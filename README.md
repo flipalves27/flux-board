@@ -1,11 +1,11 @@
-# Backlog Reborn — Plataforma Kanban (Next.js)
+# Flux-Board — Plataforma Kanban (Next.js)
 
-Aplicação de gestão de backlog em formato Kanban, migrada para **React + Next.js 15** com App Router para melhor performance e experiência de desenvolvimento.
+Aplicação de gestão de backlog em formato Kanban. **Organize the flow. Ship what matters.**
 
 ## Estrutura do Projeto
 
 ```
-seguradora-reborn/
+flux-board/
 ├── app/
 │   ├── api/                 # Route Handlers (auth, boards, users)
 │   ├── board/[id]/          # Página do Kanban
@@ -67,7 +67,7 @@ Para deploy na Vercel: `vercel` ou push para o repositório conectado.
 O sistema usa **Vercel KV (Redis)** para persistir dados.
 
 1. Dashboard Vercel → **Storage** → **Create Database** → **KV (Redis)**
-2. Conecte ao projeto `seguradora-reborn`
+2. Conecte ao projeto `flux-board`
 3. Variáveis adicionadas automaticamente: `KV_REST_API_URL`, `KV_REST_API_TOKEN`, etc.
 4. Opcional: `JWT_SECRET` para produção
 
