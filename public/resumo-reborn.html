@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto Reborn — Resumo Executivo | Austral Seguradora</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #2ECBAC;
+    --navy: #0D1B3E;
+    --navy-deep: #091230;
+    --green-lime: #C5D63D;
+    --gray: #6B6B6B;
+    --gray-light: #9A9A9A;
+    --gray-bg: #F4F5F7;
+    --white: #FFFFFF;
+    --red-serasa: #C0392B;
+    --orange-i4pro: #E67E22;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--navy-deep);
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  .slide {
+    min-height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* NAV */
+  .nav-dots {
+    position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 14px;
+  }
+  .nav-dots a {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.35);
+    transition: all 0.3s; display: block;
+  }
+  .nav-dots a:hover, .nav-dots a.active {
+    background: var(--teal); border-color: var(--teal); transform: scale(1.35);
+  }
+
+  /* CORNER */
+  .corner {
+    position: absolute; top: 0; right: 0; width: 100px; height: 100px; z-index: 5; overflow: hidden;
+  }
+  .corner::before {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 72px; height: 72px; background: var(--navy);
+    transform: translate(18px, -18px) rotate(45deg);
+  }
+  .corner::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 54px; height: 54px; background: var(--teal);
+    transform: translate(27px, 9px) rotate(45deg);
+  }
+
+  /* HEADER BAR */
+  .slide-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+  }
+  .slide-header .dot { width: 18px; height: 18px; background: var(--green-lime); border-radius: 3px; flex-shrink: 0; }
+  .slide-header h2 { font-size: 28px; font-weight: 700; }
+  .slide-header .tag {
+    margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; padding: 5px 14px; border-radius: 20px;
+  }
+
+  .slide-sub { font-size: 13px; margin-bottom: 22px; line-height: 1.5; max-width: 900px; }
+
+  /* ═══════════════════════════════ */
+  /* SLIDE 1 — CANAIS DE CADASTRO  */
+  /* ═══════════════════════════════ */
+  .slide-1 { background: var(--white); color: var(--navy); }
+  .slide-1 .corner::before { background: var(--navy); }
+  .s1-wrap { max-width: 1360px; width: 100%; padding: 48px 56px 40px; }
+  .s1-wrap .slide-sub { color: var(--gray); }
+  .s1-wrap .tag { background: rgba(46,203,172,0.1); color: var(--teal); }
+
+  /* TABLE */
+  .tbl { width: 100%; border-collapse: collapse; margin-top: 6px; border: 1.5px solid #e0e2e7; border-radius: 8px; overflow: hidden; }
+  .tbl thead th {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--white);
+    padding: 12px 14px; text-align: left;
+    background: var(--navy); border-bottom: 2px solid var(--teal);
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .tbl thead th:last-child { border-right: none; }
+  .tbl tbody td {
+    padding: 11px 12px; vertical-align: middle; font-size: 13px;
+    border-bottom: 1px solid #e4e6eb; border-right: 1px solid #eeeff2;
+  }
+  .tbl tbody td:last-child { border-right: none; }
+  .tbl tbody tr:last-child td { border-bottom: none; }
+  .tbl tbody tr { transition: background 0.15s; }
+  .tbl tbody tr:nth-child(even) { background: rgba(244,245,247,0.5); }
+  .tbl tbody tr:hover { background: rgba(46,203,172,0.06); }
+  .b-role {
+    display: inline-block; padding: 5px 12px; border-radius: 5px; font-weight: 600; font-size: 12px;
+    border: 2px solid var(--green-lime); background: rgba(197,214,61,0.07); color: var(--navy);
+  }
+  .b-team {
+    display: inline-block; padding: 5px 12px; border-radius: 5px; font-weight: 600; font-size: 12px;
+    background: var(--navy); color: var(--white);
+  }
+  .b-team-outline {
+    display: inline-block; padding: 5px 12px; border-radius: 5px; font-weight: 600; font-size: 12px;
+    background: rgba(13,27,62,0.04); color: var(--navy); border: 2px solid var(--navy);
+  }
+  .b-line {
+    display: inline-block; padding: 5px 12px; border-radius: 5px; font-weight: 600; font-size: 12px;
+    background: var(--teal); color: var(--white);
+  }
+  .dilig { display: inline-flex; align-items: center; gap: 5px; }
+  .dilig .st {
+    display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    background: var(--gray-bg); color: var(--navy); border: 1px solid #ddd;
+  }
+  .dilig .st.serasa { background: rgba(192,57,43,0.06); border-color: var(--red-serasa); color: var(--red-serasa); }
+  .dilig .st.susep { background: rgba(13,27,62,0.05); border-color: var(--navy); color: var(--navy); }
+  .dilig .arr { color: var(--gray-light); font-size: 13px; }
+
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+  .legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray); }
+  .legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  /* ═══════════════════════════════ */
+  /* SLIDE 2 — FLUXO + CAPACIDADES */
+  /* ═══════════════════════════════ */
+  .slide-2 { background: var(--navy-deep); color: var(--white); }
+  .s2-wrap { max-width: 1360px; width: 100%; padding: 48px 56px 40px; }
+  .s2-wrap .slide-sub { color: rgba(255,255,255,0.4); }
+  .s2-wrap .tag { background: rgba(46,203,172,0.12); color: var(--teal); }
+
+  /* FLOW */
+  .flow-container { margin-top: 8px; }
+
+  /* 2-panel layout */
+  .flow-panels {
+    display: flex;
+    gap: 28px;
+    align-items: stretch;
+  }
+  .panel-reborn {
+    flex: 1;
+    min-width: 0;
+    padding: 24px 28px;
+    border: 1px solid rgba(46,203,172,0.15);
+    border-radius: 12px;
+    background: rgba(46,203,172,0.02);
+  }
+  .panel-i4pro {
+    width: 250px;
+    flex-shrink: 0;
+    padding: 24px 20px;
+    border: 1px solid rgba(230,126,34,0.15);
+    border-radius: 12px;
+    background: rgba(230,126,34,0.02);
+  }
+
+  .flow-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 4px;
+    display: inline-block; margin-bottom: 16px;
+  }
+  .flow-label.rb-label { color: var(--teal); background: rgba(46,203,172,0.08); }
+  .flow-label.i4-label { color: var(--orange-i4pro); background: rgba(230,126,34,0.08); }
+
+  /* ── Nodes ── */
+  .fn {
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .fn.rb { background: rgba(46,203,172,0.08); border: 1.5px solid var(--teal); color: var(--teal); }
+  .fn.i4 { background: rgba(230,126,34,0.08); border: 1.5px solid var(--orange-i4pro); color: var(--orange-i4pro); }
+  .fn.nu { background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.13); color: rgba(255,255,255,0.7); }
+  .fn.dc { background: rgba(197,214,61,0.06); border: 1.5px solid var(--green-lime); color: var(--green-lime); }
+  .fn .nl {
+    font-size: 9px; font-weight: 400; opacity: 0.5;
+    display: block; margin-top: 2px;
+  }
+
+  /* ── Flow rows ── */
+  .fr {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .fa {
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  /* ── Branches ── */
+  .branch-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .branch {
+    padding: 14px 16px;
+    border-radius: 10px;
+  }
+  .branch.yes-bg {
+    background: rgba(197,214,61,0.03);
+    border: 1px solid rgba(197,214,61,0.1);
+  }
+  .branch.no-bg {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .branch-tag {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    display: block; margin-bottom: 10px;
+  }
+  .branch-tag.yes { color: var(--green-lime); }
+  .branch-tag.no { color: rgba(255,255,255,0.3); }
+
+  /* ── I4PRO ops ── */
+  .i4-ops {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .i4-op {
+    padding: 14px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    background: rgba(230,126,34,0.05);
+    border: 1.5px solid rgba(230,126,34,0.2);
+    color: var(--orange-i4pro);
+  }
+  .i4-op .op-icon { font-size: 15px; margin-right: 4px; }
+  .i4-op .op-title { font-weight: 700; }
+  .i4-op .op-desc {
+    font-size: 10px; font-weight: 400;
+    color: rgba(255,255,255,0.3);
+    display: block; margin-top: 6px; line-height: 1.4;
+  }
+
+  /* ── Connection badges ── */
+  .conn-badge {
+    font-size: 8px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px;
+    display: block; margin-top: 4px; width: fit-content;
+  }
+  .conn-badge.update { background: rgba(230,126,34,0.08); color: var(--orange-i4pro); border: 1px solid rgba(230,126,34,0.2); }
+  .conn-badge.create { background: rgba(197,214,61,0.06); color: var(--green-lime); border: 1px solid rgba(197,214,61,0.15); }
+
+  /* ── I4PRO step tags ── */
+  .i4-step-tag {
+    font-size: 8px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px;
+    display: inline-block; margin-bottom: 8px;
+  }
+  .i4-step-tag.s3 { background: rgba(46,203,172,0.1); color: var(--teal); }
+  .i4-step-tag.s5 { background: rgba(230,126,34,0.08); color: var(--orange-i4pro); }
+
+  /* DIVIDER */
+  .divider {
+    width: 100%; height: 1px; margin: 24px 0 20px;
+    background: linear-gradient(90deg, transparent, rgba(46,203,172,0.2), transparent);
+  }
+
+  /* CAPABILITIES */
+  .cap-title {
+    font-size: 16px; font-weight: 700; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cap-title .dot { width: 14px; height: 14px; background: var(--green-lime); border-radius: 3px; }
+  .caps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  }
+  .cap {
+    padding: 18px 16px; border-radius: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    transition: all 0.25s;
+  }
+  .cap:hover {
+    border-color: var(--teal); background: rgba(46,203,172,0.04);
+    transform: translateY(-2px);
+  }
+  .cap .ico {
+    width: 32px; height: 32px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; margin-bottom: 10px;
+  }
+  .cap .ico.t { background: rgba(46,203,172,0.1); }
+  .cap .ico.n { background: rgba(255,255,255,0.06); }
+  .cap .ico.l { background: rgba(197,214,61,0.1); }
+  .cap h4 { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  .cap p { font-size: 11.5px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+
+  /* FOOTER LOGO */
+  .foot {
+    position: absolute; bottom: 24px; right: 56px; text-align: right; z-index: 5;
+  }
+  .foot .fl {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    font-size: 22px; letter-spacing: 4px; color: rgba(255,255,255,0.15);
+  }
+  .foot .fs {
+    font-size: 9px; letter-spacing: 5px; color: rgba(46,203,172,0.25);
+  }
+
+  .foot-light { position: absolute; bottom: 24px; right: 56px; text-align: right; z-index: 5; }
+  .foot-light .fl {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    font-size: 22px; letter-spacing: 4px; color: rgba(13,27,62,0.1);
+  }
+  .foot-light .fs { font-size: 9px; letter-spacing: 5px; color: rgba(46,203,172,0.3); }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim { opacity: 0; animation: fadeInUp 0.6s ease forwards; }
+  .d1 { animation-delay: 0.1s; } .d2 { animation-delay: 0.2s; }
+  .d3 { animation-delay: 0.3s; } .d4 { animation-delay: 0.4s; }
+
+  @media (max-width: 900px) {
+    .caps { grid-template-columns: 1fr 1fr; }
+    .s1-wrap, .s2-wrap { padding: 36px 28px; }
+    .fr { flex-wrap: wrap; gap: 6px; }
+    .flow-panels { flex-direction: column; }
+    .panel-i4pro { width: 100%; }
+    .nav-dots { display: none; }
+  }
+  @media (max-width: 600px) {
+    .caps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav-dots">
+  <a href="#slide1" class="active"></a>
+  <a href="#slide2"></a>
+</nav>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 1 — CANAIS DE CADASTRO & DILIGÊNCIA      -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="slide1" class="slide slide-1">
+  <div class="corner"></div>
+  <div class="s1-wrap">
+
+    <div class="slide-header anim d1">
+      <div class="dot"></div>
+      <h2>Projeto <strong>Reborn</strong> — Canais de Cadastro</h2>
+      <span class="tag">Slide 1/2</span>
+    </div>
+    <p class="slide-sub anim d2">
+      Visão geral dos papéis cadastrados no I4PRO e Reborn, equipes responsáveis pela operação, linhas de negócio atendidas e as respectivas operações de diligência (SERPRO, SUSEP, SERASA) executadas por canal.
+    </p>
+
+    <table class="tbl anim d3">
+      <thead>
+        <tr>
+          <th style="width:14%">Papéis (I4PRO / Reborn)</th>
+          <th style="width:13%">Equipe de Cadastro</th>
+          <th style="width:14%">Linha de Negócio</th>
+          <th>Operações de Diligência</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="b-role">Corretor</span></td>
+          <td><span class="b-team">Comercial</span></td>
+          <td><span class="b-line">Todas as Linhas</span></td>
+          <td>
+            <div class="dilig">
+              <span class="st">SERPRO (RF)</span><span class="arr">→</span>
+              <span class="st susep">SUSEP</span><span class="arr"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="b-role">Cliente/Pagador</span></td>
+          <td><span class="b-team">D&amp;O</span></td>
+          <td><span class="b-line">Financial Lines</span></td>
+          <td>
+            <div class="dilig">
+              <span class="st">SERPRO (RF)</span><span class="arr">→</span>
+              <span class="st serasa">SERASA</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td rowspan="3"><span class="b-role">Cliente</span></td>
+          <td><span class="b-team">E&amp;O</span></td>
+          <td><span class="b-line">RC Profissional</span></td>
+          <td><div class="dilig"><span class="st">SERPRO (RF)</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="b-team">RCG</span></td>
+          <td><span class="b-line">RC Geral</span></td>
+          <td><div class="dilig"><span class="st">SERPRO (RF)</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="b-team-outline">Garantia</span></td>
+          <td><span class="b-line">Subscrição</span></td>
+          <td><div class="dilig"><span class="st">SERPRO (RF)</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="b-role">Tomador</span></td>
+          <td><span class="b-team">Comercial</span></td>
+          <td><span class="b-line">Garantia</span></td>
+          <td>
+            <div class="dilig">
+              <span class="st">SERPRO (RF)</span><span class="arr">→</span>
+              <span class="st serasa">SERASA</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="legend anim d4">
+      <span><i class="sw" style="background:var(--green-lime);border:2px solid var(--green-lime);"></i> Papéis</span>
+      <span><i class="sw" style="background:var(--navy);"></i> Equipes</span>
+      <span><i class="sw" style="background:var(--teal);"></i> Linhas de Negócio</span>
+      <span><i class="sw" style="background:rgba(192,57,43,0.1);border:2px solid var(--red-serasa);"></i> SERASA</span>
+      <span><i class="sw" style="background:rgba(13,27,62,0.06);border:2px solid var(--navy);"></i> SUSEP</span>
+    </div>
+  </div>
+  <div class="foot-light"><div class="fl">AUSTRAL</div><div class="fs">SEGURADORA</div></div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 2 — FLUXO DE CADASTRO + CAPACIDADES      -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="slide2" class="slide slide-2">
+  <div class="s2-wrap">
+
+    <div class="slide-header anim d1">
+      <div class="dot" style="background:var(--green-lime);"></div>
+      <h2 style="color:var(--white);">Fluxo de Cadastro <strong>Atual</strong> &amp; Capacidades</h2>
+      <span class="tag">Slide 2/2</span>
+    </div>
+    <p class="slide-sub anim d2">
+      Como a Plataforma Reborn interage com o I4PRO para gestão de pessoas — e as principais capacidades entregues pelo projeto.
+    </p>
+
+    <!-- FLOW DIAGRAM — Executive View -->
+    <div class="flow-container anim d3">
+      <div class="flow-panels">
+
+        <!-- ─── LEFT PANEL: REBORN ─── -->
+        <div class="panel-reborn">
+          <div class="flow-label rb-label">Plataforma Reborn — Gestão de Cadastros</div>
+
+          <!-- Step 1–3: Entry flow -->
+          <div class="fr">
+            <div class="fn rb">① Novo Cadastro<span class="nl">Usuário inicia no Reborn</span></div>
+            <span class="fa">→</span>
+            <div class="fn rb">② Identifica Pessoa<span class="nl">Tomador, Cliente ou Corretor</span></div>
+            <span class="fa">→</span>
+            <div class="fn dc">③ Consulta I4PRO<span class="nl">Pessoa já existe?</span></div>
+          </div>
+
+          <!-- Branches -->
+          <div class="branch-group">
+            <!-- SIM -->
+            <div class="branch yes-bg">
+              <div class="branch-tag yes">SIM ✓ — Pessoa já existe no I4PRO</div>
+              <div class="fr">
+                <div class="fn nu">Carrega Dados<span class="nl">vindos do I4PRO</span></div>
+                <span class="fa">→</span>
+                <div class="fn rb">④ Cria no Reborn</div>
+                <span class="fa">→</span>
+                <div class="fn i4">⑤ Atualiza I4PRO</div>
+              </div>
+              <div class="conn-badge update">↗ Aciona: Atualização de Dados no I4PRO</div>
+            </div>
+            <!-- NÃO -->
+            <div class="branch no-bg">
+              <div class="branch-tag no">NÃO ✗ — Pessoa não existe no I4PRO</div>
+              <div class="fr">
+                <div class="fn nu">Preenche Cadastro<span class="nl">dados novos</span></div>
+                <span class="fa">→</span>
+                <div class="fn rb">④ Cria no Reborn</div>
+                <span class="fa">→</span>
+                <div class="fn i4">⑤ Cria no I4PRO</div>
+              </div>
+              <div class="conn-badge create">↗ Aciona: Criação de Nova Pessoa no I4PRO</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── RIGHT PANEL: I4PRO ─── -->
+        <div class="panel-i4pro">
+          <div class="flow-label i4-label">Sistema I4PRO — Pessoas</div>
+          <div class="i4-ops">
+            <div class="i4-op">
+              <div class="i4-step-tag s3">Passo ③</div>
+              <span class="op-icon">🔍</span>
+              <span class="op-title">Consulta Pessoa</span>
+              <span class="op-desc">Verifica se a pessoa já existe na base do I4PRO antes de prosseguir com o cadastro.</span>
+            </div>
+            <div class="i4-op">
+              <div class="i4-step-tag s5">Passo ⑤ — Se existe</div>
+              <span class="op-icon">📝</span>
+              <span class="op-title">Atualização de Dados</span>
+              <span class="op-desc">Sincroniza o registro existente no I4PRO com os dados atualizados do Reborn.</span>
+            </div>
+            <div class="i4-op">
+              <div class="i4-step-tag s5">Passo ⑤ — Se não existe</div>
+              <span class="op-icon">➕</span>
+              <span class="op-title">Criação de Nova Pessoa</span>
+              <span class="op-desc">Cria um novo registro no I4PRO a partir dos dados preenchidos no Reborn.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Flow legend -->
+      <div style="margin-top:14px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Legenda:</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:5px;">
+          <span style="width:14px;height:3px;background:var(--teal);border-radius:2px;display:inline-block;"></span> Reborn
+        </span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:5px;">
+          <span style="width:14px;height:3px;background:var(--orange-i4pro);border-radius:2px;display:inline-block;"></span> I4PRO
+        </span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:5px;">
+          <span style="width:14px;height:3px;background:var(--green-lime);border-radius:2px;display:inline-block;"></span> Decisão
+        </span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.4);">①→⑤ Sequência</span>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider anim d3"></div>
+
+    <!-- CAPABILITIES -->
+    <div class="cap-title anim d4">
+      <div class="dot"></div>
+      Capacidades Entregues pelo Reborn
+    </div>
+    <div class="caps anim d4">
+      <div class="cap">
+        <div class="ico t">👤</div>
+        <h4>Gestão Centralizada</h4>
+        <p>Cadastro único de Tomadores, Clientes, Corretores e Pagadores com consulta integrada ao I4PRO.</p>
+      </div>
+      <div class="cap">
+        <div class="ico n">🔍</div>
+        <h4>Diligência Automatizada</h4>
+        <p>Consultas automáticas ao SERPRO, SUSEP e SERASA conforme linha de negócio e papel.</p>
+      </div>
+      <div class="cap">
+        <div class="ico l">🔄</div>
+        <h4>Sincronização I4PRO</h4>
+        <p>Verificação de existência, carga automática de dados ou criação de novo registro no I4PRO.</p>
+      </div>
+      <div class="cap">
+        <div class="ico t">📋</div>
+        <h4>Múltiplas Linhas</h4>
+        <p>Garantia, Financial Lines, RC Profissional e RC Geral com fluxos de diligência distintos.</p>
+      </div>
+      <div class="cap">
+        <div class="ico n">🏢</div>
+        <h4>Equipes Segmentadas</h4>
+        <p>Comercial, D&amp;O, E&amp;O, RCG e Garantia com operações de cadastro especializadas.</p>
+      </div>
+      <div class="cap">
+        <div class="ico l">⚡</div>
+        <h4>Tempo Real</h4>
+        <p>Atualização bidirecional Reborn ↔ I4PRO garantindo consistência cadastral.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="foot"><div class="fl">AUSTRAL</div><div class="fs">SEGURADORA</div></div>
+</section>
+
+<script>
+  const dots = document.querySelectorAll('.nav-dots a');
+  const slides = document.querySelectorAll('.slide');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        dots.forEach(d => d.classList.remove('active'));
+        const a = document.querySelector(`.nav-dots a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach(s => obs.observe(s));
+
+  const animObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.anim').forEach(el => el.style.animationPlayState = 'running');
+      }
+    });
+  }, { threshold: 0.15 });
+  slides.forEach(s => {
+    s.querySelectorAll('.anim').forEach(el => el.style.animationPlayState = 'paused');
+    animObs.observe(s);
+  });
+  slides[0].querySelectorAll('.anim').forEach(el => el.style.animationPlayState = 'running');
+</script>
+
+</body>
+</html>

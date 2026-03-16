@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus Boards — Plataforma Reborn</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--teal:#00C9B7;--teal-d:#009E90;--navy:#0A1F3F;--lime:#C5D93E;--white:#FFF;--off:#F4F6FA;--g100:#F3F4F6;--g200:#E5E7EB;--g400:#9CA3AF;--g600:#4B5563;--g700:#374151;--font-d:'Plus Jakarta Sans',sans-serif;--font-b:'DM Sans',sans-serif;--rad:10px;--shadow:0 4px 16px rgba(10,31,63,.1)}
+body{font-family:var(--font-b);background:var(--off);color:var(--g700);min-height:100vh}
+.hdr{background:var(--navy);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand-bar{width:4px;height:24px;background:var(--teal);border-radius:2px}
+.brand h1{font-family:var(--font-d);font-size:1rem;font-weight:800;color:var(--white)}
+.brand h1 span{color:var(--teal)}
+.user-info{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.user-name{font-size:.85rem;color:var(--g400)}
+.btn{padding:.45rem .9rem;border-radius:8px;font-family:var(--font-b);font-weight:600;font-size:.8rem;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--teal);color:var(--navy)}
+.btn-primary:hover{background:var(--lime)}
+.btn-ghost{background:transparent;color:var(--g400);border:1px solid var(--g600)}
+.btn-ghost:hover{color:var(--white);border-color:var(--g400)}
+.main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+.main h2{font-family:var(--font-d);font-size:1.4rem;font-weight:800;color:var(--navy);margin-bottom:1.5rem}
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.board-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rad);padding:1.25rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:.5rem;position:relative}
+.board-card:hover{box-shadow:var(--shadow);border-color:var(--teal)}
+.board-card h3{font-family:var(--font-d);font-size:1rem;font-weight:700;color:var(--navy)}
+.board-card .meta{font-size:.75rem;color:var(--g400)}
+.board-card .actions{display:flex;gap:.35rem;margin-top:auto;padding-top:.5rem}
+.board-card .actions button{padding:.3rem .5rem;font-size:.7rem;border-radius:6px;border:1px solid var(--g200);background:var(--white);color:var(--g600);cursor:pointer;transition:all .15s}
+.board-card .actions button:hover{background:var(--g100);border-color:var(--teal);color:var(--teal-d)}
+.board-card .actions .btn-del:hover{background:#FEF2F2;border-color:#EF4444;color:#EF4444}
+.card-new{background:var(--g100);border:2px dashed var(--g200);display:flex;align-items:center;justify-content:center;min-height:120px;color:var(--g600);font-weight:600;font-size:.95rem}
+.card-new:hover{background:rgba(0,201,183,.08);border-color:var(--teal);color:var(--teal-d)}
+.empty{text-align:center;padding:3rem;color:var(--g400)}
+.modal-overlay{position:fixed;inset:0;background:rgba(10,31,63,.5);z-index:300;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--white);border-radius:var(--rad);padding:1.5rem;min-width:320px}
+.modal h3{margin-bottom:1rem;font-family:var(--font-d)}
+.modal .form-row{margin-bottom:1rem}
+.modal .form-label{display:block;font-size:.7rem;font-weight:600;color:var(--g600);margin-bottom:.3rem}
+.modal .form-input{width:100%;padding:.5rem;border:1.5px solid var(--g200);border-radius:8px;font-size:.9rem}
+.modal .form-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="brand"><div class="brand-bar"></div><h1>AUSTRAL <span>SEGURADORA</span> — PLATAFORMA REBORN</h1></div>
+  <div class="user-info">
+    <span class="user-name" id="user-name"></span>
+    <a href="users.html" class="btn btn-ghost" id="link-admin" style="display:none">Administrar Usuários</a>
+    <button class="btn btn-ghost" onclick="logout()">Sair</button>
+  </div>
+</div>
+<div class="main">
+  <h2>Meus Boards</h2>
+  <div class="board-grid" id="board-grid">
+    <div class="card-new" onclick="openNewBoardModal()">+ Novo Board</div>
+  </div>
+  <div class="empty" id="empty-msg" style="display:none">Nenhum board ainda. Clique em "Novo Board" para criar.</div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">Novo Board</h3>
+    <div class="form-row"><label class="form-label">Nome do Board</label><input class="form-input" id="board-name" placeholder="Ex: Backlog Principal"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-modal-save">Criar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const AUTH_KEY = "reborn_auth";
+
+function getAuth() {
+  const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function redirectLogin() {
+  if (!getAuth()) { window.location.href = "login.html"; return true; }
+  return false;
+}
+
+async function api(path, opts = {}) {
+  const auth = getAuth();
+  if (!auth?.token) return null;
+  const headers = { ...opts.headers, Authorization: "Bearer " + auth.token };
+  if (opts.body && typeof opts.body === "object" && !(opts.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(opts.body);
+  }
+  const r = await fetch(path, { ...opts, headers });
+  if (r.status === 401) { localStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(AUTH_KEY); window.location.href = "login.html"; return null; }
+  return r;
+}
+
+async function loadBoards() {
+  const r = await api("/api/boards");
+  if (!r || !r.ok) return;
+  const { boards } = await r.json();
+  const grid = document.getElementById("board-grid");
+  const empty = document.getElementById("empty-msg");
+  grid.innerHTML = '<div class="card-new" onclick="openNewBoardModal()">+ Novo Board</div>';
+  if (boards && boards.length > 0) {
+    empty.style.display = "none";
+      boards.forEach((b) => {
+        const card = document.createElement("div");
+        card.className = "board-card";
+        const isBoardReborn = b.id === "b_reborn";
+        const isAdmin = getAuth()?.user?.isAdmin;
+        const actionsHtml = isBoardReborn
+          ? (isAdmin
+              ? `<div class="actions"><button class="btn-del" onclick="event.stopPropagation();deleteBoard('${b.id}','${escapeHtml(b.name).replace(/'/g,"\\'")}')">Excluir</button></div>`
+              : '<span class="meta" style="font-style:italic">Board padrão</span>')
+          : `<div class="actions">
+          <button onclick="event.stopPropagation();editBoardName('${b.id}','${escapeHtml(b.name).replace(/'/g,"\\'")}')">Renomear</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteBoard('${b.id}','${escapeHtml(b.name).replace(/'/g,"\\'")}')">Excluir</button>
+        </div>`;
+        card.innerHTML = `
+        <h3>${escapeHtml(b.name)}</h3>
+        <span class="meta">Atualizado: ${formatDate(b.lastUpdated)}</span>
+        ${actionsHtml}
+      `;
+        card.onclick = () => { window.location.href = "board.html?id=" + encodeURIComponent(b.id); };
+        grid.insertBefore(card, grid.firstChild);
+      });
+  } else {
+    empty.style.display = "block";
+  }
+}
+
+function formatDate(s) {
+  if (!s) return "-";
+  try {
+    const d = new Date(s);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } catch { return s; }
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s || "";
+  return d.innerHTML;
+}
+
+function openNewBoardModal() {
+  document.getElementById("modal-title").textContent = "Novo Board";
+  document.getElementById("board-name").value = "";
+  document.getElementById("board-name").dataset.boardId = "";
+  document.getElementById("btn-modal-save").textContent = "Criar";
+  document.getElementById("btn-modal-save").onclick = createBoard;
+  document.getElementById("modal-overlay").classList.add("show");
+  document.getElementById("board-name").focus();
+}
+
+function editBoardName(id, name) {
+  document.getElementById("modal-title").textContent = "Renomear Board";
+  document.getElementById("board-name").value = name;
+  document.getElementById("board-name").dataset.boardId = id;
+  document.getElementById("btn-modal-save").textContent = "Salvar";
+  document.getElementById("btn-modal-save").onclick = () => saveBoardName(id);
+  document.getElementById("modal-overlay").classList.add("show");
+}
+
+async function createBoard() {
+  const name = document.getElementById("board-name").value.trim() || "Novo Board";
+  const r = await api("/api/boards", { method: "POST", body: { name } });
+  if (!r || !r.ok) { alert("Erro ao criar board."); return; }
+  const { board } = await r.json();
+  closeModal();
+  window.location.href = "board.html?id=" + encodeURIComponent(board.id);
+}
+
+async function saveBoardName(id) {
+  const name = document.getElementById("board-name").value.trim() || "Board";
+  const r = await api("/api/boards/" + id, { method: "PUT", body: { name } });
+  if (!r || !r.ok) { alert("Erro ao renomear."); return; }
+  closeModal();
+  loadBoards();
+}
+
+async function deleteBoard(id, name) {
+  if (!confirm('Excluir o board "' + name + '"? Esta ação não pode ser desfeita.')) return;
+  const r = await api("/api/boards/" + id, { method: "DELETE" });
+  if (!r || !r.ok) { alert("Erro ao excluir."); return; }
+  loadBoards();
+}
+
+function closeModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById("modal-overlay").classList.remove("show");
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
+  window.location.href = "login.html";
+}
+
+if (redirectLogin()) {}
+else {
+  const auth = getAuth();
+  document.getElementById("user-name").textContent = auth?.user?.name || auth?.user?.username || "Usuário";
+  if (auth?.user?.isAdmin) document.getElementById("link-admin").style.display = "inline-block";
+  loadBoards();
+}
+</script>
+</body>
+</html>
