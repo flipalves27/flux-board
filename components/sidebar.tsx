@@ -8,7 +8,7 @@ import { useTheme } from "@/context/theme-context";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 44 44" fill="none" className={className} aria-hidden>
+    <svg viewBox="0 -4 44 48" fill="none" className={className} aria-hidden>
       <path d="M8 32L16 20L24 26L36 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M30 10H36V16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="16" cy="20" r="2.5" fill="var(--flux-accent)" />

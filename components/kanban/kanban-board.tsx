@@ -386,20 +386,6 @@ export function KanbanBoard({
               <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">{cards.length}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
-              Importar
-              <input
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleImportCSV}
-              />
-            </label>
-            <button onClick={handleExportCSV} className="btn-bar">
-              Exportar
-            </button>
-          </div>
         </div>
       </div>
 
@@ -464,6 +450,18 @@ export function KanbanBoard({
                   placeholder="Buscar..."
                   className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
+                <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
+                  Importar
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="hidden"
+                    onChange={handleImportCSV}
+                  />
+                </label>
+                <button onClick={handleExportCSV} className="btn-bar">
+                  Exportar
+                </button>
               </div>
             </>
           )}
