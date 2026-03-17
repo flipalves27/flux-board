@@ -37,23 +37,23 @@ export function KanbanCard({
   });
 
   const dr = daysRemaining(card.dueDate);
-  const dueClass = dr === null ? "" : dr < 0 ? "text-[var(--red)]" : dr <= 3 ? "text-[var(--amber)]" : "text-[var(--g400)]";
+  const dueClass = dr === null ? "" : dr < 0 ? "text-[var(--flux-danger)]" : dr <= 3 ? "text-[var(--flux-warning)]" : "text-[var(--flux-text-muted)]";
   const dueText =
     dr === null ? "" : dr < 0 ? `${Math.abs(dr)}d atraso` : dr === 0 ? "Hoje" : `${dr}d`;
 
   const prioClass =
     card.priority === "Urgente"
-      ? "bg-[var(--red-bg)] text-[var(--red)] border border-[var(--red-b)]"
+      ? "bg-[rgba(255,107,107,0.15)] text-[var(--flux-danger)] border border-[rgba(255,107,107,0.35)]"
       : card.priority === "Importante"
-        ? "bg-[var(--amber-bg)] text-[var(--amber)] border border-[var(--amber-b)]"
-        : "bg-[var(--blue-bg)] text-[var(--blue)] border border-[var(--blue-b)]";
+        ? "bg-[rgba(255,217,61,0.12)] text-[var(--flux-warning)] border border-[rgba(255,217,61,0.35)]"
+        : "bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]";
 
   const progColor =
     card.progress === "Em andamento"
-      ? "var(--teal)"
+      ? "var(--flux-primary)"
       : card.progress === "Concluída"
-        ? "var(--green)"
-        : "var(--g400)";
+        ? "var(--flux-success)"
+        : "var(--flux-text-muted)";
 
   return (
     <div
@@ -65,13 +65,13 @@ export function KanbanCard({
           onEdit();
         }
       }}
-      className={`bg-white border border-[var(--g200)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out hover:shadow-[0_4px_20px_rgba(10,31,63,0.08)] hover:border-[var(--g300)] ${
+      className={`bg-[var(--flux-surface-elevated)] border border-[rgba(108,92,231,0.2)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out hover:shadow-[0_4px_20px_rgba(108,92,231,0.15)] hover:border-[var(--flux-primary)]/40 ${
         isDragging ? "opacity-40 scale-[0.98]" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-1.5 card-top">
         <div className="flex items-center gap-0 card-id-wrap">
-          <span className="text-[11px] font-bold text-[var(--g400)] font-mono card-id">{card.id}</span>
+          <span className="text-[11px] font-bold text-[var(--flux-text-muted)] font-mono card-id">{card.id}</span>
         </div>
         <div className="flex items-center gap-1 card-top-right">
           <button
@@ -80,7 +80,7 @@ export function KanbanCard({
               e.stopPropagation();
               onDelete();
             }}
-            className="card-delete w-4 h-4 rounded border-none bg-transparent text-[var(--g400)] text-[10px] flex items-center justify-center opacity-35 hover:opacity-100 hover:bg-[var(--red-bg)] hover:text-[var(--red)]"
+            className="card-delete w-4 h-4 rounded border-none bg-transparent text-[var(--flux-text-muted)] text-[10px] flex items-center justify-center opacity-35 hover:opacity-100 hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)]"
           >
             ✕
           </button>
@@ -91,7 +91,7 @@ export function KanbanCard({
                 e.stopPropagation();
                 onOpenDesc();
               }}
-              className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[var(--g200)] bg-[var(--g50)] text-[var(--g500)] flex items-center justify-center shrink-0 hover:bg-[var(--teal)] hover:text-white hover:border-[var(--teal)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
+              className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
               title="Ver descrição"
               aria-label="Ver descrição"
             >
@@ -106,18 +106,18 @@ export function KanbanCard({
           </span>
         </div>
       </div>
-      <div className="font-display font-bold text-sm text-[var(--g800)] leading-tight mb-1.5">
+      <div className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight mb-1.5">
         {card.title}
       </div>
-      <div className="text-xs text-[var(--g500)] leading-snug mb-2.5 line-clamp-2">
+      <div className="text-xs text-[var(--flux-text-muted)] leading-snug mb-2.5 line-clamp-2">
         {card.desc}
       </div>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {card.tags.map((t) => (
           <span
             key={t}
-            className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--g100)] text-[var(--g500)] ${
-              t === "Incidente" ? "bg-[var(--orange-bg)] text-[var(--orange)] border border-[var(--orange-b)] font-semibold" : ""
+            className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[rgba(255,255,255,0.06)] text-[var(--flux-text-muted)] ${
+              t === "Incidente" ? "bg-[rgba(253,167,223,0.15)] text-[var(--flux-accent)] border border-[rgba(253,167,223,0.35)] font-semibold" : ""
             }`}
           >
             {t}
@@ -130,7 +130,7 @@ export function KanbanCard({
             className="w-1.5 h-1.5 rounded-full"
             style={{ background: progColor }}
           />
-          <span className="text-[11px] text-[var(--g400)] font-medium">{card.progress}</span>
+          <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{card.progress}</span>
         </div>
         {dr !== null && (
           <span className={`flex items-center gap-1 text-[11px] font-semibold ${dueClass}`}>
@@ -139,8 +139,8 @@ export function KanbanCard({
           </span>
         )}
       </div>
-      <div className="border-t border-[var(--g100)] pt-2.5 mt-2">
-        <span className="text-[11px] font-semibold text-[var(--g400)] uppercase block mb-2">
+      <div className="border-t border-[rgba(255,255,255,0.06)] pt-2.5 mt-2">
+        <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] uppercase block mb-2 font-display">
           Direcionamento
         </span>
         <div className="flex gap-2 flex-wrap">
@@ -153,8 +153,8 @@ export function KanbanCard({
                 type="button"
                 className={`dir-btn text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
                   sel
-                    ? `text-white ${dk === "manter" ? "bg-[#059669] border-[#059669]" : dk === "priorizar" ? "bg-[var(--teal-d)] border-[var(--teal-d)]" : dk === "adiar" ? "bg-[var(--amber)] border-[var(--amber)] text-[var(--g800)]" : dk === "cancelar" ? "bg-[var(--red)] border-[var(--red)]" : "bg-[var(--g600)] border-[var(--g600)]"}`
-                    : "bg-white text-[var(--g500)] border-[var(--g200)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] hover:bg-[#F0FDFB]"
+                    ? `text-white ${dk === "manter" ? "bg-[#059669] border-[#059669]" : dk === "priorizar" ? "bg-[var(--flux-secondary)] border-[var(--flux-secondary)]" : dk === "adiar" ? "bg-[var(--flux-warning)] border-[var(--flux-warning)] text-[#1A1730]" : dk === "cancelar" ? "bg-[var(--flux-danger)] border-[var(--flux-danger)]" : "bg-[var(--flux-text-muted)] border-[var(--flux-text-muted)]"}`
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();

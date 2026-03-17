@@ -18,8 +18,8 @@ export default function HomePage() {
   }, [user, isLoading, isChecked, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--off)]">
-      <p className="text-[var(--g600)] font-medium">Redirecionando...</p>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
+      <p className="text-[var(--flux-text-muted)] font-medium">Redirecionando...</p>
     </div>
   );
 }

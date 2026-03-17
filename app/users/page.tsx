@@ -128,11 +128,11 @@ export default function UsersPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--off)]">
+    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title="Usuários" backHref="/boards" />
       <main className="max-w-[900px] mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-xl font-extrabold text-[var(--navy)]">
+          <h2 className="font-display text-xl font-bold text-[var(--flux-text)]">
             Administrar Usuários
           </h2>
           <button
@@ -144,22 +144,22 @@ export default function UsersPage() {
         </div>
 
         {loading ? (
-          <p className="text-[var(--g500)]">Carregando...</p>
+          <p className="text-[var(--flux-text-muted)]">Carregando...</p>
         ) : (
-          <div className="bg-white rounded-[var(--rad)] shadow-[var(--shadow-md)] overflow-hidden">
+          <div className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] shadow-[var(--shadow-md)] overflow-hidden">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 bg-[var(--g100)] font-display text-xs font-bold text-[var(--g600)] uppercase tracking-wide text-left">
+                  <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
                     Nome
                   </th>
-                  <th className="px-4 py-3 bg-[var(--g100)] font-display text-xs font-bold text-[var(--g600)] uppercase tracking-wide text-left">
+                  <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
                     E-mail
                   </th>
-                  <th className="px-4 py-3 bg-[var(--g100)] font-display text-xs font-bold text-[var(--g600)] uppercase tracking-wide text-left">
+                  <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
                     Tipo
                   </th>
-                  <th className="px-4 py-3 bg-[var(--g100)] font-display text-xs font-bold text-[var(--g600)] uppercase tracking-wide text-left">
+                  <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
                     Ações
                   </th>
                 </tr>
@@ -168,13 +168,13 @@ export default function UsersPage() {
                 {users.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-b border-[var(--g200)] hover:bg-[rgba(0,201,183,0.04)]"
+                    className="border-b border-[rgba(255,255,255,0.06)] hover:bg-[rgba(108,92,231,0.06)]"
                   >
-                    <td className="px-4 py-3">{u.name}</td>
-                    <td className="px-4 py-3">{u.email}</td>
+                    <td className="px-4 py-3 text-[var(--flux-text)]">{u.name}</td>
+                    <td className="px-4 py-3 text-[var(--flux-text-muted)]">{u.email}</td>
                     <td className="px-4 py-3">
                       {u.isAdmin ? (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[var(--navy)] text-white">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[var(--flux-primary)] text-white">
                           Admin
                         </span>
                       ) : (
@@ -186,13 +186,13 @@ export default function UsersPage() {
                         <div className="flex gap-3">
                           <button
                             onClick={() => openEditModal(u)}
-                            className="btn-sm border-[var(--g200)] bg-white text-[var(--g600)] hover:bg-[var(--g100)] hover:border-[var(--teal)] hover:text-[var(--teal-d)]"
+                            className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.1)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => deleteUser(u.id, u.name)}
-                            className="btn-sm border-[var(--g200)] bg-white text-[var(--g600)] hover:bg-[#FEF2F2] hover:border-[#EF4444] hover:text-[#EF4444]"
+                            className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
                           >
                             Excluir
                           </button>
@@ -215,18 +215,18 @@ export default function UsersPage() {
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="bg-white rounded-[var(--rad)] p-6 min-w-[360px] max-w-[95%]"
+            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[360px] max-w-[95%]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-display font-bold mb-4">
+            <h3 className="font-display font-bold mb-4 text-[var(--flux-text)]">
               {modalMode === "new" ? "Novo Usuário" : "Editar Usuário"}
             </h3>
             {formError && (
-              <p className="text-[#B91C1C] text-sm mb-2">{formError}</p>
+              <p className="text-[var(--flux-danger)] text-sm mb-2">{formError}</p>
             )}
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-1">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
                   Nome
                 </label>
                 <input
@@ -234,11 +234,11 @@ export default function UsersPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Nome completo"
-                  className="w-full px-3 py-2 border border-[var(--g200)] rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-1">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
                   E-mail
                 </label>
                 <input
@@ -247,11 +247,11 @@ export default function UsersPage() {
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="email@exemplo.com"
                   disabled={modalMode === "edit"}
-                  className="w-full px-3 py-2 border border-[var(--g200)] rounded-lg text-sm disabled:opacity-60"
+                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] disabled:opacity-60 focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-1">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
                   Senha
                 </label>
                 <input
@@ -259,11 +259,11 @@ export default function UsersPage() {
                   value={formPwd}
                   onChange={(e) => setFormPwd(e.target.value)}
                   placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 4 caracteres"}
-                  className="w-full px-3 py-2 border border-[var(--g200)] rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--g100)]">
+            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[rgba(255,255,255,0.08)]">
               <button
                 onClick={() => setModalOpen(false)}
                 className="btn-secondary"

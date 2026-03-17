@@ -2,39 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Flux-Board design system — dark theme */
 :root {
-  --teal: #00c9b7;
-  --teal-d: #009e90;
-  --navy: #0a1f3f;
-  --lime: #c5d93e;
-  --white: #fff;
-  --off: #f4f6fa;
-  --g50: #f9fafb;
-  --g100: #f3f4f6;
-  --g200: #e5e7eb;
-  --g300: #d1d5db;
-  --g400: #9ca3af;
-  --g500: #6b7280;
-  --g600: #4b5563;
-  --g700: #374151;
-  --g800: #1f2937;
-  --red: #ef4444;
-  --red-bg: #fef2f2;
-  --red-b: #fecaca;
-  --amber: #f59e0b;
-  --amber-bg: #fffbeb;
-  --amber-b: #fde68a;
-  --blue: #3b82f6;
-  --blue-bg: #eff6ff;
-  --blue-b: #bfdbfe;
-  --green: #10b981;
-  --orange: #f97316;
-  --orange-bg: #fff7ed;
-  --orange-b: #fed7aa;
-  --rad: 10px;
-  --rad-sm: 6px;
-  --shadow-md: 0 4px 16px rgba(10, 31, 63, 0.1);
-  --shadow-drag: 0 12px 36px rgba(10, 31, 63, 0.18);
+  --flux-primary: #6C5CE7;
+  --flux-primary-light: #A29BFE;
+  --flux-primary-dark: #4834D4;
+  --flux-secondary: #00D2D3;
+  --flux-secondary-light: #7EFCF6;
+  --flux-secondary-dark: #01A3A4;
+  --flux-accent: #FDA7DF;
+  --flux-accent-dark: #E056A0;
+  --flux-surface-dark: #0D0B1A;
+  --flux-surface-mid: #1A1730;
+  --flux-surface-card: #221F3A;
+  --flux-surface-elevated: #2D2952;
+  --flux-text: #F0EEFF;
+  --flux-text-muted: #9B97C2;
+  --flux-success: #00E676;
+  --flux-warning: #FFD93D;
+  --flux-danger: #FF6B6B;
+  --flux-info: #74B9FF;
+  --flux-rad: 10px;
+  --flux-rad-sm: 6px;
+  --flux-rad-lg: 16px;
+  --flux-rad-xl: 20px;
+  --shadow-md: 0 4px 16px rgba(13, 11, 26, 0.4);
+  --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
 }
 
 @layer base {
@@ -42,120 +35,112 @@
     font-size: 14px;
   }
   body {
-    font-family: "DM Sans", sans-serif;
-    background: var(--off);
-    color: var(--g700);
+    font-family: var(--font-body), "DM Sans", sans-serif;
+    background: var(--flux-surface-dark);
+    color: var(--flux-text);
     min-height: 100vh;
   }
 }
 
 @layer components {
-  /* Botões primários - teal/navy */
   .btn-primary {
-    @apply px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ease-out;
-    background: var(--teal);
-    color: var(--navy);
-    box-shadow: 0 1px 3px rgba(0, 201, 183, 0.25);
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
+    background: var(--flux-primary);
+    color: white;
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.35);
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--lime);
-    box-shadow: 0 4px 12px rgba(0, 201, 183, 0.35);
+    background: var(--flux-primary-light);
+    box-shadow: 0 6px 24px rgba(108, 92, 231, 0.45);
     transform: translateY(-1px);
   }
   .btn-primary:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 201, 183, 0.2);
+    background: var(--flux-primary-dark);
   }
 
-  /* Botões secundários / outline */
   .btn-secondary {
-    @apply px-4 py-2.5 rounded-lg font-semibold text-sm border transition-all duration-200 ease-out;
-    background: var(--g100);
-    color: var(--g600);
-    border-color: var(--g200);
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm border transition-all duration-200 ease-out font-display;
+    background: var(--flux-surface-card);
+    color: var(--flux-text);
+    border-color: rgba(108, 92, 231, 0.3);
   }
   .btn-secondary:hover:not(:disabled) {
-    background: var(--g200);
-    border-color: var(--g300);
-    color: var(--g700);
+    background: var(--flux-surface-elevated);
+    border-color: var(--flux-primary);
+    color: var(--flux-primary-light);
   }
 
-  /* Botões ghost / header */
   .btn-ghost {
-    @apply px-4 py-2.5 rounded-lg font-semibold text-sm border transition-all duration-200 ease-out;
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm border transition-all duration-200 ease-out font-display;
     background: transparent;
-    color: var(--g400);
-    border-color: var(--g600);
+    color: var(--flux-text-muted);
+    border-color: rgba(255, 255, 255, 0.12);
   }
   .btn-ghost:hover:not(:disabled) {
-    color: white;
-    border-color: var(--g400);
+    color: var(--flux-text);
+    border-color: var(--flux-primary);
+    background: rgba(108, 92, 231, 0.1);
   }
 
-  /* Botões pill (filtros, tags) */
   .btn-pill {
-    @apply px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ease-out;
+    @apply px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ease-out font-display;
   }
   .btn-pill:hover {
     transform: translateY(-0.5px);
   }
 
-  /* Botões de ação pequenos */
   .btn-sm {
-    @apply px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ease-out;
+    @apply px-3 py-1.5 rounded-[var(--flux-rad-sm)] text-xs font-semibold border transition-all duration-200 ease-out font-display;
   }
   .btn-sm:hover {
     transform: translateY(-0.5px);
   }
 
-  /* Botão perigo (soft) */
   .btn-danger {
-    @apply px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ease-out;
-    background: var(--red-bg);
-    color: var(--red);
-    border: 1px solid var(--red-b);
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
+    background: rgba(255, 107, 107, 0.12);
+    color: var(--flux-danger);
+    border: 1px solid rgba(255, 107, 107, 0.35);
   }
   .btn-danger:hover:not(:disabled) {
-    background: var(--red);
+    background: var(--flux-danger);
     color: white;
-    border-color: var(--red);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    border-color: var(--flux-danger);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
   }
 
-  /* Botão perigo sólido (confirmar exclusão) */
   .btn-danger-solid {
-    @apply px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ease-out;
-    background: var(--red);
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
+    background: var(--flux-danger);
     color: white;
-    border: 1px solid var(--red);
+    border: 1px solid var(--flux-danger);
   }
   .btn-danger-solid:hover:not(:disabled) {
-    background: #dc2626;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    background: #e05555;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
     transform: translateY(-1px);
   }
 
-  /* Scrollbar suave alinhada ao layout */
   .scrollbar-kanban {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 201, 183, 0.4) var(--g100);
+    scrollbar-color: rgba(108, 92, 231, 0.4) var(--flux-surface-card);
   }
   .scrollbar-kanban::-webkit-scrollbar {
     width: 6px;
   }
   .scrollbar-kanban::-webkit-scrollbar-track {
-    background: var(--g100);
+    background: var(--flux-surface-card);
     border-radius: 3px;
   }
   .scrollbar-kanban::-webkit-scrollbar-thumb {
-    background: rgba(0, 201, 183, 0.35);
+    background: rgba(108, 92, 231, 0.35);
     border-radius: 3px;
   }
   .scrollbar-kanban::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 201, 183, 0.55);
+    background: rgba(108, 92, 231, 0.55);
   }
 
-  /* Animação do modal de card */
   .card-modal-backdrop {
     animation: cardModalFadeIn 0.2s ease-out forwards;
   }
@@ -163,7 +148,6 @@
     animation: cardModalSlideIn 0.25s cubic-bezier(0.18, 0.67, 0.6, 1.02) forwards;
   }
 
-  /* Animação fade-in genérica para modais (descrição, mapa, etc.) */
   .modal-overlay-animate {
     animation: modalOverlayFade 0.28s ease forwards;
   }
@@ -173,12 +157,8 @@
 }
 
 @keyframes cardModalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes cardModalSlideIn {
@@ -193,12 +173,8 @@
 }
 
 @keyframes modalOverlayFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes modalContentFade {

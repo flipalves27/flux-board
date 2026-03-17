@@ -96,7 +96,7 @@ export function KanbanBoard({
   const visibleCardsByBucket = (bucketKey: string) =>
     getCardsByBucket(bucketKey).filter(filterCard);
 
-  const COLUMN_COLORS = ["#9CA3AF", "#8B5CF6", "#0A1F3F", "#00C9B7", "#F97316", "#10B981", "#3B82F6", "#EC4899"];
+  const COLUMN_COLORS = ["#9B97C2", "#6C5CE7", "#00D2D3", "#FDA7DF", "#FFD93D", "#00E676", "#74B9FF", "#E056A0"];
   const addColumn = () => {
     const label = newColumnName.trim() || "Nova Coluna";
     const key = `col_${Date.now()}`;
@@ -360,35 +360,35 @@ export function KanbanBoard({
 
   return (
     <>
-      <div className="bg-white border-b border-[var(--g200)]">
+      <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
         <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center gap-6 overflow-x-auto flex-wrap">
           {buckets.map((b, i) => {
             const n = visibleCardsByBucket(b.key).length;
             return (
               <div key={b.key} className="flex items-center gap-2 shrink-0">
-                {i > 0 && <div className="w-px h-5 bg-[var(--g200)]" />}
+                {i > 0 && <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />}
                 <div className="flex items-center gap-2">
                   <div
                     className="w-2 h-2 rounded-full"
-                    style={{ background: b.color || "#9CA3AF" }}
+                    style={{ background: b.color || "#9B97C2" }}
                   />
-                  <span className="text-xs text-[var(--g500)] font-medium">{b.label || ""}</span>
-                  <span className="font-display font-extrabold text-sm text-[var(--g800)]">{n}</span>
+                  <span className="text-xs text-[var(--flux-text-muted)] font-medium">{b.label || ""}</span>
+                  <span className="font-display font-bold text-sm text-[var(--flux-text)]">{n}</span>
                 </div>
               </div>
             );
           })}
-          <div className="w-px h-5 bg-[var(--g200)]" />
+          <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[var(--g700)]">Total</span>
-            <span className="font-display font-extrabold text-sm text-[var(--teal-d)]">{cards.length}</span>
+            <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
+            <span className="font-display font-bold text-sm text-[var(--flux-secondary)]">{cards.length}</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-b border-[var(--g200)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(10,31,63,0.04)]">
+      <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
         <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center gap-4 flex-wrap">
-          <span className="text-xs font-semibold text-[var(--g400)] uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
             Prioridade
           </span>
           <div className="flex items-center gap-2 flex-wrap">
@@ -398,26 +398,26 @@ export function KanbanBoard({
                 onClick={() => setActivePrio(p)}
                 className={`btn-pill transition-all duration-200 ${
                   activePrio === p
-                    ? "bg-[var(--navy)] text-white border-[var(--navy)] shadow-sm"
-                    : "bg-white text-[var(--g600)] border-[var(--g200)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] hover:bg-[rgba(0,201,183,0.04)]"
+                    ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                 }`}
               >
                 {p === "all" ? "Todas" : p}
               </button>
             ))}
           </div>
-          <div className="w-px h-6 bg-[var(--g200)]" />
+          <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
           <button
             onClick={() => setLabelsOpen(!labelsOpen)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--teal)] bg-[rgba(0,201,183,0.06)] text-[var(--teal-d)] hover:bg-[rgba(0,201,183,0.12)] hover:shadow-sm ${labelsOpen ? "open" : ""}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display ${labelsOpen ? "open" : ""}`}
           >
             <span>Rótulos</span>
             <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
           </button>
-          <div className="w-px h-6 bg-[var(--g200)]" />
+          <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
           <button
             onClick={() => setMapaOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[var(--g300)] bg-[var(--g50)] text-[var(--navy)] hover:bg-[var(--g100)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] transition-all duration-200"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display"
           >
             Mapa de Produção
           </button>
@@ -427,20 +427,20 @@ export function KanbanBoard({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar..."
-              className="px-3 py-2 rounded-lg border border-[var(--g200)] text-sm bg-[var(--g50)] w-[180px] focus:border-[var(--teal)] focus:ring-2 focus:ring-[rgba(0,201,183,0.2)] outline-none transition-all duration-200"
+              className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[180px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
             />
           </div>
         </div>
         {labelsOpen && (
-          <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[var(--g100)]">
+          <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
             {filterLabels.map((l) => (
               <button
                 key={l}
                 onClick={() => toggleLabel(l)}
                 className={`btn-pill transition-all duration-200 ${
                   activeLabels.has(l)
-                    ? "bg-[var(--teal)] text-[var(--navy)] border-[var(--teal)] shadow-sm"
-                    : "bg-white text-[var(--g600)] border-[var(--g200)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] hover:bg-[rgba(0,201,183,0.04)]"
+                    ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                 }`}
               >
                 {l}
@@ -460,7 +460,7 @@ export function KanbanBoard({
           <button
             type="button"
             onClick={() => setAddColumnOpen(true)}
-            className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-lg border border-dashed border-[var(--g300)] bg-[var(--g50)] flex items-center justify-center text-[var(--g400)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] hover:bg-[rgba(0,201,183,0.04)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
+            className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
             title="Nova coluna"
           >
             <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
@@ -516,7 +516,7 @@ export function KanbanBoard({
             }}
           >
             {activeCard ? (
-              <div className="scale-[1.02] shadow-[0_12px_32px_rgba(10,31,63,0.15)] ring-2 ring-[var(--teal)]/40 rounded-xl transition-all duration-200 ease-out">
+              <div className="scale-[1.02] shadow-[0_12px_32px_rgba(108,92,231,0.3)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
                 <KanbanCard
                   card={activeCard}
                   directions={directions}
@@ -534,23 +534,23 @@ export function KanbanBoard({
       </div>
 
       {totalWithDir > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[var(--navy)] border-t-2 border-[var(--teal)] py-2 px-6 z-[200]">
+        <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)] border-t-2 border-[var(--flux-primary)] py-2 px-6 z-[200]">
           <div className="max-w-[1900px] mx-auto flex items-center gap-4 flex-wrap">
             {directions.map((d, i) => (
               <div key={d} className="flex items-center gap-2">
-                {i > 0 && <div className="w-px h-4 bg-[var(--g600)]" />}
+                {i > 0 && <div className="w-px h-4 bg-[var(--flux-text-muted)]" />}
                 <div
                   className="w-1.5 h-1.5 rounded-full"
                   style={{ background: DIR_COLORS[d.toLowerCase()] }}
                 />
-                <span className="font-display font-extrabold text-white">{directionCounts[d.toLowerCase()] || 0}</span>
-                <span className="text-xs text-[var(--g400)] font-medium">{d}</span>
+                <span className="font-display font-bold text-[var(--flux-text)]">{directionCounts[d.toLowerCase()] || 0}</span>
+                <span className="text-xs text-[var(--flux-text-muted)] font-medium">{d}</span>
               </div>
             ))}
-            <div className="w-px h-4 bg-[var(--g600)]" />
+            <div className="w-px h-4 bg-[var(--flux-text-muted)]" />
             <div className="flex items-center gap-2">
-              <span className="font-display font-extrabold text-[var(--g400)]">{cards.length - totalWithDir}</span>
-              <span className="text-xs text-[var(--g400)] font-medium">Pendentes</span>
+              <span className="font-display font-bold text-[var(--flux-text-muted)]">{cards.length - totalWithDir}</span>
+              <span className="text-xs text-[var(--flux-text-muted)] font-medium">Pendentes</span>
             </div>
           </div>
         </div>
@@ -626,21 +626,21 @@ export function KanbanBoard({
 
       {addColumnOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-[400] flex items-center justify-center"
+          className="fixed inset-0 bg-black/50 z-[400] flex items-center justify-center"
           onClick={() => setAddColumnOpen(false)}
         >
           <div
-            className="bg-white rounded-[var(--rad)] p-6 min-w-[280px] shadow-xl"
+            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-display font-bold text-[var(--navy)] mb-4">Nova coluna</h3>
+            <h3 className="font-display font-bold text-[var(--flux-text)] mb-4">Nova coluna</h3>
             <input
               type="text"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addColumn()}
               placeholder="Ex: Backlog, Em progresso..."
-              className="w-full px-3 py-2 border border-[var(--g200)] rounded-lg text-sm mb-4 focus:border-[var(--teal)] outline-none"
+              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
             />
             <div className="flex gap-3 justify-end pt-2">
@@ -662,9 +662,9 @@ export function KanbanBoard({
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/30 z-[400] flex items-center justify-center">
-          <div className="bg-white rounded-[var(--rad)] p-6 min-w-[280px] text-center shadow-xl">
-            <p className="text-[var(--g700)] mb-4 font-medium">
+        <div className="fixed inset-0 bg-black/50 z-[400] flex items-center justify-center">
+          <div className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl">
+            <p className="text-[var(--flux-text)] mb-4 font-medium">
               {confirmDelete.type === "card"
                 ? `Excluir "${cards.find((c) => c.id === confirmDelete.id)?.title}"?`
                 : `Excluir a coluna "${confirmDelete.label}"?`}

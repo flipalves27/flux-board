@@ -46,14 +46,14 @@ export default function DiscoveryGarantiaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-[var(--g600)]">Carregando Discovery...</p>
+        <p className="text-[var(--flux-text-muted)]">Carregando Discovery...</p>
       </div>
     );
   }
   if (error || !content) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-[var(--red)]">{error || "Conteúdo não encontrado."}</p>
+        <p className="text-[var(--flux-danger)]">{error || "Conteúdo não encontrado."}</p>
       </div>
     );
   }

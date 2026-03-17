@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
+import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { apiFetch, apiPut } from "@/lib/api-client";
 
@@ -63,12 +63,12 @@ export interface BoardData {
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
-  { key: "Refinamento Negócio/Técnico", label: "Refinamento", color: "#9CA3AF" },
-  { key: "Backlog", label: "Backlog", color: "#8B5CF6" },
-  { key: "Priorizado", label: "Priorizado", color: "#0A1F3F" },
-  { key: "Em Execução (Desenvolvimento)", label: "Em Execução", color: "#00C9B7" },
-  { key: "Incidente", label: "Incidente", color: "#F97316" },
-  { key: "Em Produção", label: "Em Produção", color: "#10B981" },
+  { key: "Refinamento Negócio/Técnico", label: "Refinamento", color: "#9B97C2" },
+  { key: "Backlog", label: "Backlog", color: "#6C5CE7" },
+  { key: "Priorizado", label: "Priorizado", color: "#00D2D3" },
+  { key: "Em Execução (Desenvolvimento)", label: "Em Execução", color: "#FDA7DF" },
+  { key: "Incidente", label: "Incidente", color: "#FFD93D" },
+  { key: "Em Produção", label: "Em Produção", color: "#00E676" },
 ];
 
 export default function BoardPage() {
@@ -177,52 +177,29 @@ export default function BoardPage() {
   if (!user) return null;
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--off)]">
-        <p className="text-[var(--g600)]">Carregando board...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
+        <p className="text-[var(--flux-text-muted)]">Carregando board...</p>
       </div>
     );
   }
   if (!db) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--off)]">
-      <header className="bg-[var(--navy)] sticky top-0 z-[200]">
-        <div className="max-w-[1900px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/boards"
-              className="flex items-center gap-1.5 text-[var(--g400)] text-sm no-underline mr-2 hover:text-white transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-80">
-                <rect x="3" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="3" y="14" width="7" height="7" rx="1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" />
-              </svg>
-              Boards
-            </Link>
-            <div className="w-1 h-6 bg-[var(--teal)] rounded-sm" />
-            <h1 className="font-display font-extrabold text-base text-white">
-              AUSTRAL <span className="text-[var(--teal)] font-semibold">SEGURADORA</span> —{" "}
-              <span>{boardName}</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className={`flex items-center gap-1 text-xs font-semibold transition-opacity ${
-                saveStatus === "idle" ? "opacity-0" : "opacity-100"
-              } ${saveStatus === "error" ? "text-[var(--red)]" : "text-[var(--teal)]"}`}
-            >
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${
-                  saveStatus === "error" ? "bg-[var(--red)]" : "bg-[var(--teal)]"
-                }`}
-              />
-              <span>{saveStatus === "error" ? "Erro API" : "Salvo"}</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <Header title={boardName} backHref="/boards" backLabel="← Boards">
+        <div
+          className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
+            saveStatus === "idle" ? "opacity-0" : "opacity-100"
+          } ${saveStatus === "error" ? "text-[var(--flux-danger)]" : "text-[var(--flux-secondary)]"}`}
+        >
+          <div
+            className={`w-1.5 h-1.5 rounded-full ${
+              saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
+            }`}
+          />
+          <span>{saveStatus === "error" ? "Erro API" : "Salvo"}</span>
         </div>
-      </header>
+      </Header>
 
       <KanbanBoard
         db={db}

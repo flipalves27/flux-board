@@ -27,7 +27,7 @@ function DroppableSlot({ id }: { id: string }) {
     <div
       ref={setNodeRef}
       className={`min-h-[12px] flex-shrink-0 rounded transition-all duration-200 ease-out ${
-        isOver ? "bg-[var(--teal)]/20 ring-2 ring-[var(--teal)]/40 scale-[1.01]" : "hover:bg-[var(--g200)]/25"
+        isOver ? "bg-[var(--flux-primary)]/20 ring-2 ring-[var(--flux-primary)]/40 scale-[1.01]" : "hover:bg-[rgba(255,255,255,0.04)]"
       }`}
     />
   );
@@ -68,26 +68,26 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
-      className={`min-w-[52px] max-w-[290px] flex-1 flex-[1_0_260px] bg-[var(--g50)] rounded-[var(--rad)] border border-[var(--g200)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
+      className={`min-w-[52px] max-w-[290px] flex-1 flex-[1_0_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.15)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
         collapsed ? "min-w-[52px] max-w-[52px] flex-[0_0_52px] cursor-pointer overflow-hidden" : ""
-      } ${isOver ? "bg-[rgba(0,201,183,0.08)]" : ""}`}
+      } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
     >
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-2 p-2.5 pb-2 border-b border-[var(--g200)] sticky top-0 bg-[var(--g50)] rounded-t-[var(--rad)] cursor-grab active:cursor-grabbing"
+        className="flex items-center gap-2 p-2.5 pb-2 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
         onClick={collapsed ? onToggleCollapse : undefined}
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
-          style={{ background: bucket.color || "#9CA3AF" }}
+          style={{ background: bucket.color || "#9B97C2" }}
         />
-        <div className="font-display font-bold text-xs text-[var(--g800)] flex-1 truncate">
+        <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 truncate">
           {bucket.label}
         </div>
         <div
-          className="font-display font-extrabold text-xs text-white px-2 py-0.5 rounded-full min-w-[20px] text-center"
-          style={{ background: bucket.color || "#9CA3AF" }}
+          className="font-display font-bold text-xs text-white px-2 py-0.5 rounded-full min-w-[20px] text-center"
+          style={{ background: bucket.color || "#9B97C2" }}
         >
           {cards.length}
         </div>
@@ -97,7 +97,7 @@ export function KanbanColumn({
             e.stopPropagation();
             onAddCard();
           }}
-          className="w-5 h-5 rounded-full border border-[var(--g200)] bg-white text-[var(--g500)] flex items-center justify-center text-[10px] hover:border-[var(--teal)] hover:text-[var(--teal-d)]"
+          className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[10px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
           title="Novo Card"
         >
           +
@@ -108,7 +108,7 @@ export function KanbanColumn({
             e.stopPropagation();
             onToggleCollapse();
           }}
-          className="w-5 h-5 rounded-full border border-[var(--g200)] bg-white text-[var(--g500)] flex items-center justify-center text-xs hover:border-[var(--teal)] hover:text-[var(--teal-d)]"
+          className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
           title={collapsed ? "Expandir" : "Recolher"}
         >
           ◂
@@ -120,7 +120,7 @@ export function KanbanColumn({
               e.stopPropagation();
               onDeleteColumn();
             }}
-            className="w-5 h-5 rounded-full border border-[var(--g200)] bg-white text-[var(--g500)] flex items-center justify-center text-[10px] hover:border-[var(--red)] hover:text-[var(--red)]"
+            className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[10px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
             title="Excluir coluna"
           >
             ×

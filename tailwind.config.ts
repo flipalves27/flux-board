@@ -9,15 +9,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        teal: "#00C9B7",
-        "teal-d": "#009E90",
-        navy: "#0A1F3F",
-        lime: "#C5D93E",
-        off: "#F4F6FA",
+        flux: {
+          primary: "#6C5CE7",
+          "primary-light": "#A29BFE",
+          "primary-dark": "#4834D4",
+          secondary: "#00D2D3",
+          accent: "#FDA7DF",
+          "surface-dark": "#0D0B1A",
+          "surface-mid": "#1A1730",
+          "surface-card": "#221F3A",
+          "surface-elevated": "#2D2952",
+          success: "#00E676",
+          warning: "#FFD93D",
+          danger: "#FF6B6B",
+          info: "#74B9FF",
+        },
       },
       fontFamily: {
-        display: ["Plus Jakarta Sans", "sans-serif"],
-        body: ["DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Outfit", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "sans-serif"],
       },
     },
   },

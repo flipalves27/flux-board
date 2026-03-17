@@ -94,7 +94,7 @@ function opBadgeClass(key: string): string {
   if (key === "serpro") return "bg-[rgba(13,148,136,0.14)] text-[#0D9488] border-[rgba(13,148,136,0.4)]";
   if (key === "susep") return "bg-[rgba(79,70,229,0.12)] text-[#4F46E5] border-[rgba(79,70,229,0.35)]";
   if (key === "serasa") return "bg-[rgba(185,28,28,0.12)] text-[#B91C1C] border-[rgba(185,28,28,0.4)]";
-  return "bg-[var(--g100)] text-[var(--g700)] border-[var(--g200)]";
+  return "bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] border-[rgba(255,255,255,0.12)]";
 }
 
 export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
@@ -123,41 +123,40 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-[960px] max-h-[90vh] overflow-y-auto shadow-xl relative border border-[var(--g100)] modal-content-animate"
+        className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl w-full max-w-[960px] max-h-[90vh] overflow-y-auto shadow-xl relative modal-content-animate"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full border border-[var(--g200)] bg-[var(--g50)] text-[var(--g500)] flex items-center justify-center text-lg hover:bg-[var(--g200)] hover:text-[var(--g800)] transition-all duration-200"
+          className="absolute top-4 right-4 w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200"
         >
           ×
         </button>
 
         <div className="p-6 pb-2">
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-[var(--teal)] text-[var(--navy)] px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide">
+            <span className="bg-[var(--flux-primary)] text-white px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide font-display">
               VISÃO EXECUTIVA
             </span>
-            <span className="font-display font-extrabold text-xl text-[var(--navy)]">
-              Mapa de Produção — Plataforma Reborn
+            <span className="font-display font-bold text-xl text-[var(--flux-text)]">
+              Mapa de Produção — Flux-Board
             </span>
           </div>
-          <p className="text-sm text-[var(--g600)] leading-relaxed mb-6 max-w-[720px]">
-            Visão consolidada do que já está em produção: linhas de negócio que podem utilizar o cadastro diretamente pelo REBORN e as validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo.
+          <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed mb-6 max-w-[720px]">
+            Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo.
           </p>
 
-          {/* Validações integradas — glossário executivo */}
           <div className="mb-8">
-            <h3 className="font-display font-bold text-sm text-[var(--g700)] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-[var(--teal)]/15 flex items-center justify-center text-[var(--teal-d)]">
+            <h3 className="font-display font-bold text-sm text-[var(--flux-text)] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-[var(--flux-primary)]/15 flex items-center justify-center text-[var(--flux-primary-light)]">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </span>
               Validações integradas
             </h3>
-            <p className="text-xs text-[var(--g500)] mb-4">
+            <p className="text-xs text-[var(--flux-text-muted)] mb-4">
               Consultas automáticas realizadas pela plataforma para garantir conformidade e apoio à subscrição.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,16 +169,15 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                     <span className="flex-shrink-0">{v.icon}</span>
                     <span className="font-display font-bold text-sm">{v.nome}</span>
                   </div>
-                  <p className="text-xs text-[var(--g600)] leading-relaxed">{v.descricao}</p>
+                  <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{v.descricao}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Cadastros em Produção — grid em cards */}
           <div className="mb-6">
-            <h3 className="font-display font-bold text-sm text-[var(--g700)] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-[var(--green)]/15 flex items-center justify-center text-[var(--green)]">
+            <h3 className="font-display font-bold text-sm text-[var(--flux-text)] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-[var(--flux-success)]/15 flex items-center justify-center text-[var(--flux-success)]">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <path d="M9 22V12h6v10" />
@@ -187,8 +185,8 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
               </span>
               Cadastros em Produção
             </h3>
-            <p className="text-xs text-[var(--g500)] mb-4">
-              Papéis já operando no REBORN, por equipe e linha de negócio, com as validações aplicadas.
+            <p className="text-xs text-[var(--flux-text-muted)] mb-4">
+              Papéis por equipe e linha de negócio, com as validações aplicadas.
             </p>
             <div className="space-y-3">
               {data.map((d, i) => (
@@ -198,45 +196,45 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                   onBlur={() => setSelectedCard(null)}
                   className={`rounded-xl border-2 p-4 transition-all duration-200 grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_minmax(180px,1.2fr)_1.4fr] gap-3 items-center ${
                     selectedCard === i
-                      ? "bg-[rgba(0,201,183,0.08)] border-[var(--teal)] shadow-md"
-                      : "bg-[var(--g50)] border-[var(--g200)] hover:bg-[rgba(0,201,183,0.05)] hover:border-[var(--teal)]/60"
+                      ? "bg-[rgba(108,92,231,0.08)] border-[var(--flux-primary)] shadow-md"
+                      : "bg-[var(--flux-surface-elevated)] border-[rgba(255,255,255,0.12)] hover:bg-[rgba(108,92,231,0.05)] hover:border-[var(--flux-primary)]/50"
                   }`}
                 >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--green)]/15 text-[var(--green)] flex-shrink-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--flux-success)]/15 text-[var(--flux-success)] flex-shrink-0">
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                       <path d="M22 4 12 14.01l-3-3" />
                     </svg>
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--g400)] font-semibold block mb-0.5">Papel</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Papel</label>
                     <input
                       type="text"
                       value={d.papel}
                       onChange={(e) => update(i, "papel", e.target.value)}
-                      className="w-full bg-transparent border-none outline-none text-sm font-bold text-[var(--navy)] focus:ring-0 p-0"
+                      className="w-full bg-transparent border-none outline-none text-sm font-bold text-[var(--flux-text)] focus:ring-0 p-0"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--g400)] font-semibold block mb-0.5">Equipe</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Equipe</label>
                     <input
                       type="text"
                       value={d.equipe}
                       onChange={(e) => update(i, "equipe", e.target.value)}
-                      className="w-full bg-transparent border-none outline-none text-sm text-[var(--g600)] focus:ring-0 p-0"
+                      className="w-full bg-transparent border-none outline-none text-sm text-[var(--flux-text-muted)] focus:ring-0 p-0"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--g400)] font-semibold block mb-0.5">Linha de negócio</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Linha de negócio</label>
                     <input
                       type="text"
                       value={d.linha}
                       onChange={(e) => update(i, "linha", e.target.value)}
-                      className="w-full bg-transparent border-none outline-none text-sm text-[var(--g600)] focus:ring-0 p-0"
+                      className="w-full bg-transparent border-none outline-none text-sm text-[var(--flux-text-muted)] focus:ring-0 p-0"
                     />
                   </div>
                   <div className="relative">
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--g400)] font-semibold block mb-1.5">Validações</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-1.5 font-display">Validações</label>
                     <div className="flex flex-wrap gap-1.5">
                       {getOpInfo(d.operacoes).map((op, j) => {
                         const info = VALIDACOES_INTEGRADAS.find((v) => v.id === op.key);
@@ -256,7 +254,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                       value={d.operacoes}
                       onChange={(e) => update(i, "operacoes", e.target.value)}
                       placeholder="Ex: SERPRO (RF), SUSEP"
-                      className="mt-1.5 w-full bg-white/60 border border-[var(--g200)] rounded-lg px-2 py-1 text-xs text-[var(--g600)] focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]/30 outline-none"
+                      className="mt-1.5 w-full bg-[var(--flux-surface-elevated)] border border-[rgba(255,255,255,0.12)] rounded-lg px-2 py-1 text-xs text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/30 outline-none"
                     />
                   </div>
                 </div>
@@ -264,7 +262,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t border-[var(--g100)]">
+          <div className="flex gap-3 justify-end pt-4 border-t border-[rgba(255,255,255,0.08)]">
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancelar
             </button>

@@ -16,7 +16,7 @@ interface CardModalProps {
 }
 
 const inputBase =
-  "w-full px-4 py-3 border border-[var(--g200)] rounded-xl text-sm transition-all duration-200 outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[rgba(0,201,183,0.15)] hover:border-[var(--g300)]";
+  "w-full px-4 py-3 border border-[rgba(255,255,255,0.12)] rounded-xl text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] transition-all duration-200 outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] hover:border-[rgba(255,255,255,0.2)]";
 
 export function CardModal({
   card,
@@ -88,33 +88,32 @@ export function CardModal({
       onClick={onClose}
     >
       <div
-        className="absolute inset-0 bg-[var(--navy)]/40 backdrop-blur-md"
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
         aria-hidden
       />
       <div
-        className="relative bg-white rounded-2xl w-full max-w-[720px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(10,31,63,0.2)] border border-[var(--g200)]/60 scrollbar-kanban card-modal-content"
+        className="relative bg-[var(--flux-surface-card)] rounded-2xl w-full max-w-[720px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(0,0,0,0.5)] border border-[rgba(108,92,231,0.2)] scrollbar-kanban card-modal-content"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Barra de destaque superior */}
         <div
           className="h-1 rounded-t-2xl"
           style={{
-            background: "linear-gradient(90deg, var(--teal), var(--teal-d))",
+            background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary))",
           }}
         />
 
         <div className="p-8">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
-              <h2 className="font-display font-extrabold text-xl text-[var(--g800)] flex items-center gap-3">
+              <h2 className="font-display font-bold text-xl text-[var(--flux-text)] flex items-center gap-3">
                 {mode === "edit" ? "Editar Card" : "Novo Card"}
                 {mode === "edit" && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[var(--blue-bg)] text-[var(--blue)] border border-[var(--blue-b)]">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]">
                     {card.id}
                   </span>
                 )}
               </h2>
-              <p className="text-sm text-[var(--g500)] mt-1">
+              <p className="text-sm text-[var(--flux-text-muted)] mt-1">
                 {mode === "edit"
                   ? "Atualize as informações do card"
                   : "Preencha os dados para criar um novo card"}
@@ -123,7 +122,7 @@ export function CardModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-10 h-10 rounded-xl border border-[var(--g200)] bg-[var(--g50)] text-[var(--g500)] flex items-center justify-center text-lg hover:bg-[var(--g200)] hover:text-[var(--g800)] transition-all duration-200 shrink-0"
+              className="w-10 h-10 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200 shrink-0"
             >
               ×
             </button>
@@ -132,7 +131,7 @@ export function CardModal({
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   ID
                 </label>
                 <input
@@ -144,7 +143,7 @@ export function CardModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   Coluna
                 </label>
                 <select
@@ -162,7 +161,7 @@ export function CardModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Título
               </label>
               <input
@@ -175,7 +174,7 @@ export function CardModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Descrição
               </label>
               <textarea
@@ -189,7 +188,7 @@ export function CardModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   Prioridade
                 </label>
                 <select
@@ -205,7 +204,7 @@ export function CardModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   Progresso
                 </label>
                 <select
@@ -221,7 +220,7 @@ export function CardModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   Data de Conclusão
                 </label>
                 <input
@@ -234,7 +233,7 @@ export function CardModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[var(--g600)] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Rótulos
               </label>
               <div className="flex flex-wrap gap-2">
@@ -243,10 +242,10 @@ export function CardModal({
                     key={t}
                     type="button"
                     onClick={() => toggleTag(t)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 font-display ${
                       tags.has(t)
-                        ? "bg-[var(--teal)] text-[var(--navy)] border-[var(--teal)] shadow-sm"
-                        : "bg-white text-[var(--g600)] border-[var(--g200)] hover:border-[var(--teal)] hover:text-[var(--teal-d)] hover:bg-[rgba(0,201,183,0.06)]"
+                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                        : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                     }`}
                   >
                     {t}
@@ -255,11 +254,10 @@ export function CardModal({
               </div>
             </div>
 
-            {/* Links — lista discreta e moderna */}
-            <div className="rounded-xl border border-[var(--g100)] bg-[var(--g50)]/50 overflow-hidden transition-all duration-200">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--g100)]">
-                <span className="text-xs font-semibold text-[var(--g500)] uppercase tracking-wider flex items-center gap-2">
-                  <svg className="w-3.5 h-3.5 text-[var(--teal)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[var(--flux-surface-elevated)]/50 overflow-hidden transition-all duration-200">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[rgba(255,255,255,0.06)]">
+                <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider flex items-center gap-2 font-display">
+                  <svg className="w-3.5 h-3.5 text-[var(--flux-primary-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                   Links
@@ -267,14 +265,14 @@ export function CardModal({
                 <button
                   type="button"
                   onClick={() => setLinks((prev) => [...prev, { url: "", label: "" }])}
-                  className="text-xs font-semibold text-[var(--teal)] hover:text-[var(--teal-d)] px-2 py-1 rounded-lg hover:bg-[rgba(0,201,183,0.08)] transition-colors"
+                  className="text-xs font-semibold text-[var(--flux-primary-light)] hover:text-[var(--flux-primary)] px-2 py-1 rounded-lg hover:bg-[rgba(108,92,231,0.12)] transition-colors"
                 >
                   + Adicionar link
                 </button>
               </div>
-              <ul className="divide-y divide-[var(--g100)] max-h-[200px] overflow-y-auto scrollbar-kanban">
+              <ul className="divide-y divide-[rgba(255,255,255,0.06)] max-h-[200px] overflow-y-auto scrollbar-kanban">
                 {links.length === 0 ? (
-                  <li className="px-4 py-4 text-center text-xs text-[var(--g400)]">
+                  <li className="px-4 py-4 text-center text-xs text-[var(--flux-text-muted)]">
                     Nenhum link. Clique em &quot;Adicionar link&quot; para incluir.
                   </li>
                 ) : (
@@ -291,7 +289,7 @@ export function CardModal({
                           })
                         }
                         placeholder="https://..."
-                        className="flex-1 min-w-0 px-3 py-2 text-sm border border-[var(--g200)] rounded-lg bg-white focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]/20 outline-none transition-all"
+                        className="flex-1 min-w-0 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                       />
                       <input
                         type="text"
@@ -304,14 +302,14 @@ export function CardModal({
                           })
                         }
                         placeholder="Rótulo (opcional)"
-                        className="w-32 shrink-0 px-3 py-2 text-sm border border-[var(--g200)] rounded-lg bg-white focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]/20 outline-none transition-all"
+                        className="w-32 shrink-0 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                       />
                       {link.url.trim() ? (
                         <a
                           href={link.url.trim()}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--teal)] hover:bg-[rgba(0,201,183,0.1)] transition-colors shrink-0"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.15)] transition-colors shrink-0"
                           title="Visualizar link"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -320,7 +318,7 @@ export function CardModal({
                       <button
                         type="button"
                         onClick={() => setLinks((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--g400)] hover:bg-[var(--red-bg)] hover:text-[var(--red)] transition-colors opacity-70 group-hover:opacity-100"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)] transition-colors opacity-70 group-hover:opacity-100"
                         title="Remover link"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -332,7 +330,7 @@ export function CardModal({
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-[var(--g200)] flex-wrap">
+          <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-[rgba(255,255,255,0.08)] flex-wrap">
             {mode === "edit" && onDelete && (
               <button
                 type="button"

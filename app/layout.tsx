@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 
@@ -9,15 +9,15 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Plataforma Reborn — Austral Seguradora",
-  description: "Plataforma de gestão de backlog e Kanban",
+  title: "Flux-Board — Organize the flow. Ship what matters.",
+  description: "Plataforma de gestão de backlog e Kanban. Organize o fluxo, entregue o que importa.",
 };
 
 export default function RootLayout({
@@ -26,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${dmSans.variable} ${plusJakarta.variable}`}>
-      <body className="antialiased">
+    <html lang="pt-BR" className={`${dmSans.variable} ${outfit.variable}`}>
+      <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

@@ -79,7 +79,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
       aria-labelledby="desc-modal-title"
     >
       <div
-        className="relative bg-white rounded-2xl min-h-[280px] max-h-[90vh] overflow-hidden shadow-xl border border-[var(--g100)] modal-content-animate flex flex-col"
+        className="relative bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl min-h-[280px] max-h-[90vh] overflow-hidden shadow-xl modal-content-animate flex flex-col"
         style={{
           width: modalWidth,
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -87,39 +87,38 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Barra superior (drag + estilo) */}
         <div
           onMouseDown={handleDragStart}
           className="h-1 rounded-t-2xl flex-shrink-0 cursor-move select-none"
           style={{
-            background: "linear-gradient(90deg, var(--teal), var(--teal-d))",
+            background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary))",
           }}
           aria-hidden
         />
         <div
           onMouseDown={handleDragStart}
-          className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 border-b border-[var(--g100)] cursor-move select-none bg-[var(--g50)]/40"
+          className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 border-b border-[rgba(255,255,255,0.06)] cursor-move select-none bg-[var(--flux-surface-elevated)]/40"
         >
-          <div id="desc-modal-title" className="font-display font-extrabold text-base text-[var(--g800)] flex items-center gap-2">
+          <div id="desc-modal-title" className="font-display font-bold text-base text-[var(--flux-text)] flex items-center gap-2">
             Detalhes da descrição
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-[var(--blue-bg)] text-[var(--blue)] border border-[var(--blue-b)]">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]">
               {card.id}
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full border border-[var(--g200)] bg-[var(--g50)] text-[var(--g500)] flex items-center justify-center text-lg hover:bg-[var(--g200)] hover:text-[var(--g800)] transition-colors flex-shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-colors flex-shrink-0 cursor-pointer"
             aria-label="Fechar"
           >
             ×
           </button>
         </div>
         <div className="p-5 overflow-y-auto flex-1 scrollbar-kanban">
-          <p className="text-xs font-semibold text-[var(--g600)] uppercase tracking-wide mb-2">{card.title}</p>
+          <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-2 font-display">{card.title}</p>
           {card.links && card.links.length > 0 && (
-            <div className="mb-4 rounded-lg border border-[var(--g100)] bg-[var(--g50)]/50 p-3">
-              <span className="text-xs font-semibold text-[var(--g500)] uppercase tracking-wider block mb-2">Links</span>
+            <div className="mb-4 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[var(--flux-surface-elevated)]/50 p-3">
+              <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider block mb-2 font-display">Links</span>
               <ul className="space-y-1.5">
                 {card.links.map((link, i) => (
                   <li key={i}>
@@ -127,7 +126,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[var(--teal)] hover:text-[var(--teal-d)] hover:underline truncate block"
+                      className="text-sm text-[var(--flux-primary-light)] hover:text-[var(--flux-secondary)] hover:underline truncate block"
                     >
                       {link.label?.trim() || link.url}
                     </a>
@@ -136,7 +135,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
               </ul>
             </div>
           )}
-          <label htmlFor="desc-textarea" className="block text-xs font-semibold text-[var(--g600)] uppercase tracking-wide mb-2">
+          <label htmlFor="desc-textarea" className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-2 font-display">
             Descrição
           </label>
           <textarea
@@ -144,32 +143,31 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder="Sem descrição."
-            className="w-full min-h-[140px] p-3 border border-[var(--g200)] rounded-xl font-sans text-sm text-[var(--g700)] bg-[var(--g50)] resize-y outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[rgba(0,201,183,0.12)] whitespace-pre-wrap transition-all duration-200"
+            className="w-full min-h-[140px] p-3 border border-[rgba(255,255,255,0.12)] rounded-xl font-sans text-sm text-[var(--flux-text)] bg-[var(--flux-surface-elevated)] placeholder-[var(--flux-text-muted)] resize-y outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] whitespace-pre-wrap transition-all duration-200"
           />
         </div>
-        <div className="flex gap-3 justify-end p-5 pt-3 border-t border-[var(--g100)] flex-shrink-0">
+        <div className="flex gap-3 justify-end p-5 pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl font-semibold text-sm text-[var(--g600)] bg-[var(--g100)] hover:bg-[var(--g200)] transition-colors"
+            className="px-4 py-2 rounded-xl font-semibold text-sm text-[var(--flux-text-muted)] bg-[var(--flux-surface-elevated)] hover:bg-[rgba(255,255,255,0.08)] transition-colors font-display"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl font-bold text-sm bg-[var(--teal)] text-[var(--navy)] hover:bg-[var(--lime)] transition-all duration-200"
+            className="px-4 py-2 rounded-xl font-bold text-sm bg-[var(--flux-primary)] text-white hover:bg-[var(--flux-primary-light)] transition-all duration-200 font-display"
           >
             Salvar e Fechar
           </button>
         </div>
-        {/* Resize handle — borda direita */}
         <div
           onMouseDown={handleResizeStart}
           className="absolute top-0 right-0 w-2 h-full cursor-ew-resize resize-handle group"
           aria-label="Redimensionar largura"
         >
-          <span className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-12 rounded-full bg-[var(--g200)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <span className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-12 rounded-full bg-[rgba(255,255,255,0.2)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </div>
       </div>
     </div>
