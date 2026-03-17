@@ -457,7 +457,7 @@ export function KanbanBoard({
         )}
       </div>
 
-      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-28 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
+      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-28 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -540,7 +540,7 @@ export function KanbanBoard({
         </DndContext>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)]/95 backdrop-blur-sm border-t border-[rgba(108,92,231,0.35)] py-2.5 px-5 sm:px-6 lg:px-8 z-[200] shadow-[0_-4px_14px_rgba(0,0,0,0.4)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)]/95 backdrop-blur-sm border-t border-[rgba(108,92,231,0.35)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] shadow-[0_-4px_14px_rgba(0,0,0,0.4)]">
         <div className="w-full flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 md:gap-6">
           <div className="flex items-center justify-center gap-2 overflow-x-auto flex-wrap min-w-0 scrollbar-flux pb-1">
             {buckets.map((b, i) => {
