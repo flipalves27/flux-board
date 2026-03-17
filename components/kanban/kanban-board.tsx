@@ -361,34 +361,6 @@ export function KanbanBoard({
 
   return (
     <>
-      <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
-        <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1 overflow-x-auto flex-wrap min-w-0">
-            {buckets.map((b, i) => {
-              const n = visibleCardsByBucket(b.key).length;
-              return (
-                <div key={b.key} className="flex items-center gap-1 shrink-0">
-                  {i > 0 && <div className="w-px h-4 bg-[rgba(255,255,255,0.1)]" />}
-                  <div className="flex items-center gap-1">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ background: b.color || "#9B97C2" }}
-                    />
-                    <span className="text-xs text-[var(--flux-text-muted)] font-medium whitespace-nowrap">{b.label || ""}</span>
-                    <span className="font-display font-bold text-xs text-[var(--flux-text)]">{n}</span>
-                  </div>
-                </div>
-              );
-            })}
-            <div className="w-px h-4 bg-[rgba(255,255,255,0.1)] shrink-0" />
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
-              <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">{cards.length}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div
         className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[42px] z-[150] shadow-[0_2px_6px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
         style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
@@ -485,7 +457,7 @@ export function KanbanBoard({
         )}
       </div>
 
-      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-20 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
+      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-28 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -568,28 +540,64 @@ export function KanbanBoard({
         </DndContext>
       </div>
 
-      {totalWithDir > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)] border-t-2 border-[var(--flux-primary)] py-2 px-5 sm:px-6 lg:px-8 z-[200]">
-          <div className="w-full flex items-center gap-4 flex-wrap">
-            {directions.map((d, i) => (
-              <div key={d} className="flex items-center gap-2">
-                {i > 0 && <div className="w-px h-4 bg-[var(--flux-text-muted)]" />}
-                <div
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: DIR_COLORS[d.toLowerCase()] }}
-                />
-                <span className="font-display font-bold text-[var(--flux-text)]">{directionCounts[d.toLowerCase()] || 0}</span>
-                <span className="text-xs text-[var(--flux-text-muted)] font-medium">{d}</span>
-              </div>
-            ))}
-            <div className="w-px h-4 bg-[var(--flux-text-muted)]" />
-            <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-[var(--flux-text-muted)]">{cards.length - totalWithDir}</span>
-              <span className="text-xs text-[var(--flux-text-muted)] font-medium">Pendentes</span>
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)]/95 backdrop-blur-sm border-t border-[rgba(108,92,231,0.35)] py-2.5 px-5 sm:px-6 lg:px-8 z-[200] shadow-[0_-4px_14px_rgba(0,0,0,0.4)]">
+        <div className="w-full flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 md:gap-6">
+          <div className="flex items-center justify-center gap-2 overflow-x-auto flex-wrap min-w-0 scrollbar-flux pb-1">
+            {buckets.map((b, i) => {
+              const n = visibleCardsByBucket(b.key).length;
+              return (
+                <div key={b.key} className="flex items-center gap-1 shrink-0">
+                  {i > 0 && <div className="w-px h-4 bg-[rgba(255,255,255,0.16)]" />}
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ background: b.color || "#9B97C2" }}
+                    />
+                    <span className="text-xs text-[var(--flux-text-muted)] font-medium whitespace-nowrap">
+                      {b.label || ""}
+                    </span>
+                    <span className="font-display font-bold text-xs text-[var(--flux-text)]">
+                      {n}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="w-px h-4 bg-[rgba(255,255,255,0.16)] shrink-0" />
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
+              <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">
+                {cards.length}
+              </span>
             </div>
           </div>
+
+          {totalWithDir > 0 && (
+            <div className="flex items-center justify-center gap-4 flex-wrap text-xs">
+              {directions.map((d, i) => (
+                <div key={d} className="flex items-center gap-2">
+                  {i > 0 && <div className="w-px h-4 bg-[var(--flux-text-muted)]/60" />}
+                  <div
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: DIR_COLORS[d.toLowerCase()] }}
+                  />
+                  <span className="font-display font-bold text-[var(--flux-text)]">
+                    {directionCounts[d.toLowerCase()] || 0}
+                  </span>
+                  <span className="text-[var(--flux-text-muted)] font-medium">{d}</span>
+                </div>
+              ))}
+              <div className="w-px h-4 bg-[var(--flux-text-muted)]/60" />
+              <div className="flex items-center gap-2">
+                <span className="font-display font-bold text-[var(--flux-text-muted)]">
+                  {cards.length - totalWithDir}
+                </span>
+                <span className="text-[var(--flux-text-muted)] font-medium">Pendentes</span>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {modalCard && (
         <CardModal
