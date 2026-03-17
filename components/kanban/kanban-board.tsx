@@ -362,7 +362,7 @@ export function KanbanBoard({
   return (
     <>
       <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
-        <div className="max-w-[1900px] mx-auto px-4 py-2 flex items-center justify-between gap-2 flex-wrap">
+        <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1 overflow-x-auto flex-wrap min-w-0">
             {buckets.map((b, i) => {
               const n = visibleCardsByBucket(b.key).length;
@@ -393,7 +393,7 @@ export function KanbanBoard({
         className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[42px] z-[150] shadow-[0_2px_6px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
         style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
       >
-        <div className="max-w-[1900px] mx-auto px-4 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
+        <div className="w-full px-5 sm:px-6 lg:px-8 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setPriorityBarVisible((v) => !v)}
@@ -467,7 +467,7 @@ export function KanbanBoard({
           )}
         </div>
         {priorityBarVisible && labelsOpen && (
-          <div className="max-w-[1900px] mx-auto px-4 py-2 flex gap-1.5 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+          <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex gap-1.5 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
             {filterLabels.map((l) => (
               <button
                 key={l}
@@ -485,7 +485,7 @@ export function KanbanBoard({
         )}
       </div>
 
-      <div className={`max-w-[1900px] mx-auto px-4 py-4 pb-20 flex gap-4 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
+      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-20 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -569,8 +569,8 @@ export function KanbanBoard({
       </div>
 
       {totalWithDir > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)] border-t-2 border-[var(--flux-primary)] py-2 px-6 z-[200]">
-          <div className="max-w-[1900px] mx-auto flex items-center gap-4 flex-wrap">
+        <div className="fixed bottom-0 left-0 right-0 bg-[var(--flux-surface-mid)] border-t-2 border-[var(--flux-primary)] py-2 px-5 sm:px-6 lg:px-8 z-[200]">
+          <div className="w-full flex items-center gap-4 flex-wrap">
             {directions.map((d, i) => (
               <div key={d} className="flex items-center gap-2">
                 {i > 0 && <div className="w-px h-4 bg-[var(--flux-text-muted)]" />}

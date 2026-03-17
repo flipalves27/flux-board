@@ -68,7 +68,7 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
-      className={`min-w-[52px] max-w-[290px] flex-1 flex-[1_0_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.15)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
+      className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.15)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
         collapsed ? "min-w-[52px] max-w-[52px] flex-[0_0_52px] cursor-pointer overflow-hidden" : ""
       } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
     >
