@@ -24,7 +24,7 @@ interface HeaderProps {
 }
 
 export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards", hideDiscovery, children }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.2)] sticky top-0 z-[200]">
@@ -70,28 +70,6 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
             </span>
           )}
           {children}
-          {!hideDiscovery && (
-            <Link
-              href="/discovery/garantia-ia-propostas"
-              className="btn-ghost no-underline"
-            >
-              Discovery
-            </Link>
-          )}
-          {user?.isAdmin && (
-            <Link
-              href="/users"
-              className="btn-ghost no-underline"
-            >
-              Administrar Usuários
-            </Link>
-          )}
-          <button
-            onClick={logout}
-            className="btn-ghost cursor-pointer"
-          >
-            Sair
-          </button>
         </div>
       </div>
     </header>

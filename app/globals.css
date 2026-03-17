@@ -30,6 +30,23 @@
   --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
 }
 
+/* Flux-Board — light theme */
+[data-theme="light"] {
+  --flux-surface-dark: #F5F4FF;
+  --flux-surface-mid: #EDEBFC;
+  --flux-surface-card: #FFFFFF;
+  --flux-surface-elevated: #E8E6F9;
+  --flux-text: #1A1730;
+  --flux-text-muted: #5C5896;
+  --shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
+  --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
+}
+
+[data-theme="light"] body {
+  background: var(--flux-surface-dark);
+  color: var(--flux-text);
+}
+
 @layer base {
   html {
     font-size: 14px;

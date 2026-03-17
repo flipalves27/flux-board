@@ -556,7 +556,7 @@ export function KanbanBoard({
         </div>
       )}
 
-      <div className="fixed top-14 right-6 flex items-center gap-2 z-[200]">
+      <div className="fixed top-20 right-6 flex items-center gap-2 z-[200]">
         <label className="btn-secondary cursor-pointer inline-flex items-center justify-center gap-1.5 text-[var(--g600)] hover:text-[var(--g700)]">
           Importar
           <input
