@@ -492,14 +492,6 @@ export function KanbanBoard({
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <button
-            type="button"
-            onClick={() => setAddColumnOpen(true)}
-            className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
-            title="Nova coluna"
-          >
-            <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
-          </button>
           <SortableContext items={buckets.map((b) => b.key)} strategy={horizontalListSortingStrategy}>
             {buckets.map((b) => (
               <KanbanColumn
@@ -543,6 +535,14 @@ export function KanbanBoard({
               />
             ))}
           </SortableContext>
+          <button
+            type="button"
+            onClick={() => setAddColumnOpen(true)}
+            className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
+            title="Nova coluna"
+          >
+            <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
+          </button>
 
           <DragOverlay
             dropAnimation={{
