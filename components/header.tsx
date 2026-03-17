@@ -16,8 +16,8 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
 
   return (
     <header className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.12)] sticky top-0 z-[200]">
-      <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-5 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
           {backHref && (
             <Link
               href={backHref}

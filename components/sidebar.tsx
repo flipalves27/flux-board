@@ -135,7 +135,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 px-3 flex flex-col gap-1 min-w-0">
+      <nav className="flex-1 py-5 px-3 flex flex-col gap-2 min-w-0">
         <Link href="/boards" className={linkClass("/boards")}>
           <IconBoards className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Boards</span>}
@@ -153,7 +153,7 @@ export function Sidebar() {
       </nav>
 
       {/* Theme + Logout */}
-      <div className="p-3 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-1 shrink-0">
+      <div className="p-3 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-2 shrink-0">
         <button
           type="button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

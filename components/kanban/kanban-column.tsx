@@ -75,63 +75,65 @@ export function KanbanColumn({
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-2 p-2.5 pb-2 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
+        className="flex items-center gap-3 px-3 py-3 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
         onClick={collapsed ? onToggleCollapse : undefined}
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
           style={{ background: bucket.color || "#9B97C2" }}
         />
-        <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 truncate">
+        <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate">
           {bucket.label}
         </div>
         <div
-          className="font-display font-bold text-xs text-white px-2 py-0.5 rounded-full min-w-[20px] text-center"
+          className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0"
           style={{ background: bucket.color || "#9B97C2" }}
         >
           {cards.length}
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddCard();
-          }}
-          className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[10px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-          title="Novo Card"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleCollapse();
-          }}
-          className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-          title={collapsed ? "Expandir" : "Recolher"}
-        >
-          ◂
-        </button>
-        {onDeleteColumn && (
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onDeleteColumn();
+              onAddCard();
             }}
-            className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[10px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-            title="Excluir coluna"
+            className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+            title="Novo Card"
           >
-            ×
+            +
           </button>
-        )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCollapse();
+            }}
+            className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+            title={collapsed ? "Expandir" : "Recolher"}
+          >
+            ◂
+          </button>
+          {onDeleteColumn && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteColumn();
+              }}
+              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+              title="Excluir coluna"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       {collapsed ? (
         <div ref={setBucketRef} className="flex-1 min-h-[50px]" />
       ) : (
-        <div ref={setBucketRef} className="p-2 flex-1 overflow-y-auto flex flex-col gap-1 min-h-[50px] scrollbar-kanban">
+        <div ref={setBucketRef} className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban">
           {cards.map((c, idx) => (
             <div key={c.id} className="flex flex-col gap-1">
               <DroppableSlot id={`slot-${bucket.key}-${idx}`} />

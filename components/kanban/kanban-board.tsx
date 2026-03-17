@@ -362,40 +362,59 @@ export function KanbanBoard({
   return (
     <>
       <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
-        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center gap-6 overflow-x-auto flex-wrap">
-          {buckets.map((b, i) => {
-            const n = visibleCardsByBucket(b.key).length;
-            return (
-              <div key={b.key} className="flex items-center gap-2 shrink-0">
-                {i > 0 && <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />}
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: b.color || "#9B97C2" }}
-                  />
-                  <span className="text-xs text-[var(--flux-text-muted)] font-medium">{b.label || ""}</span>
-                  <span className="font-display font-bold text-sm text-[var(--flux-text)]">{n}</span>
+        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-6 flex-wrap">
+          <div className="flex items-center gap-5 overflow-x-auto flex-wrap min-w-0">
+            {buckets.map((b, i) => {
+              const n = visibleCardsByBucket(b.key).length;
+              return (
+                <div key={b.key} className="flex items-center gap-2 shrink-0">
+                  {i > 0 && <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ background: b.color || "#9B97C2" }}
+                    />
+                    <span className="text-xs text-[var(--flux-text-muted)] font-medium whitespace-nowrap">{b.label || ""}</span>
+                    <span className="font-display font-bold text-sm text-[var(--flux-text)]">{n}</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
-            <span className="font-display font-bold text-sm text-[var(--flux-secondary)]">{cards.length}</span>
+              );
+            })}
+            <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] shrink-0" />
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
+              <span className="font-display font-bold text-sm text-[var(--flux-secondary)]">{cards.length}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="btn-secondary cursor-pointer inline-flex items-center justify-center gap-1.5 text-[var(--g600)] hover:text-[var(--g700)]">
+              Importar
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleImportCSV}
+              />
+            </label>
+            <button
+              onClick={handleExportCSV}
+              className="btn-secondary"
+            >
+              Exportar
+            </button>
           </div>
         </div>
       </div>
 
       <div
         className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
-        style={{ maxHeight: priorityBarVisible ? "280px" : "48px" }}
+        style={{ maxHeight: priorityBarVisible ? "280px" : "52px" }}
       >
-        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-3 min-h-[48px]">
+        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-3 min-h-[52px] py-2">
           <button
             type="button"
             onClick={() => setPriorityBarVisible((v) => !v)}
-            className="flex items-center gap-2 px-3 py-2 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group"
+            className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group"
             title={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
           >
             <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
@@ -412,7 +431,7 @@ export function KanbanBoard({
           aria-hidden={!priorityBarVisible}
         >
           <div className="min-h-0">
-            <div className="max-w-[1900px] mx-auto px-6 pb-4 flex items-center gap-4 flex-wrap">
+            <div className="max-w-[1900px] mx-auto px-6 pt-1 pb-5 flex items-center gap-4 flex-wrap">
               <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
                 Prioridade
               </span>
@@ -457,7 +476,7 @@ export function KanbanBoard({
               </div>
             </div>
             {labelsOpen && (
-              <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+              <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)] mt-1">
                 {filterLabels.map((l) => (
                   <button
                     key={l}
@@ -477,7 +496,7 @@ export function KanbanBoard({
         </div>
       </div>
 
-      <div className={`max-w-[1900px] mx-auto px-6 py-3.5 pb-20 flex gap-3 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-255px)]" : "min-h-[calc(100vh-155px)]"}`}>
+      <div className={`max-w-[1900px] mx-auto px-6 py-5 pb-20 flex gap-4 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-260px)]" : "min-h-[calc(100vh-160px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -582,24 +601,6 @@ export function KanbanBoard({
           </div>
         </div>
       )}
-
-      <div className="fixed top-20 right-6 flex items-center gap-2 z-[200]">
-        <label className="btn-secondary cursor-pointer inline-flex items-center justify-center gap-1.5 text-[var(--g600)] hover:text-[var(--g700)]">
-          Importar
-          <input
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleImportCSV}
-          />
-        </label>
-        <button
-          onClick={handleExportCSV}
-          className="btn-secondary"
-        >
-          Exportar
-        </button>
-      </div>
 
       {modalCard && (
         <CardModal
