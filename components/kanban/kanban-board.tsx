@@ -64,6 +64,7 @@ export function KanbanBoard({
   } | null>(null);
   const [addColumnOpen, setAddColumnOpen] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
+  const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
   const [priorityBarVisible, setPriorityBarVisible] = useState(true);
 
@@ -98,19 +99,34 @@ export function KanbanBoard({
     getCardsByBucket(bucketKey).filter(filterCard);
 
   const COLUMN_COLORS = ["#9B97C2", "#6C5CE7", "#00D2D3", "#FDA7DF", "#FFD93D", "#00E676", "#74B9FF", "#E056A0"];
-  const addColumn = () => {
+  const saveColumn = () => {
     const label = newColumnName.trim() || "Nova Coluna";
-    const key = `col_${Date.now()}`;
-    const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
-    updateDb((prev) => ({
-      ...prev,
-      config: {
-        ...prev.config,
-        bucketOrder: [...prev.config.bucketOrder, { key, label, color }],
-      },
-    }));
+    if (editingColumnKey) {
+      // Renomear coluna existente
+      updateDb((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          bucketOrder: prev.config.bucketOrder.map((b) =>
+            b.key === editingColumnKey ? { ...b, label } : b
+          ),
+        },
+      }));
+    } else {
+      // Criar nova coluna
+      const key = `col_${Date.now()}`;
+      const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
+      updateDb((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          bucketOrder: [...prev.config.bucketOrder, { key, label, color }],
+        },
+      }));
+    }
     setNewColumnName("");
     setAddColumnOpen(false);
+    setEditingColumnKey(null);
   };
 
   const deleteColumn = (key: string) => {
@@ -492,6 +508,11 @@ export function KanbanBoard({
                   setModalMode("edit");
                 }}
                 onDeleteCard={(id) => setConfirmDelete({ type: "card", id, label: "" })}
+                onRenameColumn={() => {
+                  setEditingColumnKey(b.key);
+                  setNewColumnName(b.label);
+                  setAddColumnOpen(true);
+                }}
                 onDeleteColumn={buckets.length > 1 ? () => setConfirmDelete({ type: "bucket", id: b.key, label: b.label }) : undefined}
                 onSetDirection={(cardId, dir) => {
                   updateDb((prev) => ({
@@ -509,7 +530,11 @@ export function KanbanBoard({
           </SortableContext>
           <button
             type="button"
-            onClick={() => setAddColumnOpen(true)}
+            onClick={() => {
+              setEditingColumnKey(null);
+              setNewColumnName("");
+              setAddColumnOpen(true);
+            }}
             className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
             title="Nova coluna"
           >
@@ -658,28 +683,30 @@ export function KanbanBoard({
             className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-display font-bold text-[var(--flux-text)] mb-4">Nova coluna</h3>
+            <h3 className="font-display font-bold text-[var(--flux-text)] mb-4">
+              {editingColumnKey ? "Renomear coluna" : "Nova coluna"}
+            </h3>
             <input
               type="text"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addColumn()}
+              onKeyDown={(e) => e.key === "Enter" && saveColumn()}
               placeholder="Ex: Backlog, Em progresso..."
               className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
             />
             <div className="flex gap-3 justify-end pt-2">
               <button
-                onClick={() => { setAddColumnOpen(false); setNewColumnName(""); }}
+                onClick={() => { setAddColumnOpen(false); setNewColumnName(""); setEditingColumnKey(null); }}
                 className="btn-secondary"
               >
                 Cancelar
               </button>
               <button
-                onClick={addColumn}
+                onClick={saveColumn}
                 className="btn-primary"
               >
-                Criar
+                {editingColumnKey ? "Salvar" : "Criar"}
               </button>
             </div>
           </div>

@@ -14,6 +14,7 @@ interface KanbanColumnProps {
   onAddCard: () => void;
   onEditCard: (card: CardData) => void;
   onDeleteCard: (id: string) => void;
+  onRenameColumn?: () => void;
   onDeleteColumn?: () => void;
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc?: (card: CardData) => void;
@@ -41,6 +42,7 @@ export function KanbanColumn({
   onAddCard,
   onEditCard,
   onDeleteCard,
+  onRenameColumn,
   onDeleteColumn,
   onSetDirection,
   onOpenDesc,
@@ -122,6 +124,19 @@ export function KanbanColumn({
           >
             +
           </button>
+          {onRenameColumn && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRenameColumn();
+              }}
+              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+              title="Renomear coluna"
+            >
+              ✎
+            </button>
+          )}
           <button
             type="button"
             onClick={(e) => {
