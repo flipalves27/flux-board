@@ -131,7 +131,27 @@ export function KanbanColumn({
       </div>
 
       {collapsed ? (
-        <div ref={setBucketRef} className="flex-1 min-h-[50px]" />
+        <div
+          ref={setBucketRef}
+          className="flex-1 min-h-[50px] overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 p-1 scrollbar-kanban"
+        >
+          {cards.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center gap-1.5 min-h-0 py-1 px-1.5 rounded-md hover:bg-[rgba(255,255,255,0.06)] transition-colors cursor-default"
+              title={`${c.id} – ${c.title}`}
+            >
+              <div
+                className="w-2 h-2 rounded-full shrink-0 flex-shrink-0"
+                style={{ background: bucket.color || "#9B97C2" }}
+                aria-hidden
+              />
+              <span className="text-[10px] font-mono font-semibold text-[var(--flux-text-muted)] truncate">
+                {c.id}
+              </span>
+            </div>
+          ))}
+        </div>
       ) : (
         <div ref={setBucketRef} className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban">
           {cards.map((c, idx) => (
