@@ -140,7 +140,7 @@ export function Sidebar() {
           <IconBoards className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Boards</span>}
         </Link>
-        <Link href="/discovery/garantia-ia-propostas" className={linkClass("/discovery")}>
+        <Link href="/discovery" className={linkClass("/discovery")}>
           <IconDiscovery className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Discovery</span>}
         </Link>
