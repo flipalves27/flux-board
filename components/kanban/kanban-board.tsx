@@ -565,8 +565,8 @@ export function KanbanBoard({
         </DndContext>
       </div>
 
-      <div className="bg-[var(--flux-surface-mid)]/95 border-t border-[rgba(108,92,231,0.35)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] shadow-[0_-4px_14px_rgba(0,0,0,0.4)]">
-        <div className="w-full flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 md:gap-6">
+      <div className="bg-[var(--flux-surface-mid)]/92 border-t border-x border-[rgba(108,92,231,0.28)] rounded-t-[var(--flux-rad)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] shadow-[0_-6px_18px_rgba(0,0,0,0.45)] max-w-[1200px] mx-auto">
+        <div className="w-full flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 text-center">
           <div className="flex items-center justify-center gap-2 overflow-x-auto flex-wrap min-w-0 scrollbar-flux pb-1">
             {buckets.map((b, i) => {
               const n = visibleCardsByBucket(b.key).length;
