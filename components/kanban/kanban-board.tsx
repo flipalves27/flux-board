@@ -65,6 +65,7 @@ export function KanbanBoard({
   const [addColumnOpen, setAddColumnOpen] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
+  const [priorityBarVisible, setPriorityBarVisible] = useState(true);
 
   const buckets = db.config.bucketOrder;
   const collapsed = new Set(db.config.collapsedColumns || []);
@@ -386,71 +387,97 @@ export function KanbanBoard({
         </div>
       </div>
 
-      <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
-        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center gap-4 flex-wrap">
-          <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
-            Prioridade
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            {["all", ...priorities].map((p) => (
+      <div
+        className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
+        style={{ maxHeight: priorityBarVisible ? "280px" : "48px" }}
+      >
+        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-3 min-h-[48px]">
+          <button
+            type="button"
+            onClick={() => setPriorityBarVisible((v) => !v)}
+            className="flex items-center gap-2 px-3 py-2 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group"
+            title={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
+          >
+            <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
+            <span
+              className={`inline-block text-[10px] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
+              aria-hidden
+            >
+              ▼
+            </span>
+          </button>
+        </div>
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${priorityBarVisible ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+          aria-hidden={!priorityBarVisible}
+        >
+          <div className="min-h-0">
+            <div className="max-w-[1900px] mx-auto px-6 pb-4 flex items-center gap-4 flex-wrap">
+              <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
+                Prioridade
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {["all", ...priorities].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setActivePrio(p)}
+                    className={`btn-pill transition-all duration-200 ${
+                      activePrio === p
+                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                    }`}
+                  >
+                    {p === "all" ? "Todas" : p}
+                  </button>
+                ))}
+              </div>
+              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
               <button
-                key={p}
-                onClick={() => setActivePrio(p)}
-                className={`btn-pill transition-all duration-200 ${
-                  activePrio === p
-                    ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
-                }`}
+                onClick={() => setLabelsOpen(!labelsOpen)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display ${labelsOpen ? "open" : ""}`}
               >
-                {p === "all" ? "Todas" : p}
+                <span>Rótulos</span>
+                <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
               </button>
-            ))}
-          </div>
-          <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
-          <button
-            onClick={() => setLabelsOpen(!labelsOpen)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display ${labelsOpen ? "open" : ""}`}
-          >
-            <span>Rótulos</span>
-            <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
-          </button>
-          <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
-          <button
-            onClick={() => setMapaOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display"
-          >
-            Mapa de Produção
-          </button>
-          <div className="flex items-center gap-3 ml-auto">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar..."
-              className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[180px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
-            />
+              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
+              <button
+                onClick={() => setMapaOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display"
+              >
+                Mapa de Produção
+              </button>
+              <div className="flex items-center gap-3 ml-auto">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar..."
+                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[180px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                />
+              </div>
+            </div>
+            {labelsOpen && (
+              <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+                {filterLabels.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => toggleLabel(l)}
+                    className={`btn-pill transition-all duration-200 ${
+                      activeLabels.has(l)
+                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        {labelsOpen && (
-          <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
-            {filterLabels.map((l) => (
-              <button
-                key={l}
-                onClick={() => toggleLabel(l)}
-                className={`btn-pill transition-all duration-200 ${
-                  activeLabels.has(l)
-                    ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      <div className="max-w-[1900px] mx-auto px-6 py-3.5 pb-20 flex gap-3 overflow-x-auto min-h-[calc(100vh-155px)] items-start">
+      <div className={`max-w-[1900px] mx-auto px-6 py-3.5 pb-20 flex gap-3 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-255px)]" : "min-h-[calc(100vh-155px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}

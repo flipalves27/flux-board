@@ -139,25 +139,71 @@
     transform: translateY(-1px);
   }
 
+  /* Scrollbars — tema Flux, horizontal e vertical */
+  .scrollbar-flux,
   .scrollbar-kanban {
     scrollbar-width: thin;
-    scrollbar-color: rgba(108, 92, 231, 0.4) var(--flux-surface-card);
+    scrollbar-gutter: stable;
+    scrollbar-color: rgba(108, 92, 231, 0.45) transparent;
   }
+  .scrollbar-flux::-webkit-scrollbar,
   .scrollbar-kanban::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
+  .scrollbar-flux::-webkit-scrollbar-track,
   .scrollbar-kanban::-webkit-scrollbar-track {
-    background: var(--flux-surface-card);
-    border-radius: 3px;
+    background: transparent;
+    border-radius: 4px;
   }
+  .scrollbar-flux::-webkit-scrollbar-thumb,
   .scrollbar-kanban::-webkit-scrollbar-thumb {
     background: rgba(108, 92, 231, 0.35);
-    border-radius: 3px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
+  .scrollbar-flux::-webkit-scrollbar-thumb:hover,
   .scrollbar-kanban::-webkit-scrollbar-thumb:hover {
     background: rgba(108, 92, 231, 0.55);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
+  .scrollbar-flux::-webkit-scrollbar-corner,
+  .scrollbar-kanban::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
 
+/* Scrollbars globais (body e overflow) alinhados ao tema */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 92, 231, 0.4) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--flux-surface-dark);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(108, 92, 231, 0.4);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 92, 231, 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: var(--flux-surface-dark);
+}
+
+@layer components {
   .card-modal-backdrop {
     animation: cardModalFadeIn 0.2s ease-out forwards;
   }

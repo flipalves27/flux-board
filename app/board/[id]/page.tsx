@@ -186,7 +186,7 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title={boardName} backHref="/boards" backLabel="← Boards">
+      <Header title={boardName}>
         <div
           className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
             saveStatus === "idle" ? "opacity-0" : "opacity-100"

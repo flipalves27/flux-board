@@ -101,35 +101,33 @@ export function Sidebar() {
   const linkClass = (href: string) =>
     `flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 font-display overflow-hidden
      ${isActive(href)
-       ? "bg-[var(--flux-primary)] text-white shadow-sm"
-       : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-surface-elevated)] hover:text-[var(--flux-text)]"
+       ? "bg-[rgba(108,92,231,0.2)] text-[var(--flux-primary-light)] shadow-none"
+       : "text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-text)]"
      }`;
 
   return (
     <aside
-      className="flex flex-col shrink-0 border-r border-[var(--flux-surface-elevated)] bg-[var(--flux-surface-mid)] transition-[width] duration-300 ease-out overflow-hidden"
+      className="flex flex-col shrink-0 border-r border-[rgba(108,92,231,0.08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width] duration-300 ease-out overflow-hidden"
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
     >
-      {/* Logo + toggle */}
-      <div className={`flex items-center gap-2 h-14 px-3 border-b border-[var(--flux-surface-elevated)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
-        {!collapsed && (
-          <Link href="/boards" className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-white"
-              style={{
-                background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-                boxShadow: "0 4px 16px rgba(108,92,231,0.35)",
-              }}
-            >
-              <FluxLogoIcon className="w-5 h-5" />
-            </div>
-            <span className="font-display font-bold text-[var(--flux-text)] truncate">Flux-Board</span>
-          </Link>
-        )}
+      {/* Logo + toggle — ícone sempre visível na barra lateral */}
+      <div className={`flex items-center gap-2 h-14 px-3 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "flex-col justify-center gap-1 py-2" : "justify-between"}`}>
+        <Link href="/boards" className={`flex items-center min-w-0 ${collapsed ? "justify-center" : "gap-2"}`}>
+          <div
+            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-white"
+            style={{
+              background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+              boxShadow: "0 2px 12px rgba(108,92,231,0.25)",
+            }}
+          >
+            <FluxLogoIcon className="w-5 h-5" />
+          </div>
+          {!collapsed && <span className="font-display font-bold text-[var(--flux-text)] truncate">Flux-Board</span>}
+        </Link>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="p-2 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-surface-elevated)] hover:text-[var(--flux-text)] transition-colors shrink-0"
+          className="p-2 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
         >
           {collapsed ? <IconChevronRight className="w-5 h-5" /> : <IconChevronLeft className="w-5 h-5" />}
@@ -155,12 +153,12 @@ export function Sidebar() {
       </nav>
 
       {/* Theme + Logout */}
-      <div className="p-3 border-t border-[var(--flux-surface-elevated)] flex flex-col gap-1 shrink-0">
+      <div className="p-3 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-1 shrink-0">
         <button
           type="button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all font-display overflow-hidden
-            bg-[var(--flux-surface-elevated)]/50 text-[var(--flux-text-muted)] hover:bg-[var(--flux-surface-elevated)] hover:text-[var(--flux-primary)]`}
+            bg-transparent text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-primary)]`}
           title={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"}
         >
           {theme === "dark" ? <IconSun className="w-5 h-5 shrink-0" /> : <IconMoon className="w-5 h-5 shrink-0" />}
