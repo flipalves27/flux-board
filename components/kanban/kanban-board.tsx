@@ -362,14 +362,14 @@ export function KanbanBoard({
   return (
     <>
       <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
-        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-6 flex-wrap">
-          <div className="flex items-center gap-5 overflow-x-auto flex-wrap min-w-0">
+        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto flex-wrap min-w-0">
             {buckets.map((b, i) => {
               const n = visibleCardsByBucket(b.key).length;
               return (
-                <div key={b.key} className="flex items-center gap-2 shrink-0">
+                <div key={b.key} className="flex items-center gap-1.5 shrink-0">
                   {i > 0 && <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <div
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ background: b.color || "#9B97C2" }}
@@ -410,11 +410,11 @@ export function KanbanBoard({
         className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
         style={{ maxHeight: priorityBarVisible ? "280px" : "52px" }}
       >
-        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-3 min-h-[52px] py-2">
+        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-2 min-h-[52px] py-2 flex-wrap">
           <button
             type="button"
             onClick={() => setPriorityBarVisible((v) => !v)}
-            className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group"
+            className="flex items-center gap-2 px-3 py-2 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
             title={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
           >
             <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
@@ -425,22 +425,17 @@ export function KanbanBoard({
               ▼
             </span>
           </button>
-        </div>
-        <div
-          className={`grid transition-all duration-300 ease-in-out ${priorityBarVisible ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-          aria-hidden={!priorityBarVisible}
-        >
-          <div className="min-h-0">
-            <div className="max-w-[1900px] mx-auto px-6 pt-1 pb-5 flex items-center gap-4 flex-wrap">
-              <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
-                Prioridade
-              </span>
+          {priorityBarVisible && (
+            <>
               <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display shrink-0">
+                  Prioridade
+                </span>
                 {["all", ...priorities].map((p) => (
                   <button
                     key={p}
                     onClick={() => setActivePrio(p)}
-                    className={`btn-pill transition-all duration-200 ${
+                    className={`btn-pill transition-all duration-200 shrink-0 ${
                       activePrio === p
                         ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
                         : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
@@ -450,50 +445,49 @@ export function KanbanBoard({
                   </button>
                 ))}
               </div>
-              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
+              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)] shrink-0" />
               <button
                 onClick={() => setLabelsOpen(!labelsOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display ${labelsOpen ? "open" : ""}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display shrink-0 ${labelsOpen ? "open" : ""}`}
               >
                 <span>Rótulos</span>
                 <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
               </button>
-              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)]" />
               <button
                 onClick={() => setMapaOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 Mapa de Produção
               </button>
-              <div className="flex items-center gap-3 ml-auto">
+              <div className="flex items-center gap-2 ml-auto shrink-0">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar..."
-                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[180px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  className="px-2.5 py-1.5 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[160px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
               </div>
-            </div>
-            {labelsOpen && (
-              <div className="max-w-[1900px] mx-auto px-6 py-4 flex gap-3 flex-wrap border-t border-[rgba(255,255,255,0.06)] mt-1">
-                {filterLabels.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => toggleLabel(l)}
-                    className={`btn-pill transition-all duration-200 ${
-                      activeLabels.has(l)
-                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
+        {priorityBarVisible && labelsOpen && (
+          <div className="max-w-[1900px] mx-auto px-6 py-3 flex gap-2 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+            {filterLabels.map((l) => (
+              <button
+                key={l}
+                onClick={() => toggleLabel(l)}
+                className={`btn-pill transition-all duration-200 ${
+                  activeLabels.has(l)
+                    ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className={`max-w-[1900px] mx-auto px-6 py-5 pb-20 flex gap-4 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-260px)]" : "min-h-[calc(100vh-160px)]"}`}>
