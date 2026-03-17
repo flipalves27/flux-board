@@ -69,14 +69,33 @@ export function KanbanColumn({
       ref={setSortableRef}
       style={style}
       className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.15)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
-        collapsed ? "min-w-[52px] max-w-[52px] flex-[0_0_52px] cursor-pointer overflow-hidden" : ""
+        collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
       } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
     >
+      {collapsed ? (
+        <div
+          ref={setBucketRef}
+          {...attributes}
+          {...listeners}
+          className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+          onClick={onToggleCollapse}
+          title={`${bucket.label} – ${cards.length} card(s). Clique para expandir.`}
+        >
+          <div
+            className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
+            style={{ background: bucket.color || "#9B97C2" }}
+            aria-hidden
+          />
+          <span className="font-display font-bold text-sm text-[var(--flux-text)] tabular-nums">
+            {cards.length}
+          </span>
+        </div>
+      ) : (
+        <>
       <div
         {...attributes}
         {...listeners}
         className="flex items-center gap-3 px-3 py-3 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
-        onClick={collapsed ? onToggleCollapse : undefined}
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
@@ -130,29 +149,6 @@ export function KanbanColumn({
         </div>
       </div>
 
-      {collapsed ? (
-        <div
-          ref={setBucketRef}
-          className="flex-1 min-h-[50px] overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 p-1 scrollbar-kanban"
-        >
-          {cards.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center gap-1.5 min-h-0 py-1 px-1.5 rounded-md hover:bg-[rgba(255,255,255,0.06)] transition-colors cursor-default"
-              title={`${c.id} – ${c.title}`}
-            >
-              <div
-                className="w-2 h-2 rounded-full shrink-0 flex-shrink-0"
-                style={{ background: bucket.color || "#9B97C2" }}
-                aria-hidden
-              />
-              <span className="text-[10px] font-mono font-semibold text-[var(--flux-text-muted)] truncate">
-                {c.id}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
         <div ref={setBucketRef} className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban">
           {cards.map((c, idx) => (
             <div key={c.id} className="flex flex-col gap-1">
@@ -170,6 +166,7 @@ export function KanbanColumn({
           ))}
           <DroppableSlot id={`slot-${bucket.key}-${cards.length}`} />
         </div>
+        </>
       )}
     </div>
   );
