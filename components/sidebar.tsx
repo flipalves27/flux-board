@@ -99,7 +99,7 @@ export function Sidebar() {
   };
 
   const linkClass = (href: string) =>
-    `flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 font-display overflow-hidden
+    `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 font-display overflow-hidden
      ${isActive(href)
        ? "bg-[rgba(108,92,231,0.2)] text-[var(--flux-primary-light)] shadow-none"
        : "text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-text)]"
@@ -111,57 +111,57 @@ export function Sidebar() {
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
     >
       {/* Logo + toggle — ícone sempre visível na barra lateral */}
-      <div className={`flex items-center gap-2 h-14 px-3 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "flex-col justify-center gap-1 py-2" : "justify-between"}`}>
+      <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "flex-col justify-center gap-0.5 py-1.5" : "justify-between"}`}>
         <Link href="/boards" className={`flex items-center min-w-0 ${collapsed ? "justify-center" : "gap-2"}`}>
           <div
-            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-white"
+            className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white"
             style={{
               background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: "0 2px 12px rgba(108,92,231,0.25)",
+              boxShadow: "0 2px 8px rgba(108,92,231,0.25)",
             }}
           >
-            <FluxLogoIcon className="w-5 h-5" />
+            <FluxLogoIcon className="w-4 h-4" />
           </div>
-          {!collapsed && <span className="font-display font-bold text-[var(--flux-text)] truncate">Flux-Board</span>}
+          {!collapsed && <span className="font-display font-bold text-[var(--flux-text)] truncate text-sm">Flux-Board</span>}
         </Link>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="p-2 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
+          className="p-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
         >
-          {collapsed ? <IconChevronRight className="w-5 h-5" /> : <IconChevronLeft className="w-5 h-5" />}
+          {collapsed ? <IconChevronRight className="w-4 h-4" /> : <IconChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-5 px-3 flex flex-col gap-2 min-w-0">
+      <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 min-w-0">
         <Link href="/boards" className={linkClass("/boards")}>
-          <IconBoards className="w-5 h-5 shrink-0" />
+          <IconBoards className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Boards</span>}
         </Link>
         <Link href="/discovery/garantia-ia-propostas" className={linkClass("/discovery")}>
-          <IconDiscovery className="w-5 h-5 shrink-0" />
+          <IconDiscovery className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Discovery</span>}
         </Link>
         {user?.isAdmin && (
           <Link href="/users" className={linkClass("/users")}>
-            <IconUsers className="w-5 h-5 shrink-0" />
+            <IconUsers className="w-4 h-4 shrink-0" />
             {!collapsed && <span>Usuários</span>}
           </Link>
         )}
       </nav>
 
       {/* Theme + Logout */}
-      <div className="p-3 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-2 shrink-0">
+      <div className="p-2.5 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-0.5 shrink-0">
         <button
           type="button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all font-display overflow-hidden
+          className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display overflow-hidden
             bg-transparent text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-primary)]`}
           title={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"}
         >
-          {theme === "dark" ? <IconSun className="w-5 h-5 shrink-0" /> : <IconMoon className="w-5 h-5 shrink-0" />}
+          {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
           {!collapsed && <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>}
         </button>
         <button
@@ -169,7 +169,7 @@ export function Sidebar() {
           onClick={logout}
           className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[rgba(255,107,107,0.12)] hover:!text-[var(--flux-danger)]`}
         >
-          <IconLogout className="w-5 h-5 shrink-0" />
+          <IconLogout className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Sair</span>}
         </button>
       </div>

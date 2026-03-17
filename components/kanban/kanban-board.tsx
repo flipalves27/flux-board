@@ -362,32 +362,32 @@ export function KanbanBoard({
   return (
     <>
       <div className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)]">
-        <div className="max-w-[1900px] mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 overflow-x-auto flex-wrap min-w-0">
+        <div className="max-w-[1900px] mx-auto px-4 py-2 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1 overflow-x-auto flex-wrap min-w-0">
             {buckets.map((b, i) => {
               const n = visibleCardsByBucket(b.key).length;
               return (
-                <div key={b.key} className="flex items-center gap-1.5 shrink-0">
-                  {i > 0 && <div className="w-px h-5 bg-[rgba(255,255,255,0.1)]" />}
-                  <div className="flex items-center gap-1.5">
+                <div key={b.key} className="flex items-center gap-1 shrink-0">
+                  {i > 0 && <div className="w-px h-4 bg-[rgba(255,255,255,0.1)]" />}
+                  <div className="flex items-center gap-1">
                     <div
-                      className="w-2 h-2 rounded-full shrink-0"
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{ background: b.color || "#9B97C2" }}
                     />
                     <span className="text-xs text-[var(--flux-text-muted)] font-medium whitespace-nowrap">{b.label || ""}</span>
-                    <span className="font-display font-bold text-sm text-[var(--flux-text)]">{n}</span>
+                    <span className="font-display font-bold text-xs text-[var(--flux-text)]">{n}</span>
                   </div>
                 </div>
               );
             })}
-            <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] shrink-0" />
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="w-px h-4 bg-[rgba(255,255,255,0.1)] shrink-0" />
+            <div className="flex items-center gap-1 shrink-0">
               <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
-              <span className="font-display font-bold text-sm text-[var(--flux-secondary)]">{cards.length}</span>
+              <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">{cards.length}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="btn-secondary cursor-pointer inline-flex items-center justify-center gap-1.5 text-[var(--g600)] hover:text-[var(--g700)]">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
               Importar
               <input
                 type="file"
@@ -396,10 +396,7 @@ export function KanbanBoard({
                 onChange={handleImportCSV}
               />
             </label>
-            <button
-              onClick={handleExportCSV}
-              className="btn-secondary"
-            >
+            <button onClick={handleExportCSV} className="btn-bar">
               Exportar
             </button>
           </div>
@@ -407,14 +404,14 @@ export function KanbanBoard({
       </div>
 
       <div
-        className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[50px] z-[150] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
-        style={{ maxHeight: priorityBarVisible ? "280px" : "52px" }}
+        className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[42px] z-[150] shadow-[0_2px_6px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
+        style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
       >
-        <div className="max-w-[1900px] mx-auto px-6 flex items-center gap-2 min-h-[52px] py-2 flex-wrap">
+        <div className="max-w-[1900px] mx-auto px-4 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setPriorityBarVisible((v) => !v)}
-            className="flex items-center gap-2 px-3 py-2 rounded-[var(--flux-rad)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
             title={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
           >
             <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
@@ -427,7 +424,7 @@ export function KanbanBoard({
           </button>
           {priorityBarVisible && (
             <>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display shrink-0">
                   Prioridade
                 </span>
@@ -435,7 +432,7 @@ export function KanbanBoard({
                   <button
                     key={p}
                     onClick={() => setActivePrio(p)}
-                    className={`btn-pill transition-all duration-200 shrink-0 ${
+                    className={`btn-pill-compact transition-all duration-200 shrink-0 ${
                       activePrio === p
                         ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
                         : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
@@ -445,39 +442,39 @@ export function KanbanBoard({
                   </button>
                 ))}
               </div>
-              <div className="w-px h-6 bg-[rgba(255,255,255,0.1)] shrink-0" />
+              <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] shrink-0" />
               <button
                 onClick={() => setLabelsOpen(!labelsOpen)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] hover:shadow-sm font-display shrink-0 ${labelsOpen ? "open" : ""}`}
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] font-display shrink-0"
               >
                 <span>Rótulos</span>
                 <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
               </button>
               <button
                 onClick={() => setMapaOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 Mapa de Produção
               </button>
-              <div className="flex items-center gap-2 ml-auto shrink-0">
+              <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar..."
-                  className="px-2.5 py-1.5 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] text-sm bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[160px] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
               </div>
             </>
           )}
         </div>
         {priorityBarVisible && labelsOpen && (
-          <div className="max-w-[1900px] mx-auto px-6 py-3 flex gap-2 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+          <div className="max-w-[1900px] mx-auto px-4 py-2 flex gap-1.5 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
             {filterLabels.map((l) => (
               <button
                 key={l}
                 onClick={() => toggleLabel(l)}
-                className={`btn-pill transition-all duration-200 ${
+                className={`btn-pill-compact transition-all duration-200 ${
                   activeLabels.has(l)
                     ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
                     : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
@@ -490,7 +487,7 @@ export function KanbanBoard({
         )}
       </div>
 
-      <div className={`max-w-[1900px] mx-auto px-6 py-5 pb-20 flex gap-4 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-260px)]" : "min-h-[calc(100vh-160px)]"}`}>
+      <div className={`max-w-[1900px] mx-auto px-4 py-4 pb-20 flex gap-4 overflow-x-auto items-start scrollbar-flux transition-[min-height] duration-300 ease-in-out ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}

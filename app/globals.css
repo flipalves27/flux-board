@@ -107,6 +107,25 @@
     transform: translateY(-0.5px);
   }
 
+  .btn-pill-compact {
+    @apply px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ease-out font-display;
+  }
+  .btn-pill-compact:hover {
+    transform: translateY(-0.5px);
+  }
+
+  .btn-bar {
+    @apply px-3 py-1.5 rounded-[var(--flux-rad-sm)] font-semibold text-xs border transition-all duration-200 ease-out font-display;
+    background: var(--flux-surface-card);
+    color: var(--flux-text);
+    border-color: rgba(108, 92, 231, 0.3);
+  }
+  .btn-bar:hover:not(:disabled) {
+    background: var(--flux-surface-elevated);
+    border-color: var(--flux-primary);
+    color: var(--flux-primary-light);
+  }
+
   .btn-sm {
     @apply px-3 py-1.5 rounded-[var(--flux-rad-sm)] text-xs font-semibold border transition-all duration-200 ease-out font-display;
   }
