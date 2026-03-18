@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -49,6 +49,26 @@ export function KanbanBoard({
   progresses,
   directions,
 }: KanbanBoardProps) {
+  const boardScrollRef = useRef<HTMLDivElement | null>(null);
+  const panRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+    moved: boolean;
+  }>({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+    moved: false,
+  });
+  const [isPanning, setIsPanning] = useState(false);
+
   const [activePrio, setActivePrio] = useState("all");
   const [activeLabels, setActiveLabels] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -375,6 +395,73 @@ export function KanbanBoard({
     ? cards.find((c) => c.id === activeId.replace("card-", ""))
     : null;
 
+  const shouldIgnorePanStart = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    if (!el) return true;
+    // Não iniciar pan quando o usuário está interagindo com controles ou com elementos do DnD.
+    if (
+      el.closest(
+        'button, a, input, textarea, select, option, [role="button"], [contenteditable="true"], .cursor-grab, .cursor-grabbing'
+      )
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const handlePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const scroller = boardScrollRef.current;
+    if (!scroller) return;
+    // Só inicia o "pan" quando o clique começa no fundo do board (não dentro de colunas/cards).
+    if (e.target !== e.currentTarget) return;
+    if (shouldIgnorePanStart(e.target)) return;
+
+    panRef.current.active = true;
+    panRef.current.pointerId = e.pointerId;
+    panRef.current.startX = e.clientX;
+    panRef.current.startY = e.clientY;
+    panRef.current.startScrollLeft = scroller.scrollLeft;
+    panRef.current.startScrollTop = scroller.scrollTop;
+    panRef.current.moved = false;
+    setIsPanning(true);
+
+    scroller.setPointerCapture(e.pointerId);
+    // Evita seleção de texto enquanto arrasta.
+    e.preventDefault();
+  };
+
+  const handlePanPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = boardScrollRef.current;
+    if (!scroller) return;
+    if (!panRef.current.active) return;
+    if (panRef.current.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - panRef.current.startX;
+    const dy = e.clientY - panRef.current.startY;
+    if (!panRef.current.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) panRef.current.moved = true;
+
+    scroller.scrollLeft = panRef.current.startScrollLeft - dx;
+    scroller.scrollTop = panRef.current.startScrollTop - dy;
+    e.preventDefault();
+  };
+
+  const endPan = (e: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = boardScrollRef.current;
+    if (!scroller) return;
+    if (!panRef.current.active) return;
+    if (panRef.current.pointerId !== e.pointerId) return;
+
+    panRef.current.active = false;
+    panRef.current.pointerId = null;
+    setIsPanning(false);
+    try {
+      scroller.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <>
       <div
@@ -473,7 +560,17 @@ export function KanbanBoard({
         )}
       </div>
 
-      <div className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}>
+      <div
+        ref={boardScrollRef}
+        onPointerDown={handlePanPointerDown}
+        onPointerMove={handlePanPointerMove}
+        onPointerUp={endPan}
+        onPointerCancel={endPan}
+        className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
+          isPanning ? "cursor-grabbing select-none" : "cursor-default"
+        } ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}
+        style={{ touchAction: isPanning ? "none" : "pan-y" }}
+      >
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
