@@ -3,44 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { CardData } from "@/app/board/[id]/page";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import {
+  DESCRIPTION_BLOCKS,
+  parseDescriptionToBlocks,
+  serializeDescriptionBlocks,
+} from "@/components/kanban/description-blocks";
 
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 920;
 const DEFAULT_WIDTH = 560;
-const SECTION_TITLES = [
-  "Contexto/Negócio",
-  "Objetivo",
-  "Escopo",
-  "Escopo e especificação (com base no que foi informado)",
-  "Requisitos técnicos e funcionais",
-  "Critérios de pronto",
-  "Premissas/Dependências/Riscos",
-];
-
-function getFormattedDescriptionLine(line: string): { title: string; content: string } | null {
-  const markdownTitleMatch = line.match(/^\s*\*\*(.+?)\*\*\s*:?\s*(.*)$/);
-  if (markdownTitleMatch) {
-    return {
-      title: markdownTitleMatch[1].trim(),
-      content: markdownTitleMatch[2].trim(),
-    };
-  }
-
-  const plainTitleMatch = line.match(/^\s*([^:]{2,80}):\s*(.*)$/);
-  if (!plainTitleMatch) return null;
-
-  const maybeTitle = plainTitleMatch[1].trim();
-  const matchedSection = SECTION_TITLES.find(
-    (section) => section.toLocaleLowerCase("pt-BR") === maybeTitle.toLocaleLowerCase("pt-BR")
-  );
-  if (!matchedSection) return null;
-
-  return {
-    title: matchedSection,
-    content: plainTitleMatch[2].trim(),
-  };
-}
-
 interface DescModalProps {
   card: CardData;
   onClose: () => void;
@@ -48,7 +19,7 @@ interface DescModalProps {
 }
 
 export function DescModal({ card, onClose, onSave }: DescModalProps) {
-  const [desc, setDesc] = useState(card.desc || "");
+  const [descBlocks, setDescBlocks] = useState(() => parseDescriptionToBlocks(card.desc));
   const [modalWidth, setModalWidth] = useState(DEFAULT_WIDTH);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -66,11 +37,12 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
   });
 
   useEffect(() => {
-    setDesc(card.desc || "");
+    setDescBlocks(parseDescriptionToBlocks(card.desc));
   }, [card]);
 
   const handleSave = () => {
-    onSave(card.id, desc.trim() || "Sem descrição.");
+    const nextDescription = serializeDescriptionBlocks(descBlocks);
+    onSave(card.id, nextDescription.trim() || "Sem descrição.");
     onClose();
   };
 
@@ -184,60 +156,25 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
           <label htmlFor="desc-textarea" className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-2 font-display">
             Descrição
           </label>
-          <textarea
-            id="desc-textarea"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder="Sem descrição."
-            className="w-full min-h-[140px] p-3 border border-[rgba(255,255,255,0.12)] rounded-xl font-sans text-sm text-[var(--flux-text)] bg-[var(--flux-surface-elevated)] placeholder-[var(--flux-text-muted)] resize-y outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] whitespace-pre-wrap transition-all duration-200"
-          />
-          <div className="mt-3 rounded-xl border border-[rgba(255,255,255,0.10)] bg-[var(--flux-surface-elevated)]/40 p-3">
-            <div className="text-[11px] uppercase tracking-wide font-semibold text-[var(--flux-primary-light)] mb-2">
-              Pré-visualização formatada
-            </div>
-            <div className="text-sm text-[var(--flux-text-muted)] leading-relaxed whitespace-pre-wrap break-words text-left space-y-1">
-              {(desc || "")
-                .split(/\r?\n/)
-                .map((rawLine, index) => {
-                  const line = rawLine.trimEnd();
-                  if (!line.trim()) {
-                    return <div key={`line-${index}`} className="h-2" />;
-                  }
-
-                  const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
-                  if (bulletMatch) {
-                    return (
-                      <div key={`line-${index}`} className="flex items-start gap-2">
-                        <span className="text-[var(--flux-primary-light)] mt-[2px]">•</span>
-                        <span>{bulletMatch[1]}</span>
-                      </div>
-                    );
-                  }
-
-                  const numberedMatch = line.match(/^\s*(\d+[.)])\s+(.+)$/);
-                  if (numberedMatch) {
-                    return (
-                      <div key={`line-${index}`} className="flex items-start gap-2">
-                        <span className="text-[var(--flux-primary-light)] font-semibold min-w-[22px]">
-                          {numberedMatch[1]}
-                        </span>
-                        <span>{numberedMatch[2]}</span>
-                      </div>
-                    );
-                  }
-
-                  const formattedTitle = getFormattedDescriptionLine(line);
-                  if (formattedTitle) {
-                    return (
-                      <p key={`line-${index}`} className="text-[var(--flux-text)]">
-                        <strong>{formattedTitle.title}:</strong>
-                        {formattedTitle.content ? ` ${formattedTitle.content}` : ""}
-                      </p>
-                    );
-                  }
-
-                  return <p key={`line-${index}`}>{line}</p>;
-                })}
+          <div className="rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[var(--flux-surface-mid)] p-3">
+            <div className="space-y-3">
+              {DESCRIPTION_BLOCKS.map((block) => (
+                <div key={block.key}>
+                  <label className="block text-[11px] font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1.5 font-display">
+                    {block.label}
+                  </label>
+                  <textarea
+                    id={block.key === "businessContext" ? "desc-textarea" : undefined}
+                    value={descBlocks[block.key] || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
+                    }}
+                    placeholder={block.placeholder}
+                    className="w-full min-h-[100px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.10)] font-sans text-sm text-[var(--flux-text)] bg-[rgba(255,255,255,0.04)] placeholder-[var(--flux-text-muted)] resize-y outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] whitespace-pre-wrap leading-relaxed transition-all duration-200"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
