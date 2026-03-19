@@ -33,6 +33,15 @@ interface KanbanBoardProps {
   directions: string[];
 }
 
+type DailyLogStatus = "start" | "success" | "error";
+
+interface DailyLog {
+  timestamp: string;
+  status: DailyLogStatus;
+  message: string;
+  model?: string;
+}
+
 const DIR_COLORS: Record<string, string> = {
   manter: "#059669",
   priorizar: "#009E90",
@@ -96,14 +105,7 @@ export function KanbanBoard({
   const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
   const [dailyTab, setDailyTab] = useState<"entrada" | "historico">("entrada");
-  const [dailyLogs, setDailyLogs] = useState<
-    {
-      timestamp: string;
-      status: "start" | "success" | "error";
-      message: string;
-      model?: string;
-    }[]
-  >([]);
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
   const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
   const [dailyHistoryCreatedCardsExpandedId, setDailyHistoryCreatedCardsExpandedId] = useState<string | null>(null);
   const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
@@ -403,14 +405,16 @@ export function KanbanBoard({
       return;
     }
     const startedAt = new Date().toISOString();
-    setDailyLogs((prev) => [
-      {
-        timestamp: startedAt,
-        status: "start",
-        message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
-      },
-      ...prev,
-    ].slice(0, 50));
+    setDailyLogs((prev: DailyLog[]): DailyLog[] =>
+      [
+        {
+          timestamp: startedAt,
+          status: "start",
+          message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
+        },
+        ...prev,
+      ].slice(0, 50)
+    );
     setDailyGenerating(true);
     try {
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
@@ -420,14 +424,16 @@ export function KanbanBoard({
       });
       const data = await response.json();
       if (!response.ok) {
-        setDailyLogs((prev) => [
-          {
-            timestamp: new Date().toISOString(),
-            status: "error",
-            message: String(data?.error || "Erro ao gerar resumo."),
-          },
-          ...prev,
-        ].slice(0, 50));
+        setDailyLogs((prev: DailyLog[]): DailyLog[] =>
+          [
+            {
+              timestamp: new Date().toISOString(),
+              status: "error",
+              message: String(data?.error || "Erro ao gerar resumo."),
+            },
+            ...prev,
+          ].slice(0, 50)
+        );
         alert(data?.error || "Erro ao gerar resumo.");
         return;
       }
@@ -438,26 +444,30 @@ export function KanbanBoard({
       });
       setDailyHistoryExpandedId(String(data?.entry?.id || ""));
       const modelName = String(data?.entry?.generationMeta?.model || "").trim();
-      setDailyLogs((prev) => [
-        {
-          timestamp: new Date().toISOString(),
-          status: "success",
-          message: modelName
-            ? `Resumo gerado com sucesso pela IA (${modelName}).`
-            : "Resumo gerado com sucesso pela IA.",
-          model: modelName || undefined,
-        },
-        ...prev,
-      ].slice(0, 50));
+      setDailyLogs((prev: DailyLog[]): DailyLog[] =>
+        [
+          {
+            timestamp: new Date().toISOString(),
+            status: "success",
+            message: modelName
+              ? `Resumo gerado com sucesso pela IA (${modelName}).`
+              : "Resumo gerado com sucesso pela IA.",
+            model: modelName || undefined,
+          },
+          ...prev,
+        ].slice(0, 50)
+      );
     } catch {
-      setDailyLogs((prev) => [
-        {
-          timestamp: new Date().toISOString(),
-          status: "error",
-          message: "Erro ao gerar resumo com IA.",
-        },
-        ...prev,
-      ].slice(0, 50));
+      setDailyLogs((prev: DailyLog[]): DailyLog[] =>
+        [
+          {
+            timestamp: new Date().toISOString(),
+            status: "error",
+            message: "Erro ao gerar resumo com IA.",
+          },
+          ...prev,
+        ].slice(0, 50)
+      );
       alert("Erro ao gerar resumo com IA.");
     } finally {
       setDailyGenerating(false);
