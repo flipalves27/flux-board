@@ -182,9 +182,8 @@ async function llmInsight(args: {
     process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1"
   ).replace(/\/+$/, "");
 
-  // Permite sobrescrever o modelo; default usa um modelo Together.ai
-  const model =
-    process.env.TOGETHER_MODEL || "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo";
+  // Permite sobrescrever o modelo; default alinhado ao exemplo solicitado.
+  const model = process.env.TOGETHER_MODEL || "google/gemma-3n-E4B-it";
 
   const prompt = [
     "Você é um PM técnico sênior.",
