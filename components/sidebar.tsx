@@ -34,6 +34,14 @@ function IconDiscovery({ className }: { className?: string }) {
   );
 }
 
+function IconTasks({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
 function IconUsers({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -94,6 +102,7 @@ export function Sidebar() {
   const isActive = (href: string) => {
     if (href === "/boards") return pathname === "/boards";
     if (href === "/discovery") return pathname.startsWith("/discovery");
+    if (href === "/tasks") return pathname.startsWith("/tasks");
     if (href === "/users") return pathname === "/users";
     return pathname === href;
   };
@@ -143,6 +152,10 @@ export function Sidebar() {
         <Link href="/discovery" className={linkClass("/discovery")}>
           <IconDiscovery className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Discovery</span>}
+        </Link>
+        <Link href="/tasks" className={linkClass("/tasks")}>
+          <IconTasks className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>Minhas tarefas</span>}
         </Link>
         {user?.isAdmin && (
           <Link href="/users" className={linkClass("/users")}>

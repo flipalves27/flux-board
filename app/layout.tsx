@@ -3,6 +3,7 @@ import { DM_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
+import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { AppShell } from "@/components/app-shell";
 
 const dmSans = DM_Sans({
@@ -32,7 +33,9 @@ export default function RootLayout({
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <AuthProvider>
           <ThemeProvider>
-            <AppShell>{children}</AppShell>
+            <RoutineTasksProvider>
+              <AppShell>{children}</AppShell>
+            </RoutineTasksProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
