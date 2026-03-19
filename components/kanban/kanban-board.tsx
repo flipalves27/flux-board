@@ -378,12 +378,15 @@ export function KanbanBoard({
 
   const deleteDailyHistoryEntry = (entryId: string) => {
     if (!confirm("Excluir este resumo do histórico da Daily IA?")) return;
+    const nextEntry = dailyInsights.find((entry) => entry?.id && entry.id !== entryId);
     updateDb((prev) => ({
       ...prev,
       dailyInsights: (Array.isArray(prev.dailyInsights) ? prev.dailyInsights : []).filter((entry) => entry?.id !== entryId),
     }));
-    if (dailyHistoryExpandedId === entryId) setDailyHistoryExpandedId(null);
-    if (dailyHistoryCreatedCardsExpandedId === entryId) setDailyHistoryCreatedCardsExpandedId(null);
+    if (dailyHistoryExpandedId === entryId) setDailyHistoryExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
+    if (dailyHistoryCreatedCardsExpandedId === entryId) {
+      setDailyHistoryCreatedCardsExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
+    }
   };
 
   const buildDailyContextDoc = (entry: DailyInsightEntry) => {
@@ -957,6 +960,15 @@ export function KanbanBoard({
       .join(" \n ");
     return normalizeSearchText(searchable).includes(normalizedDailyHistorySearchQuery);
   });
+  const activeDailyHistoryId =
+    (dailyHistoryExpandedId && filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryExpandedId)
+      ? dailyHistoryExpandedId
+      : String(filteredDailyInsights[0]?.id || "")) || null;
+  const activeCreatedCardsExpandedId =
+    (dailyHistoryCreatedCardsExpandedId &&
+    filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId)
+      ? dailyHistoryCreatedCardsExpandedId
+      : activeDailyHistoryId) || null;
 
   const shouldIgnorePanStart = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
@@ -1766,9 +1778,7 @@ export function KanbanBoard({
                           const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
                           const createItems = getDailyCreateSuggestions(entry);
                           const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                          const isActive =
-                            (dailyHistoryExpandedId && dailyHistoryExpandedId === entry.id) ||
-                            (!dailyHistoryExpandedId && idx === 0);
+                          const isActive = activeDailyHistoryId === String(entry.id || "");
                           return (
                             <button
                               key={entry.id || idx}
@@ -1810,58 +1820,76 @@ export function KanbanBoard({
                   const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
                   const title = idx === 0 ? "Resumo mais recente" : `Histórico #${filteredDailyInsights.length - idx}`;
                   const createItems = getDailyCreateSuggestions(entry);
-                  const isExpanded = dailyHistoryExpandedId
-                    ? dailyHistoryExpandedId === entry.id
-                    : idx === 0;
+                  const isExpanded = activeDailyHistoryId === String(entry.id || "");
                   const sourceName = String(entry.sourceFileName || "Transcrição manual");
                   const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
                   const aiModel = String(entry?.generationMeta?.model || "").trim();
                   return (
-                    <div key={entry.id || idx} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
+                    <div
+                      key={entry.id || idx}
+                      className={`bg-[var(--flux-surface-mid)] border rounded-[12px] p-3 transition-colors ${
+                        isExpanded
+                          ? "border-[rgba(108,92,231,0.35)]"
+                          : "border-[rgba(255,255,255,0.08)]"
+                      }`}
+                    >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <button
                           type="button"
                           className="flex items-center gap-2 text-left"
-                          onClick={() => setDailyHistoryExpandedId(isExpanded ? null : String(entry.id || ""))}
+                          onClick={() => setDailyHistoryExpandedId(String(entry.id || ""))}
                         >
                           <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[0_0_10px_rgba(108,92,231,0.6)]" />
                           <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
                             {title}
                             {dt ? ` • ${dt}` : ""}
                           </h4>
+                          <span className="text-[10px] text-[var(--flux-text-muted)]">
+                            {isExpanded ? "▲ Aberto" : "▼ Expandir"}
+                          </span>
                         </button>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button className="btn-bar" onClick={() => downloadDailyContextDoc(entry)}>
-                            Baixar contexto
-                          </button>
-                          <button className="btn-bar" onClick={() => copyDailyContextDoc(entry)}>
-                            Copiar contexto
-                          </button>
-                          <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
-                            Criar cards do "Criar"
-                          </button>
-                          <button className="btn-danger-solid" onClick={() => deleteDailyHistoryEntry(String(entry.id || ""))}>
-                            Excluir resumo
-                          </button>
-                        </div>
+                        {!isExpanded && (
+                          <span className="text-[10px] text-[var(--flux-text-muted)]">
+                            {sourceName}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                        Fonte: {sourceName}
-                        {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
-                      </p>
-                      {generatedWithAi && (
-                        <CustomTooltip content="Conteudo reescrito e estruturado por IA a partir da transcricao.">
-                          <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
-                              Texto gerado com IA{aiModel ? ` • ${aiModel}` : ""}
-                            </span>
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          isExpanded ? "max-h-[2400px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+                        }`}
+                        aria-hidden={!isExpanded}
+                      >
+                        <div>
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            <button className="btn-bar" onClick={() => downloadDailyContextDoc(entry)}>
+                              Baixar contexto
+                            </button>
+                            <button className="btn-bar" onClick={() => copyDailyContextDoc(entry)}>
+                              Copiar contexto
+                            </button>
+                            <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
+                              Criar cards do "Criar"
+                            </button>
+                            <button className="btn-danger-solid" onClick={() => deleteDailyHistoryEntry(String(entry.id || ""))}>
+                              Excluir resumo
+                            </button>
                           </div>
-                        </CustomTooltip>
-                      )}
-                      <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
-                      {isExpanded && (
-                        <>
+                          <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
+                            Fonte: {sourceName}
+                            {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
+                          </p>
+                          {generatedWithAi && (
+                            <CustomTooltip content="Conteudo reescrito e estruturado por IA a partir da transcricao.">
+                              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
+                                  Texto gerado com IA{aiModel ? ` • ${aiModel}` : ""}
+                                </span>
+                              </div>
+                            </CustomTooltip>
+                          )}
+                          <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
                           <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
@@ -1977,20 +2005,25 @@ export function KanbanBoard({
                               <button
                                 type="button"
                                 className="btn-bar"
-                                onClick={() =>
-                                  setDailyHistoryCreatedCardsExpandedId(
-                                    dailyHistoryCreatedCardsExpandedId === entry.id ? null : String(entry.id || "")
-                                  )
-                                }
+                                onClick={() => setDailyHistoryCreatedCardsExpandedId(String(entry.id || ""))}
                               >
-                                {dailyHistoryCreatedCardsExpandedId === entry.id ? "Ocultar detalhes" : "Ver todas as informações"}
+                                {activeCreatedCardsExpandedId === String(entry.id || "")
+                                  ? "Detalhes abertos"
+                                  : "Ver todas as informações"}
                               </button>
                             </div>
                             <p className="text-xs text-[var(--flux-text-muted)] mt-1">
                               {(Array.isArray(entry.createdCards) ? entry.createdCards.length : 0)} card(s) registrados.
                             </p>
-                            {dailyHistoryCreatedCardsExpandedId === entry.id && (
-                              <div className="mt-2 space-y-2">
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                activeCreatedCardsExpandedId === String(entry.id || "")
+                                  ? "max-h-[1400px] opacity-100 mt-2"
+                                  : "max-h-0 opacity-0 mt-0"
+                              }`}
+                              aria-hidden={activeCreatedCardsExpandedId !== String(entry.id || "")}
+                            >
+                              <div className="space-y-2">
                                 {(Array.isArray(entry.createdCards) ? entry.createdCards : []).length ? (
                                   (entry.createdCards || []).map((createdCard, createdIdx) => (
                                     <div
@@ -2024,10 +2057,10 @@ export function KanbanBoard({
                                   <p className="text-xs text-[var(--flux-text-muted)]">Nenhum card criado para este resumo até o momento.</p>
                                 )}
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </>
-                      )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
