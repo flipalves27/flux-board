@@ -160,13 +160,20 @@ async function llmInsight(args: {
   cardSnippets: string[];
   transcript: string;
 }): Promise<LlmInsightResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  // Usa exclusivamente Together.ai (TOGETHER_API_KEY obrigatório para geração via LLM)
+  const apiKey = process.env.TOGETHER_API_KEY;
   if (!apiKey) {
     return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
   }
 
-  const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  // Endpoint OpenAI-compatível da Together.ai
+  const baseUrl = (
+    process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1"
+  ).replace(/\/+$/, "");
+
+  // Permite sobrescrever o modelo; default usa um modelo Together.ai
+  const model =
+    process.env.TOGETHER_MODEL || "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo";
 
   const prompt = [
     "Você é um PM técnico sênior.",
@@ -204,7 +211,8 @@ async function llmInsight(args: {
       model,
       temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      // Não usamos response_format para manter compatibilidade ampla;
+      // o prompt já obriga retorno como JSON puro.
     }),
   });
 
