@@ -4,6 +4,7 @@ import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
 
 type InsightResult = {
   resumo: string;
+  contextoOrganizado: string;
   criar: string[];
   criarDetalhes: Array<{
     titulo: string;
@@ -52,6 +53,9 @@ function safeInsight(raw: unknown): InsightResult {
 
   return {
     resumo: String(obj.resumo || "Resumo não disponível.").trim(),
+    contextoOrganizado: String(obj.contextoOrganizado || obj.resumo || "Contexto organizado não disponível.")
+      .trim()
+      .slice(0, 12000),
     criar,
     criarDetalhes: mergedCriarDetalhes,
     ajustar: normalizeList(obj.ajustar),
@@ -81,9 +85,30 @@ function heuristicInsight(transcript: string): InsightResult {
     top.length > 0
       ? `Pontos centrais da daily: ${top.join(" | ").slice(0, 700)}`
       : "Não foi possível extrair pontos relevantes da transcrição.";
+  const contextoOrganizado = [
+    "Contexto revisado da daily",
+    "",
+    "Resumo executivo:",
+    resumo,
+    "",
+    "Ações para criar:",
+    ...(criar.length ? criar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    "",
+    "Ações para ajustar:",
+    ...(ajustar.length ? ajustar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    "",
+    "Correções:",
+    ...(corrigir.length ? corrigir.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    "",
+    "Pendências e riscos:",
+    ...(pendencias.length ? pendencias.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+  ]
+    .join("\n")
+    .slice(0, 12000);
 
   return {
     resumo,
+    contextoOrganizado,
     criar,
     criarDetalhes: criar.slice(0, 20).map((titulo) => ({
       titulo,
@@ -111,7 +136,9 @@ async function llmInsight(args: {
   const prompt = [
     "Você é um PM técnico sênior.",
     "Recebe uma transcrição de daily e contexto de board.",
-    "Retorne JSON puro com as chaves: resumo, criar, criarDetalhes, ajustar, corrigir, pendencias.",
+    "Retorne JSON puro com as chaves: resumo, contextoOrganizado, criar, criarDetalhes, ajustar, corrigir, pendencias.",
+    "contextoOrganizado deve ser um texto enxuto, revisado e objetivo, estruturado em seções curtas para leitura rápida.",
+    "O texto de contexto deve parecer um documento pronto para anexar ao histórico da daily.",
     "criarDetalhes deve ser uma lista de objetos com: titulo, prioridade, progresso, coluna(opcional).",
     "Use apenas prioridades entre: Urgente, Importante, Média.",
     "Use apenas progresso entre: Não iniciado, Em andamento, Concluída.",
@@ -176,8 +203,9 @@ export async function POST(
   }
 
   try {
-    const body = (await request.json()) as { transcript?: string };
+    const body = (await request.json()) as { transcript?: string; fileName?: string };
     const transcript = String(body.transcript || "").trim();
+    const sourceFileName = String(body.fileName || "").trim().slice(0, 200);
     if (!transcript) {
       return NextResponse.json({ error: "Transcrição é obrigatória" }, { status: 400 });
     }
@@ -219,6 +247,7 @@ export async function POST(
       id: `daily_${Date.now()}`,
       createdAt: now,
       transcript: transcript.slice(0, 15000),
+      sourceFileName: sourceFileName || undefined,
       insight,
     };
     const dailyInsights = [entry, ...current].slice(0, 20);

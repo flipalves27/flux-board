@@ -92,7 +92,13 @@ export function KanbanBoard({
   const [dailyOpen, setDailyOpen] = useState(false);
   const [dailyTranscript, setDailyTranscript] = useState("");
   const [dailyFileName, setDailyFileName] = useState("Nenhum arquivo anexado");
+  const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
+  const [dailyFixedCollapsed, setDailyFixedCollapsed] = useState(false);
+  const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
+  const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
+  const [dailyHistoryDateTo, setDailyHistoryDateTo] = useState("");
+  const [dailyHistorySearchQuery, setDailyHistorySearchQuery] = useState("");
 
   const buckets = db.config.bucketOrder;
   const boardLabels =
@@ -100,6 +106,21 @@ export function KanbanBoard({
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
   const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
+
+  const normalizeSearchText = (value: string) =>
+    String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const toLocalDateInputValue = (isoDate: string | undefined) => {
+    if (!isoDate) return "";
+    const dt = new Date(isoDate);
+    if (Number.isNaN(dt.getTime())) return "";
+    const tzOffsetMs = dt.getTimezoneOffset() * 60000;
+    return new Date(dt.getTime() - tzOffsetMs).toISOString().slice(0, 10);
+  };
 
   const normDailyPrio = (value: string | undefined) => {
     const v = String(value || "").trim().toLowerCase();
@@ -216,9 +237,74 @@ export function KanbanBoard({
       const text = String(ev.target?.result || "");
       setDailyTranscript(text.slice(0, 40000));
       setDailyFileName(`${file.name} carregado`);
+      setDailySourceFileName(file.name);
     };
     reader.readAsText(file, "UTF-8");
     e.target.value = "";
+  };
+
+  const buildDailyContextDoc = (entry: DailyInsightEntry) => {
+    const insight = entry?.insight;
+    const dt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
+    const createItems = getDailyCreateSuggestions(entry);
+    const ajustar = Array.isArray(insight?.ajustar) ? insight?.ajustar : [];
+    const corrigir = Array.isArray(insight?.corrigir) ? insight?.corrigir : [];
+    const pendencias = Array.isArray(insight?.pendencias) ? insight?.pendencias : [];
+    const curated = String(insight?.contextoOrganizado || "").trim();
+    const blocks = [
+      `Resumo Daily IA${dt ? ` - ${dt}` : ""}`,
+      "",
+      `Arquivo de origem: ${String(entry?.sourceFileName || "Transcrição colada no modal")}`,
+      "",
+      "Resumo executivo:",
+      String(insight?.resumo || "Sem resumo."),
+      "",
+      "Contexto reorganizado e revisado:",
+      curated || "Sem conteúdo estruturado para este resumo.",
+      "",
+      "Ações para criar:",
+      ...(createItems.length ? createItems.map((x, i) => `${i + 1}. ${x.titulo}`) : ["- Sem itens identificados."]),
+      "",
+      "Ajustes:",
+      ...(ajustar.length ? ajustar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+      "",
+      "Correções:",
+      ...(corrigir.length ? corrigir.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+      "",
+      "Pendências:",
+      ...(pendencias.length ? pendencias.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    ];
+    return blocks.join("\n");
+  };
+
+  const downloadDailyContextDoc = (entry: DailyInsightEntry) => {
+    const a = document.createElement("a");
+    const created = entry?.createdAt ? new Date(entry.createdAt) : new Date();
+    const stamp = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}-${String(
+      created.getDate()
+    ).padStart(2, "0")}_${String(created.getHours()).padStart(2, "0")}-${String(created.getMinutes()).padStart(2, "0")}`;
+    const content = buildDailyContextDoc(entry);
+    a.href = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+    a.download = `daily-contexto-${stamp}.txt`;
+    a.click();
+  };
+
+  const copyDailyContextDoc = async (entry: DailyInsightEntry) => {
+    const content = buildDailyContextDoc(entry);
+    if (!content.trim()) {
+      alert("Não há contexto para copiar.");
+      return;
+    }
+    if (!navigator?.clipboard?.writeText) {
+      alert("Seu navegador não suporta cópia automática.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(content);
+      alert("Contexto copiado para a área de transferência.");
+    } catch {
+      alert("Não foi possível copiar o contexto.");
+    }
   };
 
   const generateDailyInsight = async () => {
@@ -232,7 +318,7 @@ export function KanbanBoard({
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({ transcript, fileName: dailySourceFileName || undefined }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -244,6 +330,7 @@ export function KanbanBoard({
         const next = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
         return { ...prev, dailyInsights: next };
       });
+      setDailyHistoryExpandedId(String(data?.entry?.id || ""));
     } catch {
       alert("Erro ao gerar resumo com IA.");
     } finally {
@@ -594,6 +681,28 @@ export function KanbanBoard({
     : null;
 
   const latestDaily = dailyInsights[0];
+  const normalizedDailyHistorySearchQuery = normalizeSearchText(dailyHistorySearchQuery);
+  const filteredDailyInsights = dailyInsights.filter((entry) => {
+    const entryDate = toLocalDateInputValue(entry?.createdAt);
+    if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
+    if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
+    if (!normalizedDailyHistorySearchQuery) return true;
+    const insight = entry?.insight;
+    const searchable = [
+      insight?.resumo,
+      insight?.contextoOrganizado,
+      ...(Array.isArray(insight?.criar) ? insight.criar : []),
+      ...(Array.isArray(insight?.ajustar) ? insight.ajustar : []),
+      ...(Array.isArray(insight?.corrigir) ? insight.corrigir : []),
+      ...(Array.isArray(insight?.pendencias) ? insight.pendencias : []),
+      ...(Array.isArray(insight?.criarDetalhes) ? insight.criarDetalhes.map((item) => String(item?.titulo || "")) : []),
+      entry?.transcript,
+      entry?.sourceFileName,
+    ]
+      .map((item) => String(item || ""))
+      .join(" \n ");
+    return normalizeSearchText(searchable).includes(normalizedDailyHistorySearchQuery);
+  });
 
   const shouldIgnorePanStart = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
@@ -774,6 +883,9 @@ export function KanbanBoard({
               {latestDaily?.createdAt ? ` • ${new Date(latestDaily.createdAt).toLocaleString("pt-BR")}` : ""}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <button className="btn-bar" onClick={() => setDailyFixedCollapsed((v) => !v)}>
+                {dailyFixedCollapsed ? "Expandir resumo" : "Recolher resumo"}
+              </button>
               {latestDaily?.id && (
                 <button className="btn-bar" onClick={() => createCardsFromInsight(latestDaily.id)}>
                   Criar cards do "Criar"
@@ -786,82 +898,93 @@ export function KanbanBoard({
           </div>
           {latestDaily?.insight ? (
             <div className="space-y-2">
-              <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{latestDaily.insight.resumo || ""}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {(["criar", "ajustar", "corrigir", "pendencias"] as const).map((key) => {
-                  const createItems = key === "criar" ? getDailyCreateSuggestions(latestDaily) : [];
-                  const values =
-                    key === "criar"
-                      ? createItems.map((x) => x.titulo)
-                      : Array.isArray(latestDaily.insight?.[key])
-                        ? (latestDaily.insight?.[key] as string[])
-                        : [];
-                  return (
-                    <div key={key} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
-                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                        {key === "criar"
-                          ? "Criar"
-                          : key === "ajustar"
-                            ? "Ajustar"
-                            : key === "corrigir"
-                              ? "Corrigir"
-                              : "Pendências"}
-                      </div>
-                      {values.length ? (
-                        key === "criar" ? (
-                          <ul className="space-y-1 pl-4 list-disc">
-                            {createItems.map((item, idx) => {
-                              const prioSlug = slugDaily(item.prioridade);
-                              const progSlug = slugDaily(item.progresso);
-                              const prioClass =
-                                prioSlug === "urgente"
-                                  ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
-                                  : prioSlug === "importante"
-                                    ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                    : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
-                              const progClass =
-                                progSlug === "em-andamento"
-                                  ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
-                                  : progSlug === "concluida"
-                                    ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
-                              return (
-                                <li key={`${key}-${idx}`}>
-                                  <div className="flex items-start justify-between gap-2">
-                                    <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
-                                      {item.titulo}
-                                    </span>
-                                    <span className="flex gap-1 flex-wrap justify-end">
-                                      <span
-                                        className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                      >
-                                        Prio: {item.prioridade}
-                                      </span>
-                                      <span
-                                        className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                      >
-                                        Progresso: {item.progresso}
-                                      </span>
-                                    </span>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
-                            {values.map((item, idx) => (
-                              <li key={`${key}-${idx}`}>{item}</li>
-                            ))}
-                          </ul>
-                        )
-                      ) : (
-                        <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {!dailyFixedCollapsed ? (
+                <>
+                  <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{latestDaily.insight.resumo || ""}</p>
+                  <p className="text-xs text-[var(--flux-text)] leading-relaxed bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2 whitespace-pre-line">
+                    {String(latestDaily.insight.contextoOrganizado || "Sem contexto organizado para este resumo.")}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {(["criar", "ajustar", "corrigir", "pendencias"] as const).map((key) => {
+                      const createItems = key === "criar" ? getDailyCreateSuggestions(latestDaily) : [];
+                      const values =
+                        key === "criar"
+                          ? createItems.map((x) => x.titulo)
+                          : Array.isArray(latestDaily.insight?.[key])
+                            ? (latestDaily.insight?.[key] as string[])
+                            : [];
+                      return (
+                        <div key={key} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
+                          <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
+                            {key === "criar"
+                              ? "Criar"
+                              : key === "ajustar"
+                                ? "Ajustar"
+                                : key === "corrigir"
+                                  ? "Corrigir"
+                                  : "Pendências"}
+                          </div>
+                          {values.length ? (
+                            key === "criar" ? (
+                              <ul className="space-y-1 pl-4 list-disc">
+                                {createItems.map((item, idx) => {
+                                  const prioSlug = slugDaily(item.prioridade);
+                                  const progSlug = slugDaily(item.progresso);
+                                  const prioClass =
+                                    prioSlug === "urgente"
+                                      ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
+                                      : prioSlug === "importante"
+                                        ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
+                                        : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
+                                  const progClass =
+                                    progSlug === "em-andamento"
+                                      ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
+                                      : progSlug === "concluida"
+                                        ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
+                                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
+                                  return (
+                                    <li key={`${key}-${idx}`}>
+                                      <div className="flex items-start justify-between gap-2">
+                                        <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
+                                          {item.titulo}
+                                        </span>
+                                        <span className="flex gap-1 flex-wrap justify-end">
+                                          <span
+                                            className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
+                                          >
+                                            Prio: {item.prioridade}
+                                          </span>
+                                          <span
+                                            className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
+                                          >
+                                            Progresso: {item.progresso}
+                                          </span>
+                                        </span>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ) : (
+                              <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
+                                {values.map((item, idx) => (
+                                  <li key={`${key}-${idx}`}>{item}</li>
+                                ))}
+                              </ul>
+                            )
+                          ) : (
+                            <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-[var(--flux-text-muted)]">
+                  Resumo recolhido para preservar a visibilidade do board.
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-xs text-[var(--flux-text-muted)]">Ainda não há resumo salvo para este board.</p>
@@ -1198,92 +1321,186 @@ export function KanbanBoard({
             </div>
             <div className="mt-4 space-y-3">
               {dailyInsights.length ? (
-                dailyInsights.slice(0, 3).map((entry, idx) => {
+                <>
+                  <div className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
+                    <div className="flex items-end gap-2 flex-wrap">
+                      <div className="min-w-[160px]">
+                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
+                          De
+                        </label>
+                        <input
+                          type="date"
+                          value={dailyHistoryDateFrom}
+                          onChange={(e) => setDailyHistoryDateFrom(e.target.value)}
+                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        />
+                      </div>
+                      <div className="min-w-[160px]">
+                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
+                          Até
+                        </label>
+                        <input
+                          type="date"
+                          value={dailyHistoryDateTo}
+                          onChange={(e) => setDailyHistoryDateTo(e.target.value)}
+                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[220px]">
+                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
+                          Busca textual
+                        </label>
+                        <input
+                          type="text"
+                          value={dailyHistorySearchQuery}
+                          onChange={(e) => setDailyHistorySearchQuery(e.target.value)}
+                          placeholder="Buscar em resumo, contexto e listas..."
+                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          setDailyHistoryDateFrom("");
+                          setDailyHistoryDateTo("");
+                          setDailyHistorySearchQuery("");
+                        }}
+                      >
+                        Limpar filtros
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
+                      Exibindo {filteredDailyInsights.length} de {dailyInsights.length} resumo(s).
+                    </p>
+                  </div>
+                  {filteredDailyInsights.map((entry, idx) => {
                   const insight = entry.insight;
                   if (!insight) return null;
                   const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-                  const title = idx === 0 ? "Último resumo" : "Resumo anterior";
+                  const title = idx === 0 ? "Resumo mais recente" : `Histórico #${filteredDailyInsights.length - idx}`;
                   const createItems = getDailyCreateSuggestions(entry);
+                  const isExpanded = dailyHistoryExpandedId
+                    ? dailyHistoryExpandedId === entry.id
+                    : idx === 0;
+                  const sourceName = String(entry.sourceFileName || "Transcrição manual");
                   return (
-                    <div key={entry.id || idx} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-3">
-                      <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-                        <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
-                          {title}
-                          {dt ? ` • ${dt}` : ""}
-                        </h4>
-                        <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
-                          Criar cards do "Criar"
+                    <div key={entry.id || idx} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-left"
+                          onClick={() => setDailyHistoryExpandedId(isExpanded ? null : String(entry.id || ""))}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[0_0_10px_rgba(108,92,231,0.6)]" />
+                          <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
+                            {title}
+                            {dt ? ` • ${dt}` : ""}
+                          </h4>
                         </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button className="btn-bar" onClick={() => downloadDailyContextDoc(entry)}>
+                            Baixar contexto
+                          </button>
+                          <button className="btn-bar" onClick={() => copyDailyContextDoc(entry)}>
+                            Copiar contexto
+                          </button>
+                          <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
+                            Criar cards do "Criar"
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-[var(--flux-text-muted)] mb-2">{insight.resumo || ""}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {[
-                          { key: "criar", label: "Criar", values: createItems.map((x) => x.titulo) },
-                          { key: "ajustar", label: "Ajustar", values: Array.isArray(insight.ajustar) ? insight.ajustar : [] },
-                          { key: "corrigir", label: "Corrigir", values: Array.isArray(insight.corrigir) ? insight.corrigir : [] },
-                          { key: "pendencias", label: "Pendências", values: Array.isArray(insight.pendencias) ? insight.pendencias : [] },
-                        ].map((list) => (
-                          <div key={list.key} className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
+                      <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
+                        Fonte: {sourceName}
+                        {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
+                      </p>
+                      <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
+                      {isExpanded && (
+                        <>
+                          <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
                             <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                              {list.label}
+                              Contexto organizado
                             </div>
-                            {list.values.length ? (
-                              list.key === "criar" ? (
-                                <ul className="space-y-1 pl-4 list-disc">
-                                  {createItems.map((item, i) => {
-                                    const prioSlug = slugDaily(item.prioridade);
-                                    const progSlug = slugDaily(item.progresso);
-                                    const prioClass =
-                                      prioSlug === "urgente"
-                                        ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
-                                        : prioSlug === "importante"
-                                          ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                          : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
-                                    const progClass =
-                                      progSlug === "em-andamento"
-                                        ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
-                                        : progSlug === "concluida"
-                                          ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                          : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
-                                    return (
-                                      <li key={`${list.key}-${i}`}>
-                                        <div className="flex items-start justify-between gap-2">
-                                          <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
-                                            {String(item.titulo || "")}
-                                          </span>
-                                          <span className="flex gap-1 flex-wrap justify-end">
-                                            <span
-                                              className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                            >
-                                              Prio: {item.prioridade}
-                                            </span>
-                                            <span
-                                              className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                            >
-                                              Progresso: {item.progresso}
-                                            </span>
-                                          </span>
-                                        </div>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              ) : (
-                                <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
-                                  {list.values.map((item, i) => (
-                                    <li key={`${list.key}-${i}`}>{String(item || "")}</li>
-                                  ))}
-                                </ul>
-                              )
-                            ) : (
-                              <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
-                            )}
+                            <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">
+                              {String(insight.contextoOrganizado || "Sem contexto organizado para este resumo.")}
+                            </p>
                           </div>
-                        ))}
-                      </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {[
+                              { key: "criar", label: "Criar", values: createItems.map((x) => x.titulo) },
+                              { key: "ajustar", label: "Ajustar", values: Array.isArray(insight.ajustar) ? insight.ajustar : [] },
+                              { key: "corrigir", label: "Corrigir", values: Array.isArray(insight.corrigir) ? insight.corrigir : [] },
+                              { key: "pendencias", label: "Pendências", values: Array.isArray(insight.pendencias) ? insight.pendencias : [] },
+                            ].map((list) => (
+                              <div key={list.key} className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
+                                <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
+                                  {list.label}
+                                </div>
+                                {list.values.length ? (
+                                  list.key === "criar" ? (
+                                    <ul className="space-y-1 pl-4 list-disc">
+                                      {createItems.map((item, i) => {
+                                        const prioSlug = slugDaily(item.prioridade);
+                                        const progSlug = slugDaily(item.progresso);
+                                        const prioClass =
+                                          prioSlug === "urgente"
+                                            ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
+                                            : prioSlug === "importante"
+                                              ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
+                                              : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
+                                        const progClass =
+                                          progSlug === "em-andamento"
+                                            ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
+                                            : progSlug === "concluida"
+                                              ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
+                                              : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
+                                        return (
+                                          <li key={`${list.key}-${i}`}>
+                                            <div className="flex items-start justify-between gap-2">
+                                              <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
+                                                {String(item.titulo || "")}
+                                              </span>
+                                              <span className="flex gap-1 flex-wrap justify-end">
+                                                <span
+                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
+                                                >
+                                                  Prio: {item.prioridade}
+                                                </span>
+                                                <span
+                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
+                                                >
+                                                  Progresso: {item.progresso}
+                                                </span>
+                                              </span>
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  ) : (
+                                    <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
+                                      {list.values.map((item, i) => (
+                                        <li key={`${list.key}-${i}`}>{String(item || "")}</li>
+                                      ))}
+                                    </ul>
+                                  )
+                                ) : (
+                                  <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
-                })
+                })}
+                  {!filteredDailyInsights.length && (
+                    <p className="text-xs text-[var(--flux-text-muted)]">
+                      Nenhum resumo encontrado com os filtros informados.
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="text-xs text-[var(--flux-text-muted)]">Ainda não existe resumo salvo para este board.</p>
               )}

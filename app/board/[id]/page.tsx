@@ -33,6 +33,7 @@ export interface CardLink {
 
 export interface DailyInsightPayload {
   resumo?: string;
+  contextoOrganizado?: string;
   criar?: string[];
   criarDetalhes?: Array<{
     titulo?: string;
@@ -49,6 +50,7 @@ export interface DailyInsightEntry {
   id: string;
   createdAt?: string;
   transcript?: string;
+  sourceFileName?: string;
   insight?: DailyInsightPayload;
 }
 

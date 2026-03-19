@@ -28,6 +28,14 @@
       "namedRegex": "^/api/boards/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/boards/[id]/daily-insights",
+      "regex": "^/api/boards/([^/]+?)/daily\\-insights(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/boards/(?<nxtPid>[^/]+?)/daily\\-insights(?:/)?$"
+    },
+    {
       "page": "/api/users/[id]",
       "regex": "^/api/users/([^/]+?)(?:/)?$",
       "routeKeys": {
