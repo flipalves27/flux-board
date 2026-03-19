@@ -18,7 +18,7 @@ import { KanbanCard } from "./kanban-card";
 import { CardModal } from "./card-modal";
 import { MapaModal } from "./mapa-modal";
 import { DescModal } from "./desc-modal";
-import type { BoardData, CardData, DailyInsightEntry } from "@/app/board/[id]/page";
+import type { BoardData, CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 interface KanbanBoardProps {
@@ -251,19 +251,7 @@ export function KanbanBoard({
         "Backlog";
       const nextOrderByBucket: Record<string, number> = {};
       const created: CardData[] = [];
-      const createdCardsPayload: Array<{
-        cardId: string;
-        title: string;
-        bucket: string;
-        priority: string;
-        progress: string;
-        desc: string;
-        tags: string[];
-        direction: string | null;
-        dueDate: string | null;
-        createdAt: string;
-        status: "created" | "existing";
-      }> = [];
+      const createdCardsPayload: DailyCreatedCard[] = [];
       let createdCount = 0;
       let existingCount = 0;
 
@@ -282,7 +270,7 @@ export function KanbanBoard({
         if (!(bucketKey in nextOrderByBucket)) {
           nextOrderByBucket[bucketKey] = prev.cards.filter((c) => c.bucket === bucketKey).length;
         }
-        const cardPayload = {
+        const cardPayload: DailyCreatedCard = {
           cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
           title: s.titulo,
           bucket: bucketKey,
