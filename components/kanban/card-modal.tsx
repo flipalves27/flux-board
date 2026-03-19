@@ -10,6 +10,8 @@ interface CardModalProps {
   priorities: string[];
   progresses: string[];
   filterLabels: string[];
+  onCreateLabel?: (label: string) => void;
+  onDeleteLabel?: (label: string) => void;
   onClose: () => void;
   onSave: (card: CardData) => void;
   onDelete?: (cardId: string) => void;
@@ -25,6 +27,8 @@ export function CardModal({
   priorities,
   progresses,
   filterLabels,
+  onCreateLabel,
+  onDeleteLabel,
   onClose,
   onSave,
   onDelete,
@@ -37,6 +41,7 @@ export function CardModal({
   const [progress, setProgress] = useState(card.progress);
   const [dueDate, setDueDate] = useState(card.dueDate || "");
   const [tags, setTags] = useState<Set<string>>(new Set(card.tags || []));
+  const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
 
   useEffect(() => {
@@ -48,6 +53,7 @@ export function CardModal({
     setProgress(card.progress);
     setDueDate(card.dueDate || "");
     setTags(new Set(card.tags || []));
+    setNewLabel("");
     setLinks(card.links && card.links.length > 0 ? [...card.links] : []);
   }, [card]);
 
@@ -79,6 +85,23 @@ export function CardModal({
       tags: [...tags],
       links: links.filter((l) => l.url.trim()),
       order: card.order ?? 0,
+    });
+  };
+
+  const handleCreateLabel = () => {
+    const normalized = newLabel.trim();
+    if (!normalized) return;
+    onCreateLabel?.(normalized);
+    setTags((prev) => new Set([...prev, normalized]));
+    setNewLabel("");
+  };
+
+  const handleDeleteLabel = (label: string) => {
+    onDeleteLabel?.(label);
+    setTags((prev) => {
+      const next = new Set(prev);
+      next.delete(label);
+      return next;
     });
   };
 
@@ -235,20 +258,52 @@ export function CardModal({
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Rótulos
               </label>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateLabel();
+                    }
+                  }}
+                  placeholder="Novo rótulo"
+                  className={`${inputBase} py-2.5`}
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateLabel}
+                  className="px-4 rounded-xl text-sm font-semibold border border-[var(--flux-primary)] bg-[rgba(108,92,231,0.15)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.25)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.15)] transition-all duration-200 font-display whitespace-nowrap"
+                >
+                  + Criar
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {filterLabels.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => toggleTag(t)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 font-display ${
-                      tags.has(t)
-                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                        : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
-                    }`}
-                  >
-                    {t}
-                  </button>
+                  <div key={t} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(t)}
+                      className={`pl-4 pr-8 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 font-display ${
+                        tags.has(t)
+                          ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
+                          : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLabel(t)}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
+                      title={`Excluir rótulo "${t}"`}
+                      aria-label={`Excluir rótulo ${t}`}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>

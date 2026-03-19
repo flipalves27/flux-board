@@ -58,6 +58,7 @@ export interface BoardData {
   config: {
     bucketOrder: BucketConfig[];
     collapsedColumns: string[];
+    labels?: string[];
   };
   mapaProducao?: { papel: string; equipe: string; linha: string; operacoes: string }[];
 }
@@ -124,9 +125,13 @@ export default function BoardPage() {
         version: d.version || "2.0",
         lastUpdated: d.lastUpdated || "",
         cards,
-        config: d.config || {
-          bucketOrder: DEFAULT_BUCKETS,
-          collapsedColumns: [],
+        config: {
+          bucketOrder: d.config?.bucketOrder || DEFAULT_BUCKETS,
+          collapsedColumns: d.config?.collapsedColumns || [],
+          labels:
+            Array.isArray(d.config?.labels) && d.config.labels.length > 0
+              ? d.config.labels.filter((l: unknown) => typeof l === "string" && l.trim())
+              : FILTER_LABELS,
         },
         mapaProducao: d.mapaProducao,
       });

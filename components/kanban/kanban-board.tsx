@@ -89,6 +89,8 @@ export function KanbanBoard({
   const [priorityBarVisible, setPriorityBarVisible] = useState(true);
 
   const buckets = db.config.bucketOrder;
+  const boardLabels =
+    db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
 
@@ -181,6 +183,45 @@ export function KanbanBoard({
       const next = new Set(prev);
       if (next.has(label)) next.delete(label);
       else next.add(label);
+      return next;
+    });
+  };
+
+  const createLabel = (label: string) => {
+    const normalized = label.trim();
+    if (!normalized) return;
+    updateDb((prev) => {
+      const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
+      if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return prev;
+      return {
+        ...prev,
+        config: {
+          ...prev.config,
+          labels: [...current, normalized],
+        },
+      };
+    });
+  };
+
+  const deleteLabel = (label: string) => {
+    updateDb((prev) => {
+      const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
+      if (!current.includes(label)) return prev;
+      return {
+        ...prev,
+        cards: prev.cards.map((c) => ({
+          ...c,
+          tags: c.tags.filter((t) => t !== label),
+        })),
+        config: {
+          ...prev.config,
+          labels: current.filter((l) => l !== label),
+        },
+      };
+    });
+    setActiveLabels((prev) => {
+      const next = new Set(prev);
+      next.delete(label);
       return next;
     });
   };
@@ -543,7 +584,7 @@ export function KanbanBoard({
         </div>
         {priorityBarVisible && labelsOpen && (
           <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex gap-1.5 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
-            {filterLabels.map((l) => (
+            {boardLabels.map((l) => (
               <button
                 key={l}
                 onClick={() => toggleLabel(l)}
@@ -728,7 +769,9 @@ export function KanbanBoard({
           buckets={buckets}
           priorities={priorities}
           progresses={progresses}
-          filterLabels={filterLabels}
+          filterLabels={boardLabels}
+          onCreateLabel={createLabel}
+          onDeleteLabel={deleteLabel}
           onClose={() => setModalCard(null)}
           onSave={(updated) => {
             updateDb((prev) => {
