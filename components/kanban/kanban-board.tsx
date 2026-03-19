@@ -475,7 +475,7 @@ export function KanbanBoard({
     setDailyLogs((prev) => [
       {
         timestamp: startedAt,
-        status: "start",
+        status: "start" as DailyLogStatus,
         message: "Iniciando geração do resumo prático...",
       },
       ...prev,
