@@ -100,17 +100,20 @@ export function CustomTooltip({
 
   if (!isValidElement(children)) return children;
 
-  const childProps = children.props as {
+  type ChildWithHandlersAndRef = {
     onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
     onMouseLeave?: (e: React.MouseEvent<HTMLElement>) => void;
     onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
     onBlur?: (e: React.FocusEvent<HTMLElement>) => void;
+    ref?: React.Ref<HTMLElement>;
   };
+  const childElement = children as ReactElement<ChildWithHandlersAndRef>;
+  const childProps = childElement.props;
 
-  const wrapped = cloneElement(children, {
+  const wrapped = cloneElement<ChildWithHandlersAndRef>(childElement, {
     ref: (node: HTMLElement | null) => {
       triggerRef.current = node;
-      const childRef = (children as ReactElement & { ref?: unknown }).ref;
+      const childRef = childElement.props.ref;
       if (typeof childRef === "function") childRef(node);
       else if (childRef && typeof childRef === "object" && "current" in childRef) {
         (childRef as { current: HTMLElement | null }).current = node;
