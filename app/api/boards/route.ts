@@ -12,6 +12,7 @@ import {
   type PortfolioBoardLike,
 } from "@/lib/board-portfolio-metrics";
 import { ensureAdminUser } from "@/lib/kv-users";
+import { isProTenant, maxBoardsPerUser } from "@/lib/commercial-plan";
 
 function corsHeaders() {
   return {
@@ -44,12 +45,24 @@ export async function GET(request: NextRequest) {
           id: b.id,
           name: b.name,
           ownerId: b.ownerId,
+          clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
           lastUpdated: b.lastUpdated,
           portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
         });
       }
     }
-    return NextResponse.json({ boards });
+    const cap = maxBoardsPerUser();
+    const pro = isProTenant();
+    const plan =
+      payload.isAdmin
+        ? { maxBoards: null as number | null, isPro: true, currentCount: boards.length, atLimit: false }
+        : {
+            maxBoards: pro ? null : cap,
+            isPro: pro,
+            currentCount: boards.length,
+            atLimit: !pro && cap !== null && boards.length >= cap,
+          };
+    return NextResponse.json({ boards, plan });
   } catch (err) {
     console.error("Boards API error:", err);
     return NextResponse.json(
@@ -71,6 +84,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const name = (body.name || "Novo Board").trim().slice(0, 100);
+
+    const cap = maxBoardsPerUser();
+    if (!payload.isAdmin && !isProTenant() && cap !== null) {
+      const existingIds = await getBoardIds(payload.id, false);
+      if (existingIds.length >= cap) {
+        return NextResponse.json(
+          { error: `Limite do plano: no máximo ${cap} board(s) por usuário.` },
+          { status: 403 }
+        );
+      }
+    }
 
     const board = await createBoard(payload.id, name, {
       version: "2.0",

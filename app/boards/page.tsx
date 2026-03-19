@@ -24,8 +24,16 @@ interface Board {
   id: string;
   name: string;
   ownerId: string;
+  clientLabel?: string;
   lastUpdated?: string;
   portfolio?: BoardPortfolioMetrics;
+}
+
+interface PlanInfo {
+  maxBoards: number | null;
+  isPro: boolean;
+  currentCount: number;
+  atLimit: boolean;
 }
 
 function PortfolioMetricBar({ label, value }: { label: string; value: number | null }) {
@@ -58,7 +66,9 @@ export default function BoardsPage() {
   const router = useRouter();
   const { user, getHeaders, isChecked } = useAuth();
   const [boards, setBoards] = useState<Board[]>([]);
+  const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exportBusy, setExportBusy] = useState<"brief" | "json" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,9 +95,10 @@ export default function BoardsPage() {
 
   async function loadBoards() {
     try {
-      const data = await apiGet<{ boards: Board[] }>("/api/boards", getHeaders());
+      const data = await apiGet<{ boards: Board[]; plan?: PlanInfo }>("/api/boards", getHeaders());
       const list = data.boards ?? [];
       setBoards(list);
+      setPlan(data.plan ?? null);
       setEmpty(list.length === 0);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -285,15 +296,99 @@ export default function BoardsPage() {
     setRecentEntries(clearRecentBoards(user.id));
   }
 
+  async function downloadExecutiveBrief() {
+    setExportBusy("brief");
+    try {
+      const data = await apiGet<{ markdown: string }>("/api/executive-brief", getHeaders());
+      const blob = new Blob([data.markdown], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `flux-brief-${new Date().toISOString().slice(0, 10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      pushToast({ kind: "success", title: "Brief baixado." });
+    } catch {
+      pushToast({ kind: "error", title: "Erro ao gerar o brief executivo." });
+    } finally {
+      setExportBusy(null);
+    }
+  }
+
+  async function downloadPortfolioJson() {
+    setExportBusy("json");
+    try {
+      const data = await apiGet<unknown>("/api/portfolio-export", getHeaders());
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `flux-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      pushToast({ kind: "success", title: "JSON exportado." });
+    } catch {
+      pushToast({ kind: "error", title: "Erro ao exportar o portfólio." });
+    } finally {
+      setExportBusy(null);
+    }
+  }
+
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header hideDiscovery />
       <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <h2 className="font-display text-xl font-bold text-[var(--flux-text)] mb-6">
-          Meus Boards
-        </h2>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <h2 className="font-display text-xl font-bold text-[var(--flux-text)]">Meus Boards</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={downloadExecutiveBrief}
+              disabled={exportBusy !== null || boards.length === 0}
+              className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {exportBusy === "brief" ? "Gerando…" : "Brief executivo (.md)"}
+            </button>
+            <button
+              type="button"
+              onClick={downloadPortfolioJson}
+              disabled={exportBusy !== null || boards.length === 0}
+              className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.1)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] transition-colors hover:border-[var(--flux-secondary)] disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {exportBusy === "json" ? "Exportando…" : "Portfólio JSON (BI)"}
+            </button>
+          </div>
+        </div>
+
+        {plan && plan.maxBoards !== null && !plan.isPro && (
+          <div
+            className={`mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
+              plan.atLimit
+                ? "border-[var(--flux-warning)] bg-[rgba(245,158,11,0.12)] text-[var(--flux-text)]"
+                : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)]"
+            }`}
+          >
+            {plan.atLimit ? (
+              <>
+                <span className="font-display font-bold text-[var(--flux-text)]">Limite do plano.</span>{" "}
+                Você atingiu {plan.maxBoards} board(s). Remova um board ou defina{" "}
+                <code className="text-[11px] text-[var(--flux-primary-light)]">FLUX_PRO_TENANT=true</code> no ambiente
+                para modo ilimitado (ou aumente{" "}
+                <code className="text-[11px] text-[var(--flux-primary-light)]">FLUX_MAX_BOARDS_PER_USER</code>).
+              </>
+            ) : (
+              <>
+                Plano atual: até <strong className="text-[var(--flux-text)]">{plan.maxBoards}</strong> boards por
+                usuário ({plan.currentCount} em uso).{" "}
+                <a href="/negocios" className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
+                  Ver oportunidades comerciais
+                </a>
+              </>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <p className="text-[var(--flux-text-muted)]">Carregando...</p>
@@ -529,7 +624,14 @@ export default function BoardsPage() {
                     onClick={() => handleOpenBoard(b.id)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                        {b.clientLabel ? (
+                          <span className="mt-1 inline-block max-w-full truncate rounded-full border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
+                            {b.clientLabel}
+                          </span>
+                        ) : null}
+                      </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

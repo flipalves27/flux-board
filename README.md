@@ -108,8 +108,20 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `/login` | Login e cadastro |
 | `/boards` | Lista de boards |
 | `/board/[id]` | Kanban do board |
+| `/negocios` | Hub de oportunidades comerciais (produto) |
 | `/users` | Administração de usuários (admin) |
 | `/resumo-reborn.html` | Apresentação executiva |
+
+### API comercial / go-to-market
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `GET /api/executive-brief` | Brief executivo em Markdown (JWT) |
+| `GET /api/portfolio-export` | JSON `flux-board.portfolio.v1` para BI / integrações (JWT) |
+
+**Freemium (opcional):** defina `FLUX_MAX_BOARDS_PER_USER` (inteiro ≥ 1) para limitar boards por usuário não-admin. `FLUX_PRO_TENANT=true` (ou `1`) remove o teto. Também é aceito o prefixo público `NEXT_PUBLIC_FLUX_MAX_BOARDS_PER_USER` para o mesmo limite (útil em builds client-side).
+
+**Campo comercial por board:** `clientLabel` — texto curto (ex.: cliente, conta). Edição no cabeçalho do board; incluído no brief e no export JSON.
 
 ## Credenciais padrão
 
@@ -125,3 +137,5 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 - Import/export CSV (UTF-8 BOM, `;` separador)
 - Direcionamento (Manter, Priorizar, Adiar, Cancelar, Reavaliar)
 - Sincronização debounced (300ms) com API
+- Brief executivo (.md) e export JSON do portfólio na lista de boards
+- Rótulo comercial por board (`clientLabel`) e página **Negócios** com linhas de receita

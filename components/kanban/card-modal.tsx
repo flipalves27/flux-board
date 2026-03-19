@@ -736,6 +736,7 @@ export function CardModal({
                 )}
               </ul>
             </div>
+            </CardModalSection>
           </div>
 
           <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-[rgba(255,255,255,0.08)] flex-wrap">

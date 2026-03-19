@@ -16,6 +16,8 @@ export interface BoardData {
   id: string;
   ownerId: string;
   name: string;
+  /** Rótulo comercial opcional (cliente, conta, linha de negócio) — útil para consultorias e B2B. */
+  clientLabel?: string;
   version?: string;
   cards?: unknown[];
   config?: { bucketOrder: unknown[]; collapsedColumns?: string[] };
@@ -103,6 +105,16 @@ export async function getBoardIds(userId: string, isAdmin: boolean): Promise<str
   return [...ids];
 }
 
+export async function listBoardsForUser(userId: string, isAdmin: boolean): Promise<BoardData[]> {
+  const boardIds = await getBoardIds(userId, isAdmin);
+  const boards: BoardData[] = [];
+  for (const bid of boardIds) {
+    const b = await getBoard(bid);
+    if (b) boards.push(b);
+  }
+  return boards;
+}
+
 export async function getBoard(boardId: string): Promise<BoardData | null> {
   if (isMongoConfigured()) {
     const db = await getDb();
@@ -166,6 +178,9 @@ export async function updateBoard(boardId: string, updates: Partial<BoardData>):
   const board = await getBoard(boardId);
   if (!board) return null;
   Object.assign(board, updates);
+  if ("clientLabel" in updates && (!updates.clientLabel || updates.clientLabel.trim() === "")) {
+    delete board.clientLabel;
+  }
   board.lastUpdated = new Date().toISOString();
 
   if (isMongoConfigured()) {

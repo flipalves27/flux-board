@@ -73,6 +73,9 @@ export async function PUT(
     if (body.dailyInsights !== undefined) updates.dailyInsights = body.dailyInsights;
     if (body.version !== undefined) updates.version = body.version;
     if (body.lastUpdated !== undefined) updates.lastUpdated = body.lastUpdated;
+    if (body.clientLabel !== undefined) {
+      updates.clientLabel = String(body.clientLabel ?? "").trim().slice(0, 120);
+    }
 
     const board = await updateBoard(boardId, updates);
     if (!board) {
