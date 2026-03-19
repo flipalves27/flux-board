@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routine-tasks-context";
-import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, playAlertSound } from "@/lib/alert-sounds";
+import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, getAlertSoundSettings, playAlertSound, setAlertSoundSettings } from "@/lib/alert-sounds";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -45,6 +45,7 @@ export default function TasksPage() {
 
   const [form, setForm] = useState<RoutineTaskInput>(defaultTaskInput);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [soundSettings, setSoundSettingsState] = useState(() => getAlertSoundSettings());
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -76,6 +77,17 @@ export default function TasksPage() {
     }
     createTask({ ...form, title: form.title.trim() });
     resetForm();
+  }
+
+  function setSoundSettings(next: { muted?: boolean; volume?: number }) {
+    setSoundSettingsState((prev) => {
+      const merged = {
+        muted: typeof next.muted === "boolean" ? next.muted : prev.muted,
+        volume: typeof next.volume === "number" ? next.volume : prev.volume,
+      };
+      setAlertSoundSettings(merged);
+      return merged;
+    });
   }
 
   function loadForEdit(taskId: string) {
@@ -238,6 +250,33 @@ export default function TasksPage() {
                 >
                   Testar som
                 </button>
+              </div>
+              <div className="mt-4">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">Sons globais</label>
+                <label className="flex items-center gap-2 text-sm text-[var(--flux-text-muted)]">
+                  <input
+                    type="checkbox"
+                    checked={!soundSettings.muted}
+                    onChange={(e) => setSoundSettings({ muted: !e.target.checked })}
+                  />
+                  Ativar sons de lembrete
+                </label>
+
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                    Volume ({Math.round(soundSettings.volume * 100)}%)
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={Math.round(soundSettings.volume * 100)}
+                    disabled={soundSettings.muted}
+                    onChange={(e) => setSoundSettings({ volume: Number(e.target.value) / 100 })}
+                    className="w-full"
+                  />
+                </div>
               </div>
               <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
                 {ALERT_SOUND_PRESETS.length} opcoes suaves disponiveis para personalizar seus lembretes.

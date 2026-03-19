@@ -28,6 +28,8 @@ function DroppableSlot({ id }: { id: string }) {
   return (
     <div
       ref={setNodeRef}
+      aria-hidden="true"
+      role="presentation"
       className={`min-h-[12px] flex-shrink-0 rounded transition-all duration-200 ease-out ${
         isOver ? "bg-[var(--flux-primary)]/20 ring-2 ring-[var(--flux-primary)]/40 scale-[1.01]" : "hover:bg-[rgba(255,255,255,0.04)]"
       }`}
@@ -83,6 +85,7 @@ export function KanbanColumn({
             {...listeners}
             className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
             onClick={onToggleCollapse}
+            aria-label={`Coluna ${bucket.label}. ${cards.length} card(s). Clique para expandir.`}
           >
             <div
               className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
@@ -100,6 +103,7 @@ export function KanbanColumn({
         {...attributes}
         {...listeners}
         className="flex items-center gap-3 px-3 py-3 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
+        aria-label={`Coluna ${bucket.label}. ${cards.length} card(s). Arraste para reorganizar.`}
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
@@ -174,7 +178,12 @@ export function KanbanColumn({
         </div>
       </div>
 
-        <div ref={setBucketRef} className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban">
+        <div
+          ref={setBucketRef}
+          role="region"
+          aria-label={`Coluna ${bucket.label}. Área para soltar cards.`}
+          className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
+        >
           {cards.map((c, idx) => (
             <div key={c.id} className="flex flex-col gap-1">
               <DroppableSlot id={`slot-${bucket.key}-${idx}`} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import { useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -69,6 +70,9 @@ type DailySessionState = {
 };
 
 const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
+const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
+const DAILY_SESSION_MAX_JSON_CHARS = 120000;
+const DAILY_SESSION_WRITE_DEBOUNCE_MS = 400;
 
 const DIR_COLORS: Record<string, string> = {
   manter: "#059669",
@@ -192,20 +196,21 @@ export function KanbanBoard({
   const cards = db.cards;
   const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
 
-  const normalizeSearchText = (value: string) =>
-    String(value || "")
+  const normalizeSearchText = useCallback((value: string) => {
+    return String(value || "")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .trim();
+  }, []);
 
-  const toLocalDateInputValue = (isoDate: string | undefined) => {
+  const toLocalDateInputValue = useCallback((isoDate: string | undefined) => {
     if (!isoDate) return "";
     const dt = new Date(isoDate);
     if (Number.isNaN(dt.getTime())) return "";
     const tzOffsetMs = dt.getTimezoneOffset() * 60000;
     return new Date(dt.getTime() - tzOffsetMs).toISOString().slice(0, 10);
-  };
+  }, []);
 
   const normDailyPrio = (value: string | undefined) => {
     const v = String(value || "").trim().toLowerCase();
@@ -415,7 +420,7 @@ export function KanbanBoard({
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = String(ev.target?.result || "");
-      setDailyTranscript(text.slice(0, 40000));
+      setDailyTranscript(text.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
       setDailyFileName(`${file.name} carregado`);
       setDailySourceFileName(file.name);
     };
@@ -674,13 +679,51 @@ export function KanbanBoard({
     [activePrio, activeLabels, searchQuery]
   );
 
-  const getCardsByBucket = (bucketKey: string) =>
-    cards
-      .filter((c) => c.bucket === bucketKey)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const cardsByBucketSorted = useMemo(() => {
+    const bucketKeys = buckets.map((b) => b.key);
+    const map = new Map<string, CardData[]>();
+    for (const key of bucketKeys) map.set(key, []);
 
-  const visibleCardsByBucket = (bucketKey: string) =>
-    getCardsByBucket(bucketKey).filter(filterCard);
+    for (const c of cards) {
+      if (!map.has(c.bucket)) continue;
+      map.get(c.bucket)!.push(c);
+    }
+
+    for (const key of bucketKeys) {
+      map.get(key)!.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+
+    return map;
+  }, [cards, buckets]);
+
+  const filteredCards = useMemo(() => cards.filter(filterCard), [cards, filterCard]);
+
+  const visibleCardsByBucketMap = useMemo(() => {
+    const bucketKeys = buckets.map((b) => b.key);
+    const map = new Map<string, CardData[]>();
+    for (const key of bucketKeys) map.set(key, []);
+
+    for (const c of filteredCards) {
+      if (!map.has(c.bucket)) continue;
+      map.get(c.bucket)!.push(c);
+    }
+
+    for (const key of bucketKeys) {
+      map.get(key)!.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+
+    return map;
+  }, [filteredCards, buckets]);
+
+  const getCardsByBucket = useCallback(
+    (bucketKey: string) => cardsByBucketSorted.get(bucketKey) ?? [],
+    [cardsByBucketSorted]
+  );
+
+  const visibleCardsByBucket = useCallback(
+    (bucketKey: string) => visibleCardsByBucketMap.get(bucketKey) ?? [],
+    [visibleCardsByBucketMap]
+  );
 
   const COLUMN_COLORS = ["#9B97C2", "#6C5CE7", "#00D2D3", "#FDA7DF", "#FFD93D", "#00E676", "#74B9FF", "#E056A0"];
   const saveColumn = () => {
@@ -869,15 +912,17 @@ export function KanbanBoard({
     }
   };
 
-  const directionCounts = directions.reduce(
-    (acc, d) => {
-      const key = d.toLowerCase();
-      acc[key] = cards.filter((c) => c.direction === key).length;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-  const totalWithDir = cards.filter((c) => c.direction).length;
+  const { directionCounts, totalWithDir } = useMemo(() => {
+    const acc: Record<string, number> = {};
+    let total = 0;
+    for (const c of cards) {
+      if (!c.direction) continue;
+      const key = c.direction.toLowerCase();
+      acc[key] = (acc[key] ?? 0) + 1;
+      total += 1;
+    }
+    return { directionCounts: acc, totalWithDir: total };
+  }, [cards]);
 
   const handleExportCSV = () => {
     const sep = ";";
@@ -996,37 +1041,63 @@ export function KanbanBoard({
     ? cards.find((c) => c.id === activeId.replace("card-", ""))
     : null;
 
-  const normalizedDailyHistorySearchQuery = normalizeSearchText(dailyHistorySearchQuery);
-  const filteredDailyInsights = dailyInsights.filter((entry) => {
-    const entryDate = toLocalDateInputValue(entry?.createdAt);
-    if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
-    if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
-    if (!normalizedDailyHistorySearchQuery) return true;
-    const insight = entry?.insight;
-    const searchable = [
-      insight?.resumo,
-      insight?.contextoOrganizado,
-      ...(Array.isArray(insight?.criar) ? insight.criar : []),
-      ...(Array.isArray(insight?.ajustar) ? insight.ajustar : []),
-      ...(Array.isArray(insight?.corrigir) ? insight.corrigir : []),
-      ...(Array.isArray(insight?.pendencias) ? insight.pendencias : []),
-      ...(Array.isArray(insight?.criarDetalhes) ? insight.criarDetalhes.map((item) => String(item?.titulo || "")) : []),
-      entry?.transcript,
-      entry?.sourceFileName,
-    ]
-      .map((item) => String(item || ""))
-      .join(" \n ");
-    return normalizeSearchText(searchable).includes(normalizedDailyHistorySearchQuery);
-  });
-  const activeDailyHistoryId =
-    (dailyHistoryExpandedId && filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryExpandedId)
-      ? dailyHistoryExpandedId
-      : String(filteredDailyInsights[0]?.id || "")) || null;
-  const activeCreatedCardsExpandedId =
-    (dailyHistoryCreatedCardsExpandedId &&
-    filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId)
-      ? dailyHistoryCreatedCardsExpandedId
-      : activeDailyHistoryId) || null;
+  const normalizedDailyHistorySearchQuery = useMemo(
+    () => normalizeSearchText(dailyHistorySearchQuery),
+    [dailyHistorySearchQuery, normalizeSearchText]
+  );
+
+  const filteredDailyInsights = useMemo(() => {
+    return dailyInsights.filter((entry) => {
+      const entryDate = toLocalDateInputValue(entry?.createdAt);
+      if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
+      if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
+      if (!normalizedDailyHistorySearchQuery) return true;
+
+      const insight = entry?.insight;
+      const searchable = [
+        insight?.resumo,
+        insight?.contextoOrganizado,
+        ...(Array.isArray(insight?.criar) ? insight.criar : []),
+        ...(Array.isArray(insight?.ajustar) ? insight.ajustar : []),
+        ...(Array.isArray(insight?.corrigir) ? insight.corrigir : []),
+        ...(Array.isArray(insight?.pendencias) ? insight.pendencias : []),
+        ...(Array.isArray(insight?.criarDetalhes)
+          ? insight.criarDetalhes.map((item) => String(item?.titulo || ""))
+          : []),
+        entry?.transcript,
+        entry?.sourceFileName,
+      ]
+        .map((item) => String(item || ""))
+        .join(" \n ");
+
+      return normalizeSearchText(searchable).includes(normalizedDailyHistorySearchQuery);
+    });
+  }, [
+    dailyInsights,
+    dailyHistoryDateFrom,
+    dailyHistoryDateTo,
+    normalizedDailyHistorySearchQuery,
+    toLocalDateInputValue,
+    normalizeSearchText,
+  ]);
+
+  const activeDailyHistoryId = useMemo(() => {
+    return (
+      (dailyHistoryExpandedId &&
+        filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryExpandedId)
+        ? dailyHistoryExpandedId
+        : String(filteredDailyInsights[0]?.id || "")) || null
+    );
+  }, [dailyHistoryExpandedId, filteredDailyInsights]);
+
+  const activeCreatedCardsExpandedId = useMemo(() => {
+    return (
+      (dailyHistoryCreatedCardsExpandedId &&
+      filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId)
+        ? dailyHistoryCreatedCardsExpandedId
+        : activeDailyHistoryId) || null
+    );
+  }, [dailyHistoryCreatedCardsExpandedId, filteredDailyInsights, activeDailyHistoryId]);
 
   const shouldIgnorePanStart = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
@@ -1062,7 +1133,7 @@ export function KanbanBoard({
       const raw = storage.getItem(DAILY_SESSION_STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<DailySessionState>;
-      if (typeof parsed.transcript === "string") setDailyTranscript(parsed.transcript.slice(0, 40000));
+      if (typeof parsed.transcript === "string") setDailyTranscript(parsed.transcript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
       if (typeof parsed.fileName === "string") setDailyFileName(parsed.fileName || "Nenhum arquivo anexado");
       if (typeof parsed.sourceFileName === "string") setDailySourceFileName(parsed.sourceFileName);
       if (parsed.tab === "entrada" || parsed.tab === "historico" || parsed.tab === "status") setDailyTab(parsed.tab);
@@ -1102,25 +1173,51 @@ export function KanbanBoard({
   useEffect(() => {
     const storage = typeof window !== "undefined" ? window.localStorage : null;
     if (!storage) return;
-    const payload: DailySessionState = {
-      transcript: dailyTranscript,
-      fileName: dailyFileName,
-      sourceFileName: dailySourceFileName,
-      generating: dailyGenerating,
-      tab: dailyTab,
-      logs: dailyLogs.slice(0, 50),
-      statusPhase: dailyStatusPhase,
-      historyExpandedId: dailyHistoryExpandedId,
-      historyCreatedCardsExpandedId: dailyHistoryCreatedCardsExpandedId,
-      historyDateFrom: dailyHistoryDateFrom,
-      historyDateTo: dailyHistoryDateTo,
-      historySearchQuery: dailyHistorySearchQuery,
-    };
-    try {
-      storage.setItem(DAILY_SESSION_STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // Falha de quota/permissão não deve interromper o fluxo.
-    }
+
+    const timeoutId = window.setTimeout(() => {
+      // Limitar tamanho para reduzir chance de quota estourar.
+      const transcriptToStore = dailyTranscript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS);
+
+      let payload: DailySessionState = {
+        transcript: transcriptToStore,
+        fileName: dailyFileName,
+        sourceFileName: dailySourceFileName,
+        generating: dailyGenerating,
+        tab: dailyTab,
+        logs: dailyLogs.slice(0, 50),
+        statusPhase: dailyStatusPhase,
+        historyExpandedId: dailyHistoryExpandedId,
+        historyCreatedCardsExpandedId: dailyHistoryCreatedCardsExpandedId,
+        historyDateFrom: dailyHistoryDateFrom,
+        historyDateTo: dailyHistoryDateTo,
+        historySearchQuery: dailyHistorySearchQuery,
+      };
+
+      try {
+        // Guard adicional: se o JSON estiver grande demais, reduz/transfoma transcript.
+        let json = JSON.stringify(payload);
+        if (json.length > DAILY_SESSION_MAX_JSON_CHARS) {
+          const hardTranscript = transcriptToStore.slice(0, Math.min(3500, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
+          payload = { ...payload, transcript: hardTranscript };
+          json = JSON.stringify(payload);
+          if (json.length > DAILY_SESSION_MAX_JSON_CHARS) {
+            payload = { ...payload, transcript: "" };
+          }
+        }
+
+        storage.setItem(DAILY_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      } catch {
+        // Falha de quota/permissão não deve interromper o fluxo.
+        // Remover a chave é melhor do que ficar tentando gravar repetidamente.
+        try {
+          storage.removeItem(DAILY_SESSION_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+      }
+    }, DAILY_SESSION_WRITE_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
   }, [
     dailyTranscript,
     dailyFileName,
@@ -1323,6 +1420,51 @@ export function KanbanBoard({
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          accessibility={{
+            screenReaderInstructions: {
+              draggable:
+                "Arraste e solte cards usando teclado. Use Tab para focar um card. Pressione Enter/Espaço para iniciar o arrasto. Use as setas para alternar entre as colunas/posições e pressione Enter/Espaço para soltar.",
+            },
+            announcements: {
+              onDragStart: ({ active }) => {
+                const activeId = String(active.id);
+                if (activeId.startsWith("card-")) {
+                  const cardId = activeId.replace("card-", "");
+                  const card = cards.find((c) => c.id === cardId);
+                  return card ? `Iniciando arrasto do card: ${card.title}.` : "Iniciando arrasto do card.";
+                }
+                const col = buckets.find((b) => b.key === activeId);
+                return col ? `Iniciando arrasto da coluna: ${col.label}.` : "Iniciando arrasto da coluna.";
+              },
+              onDragOver: ({ over }) => {
+                if (!over) return;
+                const overId = String(over.id);
+                if (overId.startsWith("bucket-")) {
+                  const bucketKey = overId.replace("bucket-", "");
+                  const col = buckets.find((b) => b.key === bucketKey);
+                  return col ? `Soltar na coluna: ${col.label}.` : "Soltar na coluna.";
+                }
+                const slotInfo = parseSlotId(overId);
+                if (slotInfo) {
+                  const col = buckets.find((b) => b.key === slotInfo.bucketKey);
+                  const pos = slotInfo.index + 1;
+                  return col
+                    ? `Soltar na coluna: ${col.label}, posição ${pos}.`
+                    : `Soltar na coluna, posição ${pos}.`;
+                }
+                return;
+              },
+              onDragEnd: ({ over }) => {
+                if (!over) return;
+                const overId = String(over.id);
+                if (overId.startsWith("bucket-")) return "Card/coluna solto.";
+                const slotInfo = parseSlotId(overId);
+                if (slotInfo) return "Card/coluna solto.";
+                return "Card/coluna solto.";
+              },
+              onDragCancel: () => "Arrasto cancelado.",
+            },
+          }}
         >
           <SortableContext items={buckets.map((b) => b.key)} strategy={horizontalListSortingStrategy}>
             {buckets.map((b) => (

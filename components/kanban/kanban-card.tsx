@@ -38,6 +38,7 @@ export function KanbanCard({
   });
 
   const dr = daysRemaining(card.dueDate);
+  const ariaLabel = `Card ${card.title}. Coluna ${card.bucket}. Prioridade ${card.priority}. Progresso ${card.progress}.`;
   const dueClass = dr === null ? "" : dr < 0 ? "text-[var(--flux-danger)]" : dr <= 3 ? "text-[var(--flux-warning)]" : "text-[var(--flux-text-muted)]";
   const dueText =
     dr === null ? "" : dr < 0 ? `${Math.abs(dr)}d atraso` : dr === 0 ? "Hoje" : `${dr}d`;
@@ -61,6 +62,7 @@ export function KanbanCard({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      aria-label={ariaLabel}
       onClick={(e) => {
         if (!(e.target as HTMLElement).closest(".dir-btn") && !(e.target as HTMLElement).closest(".card-delete")) {
           onEdit();
