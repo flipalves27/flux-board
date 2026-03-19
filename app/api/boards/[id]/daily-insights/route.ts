@@ -2,23 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
 
+type InsightActionItem = {
+  titulo: string;
+  descricao?: string;
+  prioridade: string;
+  progresso: string;
+  coluna?: string;
+  tags?: string[];
+  dataConclusao?: string;
+  direcionamento?: string;
+};
+
 type InsightResult = {
   resumo: string;
   contextoOrganizado: string;
   criar: string[];
-  criarDetalhes: Array<{
-    titulo: string;
-    descricao: string;
-    prioridade: string;
-    progresso: string;
-    coluna?: string;
-    tags?: string[];
-    dataConclusao?: string;
-    direcionamento?: string;
-  }>;
-  ajustar: string[];
-  corrigir: string[];
-  pendencias: string[];
+  criarDetalhes: InsightActionItem[];
+  ajustar: InsightActionItem[];
+  corrigir: InsightActionItem[];
+  pendencias: InsightActionItem[];
 };
 
 type LlmInsightResult = {
@@ -52,10 +54,16 @@ function extractTextFromLlmContent(
     .trim();
 }
 
-function normalizeList(value: unknown): string[] {
+function normalizeTitleList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => String(item || "").trim())
+    .map((item) => {
+      if (item && typeof item === "object") {
+        const rec = item as Record<string, unknown>;
+        return String(rec.titulo || rec.title || "").trim();
+      }
+      return String(item || "").trim();
+    })
     .filter(Boolean)
     .slice(0, 20);
 }
@@ -68,35 +76,49 @@ function normalizeTags(value: unknown): string[] {
     .slice(0, 6);
 }
 
-function safeInsight(raw: unknown): InsightResult {
-  const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const criar = normalizeList(obj.criar);
-  const criarDetalhesRaw = Array.isArray(obj.criarDetalhes) ? obj.criarDetalhes : [];
-  const criarDetalhes = criarDetalhesRaw
+function normalizeActionItemList(value: unknown): InsightActionItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
     .map((item) => {
       const rec = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
-      if (!rec) return null;
-      const titulo = String(rec.titulo || "").trim();
+      const titulo = rec ? String(rec.titulo || rec.title || "").trim() : String(item || "").trim();
       if (!titulo) return null;
-      const descricao = String(rec.descricao || rec.detalhes || "").trim();
-      const prioridade = String(rec.prioridade || "Média").trim() || "Média";
-      const progresso = String(rec.progresso || "Não iniciado").trim() || "Não iniciado";
-      const coluna = String(rec.coluna || "").trim();
-      const tags = normalizeTags(rec.tags);
-      const dataConclusao = String(rec.dataConclusao || "").trim();
-      const direcionamento = String(rec.direcionamento || "").trim();
+
+      const descricaoRaw = rec ? rec.descricao ?? rec.detalhes : "";
+      const prioridadeRaw = rec ? rec.prioridade : undefined;
+      const progressoRaw = rec ? rec.progresso : undefined;
+      const colunaRaw = rec ? rec.coluna : undefined;
+      const tagsRaw = rec ? rec.tags : undefined;
+      const dataConclusaoRaw = rec ? rec.dataConclusao : undefined;
+      const direcionamentoRaw = rec ? rec.direcionamento : undefined;
+
+      const descricao = rec ? String(descricaoRaw || "").trim() : "";
+      const prioridade = String(prioridadeRaw || "Média").trim() || "Média";
+      const progresso = String(progressoRaw || "Não iniciado").trim() || "Não iniciado";
+      const coluna = rec ? String(colunaRaw || "").trim() : "";
+      const tags = normalizeTags(tagsRaw);
+      const dataConclusao = rec ? String(dataConclusaoRaw || "").trim() : "";
+      const direcionamento = rec ? String(direcionamentoRaw || "").trim() : "";
+
       return {
         titulo: titulo.slice(0, 120),
-        descricao: descricao.slice(0, 1600),
+        descricao: descricao ? descricao.slice(0, 1600) : undefined,
         prioridade,
         progresso,
         coluna: coluna || undefined,
-        tags,
+        tags: tags.length ? tags : undefined,
         dataConclusao: dataConclusao || undefined,
         direcionamento: direcionamento || undefined,
-      };
+      } satisfies InsightActionItem;
     })
-    .filter(Boolean) as InsightResult["criarDetalhes"];
+    .filter(Boolean)
+    .slice(0, 20) as InsightActionItem[];
+}
+
+function safeInsight(raw: unknown): InsightResult {
+  const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const criar = normalizeTitleList(obj.criar);
+  const criarDetalhes = normalizeActionItemList(obj.criarDetalhes);
 
   const mergedCriarDetalhes =
     criarDetalhes.length > 0
@@ -115,9 +137,9 @@ function safeInsight(raw: unknown): InsightResult {
       .slice(0, 12000),
     criar: criar.length ? criar : mergedCriarDetalhes.map((item) => item.titulo),
     criarDetalhes: mergedCriarDetalhes,
-    ajustar: normalizeList(obj.ajustar),
-    corrigir: normalizeList(obj.corrigir),
-    pendencias: normalizeList(obj.pendencias),
+    ajustar: normalizeActionItemList(obj.ajustar),
+    corrigir: normalizeActionItemList(obj.corrigir),
+    pendencias: normalizeActionItemList(obj.pendencias),
   };
 }
 
@@ -133,9 +155,9 @@ function heuristicInsight(transcript: string): InsightResult {
     lines.filter((line) => keywords.some((k) => lower(line).includes(k))).slice(0, 10);
 
   const criar = pick(["criar", "novo", "iniciar", "implementar", "abrir tarefa"]);
-  const ajustar = pick(["ajustar", "refinar", "melhorar", "atualizar", "alinhar"]);
-  const corrigir = pick(["corrigir", "bug", "erro", "falha", "incidente", "quebrou"]);
-  const pendencias = pick(["pendente", "bloque", "aguard", "depende", "validar", "aprovar"]);
+  const ajustarLines = pick(["ajustar", "refinar", "melhorar", "atualizar", "alinhar"]);
+  const corrigirLines = pick(["corrigir", "bug", "erro", "falha", "incidente", "quebrou"]);
+  const pendenciasLines = pick(["pendente", "bloque", "aguard", "depende", "validar", "aprovar"]);
 
   const top = lines.slice(0, 4);
   const resumo =
@@ -152,13 +174,13 @@ function heuristicInsight(transcript: string): InsightResult {
     ...(criar.length ? criar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
     "",
     "Ações para ajustar:",
-    ...(ajustar.length ? ajustar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    ...(ajustarLines.length ? ajustarLines.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
     "",
     "Correções:",
-    ...(corrigir.length ? corrigir.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    ...(corrigirLines.length ? corrigirLines.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
     "",
     "Pendências e riscos:",
-    ...(pendencias.length ? pendencias.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+    ...(pendenciasLines.length ? pendenciasLines.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
   ]
     .join("\n")
     .slice(0, 12000);
@@ -173,9 +195,24 @@ function heuristicInsight(transcript: string): InsightResult {
       prioridade: "Média",
       progresso: "Não iniciado",
     })),
-    ajustar,
-    corrigir,
-    pendencias,
+    ajustar: ajustarLines.map((titulo) => ({
+      titulo,
+      descricao: "",
+      prioridade: "Média",
+      progresso: "Não iniciado",
+    })),
+    corrigir: corrigirLines.map((titulo) => ({
+      titulo,
+      descricao: "",
+      prioridade: "Média",
+      progresso: "Não iniciado",
+    })),
+    pendencias: pendenciasLines.map((titulo) => ({
+      titulo,
+      descricao: "",
+      prioridade: "Média",
+      progresso: "Não iniciado",
+    })),
   };
 }
 
@@ -327,6 +364,7 @@ async function llmInsight(args: {
     "contextoOrganizado deve ser um texto enxuto, revisado e objetivo, estruturado em seções curtas para leitura rápida.",
     "O texto de contexto deve parecer um documento pronto para anexar ao histórico da daily.",
     "criarDetalhes deve ser uma lista de objetos com: titulo, descricao, prioridade, progresso, coluna(opcional), tags(opcional), dataConclusao(opcional), direcionamento(opcional).",
+    "ajustar, corrigir e pendencias também devem ser listas de objetos com os mesmos campos de criarDetalhes (titulo, descricao, prioridade, progresso, coluna/opcional, tags/opcional, dataConclusao/opcional, direcionamento/opcional).",
     "titulo deve ser curto e direto (máximo de 9 palavras).",
     "descricao deve ser detalhada e pronta para virar descrição do card, incluindo escopo, objetivo e critério de pronto.",
     "tags deve ser uma lista curta de rótulos existentes no board quando possível.",

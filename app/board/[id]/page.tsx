@@ -36,19 +36,21 @@ export interface DailyInsightPayload {
   resumo?: string;
   contextoOrganizado?: string;
   criar?: string[];
-  criarDetalhes?: Array<{
-    titulo?: string;
-    descricao?: string;
-    prioridade?: string;
-    progresso?: string;
-    coluna?: string;
-    tags?: string[];
-    dataConclusao?: string;
-    direcionamento?: string;
-  }>;
-  ajustar?: string[];
-  corrigir?: string[];
-  pendencias?: string[];
+  criarDetalhes?: Array<DailyInsightActionPayload>;
+  ajustar?: Array<string | DailyInsightActionPayload>;
+  corrigir?: Array<string | DailyInsightActionPayload>;
+  pendencias?: Array<string | DailyInsightActionPayload>;
+}
+
+export interface DailyInsightActionPayload {
+  titulo?: string;
+  descricao?: string;
+  prioridade?: string;
+  progresso?: string;
+  coluna?: string;
+  tags?: string[];
+  dataConclusao?: string;
+  direcionamento?: string;
 }
 
 export interface DailyCreatedCard {

@@ -416,11 +416,76 @@ export function KanbanBoard({
     const fallback = Array.isArray(insight.criar) ? insight.criar : [];
     return fallback
       .map((txt) => {
-        const titulo = String(txt || "").trim();
+        const titulo =
+          txt && typeof txt === "object"
+            ? String((txt as { titulo?: string; title?: string })?.titulo || (txt as { titulo?: string; title?: string })?.title || "").trim()
+            : String(txt || "").trim();
         if (!titulo) return null;
         return {
           titulo,
           descricao: "Detalhar escopo, impacto esperado e critérios de aceite.",
+          prioridade: "Média",
+          progresso: "Não iniciado",
+          coluna: "",
+          tags: [],
+          dataConclusao: "",
+          direcionamento: "",
+        };
+      })
+      .filter(Boolean) as Array<{
+      titulo: string;
+      descricao: string;
+      prioridade: string;
+      progresso: string;
+      coluna: string;
+      tags: string[];
+      dataConclusao: string;
+      direcionamento: string;
+    }>;
+  };
+
+  const getDailyActionSuggestions = (rawValue?: unknown) => {
+    const list = Array.isArray(rawValue) ? rawValue : [];
+    return list
+      .map((item) => {
+        if (!item) return null;
+
+        if (item && typeof item === "object") {
+          const rec = item as {
+            titulo?: string;
+            title?: string;
+            descricao?: string;
+            detalhes?: string;
+            prioridade?: string;
+            progresso?: string;
+            coluna?: string;
+            tags?: string[];
+            dataConclusao?: string;
+            direcionamento?: string;
+          };
+
+          const titulo = String(rec?.titulo || rec?.title || "").trim();
+          if (!titulo) return null;
+
+          return {
+            titulo,
+            descricao: String(rec?.descricao || rec?.detalhes || "").trim(),
+            prioridade: normDailyPrio(rec?.prioridade),
+            progresso: normDailyProg(rec?.progresso),
+            coluna: String(rec?.coluna || "").trim(),
+            tags: Array.isArray(rec?.tags)
+              ? rec.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
+              : [],
+            dataConclusao: String(rec?.dataConclusao || "").trim(),
+            direcionamento: String(rec?.direcionamento || "").trim().toLowerCase(),
+          };
+        }
+
+        const titulo = String(item || "").trim();
+        if (!titulo) return null;
+        return {
+          titulo,
+          descricao: "",
           prioridade: "Média",
           progresso: "Não iniciado",
           coluna: "",
@@ -600,9 +665,9 @@ export function KanbanBoard({
     const insight = entry?.insight;
     const dt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
     const createItems = getDailyCreateSuggestions(entry);
-    const ajustar = Array.isArray(insight?.ajustar) ? insight?.ajustar : [];
-    const corrigir = Array.isArray(insight?.corrigir) ? insight?.corrigir : [];
-    const pendencias = Array.isArray(insight?.pendencias) ? insight?.pendencias : [];
+    const ajustarItems = getDailyActionSuggestions(insight?.ajustar);
+    const corrigirItems = getDailyActionSuggestions(insight?.corrigir);
+    const pendenciasItems = getDailyActionSuggestions(insight?.pendencias);
     const curated = String(insight?.contextoOrganizado || "").trim();
     const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
     const modelName = String(entry?.generationMeta?.model || "").trim();
@@ -631,13 +696,40 @@ export function KanbanBoard({
         : ["- Sem itens identificados."]),
       "",
       "Ajustes:",
-      ...(ajustar.length ? ajustar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+      ...(ajustarItems.length
+        ? ajustarItems.map(
+            (x, i) =>
+              `${i + 1}. ${x.titulo}${
+                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
+              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
+                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
+              }`
+          )
+        : ["- Sem itens identificados."]),
       "",
       "Correções:",
-      ...(corrigir.length ? corrigir.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+      ...(corrigirItems.length
+        ? corrigirItems.map(
+            (x, i) =>
+              `${i + 1}. ${x.titulo}${
+                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
+              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
+                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
+              }`
+          )
+        : ["- Sem itens identificados."]),
       "",
       "Pendências:",
-      ...(pendencias.length ? pendencias.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
+      ...(pendenciasItems.length
+        ? pendenciasItems.map(
+            (x, i) =>
+              `${i + 1}. ${x.titulo}${
+                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
+              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
+                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
+              }`
+          )
+        : ["- Sem itens identificados."]),
     ];
     return blocks.join("\n");
   };
@@ -1204,9 +1296,9 @@ export function KanbanBoard({
         insight?.resumo,
         insight?.contextoOrganizado,
         ...(Array.isArray(insight?.criar) ? insight.criar : []),
-        ...(Array.isArray(insight?.ajustar) ? insight.ajustar : []),
-        ...(Array.isArray(insight?.corrigir) ? insight.corrigir : []),
-        ...(Array.isArray(insight?.pendencias) ? insight.pendencias : []),
+        ...(getDailyActionSuggestions(insight?.ajustar).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
+        ...(getDailyActionSuggestions(insight?.corrigir).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
+        ...(getDailyActionSuggestions(insight?.pendencias).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
         ...(Array.isArray(insight?.criarDetalhes)
           ? insight.criarDetalhes.map((item) => String(item?.titulo || ""))
           : []),
@@ -1225,6 +1317,7 @@ export function KanbanBoard({
     normalizedDailyHistorySearchQuery,
     toLocalDateInputValue,
     normalizeSearchText,
+    getDailyActionSuggestions,
   ]);
 
   const activeDailyHistoryId = useMemo(() => {
@@ -2387,90 +2480,82 @@ export function KanbanBoard({
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {[
-                              { key: "criar", label: "Criar", values: createItems.map((x) => x.titulo) },
-                              { key: "ajustar", label: "Ajustar", values: Array.isArray(insight.ajustar) ? insight.ajustar : [] },
-                              { key: "corrigir", label: "Corrigir", values: Array.isArray(insight.corrigir) ? insight.corrigir : [] },
-                              { key: "pendencias", label: "Pendências", values: Array.isArray(insight.pendencias) ? insight.pendencias : [] },
+                              { key: "criar", label: "Criar", values: createItems },
+                              { key: "ajustar", label: "Ajustar", values: getDailyActionSuggestions(insight.ajustar) },
+                              { key: "corrigir", label: "Corrigir", values: getDailyActionSuggestions(insight.corrigir) },
+                              { key: "pendencias", label: "Pendências", values: getDailyActionSuggestions(insight.pendencias) },
                             ].map((list) => (
                               <div key={list.key} className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
                                 <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
                                   {list.label}
                                 </div>
                                 {list.values.length ? (
-                                  list.key === "criar" ? (
-                                    <ul className="space-y-1 pl-4 list-disc">
-                                      {createItems.map((item, i) => {
-                                        const prioSlug = slugDaily(item.prioridade);
-                                        const progSlug = slugDaily(item.progresso);
-                                        const prioClass =
-                                          prioSlug === "urgente"
-                                            ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
-                                            : prioSlug === "importante"
-                                              ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                              : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
-                                        const progClass =
-                                          progSlug === "em-andamento"
-                                            ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
-                                            : progSlug === "concluida"
-                                              ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                              : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
-                                        return (
-                                          <li key={`${list.key}-${i}`}>
-                                            <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-2">
-                                              <div className="flex items-start justify-between gap-2">
-                                                <span className="flex-1 min-w-0 text-xs font-semibold text-[var(--flux-text)] leading-[1.35]">
-                                                  {String(item.titulo || "")}
+                                  <ul className="space-y-1 pl-4 list-disc">
+                                    {list.values.map((item, i) => {
+                                      const prioSlug = slugDaily(item.prioridade);
+                                      const progSlug = slugDaily(item.progresso);
+                                      const prioClass =
+                                        prioSlug === "urgente"
+                                          ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
+                                          : prioSlug === "importante"
+                                            ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
+                                            : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
+                                      const progClass =
+                                        progSlug === "em-andamento"
+                                          ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
+                                          : progSlug === "concluida"
+                                            ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
+                                            : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
+                                      return (
+                                        <li key={`${list.key}-${i}`}>
+                                          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-2">
+                                            <div className="flex items-start justify-between gap-2">
+                                              <span className="flex-1 min-w-0 text-xs font-semibold text-[var(--flux-text)] leading-[1.35]">
+                                                {String(item.titulo || "")}
+                                              </span>
+                                              <span className="flex gap-1 flex-wrap justify-end">
+                                                <span
+                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
+                                                >
+                                                  Prio: {item.prioridade}
                                                 </span>
-                                                <span className="flex gap-1 flex-wrap justify-end">
-                                                  <span
-                                                    className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                                  >
-                                                    Prio: {item.prioridade}
-                                                  </span>
-                                                  <span
-                                                    className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                                  >
-                                                    Progresso: {item.progresso}
-                                                  </span>
+                                                <span
+                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
+                                                >
+                                                  Progresso: {item.progresso}
                                                 </span>
-                                              </div>
-                                              {item.descricao && (
-                                                <p className="mt-1 text-[11px] text-[var(--flux-text-muted)] leading-relaxed whitespace-pre-line">
-                                                  {item.descricao}
-                                                </p>
-                                              )}
-                                              <div className="mt-1 flex flex-wrap gap-1">
-                                                {item.coluna && (
-                                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                    Coluna: {item.coluna}
-                                                  </span>
-                                                )}
-                                                {item.dataConclusao && (
-                                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                    Prazo: {item.dataConclusao}
-                                                  </span>
-                                                )}
-                                                {item.tags?.map((tag) => (
-                                                  <span
-                                                    key={`${item.titulo}-${tag}`}
-                                                    className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
-                                                  >
-                                                    {tag}
-                                                  </span>
-                                                ))}
-                                              </div>
+                                              </span>
                                             </div>
-                                          </li>
-                                        );
-                                      })}
-                                    </ul>
-                                  ) : (
-                                    <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
-                                      {list.values.map((item, i) => (
-                                        <li key={`${list.key}-${i}`}>{String(item || "")}</li>
-                                      ))}
-                                    </ul>
-                                  )
+                                            {item.descricao && (
+                                              <p className="mt-1 text-[11px] text-[var(--flux-text-muted)] leading-relaxed whitespace-pre-line">
+                                                {item.descricao}
+                                              </p>
+                                            )}
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                              {item.coluna && (
+                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                  Coluna: {item.coluna}
+                                                </span>
+                                              )}
+                                              {item.dataConclusao && (
+                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                  Prazo: {item.dataConclusao}
+                                                </span>
+                                              )}
+                                              {item.tags?.map((tag) => (
+                                                <span
+                                                  key={`${item.titulo}-${tag}`}
+                                                  className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                                                >
+                                                  {tag}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
                                 ) : (
                                   <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
                                 )}
