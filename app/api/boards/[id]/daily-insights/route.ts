@@ -159,6 +159,42 @@ function heuristicInsight(transcript: string): InsightResult {
   };
 }
 
+function parseJsonFromLlmContent(content: string): unknown {
+  const raw = String(content || "").trim();
+  if (!raw) return {};
+
+  const direct = () => JSON.parse(raw);
+
+  const fromFence = () => {
+    const fencedMatch = raw.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    if (!fencedMatch) return null;
+    return JSON.parse(fencedMatch[1].trim());
+  };
+
+  const fromObjectRange = () => {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    const candidate = raw.slice(start, end + 1).trim();
+    return JSON.parse(candidate);
+  };
+
+  try {
+    return direct();
+  } catch {
+    // Tenta extrair JSON de respostas com markdown ou texto extra.
+  }
+
+  try {
+    const parsed = fromFence();
+    if (parsed !== null) return parsed;
+  } catch {
+    // Continua para próxima estratégia.
+  }
+
+  return fromObjectRange();
+}
+
 async function llmInsight(args: {
   boardName: string;
   bucketLabels: string[];
@@ -249,7 +285,7 @@ async function llmInsight(args: {
     const content = data.choices?.[0]?.message?.content || "{}";
     try {
       return {
-        insight: safeInsight(JSON.parse(content)),
+        insight: safeInsight(parseJsonFromLlmContent(content)),
         generatedWithAI: true,
         model,
         provider: "together.ai",
