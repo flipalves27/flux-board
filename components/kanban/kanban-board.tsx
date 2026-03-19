@@ -82,6 +82,152 @@ const DIR_COLORS: Record<string, string> = {
   reavaliar: "#6B7280",
 };
 
+type OrganizedContextSection = {
+  title: string;
+  items: string[];
+  text: string;
+};
+
+function stripMarkdownDecorations(input: string): string {
+  return String(input || "")
+    .replace(/\r/g, "\n")
+    // Remove common markdown bold/italic markers.
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    // Remove leading bullet-ish markers that can leak into text.
+    .replace(/^\s*[-•]\s+/g, "")
+    .trim();
+}
+
+function parseOrganizedContext(raw: string): OrganizedContextSection[] {
+  const text = String(raw || "").replace(/\r/g, "\n").trim();
+  if (!text) return [];
+
+  const lines = text
+    .split("\n")
+    .map((l) => String(l ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 250);
+
+  const sections: OrganizedContextSection[] = [];
+  let current: OrganizedContextSection | null = null;
+
+  const pushCurrent = () => {
+    if (!current) return;
+    const title = stripMarkdownDecorations(current.title || "").replace(/:\s*$/g, "").trim();
+    const items = current.items.map((x) => stripMarkdownDecorations(x)).filter(Boolean);
+    const sectionText = stripMarkdownDecorations(current.text || "");
+    const hasContent = items.length > 0 || sectionText.length > 0;
+    if (title && hasContent) sections.push({ title, items, text: sectionText });
+    current = null;
+  };
+
+  const isHeading = (line: string): string | null => {
+    const t = line.trim();
+    if (!t) return null;
+
+    // Example: **Resumo:** or **Cards em Andamento:**
+    const boldHeading = t.match(/^\*{2,}\s*([^*]+?)\s*\*{2,}\s*:?\s*$/);
+    if (boldHeading?.[1]) return boldHeading[1];
+
+    // Example: ## Título
+    const hashHeading = t.match(/^#{1,3}\s*(.+?)\s*$/);
+    if (hashHeading?.[1]) return hashHeading[1];
+
+    // Example: Resumo executivo:
+    // Keep this conservative to avoid treating sentences with colons as headings.
+    if (t.length <= 70) {
+      const plainHeading = t.match(/^([^:]{2,70}?)\s*:\s*$/);
+      if (plainHeading?.[1]) return plainHeading[1];
+    }
+
+    // Example: "Resumo" alone on its own line.
+    if (t.length <= 70 && !t.startsWith("-") && !t.startsWith("•") && !/^[0-9]+[.)]\s+/.test(t)) {
+      const looksLikeShortLabel = /^[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s-]+$/.test(t) && !t.includes("http");
+      if (looksLikeShortLabel && !t.includes(",")) return t;
+    }
+
+    return null;
+  };
+
+  const bulletItem = (line: string): string | null => {
+    const t = line.trim();
+    const bullet = t.match(/^[-•*]\s+(.*)$/);
+    if (bullet?.[1]) return bullet[1];
+    const numbered = t.match(/^\d+[.)]\s+(.*)$/);
+    if (numbered?.[1]) return numbered[1];
+    return null;
+  };
+
+  for (const rawLine of lines) {
+    const heading = isHeading(rawLine);
+    if (heading) {
+      pushCurrent();
+      current = { title: heading, items: [], text: "" };
+      continue;
+    }
+
+    const item = bulletItem(rawLine);
+    if (item) {
+      if (!current) current = { title: "Conteúdo organizado", items: [], text: "" };
+      current.items.push(stripMarkdownDecorations(item));
+      continue;
+    }
+
+    if (!current) current = { title: "Conteúdo organizado", items: [], text: "" };
+
+    // If we already have items, treat non-bullet lines as a continuation of the previous item.
+    if (current.items.length > 0) {
+      const prevIdx = current.items.length - 1;
+      current.items[prevIdx] = `${current.items[prevIdx]} ${stripMarkdownDecorations(rawLine)}`.trim();
+    } else {
+      current.text = `${current.text}${current.text ? "\n" : ""}${stripMarkdownDecorations(rawLine)}`.trim();
+    }
+  }
+
+  pushCurrent();
+
+  // Fallback: if parsing produced nothing usable, return a single section.
+  if (!sections.length) {
+    return [{ title: "Conteúdo organizado", items: [], text: text.slice(0, 4000) }];
+  }
+
+  // Avoid rendering unbounded sections.
+  return sections.slice(0, 6);
+}
+
+function renderOrganizedContext(raw: string) {
+  const sections = parseOrganizedContext(raw);
+  if (!sections.length) {
+    return <p className="text-xs text-[var(--flux-text-muted)]">Sem contexto organizado para este resumo.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {sections.map((section, idx) => (
+        <div key={`${section.title}-${idx}`} className="space-y-1">
+          <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+            {section.title}
+          </div>
+          {section.items.length ? (
+            <ul className="list-disc pl-4 space-y-1">
+              {section.items.map((it, i) => (
+                <li key={`${idx}-${i}`} className="text-xs text-[var(--flux-text)] leading-relaxed">
+                  {it}
+                </li>
+              ))}
+            </ul>
+          ) : section.text ? (
+            <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">{section.text}</p>
+          ) : (
+            <p className="text-xs text-[var(--flux-text-muted)]">Sem itens.</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function KanbanBoard({
   db,
   updateDb,
@@ -2237,9 +2383,7 @@ export function KanbanBoard({
                                 </div>
                               )}
                             </div>
-                            <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">
-                              {String(insight.contextoOrganizado || "Sem contexto organizado para este resumo.")}
-                            </p>
+                            {renderOrganizedContext(String(insight.contextoOrganizado || ""))}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {[
