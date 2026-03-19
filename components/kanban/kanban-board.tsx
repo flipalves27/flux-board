@@ -897,6 +897,16 @@ export function KanbanBoard({
     }
   };
 
+  const openDailyHistoryFromStatusEntry = (entryId: string) => {
+    // Garante vínculo com o Histórico mesmo quando filtros estão ativos.
+    setDailyHistoryDateFrom("");
+    setDailyHistoryDateTo("");
+    setDailyHistorySearchQuery("");
+    setDailyHistoryCreatedCardsExpandedId(null);
+    setDailyHistoryExpandedId(entryId);
+    setDailyTab("historico");
+  };
+
   const generateDailyInsight = async () => {
     const transcript = dailyTranscript.trim();
     if (!transcript) {
@@ -915,6 +925,9 @@ export function KanbanBoard({
     setDailyGenerating(true);
     setDailyTab("status");
     setDailyStatusPhase("preparing");
+    // Ao iniciar uma execução, manter o histórico colapsado (limpar contextos de UI).
+    setDailyHistoryExpandedId(null);
+    setDailyHistoryCreatedCardsExpandedId(null);
     setDailyLogs((prev) => [
       {
         timestamp: startedAt,
@@ -955,7 +968,6 @@ export function KanbanBoard({
         const next = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
         return { ...prev, dailyInsights: next };
       });
-      setDailyHistoryExpandedId(String(data?.entry?.id || ""));
       const modelName = String(
         data?.llmDebug?.model || data?.entry?.generationMeta?.model || ""
       ).trim();
@@ -1028,6 +1040,19 @@ export function KanbanBoard({
       if (dailyAbortControllerRef.current === controller) dailyAbortControllerRef.current = null;
       if (dailyRequestSeqRef.current === requestSeq) {
         setDailyGenerating(false);
+        // Após finalizar a execução: voltar barra ao início e limpar contextos.
+        setDailyStatusPhase("idle");
+        setDailyLogs([]);
+        setDailyHistoryExpandedId(null);
+        setDailyHistoryCreatedCardsExpandedId(null);
+        setDailyTranscript("");
+        setDailyFileName("Nenhum arquivo anexado");
+        setDailySourceFileName("");
+        try {
+          window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
       }
     }
   };
@@ -1454,22 +1479,21 @@ export function KanbanBoard({
   ]);
 
   const activeDailyHistoryId = useMemo(() => {
-    return (
-      (dailyHistoryExpandedId &&
-        filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryExpandedId)
-        ? dailyHistoryExpandedId
-        : String(filteredDailyInsights[0]?.id || "")) || null
+    if (!dailyHistoryExpandedId) return null;
+    const existsInFiltered = filteredDailyInsights.some(
+      (entry) => String(entry?.id || "") === dailyHistoryExpandedId
     );
+    return existsInFiltered ? dailyHistoryExpandedId : null;
   }, [dailyHistoryExpandedId, filteredDailyInsights]);
 
   const activeCreatedCardsExpandedId = useMemo(() => {
-    return (
-      (dailyHistoryCreatedCardsExpandedId &&
-      filteredDailyInsights.some((entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId)
-        ? dailyHistoryCreatedCardsExpandedId
-        : activeDailyHistoryId) || null
+    if (!dailyHistoryExpandedId) return null;
+    if (!dailyHistoryCreatedCardsExpandedId) return null;
+    const existsInFiltered = filteredDailyInsights.some(
+      (entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId
     );
-  }, [dailyHistoryCreatedCardsExpandedId, filteredDailyInsights, activeDailyHistoryId]);
+    return existsInFiltered ? dailyHistoryCreatedCardsExpandedId : null;
+  }, [dailyHistoryCreatedCardsExpandedId, dailyHistoryExpandedId, filteredDailyInsights]);
 
   const shouldIgnorePanStart = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
@@ -1536,6 +1560,9 @@ export function KanbanBoard({
         setDailyGenerating(true);
         setDailyOpen(true);
         setDailyTab("status");
+        // Sempre abrir colapsado no histórico (requisito do usuário).
+        setDailyHistoryExpandedId(null);
+        setDailyHistoryCreatedCardsExpandedId(null);
       }
     } catch {
       // Se houver lixo no storage, ignora silenciosamente.
@@ -1717,8 +1744,28 @@ export function KanbanBoard({
               </button>
               <button
                 onClick={() => {
+                  // Sempre colapsar histórico ao abrir o modal.
+                  setDailyHistoryExpandedId(null);
+                  setDailyHistoryCreatedCardsExpandedId(null);
+
+                  if (!dailyGenerating) {
+                    // Ao abrir uma execução nova, limpar contexto de entrada (requisito do usuário).
+                    setDailyTranscript("");
+                    setDailyFileName("Nenhum arquivo anexado");
+                    setDailySourceFileName("");
+                    setDailyLogs([]);
+                    setDailyStatusPhase("idle");
+                    setDailyTab("entrada");
+                    try {
+                      window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
+                    } catch {
+                      // ignore
+                    }
+                  } else {
+                    setDailyTab("status");
+                  }
+
                   setDailyOpen(true);
-                  if (dailyGenerating) setDailyTab("status");
                 }}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
@@ -2257,7 +2304,26 @@ export function KanbanBoard({
               <button
                 type="button"
                 className={`btn-bar ${dailyTab === "entrada" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
-                onClick={() => setDailyTab("entrada")}
+                onClick={() => {
+                  setDailyTab("entrada");
+                  // Sempre colapsar histórico ao iniciar "Nova Daily".
+                  setDailyHistoryExpandedId(null);
+                  setDailyHistoryCreatedCardsExpandedId(null);
+
+                  if (!dailyGenerating) {
+                    // Ao abrir uma execução nova: limpar contexto de entrada.
+                    setDailyTranscript("");
+                    setDailyFileName("Nenhum arquivo anexado");
+                    setDailySourceFileName("");
+                    setDailyLogs([]);
+                    setDailyStatusPhase("idle");
+                    try {
+                      window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                }}
               >
                 Nova Daily
               </button>
@@ -2324,14 +2390,22 @@ export function KanbanBoard({
                       Acompanhamento da geração
                     </div>
                     <div className="text-[11px] text-[var(--flux-text-muted)]">
-                      {dailyGenerating ? "Processando..." : dailyStatusPhase === "done" ? "Concluído" : dailyStatusPhase === "error" ? "Falha" : "Aguardando"}
+                      {dailyGenerating
+                        ? "Processando..."
+                        : dailyStatusPhase === "done"
+                          ? "Concluído"
+                          : dailyStatusPhase === "error"
+                            ? "Falha"
+                            : dailyStatusPhase === "idle"
+                              ? "Pronto"
+                              : "Aguardando"}
                     </div>
                   </div>
                   <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
                     <div
                       className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
                       style={{
-                        width: `${Math.max(6, Math.min(100, statusStepIndex * 25))}%`,
+                        width: `${dailyStatusPhase === "idle" ? 0 : Math.max(6, Math.min(100, statusStepIndex * 25))}%`,
                         opacity: dailyGenerating ? 0.95 : 0.8,
                       }}
                     />
@@ -2355,67 +2429,128 @@ export function KanbanBoard({
                     })}
                   </div>
                 </div>
-                {dailyLogs.length > 0 ? (
+                {dailyGenerating ? (
+                  dailyLogs.length > 0 ? (
+                    <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                          Log de conectividade com IA
+                        </div>
+                        <button
+                          type="button"
+                          className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                          onClick={() => setDailyLogs([])}
+                        >
+                          Limpar log
+                        </button>
+                      </div>
+                      <div className="max-h-40 overflow-auto space-y-1 scrollbar-flux">
+                        {dailyLogs.map((log, index) => {
+                          const dt = new Date(log.timestamp).toLocaleTimeString("pt-BR");
+                          const baseClass =
+                            log.status === "success"
+                              ? "text-[var(--flux-primary-light)]"
+                              : log.status === "error"
+                                ? "text-[#F97373]"
+                                : "text-[var(--flux-text-muted)]";
+                          return (
+                            <div
+                              key={`${log.timestamp}-${index}`}
+                              className="text-[11px] flex items-start gap-2"
+                            >
+                              <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">
+                                {dt}
+                              </span>
+                              <div className={`flex-1 ${baseClass} space-y-0.5`}>
+                                <div>{log.message}</div>
+                                {(log.provider || log.model) && (
+                                  <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                    {log.provider && <span>LLM: {log.provider}</span>}
+                                    {log.provider && log.model && <span> • </span>}
+                                    {log.model && <span>Modelo: {log.model}</span>}
+                                  </div>
+                                )}
+                                {log.errorKind && (
+                                  <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                    Erro IA: {log.errorKind}
+                                    {log.errorMessage ? ` - ${log.errorMessage}` : ""}
+                                  </div>
+                                )}
+                                {log.resultSnippet && (
+                                  <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-pre-wrap">
+                                    {log.resultSnippet}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[var(--flux-text-muted)] mt-4">
+                      O log aparecerá aqui assim que a geração for iniciada.
+                    </p>
+                  )
+                ) : (
                   <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                        Log de conectividade com IA
+                        Execucoes de status
                       </div>
-                      <button
-                        type="button"
-                        className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
-                        onClick={() => setDailyLogs([])}
-                      >
-                        Limpar log
-                      </button>
+                      <span className="text-[10px] text-[var(--flux-text-muted)]">Vinculado ao histórico</span>
                     </div>
-                    <div className="max-h-40 overflow-auto space-y-1 scrollbar-flux">
-                      {dailyLogs.map((log, index) => {
-                        const dt = new Date(log.timestamp).toLocaleTimeString("pt-BR");
-                        const baseClass =
-                          log.status === "success"
-                            ? "text-[var(--flux-primary-light)]"
-                            : log.status === "error"
-                              ? "text-[#F97373]"
-                              : "text-[var(--flux-text-muted)]";
-                        return (
-                          <div
-                            key={`${log.timestamp}-${index}`}
-                            className="text-[11px] flex items-start gap-2"
-                          >
-                            <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">
-                              {dt}
-                            </span>
-                            <div className={`flex-1 ${baseClass} space-y-0.5`}>
-                              <div>{log.message}</div>
-                              {(log.provider || log.model) && (
-                                <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                  {log.provider && <span>LLM: {log.provider}</span>}
-                                  {log.provider && log.model && <span> • </span>}
-                                  {log.model && <span>Modelo: {log.model}</span>}
+                    {dailyInsights.length ? (
+                      <div className="space-y-2">
+                        {dailyInsights.slice(0, 8).map((entry, idx) => {
+                          const insight = entry?.insight;
+                          const entryId = String(entry?.id || "");
+                          if (!entryId || !insight) return null;
+
+                          const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
+                          const label = generatedWithAi ? "Concluído" : "Concluído (heurístico)";
+                          const createdAt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
+                          const resumo = String(insight?.resumo || "").trim();
+                          const resumoShort = resumo.length > 120 ? `${resumo.slice(0, 120)}...` : resumo;
+
+                          return (
+                            <button
+                              key={entryId || idx}
+                              type="button"
+                              className="w-full text-left p-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] hover:border-[rgba(108,92,231,0.35)] hover:bg-[rgba(108,92,231,0.08)] transition-colors"
+                              onClick={() => openDailyHistoryFromStatusEntry(entryId)}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[11px] font-semibold text-[var(--flux-primary-light)]">{label}</span>
+                                    {generatedWithAi && (
+                                      <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
+                                        IA
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
+                                    {resumoShort || "Sem resumo"}
+                                  </div>
                                 </div>
-                              )}
-                              {log.errorKind && (
-                                <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                  Erro IA: {log.errorKind}
-                                  {log.errorMessage ? ` - ${log.errorMessage}` : ""}
+                                <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-nowrap">
+                                  {createdAt}
                                 </div>
-                              )}
-                              {log.resultSnippet && (
-                                <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-pre-wrap">
-                                  {log.resultSnippet}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              </div>
+                              <div className="mt-2 text-[10px] text-[var(--flux-text-muted)] underline underline-offset-2">
+                                Abrir no histórico
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--flux-text-muted)]">
+                        Nenhuma execução registrada ainda.
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-xs text-[var(--flux-text-muted)]">
-                    O status aparecerá aqui assim que a geração for iniciada.
-                  </p>
                 )}
               </div>
             ) : (
@@ -2491,7 +2626,16 @@ export function KanbanBoard({
                             <button
                               key={entry.id || idx}
                               type="button"
-                              onClick={() => setDailyHistoryExpandedId(String(entry.id || ""))}
+                              onClick={() => {
+                                const entryId = String(entry.id || "");
+                                if (!entryId) return;
+                                if (isActive) {
+                                  setDailyHistoryExpandedId(null);
+                                  setDailyHistoryCreatedCardsExpandedId(null);
+                                } else {
+                                  setDailyHistoryExpandedId(entryId);
+                                }
+                              }}
                               className={`w-full flex items-center justify-between gap-2 py-1.5 px-1.5 text-left transition-colors ${
                                 isActive
                                   ? "bg-[rgba(108,92,231,0.16)]"
@@ -2545,7 +2689,16 @@ export function KanbanBoard({
                         <button
                           type="button"
                           className="flex items-center gap-2 text-left"
-                          onClick={() => setDailyHistoryExpandedId(String(entry.id || ""))}
+                          onClick={() => {
+                            const entryId = String(entry.id || "");
+                            if (!entryId) return;
+                            if (isExpanded) {
+                              setDailyHistoryExpandedId(null);
+                              setDailyHistoryCreatedCardsExpandedId(null);
+                            } else {
+                              setDailyHistoryExpandedId(entryId);
+                            }
+                          }}
                         >
                           <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[0_0_10px_rgba(108,92,231,0.6)]" />
                           <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
@@ -2556,7 +2709,20 @@ export function KanbanBoard({
                             {isExpanded ? "▲ Aberto" : "▼ Expandir"}
                           </span>
                         </button>
-                        {!isExpanded && (
+                        {isExpanded ? (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDailyHistoryExpandedId(null);
+                              setDailyHistoryCreatedCardsExpandedId(null);
+                            }}
+                          >
+                            Colapsar
+                          </button>
+                        ) : (
                           <span className="text-[10px] text-[var(--flux-text-muted)]">
                             {sourceName}
                           </span>
