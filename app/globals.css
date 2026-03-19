@@ -364,10 +364,13 @@
 
 @layer components {
   .card-modal-backdrop {
-    animation: cardModalFadeIn 0.2s ease-out forwards;
+    animation: cardModalBackdropIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   .card-modal-content {
-    animation: cardModalSlideIn 0.25s cubic-bezier(0.18, 0.67, 0.6, 1.02) forwards;
+    animation: cardModalPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .card-modal-accent {
+    animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
 
   .modal-overlay-animate {
@@ -378,19 +381,48 @@
   }
 }
 
-@keyframes cardModalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes cardModalSlideIn {
+@keyframes cardModalBackdropIn {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cardModalPanelIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes cardModalAccentGlow {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.92;
+    filter: brightness(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-modal-backdrop,
+  .card-modal-content,
+  .card-modal-accent {
+    animation: none !important;
+  }
+  .card-modal-content {
+    filter: none !important;
   }
 }
 

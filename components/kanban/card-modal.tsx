@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import type { CardData, BucketConfig, CardLink } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
@@ -31,6 +31,38 @@ interface CardModalProps {
 
 const inputBase =
   "w-full px-4 py-3 border border-[rgba(255,255,255,0.12)] rounded-xl text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] transition-all duration-200 outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.25)] hover:border-[rgba(255,255,255,0.2)]";
+
+const sectionShell =
+  "rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(148deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.02)_45%,rgba(0,0,0,0.08)_100%)] p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-[border-color,box-shadow] duration-300 ease-out hover:border-[rgba(108,92,231,0.2)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_16px_48px_-20px_rgba(0,0,0,0.5)]";
+
+function CardModalSection({
+  title,
+  description,
+  headerRight,
+  children,
+}: {
+  title: string;
+  description?: string;
+  headerRight?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className={sectionShell}>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--flux-text-muted)]">
+            {title}
+          </h3>
+          {description ? (
+            <p className="mt-1 max-w-xl text-xs leading-relaxed text-[var(--flux-text-muted)]/90">{description}</p>
+          ) : null}
+        </div>
+        {headerRight ? <div className="shrink-0">{headerRight}</div> : null}
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
 
 export function CardModal({
   card,
@@ -322,15 +354,14 @@ export function CardModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4 card-modal-backdrop"
-    >
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl motion-safe:transition-[background-color] motion-safe:duration-300"
         aria-hidden
+        onClick={onClose}
       />
       <div
-        className="relative bg-[var(--flux-surface-card)] rounded-2xl w-full max-w-[720px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(0,0,0,0.5)] border border-[rgba(108,92,231,0.2)] scrollbar-kanban card-modal-content"
+        className="relative flex w-full max-w-[760px] flex-col overflow-hidden rounded-3xl border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_32px_96px_-24px_rgba(0,0,0,0.65),0_0_120px_-40px_rgba(108,92,231,0.35)] max-h-[min(90vh,880px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -339,44 +370,68 @@ export function CardModal({
         tabIndex={-1}
       >
         <div
-          className="h-1 rounded-t-2xl"
+          className="card-modal-accent h-[3px] shrink-0"
           style={{
-            background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary))",
+            background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary), var(--flux-primary))",
+            backgroundSize: "200% 100%",
           }}
         />
 
-        <div className="p-8">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <h2
-                id="card-modal-title"
-                className="font-display font-bold text-xl text-[var(--flux-text)] flex items-center gap-3"
-              >
-                {mode === "edit" ? "Editar Card" : "Novo Card"}
+        <header className="relative shrink-0 overflow-hidden border-b border-[rgba(255,255,255,0.06)] px-8 pb-5 pt-7">
+          <div
+            className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
+            style={{
+              background: "radial-gradient(circle at center, var(--flux-primary) 0%, transparent 68%)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -left-16 bottom-0 h-40 w-40 rounded-full opacity-[0.08] blur-3xl"
+            style={{
+              background: "radial-gradient(circle at center, var(--flux-secondary) 0%, transparent 70%)",
+            }}
+          />
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
+                  {mode === "edit" ? "Edição" : "Criação"}
+                </span>
                 {mode === "edit" && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]">
+                  <span className="inline-flex items-center rounded-full border border-[rgba(116,185,255,0.35)] bg-[rgba(116,185,255,0.1)] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--flux-info)]">
                     {card.id}
                   </span>
                 )}
+              </div>
+              <h2 id="card-modal-title" className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
+                {mode === "edit" ? "Editar card" : "Novo card"}
               </h2>
-              <p className="text-sm text-[var(--flux-text-muted)] mt-1">
+              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-[var(--flux-text-muted)]">
                 {mode === "edit"
-                  ? "Atualize as informações do card"
-                  : "Preencha os dados para criar um novo card"}
+                  ? "Ajuste identificação, conteúdo e status — as alterações refletem no quadro na hora."
+                  : "Defina o essencial agora; você pode refinar título, descrição e links depois."}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               ref={closeBtnRef}
-              className="w-10 h-10 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200 shrink-0"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] text-[var(--flux-text-muted)] motion-safe:transition-all motion-safe:duration-200 hover:border-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] motion-safe:hover:rotate-90 active:scale-95"
+              aria-label="Fechar"
             >
-              ×
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
+        </header>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 scrollbar-kanban">
           <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <CardModalSection
+              title="Identificação e coluna"
+              description="ID único e posição atual no fluxo do board."
+            >
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   ID
@@ -395,10 +450,10 @@ export function CardModal({
                       onClick={generateAiContextForCard}
                       disabled={!aiContextCanGenerate || aiContextBusy}
                       aria-label="Gerar contexto por IA"
-                      className={`w-10 h-10 rounded-xl border text-[var(--flux-primary-light)] flex items-center justify-center transition-all duration-200 shrink-0 ${
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[var(--flux-primary-light)] transition-all duration-200 motion-safe:active:scale-95 ${
                         !aiContextCanGenerate || aiContextBusy
-                          ? "opacity-45 cursor-not-allowed bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]"
-                          : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] hover:bg-[rgba(108,92,231,0.12)] hover:border-[rgba(108,92,231,0.40)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.10)]"
+                          ? "cursor-not-allowed border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] opacity-45"
+                          : "border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(108,92,231,0.45)] hover:bg-[rgba(108,92,231,0.14)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.12),0_8px_24px_-8px_rgba(108,92,231,0.25)]"
                       }`}
                       title="Contexto IA"
                     >
@@ -426,7 +481,12 @@ export function CardModal({
                 </select>
               </div>
             </div>
+            </CardModalSection>
 
+            <CardModalSection
+              title="Conteúdo principal"
+              description="Título no quadro e descrição em blocos — use o botão de IA quando quiser sugestões a partir do que já escreveu."
+            >
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Título
@@ -460,11 +520,11 @@ export function CardModal({
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                 Descrição
               </label>
-              <div className="rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[var(--flux-surface-mid)] p-3">
+              <div className="rounded-xl border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
                 <div className="space-y-3">
                   {DESCRIPTION_BLOCKS.map((block) => (
                     <div key={block.key}>
-                      <label className="block text-[11px] font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1.5 font-display">
+                      <label className="mb-1.5 block font-display text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                         {block.label}
                       </label>
                       <textarea
@@ -476,7 +536,7 @@ export function CardModal({
                         }}
                         placeholder={block.placeholder}
                         rows={3}
-                        className="w-full resize-y min-h-[90px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] leading-relaxed whitespace-pre-wrap outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] transition-all duration-200"
+                        className="min-h-[90px] w-full resize-y rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_rgba(108,92,231,0.12)] focus:ring-0 whitespace-pre-wrap"
                       />
                     </div>
                   ))}
@@ -496,8 +556,10 @@ export function CardModal({
                 </div>
               )}
             </div>
+            </CardModalSection>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <CardModalSection title="Status e prazo" description="Prioridade, estágio de trabalho e data alvo de conclusão.">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   Prioridade
@@ -542,11 +604,11 @@ export function CardModal({
                 />
               </div>
             </div>
+            </CardModalSection>
 
+            <CardModalSection title="Rótulos" description="Marque tags existentes ou crie novas para este board.">
             <div>
-              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                Rótulos
-              </label>
+              <label className="sr-only">Novo rótulo</label>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
