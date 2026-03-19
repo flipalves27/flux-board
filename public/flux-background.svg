@@ -1,0 +1,43 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#120F28"/>
+      <stop offset="1" stop-color="#090814"/>
+    </linearGradient>
+    <radialGradient id="glowPrimary" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(470 330) rotate(36.5) scale(610 380)">
+      <stop stop-color="#6C5CE7" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#6C5CE7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowSecondary" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 170) rotate(150) scale(520 290)">
+      <stop stop-color="#00D2D3" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#00D2D3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowAccent" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1300 780) rotate(178) scale(490 260)">
+      <stop stop-color="#FDA7DF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FDA7DF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <ellipse cx="470" cy="330" rx="610" ry="380" fill="url(#glowPrimary)"/>
+  <ellipse cx="1180" cy="170" rx="520" ry="290" fill="url(#glowSecondary)"/>
+  <ellipse cx="1300" cy="780" rx="490" ry="260" fill="url(#glowAccent)"/>
+
+  <g opacity="0.16" stroke-linecap="round">
+    <path d="M110 780C360 610 730 570 1000 640C1190 690 1370 790 1490 900" stroke="#A29BFE" stroke-width="1.5"/>
+    <path d="M80 680C390 480 780 420 1110 500C1280 540 1420 620 1540 730" stroke="#7EFCF6" stroke-width="1.2"/>
+    <path d="M230 860C500 730 850 730 1140 810C1280 850 1410 900 1510 960" stroke="#FDA7DF" stroke-width="1.2"/>
+  </g>
+
+  <g opacity="0.2">
+    <circle cx="290" cy="230" r="3" fill="#FFFFFF"/>
+    <circle cx="370" cy="170" r="2" fill="#7EFCF6"/>
+    <circle cx="700" cy="140" r="2" fill="#A29BFE"/>
+    <circle cx="980" cy="220" r="3" fill="#FFFFFF"/>
+    <circle cx="1270" cy="300" r="2" fill="#FDA7DF"/>
+    <circle cx="1410" cy="540" r="2.2" fill="#7EFCF6"/>
+    <circle cx="1120" cy="700" r="2" fill="#FFFFFF"/>
+    <circle cx="830" cy="820" r="2.4" fill="#A29BFE"/>
+    <circle cx="560" cy="760" r="2" fill="#FDA7DF"/>
+  </g>
+</svg>
