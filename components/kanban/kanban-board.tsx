@@ -237,11 +237,39 @@ export function KanbanBoard({
     const nowIso = new Date().toISOString();
     updateDb((prev) => {
       const bucketOrder = prev.config.bucketOrder || [];
+      const normalizeCardTitle = (value: string) =>
+        String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+      const existingCardTitles = new Set(prev.cards.map((c) => normalizeCardTitle(c.title)));
       const backlogKey =
         bucketOrder.find((b) => String(b.label || "").toLowerCase() === "backlog")?.key ||
         bucketOrder[0]?.key ||
         "Backlog";
-      const created = suggestions.map((s, idx) => {
+      const nextOrderByBucket: Record<string, number> = {};
+      const created: CardData[] = [];
+      const createdCardsPayload: Array<{
+        cardId: string;
+        title: string;
+        bucket: string;
+        priority: string;
+        progress: string;
+        desc: string;
+        tags: string[];
+        direction: string | null;
+        dueDate: string | null;
+        createdAt: string;
+        status: "created" | "existing";
+      }> = [];
+      let createdCount = 0;
+      let existingCount = 0;
+
+      suggestions.forEach((s, idx) => {
+        const normalizedTitle = normalizeCardTitle(s.titulo);
+        const alreadyExists = existingCardTitles.has(normalizedTitle);
         const lowerCol = String(s.coluna || "").trim().toLowerCase();
         const mapped = lowerCol
           ? bucketOrder.find(
@@ -251,51 +279,73 @@ export function KanbanBoard({
             )
           : null;
         const bucketKey = mapped ? mapped.key : backlogKey;
-        const nextOrd = prev.cards.filter((c) => c.bucket === bucketKey).length;
-        return {
-          id: `AI-${Date.now()}-${idx + 1}`,
+        if (!(bucketKey in nextOrderByBucket)) {
+          nextOrderByBucket[bucketKey] = prev.cards.filter((c) => c.bucket === bucketKey).length;
+        }
+        const cardPayload = {
+          cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
+          title: s.titulo,
           bucket: bucketKey,
           priority: normDailyPrio(s.prioridade),
           progress: normDailyProg(s.progresso),
-          title: s.titulo,
           desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
           tags: s.tags?.length ? s.tags : ["Reborn"],
-          links: [],
           direction: directions.map((d) => d.toLowerCase()).includes(String(s.direcionamento || "").toLowerCase())
             ? String(s.direcionamento).toLowerCase()
             : null,
           dueDate: s.dataConclusao || null,
-          order: nextOrd,
-        } as CardData;
+          createdAt: nowIso,
+          status: alreadyExists ? "existing" : "created",
+        };
+        if (!alreadyExists) {
+          created.push({
+            id: cardPayload.cardId,
+            bucket: cardPayload.bucket,
+            priority: cardPayload.priority,
+            progress: cardPayload.progress,
+            title: cardPayload.title,
+            desc: cardPayload.desc,
+            tags: cardPayload.tags,
+            links: [],
+            direction: cardPayload.direction,
+            dueDate: cardPayload.dueDate,
+            order: nextOrderByBucket[bucketKey]++,
+          } as CardData);
+          existingCardTitles.add(normalizedTitle);
+          createdCount++;
+        } else {
+          existingCount++;
+        }
+        createdCardsPayload.push(cardPayload);
       });
       const nextDailyInsights = Array.isArray(prev.dailyInsights)
         ? prev.dailyInsights.map((insightEntry) => {
             if (!entryId || insightEntry?.id !== entryId) return insightEntry;
             const previousCreated = Array.isArray(insightEntry.createdCards) ? insightEntry.createdCards : [];
-            const createdCardsPayload = created.map((card) => ({
-              cardId: card.id,
-              title: card.title,
-              bucket: card.bucket,
-              priority: card.priority,
-              progress: card.progress,
-              desc: card.desc,
-              tags: card.tags,
-              direction: card.direction,
-              dueDate: card.dueDate,
-              createdAt: nowIso,
-            }));
             return {
               ...insightEntry,
               createdCards: [...createdCardsPayload, ...previousCreated].slice(0, 100),
             };
           })
         : prev.dailyInsights;
+      window.setTimeout(() => {
+        if (createdCount > 0 && existingCount > 0) {
+          alert(
+            `${createdCount} card(s) criado(s) com sucesso. ${existingCount} item(ns) já existia(m) no board e foram apenas sinalizados.`
+          );
+          return;
+        }
+        if (createdCount > 0) {
+          alert(`${createdCount} card(s) criado(s) com sucesso.`);
+          return;
+        }
+        alert("Nenhum novo card criado. Todos os itens sugeridos já existem no board.");
+      }, 0);
       return { ...prev, cards: [...prev.cards, ...created], dailyInsights: nextDailyInsights };
     });
     if (entryId) {
       setDailyHistoryCreatedCardsExpandedId(entryId);
     }
-    alert(`${suggestions.length} card(s) criados automaticamente.`);
   };
 
   const loadDailyTranscriptFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -410,15 +460,6 @@ export function KanbanBoard({
       alert("Informe ou anexe a transcrição da daily.");
       return;
     }
-    const startedAt = new Date().toISOString();
-    setDailyLogs((prev) => [
-      {
-        timestamp: startedAt,
-        status: "start" as DailyLogStatus,
-        message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
-      },
-      ...prev,
-    ].slice(0, 50));
     setDailyGenerating(true);
     try {
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
@@ -471,9 +512,7 @@ export function KanbanBoard({
           timestamp: new Date().toISOString(),
           status: "success" as DailyLogStatus,
           message: generatedWithAI
-            ? `Resumo gerado com sucesso pela IA${providerName ? ` (${providerName})` : ""}${
-                modelName ? ` - modelo: ${modelName}` : ""
-              }.`
+            ? "Modelo gerado com sucesso."
             : "Resumo estruturado sem uso efetivo da IA (modo heurístico).",
           model: modelName || undefined,
           provider: providerName || undefined,
@@ -1395,11 +1434,11 @@ export function KanbanBoard({
                 </p>
                 {dailyGenerating && (
                   <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
-                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
-                      Integrando com LLM de IA para estruturar resumo e sugestões de cards...
+                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold animate-pulse">
+                      A IA esta analisando a transcricao e gerando o modelo para voce...
                     </p>
                     <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                      Isso pode levar alguns segundos dependendo do tamanho da transcrição.
+                      Aguarde um instante. Assim que finalizar, exibiremos o resultado pronto para revisao.
                     </p>
                   </div>
                 )}
@@ -1424,7 +1463,7 @@ export function KanbanBoard({
                     Fechar
                   </button>
                   <button className="btn-primary" onClick={generateDailyInsight} disabled={dailyGenerating}>
-                    {dailyGenerating ? "Integrando com IA..." : "Gerar resumo prático"}
+                    {dailyGenerating ? "Analisando e gerando com IA..." : "Gerar resumo prático"}
                   </button>
                 </div>
                 {dailyLogs.length > 0 && (
@@ -1787,6 +1826,11 @@ export function KanbanBoard({
                                     >
                                       <div className="text-xs font-semibold text-[var(--flux-text)]">
                                         {createdCard.title || "Sem título"}
+                                        {createdCard.status === "existing" && (
+                                          <span className="ml-2 text-[10px] font-bold px-1.5 py-[1px] rounded-full border border-[rgba(255,217,61,0.3)] text-[#F59E0B] bg-[rgba(255,217,61,0.12)]">
+                                            Card ja existente
+                                          </span>
+                                        )}
                                       </div>
                                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
                                         ID: {createdCard.cardId} • Coluna: {createdCard.bucket} • Prioridade: {createdCard.priority} •

@@ -61,6 +61,7 @@ export interface DailyCreatedCard {
   direction?: string | null;
   dueDate?: string | null;
   createdAt?: string;
+  status?: "created" | "existing";
 }
 
 export interface DailyInsightEntry {
