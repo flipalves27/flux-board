@@ -28,7 +28,7 @@ type LlmInsightResult = {
   provider?: string;
   // Campos auxiliares para log de conectividade com IA (expostos apenas na resposta HTTP)
   rawContent?: string;
-  errorKind?: "no_api_key" | "http_error" | "network_error" | "parse_error";
+  errorKind?: "no_api_key" | "no_model" | "http_error" | "network_error" | "parse_error";
   errorMessage?: string;
 };
 
@@ -308,8 +308,17 @@ async function llmInsight(args: {
     process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1"
   ).replace(/\/+$/, "");
 
-  // Permite sobrescrever o modelo; default alinhado ao exemplo solicitado.
-  const model = process.env.TOGETHER_MODEL || "google/gemma-3n-E4B-it";
+  // O modelo precisa vir de variável de ambiente (ex.: Vercel).
+  const model = process.env.TOGETHER_MODEL;
+  if (!model) {
+    return {
+      insight: heuristicInsight(args.transcript),
+      generatedWithAI: false,
+      provider: "together.ai",
+      errorKind: "no_model",
+      errorMessage: "TOGETHER_MODEL não configurada. Defina no ambiente (ex.: Vercel). Usando modo heurístico.",
+    };
+  }
 
   const prompt = [
     "Você é um PM técnico sênior.",
