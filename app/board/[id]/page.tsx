@@ -66,6 +66,10 @@ export interface DailyInsightEntry {
   sourceFileName?: string;
   insight?: DailyInsightPayload;
   createdCards?: DailyCreatedCard[];
+  generationMeta?: {
+    usedLlm?: boolean;
+    model?: string;
+  };
 }
 
 export interface CardData {

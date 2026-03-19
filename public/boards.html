@@ -45,6 +45,8 @@ body{font-family:var(--font-b);background:var(--off);color:var(--g700);min-heigh
 .modal .form-label{display:block;font-size:.7rem;font-weight:600;color:var(--g600);margin-bottom:.3rem}
 .modal .form-input{width:100%;padding:.5rem;border:1.5px solid var(--g200);border-radius:8px;font-size:.9rem}
 .modal .form-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+.custom-tooltip-fallback{pointer-events:none;position:fixed;z-index:9999;max-width:260px;border-radius:8px;border:1px solid rgba(0,201,183,.35);background:rgba(10,31,63,.95);padding:.35rem .6rem;font-size:11px;font-weight:500;line-height:1.35;color:var(--white);box-shadow:0 10px 30px rgba(0,0,0,.35);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .12s ease}
+.custom-tooltip-fallback.show{opacity:1;visibility:visible}
 </style>
 </head>
 <body>
@@ -77,6 +79,113 @@ body{font-family:var(--font-b);background:var(--off);color:var(--g700);min-heigh
 
 <script>
 const AUTH_KEY = "reborn_auth";
+const TOOLTIP_DATA_ATTR = "data-tooltip-content";
+let _tooltipEl = null, _tooltipAnchor = null;
+
+function getTooltipCoords(triggerRect, tooltipRect, offset) {
+  return {
+    top: triggerRect.top - tooltipRect.height - offset,
+    left: triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2
+  };
+}
+
+function clampTooltipToViewport(coords, tooltipRect, padding) {
+  const maxLeft = window.innerWidth - tooltipRect.width - padding;
+  const maxTop = window.innerHeight - tooltipRect.height - padding;
+  return {
+    left: Math.min(Math.max(coords.left, padding), Math.max(maxLeft, padding)),
+    top: Math.min(Math.max(coords.top, padding), Math.max(maxTop, padding))
+  };
+}
+
+function getTooltipTarget(el) {
+  if (!el || !el.closest) return null;
+  return el.closest(`[title],[${TOOLTIP_DATA_ATTR}]`);
+}
+
+function hoistNativeTitle(el) {
+  if (!el) return "";
+  const nativeTitle = el.getAttribute("title");
+  if (nativeTitle) {
+    el.setAttribute(TOOLTIP_DATA_ATTR, nativeTitle);
+    el.removeAttribute("title");
+    if (!el.getAttribute("aria-label") && !el.getAttribute("aria-labelledby")) {
+      el.setAttribute("aria-label", nativeTitle);
+    }
+  }
+  return (el.getAttribute(TOOLTIP_DATA_ATTR) || "").trim();
+}
+
+function ensureTooltipEl() {
+  if (_tooltipEl) return _tooltipEl;
+  const el = document.createElement("div");
+  el.className = "custom-tooltip-fallback";
+  el.setAttribute("role", "tooltip");
+  document.body.appendChild(el);
+  _tooltipEl = el;
+  return el;
+}
+
+function hideCustomTooltip() {
+  if (!_tooltipEl) return;
+  _tooltipEl.classList.remove("show");
+  _tooltipEl.style.top = "-9999px";
+  _tooltipEl.style.left = "-9999px";
+  _tooltipAnchor = null;
+}
+
+function updateCustomTooltipPosition() {
+  if (!_tooltipEl || !_tooltipAnchor) return;
+  const triggerRect = _tooltipAnchor.getBoundingClientRect();
+  const tooltipRect = _tooltipEl.getBoundingClientRect();
+  const next = getTooltipCoords(triggerRect, tooltipRect, 10);
+  const clamped = clampTooltipToViewport(next, tooltipRect, 8);
+  _tooltipEl.style.top = clamped.top + "px";
+  _tooltipEl.style.left = clamped.left + "px";
+}
+
+function showCustomTooltip(anchor, text) {
+  const value = (text || "").trim();
+  if (!anchor || !value) { hideCustomTooltip(); return; }
+  const tooltip = ensureTooltipEl();
+  _tooltipAnchor = anchor;
+  tooltip.textContent = value;
+  tooltip.classList.add("show");
+  updateCustomTooltipPosition();
+}
+
+function initCustomTooltipFallback() {
+  document.querySelectorAll("[title]").forEach((el) => { hoistNativeTitle(el); });
+  document.addEventListener("pointerover", (e) => {
+    const target = getTooltipTarget(e.target);
+    if (!target) { hideCustomTooltip(); return; }
+    const text = hoistNativeTitle(target);
+    if (!text) { hideCustomTooltip(); return; }
+    showCustomTooltip(target, text);
+  });
+  document.addEventListener("pointerout", (e) => {
+    if (!_tooltipAnchor) return;
+    const next = e.relatedTarget;
+    if (next && _tooltipAnchor.contains(next)) return;
+    hideCustomTooltip();
+  });
+  document.addEventListener("focusin", (e) => {
+    const target = getTooltipTarget(e.target);
+    if (!target) { hideCustomTooltip(); return; }
+    const text = hoistNativeTitle(target);
+    if (!text) { hideCustomTooltip(); return; }
+    showCustomTooltip(target, text);
+  });
+  document.addEventListener("focusout", (e) => {
+    if (!_tooltipAnchor) return;
+    const next = e.relatedTarget;
+    if (next && _tooltipAnchor.contains(next)) return;
+    hideCustomTooltip();
+  });
+  document.addEventListener("scroll", () => { if (_tooltipAnchor) updateCustomTooltipPosition(); }, true);
+  window.addEventListener("resize", () => { if (_tooltipAnchor) updateCustomTooltipPosition(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideCustomTooltip(); });
+}
 
 function getAuth() {
   const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
@@ -209,6 +318,7 @@ function logout() {
 
 if (redirectLogin()) {}
 else {
+  initCustomTooltipFallback();
   const auth = getAuth();
   document.getElementById("user-name").textContent = auth?.user?.name || auth?.user?.username || "Usuário";
   if (auth?.user?.isAdmin) document.getElementById("link-admin").style.display = "inline-block";

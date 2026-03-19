@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme-context";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -167,16 +168,17 @@ export function Sidebar() {
 
       {/* Theme + Logout */}
       <div className="p-2.5 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-0.5 shrink-0">
-        <button
-          type="button"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display overflow-hidden
+        <CustomTooltip content={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"} position="right">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display overflow-hidden
             bg-transparent text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-primary)]`}
-          title={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"}
-        >
-          {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
-          {!collapsed && <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>}
-        </button>
+          >
+            {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
+            {!collapsed && <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>}
+          </button>
+        </CustomTooltip>
         <button
           type="button"
           onClick={logout}

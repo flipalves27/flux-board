@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { KanbanCard } from "./kanban-card";
 import type { CardData, BucketConfig } from "@/app/board/[id]/page";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 interface KanbanColumnProps {
   bucket: BucketConfig;
@@ -75,23 +76,24 @@ export function KanbanColumn({
       } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
     >
       {collapsed ? (
-        <div
-          ref={setBucketRef}
-          {...attributes}
-          {...listeners}
-          className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
-          onClick={onToggleCollapse}
-          title={`${bucket.label} – ${cards.length} card(s). Clique para expandir.`}
-        >
+        <CustomTooltip content={`${bucket.label} - ${cards.length} card(s). Clique para expandir.`} position="right">
           <div
-            className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
-            style={{ background: bucket.color || "#9B97C2" }}
-            aria-hidden
-          />
-          <span className="font-display font-bold text-sm text-[var(--flux-text)] tabular-nums">
-            {cards.length}
-          </span>
-        </div>
+            ref={setBucketRef}
+            {...attributes}
+            {...listeners}
+            className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+            onClick={onToggleCollapse}
+          >
+            <div
+              className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
+              style={{ background: bucket.color || "#9B97C2" }}
+              aria-hidden
+            />
+            <span className="font-display font-bold text-sm text-[var(--flux-text)] tabular-nums">
+              {cards.length}
+            </span>
+          </div>
+        </CustomTooltip>
       ) : (
         <>
       <div
@@ -113,53 +115,61 @@ export function KanbanColumn({
           {cards.length}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddCard();
-            }}
-            className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-            title="Novo Card"
-          >
-            +
-          </button>
-          {onRenameColumn && (
+          <CustomTooltip content="Novo card" position="top">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onRenameColumn();
+                onAddCard();
               }}
               className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-              title="Renomear coluna"
+              aria-label="Novo card"
             >
-              ✎
+              +
             </button>
+          </CustomTooltip>
+          {onRenameColumn && (
+            <CustomTooltip content="Renomear coluna" position="top">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRenameColumn();
+                }}
+                className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                aria-label="Renomear coluna"
+              >
+                ✎
+              </button>
+            </CustomTooltip>
           )}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleCollapse();
-            }}
-            className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-            title={collapsed ? "Expandir" : "Recolher"}
-          >
-            ◂
-          </button>
-          {onDeleteColumn && (
+          <CustomTooltip content={collapsed ? "Expandir coluna" : "Recolher coluna"} position="top">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onDeleteColumn();
+                onToggleCollapse();
               }}
-              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-              title="Excluir coluna"
+              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+              aria-label={collapsed ? "Expandir coluna" : "Recolher coluna"}
             >
-              ×
+              ◂
             </button>
+          </CustomTooltip>
+          {onDeleteColumn && (
+            <CustomTooltip content="Excluir coluna" position="top">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteColumn();
+                }}
+                className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                aria-label="Excluir coluna"
+              >
+                ×
+              </button>
+            </CustomTooltip>
           )}
         </div>
       </div>

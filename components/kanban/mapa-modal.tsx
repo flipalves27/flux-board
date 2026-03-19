@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 interface MapaItem {
   papel: string;
@@ -239,13 +240,13 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                       {getOpInfo(d.operacoes).map((op, j) => {
                         const info = VALIDACOES_INTEGRADAS.find((v) => v.id === op.key);
                         return (
-                          <span
-                            key={j}
-                            title={info?.descricao}
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border ${opBadgeClass(op.key)} cursor-help`}
-                          >
-                            {op.label}
-                          </span>
+                          <CustomTooltip key={j} content={info?.descricao || ""} disabled={!info?.descricao}>
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border ${opBadgeClass(op.key)} cursor-help`}
+                            >
+                              {op.label}
+                            </span>
+                          </CustomTooltip>
                         );
                       })}
                     </div>

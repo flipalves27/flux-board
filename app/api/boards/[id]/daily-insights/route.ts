@@ -17,6 +17,12 @@ type InsightResult = {
   pendencias: string[];
 };
 
+type LlmInsightResult = {
+  insight: InsightResult;
+  generatedWithAI: boolean;
+  model?: string;
+};
+
 function normalizeList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -126,9 +132,11 @@ async function llmInsight(args: {
   bucketLabels: string[];
   cardSnippets: string[];
   transcript: string;
-}): Promise<InsightResult> {
+}): Promise<LlmInsightResult> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return heuristicInsight(args.transcript);
+  if (!apiKey) {
+    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
+  }
 
   const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
@@ -169,7 +177,7 @@ async function llmInsight(args: {
   });
 
   if (!response.ok) {
-    return heuristicInsight(args.transcript);
+    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
   }
 
   const data = (await response.json()) as {
@@ -177,9 +185,13 @@ async function llmInsight(args: {
   };
   const content = data.choices?.[0]?.message?.content || "{}";
   try {
-    return safeInsight(JSON.parse(content));
+    return {
+      insight: safeInsight(JSON.parse(content)),
+      generatedWithAI: true,
+      model,
+    };
   } catch {
-    return heuristicInsight(args.transcript);
+    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
   }
 }
 
@@ -234,7 +246,7 @@ export async function POST(
       )} | ${String(rec.desc || "").slice(0, 220)}`;
     });
 
-    const insight = await llmInsight({
+    const llmResult = await llmInsight({
       boardName: board.name || "Board",
       bucketLabels,
       cardSnippets,
@@ -248,7 +260,11 @@ export async function POST(
       createdAt: now,
       transcript: transcript.slice(0, 15000),
       sourceFileName: sourceFileName || undefined,
-      insight,
+      insight: llmResult.insight,
+      generationMeta: {
+        usedLlm: llmResult.generatedWithAI,
+        model: llmResult.generatedWithAI ? llmResult.model : undefined,
+      },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
     await updateBoard(boardId, { dailyInsights });

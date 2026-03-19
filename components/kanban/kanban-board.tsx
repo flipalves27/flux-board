@@ -19,6 +19,7 @@ import { CardModal } from "./card-modal";
 import { MapaModal } from "./mapa-modal";
 import { DescModal } from "./desc-modal";
 import type { BoardData, CardData, DailyInsightEntry } from "@/app/board/[id]/page";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 interface KanbanBoardProps {
   db: BoardData;
@@ -294,8 +295,12 @@ export function KanbanBoard({
     const corrigir = Array.isArray(insight?.corrigir) ? insight?.corrigir : [];
     const pendencias = Array.isArray(insight?.pendencias) ? insight?.pendencias : [];
     const curated = String(insight?.contextoOrganizado || "").trim();
+    const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
+    const modelName = String(entry?.generationMeta?.model || "").trim();
     const blocks = [
       `Resumo Daily IA${dt ? ` - ${dt}` : ""}`,
+      "",
+      generatedWithAi ? `Texto aprimorado por IA${modelName ? ` (${modelName})` : ""}` : "Texto estruturado automaticamente",
       "",
       `Arquivo de origem: ${String(entry?.sourceFileName || "Transcrição colada no modal")}`,
       "",
@@ -820,20 +825,22 @@ export function KanbanBoard({
         style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
       >
         <div className="w-full px-5 sm:px-6 lg:px-8 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setPriorityBarVisible((v) => !v)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
-            title={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
-          >
-            <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
-            <span
-              className={`inline-block text-[10px] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
-              aria-hidden
+          <CustomTooltip content={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"} position="bottom">
+            <button
+              type="button"
+              onClick={() => setPriorityBarVisible((v) => !v)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
+              aria-label={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
             >
-              ▼
-            </span>
-          </button>
+              <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
+              <span
+                className={`inline-block text-[10px] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
+                aria-hidden
+              >
+                ▼
+              </span>
+            </button>
+          </CustomTooltip>
           {priorityBarVisible && (
             <>
               <div className="flex items-center gap-1 flex-wrap">
@@ -982,18 +989,20 @@ export function KanbanBoard({
               />
             ))}
           </SortableContext>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingColumnKey(null);
-              setNewColumnName("");
-              setAddColumnOpen(true);
-            }}
-            className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
-            title="Nova coluna"
-          >
-            <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
-          </button>
+          <CustomTooltip content="Nova coluna" position="right">
+            <button
+              type="button"
+              onClick={() => {
+                setEditingColumnKey(null);
+                setNewColumnName("");
+                setAddColumnOpen(true);
+              }}
+              className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
+              aria-label="Nova coluna"
+            >
+              <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
+            </button>
+          </CustomTooltip>
 
           <DragOverlay
             dropAnimation={{
@@ -1332,6 +1341,8 @@ export function KanbanBoard({
                     ? dailyHistoryExpandedId === entry.id
                     : idx === 0;
                   const sourceName = String(entry.sourceFileName || "Transcrição manual");
+                  const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
+                  const aiModel = String(entry?.generationMeta?.model || "").trim();
                   return (
                     <div key={entry.id || idx} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1365,12 +1376,29 @@ export function KanbanBoard({
                         Fonte: {sourceName}
                         {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
                       </p>
+                      {generatedWithAi && (
+                        <CustomTooltip content="Conteudo reescrito e estruturado por IA a partir da transcricao.">
+                          <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
+                              Texto gerado com IA{aiModel ? ` • ${aiModel}` : ""}
+                            </span>
+                          </div>
+                        </CustomTooltip>
+                      )}
                       <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
                       {isExpanded && (
                         <>
                           <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
-                            <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                              Contexto organizado
+                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                              <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                                Contexto organizado
+                              </div>
+                              {generatedWithAi && (
+                                <div className="text-[10px] font-semibold text-[var(--flux-primary-light)]/90">
+                                  Organizado por IA
+                                </div>
+                              )}
                             </div>
                             <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">
                               {String(insight.contextoOrganizado || "Sem contexto organizado para este resumo.")}

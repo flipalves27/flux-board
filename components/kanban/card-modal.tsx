@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { CardData, BucketConfig, CardLink } from "@/app/board/[id]/page";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 interface CardModalProps {
   card: CardData;
@@ -294,15 +295,16 @@ export function CardModal({
                     >
                       {t}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteLabel(t)}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
-                      title={`Excluir rótulo "${t}"`}
-                      aria-label={`Excluir rótulo ${t}`}
-                    >
-                      ×
-                    </button>
+                    <CustomTooltip content={`Excluir rótulo "${t}"`}>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLabel(t)}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
+                        aria-label={`Excluir rótulo ${t}`}
+                      >
+                        ×
+                      </button>
+                    </CustomTooltip>
                   </div>
                 ))}
               </div>
@@ -359,24 +361,26 @@ export function CardModal({
                         className="w-32 shrink-0 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                       />
                       {link.url.trim() ? (
-                        <a
-                          href={link.url.trim()}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.15)] transition-colors shrink-0"
-                          title="Visualizar link"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                        </a>
+                        <CustomTooltip content="Visualizar link">
+                          <a
+                            href={link.url.trim()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.15)] transition-colors shrink-0"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </a>
+                        </CustomTooltip>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setLinks((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)] transition-colors opacity-70 group-hover:opacity-100"
-                        title="Remover link"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      <CustomTooltip content="Remover link">
+                        <button
+                          type="button"
+                          onClick={() => setLinks((prev) => prev.filter((_, i) => i !== idx))}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)] transition-colors opacity-70 group-hover:opacity-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </CustomTooltip>
                     </li>
                   ))
                 )}
