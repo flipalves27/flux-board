@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useToast } from "@/context/toast-context";
 
 interface DiscoveryItem {
   id: string;
@@ -24,6 +25,7 @@ const DISCOVERIES: DiscoveryItem[] = [
 export default function DiscoveryHomePage() {
   const router = useRouter();
   const { user, isChecked } = useAuth();
+  const { pushToast } = useToast();
 
   useEffect(() => {
     if (!isChecked) return;
@@ -43,7 +45,7 @@ export default function DiscoveryHomePage() {
       <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
         <button
           type="button"
-          onClick={() => alert("Criação de novos Discoverys em breve.")}
+          onClick={() => pushToast({ kind: "info", title: "Criação de novos Discoverys em breve." })}
           className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[rgba(108,92,231,0.3)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[rgba(108,92,231,0.08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
         >
           + Novo Discovery

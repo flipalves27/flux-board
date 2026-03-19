@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { CardData, BucketConfig, CardLink } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/context/toast-context";
 
 interface CardModalProps {
   card: CardData;
@@ -45,6 +48,20 @@ export function CardModal({
   const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const { pushToast } = useToast();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  useModalA11y({
+    // Evita conflitos de focus trap quando abrimos o ConfirmDialog.
+    open: !confirmDeleteOpen,
+    onClose,
+    containerRef: dialogRef,
+    initialFocusRef: closeBtnRef,
+  });
+
   useEffect(() => {
     setId(card.id);
     setTitle(card.title);
@@ -70,7 +87,7 @@ export function CardModal({
   const handleSave = () => {
     const t = title.trim();
     if (!t) {
-      alert("Informe o título.");
+      pushToast({ kind: "error", title: "Informe o título." });
       return;
     }
     const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
@@ -117,6 +134,11 @@ export function CardModal({
       <div
         className="relative bg-[var(--flux-surface-card)] rounded-2xl w-full max-w-[720px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(0,0,0,0.5)] border border-[rgba(108,92,231,0.2)] scrollbar-kanban card-modal-content"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="card-modal-title"
+        tabIndex={-1}
       >
         <div
           className="h-1 rounded-t-2xl"
@@ -128,7 +150,10 @@ export function CardModal({
         <div className="p-8">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
-              <h2 className="font-display font-bold text-xl text-[var(--flux-text)] flex items-center gap-3">
+              <h2
+                id="card-modal-title"
+                className="font-display font-bold text-xl text-[var(--flux-text)] flex items-center gap-3"
+              >
                 {mode === "edit" ? "Editar Card" : "Novo Card"}
                 {mode === "edit" && (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]">
@@ -145,6 +170,7 @@ export function CardModal({
             <button
               type="button"
               onClick={onClose}
+              ref={closeBtnRef}
               className="w-10 h-10 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200 shrink-0"
             >
               ×
@@ -393,10 +419,7 @@ export function CardModal({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm("Excluir este card?")) {
-                    onDelete(card.id);
-                    onClose();
-                  }
+                  setConfirmDeleteOpen(true);
                 }}
                 className="mr-auto btn-danger"
               >
@@ -411,6 +434,20 @@ export function CardModal({
             </button>
           </div>
         </div>
+        <ConfirmDialog
+          open={confirmDeleteOpen}
+          title="Excluir este card?"
+          description="Esta ação não pode ser desfeita."
+          intent="danger"
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onCancel={() => setConfirmDeleteOpen(false)}
+          onConfirm={() => {
+            onDelete?.(card.id);
+            setConfirmDeleteOpen(false);
+            onClose();
+          }}
+        />
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/context/toast-context";
 
 interface UserRow {
   id: string;
@@ -26,6 +28,8 @@ export default function UsersPage() {
   const [formEmail, setFormEmail] = useState("");
   const [formPwd, setFormPwd] = useState("");
   const [formError, setFormError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const { pushToast } = useToast();
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -116,13 +120,7 @@ export default function UsersPage() {
   }
 
   async function deleteUser(id: string, name: string) {
-    if (!confirm(`Excluir o usuário "${name}"? Esta ação não pode ser desfeita.`)) return;
-    try {
-      await apiDelete(`/api/users/${id}`, getHeaders());
-      loadUsers();
-    } catch {
-      alert("Erro ao excluir.");
-    }
+    setConfirmDelete({ id, name });
   }
 
   if (!user) return null;
@@ -280,6 +278,26 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={confirmDelete ? `Excluir o usuário "${confirmDelete.name}"?` : ""}
+        description="Esta ação não pode ser desfeita."
+        intent="danger"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await apiDelete(`/api/users/${confirmDelete.id}`, getHeaders());
+            setConfirmDelete(null);
+            loadUsers();
+          } catch {
+            pushToast({ kind: "error", title: "Erro ao excluir." });
+          }
+        }}
+      />
     </div>
   );
 }

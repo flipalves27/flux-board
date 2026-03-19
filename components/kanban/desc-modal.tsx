@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { CardData } from "@/app/board/[id]/page";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
 
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 920;
@@ -21,6 +22,15 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
   const [resizing, setResizing] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
   const resizeStart = useRef({ x: 0, w: 0 });
+
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  useModalA11y({
+    open: true,
+    onClose,
+    containerRef: panelRef,
+    initialFocusRef: closeBtnRef,
+  });
 
   useEffect(() => {
     setDesc(card.desc || "");
@@ -80,6 +90,8 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
     >
       <div
         className="relative bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl min-h-[280px] max-h-[90vh] overflow-hidden shadow-xl modal-content-animate flex flex-col"
+        ref={panelRef}
+        tabIndex={-1}
         style={{
           width: modalWidth,
           transform: `translate(${position.x}px, ${position.y}px)`,
@@ -108,6 +120,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
           <button
             type="button"
             onClick={onClose}
+            ref={closeBtnRef}
             className="w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-colors flex-shrink-0 cursor-pointer"
             aria-label="Fechar"
           >

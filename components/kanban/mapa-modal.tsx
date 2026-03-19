@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
 
 interface MapaItem {
   papel: string;
@@ -104,6 +105,15 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
   );
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  useModalA11y({
+    open: true,
+    onClose,
+    containerRef: dialogRef,
+    initialFocusRef: closeBtnRef,
+  });
+
   const update = (idx: number, field: keyof MapaItem, value: string) => {
     setData((prev) => {
       const next = [...prev];
@@ -126,10 +136,16 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
       <div
         className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl w-full max-w-[960px] max-h-[90vh] overflow-y-auto shadow-xl relative modal-content-animate"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mapa-modal-title"
+        tabIndex={-1}
       >
         <button
           type="button"
           onClick={onClose}
+          ref={closeBtnRef}
           className="absolute top-4 right-4 w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200"
         >
           ×
@@ -140,7 +156,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
             <span className="bg-[var(--flux-primary)] text-white px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide font-display">
               VISÃO EXECUTIVA
             </span>
-            <span className="font-display font-bold text-xl text-[var(--flux-text)]">
+            <span id="mapa-modal-title" className="font-display font-bold text-xl text-[var(--flux-text)]">
               Mapa de Produção — Flux-Board
             </span>
           </div>

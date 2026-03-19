@@ -20,6 +20,9 @@ import { MapaModal } from "./mapa-modal";
 import { DescModal } from "./desc-modal";
 import type { BoardData, CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/context/toast-context";
 
 interface KanbanBoardProps {
   db: BoardData;
@@ -138,6 +141,50 @@ export function KanbanBoard({
   const [dailyHistoryDateTo, setDailyHistoryDateTo] = useState("");
   const [dailyHistorySearchQuery, setDailyHistorySearchQuery] = useState("");
 
+  const { pushToast } = useToast();
+
+  const [dailyDeleteConfirmId, setDailyDeleteConfirmId] = useState<string | null>(null);
+  const [csvImportMode, setCsvImportMode] = useState<"replace" | "merge">("replace");
+  const [csvImportConfirm, setCsvImportConfirm] = useState<{
+    count: number;
+    cards: CardData[];
+    mode: "replace" | "merge";
+    sameIdCount: number;
+  } | null>(null);
+  const anyConfirmOpen = Boolean(dailyDeleteConfirmId || csvImportConfirm);
+
+  const dailyRequestSeqRef = useRef(0);
+  const dailyAbortControllerRef = useRef<AbortController | null>(null);
+  const dailyInFlightRef = useRef(false);
+  const DAILY_INSIGHT_TIMEOUT_MS = 60000;
+
+  const addColumnDialogRef = useRef<HTMLDivElement | null>(null);
+  const addColumnInputRef = useRef<HTMLInputElement | null>(null);
+  useModalA11y({
+    open: addColumnOpen,
+    onClose: () => setAddColumnOpen(false),
+    containerRef: addColumnDialogRef,
+    initialFocusRef: addColumnInputRef,
+  });
+
+  const confirmDeleteDialogRef = useRef<HTMLDivElement | null>(null);
+  const confirmDeleteCancelRef = useRef<HTMLButtonElement | null>(null);
+  useModalA11y({
+    open: Boolean(confirmDelete),
+    onClose: () => setConfirmDelete(null),
+    containerRef: confirmDeleteDialogRef,
+    initialFocusRef: confirmDeleteCancelRef,
+  });
+
+  const dailyDialogRef = useRef<HTMLDivElement | null>(null);
+  const dailyCloseRef = useRef<HTMLButtonElement | null>(null);
+  useModalA11y({
+    open: dailyOpen && !anyConfirmOpen,
+    onClose: () => setDailyOpen(false),
+    containerRef: dailyDialogRef,
+    initialFocusRef: dailyCloseRef,
+  });
+
   const buckets = db.config.bucketOrder;
   const boardLabels =
     db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
@@ -246,12 +293,12 @@ export function KanbanBoard({
   const createCardsFromInsight = (entryId?: string) => {
     const entry = entryId ? dailyInsights.find((x) => x?.id === entryId) : dailyInsights[0];
     if (!entry?.insight) {
-      alert("Resumo não encontrado.");
+      pushToast({ kind: "error", title: "Resumo não encontrado." });
       return;
     }
     const suggestions = getDailyCreateSuggestions(entry);
     if (!suggestions.length) {
-      alert("Não há itens em 'Criar' para transformar em card.");
+      pushToast({ kind: "error", title: "Não há itens em 'Criar' para transformar em card." });
       return;
     }
     const nowIso = new Date().toISOString();
@@ -338,16 +385,22 @@ export function KanbanBoard({
         : prev.dailyInsights;
       window.setTimeout(() => {
         if (createdCount > 0 && existingCount > 0) {
-          alert(
-            `${createdCount} card(s) criado(s) com sucesso. ${existingCount} item(ns) já existia(m) no board e foram apenas sinalizados.`
-          );
+          pushToast({
+            kind: "success",
+            title: `${createdCount} card(s) criado(s) com sucesso.`,
+            description: `${existingCount} item(ns) já existia(m) no board e foram apenas sinalizados.`,
+          });
           return;
         }
         if (createdCount > 0) {
-          alert(`${createdCount} card(s) criado(s) com sucesso.`);
+          pushToast({ kind: "success", title: `${createdCount} card(s) criado(s) com sucesso.` });
           return;
         }
-        alert("Nenhum novo card criado. Todos os itens sugeridos já existem no board.");
+        pushToast({
+          kind: "info",
+          title: "Nenhum novo card criado.",
+          description: "Todos os itens sugeridos já existem no board.",
+        });
       }, 0);
       return { ...prev, cards: [...prev.cards, ...created], dailyInsights: nextDailyInsights };
     });
@@ -376,8 +429,7 @@ export function KanbanBoard({
     setDailySourceFileName("");
   };
 
-  const deleteDailyHistoryEntry = (entryId: string) => {
-    if (!confirm("Excluir este resumo do histórico da Daily IA?")) return;
+  const performDeleteDailyHistoryEntry = (entryId: string) => {
     const nextEntry = dailyInsights.find((entry) => entry?.id && entry.id !== entryId);
     updateDb((prev) => ({
       ...prev,
@@ -387,6 +439,10 @@ export function KanbanBoard({
     if (dailyHistoryCreatedCardsExpandedId === entryId) {
       setDailyHistoryCreatedCardsExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
     }
+  };
+
+  const deleteDailyHistoryEntry = (entryId: string) => {
+    setDailyDeleteConfirmId(entryId);
   };
 
   const buildDailyContextDoc = (entry: DailyInsightEntry) => {
@@ -450,27 +506,35 @@ export function KanbanBoard({
   const copyDailyContextDoc = async (entry: DailyInsightEntry) => {
     const content = buildDailyContextDoc(entry);
     if (!content.trim()) {
-      alert("Não há contexto para copiar.");
+      pushToast({ kind: "error", title: "Não há contexto para copiar." });
       return;
     }
     if (!navigator?.clipboard?.writeText) {
-      alert("Seu navegador não suporta cópia automática.");
+      pushToast({ kind: "warning", title: "Seu navegador não suporta cópia automática." });
       return;
     }
     try {
       await navigator.clipboard.writeText(content);
-      alert("Contexto copiado para a área de transferência.");
+      pushToast({ kind: "success", title: "Contexto copiado para a área de transferência." });
     } catch {
-      alert("Não foi possível copiar o contexto.");
+      pushToast({ kind: "error", title: "Não foi possível copiar o contexto." });
     }
   };
 
   const generateDailyInsight = async () => {
     const transcript = dailyTranscript.trim();
     if (!transcript) {
-      alert("Informe ou anexe a transcrição da daily.");
+      pushToast({ kind: "error", title: "Informe ou anexe a transcrição da daily." });
       return;
     }
+    // Evita reentrância / cliques duplos durante a geração.
+    if (dailyInFlightRef.current) return;
+    dailyInFlightRef.current = true;
+    const requestSeq = ++dailyRequestSeqRef.current;
+    const controller = new AbortController();
+    dailyAbortControllerRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort(), DAILY_INSIGHT_TIMEOUT_MS);
+
     const startedAt = new Date().toISOString();
     setDailyGenerating(true);
     setDailyTab("status");
@@ -489,6 +553,7 @@ export function KanbanBoard({
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({ transcript, fileName: dailySourceFileName || undefined }),
+        signal: controller.signal,
       });
       setDailyStatusPhase("processing");
       const data = await response.json();
@@ -506,7 +571,7 @@ export function KanbanBoard({
           } as DailyLog,
           ...prev,
         ].slice(0, 50));
-        alert(data?.error || "Erro ao gerar resumo.");
+        pushToast({ kind: "error", title: String(data?.error || "Erro ao gerar resumo.") });
         return;
       }
       updateDb((prev) => {
@@ -530,7 +595,6 @@ export function KanbanBoard({
       const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
       const hasRealLlmFailure = Boolean(errorKind) || !generatedWithAI;
       const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
-      const rawContent = String(data?.llmDebug?.rawContent || "").trim();
       setDailyStatusPhase("done");
 
       // Log de sucesso / fallback, explicitando conectividade com IA
@@ -565,34 +629,30 @@ export function KanbanBoard({
               } as DailyLog,
             ] as DailyLog[])
           : []),
-        // Log opcional com o JSON bruto retornado pela IA, quando disponível
-        ...(rawContent
-          ? ([
-              {
-                timestamp: new Date().toISOString(),
-                status: "start" as DailyLogStatus,
-                message: "Resposta bruta da IA (JSON) registrada para diagnóstico.",
-                provider: providerName || undefined,
-                model: modelName || undefined,
-                resultSnippet: rawContent.slice(0, 400),
-              } as DailyLog,
-            ] as DailyLog[])
-          : []),
         ...prev,
       ].slice(0, 50));
-    } catch {
+    } catch (err) {
+      const isAbort = err instanceof Error && (err as unknown as { name?: string }).name === "AbortError";
       setDailyStatusPhase("error");
       setDailyLogs((prev) => [
         {
           timestamp: new Date().toISOString(),
           status: "error" as DailyLogStatus,
-          message: "Erro ao gerar resumo com IA.",
+          message: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
         },
         ...prev,
       ].slice(0, 50));
-      alert("Erro ao gerar resumo com IA.");
+      pushToast({
+        kind: isAbort ? "warning" : "error",
+        title: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
+      });
     } finally {
-      setDailyGenerating(false);
+      window.clearTimeout(timeoutId);
+      dailyInFlightRef.current = false;
+      if (dailyAbortControllerRef.current === controller) dailyAbortControllerRef.current = null;
+      if (dailyRequestSeqRef.current === requestSeq) {
+        setDailyGenerating(false);
+      }
     }
   };
 
@@ -862,7 +922,7 @@ export function KanbanBoard({
       if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
       const rows = raw.split(/\r?\n/).filter((r) => r.trim());
       if (rows.length < 2) {
-        alert("CSV vazio.");
+        pushToast({ kind: "error", title: "CSV vazio." });
         return;
       }
       const parseRow = (line: string) => {
@@ -885,7 +945,7 @@ export function KanbanBoard({
       hdr.forEach((h, i) => (idx[h] = i));
       const iT = idx["titulo"] ?? idx["título"] ?? -1;
       if (iT === -1) {
-        alert("Coluna 'Título' não encontrada.");
+        pushToast({ kind: "error", title: "Coluna 'Título' não encontrada." });
         return;
       }
       const nc: CardData[] = [];
@@ -917,18 +977,16 @@ export function KanbanBoard({
         });
       }
       if (!nc.length) {
-        alert("Nenhum card.");
+        pushToast({ kind: "error", title: "Nenhum card." });
         return;
       }
-      if (confirm(`Importar ${nc.length} cards? Substitui os atuais.`)) {
-        const ordByBucket: Record<string, number> = {};
-        nc.forEach((card) => {
-          const bk = card.bucket;
-          ordByBucket[bk] = ordByBucket[bk] || 0;
-          card.order = ordByBucket[bk]++;
-        });
-        updateDb((prev) => ({ ...prev, cards: nc }));
+      const mode = csvImportMode;
+      let sameIdCount = 0;
+      if (mode === "merge") {
+        const existingIds = new Set(cards.map((c) => c.id));
+        sameIdCount = nc.filter((c) => existingIds.has(c.id)).length;
       }
+      setCsvImportConfirm({ count: nc.length, cards: nc, mode, sameIdCount });
     };
     reader.readAsText(file, "UTF-8");
     e.target.value = "";
@@ -1205,6 +1263,15 @@ export function KanbanBoard({
                   placeholder="Buscar..."
                   className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
+                <select
+                  value={csvImportMode}
+                  onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
+                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  aria-label="Modo de importação CSV"
+                >
+                  <option value="replace">Substituir</option>
+                  <option value="merge">Mesclar</option>
+                </select>
                 <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
                   Importar
                   <input
@@ -1463,8 +1530,13 @@ export function KanbanBoard({
           <div
             className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
             onClick={(e) => e.stopPropagation()}
+            ref={addColumnDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-column-title"
+            tabIndex={-1}
           >
-            <h3 className="font-display font-bold text-[var(--flux-text)] mb-4">
+            <h3 id="add-column-title" className="font-display font-bold text-[var(--flux-text)] mb-4">
               {editingColumnKey ? "Renomear coluna" : "Nova coluna"}
             </h3>
             <input
@@ -1475,6 +1547,7 @@ export function KanbanBoard({
               placeholder="Ex: Backlog, Em progresso..."
               className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
+              ref={addColumnInputRef}
             />
             <div className="flex gap-3 justify-end pt-2">
               <button
@@ -1496,8 +1569,15 @@ export function KanbanBoard({
 
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 z-[400] flex items-center justify-center">
-          <div className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl">
-            <p className="text-[var(--flux-text)] mb-4 font-medium">
+          <div
+            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl"
+            ref={confirmDeleteDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-delete-title"
+            tabIndex={-1}
+          >
+            <p id="confirm-delete-title" className="text-[var(--flux-text)] mb-4 font-medium">
               {confirmDelete.type === "card"
                 ? `Excluir "${cards.find((c) => c.id === confirmDelete.id)?.title}"?`
                 : `Excluir a coluna "${confirmDelete.label}"?`}
@@ -1506,6 +1586,7 @@ export function KanbanBoard({
               <button
                 onClick={() => setConfirmDelete(null)}
                 className="btn-secondary"
+                ref={confirmDeleteCancelRef}
               >
                 Cancelar
               </button>
@@ -1530,18 +1611,131 @@ export function KanbanBoard({
         </div>
       )}
 
+      <ConfirmDialog
+        open={dailyDeleteConfirmId !== null}
+        title="Excluir este resumo do histórico da Daily IA?"
+        description="Esta ação não pode ser desfeita."
+        intent="danger"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onCancel={() => setDailyDeleteConfirmId(null)}
+        onConfirm={() => {
+          if (!dailyDeleteConfirmId) return;
+          performDeleteDailyHistoryEntry(dailyDeleteConfirmId);
+          setDailyDeleteConfirmId(null);
+          pushToast({ kind: "success", title: "Resumo excluído." });
+        }}
+      />
+
+      <ConfirmDialog
+        open={csvImportConfirm !== null}
+        title={
+          csvImportConfirm
+            ? csvImportConfirm.mode === "replace"
+              ? `Importar ${csvImportConfirm.count} cards? Substitui os atuais.`
+              : `Mesclar ${csvImportConfirm.count} cards?`
+            : ""
+        }
+        description={
+          csvImportConfirm
+            ? csvImportConfirm.mode === "replace"
+              ? "Confirme para substituir o conteúdo atual do board."
+              : `Atualizará ${csvImportConfirm.sameIdCount} card(s) existentes e adicionará ${
+                  csvImportConfirm.count - csvImportConfirm.sameIdCount
+                }.`
+            : undefined
+        }
+        intent="danger"
+        confirmText={csvImportConfirm?.mode === "merge" ? "Mesclar" : "Importar"}
+        cancelText="Cancelar"
+        onCancel={() => setCsvImportConfirm(null)}
+        onConfirm={() => {
+          if (!csvImportConfirm) return;
+          const imported = csvImportConfirm.cards.map((c) => ({ ...c }));
+          const count = csvImportConfirm.count;
+
+          if (csvImportConfirm.mode === "replace") {
+            const ordByBucket: Record<string, number> = {};
+            imported.forEach((card) => {
+              const bk = card.bucket;
+              ordByBucket[bk] = ordByBucket[bk] || 0;
+              card.order = ordByBucket[bk]++;
+            });
+            updateDb((prev) => ({ ...prev, cards: imported }));
+          } else {
+            updateDb((prev) => {
+              const prevCards = Array.isArray(prev.cards) ? prev.cards : [];
+              const configKeys = Array.isArray(prev.config.bucketOrder)
+                ? prev.config.bucketOrder.map((b) => b.key)
+                : [];
+              const prevExtraKeys = Array.from(new Set(prevCards.map((c) => c.bucket))).filter(
+                (k) => !configKeys.includes(k)
+              );
+              const importedExtraKeys = Array.from(new Set(imported.map((c) => c.bucket))).filter(
+                (k) => !configKeys.includes(k) && !prevExtraKeys.includes(k)
+              );
+              const bucketKeys = [...configKeys, ...prevExtraKeys, ...importedExtraKeys];
+
+              const nextCards: CardData[] = [];
+              bucketKeys.forEach((bucketKey) => {
+                const existingInBucket = prevCards
+                  .filter((c) => c.bucket === bucketKey)
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map((c) => ({ ...c }));
+
+                const idxById = new Map<string, number>(
+                  existingInBucket.map((c, i) => [c.id, i])
+                );
+
+                imported
+                  .filter((c) => c.bucket === bucketKey)
+                  .forEach((ic) => {
+                    const idx = idxById.get(ic.id);
+                    if (idx !== undefined) {
+                      existingInBucket[idx] = { ...existingInBucket[idx], ...ic };
+                    } else {
+                      existingInBucket.push({ ...ic });
+                    }
+                  });
+
+                existingInBucket.forEach((c, i) => {
+                  c.order = i;
+                });
+
+                nextCards.push(...existingInBucket);
+              });
+
+              return { ...prev, cards: nextCards };
+            });
+          }
+
+          setCsvImportConfirm(null);
+          pushToast({
+            kind: "success",
+            title: csvImportConfirm.mode === "merge" ? `Mesclagem concluída (${count} cards).` : `Importação concluída (${count} cards).`,
+          });
+        }}
+      />
+
       {dailyOpen && (
         <div className="fixed inset-0 bg-black/50 z-[410] flex items-center justify-center p-4" onClick={() => setDailyOpen(false)}>
           <div
             className="w-full max-w-5xl h-[90vh] bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] p-5 flex flex-col"
             onClick={(e) => e.stopPropagation()}
+            ref={dailyDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="daily-ia-title"
+            tabIndex={-1}
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <h3 className="font-display font-bold text-[var(--flux-text)] text-base">Daily IA</h3>
+                <h3 id="daily-ia-title" className="font-display font-bold text-[var(--flux-text)] text-base">
+                  Daily IA
+                </h3>
                 <p className="text-xs text-[var(--flux-text-muted)]">Board: {boardName || "Board"}</p>
               </div>
-              <button className="btn-secondary" onClick={() => setDailyOpen(false)}>
+              <button ref={dailyCloseRef} type="button" className="btn-secondary" onClick={() => setDailyOpen(false)}>
                 Fechar
               </button>
             </div>

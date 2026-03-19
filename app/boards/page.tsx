@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/context/toast-context";
 
 interface Board {
   id: string;
@@ -23,6 +25,8 @@ export default function BoardsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState("");
   const [empty, setEmpty] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const { pushToast } = useToast();
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -71,7 +75,7 @@ export default function BoardsPage() {
       setModalOpen(false);
       router.push(`/board/${board.id}`);
     } catch {
-      alert("Erro ao criar board.");
+      pushToast({ kind: "error", title: "Erro ao criar board." });
     }
   }
 
@@ -83,18 +87,12 @@ export default function BoardsPage() {
       setModalOpen(false);
       loadBoards();
     } catch {
-      alert("Erro ao renomear.");
+      pushToast({ kind: "error", title: "Erro ao renomear." });
     }
   }
 
   async function deleteBoard(id: string, name: string) {
-    if (!confirm(`Excluir o board "${name}"? Esta ação não pode ser desfeita.`)) return;
-    try {
-      await apiDelete(`/api/boards/${id}`, getHeaders());
-      loadBoards();
-    } catch {
-      alert("Erro ao excluir.");
-    }
+    setConfirmDelete({ id, name });
   }
 
   function formatDate(s?: string) {
@@ -237,6 +235,26 @@ export default function BoardsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={confirmDelete ? `Excluir o board "${confirmDelete.name}"?` : ""}
+        description="Esta ação não pode ser desfeita."
+        intent="danger"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          try {
+            await apiDelete(`/api/boards/${confirmDelete.id}`, getHeaders());
+            setConfirmDelete(null);
+            loadBoards();
+          } catch {
+            pushToast({ kind: "error", title: "Erro ao excluir." });
+          }
+        }}
+      />
     </div>
   );
 }

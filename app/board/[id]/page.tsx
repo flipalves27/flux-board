@@ -6,6 +6,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { apiFetch, apiPut } from "@/lib/api-client";
+import { useToast } from "@/context/toast-context";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -124,11 +125,13 @@ export default function BoardPage() {
   const params = useParams();
   const boardId = params.id as string;
   const { user, getHeaders, isChecked } = useAuth();
+  const { pushToast } = useToast();
   const [boardName, setBoardName] = useState("Board");
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveRequestSeqRef = useRef(0);
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -153,7 +156,7 @@ export default function BoardPage() {
         return;
       }
       if (r.status === 403) {
-        alert("Sem permissão para este board.");
+        pushToast({ kind: "error", title: "Sem permissão para este board." });
         router.replace("/boards");
         return;
       }
@@ -184,7 +187,7 @@ export default function BoardPage() {
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
       });
     } catch {
-      alert("Erro ao carregar board.");
+      pushToast({ kind: "error", title: "Erro ao carregar board." });
       router.replace("/boards");
     } finally {
       setLoading(false);
@@ -201,15 +204,35 @@ export default function BoardPage() {
       };
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          await apiPut(`/api/boards/${boardId}`, payload, getHeaders());
-          setSaveStatus("saved");
-          setTimeout(() => setSaveStatus("idle"), 1500);
-        } catch {
-          setSaveStatus("error");
-          setTimeout(() => setSaveStatus("idle"), 3000);
-        }
+        const requestSeq = ++saveRequestSeqRef.current;
         saveTimeoutRef.current = null;
+        const maxAttempts = 3;
+        const backoffBaseMs = 400;
+        try {
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              await apiPut(`/api/boards/${boardId}`, payload, getHeaders());
+              if (saveRequestSeqRef.current !== requestSeq) return;
+              setSaveStatus("saved");
+              setTimeout(() => {
+                if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
+              }, 1500);
+              return;
+            } catch {
+              if (attempt >= maxAttempts) break;
+              const waitMs = backoffBaseMs * Math.pow(2, attempt - 1);
+              await new Promise((r) => window.setTimeout(r, waitMs));
+            }
+          }
+          if (saveRequestSeqRef.current !== requestSeq) return;
+          setSaveStatus("error");
+          pushToast({ kind: "error", title: "Falha ao salvar alterações. Verifique sua conexão e tente novamente." });
+          setTimeout(() => {
+            if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
+          }, 3000);
+        } finally {
+          saveTimeoutRef.current = null;
+        }
       }, 300);
     },
     [db, boardId, getHeaders]

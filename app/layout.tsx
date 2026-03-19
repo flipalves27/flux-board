@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
+import { ToastProvider } from "@/context/toast-context";
 import { AppShell } from "@/components/app-shell";
 
 const dmSans = DM_Sans({
@@ -32,11 +33,13 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${dmSans.variable} ${outfit.variable}`}>
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <AuthProvider>
-          <ThemeProvider>
-            <RoutineTasksProvider>
-              <AppShell>{children}</AppShell>
-            </RoutineTasksProvider>
-          </ThemeProvider>
+          <ToastProvider>
+            <ThemeProvider>
+              <RoutineTasksProvider>
+                <AppShell>{children}</AppShell>
+              </RoutineTasksProvider>
+            </ThemeProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

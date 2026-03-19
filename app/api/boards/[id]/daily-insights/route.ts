@@ -481,7 +481,6 @@ export async function POST(
       generatedWithAI: llmResult.generatedWithAI,
       errorKind: llmResult.errorKind,
       errorMessage: llmResult.errorMessage,
-      rawContent: llmResult.rawContent,
     };
 
     return NextResponse.json({ ok: true, entry, llmDebug });
