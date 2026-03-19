@@ -87,6 +87,8 @@ function normalizeLabel(value: string): string {
 
 function normalizeHeadingForMatch(value: string): string {
   return normalizeLabel(value)
+    .replace(/^\s*(?:\d+\s*[.)-]\s*)+/, " ")
+    .replace(/^\s*(?:secao|seção)\s+\d+\s*/i, " ")
     .replace(/\s*\([^)]*\)\s*/g, " ")
     .replace(/[._-]+/g, " ")
     .replace(/\s+/g, " ")
@@ -124,7 +126,7 @@ function isLikelySectionHeading(line: string): boolean {
   if (!trimmed) return false;
 
   // Evita interpretar itens de lista com ":" como cabeçalho de bloco.
-  if (/^([-*+]|>\s*|\d+[.)])\s+/.test(trimmed)) return false;
+  if (/^([-*+]|>\s*)\s+/.test(trimmed)) return false;
 
   const headingPart = trimmed.split(":")[0]?.trim() || "";
   if (!headingPart) return false;
@@ -157,7 +159,8 @@ export function parseDescriptionToBlocks(rawDescription: string | null | undefin
   for (const line of lines) {
     const headingMatch = line.match(/^([^:]+):(.*)$/);
     if (headingMatch && isLikelySectionHeading(line)) {
-      const matchedKey = resolveHeadingKey(headingMatch[1]);
+      const headingLabel = headingMatch[1].replace(/^\s*(?:\d+\s*[.)-]\s*)+/, "").trim();
+      const matchedKey = resolveHeadingKey(headingLabel);
       if (matchedKey) {
         currentKey = matchedKey;
         hasStructuredContent = true;
