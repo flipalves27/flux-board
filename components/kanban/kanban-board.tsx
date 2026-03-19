@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +47,25 @@ interface DailyLog {
   errorKind?: string;
   errorMessage?: string;
 }
+
+type DailyStatusPhase = "idle" | "preparing" | "requesting" | "processing" | "done" | "error";
+
+type DailySessionState = {
+  transcript: string;
+  fileName: string;
+  sourceFileName: string;
+  generating: boolean;
+  tab: "entrada" | "historico" | "status";
+  logs: DailyLog[];
+  statusPhase: DailyStatusPhase;
+  historyExpandedId: string | null;
+  historyCreatedCardsExpandedId: string | null;
+  historyDateFrom: string;
+  historyDateTo: string;
+  historySearchQuery: string;
+};
+
+const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
 
 const DIR_COLORS: Record<string, string> = {
   manter: "#059669",
@@ -110,8 +129,9 @@ export function KanbanBoard({
   const [dailyFileName, setDailyFileName] = useState("Nenhum arquivo anexado");
   const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
-  const [dailyTab, setDailyTab] = useState<"entrada" | "historico">("entrada");
+  const [dailyTab, setDailyTab] = useState<"entrada" | "historico" | "status">("entrada");
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
+  const [dailyStatusPhase, setDailyStatusPhase] = useState<DailyStatusPhase>("idle");
   const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
   const [dailyHistoryCreatedCardsExpandedId, setDailyHistoryCreatedCardsExpandedId] = useState<string | null>(null);
   const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
@@ -448,15 +468,29 @@ export function KanbanBoard({
       alert("Informe ou anexe a transcrição da daily.");
       return;
     }
+    const startedAt = new Date().toISOString();
     setDailyGenerating(true);
+    setDailyTab("status");
+    setDailyStatusPhase("preparing");
+    setDailyLogs((prev) => [
+      {
+        timestamp: startedAt,
+        status: "start",
+        message: "Iniciando geração do resumo prático...",
+      },
+      ...prev,
+    ].slice(0, 50));
     try {
+      setDailyStatusPhase("requesting");
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({ transcript, fileName: dailySourceFileName || undefined }),
       });
+      setDailyStatusPhase("processing");
       const data = await response.json();
       if (!response.ok) {
+        setDailyStatusPhase("error");
         setDailyLogs((prev) => [
           {
             timestamp: new Date().toISOString(),
@@ -493,6 +527,7 @@ export function KanbanBoard({
       const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
       const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
       const rawContent = String(data?.llmDebug?.rawContent || "").trim();
+      setDailyStatusPhase("done");
 
       // Log de sucesso / fallback, explicitando conectividade com IA
       setDailyLogs((prev) => [
@@ -542,6 +577,7 @@ export function KanbanBoard({
         ...prev,
       ].slice(0, 50));
     } catch {
+      setDailyStatusPhase("error");
       setDailyLogs((prev) => [
         {
           timestamp: new Date().toISOString(),
@@ -935,6 +971,100 @@ export function KanbanBoard({
     return false;
   };
 
+  const statusStepIndex =
+    dailyStatusPhase === "preparing"
+      ? 1
+      : dailyStatusPhase === "requesting"
+        ? 2
+        : dailyStatusPhase === "processing"
+          ? 3
+          : dailyStatusPhase === "done"
+            ? 4
+            : dailyStatusPhase === "error"
+              ? 0
+              : 0;
+
+  useEffect(() => {
+    const storage = typeof window !== "undefined" ? window.localStorage : null;
+    if (!storage) return;
+    try {
+      const raw = storage.getItem(DAILY_SESSION_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<DailySessionState>;
+      if (typeof parsed.transcript === "string") setDailyTranscript(parsed.transcript.slice(0, 40000));
+      if (typeof parsed.fileName === "string") setDailyFileName(parsed.fileName || "Nenhum arquivo anexado");
+      if (typeof parsed.sourceFileName === "string") setDailySourceFileName(parsed.sourceFileName);
+      if (parsed.tab === "entrada" || parsed.tab === "historico" || parsed.tab === "status") setDailyTab(parsed.tab);
+      if (Array.isArray(parsed.logs)) setDailyLogs(parsed.logs.slice(0, 50));
+      if (
+        parsed.statusPhase === "idle" ||
+        parsed.statusPhase === "preparing" ||
+        parsed.statusPhase === "requesting" ||
+        parsed.statusPhase === "processing" ||
+        parsed.statusPhase === "done" ||
+        parsed.statusPhase === "error"
+      ) {
+        setDailyStatusPhase(parsed.statusPhase);
+      }
+      if (typeof parsed.historyExpandedId === "string" || parsed.historyExpandedId === null) {
+        setDailyHistoryExpandedId(parsed.historyExpandedId ?? null);
+      }
+      if (
+        typeof parsed.historyCreatedCardsExpandedId === "string" ||
+        parsed.historyCreatedCardsExpandedId === null
+      ) {
+        setDailyHistoryCreatedCardsExpandedId(parsed.historyCreatedCardsExpandedId ?? null);
+      }
+      if (typeof parsed.historyDateFrom === "string") setDailyHistoryDateFrom(parsed.historyDateFrom);
+      if (typeof parsed.historyDateTo === "string") setDailyHistoryDateTo(parsed.historyDateTo);
+      if (typeof parsed.historySearchQuery === "string") setDailyHistorySearchQuery(parsed.historySearchQuery);
+      if (parsed.generating) {
+        setDailyGenerating(true);
+        setDailyOpen(true);
+        setDailyTab("status");
+      }
+    } catch {
+      // Se houver lixo no storage, ignora silenciosamente.
+    }
+  }, []);
+
+  useEffect(() => {
+    const storage = typeof window !== "undefined" ? window.localStorage : null;
+    if (!storage) return;
+    const payload: DailySessionState = {
+      transcript: dailyTranscript,
+      fileName: dailyFileName,
+      sourceFileName: dailySourceFileName,
+      generating: dailyGenerating,
+      tab: dailyTab,
+      logs: dailyLogs.slice(0, 50),
+      statusPhase: dailyStatusPhase,
+      historyExpandedId: dailyHistoryExpandedId,
+      historyCreatedCardsExpandedId: dailyHistoryCreatedCardsExpandedId,
+      historyDateFrom: dailyHistoryDateFrom,
+      historyDateTo: dailyHistoryDateTo,
+      historySearchQuery: dailyHistorySearchQuery,
+    };
+    try {
+      storage.setItem(DAILY_SESSION_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Falha de quota/permissão não deve interromper o fluxo.
+    }
+  }, [
+    dailyTranscript,
+    dailyFileName,
+    dailySourceFileName,
+    dailyGenerating,
+    dailyTab,
+    dailyLogs,
+    dailyStatusPhase,
+    dailyHistoryExpandedId,
+    dailyHistoryCreatedCardsExpandedId,
+    dailyHistoryDateFrom,
+    dailyHistoryDateTo,
+    dailyHistorySearchQuery,
+  ]);
+
   const handlePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const scroller = boardScrollRef.current;
@@ -1046,7 +1176,10 @@ export function KanbanBoard({
                 Mapa de Produção
               </button>
               <button
-                onClick={() => setDailyOpen(true)}
+                onClick={() => {
+                  setDailyOpen(true);
+                  if (dailyGenerating) setDailyTab("status");
+                }}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 Daily IA
@@ -1414,6 +1547,13 @@ export function KanbanBoard({
               >
                 Histórico ({dailyInsights.length})
               </button>
+              <button
+                type="button"
+                className={`btn-bar ${dailyTab === "status" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
+                onClick={() => setDailyTab("status")}
+              >
+                Status {dailyGenerating ? "• em andamento" : ""}
+              </button>
             </div>
             {dailyTab === "entrada" ? (
               <div className="flex-1 min-h-0 overflow-auto">
@@ -1422,11 +1562,11 @@ export function KanbanBoard({
                 </p>
                 {dailyGenerating && (
                   <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
-                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold animate-pulse">
-                      A IA esta analisando a transcricao e gerando o modelo para voce...
+                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
+                      Geracao em andamento. Acompanhe pela guia Status.
                     </p>
                     <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                      Aguarde um instante. Assim que finalizar, exibiremos o resultado pronto para revisao.
+                      Voce pode fechar e reabrir este modal sem perder o progresso atual.
                     </p>
                   </div>
                 )}
@@ -1454,7 +1594,47 @@ export function KanbanBoard({
                     {dailyGenerating ? "Analisando e gerando com IA..." : "Gerar resumo prático"}
                   </button>
                 </div>
-                {dailyLogs.length > 0 && (
+              </div>
+            ) : dailyTab === "status" ? (
+              <div className="flex-1 min-h-0 overflow-auto">
+                <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
+                      Acompanhamento da geração
+                    </div>
+                    <div className="text-[11px] text-[var(--flux-text-muted)]">
+                      {dailyGenerating ? "Processando..." : dailyStatusPhase === "done" ? "Concluído" : dailyStatusPhase === "error" ? "Falha" : "Aguardando"}
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                    <div
+                      className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
+                      style={{
+                        width: `${Math.max(6, Math.min(100, statusStepIndex * 25))}%`,
+                        opacity: dailyGenerating ? 0.95 : 0.8,
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-2">
+                    {["Preparando", "Enviando", "Processando", "Concluído"].map((step, idx) => {
+                      const stepPos = idx + 1;
+                      const active = statusStepIndex >= stepPos;
+                      return (
+                        <div
+                          key={step}
+                          className={`text-[10px] rounded-[6px] px-2 py-1 border ${
+                            active
+                              ? "border-[rgba(108,92,231,0.45)] text-[var(--flux-primary-light)] bg-[rgba(108,92,231,0.12)]"
+                              : "border-[rgba(255,255,255,0.1)] text-[var(--flux-text-muted)]"
+                          }`}
+                        >
+                          {step}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {dailyLogs.length > 0 ? (
                   <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
@@ -1511,6 +1691,10 @@ export function KanbanBoard({
                       })}
                     </div>
                   </div>
+                ) : (
+                  <p className="text-xs text-[var(--flux-text-muted)]">
+                    O status aparecerá aqui assim que a geração for iniciada.
+                  </p>
                 )}
               </div>
             ) : (

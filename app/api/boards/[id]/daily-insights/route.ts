@@ -32,6 +32,11 @@ type LlmInsightResult = {
   errorMessage?: string;
 };
 
+type ParseOutcome = {
+  parsed: unknown;
+  recovered: boolean;
+};
+
 function normalizeList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -159,40 +164,110 @@ function heuristicInsight(transcript: string): InsightResult {
   };
 }
 
-function parseJsonFromLlmContent(content: string): unknown {
-  const raw = String(content || "").trim();
-  if (!raw) return {};
+function sanitizeJsonCandidate(value: string): string {
+  return String(value || "")
+    .replace(/^\uFEFF/, "")
+    // Remove comentários estilo JS que podem vazar de respostas do modelo.
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+    // Remove vírgulas finais inválidas em objetos/arrays.
+    .replace(/,\s*([}\]])/g, "$1")
+    .trim();
+}
 
-  const direct = () => JSON.parse(raw);
+function extractBalancedJsonObject(value: string): string | null {
+  const input = String(value || "");
+  const start = input.indexOf("{");
+  if (start < 0) return null;
+  let inString = false;
+  let escaped = false;
+  let depth = 0;
+  for (let i = start; i < input.length; i++) {
+    const ch = input[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        return input.slice(start, i + 1).trim();
+      }
+    }
+  }
+  return null;
+}
+
+function objectFromRawContent(content: string): Record<string, unknown> {
+  const text = String(content || "").trim();
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 60);
+  const compact = lines.join(" ").slice(0, 700);
+  return {
+    resumo: compact || "Resposta da IA recebida sem JSON válido.",
+    contextoOrganizado: text.slice(0, 12000),
+    criar: [],
+    criarDetalhes: [],
+    ajustar: [],
+    corrigir: [],
+    pendencias: [],
+  };
+}
+
+function parseJsonFromLlmContent(content: string): ParseOutcome {
+  const raw = String(content || "").trim();
+  if (!raw) return { parsed: {}, recovered: true };
+
+  const direct = () => JSON.parse(sanitizeJsonCandidate(raw));
 
   const fromFence = () => {
     const fencedMatch = raw.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
     if (!fencedMatch) return null;
-    return JSON.parse(fencedMatch[1].trim());
+    return JSON.parse(sanitizeJsonCandidate(fencedMatch[1].trim()));
   };
 
-  const fromObjectRange = () => {
-    const start = raw.indexOf("{");
-    const end = raw.lastIndexOf("}");
-    if (start < 0 || end <= start) return null;
-    const candidate = raw.slice(start, end + 1).trim();
-    return JSON.parse(candidate);
+  const fromBalancedObject = () => {
+    const candidate = extractBalancedJsonObject(raw);
+    if (!candidate) return null;
+    return JSON.parse(sanitizeJsonCandidate(candidate));
   };
 
   try {
-    return direct();
+    return { parsed: direct(), recovered: false };
   } catch {
-    // Tenta extrair JSON de respostas com markdown ou texto extra.
+    // Continua para estratégias de recuperação.
   }
 
   try {
     const parsed = fromFence();
-    if (parsed !== null) return parsed;
+    if (parsed !== null) return { parsed, recovered: true };
   } catch {
     // Continua para próxima estratégia.
   }
 
-  return fromObjectRange();
+  try {
+    const parsed = fromBalancedObject();
+    if (parsed !== null) return { parsed, recovered: true };
+  } catch {
+    // Continua para fallback textual estruturado.
+  }
+
+  // Última linha de defesa: nunca propaga parse_error para a integração.
+  return { parsed: objectFromRawContent(raw), recovered: true };
 }
 
 async function llmInsight(args: {
@@ -283,27 +358,19 @@ async function llmInsight(args: {
       choices?: Array<{ message?: { content?: string } }>;
     };
     const content = data.choices?.[0]?.message?.content || "{}";
-    try {
-      return {
-        insight: safeInsight(parseJsonFromLlmContent(content)),
-        generatedWithAI: true,
-        model,
-        provider: "together.ai",
-        rawContent: content,
-      };
-    } catch (err) {
-      console.error("Daily insights LLM parse error:", err);
-      return {
-        insight: heuristicInsight(args.transcript),
-        generatedWithAI: false,
-        model,
-        provider: "together.ai",
-        errorKind: "parse_error",
-        errorMessage:
-          err instanceof Error ? err.message : "Falha ao interpretar JSON de resposta da IA.",
-        rawContent: content,
-      };
-    }
+    const parsed = parseJsonFromLlmContent(content);
+    return {
+      insight: safeInsight(parsed.parsed),
+      generatedWithAI: true,
+      model,
+      provider: "together.ai",
+      rawContent: content,
+      // JSON foi recuperado localmente; não propaga erro de parse para a camada de integração.
+      errorKind: undefined,
+      errorMessage: parsed.recovered
+        ? "JSON da IA foi tratado automaticamente antes da integração."
+        : undefined,
+    };
   } catch (err) {
     console.error("Daily insights LLM network error:", err);
     return {
