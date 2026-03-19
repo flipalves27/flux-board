@@ -46,12 +46,26 @@ export interface DailyInsightPayload {
   pendencias?: string[];
 }
 
+export interface DailyCreatedCard {
+  cardId: string;
+  title: string;
+  bucket: string;
+  priority: string;
+  progress: string;
+  desc?: string;
+  tags?: string[];
+  direction?: string | null;
+  dueDate?: string | null;
+  createdAt?: string;
+}
+
 export interface DailyInsightEntry {
   id: string;
   createdAt?: string;
   transcript?: string;
   sourceFileName?: string;
   insight?: DailyInsightPayload;
+  createdCards?: DailyCreatedCard[];
 }
 
 export interface CardData {

@@ -94,8 +94,9 @@ export function KanbanBoard({
   const [dailyFileName, setDailyFileName] = useState("Nenhum arquivo anexado");
   const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
-  const [dailyFixedCollapsed, setDailyFixedCollapsed] = useState(false);
+  const [dailyTab, setDailyTab] = useState<"entrada" | "historico">("entrada");
   const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
+  const [dailyHistoryCreatedCardsExpandedId, setDailyHistoryCreatedCardsExpandedId] = useState<string | null>(null);
   const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
   const [dailyHistoryDateTo, setDailyHistoryDateTo] = useState("");
   const [dailyHistorySearchQuery, setDailyHistorySearchQuery] = useState("");
@@ -193,6 +194,7 @@ export function KanbanBoard({
       alert("Não há itens em 'Criar' para transformar em card.");
       return;
     }
+    const nowIso = new Date().toISOString();
     updateDb((prev) => {
       const bucketOrder = prev.config.bucketOrder || [];
       const backlogKey =
@@ -224,8 +226,33 @@ export function KanbanBoard({
           order: nextOrd,
         } as CardData;
       });
-      return { ...prev, cards: [...prev.cards, ...created] };
+      const nextDailyInsights = Array.isArray(prev.dailyInsights)
+        ? prev.dailyInsights.map((insightEntry) => {
+            if (!entryId || insightEntry?.id !== entryId) return insightEntry;
+            const previousCreated = Array.isArray(insightEntry.createdCards) ? insightEntry.createdCards : [];
+            const createdCardsPayload = created.map((card) => ({
+              cardId: card.id,
+              title: card.title,
+              bucket: card.bucket,
+              priority: card.priority,
+              progress: card.progress,
+              desc: card.desc,
+              tags: card.tags,
+              direction: card.direction,
+              dueDate: card.dueDate,
+              createdAt: nowIso,
+            }));
+            return {
+              ...insightEntry,
+              createdCards: [...createdCardsPayload, ...previousCreated].slice(0, 100),
+            };
+          })
+        : prev.dailyInsights;
+      return { ...prev, cards: [...prev.cards, ...created], dailyInsights: nextDailyInsights };
     });
+    if (entryId) {
+      setDailyHistoryCreatedCardsExpandedId(entryId);
+    }
     alert(`${suggestions.length} card(s) criados automaticamente.`);
   };
 
@@ -241,6 +268,22 @@ export function KanbanBoard({
     };
     reader.readAsText(file, "UTF-8");
     e.target.value = "";
+  };
+
+  const clearDailyAttachmentAndTranscript = () => {
+    setDailyTranscript("");
+    setDailyFileName("Nenhum arquivo anexado");
+    setDailySourceFileName("");
+  };
+
+  const deleteDailyHistoryEntry = (entryId: string) => {
+    if (!confirm("Excluir este resumo do histórico da Daily IA?")) return;
+    updateDb((prev) => ({
+      ...prev,
+      dailyInsights: (Array.isArray(prev.dailyInsights) ? prev.dailyInsights : []).filter((entry) => entry?.id !== entryId),
+    }));
+    if (dailyHistoryExpandedId === entryId) setDailyHistoryExpandedId(null);
+    if (dailyHistoryCreatedCardsExpandedId === entryId) setDailyHistoryCreatedCardsExpandedId(null);
   };
 
   const buildDailyContextDoc = (entry: DailyInsightEntry) => {
@@ -680,7 +723,6 @@ export function KanbanBoard({
     ? cards.find((c) => c.id === activeId.replace("card-", ""))
     : null;
 
-  const latestDaily = dailyInsights[0];
   const normalizedDailyHistorySearchQuery = normalizeSearchText(dailyHistorySearchQuery);
   const filteredDailyInsights = dailyInsights.filter((entry) => {
     const entryDate = toLocalDateInputValue(entry?.createdAt);
@@ -873,123 +915,6 @@ export function KanbanBoard({
             ))}
           </div>
         )}
-      </div>
-
-      <div className="w-full px-5 sm:px-6 lg:px-8 mt-3">
-        <div className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[12px] p-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-            <div className="font-display font-bold text-sm text-[var(--flux-text)]">
-              Resumo Daily IA (fixo)
-              {latestDaily?.createdAt ? ` • ${new Date(latestDaily.createdAt).toLocaleString("pt-BR")}` : ""}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button className="btn-bar" onClick={() => setDailyFixedCollapsed((v) => !v)}>
-                {dailyFixedCollapsed ? "Expandir resumo" : "Recolher resumo"}
-              </button>
-              {latestDaily?.id && (
-                <button className="btn-bar" onClick={() => createCardsFromInsight(latestDaily.id)}>
-                  Criar cards do "Criar"
-                </button>
-              )}
-              <button className="btn-bar" onClick={() => setDailyOpen(true)}>
-                Abrir Daily IA
-              </button>
-            </div>
-          </div>
-          {latestDaily?.insight ? (
-            <div className="space-y-2">
-              {!dailyFixedCollapsed ? (
-                <>
-                  <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{latestDaily.insight.resumo || ""}</p>
-                  <p className="text-xs text-[var(--flux-text)] leading-relaxed bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2 whitespace-pre-line">
-                    {String(latestDaily.insight.contextoOrganizado || "Sem contexto organizado para este resumo.")}
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {(["criar", "ajustar", "corrigir", "pendencias"] as const).map((key) => {
-                      const createItems = key === "criar" ? getDailyCreateSuggestions(latestDaily) : [];
-                      const values =
-                        key === "criar"
-                          ? createItems.map((x) => x.titulo)
-                          : Array.isArray(latestDaily.insight?.[key])
-                            ? (latestDaily.insight?.[key] as string[])
-                            : [];
-                      return (
-                        <div key={key} className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
-                          <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                            {key === "criar"
-                              ? "Criar"
-                              : key === "ajustar"
-                                ? "Ajustar"
-                                : key === "corrigir"
-                                  ? "Corrigir"
-                                  : "Pendências"}
-                          </div>
-                          {values.length ? (
-                            key === "criar" ? (
-                              <ul className="space-y-1 pl-4 list-disc">
-                                {createItems.map((item, idx) => {
-                                  const prioSlug = slugDaily(item.prioridade);
-                                  const progSlug = slugDaily(item.progresso);
-                                  const prioClass =
-                                    prioSlug === "urgente"
-                                      ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
-                                      : prioSlug === "importante"
-                                        ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                        : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
-                                  const progClass =
-                                    progSlug === "em-andamento"
-                                      ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
-                                      : progSlug === "concluida"
-                                        ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
-                                  return (
-                                    <li key={`${key}-${idx}`}>
-                                      <div className="flex items-start justify-between gap-2">
-                                        <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
-                                          {item.titulo}
-                                        </span>
-                                        <span className="flex gap-1 flex-wrap justify-end">
-                                          <span
-                                            className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                          >
-                                            Prio: {item.prioridade}
-                                          </span>
-                                          <span
-                                            className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                          >
-                                            Progresso: {item.progresso}
-                                          </span>
-                                        </span>
-                                      </div>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            ) : (
-                              <ul className="text-xs text-[var(--flux-text)] space-y-1 list-disc pl-4">
-                                {values.map((item, idx) => (
-                                  <li key={`${key}-${idx}`}>{item}</li>
-                                ))}
-                              </ul>
-                            )
-                          ) : (
-                            <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-[var(--flux-text-muted)]">
-                  Resumo recolhido para preservar a visibilidade do board.
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-[var(--flux-text-muted)]">Ainda não há resumo salvo para este board.</p>
-          )}
-        </div>
       </div>
 
       <div
@@ -1283,7 +1208,7 @@ export function KanbanBoard({
       {dailyOpen && (
         <div className="fixed inset-0 bg-black/50 z-[410] flex items-center justify-center p-4" onClick={() => setDailyOpen(false)}>
           <div
-            className="w-full max-w-5xl max-h-[90vh] overflow-auto bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] p-5"
+            className="w-full max-w-5xl h-[90vh] bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] p-5 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 mb-4">
@@ -1295,32 +1220,55 @@ export function KanbanBoard({
                 Fechar
               </button>
             </div>
-            <p className="text-xs text-[var(--flux-text-muted)] mb-3">
-              Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.
-            </p>
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-              <label className="btn-bar cursor-pointer">
-                Anexar transcrição
-                <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={loadDailyTranscriptFile} />
-              </label>
-              <span className="text-xs text-[var(--flux-text-muted)]">{dailyFileName}</span>
-            </div>
-            <textarea
-              value={dailyTranscript}
-              onChange={(e) => setDailyTranscript(e.target.value)}
-              placeholder="Ex: ontem finalizamos... hoje vamos... bloqueio em..."
-              className="w-full min-h-[150px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
-            />
-            <div className="flex items-center gap-2 justify-end mt-3">
-              <button className="btn-secondary" onClick={() => setDailyOpen(false)}>
-                Fechar
+            <div className="flex items-center gap-2 mb-3 border-b border-[rgba(255,255,255,0.08)] pb-3">
+              <button
+                type="button"
+                className={`btn-bar ${dailyTab === "entrada" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
+                onClick={() => setDailyTab("entrada")}
+              >
+                Nova Daily
               </button>
-              <button className="btn-primary" onClick={generateDailyInsight} disabled={dailyGenerating}>
-                {dailyGenerating ? "Gerando..." : "Gerar resumo prático"}
+              <button
+                type="button"
+                className={`btn-bar ${dailyTab === "historico" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
+                onClick={() => setDailyTab("historico")}
+              >
+                Histórico ({dailyInsights.length})
               </button>
             </div>
-            <div className="mt-4 space-y-3">
-              {dailyInsights.length ? (
+            {dailyTab === "entrada" ? (
+              <div className="flex-1 min-h-0 overflow-auto">
+                <p className="text-xs text-[var(--flux-text-muted)] mb-3">
+                  Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.
+                </p>
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  <label className="btn-bar cursor-pointer">
+                    Anexar transcrição
+                    <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={loadDailyTranscriptFile} />
+                  </label>
+                  <button type="button" className="btn-secondary" onClick={clearDailyAttachmentAndTranscript}>
+                    Excluir anexo e conteúdo
+                  </button>
+                  <span className="text-xs text-[var(--flux-text-muted)]">{dailyFileName}</span>
+                </div>
+                <textarea
+                  value={dailyTranscript}
+                  onChange={(e) => setDailyTranscript(e.target.value)}
+                  placeholder="Ex: ontem finalizamos... hoje vamos... bloqueio em..."
+                  className="w-full min-h-[260px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
+                />
+                <div className="flex items-center gap-2 justify-end mt-3">
+                  <button className="btn-secondary" onClick={() => setDailyOpen(false)}>
+                    Fechar
+                  </button>
+                  <button className="btn-primary" onClick={generateDailyInsight} disabled={dailyGenerating}>
+                    {dailyGenerating ? "Gerando..." : "Gerar resumo prático"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 overflow-auto space-y-3">
+                {dailyInsights.length ? (
                 <>
                   <div className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
                     <div className="flex items-end gap-2 flex-wrap">
@@ -1408,6 +1356,9 @@ export function KanbanBoard({
                           <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
                             Criar cards do "Criar"
                           </button>
+                          <button className="btn-danger-solid" onClick={() => deleteDailyHistoryEntry(String(entry.id || ""))}>
+                            Excluir resumo
+                          </button>
                         </div>
                       </div>
                       <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
@@ -1490,6 +1441,58 @@ export function KanbanBoard({
                               </div>
                             ))}
                           </div>
+                          <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                                Cards criados a partir desta transcrição
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-bar"
+                                onClick={() =>
+                                  setDailyHistoryCreatedCardsExpandedId(
+                                    dailyHistoryCreatedCardsExpandedId === entry.id ? null : String(entry.id || "")
+                                  )
+                                }
+                              >
+                                {dailyHistoryCreatedCardsExpandedId === entry.id ? "Ocultar detalhes" : "Ver todas as informações"}
+                              </button>
+                            </div>
+                            <p className="text-xs text-[var(--flux-text-muted)] mt-1">
+                              {(Array.isArray(entry.createdCards) ? entry.createdCards.length : 0)} card(s) registrados.
+                            </p>
+                            {dailyHistoryCreatedCardsExpandedId === entry.id && (
+                              <div className="mt-2 space-y-2">
+                                {(Array.isArray(entry.createdCards) ? entry.createdCards : []).length ? (
+                                  (entry.createdCards || []).map((createdCard, createdIdx) => (
+                                    <div
+                                      key={`${createdCard.cardId || "card"}-${createdIdx}`}
+                                      className="border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2 bg-[var(--flux-surface-mid)]"
+                                    >
+                                      <div className="text-xs font-semibold text-[var(--flux-text)]">
+                                        {createdCard.title || "Sem título"}
+                                      </div>
+                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+                                        ID: {createdCard.cardId} • Coluna: {createdCard.bucket} • Prioridade: {createdCard.priority} •
+                                        Progresso: {createdCard.progress}
+                                      </div>
+                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+                                        Direcionamento: {createdCard.direction || "-"} • Data: {createdCard.createdAt ? new Date(createdCard.createdAt).toLocaleString("pt-BR") : "-"}
+                                      </div>
+                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+                                        Tags: {(Array.isArray(createdCard.tags) && createdCard.tags.length ? createdCard.tags.join(", ") : "-")}
+                                      </div>
+                                      <p className="text-xs text-[var(--flux-text)] mt-1 whitespace-pre-line">
+                                        {createdCard.desc || "Sem descrição."}
+                                      </p>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-xs text-[var(--flux-text-muted)]">Nenhum card criado para este resumo até o momento.</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </>
                       )}
                     </div>
@@ -1504,7 +1507,8 @@ export function KanbanBoard({
               ) : (
                 <p className="text-xs text-[var(--flux-text-muted)]">Ainda não existe resumo salvo para este board.</p>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
