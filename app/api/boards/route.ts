@@ -7,6 +7,10 @@ import {
   ensureBoardReborn,
   getDefaultBoardData,
 } from "@/lib/kv-boards";
+import {
+  computeBoardPortfolio,
+  type PortfolioBoardLike,
+} from "@/lib/board-portfolio-metrics";
 import { ensureAdminUser } from "@/lib/kv-users";
 
 function corsHeaders() {
@@ -35,7 +39,15 @@ export async function GET(request: NextRequest) {
     const boards = [];
     for (const bid of boardIds) {
       const b = await getBoard(bid);
-      if (b) boards.push({ id: b.id, name: b.name, ownerId: b.ownerId, lastUpdated: b.lastUpdated });
+      if (b) {
+        boards.push({
+          id: b.id,
+          name: b.name,
+          ownerId: b.ownerId,
+          lastUpdated: b.lastUpdated,
+          portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
+        });
+      }
     }
     return NextResponse.json({ boards });
   } catch (err) {

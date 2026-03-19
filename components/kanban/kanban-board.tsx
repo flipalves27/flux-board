@@ -73,6 +73,7 @@ const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
 const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
 const DAILY_SESSION_MAX_JSON_CHARS = 120000;
 const DAILY_SESSION_WRITE_DEBOUNCE_MS = 400;
+const KANBAN_FILTERS_STORAGE_PREFIX = "flux.kanban.filters:";
 
 const DIR_COLORS: Record<string, string> = {
   manter: "#059669",
@@ -87,6 +88,21 @@ type OrganizedContextSection = {
   items: string[];
   text: string;
 };
+
+type SavedKanbanFilters = {
+  activePrio: string;
+  activeLabels: string[];
+  searchQuery: string;
+};
+
+function daysUntilDueDate(date: string | null): number | null {
+  if (!date) return null;
+  const due = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((due.getTime() - today.getTime()) / 86400000);
+}
 
 function stripMarkdownDecorations(input: string): string {
   return String(input || "")
@@ -395,6 +411,7 @@ export function KanbanBoard({
   const [activePrio, setActivePrio] = useState("all");
   const [activeLabels, setActiveLabels] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [modalCard, setModalCard] = useState<CardData | null>(null);
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
@@ -439,6 +456,7 @@ export function KanbanBoard({
   const dailyRequestSeqRef = useRef(0);
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
   const dailyInFlightRef = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const DAILY_INSIGHT_TIMEOUT_MS = 60000;
 
   const addColumnDialogRef = useRef<HTMLDivElement | null>(null);
@@ -474,6 +492,7 @@ export function KanbanBoard({
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
   const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
+  const filtersStorageKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
 
   const normalizeSearchText = useCallback((value: string) => {
     return String(value || "")
@@ -490,6 +509,77 @@ export function KanbanBoard({
     const tzOffsetMs = dt.getTimezoneOffset() * 60000;
     return new Date(dt.getTime() - tzOffsetMs).toISOString().slice(0, 10);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(filtersStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as SavedKanbanFilters;
+      if (typeof parsed.activePrio === "string") setActivePrio(parsed.activePrio);
+      if (Array.isArray(parsed.activeLabels)) {
+        setActiveLabels(new Set(parsed.activeLabels.filter((item) => typeof item === "string")));
+      }
+      if (typeof parsed.searchQuery === "string") setSearchQuery(parsed.searchQuery);
+    } catch {
+      // ignore storage parsing errors
+    }
+  }, [filtersStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const payload: SavedKanbanFilters = {
+      activePrio,
+      activeLabels: [...activeLabels],
+      searchQuery,
+    };
+    window.localStorage.setItem(filtersStorageKey, JSON.stringify(payload));
+  }, [activePrio, activeLabels, searchQuery, filtersStorageKey]);
+
+  useEffect(() => {
+    const stillFocused = activePrio === "Urgente" && activeLabels.size === 0 && searchQuery === "andamento";
+    if (!stillFocused && focusMode) setFocusMode(false);
+  }, [activePrio, activeLabels, searchQuery, focusMode]);
+
+  const clearFilters = useCallback(() => {
+    setActivePrio("all");
+    setActiveLabels(new Set());
+    setSearchQuery("");
+    setFocusMode(false);
+  }, []);
+
+  const applyFocusMode = useCallback(() => {
+    setActivePrio("Urgente");
+    setActiveLabels(new Set());
+    setSearchQuery("andamento");
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (ev: KeyboardEvent) => {
+      const target = ev.target as HTMLElement | null;
+      const isTypingTarget =
+        !!target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (ev.key === "/" && !isTypingTarget) {
+        ev.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+      if ((ev.key === "f" || ev.key === "F") && !isTypingTarget) {
+        ev.preventDefault();
+        setFocusMode((prev) => {
+          if (prev) {
+            clearFilters();
+            return false;
+          }
+          applyFocusMode();
+          return true;
+        });
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [applyFocusMode, clearFilters]);
 
   const normDailyPrio = (value: string | undefined) => {
     const v = String(value || "").trim().toLowerCase();
@@ -1320,6 +1410,48 @@ export function KanbanBoard({
     return { directionCounts: acc, totalWithDir: total };
   }, [cards]);
 
+  const executionInsights = useMemo(() => {
+    const inProgress = cards.filter((c) => c.progress === "Em andamento").length;
+    const done = cards.filter((c) => c.progress === "Concluída").length;
+    const urgent = cards.filter((c) => c.priority === "Urgente").length;
+    const overdue = cards.filter((c) => {
+      const days = daysUntilDueDate(c.dueDate);
+      return days !== null && days < 0 && c.progress !== "Concluída";
+    }).length;
+    const dueSoon = cards.filter((c) => {
+      const days = daysUntilDueDate(c.dueDate);
+      return days !== null && days >= 0 && days <= 3 && c.progress !== "Concluída";
+    }).length;
+    const doneRate = cards.length > 0 ? Math.round((done / cards.length) * 100) : 0;
+
+    const priorityWeight: Record<string, number> = { Urgente: 4, Importante: 2, "Média": 1 };
+    const progressWeight: Record<string, number> = { "Não iniciado": 2, "Em andamento": 3, "Concluída": 0 };
+    const nextActions = [...cards]
+      .filter((c) => c.progress !== "Concluída")
+      .map((c) => {
+        const due = daysUntilDueDate(c.dueDate);
+        const dueScore = due === null ? 0 : due < 0 ? 5 : due <= 2 ? 4 : due <= 5 ? 2 : 1;
+        const score =
+          (priorityWeight[c.priority] ?? 1) +
+          (progressWeight[c.progress] ?? 1) +
+          dueScore +
+          (c.direction === "priorizar" ? 2 : 0);
+        return { card: c, score, due };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    const wipRiskColumns = buckets
+      .map((bucket) => {
+        const count = getCardsByBucket(bucket.key).filter((c) => c.progress === "Em andamento").length;
+        return { key: bucket.key, label: bucket.label, count };
+      })
+      .filter((entry) => entry.count >= 4)
+      .sort((a, b) => b.count - a.count);
+
+    return { inProgress, doneRate, urgent, overdue, dueSoon, nextActions, wipRiskColumns };
+  }, [cards, buckets, getCardsByBucket]);
+
   const handleExportCSV = () => {
     const sep = ";";
     const nl = "\r\n";
@@ -1730,6 +1862,29 @@ export function KanbanBoard({
               </div>
               <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] shrink-0" />
               <button
+                onClick={() => {
+                  if (focusMode) clearFilters();
+                  else {
+                    applyFocusMode();
+                    setFocusMode(true);
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 font-display shrink-0 ${
+                  focusMode
+                    ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)]"
+                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:border-[var(--flux-secondary)] hover:text-[var(--flux-secondary)]"
+                }`}
+                title="Atalho: tecla F"
+              >
+                {focusMode ? "Foco do dia: ON" : "Foco do dia"}
+              </button>
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+              >
+                Limpar filtros
+              </button>
+              <button
                 onClick={() => setLabelsOpen(!labelsOpen)}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] font-display shrink-0"
               >
@@ -1773,10 +1928,11 @@ export function KanbanBoard({
               </button>
               <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar..."
+                  placeholder="Buscar... (/)"
                   className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
                 <select
@@ -1819,6 +1975,32 @@ export function KanbanBoard({
                 {l}
               </button>
             ))}
+          </div>
+        )}
+        {priorityBarVisible && (
+          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 border-t border-[rgba(255,255,255,0.06)]">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Total</div>
+                <div className="text-sm font-display font-bold text-[var(--flux-text)]">{cards.length}</div>
+              </div>
+              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(116,185,255,0.2)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Em andamento</div>
+                <div className="text-sm font-display font-bold text-[var(--flux-info)]">{executionInsights.inProgress}</div>
+              </div>
+              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Atrasados</div>
+                <div className="text-sm font-display font-bold text-[var(--flux-danger)]">{executionInsights.overdue}</div>
+              </div>
+              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,217,61,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Vence em 3d</div>
+                <div className="text-sm font-display font-bold text-[var(--flux-warning)]">{executionInsights.dueSoon}</div>
+              </div>
+              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(0,230,118,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Taxa concluída</div>
+                <div className="text-sm font-display font-bold text-[var(--flux-success)]">{executionInsights.doneRate}%</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -2029,6 +2211,52 @@ export function KanbanBoard({
             </div>
           )}
         </div>
+        {(executionInsights.nextActions.length > 0 || executionInsights.wipRiskColumns.length > 0) && (
+          <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-1.5">
+                Proximas melhores acoes
+              </div>
+              <div className="space-y-1.5">
+                {executionInsights.nextActions.map((entry) => (
+                  <button
+                    key={entry.card.id}
+                    onClick={() => {
+                      setModalCard(entry.card);
+                      setModalMode("edit");
+                    }}
+                    className="w-full text-left rounded-md border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 hover:border-[var(--flux-primary)] transition-colors"
+                  >
+                    <div className="text-xs font-semibold text-[var(--flux-text)] truncate">{entry.card.title}</div>
+                    <div className="text-[10px] text-[var(--flux-text-muted)]">
+                      {entry.card.priority} · {entry.card.progress}
+                      {entry.due !== null ? ` · prazo ${entry.due < 0 ? `${Math.abs(entry.due)}d atraso` : `${entry.due}d`}` : ""}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] p-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-danger)] mb-1.5">
+                Risco de WIP por coluna
+              </div>
+              {executionInsights.wipRiskColumns.length === 0 ? (
+                <p className="text-xs text-[var(--flux-text-muted)]">Sem gargalos criticos ({">="} 4 itens em andamento).</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {executionInsights.wipRiskColumns.map((entry) => (
+                    <span
+                      key={entry.key}
+                      className="rounded-full border border-[rgba(255,107,107,0.4)] bg-[rgba(255,107,107,0.14)] px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-text)]"
+                    >
+                      {entry.label}: {entry.count}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {modalCard && (

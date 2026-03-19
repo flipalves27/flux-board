@@ -75,6 +75,20 @@ export function KanbanCard({
       <div className="flex items-center justify-between gap-2 mb-1.5 card-top">
         <div className="flex items-center gap-0 card-id-wrap">
           <span className="text-[11px] font-bold text-[var(--flux-text-muted)] font-mono card-id">{card.id}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (typeof navigator !== "undefined" && navigator.clipboard) {
+                void navigator.clipboard.writeText(card.id);
+              }
+            }}
+            className="ml-1 rounded border border-[rgba(255,255,255,0.12)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+            title="Copiar ID do card"
+            aria-label="Copiar ID do card"
+          >
+            Copiar
+          </button>
         </div>
         <div className="flex items-center gap-1 card-top-right">
           <button

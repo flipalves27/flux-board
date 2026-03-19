@@ -1,18 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import {
+  clearRecentBoards,
+  cleanupBoardShortcuts,
+  getBoardShortcuts,
+  registerBoardVisit,
+  toggleBoardFavorite,
+  type BoardVisitEntry,
+} from "@/lib/board-shortcuts";
+import {
+  averageNullable,
+  type BoardPortfolioMetrics,
+} from "@/lib/board-portfolio-metrics";
 
 interface Board {
   id: string;
   name: string;
   ownerId: string;
   lastUpdated?: string;
+  portfolio?: BoardPortfolioMetrics;
+}
+
+function PortfolioMetricBar({ label, value }: { label: string; value: number | null }) {
+  const fillClass =
+    value === null
+      ? ""
+      : value >= 72
+        ? "bg-[var(--flux-success)]"
+        : value >= 48
+          ? "bg-[var(--flux-warning)]"
+          : "bg-[var(--flux-danger)]";
+  return (
+    <div className="space-y-0.5 min-w-0">
+      <div className="flex justify-between gap-2 text-[10px] text-[var(--flux-text-muted)]">
+        <span className="truncate">{label}</span>
+        <span className="shrink-0 font-mono tabular-nums text-[var(--flux-text)]">
+          {value !== null ? value : "—"}
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
+        {value !== null && (
+          <div className={`h-full rounded-full transition-all ${fillClass}`} style={{ width: `${value}%` }} />
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function BoardsPage() {
@@ -26,6 +65,14 @@ export default function BoardsPage() {
   const [boardName, setBoardName] = useState("");
   const [empty, setEmpty] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<"recent" | "name">("recent");
+  const [showOnlyUpdatedToday, setShowOnlyUpdatedToday] = useState(false);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [favoriteSortMode, setFavoriteSortMode] = useState<"name" | "mostAccessed">("name");
+  const [favoriteBoardIds, setFavoriteBoardIds] = useState<string[]>([]);
+  const [recentEntries, setRecentEntries] = useState<BoardVisitEntry[]>([]);
+  const [visitCounts, setVisitCounts] = useState<Record<string, number>>({});
   const { pushToast } = useToast();
 
   useEffect(() => {
@@ -53,6 +100,18 @@ export default function BoardsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!user || boards.length === 0) return;
+    cleanupBoardShortcuts(
+      user.id,
+      boards.map((board) => board.id)
+    );
+    const shortcuts = getBoardShortcuts(user.id);
+    setFavoriteBoardIds(shortcuts.favorites);
+    setRecentEntries(shortcuts.recents);
+    setVisitCounts(shortcuts.visitCounts);
+  }, [user, boards]);
 
   function openNewModal() {
     setModalMode("new");
@@ -108,6 +167,124 @@ export default function BoardsPage() {
     }
   }
 
+  function parseDateSafe(value?: string) {
+    if (!value) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function isSameDay(a: Date, b: Date) {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
+  }
+
+  const now = new Date();
+  const boardsUpdatedToday = useMemo(
+    () => boards.filter((b) => {
+      const d = parseDateSafe(b.lastUpdated);
+      return d ? isSameDay(d, now) : false;
+    }),
+    [boards]
+  );
+
+  const portfolioSummary = useMemo(() => {
+    const withCards = boards.filter((b) => (b.portfolio?.cardCount ?? 0) > 0);
+    if (withCards.length === 0) {
+      return {
+        avgRisco: null as number | null,
+        avgThroughput: null as number | null,
+        avgPrevisibilidade: null as number | null,
+        atRisk: 0,
+        withCards: 0,
+      };
+    }
+    return {
+      avgRisco: averageNullable(withCards.map((b) => b.portfolio!.risco)),
+      avgThroughput: averageNullable(withCards.map((b) => b.portfolio!.throughput)),
+      avgPrevisibilidade: averageNullable(withCards.map((b) => b.portfolio!.previsibilidade)),
+      atRisk: withCards.filter((b) => (b.portfolio!.risco ?? 100) < 48).length,
+      withCards: withCards.length,
+    };
+  }, [boards]);
+
+  const visibleBoards = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    let list = boards.filter((b) => {
+      if (!normalized) return true;
+      return b.name.toLowerCase().includes(normalized) || b.id.toLowerCase().includes(normalized);
+    });
+
+    if (showOnlyUpdatedToday) {
+      list = list.filter((b) => {
+        const d = parseDateSafe(b.lastUpdated);
+        return d ? isSameDay(d, now) : false;
+      });
+    }
+    if (showOnlyFavorites) {
+      const favoriteIds = new Set(favoriteBoardIds);
+      list = list.filter((b) => favoriteIds.has(b.id));
+    }
+
+    const sorted = [...list];
+    if (sortMode === "name") {
+      sorted.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    } else {
+      sorted.sort((a, b) => {
+        const ad = parseDateSafe(a.lastUpdated)?.getTime() ?? 0;
+        const bd = parseDateSafe(b.lastUpdated)?.getTime() ?? 0;
+        return bd - ad;
+      });
+    }
+    return sorted;
+  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, now]);
+
+  const quickFavoriteBoards = useMemo(() => {
+    const favoriteIds = new Set(favoriteBoardIds);
+    const list = boards.filter((board) => favoriteIds.has(board.id));
+    if (favoriteSortMode === "mostAccessed") {
+      return list.sort((a, b) => {
+        const aCount = visitCounts[a.id] ?? 0;
+        const bCount = visitCounts[b.id] ?? 0;
+        if (bCount !== aCount) return bCount - aCount;
+        return a.name.localeCompare(b.name, "pt-BR");
+      });
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [boards, favoriteBoardIds, favoriteSortMode, visitCounts]);
+  const favoriteModeLabel = favoriteSortMode === "mostAccessed" ? "Mais acessados" : "Nome (A-Z)";
+
+  const quickRecentBoards = useMemo(() => {
+    if (recentEntries.length === 0) return [];
+    const byId = new Map(boards.map((board) => [board.id, board]));
+    return recentEntries
+      .map((entry) => {
+        const board = byId.get(entry.boardId);
+        return board ? { board, visitedAt: entry.visitedAt } : null;
+      })
+      .filter((item): item is { board: Board; visitedAt: string } => item !== null);
+  }, [boards, recentEntries]);
+
+  function handleOpenBoard(boardId: string) {
+    if (user) {
+      setRecentEntries(registerBoardVisit(user.id, boardId));
+      setVisitCounts(getBoardShortcuts(user.id).visitCounts);
+    }
+    router.push(`/board/${boardId}`);
+  }
+
+  function handleToggleFavorite(boardId: string) {
+    if (!user) return;
+    setFavoriteBoardIds(toggleBoardFavorite(user.id, boardId));
+  }
+
+  function handleClearRecents() {
+    if (!user) return;
+    setRecentEntries(clearRecentBoards(user.id));
+  }
+
   if (!user) return null;
 
   return (
@@ -122,6 +299,215 @@ export default function BoardsPage() {
           <p className="text-[var(--flux-text-muted)]">Carregando...</p>
         ) : (
           <>
+            <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boards.length}</p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Atualizados hoje</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boardsUpdatedToday.length}</p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
+                  {boards.filter((b) => b.id === "b_reborn").length}
+                </p>
+              </div>
+            </section>
+
+            <section className="mb-6 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-card)] p-5">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
+                    Dashboard executivo · Portfólio
+                  </h3>
+                  <p className="mt-1 max-w-3xl text-xs leading-relaxed text-[var(--flux-text-muted)]">
+                    Índices de 0 a 100 por board (quanto maior, melhor).{" "}
+                    <strong className="font-semibold text-[var(--flux-text)]">Risco</strong> sintetiza atrasos, urgências
+                    em aberto e pressão de WIP; <strong className="font-semibold text-[var(--flux-text)]">Throughput</strong>{" "}
+                    combina concluídos e avanço nas colunas;{" "}
+                    <strong className="font-semibold text-[var(--flux-text)]">Previsibilidade</strong> reflete o respeito a
+                    prazos nos itens em aberto.
+                  </p>
+                </div>
+                {portfolioSummary.withCards > 0 ? (
+                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
+                    Médias sobre {portfolioSummary.withCards} board{portfolioSummary.withCards !== 1 ? "s" : ""} com itens
+                    {portfolioSummary.atRisk > 0 && (
+                      <span className="mt-1 block text-[var(--flux-danger)] sm:mt-0 sm:ml-2 sm:inline">
+                        · {portfolioSummary.atRisk} com risco &lt; 48 (atenção)
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
+                    Adicione cards aos boards para ver médias agregadas.
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-[var(--flux-rad)] border border-[rgba(255,107,107,0.2)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Risco
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Menor exposição · melhor</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgRisco ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgRisco} />
+                  </div>
+                </div>
+                <div className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.25)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Throughput
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Entrega e fluxo</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgThroughput ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgThroughput} />
+                  </div>
+                </div>
+                <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Previsibilidade
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Prazos sob controle</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgPrevisibilidade ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgPrevisibilidade} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nome ou ID do board..."
+                className="w-full rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+              />
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
+                className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                aria-label="Ordenação dos boards"
+              >
+                <option value="recent">Mais recente</option>
+                <option value="name">Nome (A-Z)</option>
+              </select>
+              <button
+                onClick={() => setShowOnlyUpdatedToday((v) => !v)}
+                className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
+                  showOnlyUpdatedToday
+                    ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.12)] text-[var(--flux-secondary)]"
+                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {showOnlyUpdatedToday ? "Somente hoje: ON" : "Somente hoje: OFF"}
+              </button>
+              <button
+                onClick={() => setShowOnlyFavorites((v) => !v)}
+                className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
+                  showOnlyFavorites
+                    ? "border-[rgba(255,215,0,0.5)] bg-[rgba(255,215,0,0.12)] text-[var(--flux-text)]"
+                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {showOnlyFavorites ? "Só favoritos: ON" : "Só favoritos: OFF"}
+              </button>
+            </section>
+
+            {(quickFavoriteBoards.length > 0 || quickRecentBoards.length > 0) && (
+              <section className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className="rounded-[var(--flux-rad)] border border-[rgba(255,215,0,0.25)] bg-[var(--flux-surface-card)] p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
+                      Favoritos
+                      <span className="ml-1 font-normal text-[11px] text-[var(--flux-text-muted)]">
+                        {" "}
+                        · {favoriteModeLabel}
+                      </span>
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={favoriteSortMode}
+                        onChange={(e) => setFavoriteSortMode(e.target.value as "name" | "mostAccessed")}
+                        className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        aria-label="Ordenação dos favoritos"
+                      >
+                        <option value="name">Nome (A-Z)</option>
+                        <option value="mostAccessed">Mais acessados</option>
+                      </select>
+                      <span className="text-xs text-[var(--flux-text-muted)]">{quickFavoriteBoards.length}</span>
+                    </div>
+                  </div>
+                  {quickFavoriteBoards.length === 0 ? (
+                    <p className="text-xs text-[var(--flux-text-muted)]">
+                      Clique na estrela de um board para fixar aqui.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {quickFavoriteBoards.map((board) => (
+                        <button
+                          key={board.id}
+                          onClick={() => handleOpenBoard(board.id)}
+                          className="rounded-full border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.1)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[rgba(255,215,0,0.48)]"
+                        >
+                          {board.name}
+                          {favoriteSortMode === "mostAccessed" && (
+                            <span className="ml-1 text-[10px] text-[var(--flux-text-muted)]">
+                              ({visitCounts[board.id] ?? 0})
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">Acessados recentemente</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleClearRecents}
+                        className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-text)]"
+                      >
+                        Limpar recentes
+                      </button>
+                      <span className="text-xs text-[var(--flux-text-muted)]">{quickRecentBoards.length}</span>
+                    </div>
+                  </div>
+                  {quickRecentBoards.length === 0 ? (
+                    <p className="text-xs text-[var(--flux-text-muted)]">
+                      Os boards abertos por ultimo aparecem aqui.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {quickRecentBoards.map(({ board, visitedAt }) => (
+                        <button
+                          key={`${board.id}-${visitedAt}`}
+                          onClick={() => handleOpenBoard(board.id)}
+                          className="rounded-full border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.11)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[var(--flux-primary)]"
+                          title={`Ultimo acesso: ${formatDate(visitedAt)}`}
+                        >
+                          {board.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
               <button
                 onClick={openNewModal}
@@ -129,19 +515,59 @@ export default function BoardsPage() {
               >
                 + Novo Board
               </button>
-              {boards.map((b) => {
+              {visibleBoards.map((b) => {
                 const isBoardReborn = b.id === "b_reborn";
                 const isAdmin = user.isAdmin;
+                const wasUpdatedToday = (() => {
+                  const d = parseDateSafe(b.lastUpdated);
+                  return d ? isSameDay(d, now) : false;
+                })();
                 return (
                   <div
                     key={b.id}
                     className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
-                    onClick={() => router.push(`/board/${b.id}`)}
+                    onClick={() => handleOpenBoard(b.id)}
                   >
-                    <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFavorite(b.id);
+                        }}
+                        className={`rounded-md border px-2 py-1 text-xs transition-colors ${
+                          favoriteBoardIds.includes(b.id)
+                            ? "border-[rgba(255,215,0,0.5)] bg-[rgba(255,215,0,0.15)] text-[var(--flux-text)]"
+                            : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                        }`}
+                        aria-label={favoriteBoardIds.includes(b.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                        title={favoriteBoardIds.includes(b.id) ? "Desfavoritar" : "Favoritar"}
+                      >
+                        {favoriteBoardIds.includes(b.id) ? "★" : "☆"}
+                      </button>
+                    </div>
+                    {b.portfolio && b.portfolio.cardCount > 0 ? (
+                      <div className="space-y-2 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-elevated)]/80 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                          Score do board
+                        </p>
+                        <PortfolioMetricBar label="Risco" value={b.portfolio.risco} />
+                        <PortfolioMetricBar label="Throughput" value={b.portfolio.throughput} />
+                        <PortfolioMetricBar label="Previsibilidade" value={b.portfolio.previsibilidade} />
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-[var(--flux-text-muted)]">
+                        Sem itens ainda — os índices aparecem quando houver cards.
+                      </p>
+                    )}
                     <span className="text-xs text-[var(--flux-text-muted)]">
                       Atualizado: {formatDate(b.lastUpdated)}
                     </span>
+                    {wasUpdatedToday && (
+                      <span className="w-fit rounded-full border border-[rgba(0,210,211,0.38)] bg-[rgba(0,210,211,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
+                        Hoje
+                      </span>
+                    )}
                     {isBoardReborn ? (
                       isAdmin ? (
                         <div className="mt-auto pt-3">
@@ -189,6 +615,11 @@ export default function BoardsPage() {
                 Nenhum board ainda. Clique em &quot;Novo Board&quot; para criar.
               </p>
             )}
+            {!empty && boards.length > 0 && visibleBoards.length === 0 && (
+              <p className="text-center py-12 text-[var(--flux-text-muted)]">
+                Nenhum board encontrado para os filtros aplicados.
+              </p>
+            )}
           </>
         )}
       </main>
@@ -213,6 +644,13 @@ export default function BoardsPage() {
                 type="text"
                 value={boardName}
                 onChange={(e) => setBoardName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (modalMode === "new") createBoard();
+                    else saveBoardName();
+                  }
+                }}
                 placeholder="Ex: Backlog Principal"
                 className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 autoFocus

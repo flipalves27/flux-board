@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { apiFetch, apiPut } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
+import { registerBoardVisit } from "@/lib/board-shortcuts";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -131,7 +132,7 @@ export default function BoardPage() {
   const [boardName, setBoardName] = useState("Board");
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
 
@@ -188,6 +189,9 @@ export default function BoardPage() {
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
       });
+      if (user?.id) {
+        registerBoardVisit(user.id, boardId);
+      }
     } catch {
       pushToast({ kind: "error", title: "Erro ao carregar board." });
       router.replace("/boards");
@@ -205,6 +209,7 @@ export default function BoardPage() {
         lastUpdated: new Date().toISOString(),
       };
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      setSaveStatus("saving");
       saveTimeoutRef.current = setTimeout(async () => {
         const requestSeq = ++saveRequestSeqRef.current;
         saveTimeoutRef.current = null;
@@ -275,7 +280,7 @@ export default function BoardPage() {
               saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
             }`}
           />
-          <span>{saveStatus === "error" ? "Erro API" : "Salvo"}</span>
+          <span>{saveStatus === "error" ? "Erro API" : saveStatus === "saving" ? "Salvando..." : "Salvo"}</span>
         </div>
       </Header>
 
