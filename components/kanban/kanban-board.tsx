@@ -96,6 +96,14 @@ export function KanbanBoard({
   const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
   const [dailyTab, setDailyTab] = useState<"entrada" | "historico">("entrada");
+  const [dailyLogs, setDailyLogs] = useState<
+    {
+      timestamp: string;
+      status: "start" | "success" | "error";
+      message: string;
+      model?: string;
+    }[]
+  >([]);
   const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
   const [dailyHistoryCreatedCardsExpandedId, setDailyHistoryCreatedCardsExpandedId] = useState<string | null>(null);
   const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
@@ -394,6 +402,15 @@ export function KanbanBoard({
       alert("Informe ou anexe a transcrição da daily.");
       return;
     }
+    const startedAt = new Date().toISOString();
+    setDailyLogs((prev) => [
+      {
+        timestamp: startedAt,
+        status: "start",
+        message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
+      },
+      ...prev,
+    ].slice(0, 50));
     setDailyGenerating(true);
     try {
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
@@ -403,6 +420,14 @@ export function KanbanBoard({
       });
       const data = await response.json();
       if (!response.ok) {
+        setDailyLogs((prev) => [
+          {
+            timestamp: new Date().toISOString(),
+            status: "error",
+            message: String(data?.error || "Erro ao gerar resumo."),
+          },
+          ...prev,
+        ].slice(0, 50));
         alert(data?.error || "Erro ao gerar resumo.");
         return;
       }
@@ -412,7 +437,27 @@ export function KanbanBoard({
         return { ...prev, dailyInsights: next };
       });
       setDailyHistoryExpandedId(String(data?.entry?.id || ""));
+      const modelName = String(data?.entry?.generationMeta?.model || "").trim();
+      setDailyLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "success",
+          message: modelName
+            ? `Resumo gerado com sucesso pela IA (${modelName}).`
+            : "Resumo gerado com sucesso pela IA.",
+          model: modelName || undefined,
+        },
+        ...prev,
+      ].slice(0, 50));
     } catch {
+      setDailyLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "error",
+          message: "Erro ao gerar resumo com IA.",
+        },
+        ...prev,
+      ].slice(0, 50));
       alert("Erro ao gerar resumo com IA.");
     } finally {
       setDailyGenerating(false);
@@ -1317,6 +1362,46 @@ export function KanbanBoard({
                     {dailyGenerating ? "Integrando com IA..." : "Gerar resumo prático"}
                   </button>
                 </div>
+                {dailyLogs.length > 0 && (
+                  <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                        Log de conectividade com IA
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                        onClick={() => setDailyLogs([])}
+                      >
+                        Limpar log
+                      </button>
+                    </div>
+                    <div className="max-h-40 overflow-auto space-y-1 scrollbar-flux">
+                      {dailyLogs.map((log, index) => {
+                        const dt = new Date(log.timestamp).toLocaleTimeString("pt-BR");
+                        const baseClass =
+                          log.status === "success"
+                            ? "text-[var(--flux-primary-light)]"
+                            : log.status === "error"
+                              ? "text-[#F97373]"
+                              : "text-[var(--flux-text-muted)]";
+                        return (
+                          <div
+                            key={`${log.timestamp}-${index}`}
+                            className="text-[11px] flex items-start gap-2"
+                          >
+                            <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">
+                              {dt}
+                            </span>
+                            <span className={`flex-1 ${baseClass}`}>
+                              {log.message}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex-1 min-h-0 overflow-auto space-y-3">
@@ -1374,6 +1459,56 @@ export function KanbanBoard({
                       Exibindo {filteredDailyInsights.length} de {dailyInsights.length} resumo(s).
                     </p>
                   </div>
+                  {filteredDailyInsights.length > 0 && (
+                    <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
+                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
+                        Lista de históricos
+                      </div>
+                      <div className="max-h-40 overflow-auto scrollbar-flux divide-y divide-[rgba(255,255,255,0.06)]">
+                        {filteredDailyInsights.map((entry, idx) => {
+                          const insight = entry.insight;
+                          if (!insight) return null;
+                          const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
+                          const createItems = getDailyCreateSuggestions(entry);
+                          const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
+                          const isActive =
+                            (dailyHistoryExpandedId && dailyHistoryExpandedId === entry.id) ||
+                            (!dailyHistoryExpandedId && idx === 0);
+                          return (
+                            <button
+                              key={entry.id || idx}
+                              type="button"
+                              onClick={() => setDailyHistoryExpandedId(String(entry.id || ""))}
+                              className={`w-full flex items-center justify-between gap-2 py-1.5 px-1.5 text-left transition-colors ${
+                                isActive
+                                  ? "bg-[rgba(108,92,231,0.16)]"
+                                  : "hover:bg-[rgba(108,92,231,0.08)]"
+                              }`}
+                            >
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <span className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
+                                  {insight.resumo || "Resumo sem título"}
+                                </span>
+                                <span className="text-[10px] text-[var(--flux-text-muted)]">
+                                  {dt || "Sem data"} • {createItems.length} item(ns) em "Criar"
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {generatedWithAi && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
+                                    IA
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-[var(--flux-text-muted)]">
+                                  #{filteredDailyInsights.length - idx}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {filteredDailyInsights.map((entry, idx) => {
                   const insight = entry.insight;
                   if (!insight) return null;
