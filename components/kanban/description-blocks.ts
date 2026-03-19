@@ -38,6 +38,44 @@ const labelToKeyMap = new Map(
   DESCRIPTION_BLOCKS.map((block) => [normalizeLabel(block.label), block.key]),
 );
 
+const headingAliasesByKey: Record<string, string[]> = {
+  businessContext: [
+    "contexto/negocio",
+    "contexto de negocio",
+    "contexto negocio",
+    "contexto",
+    "cenario atual",
+    "resumo de negocio",
+  ],
+  objective: [
+    "objetivo",
+    "objetivo principal",
+    "resultado esperado",
+  ],
+  scope: [
+    "escopo",
+    "escopo da entrega",
+    "o que sera feito",
+    "o que entra",
+    "fora de escopo",
+  ],
+  successCriteria: [
+    "criterios de sucesso",
+    "criterios de pronto",
+    "criterios de aceite",
+    "criterios de aceitacao",
+    "aceite",
+  ],
+  notes: [
+    "observacoes",
+    "premissas",
+    "dependencias",
+    "riscos",
+    "premissas/dependencias/riscos",
+    "informacoes complementares",
+  ],
+};
+
 function normalizeLabel(value: string): string {
   return value
     .normalize("NFD")
@@ -45,6 +83,59 @@ function normalizeLabel(value: string): string {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeHeadingForMatch(value: string): string {
+  return normalizeLabel(value)
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolveHeadingKey(rawHeading: string): string | null {
+  const heading = normalizeHeadingForMatch(rawHeading);
+  if (!heading) return null;
+
+  const direct = labelToKeyMap.get(heading);
+  if (direct) return direct;
+
+  for (const [key, aliases] of Object.entries(headingAliasesByKey)) {
+    const hasMatch = aliases.some((alias) => {
+      const normalizedAlias = normalizeHeadingForMatch(alias);
+      return heading === normalizedAlias || heading.startsWith(`${normalizedAlias} `) || heading.includes(normalizedAlias);
+    });
+    if (hasMatch) return key;
+  }
+
+  if (heading.startsWith("contexto")) return "businessContext";
+  if (heading.startsWith("objetivo")) return "objective";
+  if (heading.startsWith("escopo")) return "scope";
+  if (heading.includes("criterio")) return "successCriteria";
+  if (heading.includes("observa") || heading.includes("premissa") || heading.includes("dependencia") || heading.includes("risco")) {
+    return "notes";
+  }
+
+  return null;
+}
+
+function isLikelySectionHeading(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  // Evita interpretar itens de lista com ":" como cabeçalho de bloco.
+  if (/^([-*+]|>\s*|\d+[.)])\s+/.test(trimmed)) return false;
+
+  const headingPart = trimmed.split(":")[0]?.trim() || "";
+  if (!headingPart) return false;
+  if (headingPart.length > 80) return false;
+  if (headingPart.split(/\s+/).length > 8) return false;
+
+  return true;
+}
+
+function hasMeaningfulContent(value: string): boolean {
+  return /\S/.test(value);
 }
 
 export function createEmptyDescriptionBlocks(): DescriptionBlocksState {
@@ -64,15 +155,14 @@ export function parseDescriptionToBlocks(rawDescription: string | null | undefin
   let hasStructuredContent = false;
 
   for (const line of lines) {
-    const headingMatch = line.match(/^([^:]+):\s*(.*)$/);
-    if (headingMatch) {
-      const heading = normalizeLabel(headingMatch[1]);
-      const matchedKey = labelToKeyMap.get(heading);
+    const headingMatch = line.match(/^([^:]+):(.*)$/);
+    if (headingMatch && isLikelySectionHeading(line)) {
+      const matchedKey = resolveHeadingKey(headingMatch[1]);
       if (matchedKey) {
         currentKey = matchedKey;
         hasStructuredContent = true;
-        const firstLine = headingMatch[2].trim();
-        if (firstLine) {
+        const firstLine = headingMatch[2].replace(/^\s/, "");
+        if (firstLine.trim()) {
           blocks[matchedKey] = blocks[matchedKey]
             ? `${blocks[matchedKey]}\n${firstLine}`
             : firstLine;
@@ -109,8 +199,8 @@ export function parseDescriptionToBlocks(rawDescription: string | null | undefin
 export function serializeDescriptionBlocks(blocks: DescriptionBlocksState): string {
   const sections = DESCRIPTION_BLOCKS
     .map((block) => {
-      const value = String(blocks[block.key] || "").trim();
-      if (!value) return "";
+      const value = String(blocks[block.key] || "");
+      if (!hasMeaningfulContent(value)) return "";
       return `${block.label}:\n${value}`;
     })
     .filter(Boolean);
