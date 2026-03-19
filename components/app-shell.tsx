@@ -16,17 +16,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPublicRoute = pathname === "/" || pathname === "/login";
   const showSidebar = isChecked && user && !isPublicRoute;
 
-  if (!showSidebar) {
-    return <>{children}</>;
-  }
-
   useEffect(() => {
+    if (!showSidebar) return;
     alerts.forEach((alert) => {
       if (announcedAlertsRef.current.has(alert.id)) return;
       announcedAlertsRef.current.add(alert.id);
       playAlertSound(alert.soundId);
     });
-  }, [alerts]);
+  }, [alerts, showSidebar]);
+
+  if (!showSidebar) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen">
