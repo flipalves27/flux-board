@@ -37,9 +37,13 @@ export interface DailyInsightPayload {
   criar?: string[];
   criarDetalhes?: Array<{
     titulo?: string;
+    descricao?: string;
     prioridade?: string;
     progresso?: string;
     coluna?: string;
+    tags?: string[];
+    dataConclusao?: string;
+    direcionamento?: string;
   }>;
   ajustar?: string[];
   corrigir?: string[];

@@ -8,9 +8,13 @@ type InsightResult = {
   criar: string[];
   criarDetalhes: Array<{
     titulo: string;
+    descricao: string;
     prioridade: string;
     progresso: string;
     coluna?: string;
+    tags?: string[];
+    dataConclusao?: string;
+    direcionamento?: string;
   }>;
   ajustar: string[];
   corrigir: string[];
@@ -31,6 +35,14 @@ function normalizeList(value: unknown): string[] {
     .slice(0, 20);
 }
 
+function normalizeTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 function safeInsight(raw: unknown): InsightResult {
   const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const criar = normalizeList(obj.criar);
@@ -41,10 +53,23 @@ function safeInsight(raw: unknown): InsightResult {
       if (!rec) return null;
       const titulo = String(rec.titulo || "").trim();
       if (!titulo) return null;
+      const descricao = String(rec.descricao || rec.detalhes || "").trim();
       const prioridade = String(rec.prioridade || "Média").trim() || "Média";
       const progresso = String(rec.progresso || "Não iniciado").trim() || "Não iniciado";
       const coluna = String(rec.coluna || "").trim();
-      return { titulo, prioridade, progresso, coluna: coluna || undefined };
+      const tags = normalizeTags(rec.tags);
+      const dataConclusao = String(rec.dataConclusao || "").trim();
+      const direcionamento = String(rec.direcionamento || "").trim();
+      return {
+        titulo: titulo.slice(0, 120),
+        descricao: descricao.slice(0, 1600),
+        prioridade,
+        progresso,
+        coluna: coluna || undefined,
+        tags,
+        dataConclusao: dataConclusao || undefined,
+        direcionamento: direcionamento || undefined,
+      };
     })
     .filter(Boolean) as InsightResult["criarDetalhes"];
 
@@ -53,6 +78,7 @@ function safeInsight(raw: unknown): InsightResult {
       ? criarDetalhes.slice(0, 20)
       : criar.slice(0, 20).map((titulo) => ({
           titulo,
+          descricao: "Detalhar escopo, impacto e critérios de aceite com o time.",
           prioridade: "Média",
           progresso: "Não iniciado",
         }));
@@ -62,7 +88,7 @@ function safeInsight(raw: unknown): InsightResult {
     contextoOrganizado: String(obj.contextoOrganizado || obj.resumo || "Contexto organizado não disponível.")
       .trim()
       .slice(0, 12000),
-    criar,
+    criar: criar.length ? criar : mergedCriarDetalhes.map((item) => item.titulo),
     criarDetalhes: mergedCriarDetalhes,
     ajustar: normalizeList(obj.ajustar),
     corrigir: normalizeList(obj.corrigir),
@@ -118,6 +144,7 @@ function heuristicInsight(transcript: string): InsightResult {
     criar,
     criarDetalhes: criar.slice(0, 20).map((titulo) => ({
       titulo,
+      descricao: "Detalhar escopo, impacto esperado e validação com stakeholders.",
       prioridade: "Média",
       progresso: "Não iniciado",
     })),
@@ -139,7 +166,7 @@ async function llmInsight(args: {
   }
 
   const baseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
   const prompt = [
     "Você é um PM técnico sênior.",
@@ -147,7 +174,12 @@ async function llmInsight(args: {
     "Retorne JSON puro com as chaves: resumo, contextoOrganizado, criar, criarDetalhes, ajustar, corrigir, pendencias.",
     "contextoOrganizado deve ser um texto enxuto, revisado e objetivo, estruturado em seções curtas para leitura rápida.",
     "O texto de contexto deve parecer um documento pronto para anexar ao histórico da daily.",
-    "criarDetalhes deve ser uma lista de objetos com: titulo, prioridade, progresso, coluna(opcional).",
+    "criarDetalhes deve ser uma lista de objetos com: titulo, descricao, prioridade, progresso, coluna(opcional), tags(opcional), dataConclusao(opcional), direcionamento(opcional).",
+    "titulo deve ser curto e direto (máximo de 9 palavras).",
+    "descricao deve ser detalhada e pronta para virar descrição do card, incluindo escopo, objetivo e critério de pronto.",
+    "tags deve ser uma lista curta de rótulos existentes no board quando possível.",
+    "dataConclusao deve ser ISO (YYYY-MM-DD) quando existir indicação de prazo.",
+    "direcionamento deve usar apenas: manter, priorizar, adiar, cancelar, reavaliar (quando aplicável).",
     "Use apenas prioridades entre: Urgente, Importante, Média.",
     "Use apenas progresso entre: Não iniciado, Em andamento, Concluída.",
     "Cada lista deve conter itens objetivos e acionáveis, sem texto longo.",

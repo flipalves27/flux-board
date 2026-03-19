@@ -156,16 +156,26 @@ export function KanbanBoard({
             if (!titulo) return null;
             return {
               titulo,
+              descricao: String(item?.descricao || "").trim(),
               prioridade: normDailyPrio(item?.prioridade),
               progresso: normDailyProg(item?.progresso),
               coluna: String(item?.coluna || "").trim(),
+              tags: Array.isArray(item?.tags)
+                ? item.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
+                : [],
+              dataConclusao: String(item?.dataConclusao || "").trim(),
+              direcionamento: String(item?.direcionamento || "").trim().toLowerCase(),
             };
           })
           .filter(Boolean) as Array<{
           titulo: string;
+          descricao: string;
           prioridade: string;
           progresso: string;
           coluna: string;
+          tags: string[];
+          dataConclusao: string;
+          direcionamento: string;
         }>
       : [];
     if (detailed.length > 0) return detailed;
@@ -174,13 +184,26 @@ export function KanbanBoard({
       .map((txt) => {
         const titulo = String(txt || "").trim();
         if (!titulo) return null;
-        return { titulo, prioridade: "Média", progresso: "Não iniciado", coluna: "" };
+        return {
+          titulo,
+          descricao: "Detalhar escopo, impacto esperado e critérios de aceite.",
+          prioridade: "Média",
+          progresso: "Não iniciado",
+          coluna: "",
+          tags: [],
+          dataConclusao: "",
+          direcionamento: "",
+        };
       })
       .filter(Boolean) as Array<{
       titulo: string;
+      descricao: string;
       prioridade: string;
       progresso: string;
       coluna: string;
+      tags: string[];
+      dataConclusao: string;
+      direcionamento: string;
     }>;
   };
 
@@ -219,11 +242,13 @@ export function KanbanBoard({
           priority: normDailyPrio(s.prioridade),
           progress: normDailyProg(s.progresso),
           title: s.titulo,
-          desc: "Criado automaticamente a partir da Daily IA.",
-          tags: ["Reborn"],
+          desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
+          tags: s.tags?.length ? s.tags : ["Reborn"],
           links: [],
-          direction: null,
-          dueDate: null,
+          direction: directions.map((d) => d.toLowerCase()).includes(String(s.direcionamento || "").toLowerCase())
+            ? String(s.direcionamento).toLowerCase()
+            : null,
+          dueDate: s.dataConclusao || null,
           order: nextOrd,
         } as CardData;
       });
@@ -311,7 +336,15 @@ export function KanbanBoard({
       curated || "Sem conteúdo estruturado para este resumo.",
       "",
       "Ações para criar:",
-      ...(createItems.length ? createItems.map((x, i) => `${i + 1}. ${x.titulo}`) : ["- Sem itens identificados."]),
+      ...(createItems.length
+        ? createItems.map((x, i) =>
+            `${i + 1}. ${x.titulo}${
+              x.descricao ? `\n   Descrição: ${x.descricao}` : ""
+            }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
+              x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
+            }`
+          )
+        : ["- Sem itens identificados."]),
       "",
       "Ajustes:",
       ...(ajustar.length ? ajustar.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens identificados."]),
@@ -1250,6 +1283,16 @@ export function KanbanBoard({
                 <p className="text-xs text-[var(--flux-text-muted)] mb-3">
                   Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.
                 </p>
+                {dailyGenerating && (
+                  <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
+                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
+                      Integrando com LLM de IA para estruturar resumo e sugestões de cards...
+                    </p>
+                    <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+                      Isso pode levar alguns segundos dependendo do tamanho da transcrição.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   <label className="btn-bar cursor-pointer">
                     Anexar transcrição
@@ -1271,7 +1314,7 @@ export function KanbanBoard({
                     Fechar
                   </button>
                   <button className="btn-primary" onClick={generateDailyInsight} disabled={dailyGenerating}>
-                    {dailyGenerating ? "Gerando..." : "Gerar resumo prático"}
+                    {dailyGenerating ? "Integrando com IA..." : "Gerar resumo prático"}
                   </button>
                 </div>
               </div>
@@ -1435,22 +1478,49 @@ export function KanbanBoard({
                                               : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
                                         return (
                                           <li key={`${list.key}-${i}`}>
-                                            <div className="flex items-start justify-between gap-2">
-                                              <span className="flex-1 min-w-0 text-xs text-[var(--flux-text)] leading-[1.4]">
-                                                {String(item.titulo || "")}
-                                              </span>
-                                              <span className="flex gap-1 flex-wrap justify-end">
-                                                <span
-                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                                >
-                                                  Prio: {item.prioridade}
+                                            <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-2">
+                                              <div className="flex items-start justify-between gap-2">
+                                                <span className="flex-1 min-w-0 text-xs font-semibold text-[var(--flux-text)] leading-[1.35]">
+                                                  {String(item.titulo || "")}
                                                 </span>
-                                                <span
-                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                                >
-                                                  Progresso: {item.progresso}
+                                                <span className="flex gap-1 flex-wrap justify-end">
+                                                  <span
+                                                    className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
+                                                  >
+                                                    Prio: {item.prioridade}
+                                                  </span>
+                                                  <span
+                                                    className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
+                                                  >
+                                                    Progresso: {item.progresso}
+                                                  </span>
                                                 </span>
-                                              </span>
+                                              </div>
+                                              {item.descricao && (
+                                                <p className="mt-1 text-[11px] text-[var(--flux-text-muted)] leading-relaxed whitespace-pre-line">
+                                                  {item.descricao}
+                                                </p>
+                                              )}
+                                              <div className="mt-1 flex flex-wrap gap-1">
+                                                {item.coluna && (
+                                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                    Coluna: {item.coluna}
+                                                  </span>
+                                                )}
+                                                {item.dataConclusao && (
+                                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                    Prazo: {item.dataConclusao}
+                                                  </span>
+                                                )}
+                                                {item.tags?.map((tag) => (
+                                                  <span
+                                                    key={`${item.titulo}-${tag}`}
+                                                    className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                                                  >
+                                                    {tag}
+                                                  </span>
+                                                ))}
+                                              </div>
                                             </div>
                                           </li>
                                         );
