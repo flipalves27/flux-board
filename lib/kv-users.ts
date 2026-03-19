@@ -1,10 +1,14 @@
 import { getStore } from "./storage";
+import { getDb, isMongoConfigured } from "./mongo";
 import { hashPassword, verifyPassword } from "./auth";
+import type { Db } from "mongodb";
 
 const USERS_KEY = "reborn_users";
 const USER_PREFIX = "reborn_user:";
 const USER_BY_EMAIL = "reborn_user_email:";
 const USER_BY_USERNAME = "reborn_user_username:";
+
+const COL_USERS = "users";
 
 const ADMIN_USER = {
   id: "admin",
@@ -24,6 +28,17 @@ export interface User {
   isAdmin: boolean;
 }
 
+type UserDoc = {
+  _id: string;
+  username: string;
+  name: string;
+  email: string;
+  passwordHash: string | null;
+  isAdmin: boolean;
+  usernameLower: string;
+  emailLower: string;
+};
+
 function recreateAdminUser(): User {
   return {
     ...ADMIN_USER,
@@ -31,7 +46,48 @@ function recreateAdminUser(): User {
   };
 }
 
-async function persistAdminUser(admin: User): Promise<void> {
+function toUser(doc: UserDoc): User {
+  return {
+    id: doc._id,
+    username: doc.username,
+    name: doc.name,
+    email: doc.email,
+    passwordHash: doc.passwordHash,
+    isAdmin: !!doc.isAdmin,
+  };
+}
+
+let userIndexesEnsured = false;
+
+async function ensureUserIndexes(db: Db): Promise<void> {
+  if (userIndexesEnsured) return;
+  const col = db.collection<UserDoc>(COL_USERS);
+  await col.createIndex({ emailLower: 1 }, { unique: true });
+  await col.createIndex({ usernameLower: 1 }, { unique: true });
+  userIndexesEnsured = true;
+}
+
+async function persistAdminUserMongo(db: Db, admin: User): Promise<void> {
+  await ensureUserIndexes(db);
+  const col = db.collection<UserDoc>(COL_USERS);
+  await col.updateOne(
+    { _id: "admin" },
+    {
+      $set: {
+        username: admin.username,
+        name: admin.name,
+        email: admin.email,
+        passwordHash: admin.passwordHash,
+        isAdmin: true,
+        usernameLower: admin.username.toLowerCase(),
+        emailLower: admin.email.toLowerCase(),
+      },
+    },
+    { upsert: true }
+  );
+}
+
+async function persistAdminUserKv(admin: User): Promise<void> {
   const kv = await getStore();
   await kv.set(USER_PREFIX + "admin", JSON.stringify(admin));
   await kv.set(USER_BY_USERNAME + "Admin".toLowerCase(), "admin");
@@ -44,6 +100,29 @@ async function persistAdminUser(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    const col = db.collection<UserDoc>(COL_USERS);
+    await ensureUserIndexes(db);
+    const raw = await col.findOne({ _id: "admin" });
+    if (raw) {
+      const existing = toUser(raw);
+      const needsRecreate =
+        !existing.isAdmin ||
+        !existing.passwordHash ||
+        !verifyPassword("Admin", existing.passwordHash);
+      if (needsRecreate) {
+        const admin = recreateAdminUser();
+        await persistAdminUserMongo(db, admin);
+        return admin;
+      }
+      return existing;
+    }
+    const admin = recreateAdminUser();
+    await persistAdminUserMongo(db, admin);
+    return admin;
+  }
+
   const kv = await getStore();
   const raw = await kv.get<string>(USER_PREFIX + "admin");
   if (raw) {
@@ -55,18 +134,24 @@ export async function ensureAdminUser(): Promise<User | null> {
 
     if (needsRecreate) {
       const admin = recreateAdminUser();
-      await persistAdminUser(admin);
+      await persistAdminUserKv(admin);
       return admin;
     }
     return existing;
   }
 
   const admin = recreateAdminUser();
-  await persistAdminUser(admin);
+  await persistAdminUserKv(admin);
   return admin;
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const doc = await db.collection<UserDoc>(COL_USERS).findOne({ _id: id });
+    return doc ? toUser(doc) : null;
+  }
   const kv = await getStore();
   const raw = await kv.get<string>(USER_PREFIX + id);
   if (!raw) return null;
@@ -74,6 +159,14 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 export async function getUserByUsername(username: string): Promise<User | null> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const doc = await db
+      .collection<UserDoc>(COL_USERS)
+      .findOne({ usernameLower: (username || "").toLowerCase() });
+    return doc ? toUser(doc) : null;
+  }
   const kv = await getStore();
   const id = await kv.get<string>(USER_BY_USERNAME + (username || "").toLowerCase());
   if (!id) return null;
@@ -81,6 +174,14 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const doc = await db
+      .collection<UserDoc>(COL_USERS)
+      .findOne({ emailLower: (email || "").toLowerCase() });
+    return doc ? toUser(doc) : null;
+  }
   const kv = await getStore();
   const id = await kv.get<string>(USER_BY_EMAIL + (email || "").toLowerCase());
   if (!id) return null;
@@ -94,27 +195,58 @@ export async function createUser(user: {
   passwordHash: string;
 }): Promise<User> {
   const id = "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
-  const doc: User = {
-    id,
+  const doc: UserDoc = {
+    _id: id,
     username: user.username,
     name: user.name,
     email: user.email,
     passwordHash: user.passwordHash,
     isAdmin: false,
+    usernameLower: user.username.toLowerCase(),
+    emailLower: user.email.toLowerCase(),
   };
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    await db.collection<UserDoc>(COL_USERS).insertOne(doc);
+    return toUser(doc);
+  }
+
   const kv = await getStore();
-  await kv.set(USER_PREFIX + id, JSON.stringify(doc));
+  const u: User = toUser(doc);
+  await kv.set(USER_PREFIX + id, JSON.stringify(u));
   await kv.set(USER_BY_USERNAME + user.username.toLowerCase(), id);
   await kv.set(USER_BY_EMAIL + user.email.toLowerCase(), id);
   const users = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
   users.push(id);
   await kv.set(USERS_KEY, users);
-  return doc;
+  return u;
 }
 
 export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
   const user = await getUserById(id);
   if (!user) return null;
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const col = db.collection<UserDoc>(COL_USERS);
+    const $set: Partial<UserDoc> = {};
+    if (updates.username !== undefined) {
+      $set.username = updates.username;
+      $set.usernameLower = updates.username.toLowerCase();
+    }
+    if (updates.email !== undefined) {
+      $set.email = updates.email;
+      $set.emailLower = updates.email.toLowerCase();
+    }
+    if (updates.name !== undefined) $set.name = updates.name;
+    if (updates.passwordHash !== undefined) $set.passwordHash = updates.passwordHash;
+    if (Object.keys($set).length) await col.updateOne({ _id: id }, { $set });
+    return getUserById(id);
+  }
+
   const kv = await getStore();
   if (updates.username !== undefined) {
     await kv.del(USER_BY_USERNAME + user.username.toLowerCase());
@@ -132,8 +264,26 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
   return user;
 }
 
-export async function listUsers(): Promise<{ id: string; username: string; name: string; email: string; isAdmin: boolean }[]> {
+export async function listUsers(): Promise<
+  { id: string; username: string; name: string; email: string; isAdmin: boolean }[]
+> {
   await ensureAdminUser();
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const docs = await db
+      .collection<UserDoc>(COL_USERS)
+      .find({})
+      .sort({ usernameLower: 1 })
+      .toArray();
+    return docs.map((u) => ({
+      id: u._id,
+      username: u.username,
+      name: u.name,
+      email: u.email,
+      isAdmin: !!u.isAdmin,
+    }));
+  }
   const kv = await getStore();
   const ids = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
   const users = [];
@@ -147,10 +297,20 @@ export async function listUsers(): Promise<{ id: string; username: string; name:
 export async function deleteUser(id: string): Promise<void> {
   const user = await getUserById(id);
   if (!user) return;
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await db.collection<UserDoc>(COL_USERS).deleteOne({ _id: id });
+    return;
+  }
+
   const kv = await getStore();
   await kv.del(USER_PREFIX + id);
   await kv.del(USER_BY_EMAIL + (user.email || "").toLowerCase());
   await kv.del(USER_BY_USERNAME + (user.username || "").toLowerCase());
   const users = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
-  await kv.set(USERS_KEY, users.filter((u) => u !== id));
+  await kv.set(
+    USERS_KEY,
+    users.filter((u) => u !== id)
+  );
 }

@@ -22,8 +22,9 @@ flux-board/
 ├── lib/
 │   ├── api-client.ts        # Cliente API com suporte a Vercel bypass
 │   ├── auth.ts              # JWT, hash de senha
-│   ├── kv-boards.ts         # CRUD boards (Vercel KV)
-│   └── kv-users.ts          # CRUD usuários (Vercel KV)
+│   ├── mongo.ts             # Cliente MongoDB (serverless / Vercel)
+│   ├── kv-boards.ts         # CRUD boards (MongoDB)
+│   └── kv-users.ts          # CRUD usuários (MongoDB)
 ├── data/
 │   └── db.json              # Seed inicial
 ├── public/
@@ -41,7 +42,7 @@ flux-board/
 - **TypeScript**
 - **Tailwind CSS**
 - **@dnd-kit** (drag-and-drop)
-- **Vercel KV** (Redis)
+- **MongoDB** (driver oficial, ex.: Vercel Storage / Atlas)
 - **JWT** (autenticação)
 
 ## Desenvolvimento
@@ -62,14 +63,21 @@ npm start
 
 Para deploy na Vercel: `vercel` ou push para o repositório conectado.
 
-## Configuração: Vercel KV
+## Configuração: MongoDB (Vercel)
 
-O sistema usa **Vercel KV (Redis)** para persistir dados.
+Usuários, boards e metadados ficam no **MongoDB**.
 
-1. Dashboard Vercel → **Storage** → **Create Database** → **KV (Redis)**
-2. Conecte ao projeto `flux-board`
-3. Variáveis adicionadas automaticamente: `KV_REST_API_URL`, `KV_REST_API_TOKEN`, etc.
-4. Opcional: `JWT_SECRET` para produção
+1. Dashboard Vercel → **Storage** → crie ou vincule um banco **MongoDB** ao projeto.
+2. Garanta a variável **`MONGODB_URI`** no ambiente do projeto (a integração costuma injetá-la automaticamente).
+3. Opcional: **`MONGO_URI`** — alias aceito pelo código.
+4. Opcional: **`MONGODB_DB`** — nome do database se quiser forçar (senão usa o database da connection string).
+5. Opcional: **`JWT_SECRET`** em produção.
+
+**Desenvolvimento local:** sem `MONGODB_URI`, a API usa armazenamento **em memória** (dados somem ao reiniciar o servidor).
+
+**Coleções criadas automaticamente:** `users`, `boards`, `user_boards`, `counters` (índices em `emailLower` / `usernameLower` na primeira execução).
+
+**Migração:** dados antigos no Redis/KV não são migrados automaticamente; é preciso exportar/importar manualmente se necessário.
 
 ## Deployment Protection na Vercel
 
