@@ -405,16 +405,14 @@ export function KanbanBoard({
       return;
     }
     const startedAt = new Date().toISOString();
-    setDailyLogs((prev: DailyLog[]): DailyLog[] =>
-      [
-        {
-          timestamp: startedAt,
-          status: "start",
-          message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
-        },
-        ...prev,
-      ].slice(0, 50)
-    );
+    setDailyLogs((prev) => [
+      {
+        timestamp: startedAt,
+        status: "start" as DailyLogStatus,
+        message: `Enviando transcrição para IA (${transcript.length} caracteres)...`,
+      },
+      ...prev,
+    ].slice(0, 50));
     setDailyGenerating(true);
     try {
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
@@ -424,16 +422,14 @@ export function KanbanBoard({
       });
       const data = await response.json();
       if (!response.ok) {
-        setDailyLogs((prev: DailyLog[]): DailyLog[] =>
-          [
-            {
-              timestamp: new Date().toISOString(),
-              status: "error",
-              message: String(data?.error || "Erro ao gerar resumo."),
-            },
-            ...prev,
-          ].slice(0, 50)
-        );
+        setDailyLogs((prev) => [
+          {
+            timestamp: new Date().toISOString(),
+            status: "error" as DailyLogStatus,
+            message: String(data?.error || "Erro ao gerar resumo."),
+          },
+          ...prev,
+        ].slice(0, 50));
         alert(data?.error || "Erro ao gerar resumo.");
         return;
       }
@@ -444,30 +440,26 @@ export function KanbanBoard({
       });
       setDailyHistoryExpandedId(String(data?.entry?.id || ""));
       const modelName = String(data?.entry?.generationMeta?.model || "").trim();
-      setDailyLogs((prev: DailyLog[]): DailyLog[] =>
-        [
-          {
-            timestamp: new Date().toISOString(),
-            status: "success",
-            message: modelName
-              ? `Resumo gerado com sucesso pela IA (${modelName}).`
-              : "Resumo gerado com sucesso pela IA.",
-            model: modelName || undefined,
-          },
-          ...prev,
-        ].slice(0, 50)
-      );
+      setDailyLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "success" as DailyLogStatus,
+          message: modelName
+            ? `Resumo gerado com sucesso pela IA (${modelName}).`
+            : "Resumo gerado com sucesso pela IA.",
+          model: modelName || undefined,
+        },
+        ...prev,
+      ].slice(0, 50));
     } catch {
-      setDailyLogs((prev: DailyLog[]): DailyLog[] =>
-        [
-          {
-            timestamp: new Date().toISOString(),
-            status: "error",
-            message: "Erro ao gerar resumo com IA.",
-          },
-          ...prev,
-        ].slice(0, 50)
-      );
+      setDailyLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "error" as DailyLogStatus,
+          message: "Erro ao gerar resumo com IA.",
+        },
+        ...prev,
+      ].slice(0, 50));
       alert("Erro ao gerar resumo com IA.");
     } finally {
       setDailyGenerating(false);
