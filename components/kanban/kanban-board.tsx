@@ -107,6 +107,7 @@ function parseOrganizedContext(raw: string): OrganizedContextSection[] {
     .split("\n")
     .map((l) => String(l ?? "").trim())
     .filter(Boolean)
+    .filter((l) => !l.startsWith("```"))
     .slice(0, 250);
 
   const sections: OrganizedContextSection[] = [];
@@ -196,8 +197,140 @@ function parseOrganizedContext(raw: string): OrganizedContextSection[] {
   return sections.slice(0, 6);
 }
 
+function sanitizeJsonCandidateForClient(value: string): string {
+  return String(value || "")
+    .replace(/^\uFEFF/, "")
+    // Remove comments that can leak from LLM responses.
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+    // Remove trailing commas in objects/arrays.
+    .replace(/,\s*([}\]])/g, "$1")
+    .trim();
+}
+
+function extractBalancedJsonObjectForClient(value: string): string | null {
+  const input = String(value || "");
+  const start = input.indexOf("{");
+  if (start < 0) return null;
+
+  let inString = false;
+  let escaped = false;
+  let depth = 0;
+
+  for (let i = start; i < input.length; i++) {
+    const ch = input[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) return input.slice(start, i + 1).trim();
+    }
+  }
+
+  return null;
+}
+
+function tryParseJsonFromRawForClient(raw: string): unknown | null {
+  const input = String(raw || "").trim();
+  if (!input) return null;
+
+  const fencedMatch = input.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch?.[1]) {
+    const candidate = sanitizeJsonCandidateForClient(fencedMatch[1].trim());
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    return JSON.parse(sanitizeJsonCandidateForClient(input));
+  } catch {
+    // ignore
+  }
+
+  const balanced = extractBalancedJsonObjectForClient(input);
+  if (!balanced) return null;
+
+  try {
+    return JSON.parse(sanitizeJsonCandidateForClient(balanced));
+  } catch {
+    return null;
+  }
+}
+
 function renderOrganizedContext(raw: string) {
-  const sections = parseOrganizedContext(raw);
+  const rawText = String(raw || "");
+
+  // Sometimes the LLM puts a JSON blob inside `contextoOrganizado` (often wrapped in ```json ... ```).
+  // In that case, try to extract the inner `contextoOrganizado` text; otherwise, pretty-print JSON.
+  const parsed = tryParseJsonFromRawForClient(rawText);
+  if (parsed && typeof parsed === "object" && parsed !== null) {
+    const rec = parsed as Record<string, unknown>;
+    const nested = rec.contextoOrganizado;
+    if (typeof nested === "string" && nested.trim()) {
+      const sections = parseOrganizedContext(nested);
+      if (sections.length) {
+        return (
+          <div className="space-y-2">
+            {sections.map((section, idx) => (
+              <div key={`${section.title}-${idx}`} className="space-y-1">
+                <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                  {section.title}
+                </div>
+                {section.items.length ? (
+                  <ul className="list-disc pl-4 space-y-1">
+                    {section.items.map((it, i) => (
+                      <li key={`${idx}-${i}`} className="text-xs text-[var(--flux-text)] leading-relaxed">
+                        {it}
+                      </li>
+                    ))}
+                  </ul>
+                ) : section.text ? (
+                  <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">{section.text}</p>
+                ) : (
+                  <p className="text-xs text-[var(--flux-text-muted)]">Sem itens.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+    }
+
+    // Render JSON directly (pretty) to avoid the UI breaking on unstructured blobs.
+    try {
+      const pretty = JSON.stringify(rec, null, 2);
+      if (pretty.trim()) {
+        return (
+          <pre className="text-xs text-[var(--flux-text)] whitespace-pre-wrap break-words leading-relaxed">
+            {pretty.slice(0, 12000)}
+          </pre>
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const sections = parseOrganizedContext(rawText);
   if (!sections.length) {
     return <p className="text-xs text-[var(--flux-text-muted)]">Sem contexto organizado para este resumo.</p>;
   }
