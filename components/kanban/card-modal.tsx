@@ -14,6 +14,9 @@ interface CardModalProps {
   priorities: string[];
   progresses: string[];
   filterLabels: string[];
+  boardId: string;
+  boardName: string;
+  getHeaders: () => Record<string, string>;
   onCreateLabel?: (label: string) => void;
   onDeleteLabel?: (label: string) => void;
   onClose: () => void;
@@ -31,12 +34,37 @@ export function CardModal({
   priorities,
   progresses,
   filterLabels,
+  boardId,
+  boardName,
+  getHeaders,
   onCreateLabel,
   onDeleteLabel,
   onClose,
   onSave,
   onDelete,
 }: CardModalProps) {
+  type AiContextPhase = "idle" | "preparing" | "requesting" | "processing" | "done" | "error";
+  type AiLogStatus = "start" | "success" | "error";
+  type AiContextLog = {
+    timestamp: string;
+    status: AiLogStatus;
+    message: string;
+    provider?: string;
+    model?: string;
+    errorKind?: string;
+    errorMessage?: string;
+    resultSnippet?: string;
+  };
+
+  const [aiContextApplied, setAiContextApplied] = useState<{
+    usedLlm: boolean;
+    provider?: string;
+    model?: string;
+    at: string;
+  } | null>(null);
+  const [aiContextBusinessSummary, setAiContextBusinessSummary] = useState("");
+  const [aiContextObjective, setAiContextObjective] = useState("");
+
   const [id, setId] = useState(card.id);
   const [title, setTitle] = useState(card.title);
   const [desc, setDesc] = useState(card.desc);
@@ -54,6 +82,29 @@ export function CardModal({
   const { pushToast } = useToast();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  const [aiContextOpen, setAiContextOpen] = useState(false);
+  const [aiContextPhase, setAiContextPhase] = useState<AiContextPhase>("idle");
+  const [aiContextLogs, setAiContextLogs] = useState<AiContextLog[]>([]);
+  const aiContextInFlightRef = useRef(false);
+  const aiContextAbortControllerRef = useRef<AbortController | null>(null);
+  const aiContextRequestSeqRef = useRef(0);
+
+  const aiContextCanGenerate = Boolean(title.trim() && desc.trim());
+  const aiContextBusy =
+    aiContextPhase === "preparing" || aiContextPhase === "requesting" || aiContextPhase === "processing";
+  const aiContextStatusStepIndex =
+    aiContextPhase === "preparing"
+      ? 1
+      : aiContextPhase === "requesting"
+        ? 2
+        : aiContextPhase === "processing"
+          ? 3
+          : aiContextPhase === "done"
+            ? 4
+            : aiContextPhase === "error"
+              ? 0
+              : 0;
+
   useModalA11y({
     // Evita conflitos de focus trap quando abrimos o ConfirmDialog.
     open: !confirmDeleteOpen,
@@ -66,6 +117,9 @@ export function CardModal({
     setId(card.id);
     setTitle(card.title);
     setDesc(card.desc);
+    setAiContextApplied(null);
+    setAiContextBusinessSummary("");
+    setAiContextObjective("");
     setBucket(card.bucket);
     setPriority(card.priority);
     setProgress(card.progress);
@@ -121,6 +175,144 @@ export function CardModal({
       next.delete(label);
       return next;
     });
+  };
+
+  const generateAiContextForCard = async () => {
+    const t = title.trim();
+    const d = desc.trim();
+    if (!t || !d) {
+      pushToast({ kind: "error", title: "Informe o título e a descrição para gerar contexto." });
+      return;
+    }
+    if (aiContextInFlightRef.current) return;
+
+    const CARD_CONTEXT_TIMEOUT_MS = 60000;
+    aiContextInFlightRef.current = true;
+    const requestSeq = ++aiContextRequestSeqRef.current;
+    const controller = new AbortController();
+    aiContextAbortControllerRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort(), CARD_CONTEXT_TIMEOUT_MS);
+
+    const startedAt = new Date().toISOString();
+    setAiContextOpen(true);
+    setAiContextPhase("preparing");
+    setAiContextBusinessSummary("");
+    setAiContextObjective("");
+    setAiContextApplied(null);
+    setAiContextLogs([
+      {
+        timestamp: startedAt,
+        status: "start",
+        message: "Preparando contexto por IA...",
+      },
+    ]);
+
+    try {
+      setAiContextPhase("requesting");
+      const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/card-context`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ title: t, description: d }),
+        signal: controller.signal,
+      });
+      setAiContextPhase("processing");
+
+      const data = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        titulo?: string;
+        descricao?: string;
+        resumoNegocio?: string;
+        objetivo?: string;
+        generatedWithAI?: boolean;
+        provider?: string;
+        model?: string;
+        llmDebug?: {
+          generatedWithAI?: boolean;
+          provider?: string;
+          model?: string;
+          errorKind?: string;
+          errorMessage?: string;
+        };
+      };
+
+      if (!response.ok) {
+        const message = String(data?.error || "Erro ao gerar contexto.");
+        setAiContextPhase("error");
+        setAiContextLogs((prev) => [
+          {
+            timestamp: new Date().toISOString(),
+            status: "error",
+            message,
+            provider: String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined,
+            model: String(data?.model || data?.llmDebug?.model || "").trim() || undefined,
+            errorKind: String(data?.llmDebug?.errorKind || "").trim() || undefined,
+            errorMessage: String(data?.llmDebug?.errorMessage || "").trim() || undefined,
+          },
+          ...prev,
+        ]);
+        pushToast({ kind: "error", title: message });
+        return;
+      }
+
+      const nextTitle = String(data?.titulo || "").trim();
+      const nextDesc = String(data?.descricao || "").trim();
+
+      if (nextTitle) setTitle(nextTitle);
+      if (nextDesc) setDesc(nextDesc);
+
+      const usedLlm =
+        Boolean(data?.generatedWithAI) ||
+        Boolean(data?.llmDebug?.generatedWithAI) ||
+        Boolean((data as any)?.usedLlm);
+
+      const providerName = String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined;
+      const modelName = String(data?.model || data?.llmDebug?.model || "").trim() || undefined;
+
+      setAiContextApplied({
+        usedLlm,
+        provider: providerName,
+        model: modelName,
+        at: new Date().toISOString(),
+      });
+      setAiContextBusinessSummary(String(data?.resumoNegocio || "").trim());
+      setAiContextObjective(String(data?.objetivo || "").trim());
+
+      setAiContextPhase("done");
+      setAiContextLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "success",
+          message: usedLlm ? "Contexto gerado com IA." : "Contexto estruturado (fallback, sem IA).",
+          provider: providerName,
+          model: modelName,
+          resultSnippet: String(data?.objetivo || data?.resumoNegocio || "").trim().slice(0, 180) || undefined,
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      const isAbort = err instanceof Error && (err as unknown as { name?: string }).name === "AbortError";
+      setAiContextPhase("error");
+      setAiContextLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "error",
+          message: isAbort ? "Tempo esgotado ao gerar contexto por IA." : "Erro ao gerar contexto por IA.",
+        },
+        ...prev,
+      ]);
+      pushToast({
+        kind: isAbort ? "warning" : "error",
+        title: isAbort ? "Tempo esgotado ao gerar contexto por IA." : "Erro ao gerar contexto por IA.",
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+      aiContextInFlightRef.current = false;
+      if (aiContextAbortControllerRef.current === controller) aiContextAbortControllerRef.current = null;
+      if (aiContextRequestSeqRef.current === requestSeq) {
+        // Modal permanece aberto para exibir o resultado.
+      }
+    }
   };
 
   return (
@@ -183,13 +375,33 @@ export function CardModal({
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
                   ID
                 </label>
-                <input
-                  type="text"
-                  value={id}
-                  onChange={(e) => setId(e.target.value)}
-                  placeholder="Ex: DI-700"
-                  className={inputBase}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={id}
+                    onChange={(e) => setId(e.target.value)}
+                    placeholder="Ex: DI-700"
+                    className={`${inputBase} flex-1`}
+                  />
+                  <CustomTooltip content="Gerar contexto por IA (baseado no Título e na Descrição)">
+                    <button
+                      type="button"
+                      onClick={generateAiContextForCard}
+                      disabled={!aiContextCanGenerate || aiContextBusy}
+                      aria-label="Gerar contexto por IA"
+                      className={`w-10 h-10 rounded-xl border text-[var(--flux-primary-light)] flex items-center justify-center transition-all duration-200 shrink-0 ${
+                        !aiContextCanGenerate || aiContextBusy
+                          ? "opacity-45 cursor-not-allowed bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.10)]"
+                          : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] hover:bg-[rgba(108,92,231,0.12)] hover:border-[rgba(108,92,231,0.40)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.10)]"
+                      }`}
+                      title="Contexto IA"
+                    >
+                      <span className="text-lg" aria-hidden>
+                        🧠
+                      </span>
+                    </button>
+                  </CustomTooltip>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
@@ -216,10 +428,26 @@ export function CardModal({
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setAiContextApplied(null);
+                }}
                 placeholder="Título executivo do card"
                 className={`${inputBase} text-base font-medium`}
               />
+              {aiContextApplied && (
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] border font-semibold ${
+                      aiContextApplied.usedLlm
+                        ? "bg-[rgba(108,92,231,0.12)] border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                        : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
+                    }`}
+                  >
+                    {aiContextApplied.usedLlm ? "Gerado por IA" : "Contexto estruturado (sem IA)"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -228,11 +456,27 @@ export function CardModal({
               </label>
               <textarea
                 value={desc}
-                onChange={(e) => setDesc(e.target.value)}
+                onChange={(e) => {
+                  setDesc(e.target.value);
+                  setAiContextApplied(null);
+                }}
                 placeholder="Descreva os detalhes do card..."
                 rows={4}
                 className={`${inputBase} resize-y min-h-[100px]`}
               />
+              {aiContextApplied && (
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] border font-semibold ${
+                      aiContextApplied.usedLlm
+                        ? "bg-[rgba(108,92,231,0.12)] border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                        : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
+                    }`}
+                  >
+                    {aiContextApplied.usedLlm ? "Texto gerado por IA" : "Descrição estruturada (sem IA)"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -434,6 +678,182 @@ export function CardModal({
             </button>
           </div>
         </div>
+        {aiContextOpen && (
+          <div
+            className="fixed inset-0 z-[420] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-context-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-full max-w-2xl bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-5 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h3
+                    id="ai-context-title"
+                    className="font-display font-bold text-[var(--flux-text)] text-base"
+                  >
+                    Contexto IA do Card
+                  </h3>
+                  <p className="text-xs text-[var(--flux-text-muted)]">Board: {boardName || "Board"}</p>
+                </div>
+                <button type="button" onClick={() => setAiContextOpen(false)} className="btn-secondary">
+                  Fechar
+                </button>
+              </div>
+
+              <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
+                    Acompanhamento da geração
+                  </div>
+                  <div className="text-[11px] text-[var(--flux-text-muted)]">
+                    {aiContextBusy
+                      ? "Processando..."
+                      : aiContextPhase === "done"
+                        ? "Concluído"
+                        : aiContextPhase === "error"
+                          ? "Falha"
+                          : "Pronto"}
+                  </div>
+                </div>
+                <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                  <div
+                    className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
+                    style={{
+                      width: `${aiContextPhase === "idle" ? 0 : Math.max(6, Math.min(100, aiContextStatusStepIndex * 25))}%`,
+                      opacity: aiContextBusy ? 0.95 : 0.85,
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-2">
+                  {["Preparando", "Enviando", "Processando", "Concluído"].map((step, idx) => {
+                    const stepPos = idx + 1;
+                    const active = aiContextStatusStepIndex >= stepPos;
+                    return (
+                      <div
+                        key={step}
+                        className={`text-[10px] rounded-[6px] px-2 py-1 border ${
+                          active
+                            ? "border-[rgba(108,92,231,0.45)] text-[var(--flux-primary-light)] bg-[rgba(108,92,231,0.12)]"
+                            : "border-[rgba(255,255,255,0.1)] text-[var(--flux-text-muted)]"
+                        }`}
+                      >
+                        {step}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {aiContextBusy ? (
+                aiContextLogs.length > 0 ? (
+                  <div className="bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                        Log de conectividade com IA
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                        onClick={() => setAiContextLogs([])}
+                      >
+                        Limpar log
+                      </button>
+                    </div>
+                    <div className="max-h-56 overflow-auto space-y-1 scrollbar-flux">
+                      {aiContextLogs.map((log, index) => {
+                        const dt = new Date(log.timestamp).toLocaleTimeString("pt-BR");
+                        const baseClass =
+                          log.status === "success"
+                            ? "text-[var(--flux-primary-light)]"
+                            : log.status === "error"
+                              ? "text-[#F97373]"
+                              : "text-[var(--flux-text-muted)]";
+                        return (
+                          <div key={`${log.timestamp}-${index}`} className="text-[11px] flex items-start gap-2">
+                            <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">{dt}</span>
+                            <div className={`flex-1 ${baseClass} space-y-0.5`}>
+                              <div>{log.message}</div>
+                              {log.provider || log.model ? (
+                                <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                  {log.provider && <span>LLM: {log.provider}</span>}
+                                  {log.provider && log.model ? <span> • </span> : null}
+                                  {log.model && <span>Modelo: {log.model}</span>}
+                                </div>
+                              ) : null}
+                              {log.errorKind ? (
+                                <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                  Erro IA: {log.errorKind}
+                                  {log.errorMessage ? ` - ${log.errorMessage}` : ""}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[var(--flux-text-muted)] mt-4">
+                    O log aparecerá aqui assim que a geração for iniciada.
+                  </p>
+                )
+              ) : (
+                <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                      Resultado aplicado no card
+                    </div>
+                    <span className="text-[10px] text-[var(--flux-text-muted)]">
+                      {aiContextPhase === "done"
+                        ? aiContextApplied?.usedLlm
+                          ? "IA aplicada"
+                          : "fallback aplicado"
+                        : aiContextPhase === "error"
+                          ? "falha"
+                          : ""}
+                    </span>
+                  </div>
+
+                  {aiContextPhase === "done" && aiContextApplied ? (
+                    <div className="space-y-2">
+                      <div className="text-xs text-[var(--flux-text-muted)]">
+                        O <span className="text-[var(--flux-text)] font-semibold">Título</span> e a{" "}
+                        <span className="text-[var(--flux-text)] font-semibold">Descrição</span> foram preenchidos
+                        automaticamente.
+                      </div>
+                      {(aiContextBusinessSummary || aiContextObjective) && (
+                        <div className="rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3">
+                          {aiContextBusinessSummary ? (
+                            <div className="text-[11px] mb-2">
+                              <span className="font-semibold text-[var(--flux-text)]">Negócio:</span>{" "}
+                              <span className="text-[var(--flux-text-muted)]">{aiContextBusinessSummary}</span>
+                            </div>
+                          ) : null}
+                          {aiContextObjective ? (
+                            <div className="text-[11px]">
+                              <span className="font-semibold text-[var(--flux-text)]">Objetivo:</span>{" "}
+                              <span className="text-[var(--flux-text-muted)]">{aiContextObjective}</span>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  ) : aiContextPhase === "error" ? (
+                    <div className="text-xs text-[var(--flux-text-muted)]">
+                      Não foi possível gerar o contexto por IA. Ajuste o Título/Descrição e tente novamente.
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <ConfirmDialog
           open={confirmDeleteOpen}
           title="Excluir este card?"

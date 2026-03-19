@@ -2039,6 +2039,9 @@ export function KanbanBoard({
           priorities={priorities}
           progresses={progresses}
           filterLabels={boardLabels}
+          boardId={boardId}
+          boardName={boardName}
+          getHeaders={getHeaders}
           onCreateLabel={createLabel}
           onDeleteLabel={deleteLabel}
           onClose={() => setModalCard(null)}
