@@ -70,6 +70,7 @@ export async function PUT(
     if (body.cards !== undefined) updates.cards = body.cards;
     if (body.config !== undefined) updates.config = body.config;
     if (body.mapaProducao !== undefined) updates.mapaProducao = body.mapaProducao;
+    if (body.dailyInsights !== undefined) updates.dailyInsights = body.dailyInsights;
     if (body.version !== undefined) updates.version = body.version;
     if (body.lastUpdated !== undefined) updates.lastUpdated = body.lastUpdated;
 

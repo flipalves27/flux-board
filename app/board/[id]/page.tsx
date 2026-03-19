@@ -31,6 +31,27 @@ export interface CardLink {
   label?: string;
 }
 
+export interface DailyInsightPayload {
+  resumo?: string;
+  criar?: string[];
+  criarDetalhes?: Array<{
+    titulo?: string;
+    prioridade?: string;
+    progresso?: string;
+    coluna?: string;
+  }>;
+  ajustar?: string[];
+  corrigir?: string[];
+  pendencias?: string[];
+}
+
+export interface DailyInsightEntry {
+  id: string;
+  createdAt?: string;
+  transcript?: string;
+  insight?: DailyInsightPayload;
+}
+
 export interface CardData {
   id: string;
   bucket: string;
@@ -61,6 +82,7 @@ export interface BoardData {
     labels?: string[];
   };
   mapaProducao?: { papel: string; equipe: string; linha: string; operacoes: string }[];
+  dailyInsights?: DailyInsightEntry[];
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
@@ -134,6 +156,7 @@ export default function BoardPage() {
               : FILTER_LABELS,
         },
         mapaProducao: d.mapaProducao,
+        dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
       });
     } catch {
       alert("Erro ao carregar board.");
@@ -209,6 +232,7 @@ export default function BoardPage() {
       <KanbanBoard
         db={db}
         updateDb={updateDb}
+        boardName={boardName}
         boardId={boardId}
         getHeaders={getHeaders}
         filterLabels={FILTER_LABELS}

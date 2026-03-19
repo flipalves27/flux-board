@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       cards: [],
       config: { bucketOrder: [], collapsedColumns: [] },
       mapaProducao: [],
+      dailyInsights: [],
     });
     return NextResponse.json(
       {

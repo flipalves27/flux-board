@@ -36,6 +36,7 @@ export interface BoardData {
   cards?: unknown[];
   config?: { bucketOrder: unknown[]; collapsedColumns?: string[] };
   mapaProducao?: unknown[];
+  dailyInsights?: unknown[];
   createdAt?: string;
   lastUpdated?: string;
 }
@@ -101,7 +102,13 @@ export async function userCanAccessBoard(userId: string, isAdmin: boolean, board
   return false;
 }
 
-export function getDefaultBoardData(): { version: string; cards: unknown[]; config: unknown; mapaProducao: unknown[] } {
+export function getDefaultBoardData(): {
+  version: string;
+  cards: unknown[];
+  config: unknown;
+  mapaProducao: unknown[];
+  dailyInsights: unknown[];
+} {
   const fs = require("fs");
   const path = require("path");
   const dataDir = path.join(process.cwd(), "data");
@@ -115,6 +122,7 @@ export function getDefaultBoardData(): { version: string; cards: unknown[]; conf
     cards: seed.cards || [],
     config: seed.config || { bucketOrder: [], collapsedColumns: [] },
     mapaProducao: seed.mapaProducao || [],
+    dailyInsights: [],
   };
 }
 
@@ -134,6 +142,7 @@ export async function ensureBoardReborn(
     cards: seedData.cards || [],
     config: seedData.config as BoardData["config"],
     mapaProducao: seedData.mapaProducao || [],
+    dailyInsights: seedData.dailyInsights || [],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
   };
