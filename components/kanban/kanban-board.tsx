@@ -525,6 +525,7 @@ export function KanbanBoard({
         data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || ""
       ).trim();
       const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
+      const hasRealLlmFailure = Boolean(errorKind) || !generatedWithAI;
       const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
       const rawContent = String(data?.llmDebug?.rawContent || "").trim();
       setDailyStatusPhase("done");
@@ -544,7 +545,7 @@ export function KanbanBoard({
             : undefined,
         } as DailyLog,
         // Quando existir erro de integração com IA, logar claramente mesmo com fallback bem-sucedido
-        ...(errorKind || errorMessage
+        ...(hasRealLlmFailure
           ? ([
               {
                 timestamp: new Date().toISOString(),

@@ -37,6 +37,21 @@ type ParseOutcome = {
   recovered: boolean;
 };
 
+function extractTextFromLlmContent(
+  content: string | Array<{ type?: string; text?: string }> | undefined
+): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((part) => {
+      if (!part || typeof part !== "object") return "";
+      return String(part.text || "").trim();
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 function normalizeList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -355,9 +370,9 @@ async function llmInsight(args: {
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
     };
-    const content = data.choices?.[0]?.message?.content || "{}";
+    const content = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "{}";
     const parsed = parseJsonFromLlmContent(content);
     return {
       insight: safeInsight(parsed.parsed),
