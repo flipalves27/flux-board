@@ -40,6 +40,12 @@ interface DailyLog {
   status: DailyLogStatus;
   message: string;
   model?: string;
+  provider?: string;
+  // Texto opcional com o resultado retornado pela IA (resumo) ou JSON bruto truncado
+  resultSnippet?: string;
+  // Informações de erro de integração com IA (quando houver)
+  errorKind?: string;
+  errorMessage?: string;
 }
 
 const DIR_COLORS: Record<string, string> = {
@@ -427,7 +433,11 @@ export function KanbanBoard({
             timestamp: new Date().toISOString(),
             status: "error" as DailyLogStatus,
             message: String(data?.error || "Erro ao gerar resumo."),
-          },
+            errorKind: data?.llmDebug?.errorKind,
+            errorMessage: data?.llmDebug?.errorMessage,
+            provider: data?.llmDebug?.provider,
+            model: data?.llmDebug?.model,
+          } as DailyLog,
           ...prev,
         ].slice(0, 50));
         alert(data?.error || "Erro ao gerar resumo.");
@@ -439,16 +449,69 @@ export function KanbanBoard({
         return { ...prev, dailyInsights: next };
       });
       setDailyHistoryExpandedId(String(data?.entry?.id || ""));
-      const modelName = String(data?.entry?.generationMeta?.model || "").trim();
+      const modelName = String(
+        data?.llmDebug?.model || data?.entry?.generationMeta?.model || ""
+      ).trim();
+      const providerName = String(
+        data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || ""
+      ).trim();
+      const generatedWithAI = Boolean(
+        data?.llmDebug?.generatedWithAI ?? data?.entry?.generationMeta?.usedLlm
+      );
+      const errorKind = String(
+        data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || ""
+      ).trim();
+      const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
+      const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
+      const rawContent = String(data?.llmDebug?.rawContent || "").trim();
+
+      // Log de sucesso / fallback, explicitando conectividade com IA
       setDailyLogs((prev) => [
         {
           timestamp: new Date().toISOString(),
           status: "success" as DailyLogStatus,
-          message: modelName
-            ? `Resumo gerado com sucesso pela IA (${modelName}).`
-            : "Resumo gerado com sucesso pela IA.",
+          message: generatedWithAI
+            ? `Resumo gerado com sucesso pela IA${providerName ? ` (${providerName})` : ""}${
+                modelName ? ` - modelo: ${modelName}` : ""
+              }.`
+            : "Resumo estruturado sem uso efetivo da IA (modo heurístico).",
           model: modelName || undefined,
-        },
+          provider: providerName || undefined,
+          resultSnippet: insightResumo
+            ? `Resumo: ${insightResumo.slice(0, 200)}${insightResumo.length > 200 ? "..." : ""}`
+            : undefined,
+        } as DailyLog,
+        // Quando existir erro de integração com IA, logar claramente mesmo com fallback bem-sucedido
+        ...(errorKind || errorMessage
+          ? ([
+              {
+                timestamp: new Date().toISOString(),
+                status: "error" as DailyLogStatus,
+                message: `Falha na integração com IA${
+                  providerName ? ` (${providerName})` : ""
+                }${modelName ? ` - modelo: ${modelName}` : ""}${
+                  errorKind ? ` [${errorKind}]` : ""
+                }. Conteúdo tratado em modo heurístico.`,
+                errorKind,
+                errorMessage: errorMessage || undefined,
+                provider: providerName || undefined,
+                model: modelName || undefined,
+              } as DailyLog,
+            ] as DailyLog[])
+          : []),
+        // Log opcional com o JSON bruto retornado pela IA, quando disponível
+        ...(rawContent
+          ? ([
+              {
+                timestamp: new Date().toISOString(),
+                status: "start" as DailyLogStatus,
+                message: "Resposta bruta da IA (JSON) registrada para diagnóstico.",
+                provider: providerName || undefined,
+                model: modelName || undefined,
+                resultSnippet: rawContent.slice(0, 400),
+              } as DailyLog,
+            ] as DailyLog[])
+          : []),
         ...prev,
       ].slice(0, 50));
     } catch {
@@ -1395,9 +1458,27 @@ export function KanbanBoard({
                             <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">
                               {dt}
                             </span>
-                            <span className={`flex-1 ${baseClass}`}>
-                              {log.message}
-                            </span>
+                            <div className={`flex-1 ${baseClass} space-y-0.5`}>
+                              <div>{log.message}</div>
+                              {(log.provider || log.model) && (
+                                <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                  {log.provider && <span>LLM: {log.provider}</span>}
+                                  {log.provider && log.model && <span> • </span>}
+                                  {log.model && <span>Modelo: {log.model}</span>}
+                                </div>
+                              )}
+                              {log.errorKind && (
+                                <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                  Erro IA: {log.errorKind}
+                                  {log.errorMessage ? ` - ${log.errorMessage}` : ""}
+                                </div>
+                              )}
+                              {log.resultSnippet && (
+                                <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-pre-wrap">
+                                  {log.resultSnippet}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}

@@ -25,6 +25,11 @@ type LlmInsightResult = {
   insight: InsightResult;
   generatedWithAI: boolean;
   model?: string;
+  provider?: string;
+  // Campos auxiliares para log de conectividade com IA (expostos apenas na resposta HTTP)
+  rawContent?: string;
+  errorKind?: "no_api_key" | "http_error" | "network_error" | "parse_error";
+  errorMessage?: string;
 };
 
 function normalizeList(value: unknown): string[] {
@@ -163,7 +168,13 @@ async function llmInsight(args: {
   // Usa exclusivamente Together.ai (TOGETHER_API_KEY obrigatório para geração via LLM)
   const apiKey = process.env.TOGETHER_API_KEY;
   if (!apiKey) {
-    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
+    return {
+      insight: heuristicInsight(args.transcript),
+      generatedWithAI: false,
+      provider: "together.ai",
+      errorKind: "no_api_key",
+      errorMessage: "TOGETHER_API_KEY não configurada. Usando modo heurístico.",
+    };
   }
 
   // Endpoint OpenAI-compatível da Together.ai
@@ -201,37 +212,73 @@ async function llmInsight(args: {
     args.transcript.slice(0, 12000),
   ].join("\n");
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
-      // Não usamos response_format para manter compatibilidade ampla;
-      // o prompt já obriga retorno como JSON puro.
-    }),
-  });
-
-  if (!response.ok) {
-    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
-  }
-
-  const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = data.choices?.[0]?.message?.content || "{}";
   try {
-    return {
-      insight: safeInsight(JSON.parse(content)),
-      generatedWithAI: true,
-      model,
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        messages: [{ role: "user", content: prompt }],
+        // Não usamos response_format para manter compatibilidade ampla;
+        // o prompt já obriga retorno como JSON puro.
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      const message = `HTTP ${response.status} ${response.statusText}${
+        errorBody ? ` - ${errorBody.slice(0, 400)}` : ""
+      }`;
+      console.error("Daily insights LLM HTTP error:", message);
+      return {
+        insight: heuristicInsight(args.transcript),
+        generatedWithAI: false,
+        model,
+        provider: "together.ai",
+        errorKind: "http_error",
+        errorMessage: message,
+      };
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
     };
-  } catch {
-    return { insight: heuristicInsight(args.transcript), generatedWithAI: false };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    try {
+      return {
+        insight: safeInsight(JSON.parse(content)),
+        generatedWithAI: true,
+        model,
+        provider: "together.ai",
+        rawContent: content,
+      };
+    } catch (err) {
+      console.error("Daily insights LLM parse error:", err);
+      return {
+        insight: heuristicInsight(args.transcript),
+        generatedWithAI: false,
+        model,
+        provider: "together.ai",
+        errorKind: "parse_error",
+        errorMessage:
+          err instanceof Error ? err.message : "Falha ao interpretar JSON de resposta da IA.",
+        rawContent: content,
+      };
+    }
+  } catch (err) {
+    console.error("Daily insights LLM network error:", err);
+    return {
+      insight: heuristicInsight(args.transcript),
+      generatedWithAI: false,
+      model,
+      provider: "together.ai",
+      errorKind: "network_error",
+      errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
+    };
   }
 }
 
@@ -304,12 +351,23 @@ export async function POST(
       generationMeta: {
         usedLlm: llmResult.generatedWithAI,
         model: llmResult.generatedWithAI ? llmResult.model : undefined,
+        provider: llmResult.provider,
+        errorKind: llmResult.errorKind,
       },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
     await updateBoard(boardId, { dailyInsights });
 
-    return NextResponse.json({ ok: true, entry });
+    const llmDebug = {
+      provider: llmResult.provider,
+      model: llmResult.model,
+      generatedWithAI: llmResult.generatedWithAI,
+      errorKind: llmResult.errorKind,
+      errorMessage: llmResult.errorMessage,
+      rawContent: llmResult.rawContent,
+    };
+
+    return NextResponse.json({ ok: true, entry, llmDebug });
   } catch (err) {
     console.error("Daily insights API error:", err);
     return NextResponse.json(
