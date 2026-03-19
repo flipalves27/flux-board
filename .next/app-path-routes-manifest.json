@@ -1,17 +1,19 @@
 {
   "/api/auth/login/route": "/api/auth/login",
   "/api/auth/register/route": "/api/auth/register",
-  "/_not-found/page": "/_not-found",
   "/api/auth/me/route": "/api/auth/me",
   "/api/boards/[id]/route": "/api/boards/[id]",
-  "/api/boards/route": "/api/boards",
-  "/api/users/route": "/api/users",
   "/api/discovery/garantia-ia-propostas/route": "/api/discovery/garantia-ia-propostas",
   "/api/users/[id]/route": "/api/users/[id]",
-  "/page": "/",
+  "/api/boards/route": "/api/boards",
+  "/api/users/route": "/api/users",
+  "/_not-found/page": "/_not-found",
   "/board/[id]/page": "/board/[id]",
+  "/boards/page": "/boards",
+  "/page": "/",
   "/login/page": "/login",
   "/users/page": "/users",
-  "/boards/page": "/boards",
-  "/discovery/garantia-ia-propostas/page": "/discovery/garantia-ia-propostas"
+  "/tasks/page": "/tasks",
+  "/discovery/garantia-ia-propostas/page": "/discovery/garantia-ia-propostas",
+  "/discovery/page": "/discovery"
 }

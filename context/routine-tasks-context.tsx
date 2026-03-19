@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { DEFAULT_ALERT_SOUND_ID } from "@/lib/alert-sounds";
 
 const STORAGE_KEY = "flux_routine_tasks_v1";
 const ALERT_TTL_MS = 7000;
@@ -17,6 +18,7 @@ export interface RoutineTask {
   weekdays: number[];
   dayOfMonth: number;
   alertBeforeMinutes: number;
+  alertSound: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -34,6 +36,7 @@ export interface RoutineTaskInput {
   weekdays: number[];
   dayOfMonth: number;
   alertBeforeMinutes: number;
+  alertSound: string;
   active: boolean;
 }
 
@@ -42,6 +45,7 @@ export interface TaskAlert {
   taskId: string;
   title: string;
   dueAt: string;
+  soundId: string;
   createdAt: number;
 }
 
@@ -137,6 +141,7 @@ function normalizeTask(raw: Partial<RoutineTask>): RoutineTask {
     weekdays: Array.isArray(raw.weekdays) ? raw.weekdays.filter((d) => typeof d === "number") : [1],
     dayOfMonth: toNumber(raw.dayOfMonth, 1),
     alertBeforeMinutes: toNumber(raw.alertBeforeMinutes, 15),
+    alertSound: typeof raw.alertSound === "string" ? raw.alertSound : DEFAULT_ALERT_SOUND_ID,
     active: raw.active !== false,
   };
 
@@ -197,6 +202,7 @@ export function RoutineTasksProvider({ children }: { children: React.ReactNode }
               taskId: task.id,
               title: task.title,
               dueAt: task.nextDueAt,
+          soundId: task.alertSound,
               createdAt: nowMs,
             });
             return { ...task, lastAlertForDueAt: task.nextDueAt, updatedAt: new Date().toISOString() };
@@ -278,6 +284,7 @@ export function RoutineTasksProvider({ children }: { children: React.ReactNode }
           weekdays: task.weekdays,
           dayOfMonth: task.dayOfMonth,
           alertBeforeMinutes: task.alertBeforeMinutes,
+          alertSound: task.alertSound,
           active: task.active,
         };
         return {

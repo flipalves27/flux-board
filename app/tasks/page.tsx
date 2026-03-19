@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routine-tasks-context";
+import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, playAlertSound } from "@/lib/alert-sounds";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -27,6 +28,7 @@ const defaultTaskInput: RoutineTaskInput = {
   weekdays: [1, 2, 3, 4, 5],
   dayOfMonth: 1,
   alertBeforeMinutes: 15,
+  alertSound: DEFAULT_ALERT_SOUND_ID,
   active: true,
 };
 
@@ -89,6 +91,7 @@ export default function TasksPage() {
       weekdays: task.weekdays,
       dayOfMonth: task.dayOfMonth,
       alertBeforeMinutes: task.alertBeforeMinutes,
+      alertSound: task.alertSound,
       active: task.active,
     });
   }
@@ -116,6 +119,43 @@ export default function TasksPage() {
           </p>
 
           <form onSubmit={submitTask} className="space-y-3">
+            <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.16)] bg-[linear-gradient(180deg,rgba(108,92,231,0.1),rgba(108,92,231,0.03))] p-3">
+              <p className="text-xs text-[var(--flux-primary-light)] font-semibold font-display uppercase tracking-wide mb-2">
+                Configuracao rapida
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      recurrence: "daily",
+                      weekdays: [1, 2, 3, 4, 5],
+                      dayOfMonth: 1,
+                    }))
+                  }
+                  className="text-left rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
+                >
+                  <p className="text-sm font-semibold text-[var(--flux-text)]">Rotina diaria</p>
+                  <p className="text-xs text-[var(--flux-text-muted)] mt-1">Todo dia no horario escolhido</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      recurrence: "weekly",
+                      weekdays: [1, 2, 3, 4, 5],
+                    }))
+                  }
+                  className="text-left rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
+                >
+                  <p className="text-sm font-semibold text-[var(--flux-text)]">Seg a sex</p>
+                  <p className="text-xs text-[var(--flux-text-muted)] mt-1">Ideal para rituais de trabalho</p>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">Título</label>
               <input
@@ -175,6 +215,33 @@ export default function TasksPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">Som do alerta</label>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-2">
+                <select
+                  value={form.alertSound}
+                  onChange={(e) => setForm((prev) => ({ ...prev, alertSound: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                >
+                  {ALERT_SOUND_PRESETS.map((sound) => (
+                    <option key={sound.id} value={sound.id}>
+                      {sound.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => playAlertSound(form.alertSound)}
+                  className="btn-secondary whitespace-nowrap"
+                >
+                  Testar som
+                </button>
+              </div>
+              <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+                {ALERT_SOUND_PRESETS.length} opcoes suaves disponiveis para personalizar seus lembretes.
+              </p>
             </div>
 
             {form.recurrence === "weekly" && (
@@ -285,15 +352,21 @@ export default function TasksPage() {
                   {task.notes && <p className="text-sm text-[var(--flux-text-muted)] mt-2">{task.notes}</p>}
 
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-xs text-[var(--flux-text-muted)]">
-                      Próximo alerta:{" "}
-                      {new Date(task.nextDueAt).toLocaleString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                    <div className="text-xs text-[var(--flux-text-muted)]">
+                      <span>
+                        Próximo alerta:{" "}
+                        {new Date(task.nextDueAt).toLocaleString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <span className="mx-1.5">-</span>
+                      <span>
+                        Som: {ALERT_SOUND_PRESETS.find((sound) => sound.id === task.alertSound)?.name ?? "Padrao"}
+                      </span>
+                    </div>
                     <div className="flex gap-2">
                       <button type="button" onClick={() => completeTask(task.id)} className="btn-sm border-[rgba(0,230,118,0.3)] text-[var(--flux-success)]">
                         Concluir

@@ -64,6 +64,12 @@
       "namedRegex": "^/boards(?:/)?$"
     },
     {
+      "page": "/discovery",
+      "regex": "^/discovery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/discovery(?:/)?$"
+    },
+    {
       "page": "/discovery/garantia-ia-propostas",
       "regex": "^/discovery/garantia\\-ia\\-propostas(?:/)?$",
       "routeKeys": {},
@@ -74,6 +80,12 @@
       "regex": "^/login(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/tasks",
+      "regex": "^/tasks(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tasks(?:/)?$"
     },
     {
       "page": "/users",

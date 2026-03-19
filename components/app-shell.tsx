@@ -1,14 +1,17 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Sidebar } from "@/components/sidebar";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
+import { playAlertSound } from "@/lib/alert-sounds";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isChecked } = useAuth();
   const { alerts, dismissAlert } = useRoutineTasks();
+  const announcedAlertsRef = useRef<Set<string>>(new Set());
 
   const isPublicRoute = pathname === "/" || pathname === "/login";
   const showSidebar = isChecked && user && !isPublicRoute;
@@ -16,6 +19,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!showSidebar) {
     return <>{children}</>;
   }
+
+  useEffect(() => {
+    alerts.forEach((alert) => {
+      if (announcedAlertsRef.current.has(alert.id)) return;
+      announcedAlertsRef.current.add(alert.id);
+      playAlertSound(alert.soundId);
+    });
+  }, [alerts]);
 
   return (
     <div className="flex min-h-screen">
