@@ -95,9 +95,10 @@ async function rateLimitMongo({ key, limit, windowMs }: RateLimitParams): Promis
     { upsert: true, returnDocument: "after" }
   );
 
-  // Depending on the MongoDB driver version/types, `findOneAndUpdate` may return the document directly.
-  const doc = r;
-  const count = typeof doc?.count === "number" ? doc.count : 1;
+  // `findOneAndUpdate` (mongodb v4+) typically returns `{ value: Document | null, ... }`.
+  // Como os types podem variar, tratamos tanto `r.value` quanto `r` como fallback.
+  const doc = (r as any)?.value ?? (r as any);
+  const count = typeof (doc as any)?.count === "number" ? (doc as any).count : 1;
 
   const retryAfterMs = windowStartMs + windowMs - now;
   const retryAfterSeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
