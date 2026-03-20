@@ -15,6 +15,7 @@ import {
 import { ensureAdminUser } from "@/lib/kv-users";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
+import { getBoardCap } from "@/lib/plan-gates";
 
 function corsHeaders() {
   return {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
     const currentCount = orgBoardIds.filter((id) => id !== rebornId).length;
-    const cap = org?.plan === "free" ? org.maxBoards : null;
+    const cap = getBoardCap(org);
     const isPro = cap === null;
 
     const plan =
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     const name = (sanitizeText(parsed.data.name ?? "Novo Board").trim().slice(0, 100) || "Novo Board").trim();
 
     const rebornId = getBoardRebornId(payload.orgId);
-    const cap = org?.plan === "free" ? org.maxBoards : null;
+    const cap = getBoardCap(org);
     if (cap !== null) {
       const existingIds = await getBoardIds(payload.id, payload.orgId, true);
       const currentCount = existingIds.filter((id) => id !== rebornId).length;

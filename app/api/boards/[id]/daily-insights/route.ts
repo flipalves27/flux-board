@@ -3,6 +3,8 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { DailyInsightInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { getOrganizationById } from "@/lib/kv-organizations";
+import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
 
 type InsightActionItem = {
   titulo: string;
@@ -460,6 +462,16 @@ export async function POST(
   const { id: boardId } = await params;
   if (!boardId || boardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
+  }
+
+  const org = await getOrganizationById(payload.orgId);
+  try {
+    assertFeatureAllowed(org, "daily_insights");
+  } catch (err) {
+    if (err instanceof PlanGateError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    throw err;
   }
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);

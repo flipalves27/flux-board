@@ -10,6 +10,13 @@ export interface Organization {
   plan: "free" | "pro" | "business";
   maxUsers: number;
   maxBoards: number;
+  // Billing (Stripe)
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  stripeStatus?: string;
+  stripeCurrentPeriodEnd?: string; // ISO
+  stripeSeats?: number;
   createdAt: string;
 }
 
@@ -18,11 +25,21 @@ const DEFAULT_ORG_ID = "org_default";
 
 const DEFAULT_MAX_BOARDS = (() => {
   const cap = maxBoardsPerUser();
-  // Se não houver env configurado, mantém comportamento "ilimitado" semelhante ao atual.
-  return typeof cap === "number" ? cap : 1_000_000;
+  // Defaults alinhados ao modelo de precificação (imagem):
+  // Free: 3 boards; Pro/Business: ilimitado (controlado via `plan`).
+  if (typeof cap === "number") return cap;
+  const fromEnv = Number(process.env.FLUX_FREE_MAX_BOARDS ?? "");
+  if (Number.isFinite(fromEnv) && fromEnv >= 1) return fromEnv;
+  return 3;
 })();
 
-const DEFAULT_MAX_USERS = Number(process.env.FLUX_MAX_USERS_PER_ORG ?? 10_000);
+const DEFAULT_MAX_USERS = (() => {
+  const fromEnvLegacy = Number(process.env.FLUX_MAX_USERS_PER_ORG ?? "");
+  if (Number.isFinite(fromEnvLegacy) && fromEnvLegacy >= 1) return fromEnvLegacy;
+  const fromEnvFree = Number(process.env.FLUX_FREE_MAX_USERS_PER_ORG ?? "");
+  if (Number.isFinite(fromEnvFree) && fromEnvFree >= 1) return fromEnvFree;
+  return 1;
+})();
 
 const DEFAULT_ORG_DOC: Omit<Organization, "_id"> = {
   name: "Default organization",
@@ -232,7 +249,22 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
 
 export async function updateOrganization(
   orgId: string,
-  updates: Partial<Pick<Organization, "name" | "slug" | "plan" | "maxBoards" | "maxUsers">>
+  updates: Partial<
+    Pick<
+      Organization,
+      | "name"
+      | "slug"
+      | "plan"
+      | "maxBoards"
+      | "maxUsers"
+      | "stripeCustomerId"
+      | "stripeSubscriptionId"
+      | "stripePriceId"
+      | "stripeStatus"
+      | "stripeCurrentPeriodEnd"
+      | "stripeSeats"
+    >
+  >
 ): Promise<Organization | null> {
   if (!isMongoConfigured()) return null;
   const db = await getDb();

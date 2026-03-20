@@ -1,0 +1,42 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthFromRequest } from "@/lib/auth";
+import { getOrganizationById } from "@/lib/kv-organizations";
+import { createCheckoutSession } from "@/lib/billing";
+
+type BillingPlan = "pro" | "business";
+
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  const payload = getAuthFromRequest(request);
+  if (!payload || !payload.isAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  }
+
+  const org = await getOrganizationById(payload.orgId);
+  if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
+
+  const body = await request.json().catch(() => ({}));
+  const planRaw = body?.plan as unknown;
+  const seatsRaw = body?.seats as unknown;
+
+  const plan: BillingPlan = planRaw === "pro" || planRaw === "business" ? planRaw : "pro";
+
+  const seatsCandidate = typeof seatsRaw === "number" ? seatsRaw : undefined;
+  const seats =
+    typeof seatsCandidate === "number" && Number.isFinite(seatsCandidate)
+      ? Math.floor(seatsCandidate)
+      : Math.max(1, org.maxUsers || 1);
+  if (seats < 1) return NextResponse.json({ error: "seats deve ser >= 1" }, { status: 400 });
+
+  try {
+    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats });
+    return NextResponse.json({ url: session.url, sessionId: session.sessionId });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Erro interno" },
+      { status: 400 }
+    );
+  }
+}
+

@@ -18,6 +18,7 @@ import {
   getOrganizationById,
 } from "@/lib/kv-organizations";
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
+import { getUserCap } from "@/lib/plan-gates";
 
 export type AuthResult =
   | { ok: true; token: string; user: { id: string; username: string; name: string; email: string; isAdmin: boolean; orgId: string } }
@@ -136,8 +137,9 @@ export async function registerAction(
       // Garante limite de usuários por organização.
       const org = await getOrganizationById(validated.orgId);
       const members = await listUsers(validated.orgId);
-      if (org && members.length >= org.maxUsers) {
-        return { ok: false, error: `Limite do plano: no máximo ${org.maxUsers} usuário(s).` };
+      const cap = getUserCap(org);
+      if (cap !== null && members.length >= cap) {
+        return { ok: false, error: `Limite do plano: no máximo ${cap} usuário(s).` };
       }
 
       const user = await createUser({
