@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
@@ -129,6 +130,9 @@ export default function BoardPage() {
   const boardId = params.id as string;
   const { user, getHeaders, isChecked } = useAuth();
   const { pushToast } = useToast();
+  const locale = useLocale();
+  const t = useTranslations("board");
+  const localeRoot = `/${locale}`;
   const [boardName, setBoardName] = useState("Board");
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,15 +142,15 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (!isChecked || !user) {
-      router.replace("/login");
+      router.replace(`${localeRoot}/login`);
       return;
     }
     if (!boardId) {
-      router.replace("/boards");
+      router.replace(`${localeRoot}/boards`);
       return;
     }
     loadBoard();
-  }, [isChecked, user, boardId, router]);
+  }, [isChecked, user, boardId, router, localeRoot]);
 
   async function loadBoard() {
     try {
@@ -155,12 +159,12 @@ export default function BoardPage() {
         headers: getHeaders(),
       });
       if (r.status === 401) {
-        router.replace("/login");
+        router.replace(`${localeRoot}/login`);
         return;
       }
       if (r.status === 403) {
-        pushToast({ kind: "error", title: "Sem permissão para este board." });
-        router.replace("/boards");
+        pushToast({ kind: "error", title: t("toasts.noPermission") });
+        router.replace(`${localeRoot}/boards`);
         return;
       }
       if (!r.ok) throw new Error("Erro ao carregar");
@@ -193,8 +197,8 @@ export default function BoardPage() {
         registerBoardVisit(user.id, boardId);
       }
     } catch {
-      pushToast({ kind: "error", title: "Erro ao carregar board." });
-      router.replace("/boards");
+      pushToast({ kind: "error", title: t("toasts.loadError") });
+      router.replace(`${localeRoot}/boards`);
     } finally {
       setLoading(false);
     }
@@ -233,7 +237,7 @@ export default function BoardPage() {
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
           setSaveStatus("error");
-          pushToast({ kind: "error", title: "Falha ao salvar alterações. Verifique sua conexão e tente novamente." });
+          pushToast({ kind: "error", title: t("toasts.saveError") });
           setTimeout(() => {
             if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
           }, 3000);
@@ -242,7 +246,7 @@ export default function BoardPage() {
         }
       }, 300);
     },
-    [db, boardId, getHeaders]
+    [db, boardId, getHeaders, t]
   );
 
   const updateDb = useCallback(
@@ -261,7 +265,7 @@ export default function BoardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
-        <p className="text-[var(--flux-text-muted)]">Carregando board...</p>
+        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
@@ -281,7 +285,13 @@ export default function BoardPage() {
                 saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
               }`}
             />
-            <span>{saveStatus === "error" ? "Erro API" : saveStatus === "saving" ? "Salvando..." : "Salvo"}</span>
+            <span>
+              {saveStatus === "error"
+                ? t("status.errorApi")
+                : saveStatus === "saving"
+                  ? t("status.saving")
+                  : t("status.saved")}
+            </span>
           </div>
         </div>
       </Header>

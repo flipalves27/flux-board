@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export type ToastKind = "success" | "error" | "info" | "warning";
 
@@ -66,6 +67,7 @@ function kindStyles(kind: ToastKind) {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timersRef = useRef<Map<string, number>>(new Map());
+  const toastsT = useTranslations("toasts");
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -124,11 +126,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-atomic="true"
         className="fixed right-4 bottom-4 z-[520] flex w-[min(420px,92vw)] flex-col gap-2 pointer-events-none"
       >
-        {toasts.map((t) => {
-          const st = kindStyles(t.kind);
+        {toasts.map((toast) => {
+          const st = kindStyles(toast.kind);
+          const kindLabel =
+            toast.kind === "success"
+              ? toastsT("kinds.success")
+              : toast.kind === "error"
+                ? toastsT("kinds.error")
+                : toast.kind === "warning"
+                  ? toastsT("kinds.warning")
+                  : toastsT("kinds.info");
           return (
             <div
-              key={t.id}
+              key={toast.id}
               role="status"
               className="pointer-events-auto border rounded-[var(--flux-rad)] px-4 py-3 bg-[var(--flux-surface-card)]/95 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
               style={{
@@ -139,16 +149,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-wide font-semibold font-display" style={{ color: st.text }}>
-                    {t.kind === "success" ? "OK" : t.kind === "error" ? "Erro" : t.kind === "warning" ? "Atenção" : "Info"}
+                    {kindLabel}
                   </p>
-                  <p className="text-sm font-semibold text-[var(--flux-text)] mt-1">{t.title}</p>
-                  {t.description && <p className="text-xs text-[var(--flux-text-muted)] mt-1">{t.description}</p>}
+                  <p className="text-sm font-semibold text-[var(--flux-text)] mt-1">{toast.title}</p>
+                  {toast.description && (
+                    <p className="text-xs text-[var(--flux-text-muted)] mt-1">{toast.description}</p>
+                  )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => dismissToast(t.id)}
+                  onClick={() => dismissToast(toast.id)}
                   className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200"
-                  aria-label="Fechar notificação"
+                  aria-label={toastsT("closeAria")}
                 >
                   ×
                 </button>

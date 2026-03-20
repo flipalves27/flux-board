@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { BoardData, CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
 import { useToast } from "@/context/toast-context";
+import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
 import type {
   DailyLog,
@@ -47,13 +48,14 @@ export function useDailySession({
   directions: string[];
 }) {
   const { pushToast } = useToast();
+  const t = useTranslations("kanban");
 
   const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
 
   const [dailyOpen, setDailyOpen] = useState(false);
 
   const [dailyTranscript, setDailyTranscript] = useState("");
-  const [dailyFileName, setDailyFileName] = useState("Nenhum arquivo anexado");
+  const [dailyFileName, setDailyFileName] = useState(t("daily.defaults.noAttachment"));
   const [dailySourceFileName, setDailySourceFileName] = useState("");
   const [dailyGenerating, setDailyGenerating] = useState(false);
   const [dailyTab, setDailyTab] = useState<DailyTab>("entrada");
@@ -76,7 +78,7 @@ export function useDailySession({
 
   const clearDailyInput = useCallback(() => {
     setDailyTranscript("");
-    setDailyFileName("Nenhum arquivo anexado");
+    setDailyFileName(t("daily.defaults.noAttachment"));
     setDailySourceFileName("");
     setDailyLogs([]);
     setDailyStatusPhase("idle");
@@ -108,7 +110,7 @@ export function useDailySession({
       // Ao abrir uma execução nova: limpar contexto de entrada.
       setDailyTab("entrada");
       setDailyTranscript("");
-      setDailyFileName("Nenhum arquivo anexado");
+      setDailyFileName(t("daily.defaults.noAttachment"));
       setDailySourceFileName("");
       setDailyLogs([]);
       setDailyStatusPhase("idle");
@@ -134,7 +136,11 @@ export function useDailySession({
     reader.onload = (ev) => {
       const text = String(ev.target?.result || "");
       setDailyTranscript(text.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
-      setDailyFileName(`${file.name} carregado`);
+      setDailyFileName(
+        t("daily.defaults.fileLoaded", {
+          fileName: file.name,
+        })
+      );
       setDailySourceFileName(file.name);
     };
     reader.readAsText(file, "UTF-8");
@@ -143,7 +149,7 @@ export function useDailySession({
 
   const clearDailyAttachmentAndTranscript = useCallback(() => {
     setDailyTranscript("");
-    setDailyFileName("Nenhum arquivo anexado");
+    setDailyFileName(t("daily.defaults.noAttachment"));
     setDailySourceFileName("");
   }, []);
 
@@ -180,7 +186,7 @@ export function useDailySession({
     const entryId = dailyDeleteConfirmId;
     setDailyDeleteConfirmId(null);
     performDeleteDailyHistoryEntry(entryId);
-    pushToast({ kind: "success", title: "Resumo excluído." });
+    pushToast({ kind: "success", title: t("daily.toasts.delete.success") });
   }, [dailyDeleteConfirmId, performDeleteDailyHistoryEntry, pushToast]);
 
   const slugDaily = useCallback(
@@ -198,13 +204,16 @@ export function useDailySession({
     (entryId?: string) => {
       const entry = entryId ? dailyInsights.find((x) => x?.id === entryId) : dailyInsights[0];
       if (!entry?.insight) {
-        pushToast({ kind: "error", title: "Resumo não encontrado." });
+        pushToast({ kind: "error", title: t("daily.toasts.createCards.error.notFound") });
         return;
       }
 
       const suggestions = getDailyCreateSuggestions(entry);
       if (!suggestions.length) {
-        pushToast({ kind: "error", title: "Não há itens em 'Criar' para transformar em card." });
+        pushToast({
+          kind: "error",
+          title: t("daily.toasts.createCards.error.noCreateItems"),
+        });
         return;
       }
 
@@ -304,19 +313,24 @@ export function useDailySession({
           if (createdCount > 0 && existingCount > 0) {
             pushToast({
               kind: "success",
-              title: `${createdCount} card(s) criado(s) com sucesso.`,
-              description: `${existingCount} item(ns) já existia(m) no board e foram apenas sinalizados.`,
+              title: t("daily.toasts.createCards.success.both.title", { count: createdCount }),
+              description: t("daily.toasts.createCards.success.both.description", {
+                existingCount,
+              }),
             });
             return;
           }
           if (createdCount > 0) {
-            pushToast({ kind: "success", title: `${createdCount} card(s) criado(s) com sucesso.` });
+            pushToast({
+              kind: "success",
+              title: t("daily.toasts.createCards.success.single.title", { count: createdCount }),
+            });
             return;
           }
           pushToast({
             kind: "info",
-            title: "Nenhum novo card criado.",
-            description: "Todos os itens sugeridos já existem no board.",
+            title: t("daily.toasts.createCards.info.none.title"),
+            description: t("daily.toasts.createCards.info.none.description"),
           });
         }, 0);
 
@@ -429,18 +443,18 @@ export function useDailySession({
     async (entry: DailyInsightEntry) => {
       const content = buildDailyContextDoc(entry);
       if (!content.trim()) {
-        pushToast({ kind: "error", title: "Não há contexto para copiar." });
+        pushToast({ kind: "error", title: t("daily.toasts.copy.error.noContext") });
         return;
       }
       if (!navigator?.clipboard?.writeText) {
-        pushToast({ kind: "warning", title: "Seu navegador não suporta cópia automática." });
+        pushToast({ kind: "warning", title: t("daily.toasts.copy.warning.noClipboardSupport") });
         return;
       }
       try {
         await navigator.clipboard.writeText(content);
-        pushToast({ kind: "success", title: "Contexto copiado para a área de transferência." });
+        pushToast({ kind: "success", title: t("daily.toasts.copy.success.copied") });
       } catch {
-        pushToast({ kind: "error", title: "Não foi possível copiar o contexto." });
+        pushToast({ kind: "error", title: t("daily.toasts.copy.error.couldNotCopy") });
       }
     },
     [buildDailyContextDoc, pushToast]
@@ -459,7 +473,7 @@ export function useDailySession({
   const onGenerateDailyInsight = useCallback(async () => {
     const transcript = dailyTranscript.trim();
     if (!transcript) {
-      pushToast({ kind: "error", title: "Informe ou anexe a transcrição da daily." });
+      pushToast({ kind: "error", title: t("daily.toasts.generate.error.noTranscript") });
       return;
     }
     if (dailyInFlightRef.current) return;
@@ -481,7 +495,7 @@ export function useDailySession({
       {
         timestamp: startedAt,
         status: "start" as DailyLogStatus,
-        message: "Iniciando geração do resumo prático...",
+        message: t("daily.logs.generate.start"),
       },
       ...prev,
     ].slice(0, 50));
@@ -504,7 +518,7 @@ export function useDailySession({
           {
             timestamp: new Date().toISOString(),
             status: "error" as DailyLogStatus,
-            message: String(data?.error || "Erro ao gerar resumo."),
+            message: String(data?.error || t("daily.logs.generate.errorFallback")),
             errorKind: data?.llmDebug?.errorKind,
             errorMessage: data?.llmDebug?.errorMessage,
             provider: data?.llmDebug?.provider,
@@ -512,7 +526,10 @@ export function useDailySession({
           } as DailyLog,
           ...prev,
         ].slice(0, 50));
-        pushToast({ kind: "error", title: String(data?.error || "Erro ao gerar resumo.") });
+        pushToast({
+          kind: "error",
+          title: String(data?.error || t("daily.toasts.generate.errorFallback")),
+        });
         return;
       }
 
@@ -543,12 +560,14 @@ export function useDailySession({
           timestamp: new Date().toISOString(),
           status: "success" as DailyLogStatus,
           message: generatedWithAI
-            ? "Modelo gerado com sucesso."
-            : "Resumo estruturado sem uso efetivo da IA (modo heurístico).",
+            ? t("daily.logs.generate.success.aiModelGenerated")
+            : t("daily.logs.generate.success.heuristic"),
           model: modelName || undefined,
           provider: providerName || undefined,
           resultSnippet: insightResumo
-            ? `Resumo: ${insightResumo.slice(0, 200)}${insightResumo.length > 200 ? "..." : ""}`
+            ? `${t("daily.logs.generate.resultSnippetPrefix")} ${insightResumo.slice(0, 200)}${
+                insightResumo.length > 200 ? "..." : ""
+              }`
             : undefined,
         } as DailyLog,
         ...(hasRealLlmFailure
@@ -556,9 +575,9 @@ export function useDailySession({
               {
                 timestamp: new Date().toISOString(),
                 status: "error" as DailyLogStatus,
-                message: `Falha na integração com IA${providerName ? ` (${providerName})` : ""}${
-                  modelName ? ` - modelo: ${modelName}` : ""
-                }${errorKind ? ` [${errorKind}]` : ""}. Conteúdo tratado em modo heurístico.`,
+                  message: `${t("daily.logs.generate.error.integrationFailure.prefix")}${providerName ? ` (${providerName})` : ""}${
+                    modelName ? ` - ${t("daily.logs.generate.error.integrationFailure.modelLabel")}: ${modelName}` : ""
+                  }${errorKind ? ` [${errorKind}]` : ""}. ${t("daily.logs.generate.error.integrationFailure.heuristicSuffix")}`,
                 errorKind,
                 errorMessage: errorMessage || undefined,
                 provider: providerName || undefined,
@@ -575,14 +594,16 @@ export function useDailySession({
         {
           timestamp: new Date().toISOString(),
           status: "error" as DailyLogStatus,
-          message: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
+          message: isAbort
+            ? t("daily.logs.generate.error.timeout")
+            : t("daily.logs.generate.error.error"),
         },
         ...prev,
       ].slice(0, 50));
 
       pushToast({
         kind: isAbort ? "warning" : "error",
-        title: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
+        title: isAbort ? t("daily.toasts.generate.timeout") : t("daily.toasts.generate.error.title"),
       });
     } finally {
       window.clearTimeout(timeoutId);
@@ -595,7 +616,7 @@ export function useDailySession({
         setDailyHistoryExpandedId(null);
         setDailyHistoryCreatedCardsExpandedId(null);
         setDailyTranscript("");
-        setDailyFileName("Nenhum arquivo anexado");
+        setDailyFileName(t("daily.defaults.noAttachment"));
         setDailySourceFileName("");
         try {
           window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
@@ -762,7 +783,8 @@ export function useDailySession({
       if (typeof parsed.transcript === "string") {
         setDailyTranscript(parsed.transcript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
       }
-      if (typeof parsed.fileName === "string") setDailyFileName(parsed.fileName || "Nenhum arquivo anexado");
+      if (typeof parsed.fileName === "string")
+        setDailyFileName(parsed.fileName || t("daily.defaults.noAttachment"));
       if (typeof parsed.sourceFileName === "string") setDailySourceFileName(parsed.sourceFileName);
       if (parsed.tab === "entrada" || parsed.tab === "historico" || parsed.tab === "status") setDailyTab(parsed.tab);
       if (Array.isArray(parsed.logs)) setDailyLogs(parsed.logs.slice(0, 50));

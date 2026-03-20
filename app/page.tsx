@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
@@ -15,93 +17,12 @@ function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   );
 }
 
-const pillars = [
-  {
-    title: "Kanban that matches commercial pace",
-    description:
-      "Clear columns, visible priorities, and a workflow built for sales, operations, and product—without losing sight of what actually closes deals.",
-    accent: "from-[var(--flux-primary)]/25 to-transparent",
-  },
-  {
-    title: "Intelligence on the board, not in stray spreadsheets",
-    description:
-      "Daily insights, richer context on cards, and a foundation ready for prioritization and recommendations—fewer alignment meetings, more execution.",
-    accent: "from-[var(--flux-secondary)]/20 to-transparent",
-  },
-  {
-    title: "Executive and portfolio view in one place",
-    description:
-      "Portfolio metrics on boards, exports when you need them, and paths to briefings—the same source of truth for the field and leadership.",
-    accent: "from-[var(--flux-accent)]/18 to-transparent",
-  },
-];
+type KanbanMockProps = {
+  liveViewLabel: string;
+  cols: Array<{ title: string; cards: Array<{ w: string }> }>;
+};
 
-const capabilities = [
-  {
-    name: "Daily insights",
-    detail: "Read board progress to keep cadence and spot bottlenecks early.",
-  },
-  {
-    name: "Context on cards",
-    detail: "Structured information per card for faster, more consistent decisions.",
-  },
-  {
-    name: "Executive brief",
-    detail: "Support for distilling what matters for management and strategic follow-up.",
-  },
-  {
-    name: "Portfolio and metrics",
-    detail: "Roll-up indicators and exports when you need to present results.",
-  },
-  {
-    name: "Discovery and deals",
-    detail: "Room to explore hypotheses and track opportunities with live context.",
-  },
-  {
-    name: "Routines and alerts",
-    detail: "Routine reminders woven into the flow so nothing critical slips through.",
-  },
-];
-
-const steps = [
-  {
-    step: "01",
-    title: "Centralize the flow",
-    text: "Create boards aligned to your funnel or ops model. Everyone sees the same priority picture.",
-  },
-  {
-    step: "02",
-    title: "Enrich with context",
-    text: "Use descriptions, per-card context, and insights to turn tasks into informed decisions.",
-  },
-  {
-    step: "03",
-    title: "Scale with clarity",
-    text: "Metrics, exports, and an executive view support growth without losing execution standards.",
-  },
-];
-
-const audiences = [
-  {
-    title: "Sales and customer success",
-    text: "Visible pipeline, obvious next steps, and communication aligned with the customer.",
-  },
-  {
-    title: "Operations and projects",
-    text: "Predictable delivery with explicit prioritization and less cross-team rework.",
-  },
-  {
-    title: "Leadership and PMO",
-    text: "Fast portfolio reads and briefing support without juggling a dozen tools.",
-  },
-];
-
-function KanbanMock() {
-  const cols = [
-    { title: "Prospecting", cards: [{ w: "78%" }, { w: "62%" }] },
-    { title: "Proposal", cards: [{ w: "88%" }, { w: "55%" }, { w: "70%" }] },
-    { title: "Closing", cards: [{ w: "92%" }, { w: "68%" }] },
-  ];
+function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
   return (
     <div
       className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border p-4 md:p-5"
@@ -116,7 +37,7 @@ function KanbanMock() {
           <span className="h-2 w-2 rounded-full bg-[var(--flux-success)]/80" />
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--flux-text-muted)]">
-          Live view
+          {liveViewLabel}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-2 md:gap-3">
@@ -146,11 +67,73 @@ function KanbanMock() {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const localeSegment = pathname.split("/")[1];
+  const locale = localeSegment === "en" ? "en" : "pt-BR";
+  const localeRoot = `/${locale}`;
+  const t = useTranslations("landing");
   const aestheticVariant: "sober" | "vibrant" = "vibrant";
+
+  const pillars = [
+    {
+      title: t("pillars.commercialPace.title"),
+      description: t("pillars.commercialPace.description"),
+      accent: "from-[var(--flux-primary)]/25 to-transparent",
+    },
+    {
+      title: t("pillars.insights.title"),
+      description: t("pillars.insights.description"),
+      accent: "from-[var(--flux-secondary)]/20 to-transparent",
+    },
+    {
+      title: t("pillars.executiveView.title"),
+      description: t("pillars.executiveView.description"),
+      accent: "from-[var(--flux-accent)]/18 to-transparent",
+    },
+  ];
+
+  const capabilities = [
+    { name: t("capabilities.dailyInsights.name"), detail: t("capabilities.dailyInsights.detail") },
+    { name: t("capabilities.contextOnCards.name"), detail: t("capabilities.contextOnCards.detail") },
+    { name: t("capabilities.executiveBrief.name"), detail: t("capabilities.executiveBrief.detail") },
+    {
+      name: t("capabilities.portfolioAndMetrics.name"),
+      detail: t("capabilities.portfolioAndMetrics.detail"),
+    },
+    { name: t("capabilities.discoveryAndDeals.name"), detail: t("capabilities.discoveryAndDeals.detail") },
+    { name: t("capabilities.routinesAndAlerts.name"), detail: t("capabilities.routinesAndAlerts.detail") },
+  ];
+
+  const steps = [
+    { step: "01", title: t("steps.step1.title"), text: t("steps.step1.text") },
+    { step: "02", title: t("steps.step2.title"), text: t("steps.step2.text") },
+    { step: "03", title: t("steps.step3.title"), text: t("steps.step3.text") },
+  ];
+
+  const audiences = [
+    { title: t("audiences.sales.title"), text: t("audiences.sales.text") },
+    { title: t("audiences.operations.title"), text: t("audiences.operations.text") },
+    { title: t("audiences.leadership.title"), text: t("audiences.leadership.text") },
+  ];
+
+  const heroStats = [
+    { k: t("hero.stats.priority.label"), v: t("hero.stats.priority.value") },
+    { k: t("hero.stats.context.label"), v: t("hero.stats.context.value") },
+    { k: t("hero.stats.portfolio.label"), v: t("hero.stats.portfolio.value") },
+  ];
+
+  const kanbanCols = [
+    { title: t("kanbanMock.columns.prospecting"), cards: [{ w: "78%" }, { w: "62%" }] },
+    {
+      title: t("kanbanMock.columns.proposal"),
+      cards: [{ w: "88%" }, { w: "55%" }, { w: "70%" }],
+    },
+    { title: t("kanbanMock.columns.closing"), cards: [{ w: "92%" }, { w: "68%" }] },
+  ];
 
   return (
     <main
-      lang="en"
+      lang={locale}
       className={`home-variant-${aestheticVariant} home-landing-mesh relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]`}
     >
       <div
@@ -165,7 +148,7 @@ export default function HomePage() {
       />
       <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-20 pt-5 md:px-10 md:pt-6">
         <header className="hero-shell home-landing-reveal sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[var(--flux-rad-xl)] border px-4 py-3 backdrop-blur-md md:px-5 md:py-3.5">
-          <Link href="/" className="flex min-w-0 items-center gap-3">
+          <Link href={`${localeRoot}/`} className="flex min-w-0 items-center gap-3">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
               style={{
@@ -177,32 +160,32 @@ export default function HomePage() {
             </div>
             <div className="min-w-0 text-left">
               <p className="font-display text-base font-bold tracking-tight">Flux-Board</p>
-              <p className="truncate text-xs text-[var(--flux-text-muted)]">Commercial operations with clarity.</p>
+              <p className="truncate text-xs text-[var(--flux-text-muted)]">{t("header.tagline")}</p>
             </div>
           </Link>
           <nav className="order-3 flex w-full items-center justify-center gap-1 text-xs font-semibold text-[var(--flux-text-muted)] md:order-none md:w-auto md:justify-end md:gap-6 md:text-sm">
             <a href="#why" className="rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)]">
-              Why Flux-Board
+              {t("nav.why")}
             </a>
             <a href="#platform" className="rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)]">
-              Platform
+              {t("nav.platform")}
             </a>
             <a href="#how-it-works" className="hidden rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)] sm:inline">
-              How it works
+              {t("nav.how")}
             </a>
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             {user ? (
-                <Link href="/boards" className="btn-primary whitespace-nowrap">
-                Open dashboard
+              <Link href={`${localeRoot}/boards`} className="btn-primary whitespace-nowrap">
+                {t("actions.openDashboardLoggedIn")}
               </Link>
             ) : (
               <>
-                <Link href="/login" className="btn-ghost hidden sm:inline-flex">
-                  Sign in
+                <Link href={`${localeRoot}/login`} className="btn-ghost hidden sm:inline-flex">
+                  {t("actions.signIn")}
                 </Link>
-                <Link href="/login" className="btn-primary whitespace-nowrap">
-                  Get started
+                <Link href={`${localeRoot}/login`} className="btn-primary whitespace-nowrap">
+                  {t("actions.getStarted")}
                 </Link>
               </>
             )}
@@ -213,36 +196,33 @@ export default function HomePage() {
           <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
             <div>
               <p className="hero-chip inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">
-                Visual management · AI-ready · B2B
+                {t("hero.chip")}
               </p>
               <h1 className="mt-5 font-display text-[1.65rem] font-bold leading-[1.12] tracking-tight md:text-4xl lg:text-[2.65rem] lg:leading-[1.08]">
-                The board where{" "}
+                {t("hero.title.before")}{" "}
                 <span className="bg-gradient-to-r from-[var(--flux-secondary-light)] via-[var(--flux-primary-light)] to-[var(--flux-accent)] bg-clip-text text-transparent">
-                  sales and operations
+                  {t("hero.title.highlight")}
                 </span>{" "}
-                move at the same pace.
+                {t("hero.title.after")}
               </h1>
               <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--flux-text-muted)] md:text-base">
-                Flux-Board brings together professional Kanban, day-to-day insights, and portfolio visibility—for teams that need predictable delivery and
-                speed in conversations with customers and leadership.
+                {t("hero.description")}
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 {user ? (
-                  <Link href="/boards" className="btn-primary px-6 py-3 text-[15px]">
-                    Go to my boards
+                  <Link href={`${localeRoot}/boards`} className="btn-primary px-6 py-3 text-[15px]">
+                    {t("hero.primary.loggedIn")}
                   </Link>
                 ) : (
-                  <Link href="/login" className="btn-primary px-6 py-3 text-[15px]">
-                    Sign up and try it
+                  <Link href={`${localeRoot}/login`} className="btn-primary px-6 py-3 text-[15px]">
+                    {t("hero.primary.loggedOut")}
                   </Link>
                 )}
                 <a href="#platform" className="btn-secondary px-6 py-3 text-[15px]">
-                  See what the platform does
+                  {t("hero.secondary")}
                 </a>
               </div>
-              <p className="mt-6 text-xs leading-relaxed text-[var(--flux-text-muted)] md:text-sm">
-                Quick team adoption · Responsive experience · Grows with discovery, deals, and routines built into the flow
-              </p>
+              <p className="mt-6 text-xs leading-relaxed text-[var(--flux-text-muted)] md:text-sm">{t("hero.quickLine")}</p>
             </div>
             <div className="relative">
               <div
@@ -254,13 +234,9 @@ export default function HomePage() {
                 aria-hidden
               />
               <div className="relative">
-                <KanbanMock />
+                <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  {[
-                    { k: "Priority", v: "Explicit" },
-                    { k: "Context", v: "Per card" },
-                    { k: "Portfolio", v: "Visible" },
-                  ].map((row) => (
+                  {heroStats.map((row) => (
                     <div
                       key={row.k}
                       className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)]/80 px-2 py-2 backdrop-blur-sm"
@@ -277,10 +253,9 @@ export default function HomePage() {
 
         <section id="why" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24">
           <div className="mb-8 max-w-2xl">
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Built for teams that live by delivery and outcomes</h2>
+            <h2 className="font-display text-2xl font-bold md:text-3xl">{t("why.heading")}</h2>
             <p className="mt-3 text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">
-              More than a pretty Kanban: an operational layer that connects day-to-day work with how the business reads progress—from each card to portfolio
-              view.
+              {t("why.description")}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
@@ -303,14 +278,14 @@ export default function HomePage() {
         <section id="platform" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24">
           <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="font-display text-2xl font-bold md:text-3xl">Everything already in Flux-Board</h2>
+              <h2 className="font-display text-2xl font-bold md:text-3xl">{t("platform.heading")}</h2>
               <p className="mt-2 max-w-xl text-sm text-[var(--flux-text-muted)] md:text-base">
-                Capabilities that reflect today&apos;s product—insights, context, portfolio, discovery, and routines—in one cohesive experience.
+                {t("platform.description")}
               </p>
             </div>
             {!user && (
-              <Link href="/login" className="btn-secondary shrink-0 self-start md:self-auto">
-                Open the platform
+              <Link href={`${localeRoot}/login`} className="btn-secondary shrink-0 self-start md:self-auto">
+                {t("platform.actions.openPlatform")}
               </Link>
             )}
           </div>
@@ -329,9 +304,9 @@ export default function HomePage() {
         </section>
 
         <section id="how-it-works" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24">
-          <h2 className="font-display text-2xl font-bold md:text-3xl">From chaos to cadence in three steps</h2>
+          <h2 className="font-display text-2xl font-bold md:text-3xl">{t("how.heading")}</h2>
           <p className="mt-2 max-w-2xl text-sm text-[var(--flux-text-muted)] md:text-base">
-            Lean onboarding, strong defaults. Your team adopts in hours—and keeps the rhythm for weeks.
+            {t("how.description")}
           </p>
           <ol className="mt-8 grid gap-4 md:grid-cols-3">
             {steps.map((s, i) => (
@@ -354,7 +329,7 @@ export default function HomePage() {
         </section>
 
         <section className="home-landing-reveal mt-20 md:mt-24">
-          <h2 className="font-display text-2xl font-bold md:text-3xl">Who gets the most from it</h2>
+          <h2 className="font-display text-2xl font-bold md:text-3xl">{t("audiences.heading")}</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {audiences.map((a) => (
               <article key={a.title} className="tone-cyan rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-6">
@@ -374,23 +349,22 @@ export default function HomePage() {
             aria-hidden
           />
           <div className="relative">
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Bring clarity to how your team works</h2>
+            <h2 className="font-display text-2xl font-bold md:text-3xl">{t("cta.heading")}</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">
-              Try a solid commercial foundation: modern visuals, features aligned with sales and operations day-to-day, and room to grow with AI and
-              integrations.
+              {t("cta.description")}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               {user ? (
-                <Link href="/boards" className="btn-primary px-8 py-3 text-[15px]">
-                  Continue in Flux-Board
+                <Link href={`${localeRoot}/boards`} className="btn-primary px-8 py-3 text-[15px]">
+                  {t("cta.actions.loggedIn")}
                 </Link>
               ) : (
                 <>
-                  <Link href="/login" className="btn-primary px-8 py-3 text-[15px]">
-                    Start for free
+                  <Link href={`${localeRoot}/login`} className="btn-primary px-8 py-3 text-[15px]">
+                    {t("cta.actions.loggedOutPrimary")}
                   </Link>
                   <a href="#why" className="btn-secondary px-8 py-3 text-[15px]">
-                    Explore the pillars
+                    {t("cta.actions.loggedOutSecondary")}
                   </a>
                 </>
               )}
@@ -399,14 +373,14 @@ export default function HomePage() {
         </section>
 
         <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[rgba(108,92,231,0.15)] pt-8 text-center text-xs text-[var(--flux-text-muted)] md:flex-row md:text-left">
-          <p>© {new Date().getFullYear()} Flux-Board — Organize the flow. Ship what matters.</p>
+          <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
           <div className="flex flex-wrap justify-center gap-4 md:justify-end">
-            <Link href="/login" className="font-semibold text-[var(--flux-text)] transition-colors hover:text-[var(--flux-primary-light)]">
-              Sign in
+            <Link href={`${localeRoot}/login`} className="font-semibold text-[var(--flux-text)] transition-colors hover:text-[var(--flux-primary-light)]">
+              {t("footer.signIn")}
             </Link>
             <span className="hidden text-[var(--flux-text-muted)]/50 md:inline">·</span>
             <a href="#platform" className="font-semibold text-[var(--flux-text)] transition-colors hover:text-[var(--flux-primary-light)]">
-              Features
+              {t("footer.features")}
             </a>
           </div>
         </footer>

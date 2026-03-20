@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useLocale, useTranslations } from "next-intl";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -66,6 +67,10 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 export default function BoardsPage() {
   const router = useRouter();
   const { user, getHeaders, isChecked } = useAuth();
+  const locale = useLocale();
+  const t = useTranslations("boards");
+  const localeRoot = `/${locale}`;
+  const dateLocale = locale === "en" ? "en-US" : "pt-BR";
   const [boards, setBoards] = useState<Board[]>([]);
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +93,7 @@ export default function BoardsPage() {
 
   useEffect(() => {
     if (!isChecked || !user) {
-      router.replace("/login");
+      router.replace(`${localeRoot}/login`);
       return;
     }
     loadBoards();
@@ -101,7 +106,7 @@ export default function BoardsPage() {
     try {
       const doneKey = getOnboardingDoneStorageKey(user.id);
       if (localStorage.getItem(doneKey) !== "1") {
-        router.replace("/onboarding");
+        router.replace(`${localeRoot}/onboarding`);
       }
     } catch {
       // ignore localStorage read errors
@@ -117,7 +122,7 @@ export default function BoardsPage() {
       setEmpty(list.length === 0);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
-        router.replace("/login");
+        router.replace(`${localeRoot}/login`);
         return;
       }
       setBoards([]);
@@ -155,10 +160,10 @@ export default function BoardsPage() {
 
   async function createBoard() {
     try {
-      const name = boardName.trim() || "Novo Board";
+      const name = boardName.trim() || t("defaults.newBoardName");
       const { board } = await apiPost<{ board: Board }>("/api/boards", { name }, getHeaders());
       setModalOpen(false);
-      router.push(`/board/${board.id}`);
+      router.push(`${localeRoot}/board/${board.id}`);
     } catch {
       pushToast({ kind: "error", title: "Erro ao criar board." });
     }
@@ -183,7 +188,7 @@ export default function BoardsPage() {
   function formatDate(s?: string) {
     if (!s) return "-";
     try {
-      return new Date(s).toLocaleDateString("pt-BR", {
+      return new Date(s).toLocaleDateString(dateLocale, {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -256,7 +261,7 @@ export default function BoardsPage() {
 
     const sorted = [...list];
     if (sortMode === "name") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      sorted.sort((a, b) => a.name.localeCompare(b.name, dateLocale));
     } else {
       sorted.sort((a, b) => {
         const ad = parseDateSafe(a.lastUpdated)?.getTime() ?? 0;
@@ -265,7 +270,7 @@ export default function BoardsPage() {
       });
     }
     return sorted;
-  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, now]);
+  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, now, dateLocale]);
 
   const quickFavoriteBoards = useMemo(() => {
     const favoriteIds = new Set(favoriteBoardIds);
@@ -275,12 +280,13 @@ export default function BoardsPage() {
         const aCount = visitCounts[a.id] ?? 0;
         const bCount = visitCounts[b.id] ?? 0;
         if (bCount !== aCount) return bCount - aCount;
-        return a.name.localeCompare(b.name, "pt-BR");
+        return a.name.localeCompare(b.name, dateLocale);
       });
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [boards, favoriteBoardIds, favoriteSortMode, visitCounts]);
-  const favoriteModeLabel = favoriteSortMode === "mostAccessed" ? "Mais acessados" : "Nome (A-Z)";
+    return list.sort((a, b) => a.name.localeCompare(b.name, dateLocale));
+  }, [boards, favoriteBoardIds, favoriteSortMode, visitCounts, dateLocale]);
+  const favoriteModeLabel =
+    favoriteSortMode === "mostAccessed" ? t("favoriteModes.mostAccessed") : t("favoriteModes.nameAZ");
 
   const quickRecentBoards = useMemo(() => {
     if (recentEntries.length === 0) return [];
@@ -298,7 +304,7 @@ export default function BoardsPage() {
       setRecentEntries(registerBoardVisit(user.id, boardId));
       setVisitCounts(getBoardShortcuts(user.id).visitCounts);
     }
-    router.push(`/board/${boardId}`);
+    router.push(`${localeRoot}/board/${boardId}`);
   }
 
   function handleToggleFavorite(boardId: string) {
@@ -364,7 +370,7 @@ export default function BoardsPage() {
               disabled={exportBusy !== null || boards.length === 0}
               className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-40 disabled:pointer-events-none"
             >
-              {exportBusy === "brief" ? "Gerando…" : "Brief executivo (.md)"}
+              {exportBusy === "brief" ? t("exports.generatingBrief") : t("exports.executiveBrief")}
             </button>
             <button
               type="button"
@@ -372,7 +378,7 @@ export default function BoardsPage() {
               disabled={exportBusy !== null || boards.length === 0}
               className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.1)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] transition-colors hover:border-[var(--flux-secondary)] disabled:opacity-40 disabled:pointer-events-none"
             >
-              {exportBusy === "json" ? "Exportando…" : "Portfólio JSON (BI)"}
+              {exportBusy === "json" ? t("exports.exportingJson") : t("exports.portfolioJson")}
             </button>
           </div>
         </div>
@@ -406,7 +412,7 @@ export default function BoardsPage() {
         )}
 
         {loading ? (
-          <p className="text-[var(--flux-text-muted)]">Carregando...</p>
+          <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
         ) : (
           <>
             <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -501,17 +507,17 @@ export default function BoardsPage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por nome ou ID do board..."
+                placeholder={t("filters.searchPlaceholder")}
                 className="w-full rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
               />
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
                 className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                aria-label="Ordenação dos boards"
+                aria-label={t("filters.sortAriaLabel")}
               >
-                <option value="recent">Mais recente</option>
-                <option value="name">Nome (A-Z)</option>
+                <option value="recent">{t("filters.sort.recent")}</option>
+                <option value="name">{t("filters.sort.nameAZ")}</option>
               </select>
               <button
                 onClick={() => setShowOnlyUpdatedToday((v) => !v)}
@@ -540,7 +546,7 @@ export default function BoardsPage() {
                 <div className="rounded-[var(--flux-rad)] border border-[rgba(255,215,0,0.25)] bg-[var(--flux-surface-card)] p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
-                      Favoritos
+                      {t("favorites.title")}
                       <span className="ml-1 font-normal text-[11px] text-[var(--flux-text-muted)]">
                         {" "}
                         · {favoriteModeLabel}
@@ -551,10 +557,10 @@ export default function BoardsPage() {
                         value={favoriteSortMode}
                         onChange={(e) => setFavoriteSortMode(e.target.value as "name" | "mostAccessed")}
                         className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                        aria-label="Ordenação dos favoritos"
+                        aria-label={t("favorites.sortAriaLabel")}
                       >
-                        <option value="name">Nome (A-Z)</option>
-                        <option value="mostAccessed">Mais acessados</option>
+                        <option value="name">{t("favorites.sort.nameAZ")}</option>
+                        <option value="mostAccessed">{t("favorites.sort.mostAccessed")}</option>
                       </select>
                       <span className="text-xs text-[var(--flux-text-muted)]">{quickFavoriteBoards.length}</span>
                     </div>
@@ -585,13 +591,15 @@ export default function BoardsPage() {
 
                 <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">Acessados recentemente</h3>
+                    <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
+                      {t("recents.title")}
+                    </h3>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleClearRecents}
                         className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-text)]"
                       >
-                        Limpar recentes
+                        {t("recents.clear")}
                       </button>
                       <span className="text-xs text-[var(--flux-text-muted)]">{quickRecentBoards.length}</span>
                     </div>
@@ -623,7 +631,7 @@ export default function BoardsPage() {
                 onClick={openNewModal}
                 className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[rgba(108,92,231,0.3)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[rgba(108,92,231,0.08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
               >
-                + Novo Board
+                {t("actions.newBoard")}
               </button>
               {visibleBoards.map((b) => {
                 const isBoardReborn = b.id === "b_reborn";
@@ -729,12 +737,12 @@ export default function BoardsPage() {
             </div>
             {empty && boards.length === 0 && (
               <p className="text-center py-12 text-[var(--flux-text-muted)]">
-                Nenhum board ainda. Clique em &quot;Novo Board&quot; para criar.
+                {t("empty.noBoards", { newBoardName: t("defaults.newBoardName") })}
               </p>
             )}
             {!empty && boards.length > 0 && visibleBoards.length === 0 && (
               <p className="text-center py-12 text-[var(--flux-text-muted)]">
-                Nenhum board encontrado para os filtros aplicados.
+                {t("empty.noResults")}
               </p>
             )}
           </>
@@ -751,11 +759,11 @@ export default function BoardsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-display font-bold mb-4 text-[var(--flux-text)]">
-              {modalMode === "new" ? "Novo Board" : "Renomear Board"}
+              {modalMode === "new" ? t("modal.title.new") : t("modal.title.rename")}
             </h3>
             <div className="mb-4">
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                Nome do Board
+                {t("modal.boardNameLabel")}
               </label>
               <input
                 type="text"
@@ -768,7 +776,7 @@ export default function BoardsPage() {
                     else saveBoardName();
                   }
                 }}
-                placeholder="Ex: Backlog Principal"
+                placeholder={t("modal.boardNamePlaceholder")}
                 className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 autoFocus
               />
@@ -778,13 +786,13 @@ export default function BoardsPage() {
                 onClick={() => setModalOpen(false)}
                 className="btn-secondary"
               >
-                Cancelar
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={modalMode === "new" ? createBoard : saveBoardName}
                 className="btn-primary"
               >
-                {modalMode === "new" ? "Criar" : "Salvar"}
+                {modalMode === "new" ? t("modal.create") : t("modal.save")}
               </button>
             </div>
           </div>
@@ -793,11 +801,11 @@ export default function BoardsPage() {
 
       <ConfirmDialog
         open={confirmDelete !== null}
-        title={confirmDelete ? `Excluir o board "${confirmDelete.name}"?` : ""}
-        description="Esta ação não pode ser desfeita."
+        title={confirmDelete ? t("confirmDelete.title", { boardName: confirmDelete.name }) : ""}
+        description={t("confirmDelete.description")}
         intent="danger"
-        confirmText="Excluir"
-        cancelText="Cancelar"
+        confirmText={t("confirmDelete.confirm")}
+        cancelText={t("confirmDelete.cancel")}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={async () => {
           if (!confirmDelete) return;
@@ -806,7 +814,7 @@ export default function BoardsPage() {
             setConfirmDelete(null);
             loadBoards();
           } catch {
-            pushToast({ kind: "error", title: "Erro ao excluir." });
+            pushToast({ kind: "error", title: t("confirmDelete.errorDelete") });
           }
         }}
       />

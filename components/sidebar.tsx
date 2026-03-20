@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
@@ -99,13 +100,18 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations("navigation");
+
+  const localeSegment = pathname.split("/")[1];
+  const locale = localeSegment === "en" ? "en" : "pt-BR";
+  const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
 
   const isActive = (href: string) => {
-    if (href === "/boards") return pathname === "/boards";
-    if (href === "/discovery") return pathname.startsWith("/discovery");
-    if (href === "/tasks") return pathname.startsWith("/tasks");
-    if (href === "/users") return pathname === "/users";
-    return pathname === href;
+    if (href === "/boards") return normalizedPath === "/boards";
+    if (href === "/discovery") return normalizedPath.startsWith("/discovery");
+    if (href === "/tasks") return normalizedPath.startsWith("/tasks");
+    if (href === "/users") return normalizedPath === "/users";
+    return normalizedPath === href;
   };
 
   const linkClass = (href: string) =>
@@ -122,7 +128,7 @@ export function Sidebar() {
     >
       {/* Logo + toggle — ícone sempre visível; quando recolhido mantém uma linha para não cortar o ícone */}
       <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
-        <Link href="/boards" className={`flex items-center min-w-0 ${collapsed ? "justify-center shrink-0" : "gap-2"}`}>
+        <Link href={`/${locale}/boards`} className={`flex items-center min-w-0 ${collapsed ? "justify-center shrink-0" : "gap-2"}`}>
           <div
             className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white"
             style={{
@@ -138,7 +144,7 @@ export function Sidebar() {
           type="button"
           onClick={() => setCollapsed((c) => !c)}
           className="p-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          aria-label={collapsed ? t("menu.expand") : t("menu.collapse")}
         >
           {collapsed ? <IconChevronRight className="w-4 h-4" /> : <IconChevronLeft className="w-4 h-4" />}
         </button>
@@ -146,29 +152,32 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 min-w-0">
-        <Link href="/boards" className={linkClass("/boards")}>
+        <Link href={`/${locale}/boards`} className={linkClass("/boards")}>
           <IconBoards className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Boards</span>}
+          {!collapsed && <span>{t("boards")}</span>}
         </Link>
-        <Link href="/discovery" className={linkClass("/discovery")}>
+        <Link href={`/${locale}/discovery`} className={linkClass("/discovery")}>
           <IconDiscovery className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Discovery</span>}
+          {!collapsed && <span>{t("discovery")}</span>}
         </Link>
-        <Link href="/tasks" className={linkClass("/tasks")}>
+        <Link href={`/${locale}/tasks`} className={linkClass("/tasks")}>
           <IconTasks className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Minhas tarefas</span>}
+          {!collapsed && <span>{t("tasks")}</span>}
         </Link>
         {user?.isAdmin && (
-          <Link href="/users" className={linkClass("/users")}>
+          <Link href={`/${locale}/users`} className={linkClass("/users")}>
             <IconUsers className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Usuários</span>}
+            {!collapsed && <span>{t("users")}</span>}
           </Link>
         )}
       </nav>
 
       {/* Theme + Logout */}
       <div className="p-2.5 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-0.5 shrink-0">
-        <CustomTooltip content={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"} position="right">
+        <CustomTooltip
+          content={theme === "dark" ? t("theme.lightTooltip") : t("theme.darkTooltip")}
+          position="right"
+        >
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -176,7 +185,7 @@ export function Sidebar() {
             bg-transparent text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-primary)]`}
           >
             {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
-            {!collapsed && <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>}
+            {!collapsed && <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>}
           </button>
         </CustomTooltip>
         <button
@@ -185,7 +194,7 @@ export function Sidebar() {
           className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[rgba(255,107,107,0.12)] hover:!text-[var(--flux-danger)]`}
         >
           <IconLogout className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Sair</span>}
+          {!collapsed && <span>{t("logout")}</span>}
         </button>
       </div>
     </aside>

@@ -1,0 +1,978 @@
+{
+  "navigation": {
+    "boards": "Boards",
+    "discovery": "Discovery",
+    "tasks": "Minhas tarefas",
+    "users": "Usuários",
+    "menu": {
+      "expand": "Expandir menu",
+      "collapse": "Recolher menu"
+    },
+    "theme": {
+      "light": "Tema claro",
+      "dark": "Tema escuro",
+      "lightTooltip": "Usar tema claro",
+      "darkTooltip": "Usar tema escuro"
+    },
+    "logout": "Sair"
+  },
+  "appShell": {
+    "routineReminder": "Lembrete de rotina",
+    "dueLabel": "Prazo:"
+  },
+  "toasts": {
+    "kinds": {
+      "success": "OK",
+      "error": "Erro",
+      "warning": "Atenção",
+      "info": "Info"
+    },
+    "closeAria": "Fechar notificação"
+  },
+  "confirmDialog": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
+  "header": {
+    "userFallback": "Usuário"
+  },
+  "landing": {
+    "header": {
+      "tagline": "Operações comerciais com clareza."
+    },
+    "nav": {
+      "why": "Por que Flux-Board",
+      "platform": "Plataforma",
+      "how": "Como funciona"
+    },
+    "actions": {
+      "openDashboardLoggedIn": "Abrir painel",
+      "signIn": "Entrar",
+      "getStarted": "Começar"
+    },
+    "hero": {
+      "chip": "Gestão visual · Pronto para IA · B2B",
+      "title": {
+        "before": "O board onde",
+        "highlight": "vendas e operações",
+        "after": "andam no mesmo ritmo."
+      },
+      "description": "A Flux-Board reúne Kanban profissional, insights do dia a dia e visibilidade do portfólio — para equipes que precisam de entregas previsíveis e velocidade nas conversas com clientes e liderança.",
+      "primary": {
+        "loggedIn": "Ir para meus boards",
+        "loggedOut": "Criar conta e testar"
+      },
+      "secondary": "Veja o que a plataforma faz",
+      "quickLine": "Adoção rápida da equipe · Experiência responsiva · Evolui com discovery, deals e rotinas integrados ao fluxo",
+      "stats": {
+        "priority": {
+          "label": "Prioridade",
+          "value": "Explícito"
+        },
+        "context": {
+          "label": "Contexto",
+          "value": "Por card"
+        },
+        "portfolio": {
+          "label": "Portfólio",
+          "value": "Visível"
+        }
+      }
+    },
+    "kanbanMock": {
+      "liveView": "Visão ao vivo",
+      "columns": {
+        "prospecting": "Prospecção",
+        "proposal": "Proposta",
+        "closing": "Fechamento"
+      }
+    },
+    "why": {
+      "heading": "Feito para equipes que vivem por entrega e resultados",
+      "description": "Mais do que um Kanban bonito: uma camada operacional que conecta o trabalho do dia a dia com a forma como o negócio enxerga o progresso — de cada card até a visão do portfólio."
+    },
+    "pillars": {
+      "commercialPace": {
+        "title": "Kanban no ritmo comercial",
+        "description": "Colunas claras, prioridades visíveis e um fluxo feito para vendas, operações e produto — sem perder o que realmente fecha negócios."
+      },
+      "insights": {
+        "title": "Inteligência no board, não em planilhas soltas",
+        "description": "Insights diários, contexto mais rico nos cards e uma base pronta para priorização e recomendações — menos reuniões de alinhamento, mais execução."
+      },
+      "executiveView": {
+        "title": "Visão executiva e do portfólio em um só lugar",
+        "description": "Métricas do portfólio nos boards, exports quando você precisa e caminhos para briefings — a mesma fonte de verdade para o time de campo e para a liderança."
+      }
+    },
+    "platform": {
+      "heading": "Tudo o que já existe na Flux-Board",
+      "description": "Funcionalidades que refletem o produto de hoje — insights, contexto, portfólio, discovery e rotinas — em uma experiência coesa.",
+      "actions": {
+        "openPlatform": "Abrir a plataforma"
+      }
+    },
+    "capabilities": {
+      "dailyInsights": {
+        "name": "Insights diários",
+        "detail": "Leia o progresso do board para manter o ritmo e identificar gargalos cedo."
+      },
+      "contextOnCards": {
+        "name": "Contexto nos cards",
+        "detail": "Informações estruturadas por card para decisões mais rápidas e consistentes."
+      },
+      "executiveBrief": {
+        "name": "Brief executivo",
+        "detail": "Suporte para condensar o que importa para a gestão e acompanhar de forma estratégica."
+      },
+      "portfolioAndMetrics": {
+        "name": "Portfólio e métricas",
+        "detail": "Indicadores consolidados e exports quando você precisa apresentar resultados."
+      },
+      "discoveryAndDeals": {
+        "name": "Discovery e deals",
+        "detail": "Espaço para explorar hipóteses e acompanhar oportunidades com contexto em tempo real."
+      },
+      "routinesAndAlerts": {
+        "name": "Rotinas e alertas",
+        "detail": "Lembretes de rotina incorporados ao fluxo para que nada crítico passe."
+      }
+    },
+    "how": {
+      "heading": "Do caos ao ritmo em três passos",
+      "description": "Onboarding enxuto, padrões fortes. Seu time adota em horas — e mantém o ritmo por semanas."
+    },
+    "steps": {
+      "step1": {
+        "title": "Centralize o fluxo",
+        "text": "Crie boards alinhados ao seu funil ou modelo de operações. Todo mundo enxerga a mesma imagem de prioridades."
+      },
+      "step2": {
+        "title": "Enriqueça com contexto",
+        "text": "Use descrições, contexto por card e insights para transformar tarefas em decisões informadas."
+      },
+      "step3": {
+        "title": "Escale com clareza",
+        "text": "Métricas, exports e uma visão executiva suportam o crescimento sem perder padrões de execução."
+      }
+    },
+    "audiences": {
+      "heading": "Quem aproveita mais",
+      "sales": {
+        "title": "Vendas e customer success",
+        "text": "Pipeline visível, próximos passos claros e comunicação alinhada ao cliente."
+      },
+      "operations": {
+        "title": "Operações e projetos",
+        "text": "Entrega previsível com priorização explícita e menos retrabalho entre times."
+      },
+      "leadership": {
+        "title": "Liderança e PMO",
+        "text": "Leituras rápidas de portfólio e suporte a briefings sem precisar lidar com uma dúzia de ferramentas."
+      }
+    },
+    "cta": {
+      "heading": "Traga clareza sobre como seu time trabalha",
+      "description": "Uma base comercial sólida: visuais modernos, recursos alinhados ao dia a dia de vendas e operações e espaço para crescer com IA e integrações.",
+      "actions": {
+        "loggedIn": "Continuar no Flux-Board",
+        "loggedOutPrimary": "Começar grátis",
+        "loggedOutSecondary": "Explore os pilares"
+      }
+    },
+    "footer": {
+      "copyright": "© {year} Flux-Board — Organize o fluxo. Entregue o que importa.",
+      "signIn": "Entrar",
+      "features": "Recursos"
+    }
+  },
+  "login": {
+    "loading": "Carregando...",
+    "subtitle": "Organize o fluxo. Entregue o que importa.",
+    "tabs": {
+      "login": "Entrar",
+      "register": "Cadastrar"
+    },
+    "errors": {
+      "missingCredentials": "Preencha usuário e senha.",
+      "connection": "Erro de conexão. Tente novamente.",
+      "missingAllFields": "Preencha todos os campos.",
+      "passwordTooShort": "Senha deve ter pelo menos 4 caracteres."
+    },
+    "fields": {
+      "userOrEmail": "Usuário ou E-mail",
+      "password": "Senha",
+      "name": "Nome",
+      "email": "E-mail"
+    },
+    "placeholders": {
+      "userOrEmail": "Usuário ou e-mail",
+      "password": "••••••••",
+      "name": "Seu nome completo",
+      "email": "seu@email.com",
+      "passwordMin": "Mínimo 4 caracteres"
+    },
+    "remember": {
+      "login": "Manter conectado (gravar no navegador)",
+      "register": "Manter conectado após cadastro"
+    },
+    "actions": {
+      "login": "Entrar",
+      "register": "Cadastrar"
+    },
+    "rememberAfter": {}
+  },
+  "onboarding": {
+    "dragReorderAria": "Arrastar para reordenar",
+    "header": {
+      "title": "Onboarding",
+      "backLabel": "← Boards"
+    },
+    "steps": {
+      "pill1": "Setup",
+      "pill2": "Colunas",
+      "pill3": "Primeiro card"
+    },
+    "titles": {
+      "step1": "Dê um nome ao seu board",
+      "step2": "Organize suas colunas",
+      "step3": "Crie seu primeiro card"
+    },
+    "descriptions": {
+      "step1": "Escolha um template e um nome. Você pode pular se quiser.",
+      "step2": "Arraste as colunas para ajustar o fluxo. Você pode pular.",
+      "step3": "Um card é o suficiente para começar. Você pode pular também."
+    },
+    "errors": {
+      "init": "Erro ao iniciar onboarding.",
+      "createBoard": "Erro ao criar board.",
+      "saveColumns": "Erro ao salvar colunas.",
+      "createCard": "Erro ao criar card."
+    },
+    "fields": {
+      "boardName": "Nome do board",
+      "template": "Template",
+      "cardTitle": "Título",
+      "column": "Coluna",
+      "priority": "Prioridade",
+      "progress": "Progresso",
+      "descriptionOptional": "Descrição (opcional)"
+    },
+    "placeholders": {
+      "boardName": "Ex: Pipeline Comercial",
+      "cardTitle": "Ex: Reunião de alinhamento",
+      "cardDescriptionOptional": "O que precisa acontecer? (pode ser curto)"
+    },
+    "preview": {
+      "title": "Pré-visualização do template",
+      "description": "Ao continuar, criaremos seu board com essas colunas e você poderá reordenar na etapa seguinte."
+    },
+    "buttons": {
+      "skip": "Pular",
+      "continue": "Continuar",
+      "creating": "Criando…",
+      "saving": "Salvando…",
+      "createCard": "Criar card"
+    },
+    "step2": {
+      "reorderTitle": "Arraste para reordenar",
+      "reorderDescription": "Seus cards serão criados usando a ordem/colunas deste template.",
+      "boardLabel": "Board:"
+    },
+    "step3": {
+      "title": "Primeiro card",
+      "description": "Crie um item simples para começar. Você pode pular e ir direto para o board."
+    },
+    "options": {
+      "priority": {
+        "Urgente": "Urgente",
+        "Importante": "Importante",
+        "Média": "Média"
+      },
+      "progress": {
+        "Não iniciado": "Não iniciado",
+        "Em andamento": "Em andamento",
+        "Concluída": "Concluída"
+      }
+    },
+    "loading": {
+      "board": "Carregando board…"
+    }
+  },
+  "boards": {
+    "defaults": {
+      "newBoardName": "Novo Board"
+    },
+    "loading": "Carregando...",
+    "exports": {
+      "generatingBrief": "Gerando…",
+      "executiveBrief": "Brief executivo (.md)",
+      "exportingJson": "Exportando…",
+      "portfolioJson": "Portfólio JSON (BI)"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar por nome ou ID do board...",
+      "sortAriaLabel": "Ordenação dos boards",
+      "sort": {
+        "recent": "Mais recente",
+        "nameAZ": "Nome (A-Z)"
+      }
+    },
+    "favorites": {
+      "title": "Favoritos",
+      "sortAriaLabel": "Ordenação dos favoritos",
+      "sort": {
+        "nameAZ": "Nome (A-Z)",
+        "mostAccessed": "Mais acessados"
+      }
+    },
+    "recents": {
+      "title": "Acessados recentemente",
+      "clear": "Limpar recentes"
+    },
+    "actions": {
+      "newBoard": "+ Novo Board"
+    },
+    "empty": {
+      "noBoards": "Nenhum board ainda. Clique em \"{newBoardName}\" para criar.",
+      "noResults": "Nenhum board encontrado para os filtros aplicados."
+    },
+    "favoriteModes": {
+      "mostAccessed": "Mais acessados",
+      "nameAZ": "Nome (A-Z)"
+    },
+    "modal": {
+      "title": {
+        "new": "Novo Board",
+        "rename": "Renomear Board"
+      },
+      "boardNameLabel": "Nome do Board",
+      "boardNamePlaceholder": "Ex: Backlog Principal",
+      "cancel": "Cancelar",
+      "create": "Criar",
+      "save": "Salvar"
+    },
+    "confirmDelete": {
+      "title": "Excluir o board \"{boardName}\"?",
+      "description": "Esta ação não pode ser desfeita.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar",
+      "errorDelete": "Erro ao excluir."
+    }
+  },
+  "board": {
+    "loading": "Carregando board...",
+    "status": {
+      "errorApi": "Erro API",
+      "saving": "Salvando...",
+      "saved": "Salvo"
+    },
+    "toasts": {
+      "noPermission": "Sem permissão para este board.",
+      "loadError": "Erro ao carregar board.",
+      "saveError": "Falha ao salvar alterações. Verifique sua conexão e tente novamente."
+    }
+  },
+  "kanban": {
+    "cardModal": {
+      "toasts": {
+        "missingTitle": "Informe o título.",
+        "missingTitleAndDescription": "Informe o título e a descrição para gerar contexto."
+      },
+      "logs": {
+        "preparingContext": "Preparando contexto por IA...",
+        "contextGenerationErrorFallback": "Erro ao gerar contexto.",
+        "contextGeneratedByAI": "Contexto gerado com IA.",
+        "contextStructuredFallback": "Contexto estruturado (fallback, sem IA).",
+        "contextTimeout": "Tempo esgotado ao gerar contexto por IA.",
+        "contextError": "Erro ao gerar contexto por IA.",
+        "unableToGenerateContext": "Não foi possível gerar o contexto por IA. Ajuste o Título/Descrição e tente novamente."
+      },
+      "badges": {
+        "aiGenerated": "Gerado por IA",
+        "aiFallbackStructured": "Contexto estruturado (sem IA)",
+        "aiGeneratedText": "Texto gerado por IA",
+        "aiFallbackStructuredDescription": "Descrição estruturada (sem IA)"
+      },
+      "confirmDelete": {
+        "title": "Excluir este card?",
+        "description": "Esta ação não pode ser desfeita.",
+        "confirm": "Excluir",
+        "cancel": "Cancelar"
+      },
+      "modePill": {
+        "edit": "Edição",
+        "create": "Criação"
+      },
+      "header": {
+        "title": {
+          "edit": "Editar card",
+          "new": "Novo card"
+        },
+        "description": {
+          "edit": "Ajuste identificação, conteúdo e status — as alterações refletem no quadro na hora.",
+          "new": "Defina o essencial agora; você pode refinar título, descrição e links depois."
+        }
+      },
+      "sections": {
+        "identification": {
+          "title": "Identificação e coluna",
+          "description": "ID único e posição atual no fluxo do board."
+        },
+        "content": {
+          "title": "Conteúdo principal",
+          "description": "Título no quadro e descrição em blocos — use o botão de IA quando quiser sugestões a partir do que já escreveu."
+        },
+        "statusDue": {
+          "title": "Status e prazo",
+          "description": "Prioridade, estágio de trabalho e data alvo de conclusão."
+        },
+        "labels": {
+          "title": "Rótulos",
+          "description": "Marque tags existentes ou crie novas para este board."
+        },
+        "links": {
+          "title": "Links",
+          "addButton": "+ Adicionar link",
+          "empty": "Nenhum link. Clique em &quot;Adicionar link&quot; para incluir.",
+          "urlPlaceholder": "https://...",
+          "labelPlaceholder": "Rótulo (opcional)",
+          "tooltips": {
+            "view": "Visualizar link",
+            "remove": "Remover link"
+          }
+        }
+      },
+      "fields": {
+        "id": {
+          "label": "ID",
+          "placeholder": "Ex: DI-700"
+        },
+        "column": {
+          "label": "Coluna"
+        },
+        "title": {
+          "label": "Título",
+          "placeholder": "Título executivo do card"
+        },
+        "description": {
+          "label": "Descrição"
+        },
+        "priority": {
+          "label": "Prioridade"
+        },
+        "progress": {
+          "label": "Progresso"
+        },
+        "dueDate": {
+          "label": "Data de Conclusão"
+        },
+        "newLabel": {
+          "srLabel": "Novo rótulo",
+          "placeholder": "Novo rótulo"
+        }
+      },
+      "buttons": {
+        "createLabel": "+ Criar",
+        "delete": "Excluir",
+        "cancel": "Cancelar",
+        "save": "Salvar"
+      },
+      "tooltips": {
+        "deleteLabel": "Excluir rótulo \"{label}\"",
+        "deleteLabelAria": "Excluir rótulo {label}"
+      },
+      "aria": {
+        "close": "Fechar"
+      },
+      "options": {
+        "priority": {
+          "Urgente": "Urgente",
+          "Importante": "Importante",
+          "Média": "Média"
+        },
+        "progress": {
+          "Não iniciado": "Não iniciado",
+          "Em andamento": "Em andamento",
+          "Concluída": "Concluída"
+        }
+      },
+      "aiContext": {
+        "title": "Contexto IA do Card",
+        "boardLabel": "Board: {boardName}",
+        "boardFallback": "Board",
+        "close": "Fechar",
+        "trackingTitle": "Acompanhamento da geração",
+        "status": {
+          "busy": "Processando...",
+          "done": "Concluído",
+          "error": "Falha",
+          "idle": "Pronto"
+        },
+        "steps": {
+          "preparing": "Preparando",
+          "sending": "Enviando",
+          "processing": "Processando",
+          "done": "Concluído"
+        },
+        "tooltips": {
+          "trigger": "Gerar contexto por IA (baseado no Título e na Descrição)",
+          "triggerAria": "Gerar contexto por IA",
+          "triggerTitle": "Contexto IA"
+        },
+        "log": {
+          "title": "Log de conectividade com IA",
+          "clearButton": "Limpar log",
+          "emptyMessage": "O log aparecerá aqui assim que a geração for iniciada.",
+          "llmPrefix": "LLM:",
+          "modelPrefix": "Modelo:",
+          "errorPrefix": "Erro IA:"
+        },
+        "result": {
+          "appliedHeader": "Resultado aplicado no card",
+          "applied": {
+            "ai": "IA aplicada",
+            "fallback": "fallback aplicado"
+          },
+          "status": {
+            "error": "falha"
+          },
+          "autoFilledText": "O Título e a Descrição foram preenchidos automaticamente.",
+          "businessLabel": "Negócio:",
+          "objectiveLabel": "Objetivo:"
+        }
+      }
+    },
+    "addColumnModal": {
+      "title": {
+        "new": "Nova coluna",
+        "rename": "Renomear coluna"
+      },
+      "placeholder": "Ex: Backlog, Em progresso...",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "create": "Criar"
+    },
+    "confirmDelete": {
+      "cancel": "Cancelar",
+      "confirm": "Excluir",
+      "cardTitle": "Excluir \"{cardTitle}\"?",
+      "columnTitle": "Excluir a coluna \"{columnLabel}\"?"
+    },
+    "csvImport": {
+      "toasts": {
+        "emptyCsv": "CSV vazio.",
+        "missingTitleColumn": "Coluna 'Título' não encontrada.",
+        "noCards": "Nenhum card."
+      }
+    },
+    "csvImportConfirm": {
+      "merge": "Mesclar",
+      "import": "Importar",
+      "title": {
+        "replace": "Importar {count} cards? Substitui os atuais.",
+        "merge": "Mesclar {count} cards?"
+      },
+      "description": {
+        "replace": "Confirme para substituir o conteúdo atual do board.",
+        "merge": "Atualizará {existingCount} card(s) existentes e adicionará {newCount}."
+      },
+      "toasts": {
+        "mergeSuccess": "Mesclagem concluída ({count} cards).",
+        "replaceSuccess": "Importação concluída ({count} cards)."
+      }
+    },
+    "dailyDelete": {
+      "title": "Excluir este resumo do histórico da Daily IA?",
+      "description": "Esta ação não pode ser desfeita."
+    },
+    "descModal": {
+      "title": "Detalhes da descrição",
+      "aria": {
+        "close": "Fechar",
+        "resizeWidth": "Redimensionar largura"
+      },
+      "labels": {
+        "description": "Descrição",
+        "links": "Links"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "saveAndClose": "Salvar e Fechar"
+      }
+    },
+    "mapaModal": {
+      "validations": {
+        "serpro": {
+          "name": "SERPRO (Receita Federal)",
+          "description": "Validação da regularidade fiscal e do CNPJ junto à Receita Federal, por meio de parceiro certificado, garantindo conformidade e idoneidade do cadastro para decisões de negócio."
+        },
+        "susep": {
+          "name": "SUSEP",
+          "description": "Consulta ao órgão regulador do setor de seguros para verificação do status e da regularidade do corretor, assegurando que apenas corretores habilitados operem na plataforma."
+        },
+        "serasa": {
+          "name": "SERASA",
+          "description": "Análise de crédito e saúde financeira do Segurado e do Tomador via parceiro especializado, suportando decisões de subscrição e mitigação de risco."
+        }
+      },
+      "executiveView": {
+        "badge": "VISÃO EXECUTIVA",
+        "title": "Mapa de Produção — Flux-Board",
+        "description": "Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo."
+      },
+      "sections": {
+        "integrations": {
+          "title": "Validações integradas",
+          "description": "Consultas automáticas realizadas pela plataforma para garantir conformidade e apoio à subscrição."
+        },
+        "inProduction": {
+          "title": "Cadastros em Produção",
+          "description": "Papéis por equipe e linha de negócio, com as validações aplicadas."
+        }
+      },
+      "fields": {
+        "role": "Papel",
+        "team": "Equipe",
+        "businessLine": "Linha de negócio",
+        "validations": "Validações",
+        "validationsPlaceholder": "Ex: SERPRO (RF), SUSEP"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "save": "Salvar"
+      }
+    },
+    "daily": {
+      "title": "Daily IA",
+      "boardLabel": "Board: {boardName}",
+      "boardFallback": "Board",
+      "close": "Fechar",
+      "tabs": {
+        "new": "Nova Daily",
+        "history": "Histórico",
+        "status": "Status",
+        "statusInProgressSuffix": "• em andamento"
+      },
+      "entry": {
+        "description": "Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.",
+        "generating": {
+          "title": "Geracao em andamento. Acompanhe pela guia Status.",
+          "description": "Voce pode fechar e reabrir este modal sem perder o progresso atual."
+        },
+        "attachLabel": "Anexar transcrição",
+        "clearAttachmentButton": "Excluir anexo e conteúdo",
+        "transcriptPlaceholder": "Ex: ontem finalizamos... hoje vamos... bloqueio em...",
+        "close": "Fechar",
+        "generateButton": {
+          "generating": "Analisando e gerando com IA...",
+          "idle": "Gerar resumo prático"
+        }
+      },
+      "status": {
+        "trackingTitle": "Acompanhamento da geração",
+        "phase": {
+          "busy": "Processando...",
+          "done": "Concluído",
+          "error": "Falha",
+          "idle": "Pronto",
+          "waiting": "Aguardando"
+        },
+        "steps": {
+          "preparing": "Preparando",
+          "sending": "Enviando",
+          "processing": "Processando",
+          "done": "Concluído"
+        },
+        "log": {
+          "title": "Log de conectividade com IA",
+          "clearButton": "Limpar log",
+          "emptyMessage": "O log aparecerá aqui assim que a geração for iniciada.",
+          "llmPrefix": "LLM:",
+          "modelPrefix": "Modelo:",
+          "errorPrefix": "Erro IA:"
+        },
+        "exec": {
+          "title": "Execucoes de status",
+          "linkedToHistory": "Vinculado ao histórico",
+          "label": {
+            "done": "Concluído",
+            "doneHeuristic": "Concluído (heurístico)"
+          },
+          "noSummary": "Sem resumo",
+          "openInHistory": "Abrir no histórico",
+          "noneYet": "Nenhuma execução registrada ainda."
+        }
+      },
+      "badges": {
+        "ai": "IA"
+      },
+      "lists": {
+        "create": "Criar",
+        "adjust": "Ajustar",
+        "correct": "Corrigir",
+        "pending": "Pendências"
+      },
+      "history": {
+        "filters": {
+          "fromLabel": "De",
+          "toLabel": "Até",
+          "searchLabel": "Busca textual",
+          "searchPlaceholder": "Buscar em resumo, contexto e listas...",
+          "clearButton": "Limpar filtros",
+          "countText": "Exibindo {filtered} de {total} resumo(s)."
+        },
+        "list": {
+          "title": "Lista de históricos",
+          "item": {
+            "noTitle": "Resumo sem título",
+            "noDate": "Sem data",
+            "createCountText": "{count} item(ns) em \"Criar\""
+          }
+        },
+        "entry": {
+          "title": {
+            "latest": "Resumo mais recente",
+            "history": "Histórico #{index}"
+          },
+          "sourceManualFallback": "Transcrição manual",
+          "expand": {
+            "opened": "▲ Aberto",
+            "collapsed": "▼ Expandir"
+          },
+          "collapseButton": "Colapsar",
+          "actions": {
+            "downloadContext": "Baixar contexto",
+            "copyContext": "Copiar contexto",
+            "createCardsFrom": "Criar cards do \"Criar\"",
+            "deleteSummary": "Excluir resumo"
+          },
+          "meta": {
+            "sourcePrefix": "Fonte:",
+            "processedChars": " • {count} caracteres processados"
+          },
+          "tooltips": {
+            "rewritten": "Conteudo reescrito e estruturado por IA a partir da transcricao."
+          },
+          "badges": {
+            "aiGeneratedText": "Texto gerado com IA"
+          },
+          "context": {
+            "organizedTitle": "Contexto organizado",
+            "organizedByAi": "Organizado por IA"
+          },
+          "listItem": {
+            "prioPrefix": "Prio:",
+            "progressPrefix": "Progresso:",
+            "columnPrefix": "Coluna:",
+            "duePrefix": "Prazo:"
+          },
+          "list": {
+            "emptyMessage": "Sem itens identificados."
+          },
+          "createdCards": {
+            "title": "Cards criados a partir desta transcrição",
+            "detailsOpen": "Detalhes abertos",
+            "viewAll": "Ver todas as informações",
+            "countText": "{count} card(s) registrados.",
+            "card": {
+              "noTitle": "Sem título",
+              "alreadyExists": "Card ja existente",
+              "idPrefix": "ID:",
+              "columnPrefix": "Coluna:",
+              "priorityPrefix": "Prioridade:",
+              "progressPrefix": "Progresso:",
+              "directionPrefix": "Direcionamento:",
+              "noValue": "-",
+              "datePrefix": "Data:",
+              "tagsPrefix": "Tags:",
+              "noDescription": "Sem descrição.",
+              "noneYet": "Nenhum card criado para este resumo até o momento."
+            }
+          }
+        },
+        "emptyNoMatches": "Nenhum resumo encontrado com os filtros informados.",
+        "emptyNoSummaryYet": "Ainda não existe resumo salvo para este board."
+      },
+      "defaults": {
+        "noAttachment": "Nenhum arquivo anexado",
+        "fileLoaded": "{fileName} carregado"
+      },
+      "toasts": {
+        "delete": {
+          "success": "Resumo excluído."
+        },
+        "createCards": {
+          "error": {
+            "notFound": "Resumo não encontrado.",
+            "noCreateItems": "Não há itens em 'Criar' para transformar em card."
+          },
+          "success": {
+            "both": {
+              "title": "{count} card(s) criado(s) com sucesso.",
+              "description": "{existingCount} item(ns) já existia(m) no board e foram apenas sinalizados."
+            },
+            "single": {
+              "title": "{count} card(s) criado(s) com sucesso."
+            }
+          },
+          "info": {
+            "none": {
+              "title": "Nenhum novo card criado.",
+              "description": "Todos os itens sugeridos já existem no board."
+            }
+          }
+        },
+        "copy": {
+          "error": {
+            "noContext": "Não há contexto para copiar.",
+            "couldNotCopy": "Não foi possível copiar o contexto."
+          },
+          "warning": {
+            "noClipboardSupport": "Seu navegador não suporta cópia automática."
+          },
+          "success": {
+            "copied": "Contexto copiado para a área de transferência."
+          }
+        },
+        "generate": {
+          "error": {
+            "noTranscript": "Informe ou anexe a transcrição da daily.",
+            "title": "Erro ao gerar resumo com IA."
+          },
+          "errorFallback": "Erro ao gerar resumo.",
+          "timeout": "Tempo esgotado ao gerar a Daily IA."
+        }
+      },
+      "logs": {
+        "generate": {
+          "start": "Iniciando geração do resumo prático...",
+          "errorFallback": "Erro ao gerar resumo.",
+          "success": {
+            "aiModelGenerated": "Modelo gerado com sucesso.",
+            "heuristic": "Resumo estruturado sem uso efetivo da IA (modo heurístico)."
+          },
+          "resultSnippetPrefix": "Resumo:",
+          "error": {
+            "integrationFailure": {
+              "prefix": "Falha na integração com IA",
+              "modelLabel": "modelo",
+              "heuristicSuffix": "Conteúdo tratado em modo heurístico."
+            },
+            "timeout": "Tempo esgotado ao gerar a Daily IA.",
+            "error": "Erro ao gerar resumo com IA."
+          }
+        }
+      }
+    },
+    "card": {
+      "ariaLabel": "Card {cardTitle}. Coluna {columnLabel}. Prioridade {priority}. Progresso {progress}.",
+      "due": {
+        "overdue": "{days}d atraso",
+        "today": "Hoje",
+        "future": "{days}d"
+      },
+      "tooltips": {
+        "description": "Ver descrição",
+        "copyCardId": "Copiar ID do card"
+      },
+      "actions": {
+        "copy": "Copiar"
+      },
+      "direction": {
+        "heading": "Direcionamento"
+      }
+    },
+    "column": {
+      "collapsedTooltip": "{label} - {count} card(s). Clique para expandir.",
+      "collapsedAriaLabel": "Coluna {label}. {count} card(s). Clique para expandir.",
+      "dragAriaLabel": "Coluna {label}. {count} card(s). Arraste para reorganizar.",
+      "dropRegionAriaLabel": "Coluna {label}. Área para soltar cards.",
+      "tooltips": {
+        "newCard": "Novo card",
+        "renameColumn": "Renomear coluna",
+        "expandColumn": "Expandir coluna",
+        "collapseColumn": "Recolher coluna",
+        "deleteColumn": "Excluir coluna"
+      }
+    },
+    "directions": {
+      "manter": "Manter",
+      "priorizar": "Priorizar",
+      "adiar": "Adiar",
+      "cancelar": "Cancelar",
+      "reavaliar": "Reavaliar"
+    },
+    "board": {
+      "filters": {
+        "hideTooltip": "Ocultar filtros",
+        "showTooltip": "Mostrar filtros",
+        "title": "Filtros",
+        "priorityLabel": "Prioridade",
+        "allLabel": "Todas",
+        "shortcutTitle": "Atalho: tecla F",
+        "focusModeOn": "Foco do dia: ON",
+        "focusModeOff": "Foco do dia",
+        "clear": "Limpar filtros",
+        "labelsButton": "Rótulos",
+        "mapButton": "Mapa de Produção",
+        "dailyButton": "Daily IA",
+        "searchPlaceholder": "Buscar... (/) "
+      },
+      "toolbar": {
+        "csvImportModeAria": "Modo de importação CSV",
+        "csvImportMode": {
+          "replace": "Substituir",
+          "merge": "Mesclar"
+        },
+        "import": "Importar",
+        "export": "Exportar"
+      },
+      "stats": {
+        "totalLabel": "Total",
+        "inProgressLabel": "Em andamento",
+        "overdueLabel": "Atrasados",
+        "dueSoonLabel": "Vence em 3d",
+        "completedRateLabel": "Taxa concluída"
+      },
+      "summary": {
+        "totalLabel": "Total",
+        "pendingLabel": "Pendentes"
+      },
+      "nextActions": {
+        "title": "Proximas melhores acoes",
+        "duePrefix": "prazo"
+      },
+      "wipRisk": {
+        "title": "Risco de WIP por coluna",
+        "emptyMessage": "Sem gargalos críticos (>= {minItems} itens em andamento)."
+      },
+      "newCard": {
+        "defaultDescription": "Sem descrição."
+      },
+      "dnd": {
+        "screenReaderInstructions": {
+          "draggable": "Arraste e solte cards usando teclado. Use Tab para focar um card. Pressione Enter/Espaço para iniciar o arrasto. Use as setas para alternar entre as colunas/posições e pressione Enter/Espaço para soltar."
+        },
+        "announcements": {
+          "dragStart": {
+            "cardWithTitle": "Iniciando arrasto do card: {cardTitle}.",
+            "card": "Iniciando arrasto do card.",
+            "columnWithTitle": "Iniciando arrasto da coluna: {columnLabel}.",
+            "column": "Iniciando arrasto da coluna."
+          },
+          "dragOver": {
+            "dropOnColumnWithTitle": "Soltar na coluna: {columnLabel}.",
+            "dropOnColumn": "Soltar na coluna.",
+            "dropOnColumnWithPosition": "Soltar na coluna: {columnLabel}, posição {pos}.",
+            "dropOnPositionOnly": "Soltar na coluna, posição {pos}."
+          },
+          "dragEnd": {
+            "dropped": "Card/coluna solto."
+          },
+          "dragCancel": "Arrasto cancelado."
+        }
+      }
+    }
+  }
+}

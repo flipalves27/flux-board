@@ -6,6 +6,7 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { useTranslations } from "next-intl";
 import {
   DESCRIPTION_BLOCKS,
   parseDescriptionToBlocks,
@@ -117,6 +118,7 @@ export function CardModal({
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const { pushToast } = useToast();
+  const t = useTranslations("kanban");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const [aiContextOpen, setAiContextOpen] = useState(false);
@@ -177,16 +179,16 @@ export function CardModal({
   };
 
   const handleSave = () => {
-    const t = title.trim();
-    if (!t) {
-      pushToast({ kind: "error", title: "Informe o título." });
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) {
+      pushToast({ kind: "error", title: t("cardModal.toasts.missingTitle") });
       return;
     }
     const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
     onSave({
       ...card,
       id: finalId,
-      title: t,
+      title: normalizedTitle,
       desc: descriptionForSave.trim() || "Sem descrição.",
       bucket,
       priority,
@@ -216,10 +218,13 @@ export function CardModal({
   };
 
   const generateAiContextForCard = async () => {
-    const t = title.trim();
+    const normalizedTitle = title.trim();
     const d = descriptionForSave.trim();
-    if (!t || !d) {
-      pushToast({ kind: "error", title: "Informe o título e a descrição para gerar contexto." });
+    if (!normalizedTitle || !d) {
+      pushToast({
+        kind: "error",
+        title: t("cardModal.toasts.missingTitleAndDescription"),
+      });
       return;
     }
     if (aiContextInFlightRef.current) return;
@@ -241,7 +246,7 @@ export function CardModal({
       {
         timestamp: startedAt,
         status: "start",
-        message: "Preparando contexto por IA...",
+        message: t("cardModal.logs.preparingContext"),
       },
     ]);
 
@@ -250,7 +255,7 @@ export function CardModal({
       const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/card-context`, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ title: t, description: d }),
+        body: JSON.stringify({ title: normalizedTitle, description: d }),
         signal: controller.signal,
       });
       setAiContextPhase("processing");
@@ -275,7 +280,7 @@ export function CardModal({
       };
 
       if (!response.ok) {
-        const message = String(data?.error || "Erro ao gerar contexto.");
+        const message = String(data?.error || t("cardModal.logs.contextGenerationErrorFallback"));
         setAiContextPhase("error");
         setAiContextLogs((prev) => [
           {
@@ -321,7 +326,7 @@ export function CardModal({
         {
           timestamp: new Date().toISOString(),
           status: "success",
-          message: usedLlm ? "Contexto gerado com IA." : "Contexto estruturado (fallback, sem IA).",
+          message: usedLlm ? t("cardModal.logs.contextGeneratedByAI") : t("cardModal.logs.contextStructuredFallback"),
           provider: providerName,
           model: modelName,
           resultSnippet: String(data?.objetivo || data?.resumoNegocio || "").trim().slice(0, 180) || undefined,
@@ -335,13 +340,13 @@ export function CardModal({
         {
           timestamp: new Date().toISOString(),
           status: "error",
-          message: isAbort ? "Tempo esgotado ao gerar contexto por IA." : "Erro ao gerar contexto por IA.",
+          message: isAbort ? t("cardModal.logs.contextTimeout") : t("cardModal.logs.contextError"),
         },
         ...prev,
       ]);
       pushToast({
         kind: isAbort ? "warning" : "error",
-        title: isAbort ? "Tempo esgotado ao gerar contexto por IA." : "Erro ao gerar contexto por IA.",
+        title: isAbort ? t("cardModal.logs.contextTimeout") : t("cardModal.logs.contextError"),
       });
     } finally {
       window.clearTimeout(timeoutId);
@@ -394,7 +399,7 @@ export function CardModal({
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
-                  {mode === "edit" ? "Edição" : "Criação"}
+                  {mode === "edit" ? t("cardModal.modePill.edit") : t("cardModal.modePill.create")}
                 </span>
                 {mode === "edit" && (
                   <span className="inline-flex items-center rounded-full border border-[rgba(116,185,255,0.35)] bg-[rgba(116,185,255,0.1)] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--flux-info)]">
@@ -403,12 +408,12 @@ export function CardModal({
                 )}
               </div>
               <h2 id="card-modal-title" className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
-                {mode === "edit" ? "Editar card" : "Novo card"}
+                {mode === "edit" ? t("cardModal.header.title.edit") : t("cardModal.header.title.new")}
               </h2>
               <p className="mt-1.5 max-w-md text-sm leading-relaxed text-[var(--flux-text-muted)]">
                 {mode === "edit"
-                  ? "Ajuste identificação, conteúdo e status — as alterações refletem no quadro na hora."
-                  : "Defina o essencial agora; você pode refinar título, descrição e links depois."}
+                  ? t("cardModal.header.description.edit")
+                  : t("cardModal.header.description.new")}
               </p>
             </div>
             <button
@@ -416,7 +421,7 @@ export function CardModal({
               onClick={onClose}
               ref={closeBtnRef}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] text-[var(--flux-text-muted)] motion-safe:transition-all motion-safe:duration-200 hover:border-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] motion-safe:hover:rotate-90 active:scale-95"
-              aria-label="Fechar"
+              aria-label={t("cardModal.aria.close")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -428,34 +433,34 @@ export function CardModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 scrollbar-kanban">
           <div className="space-y-5">
             <CardModalSection
-              title="Identificação e coluna"
-              description="ID único e posição atual no fluxo do board."
+              title={t("cardModal.sections.identification.title")}
+              description={t("cardModal.sections.identification.description")}
             >
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                  ID
+                  {t("cardModal.fields.id.label")}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={id}
                     onChange={(e) => setId(e.target.value)}
-                    placeholder="Ex: DI-700"
+                    placeholder={t("cardModal.fields.id.placeholder")}
                     className={`${inputBase} flex-1`}
                   />
-                  <CustomTooltip content="Gerar contexto por IA (baseado no Título e na Descrição)">
+                  <CustomTooltip content={t("cardModal.aiContext.tooltips.trigger")}>
                     <button
                       type="button"
                       onClick={generateAiContextForCard}
                       disabled={!aiContextCanGenerate || aiContextBusy}
-                      aria-label="Gerar contexto por IA"
+                      aria-label={t("cardModal.aiContext.tooltips.triggerAria")}
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[var(--flux-primary-light)] transition-all duration-200 motion-safe:active:scale-95 ${
                         !aiContextCanGenerate || aiContextBusy
                           ? "cursor-not-allowed border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] opacity-45"
                           : "border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(108,92,231,0.45)] hover:bg-[rgba(108,92,231,0.14)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.12),0_8px_24px_-8px_rgba(108,92,231,0.25)]"
                       }`}
-                      title="Contexto IA"
+                      title={t("cardModal.aiContext.tooltips.triggerTitle")}
                     >
                       <span className="text-lg" aria-hidden>
                         🧠
@@ -466,7 +471,7 @@ export function CardModal({
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                  Coluna
+                  {t("cardModal.fields.column.label")}
                 </label>
                 <select
                   value={bucket}
@@ -484,12 +489,12 @@ export function CardModal({
             </CardModalSection>
 
             <CardModalSection
-              title="Conteúdo principal"
-              description="Título no quadro e descrição em blocos — use o botão de IA quando quiser sugestões a partir do que já escreveu."
+              title={t("cardModal.sections.content.title")}
+              description={t("cardModal.sections.content.description")}
             >
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                Título
+                {t("cardModal.fields.title.label")}
               </label>
               <input
                 type="text"
@@ -498,7 +503,7 @@ export function CardModal({
                   setTitle(e.target.value);
                   setAiContextApplied(null);
                 }}
-                placeholder="Título executivo do card"
+                placeholder={t("cardModal.fields.title.placeholder")}
                 className={`${inputBase} text-base font-medium`}
               />
               {aiContextApplied && (
@@ -510,7 +515,7 @@ export function CardModal({
                         : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
                     }`}
                   >
-                    {aiContextApplied.usedLlm ? "Gerado por IA" : "Contexto estruturado (sem IA)"}
+                    {aiContextApplied.usedLlm ? t("cardModal.badges.aiGenerated") : t("cardModal.badges.aiFallbackStructured")}
                   </span>
                 </div>
               )}
@@ -518,7 +523,7 @@ export function CardModal({
 
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                Descrição
+                {t("cardModal.fields.description.label")}
               </label>
               <div className="rounded-xl border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
                 <div className="space-y-3">
@@ -551,18 +556,21 @@ export function CardModal({
                         : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
                     }`}
                   >
-                    {aiContextApplied.usedLlm ? "Texto gerado por IA" : "Descrição estruturada (sem IA)"}
+                    {aiContextApplied.usedLlm ? t("cardModal.badges.aiGeneratedText") : t("cardModal.badges.aiFallbackStructuredDescription")}
                   </span>
                 </div>
               )}
             </div>
             </CardModalSection>
 
-            <CardModalSection title="Status e prazo" description="Prioridade, estágio de trabalho e data alvo de conclusão.">
+            <CardModalSection
+              title={t("cardModal.sections.statusDue.title")}
+              description={t("cardModal.sections.statusDue.description")}
+            >
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                  Prioridade
+                  {t("cardModal.fields.priority.label")}
                 </label>
                 <select
                   value={priority}
@@ -571,14 +579,14 @@ export function CardModal({
                 >
                   {priorities.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {t(`cardModal.options.priority.${p}`) ?? p}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                  Progresso
+                  {t("cardModal.fields.progress.label")}
                 </label>
                 <select
                   value={progress}
@@ -587,14 +595,14 @@ export function CardModal({
                 >
                   {progresses.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {t(`cardModal.options.progress.${p}`) ?? p}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                  Data de Conclusão
+                  {t("cardModal.fields.dueDate.label")}
                 </label>
                 <input
                   type="date"
@@ -606,9 +614,12 @@ export function CardModal({
             </div>
             </CardModalSection>
 
-            <CardModalSection title="Rótulos" description="Marque tags existentes ou crie novas para este board.">
+            <CardModalSection
+              title={t("cardModal.sections.labels.title")}
+              description={t("cardModal.sections.labels.description")}
+            >
             <div>
-              <label className="sr-only">Novo rótulo</label>
+              <label className="sr-only">{t("cardModal.fields.newLabel.srLabel")}</label>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
@@ -620,7 +631,7 @@ export function CardModal({
                       handleCreateLabel();
                     }
                   }}
-                  placeholder="Novo rótulo"
+                  placeholder={t("cardModal.fields.newLabel.placeholder")}
                   className={`${inputBase} py-2.5`}
                 />
                 <button
@@ -628,29 +639,29 @@ export function CardModal({
                   onClick={handleCreateLabel}
                   className="px-4 rounded-xl text-sm font-semibold border border-[var(--flux-primary)] bg-[rgba(108,92,231,0.15)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.25)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.15)] transition-all duration-200 font-display whitespace-nowrap"
                 >
-                  + Criar
+                  {t("cardModal.buttons.createLabel")}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {filterLabels.map((t) => (
-                  <div key={t} className="group relative">
+                {filterLabels.map((label) => (
+                  <div key={label} className="group relative">
                     <button
                       type="button"
-                      onClick={() => toggleTag(t)}
+                      onClick={() => toggleTag(label)}
                       className={`pl-4 pr-8 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 font-display ${
-                        tags.has(t)
+                        tags.has(label)
                           ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
                           : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                       }`}
                     >
-                      {t}
+                      {label}
                     </button>
-                    <CustomTooltip content={`Excluir rótulo "${t}"`}>
+                    <CustomTooltip content={t("cardModal.tooltips.deleteLabel", { label })}>
                       <button
                         type="button"
-                        onClick={() => handleDeleteLabel(t)}
+                        onClick={() => handleDeleteLabel(label)}
                         className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
-                        aria-label={`Excluir rótulo ${t}`}
+                        aria-label={t("cardModal.tooltips.deleteLabelAria", { label })}
                       >
                         ×
                       </button>
@@ -666,20 +677,20 @@ export function CardModal({
                   <svg className="w-3.5 h-3.5 text-[var(--flux-primary-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
-                  Links
+                  {t("cardModal.sections.links.title")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setLinks((prev) => [...prev, { url: "", label: "" }])}
                   className="text-xs font-semibold text-[var(--flux-primary-light)] hover:text-[var(--flux-primary)] px-2 py-1 rounded-lg hover:bg-[rgba(108,92,231,0.12)] transition-colors"
                 >
-                  + Adicionar link
+                  {t("cardModal.sections.links.addButton")}
                 </button>
               </div>
               <ul className="divide-y divide-[rgba(255,255,255,0.06)] max-h-[200px] overflow-y-auto scrollbar-kanban">
                 {links.length === 0 ? (
                   <li className="px-4 py-4 text-center text-xs text-[var(--flux-text-muted)]">
-                    Nenhum link. Clique em &quot;Adicionar link&quot; para incluir.
+                    {t("cardModal.sections.links.empty")}
                   </li>
                 ) : (
                   links.map((link, idx) => (
@@ -694,7 +705,7 @@ export function CardModal({
                             return next;
                           })
                         }
-                        placeholder="https://..."
+                        placeholder={t("cardModal.sections.links.urlPlaceholder")}
                         className="flex-1 min-w-0 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                       />
                       <input
@@ -707,11 +718,11 @@ export function CardModal({
                             return next;
                           })
                         }
-                        placeholder="Rótulo (opcional)"
+                        placeholder={t("cardModal.sections.links.labelPlaceholder")}
                         className="w-32 shrink-0 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                       />
                       {link.url.trim() ? (
-                        <CustomTooltip content="Visualizar link">
+                        <CustomTooltip content={t("cardModal.sections.links.tooltips.view")}>
                           <a
                             href={link.url.trim()}
                             target="_blank"
@@ -722,7 +733,7 @@ export function CardModal({
                           </a>
                         </CustomTooltip>
                       ) : null}
-                      <CustomTooltip content="Remover link">
+                      <CustomTooltip content={t("cardModal.sections.links.tooltips.remove")}>
                         <button
                           type="button"
                           onClick={() => setLinks((prev) => prev.filter((_, i) => i !== idx))}
@@ -748,14 +759,14 @@ export function CardModal({
                 }}
                 className="mr-auto btn-danger"
               >
-                Excluir
+                {t("cardModal.buttons.delete")}
               </button>
             )}
             <button type="button" onClick={onClose} className="btn-secondary">
-              Cancelar
+              {t("cardModal.buttons.cancel")}
             </button>
             <button type="button" onClick={handleSave} className="btn-primary">
-              Salvar
+              {t("cardModal.buttons.save")}
             </button>
           </div>
         </div>
@@ -777,28 +788,32 @@ export function CardModal({
                     id="ai-context-title"
                     className="font-display font-bold text-[var(--flux-text)] text-base"
                   >
-                    Contexto IA do Card
+                    {t("cardModal.aiContext.title")}
                   </h3>
-                  <p className="text-xs text-[var(--flux-text-muted)]">Board: {boardName || "Board"}</p>
+                  <p className="text-xs text-[var(--flux-text-muted)]">
+                    {t("cardModal.aiContext.boardLabel", {
+                      boardName: boardName || t("cardModal.aiContext.boardFallback"),
+                    })}
+                  </p>
                 </div>
                 <button type="button" onClick={() => setAiContextOpen(false)} className="btn-secondary">
-                  Fechar
+                  {t("cardModal.aiContext.close")}
                 </button>
               </div>
 
               <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
-                    Acompanhamento da geração
+                    {t("cardModal.aiContext.trackingTitle")}
                   </div>
                   <div className="text-[11px] text-[var(--flux-text-muted)]">
                     {aiContextBusy
-                      ? "Processando..."
+                      ? t("cardModal.aiContext.status.busy")
                       : aiContextPhase === "done"
-                        ? "Concluído"
+                        ? t("cardModal.aiContext.status.done")
                         : aiContextPhase === "error"
-                          ? "Falha"
-                          : "Pronto"}
+                          ? t("cardModal.aiContext.status.error")
+                          : t("cardModal.aiContext.status.idle")}
                   </div>
                 </div>
                 <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
@@ -811,7 +826,8 @@ export function CardModal({
                   />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-2">
-                  {["Preparando", "Enviando", "Processando", "Concluído"].map((step, idx) => {
+                  {[t("cardModal.aiContext.steps.preparing"), t("cardModal.aiContext.steps.sending"), t("cardModal.aiContext.steps.processing"), t("cardModal.aiContext.steps.done")].map(
+                    (step, idx) => {
                     const stepPos = idx + 1;
                     const active = aiContextStatusStepIndex >= stepPos;
                     return (
@@ -826,7 +842,8 @@ export function CardModal({
                         {step}
                       </div>
                     );
-                  })}
+                    }
+                  )}
                 </div>
               </div>
 
@@ -835,14 +852,14 @@ export function CardModal({
                   <div className="bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                        Log de conectividade com IA
+                        {t("cardModal.aiContext.log.title")}
                       </div>
                       <button
                         type="button"
                         className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
                         onClick={() => setAiContextLogs([])}
                       >
-                        Limpar log
+                        {t("cardModal.aiContext.log.clearButton")}
                       </button>
                     </div>
                     <div className="max-h-56 overflow-auto space-y-1 scrollbar-flux">
@@ -861,14 +878,22 @@ export function CardModal({
                               <div>{log.message}</div>
                               {log.provider || log.model ? (
                                 <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                  {log.provider && <span>LLM: {log.provider}</span>}
+                                  {log.provider && (
+                                    <span>
+                                      {t("cardModal.aiContext.log.llmPrefix")} {log.provider}
+                                    </span>
+                                  )}
                                   {log.provider && log.model ? <span> • </span> : null}
-                                  {log.model && <span>Modelo: {log.model}</span>}
+                                  {log.model && (
+                                    <span>
+                                      {t("cardModal.aiContext.log.modelPrefix")} {log.model}
+                                    </span>
+                                  )}
                                 </div>
                               ) : null}
                               {log.errorKind ? (
                                 <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                  Erro IA: {log.errorKind}
+                                  {t("cardModal.aiContext.log.errorPrefix")} {log.errorKind}
                                   {log.errorMessage ? ` - ${log.errorMessage}` : ""}
                                 </div>
                               ) : null}
@@ -880,22 +905,22 @@ export function CardModal({
                   </div>
                 ) : (
                   <p className="text-xs text-[var(--flux-text-muted)] mt-4">
-                    O log aparecerá aqui assim que a geração for iniciada.
+                    {t("cardModal.aiContext.log.emptyMessage")}
                   </p>
                 )
               ) : (
                 <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                      Resultado aplicado no card
+                      {t("cardModal.aiContext.result.appliedHeader")}
                     </div>
                     <span className="text-[10px] text-[var(--flux-text-muted)]">
                       {aiContextPhase === "done"
                         ? aiContextApplied?.usedLlm
-                          ? "IA aplicada"
-                          : "fallback aplicado"
+                          ? t("cardModal.aiContext.result.applied.ai")
+                          : t("cardModal.aiContext.result.applied.fallback")
                         : aiContextPhase === "error"
-                          ? "falha"
+                          ? t("cardModal.aiContext.result.status.error")
                           : ""}
                     </span>
                   </div>
@@ -903,21 +928,19 @@ export function CardModal({
                   {aiContextPhase === "done" && aiContextApplied ? (
                     <div className="space-y-2">
                       <div className="text-xs text-[var(--flux-text-muted)]">
-                        O <span className="text-[var(--flux-text)] font-semibold">Título</span> e a{" "}
-                        <span className="text-[var(--flux-text)] font-semibold">Descrição</span> foram preenchidos
-                        automaticamente.
+                        {t("cardModal.aiContext.result.autoFilledText")}
                       </div>
                       {(aiContextBusinessSummary || aiContextObjective) && (
                         <div className="rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3">
                           {aiContextBusinessSummary ? (
                             <div className="text-[11px] mb-2">
-                              <span className="font-semibold text-[var(--flux-text)]">Negócio:</span>{" "}
+                              <span className="font-semibold text-[var(--flux-text)]">{t("cardModal.aiContext.result.businessLabel")}</span>{" "}
                               <span className="text-[var(--flux-text-muted)]">{aiContextBusinessSummary}</span>
                             </div>
                           ) : null}
                           {aiContextObjective ? (
                             <div className="text-[11px]">
-                              <span className="font-semibold text-[var(--flux-text)]">Objetivo:</span>{" "}
+                              <span className="font-semibold text-[var(--flux-text)]">{t("cardModal.aiContext.result.objectiveLabel")}</span>{" "}
                               <span className="text-[var(--flux-text-muted)]">{aiContextObjective}</span>
                             </div>
                           ) : null}
@@ -926,7 +949,7 @@ export function CardModal({
                     </div>
                   ) : aiContextPhase === "error" ? (
                     <div className="text-xs text-[var(--flux-text-muted)]">
-                      Não foi possível gerar o contexto por IA. Ajuste o Título/Descrição e tente novamente.
+                      {t("cardModal.logs.unableToGenerateContext")}
                     </div>
                   ) : null}
                 </div>
@@ -937,11 +960,11 @@ export function CardModal({
 
         <ConfirmDialog
           open={confirmDeleteOpen}
-          title="Excluir este card?"
-          description="Esta ação não pode ser desfeita."
+          title={t("cardModal.confirmDelete.title")}
+          description={t("cardModal.confirmDelete.description")}
           intent="danger"
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          confirmText={t("cardModal.confirmDelete.confirm")}
+          cancelText={t("cardModal.confirmDelete.cancel")}
           onCancel={() => setConfirmDeleteOpen(false)}
           onConfirm={() => {
             onDelete?.(card.id);

@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import type { CardData } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { useTranslations } from "next-intl";
 
 interface KanbanCardProps {
   card: CardData;
@@ -37,11 +38,27 @@ export function KanbanCard({
     data: { card, bucket: card.bucket },
   });
 
+  const t = useTranslations("kanban");
+
   const dr = daysRemaining(card.dueDate);
-  const ariaLabel = `Card ${card.title}. Coluna ${card.bucket}. Prioridade ${card.priority}. Progresso ${card.progress}.`;
+  const prioLabel = t(`cardModal.options.priority.${card.priority}`);
+  const progLabel = t(`cardModal.options.progress.${card.progress}`);
+
+  const ariaLabel = t("card.ariaLabel", {
+    cardTitle: card.title,
+    columnLabel: card.bucket,
+    priority: prioLabel,
+    progress: progLabel,
+  });
   const dueClass = dr === null ? "" : dr < 0 ? "text-[var(--flux-danger)]" : dr <= 3 ? "text-[var(--flux-warning)]" : "text-[var(--flux-text-muted)]";
   const dueText =
-    dr === null ? "" : dr < 0 ? `${Math.abs(dr)}d atraso` : dr === 0 ? "Hoje" : `${dr}d`;
+    dr === null
+      ? ""
+      : dr < 0
+        ? t("card.due.overdue", { days: Math.abs(dr) })
+        : dr === 0
+          ? t("card.due.today")
+          : t("card.due.future", { days: dr });
 
   const prioClass =
     card.priority === "Urgente"
@@ -77,7 +94,7 @@ export function KanbanCard({
           <span className="text-[11px] font-bold text-[var(--flux-text-muted)] font-mono card-id">{card.id}</span>
 
           {onOpenDesc && (
-            <CustomTooltip content="Ver descrição" position="top">
+            <CustomTooltip content={t("card.tooltips.description")} position="top">
               <button
                 type="button"
                 onClick={(e) => {
@@ -85,7 +102,7 @@ export function KanbanCard({
                   onOpenDesc();
                 }}
                 className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
-                aria-label="Ver descrição"
+                aria-label={t("card.tooltips.description")}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -104,10 +121,10 @@ export function KanbanCard({
               }
             }}
             className="rounded border border-[rgba(255,255,255,0.12)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-            title="Copiar ID do card"
-            aria-label="Copiar ID do card"
+            title={t("card.tooltips.copyCardId")}
+            aria-label={t("card.tooltips.copyCardId")}
           >
-            Copiar
+            {t("card.actions.copy")}
           </button>
         </div>
 
@@ -123,7 +140,7 @@ export function KanbanCard({
             ✕
           </button>
           <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${prioClass}`}>
-            {card.priority}
+            {prioLabel}
           </span>
         </div>
       </div>
@@ -151,7 +168,7 @@ export function KanbanCard({
             className="w-1.5 h-1.5 rounded-full"
             style={{ background: progColor }}
           />
-          <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{card.progress}</span>
+          <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{progLabel}</span>
         </div>
         {dr !== null && (
           <span className={`flex items-center gap-1 text-[11px] font-semibold ${dueClass}`}>
@@ -162,12 +179,20 @@ export function KanbanCard({
       </div>
       <div className="border-t border-[rgba(255,255,255,0.06)] pt-2.5 mt-2">
         <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] uppercase block mb-2 font-display">
-          Direcionamento
+          {t("card.direction.heading")}
         </span>
         <div className="flex gap-2 flex-wrap">
           {directions.map((d) => {
             const dk = d.toLowerCase();
             const sel = card.direction === dk;
+            const dirLabel =
+              (() => {
+                try {
+                  return t(`directions.${dk}`);
+                } catch {
+                  return d;
+                }
+              })();
             return (
               <button
                 key={d}
@@ -182,7 +207,7 @@ export function KanbanCard({
                   onSetDirection(dk);
                 }}
               >
-                {d}
+                {dirLabel}
               </button>
             );
           })}

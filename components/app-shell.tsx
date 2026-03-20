@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Sidebar } from "@/components/sidebar";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
@@ -12,8 +13,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, isChecked } = useAuth();
   const { alerts, dismissAlert } = useRoutineTasks();
   const announcedAlertsRef = useRef<Set<string>>(new Set());
+  const t = useTranslations("appShell");
 
-  const isPublicRoute = pathname === "/" || pathname === "/login" || pathname === "/onboarding";
+  const localeSegment = pathname.split("/")[1];
+  const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
+  const isPublicRoute =
+    normalizedPath === "/" || normalizedPath === "/login" || normalizedPath === "/onboarding";
   const showSidebar = isChecked && user && !isPublicRoute;
 
   useEffect(() => {
@@ -44,11 +49,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="pointer-events-auto text-left border border-[rgba(0,210,211,0.35)] bg-[var(--flux-surface-card)]/95 backdrop-blur-sm rounded-[var(--flux-rad)] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.3)] animate-[cardModalSlideIn_0.3s_ease]"
           >
             <p className="text-[11px] font-semibold tracking-wide text-[var(--flux-secondary)] font-display uppercase">
-              Lembrete de rotina
+              {t("routineReminder")}
             </p>
             <p className="text-sm font-semibold text-[var(--flux-text)] mt-1">{alert.title}</p>
             <p className="text-xs text-[var(--flux-text-muted)] mt-1">
-              Prazo: {new Date(alert.dueAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              {t("dueLabel")}{" "}
+              {new Date(alert.dueAt).toLocaleTimeString(localeSegment === "en" ? "en-US" : "pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </p>
           </button>
         ))}

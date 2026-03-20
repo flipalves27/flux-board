@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -32,7 +33,15 @@ type PersistedWizardState = {
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 
-function StepPill({ index, current }: { index: number; current: WizardStep }) {
+function StepPill({
+  index,
+  current,
+  label,
+}: {
+  index: number;
+  current: WizardStep;
+  label: string;
+}) {
   const isDone = index < current;
   const isCurrent = index === current;
   return (
@@ -48,13 +57,13 @@ function StepPill({ index, current }: { index: number; current: WizardStep }) {
     >
       <span className="font-mono tabular-nums">{index.toString().padStart(2, "0")}</span>
       <span className="hidden sm:inline">
-        {index === 1 ? "Setup" : index === 2 ? "Colunas" : "Primeiro card"}
+        {label}
       </span>
     </div>
   );
 }
 
-function ColumnItem({ column }: { column: BucketConfig }) {
+function ColumnItem({ column, dragAria }: { column: BucketConfig; dragAria: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column.key,
   });
@@ -89,7 +98,7 @@ function ColumnItem({ column }: { column: BucketConfig }) {
       <button
         type="button"
         className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-2 py-1 text-xs text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[rgba(255,255,255,0.2)] transition-colors"
-        aria-label="Arrastar para reordenar"
+        aria-label={dragAria}
         {...attributes}
         {...listeners}
       >
@@ -111,6 +120,9 @@ function safeParseJson<T>(value: string | null): T | null {
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, getHeaders, isChecked } = useAuth();
+  const locale = useLocale();
+  const t = useTranslations("onboarding");
+  const localeRoot = `/${locale}`;
 
   const [step, setStep] = useState<WizardStep>(1);
   const [busy, setBusy] = useState(false);
@@ -164,7 +176,7 @@ export default function OnboardingPage() {
 
         const doneRaw = localStorage.getItem(doneKey);
         if (doneRaw === "1") {
-          router.replace("/boards");
+          router.replace(`${localeRoot}/boards`);
           return;
         }
 
@@ -189,7 +201,7 @@ export default function OnboardingPage() {
           }
           // User already has boards and no matching in-progress onboarding => skip wizard.
           localStorage.setItem(doneKey, "1");
-          router.replace("/boards");
+          router.replace(`${localeRoot}/boards`);
           return;
         }
 
@@ -216,7 +228,7 @@ export default function OnboardingPage() {
         loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof ApiError ? e.message : "Erro ao iniciar onboarding.";
+        const msg = e instanceof ApiError ? e.message : t("errors.init");
         setInitError(msg);
       }
     })();
@@ -224,7 +236,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -296,7 +308,7 @@ export default function OnboardingPage() {
           columnsPersisted: true,
         });
       } catch (e) {
-        const msg = e instanceof ApiError ? e.message : "Erro ao criar board.";
+        const msg = e instanceof ApiError ? e.message : t("errors.createBoard");
         setInitError(msg);
       } finally {
         setBusy(false);
@@ -329,7 +341,7 @@ export default function OnboardingPage() {
         columnsPersisted: true,
       });
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Erro ao salvar colunas.";
+      const msg = e instanceof ApiError ? e.message : t("errors.saveColumns");
       setInitError(msg);
     } finally {
       setBusy(false);
@@ -380,9 +392,9 @@ export default function OnboardingPage() {
       );
 
       markDone();
-      router.replace(`/board/${encodeURIComponent(boardId)}`);
+      router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}`);
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Erro ao criar card.";
+      const msg = e instanceof ApiError ? e.message : t("errors.createCard");
       setInitError(msg);
     } finally {
       setBusy(false);
@@ -398,14 +410,15 @@ export default function OnboardingPage() {
     markDone,
     persistColumnsAlways,
     router,
+    localeRoot,
     user,
   ]);
 
   const handleSkipStep3 = useCallback(async () => {
     markDone();
-    if (boardId) router.replace(`/board/${encodeURIComponent(boardId)}`);
-    else router.replace("/boards");
-  }, [boardId, markDone, router]);
+    if (boardId) router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}`);
+    else router.replace(`${localeRoot}/boards`);
+  }, [boardId, markDone, router, localeRoot]);
 
   // Make sure card bucket defaults to first column.
   useEffect(() => {
@@ -414,15 +427,16 @@ export default function OnboardingPage() {
   }, [bucketOrder, cardBucketKey]);
 
   const template = ONBOARDING_TEMPLATES[templateId];
-  const title = step === 1 ? "Dê um nome ao seu board" : step === 2 ? "Organize suas colunas" : "Crie seu primeiro card";
+  const title =
+    step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title="Onboarding" backHref="/boards" backLabel="← Boards">
+      <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="flex items-center gap-2">
-          <StepPill index={1} current={step} />
-          <StepPill index={2} current={step} />
-          <StepPill index={3} current={step} />
+          <StepPill index={1} current={step} label={t("steps.pill1")} />
+          <StepPill index={2} current={step} label={t("steps.pill2")} />
+          <StepPill index={3} current={step} label={t("steps.pill3")} />
         </div>
       </Header>
 
@@ -432,10 +446,10 @@ export default function OnboardingPage() {
             <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">{title}</h2>
             <p className="mt-1 text-sm text-[var(--flux-text-muted)]">
               {step === 1
-                ? "Escolha um template e um nome. Você pode pular se quiser."
-                : step === 2
-                  ? "Arraste as colunas para ajustar o fluxo. Você pode pular."
-                  : "Um card é o suficiente para começar. Você pode pular também."}
+                    ? t("descriptions.step1")
+                    : step === 2
+                      ? t("descriptions.step2")
+                      : t("descriptions.step3")}
             </p>
           </div>
         </div>
@@ -451,12 +465,12 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                  Nome do board
+                  {t("fields.boardName")}
                 </label>
                 <input
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
-                  placeholder="Ex: Pipeline Comercial"
+                    placeholder={t("placeholders.boardName")}
                   className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
                   autoFocus
@@ -464,7 +478,7 @@ export default function OnboardingPage() {
 
                 <div className="mt-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    Template
+                    {t("fields.template")}
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(ONBOARDING_TEMPLATES) as TemplateId[]).map((tid) => {
@@ -512,7 +526,7 @@ export default function OnboardingPage() {
               <div>
                 <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    Pré-visualização do template
+                    {t("preview.title")}
                   </p>
                   <div className="mt-3 space-y-2">
                     {template.buckets.map((b) => (
@@ -530,7 +544,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div className="mt-4 text-xs text-[var(--flux-text-muted)] leading-relaxed">
-                    Ao continuar, criaremos seu board com essas colunas e você poderá reordenar na etapa seguinte.
+                    {t("preview.description")}
                   </div>
                 </div>
 
@@ -541,7 +555,7 @@ export default function OnboardingPage() {
                     disabled={busy}
                     onClick={() => handleSkipStep1()}
                   >
-                    Pular
+                    {t("buttons.skip")}
                   </button>
                   <button
                     type="button"
@@ -549,7 +563,7 @@ export default function OnboardingPage() {
                     disabled={busy}
                     onClick={() => handleContinueStep1()}
                   >
-                    {busy ? "Criando…" : "Continuar"}
+                    {busy ? t("buttons.creating") : t("buttons.continue")}
                   </button>
                 </div>
               </div>
@@ -562,14 +576,15 @@ export default function OnboardingPage() {
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                  Arraste para reordenar
+                  {t("step2.reorderTitle")}
                 </p>
                 <p className="mt-1 text-sm text-[var(--flux-text-muted)]">
-                  Seus cards serão criados usando a ordem/colunas deste template.
+                  {t("step2.reorderDescription")}
                 </p>
               </div>
               <div className="text-xs text-[var(--flux-text-muted)]">
-                Board: <span className="font-mono text-[var(--flux-text)]">{boardId}</span>
+                {t("step2.boardLabel")}{" "}
+                <span className="font-mono text-[var(--flux-text)]">{boardId}</span>
               </div>
             </div>
 
@@ -577,7 +592,7 @@ export default function OnboardingPage() {
               <SortableContext items={bucketOrder.map((c) => c.key)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
                   {bucketOrder.map((c) => (
-                    <ColumnItem key={c.key} column={c} />
+                    <ColumnItem key={c.key} column={c} dragAria={t("dragReorderAria")} />
                   ))}
                 </div>
               </SortableContext>
@@ -585,10 +600,10 @@ export default function OnboardingPage() {
 
             <div className="mt-6 flex gap-3 justify-end">
               <button type="button" className="btn-secondary" disabled={busy} onClick={() => handleSkipStep2()}>
-                Pular
+                {t("buttons.skip")}
               </button>
               <button type="button" className="btn-primary" disabled={busy} onClick={() => handleContinueStep2()}>
-                {busy ? "Salvando…" : "Continuar"}
+                {busy ? t("buttons.saving") : t("buttons.continue")}
               </button>
             </div>
           </section>
@@ -598,20 +613,22 @@ export default function OnboardingPage() {
           <section className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                Primeiro card
+                {t("step3.title")}
               </p>
               <p className="mt-1 text-sm text-[var(--flux-text-muted)]">
-                Crie um item simples para começar. Você pode pular e ir direto para o board.
+                {t("step3.description")}
               </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">Título</label>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                  {t("fields.cardTitle")}
+                </label>
                 <input
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
-                  placeholder="Ex: Reunião de alinhamento"
+                  placeholder={t("placeholders.cardTitle")}
                   className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
                   autoFocus
@@ -620,7 +637,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                  Coluna
+                  {t("fields.column")}
                 </label>
                 <select
                   value={cardBucketKey}
@@ -638,7 +655,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                  Prioridade
+                  {t("fields.priority")}
                 </label>
                 <select
                   value={cardPriority}
@@ -648,7 +665,7 @@ export default function OnboardingPage() {
                 >
                   {PRIORITIES.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {t(`options.priority.${p}`)}
                     </option>
                   ))}
                 </select>
@@ -656,7 +673,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                  Progresso
+                  {t("fields.progress")}
                 </label>
                 <select
                   value={cardProgress}
@@ -666,7 +683,7 @@ export default function OnboardingPage() {
                 >
                   {PROGRESSES.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {t(`options.progress.${p}`)}
                     </option>
                   ))}
                 </select>
@@ -674,12 +691,12 @@ export default function OnboardingPage() {
 
               <div className="lg:col-span-2">
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                  Descrição (opcional)
+                  {t("fields.descriptionOptional")}
                 </label>
                 <textarea
                   value={cardDesc}
                   onChange={(e) => setCardDesc(e.target.value)}
-                  placeholder="O que precisa acontecer? (pode ser curto)"
+                  placeholder={t("placeholders.cardDescriptionOptional")}
                   rows={4}
                   className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
@@ -689,7 +706,7 @@ export default function OnboardingPage() {
 
             <div className="mt-6 flex gap-3 justify-end">
               <button type="button" className="btn-secondary" disabled={busy} onClick={() => handleSkipStep3()}>
-                Pular
+                {t("buttons.skip")}
               </button>
               <button
                 type="button"
@@ -697,7 +714,7 @@ export default function OnboardingPage() {
                 disabled={busy || !cardTitle.trim()}
                 onClick={() => handleCreateCard()}
               >
-                {busy ? "Criando…" : "Criar card"}
+                {busy ? t("buttons.creating") : t("buttons.createCard")}
               </button>
             </div>
           </section>
@@ -705,7 +722,7 @@ export default function OnboardingPage() {
 
         {step === 2 && !boardId && (
           <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-6">
-            <p className="text-[var(--flux-text-muted)]">Carregando board…</p>
+            <p className="text-[var(--flux-text-muted)]">{t("loading.board")}</p>
           </div>
         )}
       </main>

@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware";
+import { routing } from "./i18n";
 
 const NON_CSP_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -24,8 +26,10 @@ function isDocumentRequest(req: NextRequest) {
   return accept.includes("text/html");
 }
 
+const intlMiddleware = createMiddleware(routing);
+
 export function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  const res = intlMiddleware(req);
 
   for (const [k, v] of Object.entries(NON_CSP_HEADERS)) {
     res.headers.set(k, v);
@@ -46,6 +50,8 @@ export function middleware(req: NextRequest) {
 
 // Mantém o middleware rodando para páginas/HTML, mas evita _next/*.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.svg|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.svg|favicon\\.ico|robots\\.txt|sitemap\\.xml|api/).*)",
+  ],
 };
 

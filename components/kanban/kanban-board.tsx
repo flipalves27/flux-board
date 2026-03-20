@@ -25,6 +25,7 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { useTranslations } from "next-intl";
 import { useDailySession } from "./hooks/useDailySession";
 
 interface KanbanBoardProps {
@@ -75,6 +76,7 @@ export function KanbanBoard({
   progresses,
   directions,
 }: KanbanBoardProps) {
+  const t = useTranslations("kanban");
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{
     active: boolean;
@@ -631,7 +633,7 @@ export function KanbanBoard({
       if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
       const rows = raw.split(/\r?\n/).filter((r) => r.trim());
       if (rows.length < 2) {
-        pushToast({ kind: "error", title: "CSV vazio." });
+        pushToast({ kind: "error", title: t("csvImport.toasts.emptyCsv") });
         return;
       }
       const parseRow = (line: string) => {
@@ -654,7 +656,7 @@ export function KanbanBoard({
       hdr.forEach((h, i) => (idx[h] = i));
       const iT = idx["titulo"] ?? idx["título"] ?? -1;
       if (iT === -1) {
-        pushToast({ kind: "error", title: "Coluna 'Título' não encontrada." });
+        pushToast({ kind: "error", title: t("csvImport.toasts.missingTitleColumn") });
         return;
       }
       const nc: CardData[] = [];
@@ -686,7 +688,7 @@ export function KanbanBoard({
         });
       }
       if (!nc.length) {
-        pushToast({ kind: "error", title: "Nenhum card." });
+        pushToast({ kind: "error", title: t("csvImport.toasts.noCards") });
         return;
       }
       const mode = csvImportMode;
@@ -779,14 +781,17 @@ export function KanbanBoard({
         style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
       >
         <div className="w-full px-5 sm:px-6 lg:px-8 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
-          <CustomTooltip content={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"} position="bottom">
+          <CustomTooltip
+            content={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
+            position="bottom"
+          >
             <button
               type="button"
               onClick={() => setPriorityBarVisible((v) => !v)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
-              aria-label={priorityBarVisible ? "Ocultar filtros" : "Mostrar filtros"}
+              aria-label={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
             >
-              <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("board.filters.title")}</span>
               <span
                 className={`inline-block text-[10px] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
                 aria-hidden
@@ -799,7 +804,7 @@ export function KanbanBoard({
             <>
               <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display shrink-0">
-                  Prioridade
+                  {t("board.filters.priorityLabel")}
                 </span>
                 {["all", ...priorities].map((p) => (
                   <button
@@ -811,7 +816,7 @@ export function KanbanBoard({
                         : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
                     }`}
                   >
-                    {p === "all" ? "Todas" : p}
+                    {p === "all" ? t("board.filters.allLabel") : t(`cardModal.options.priority.${p}`)}
                   </button>
                 ))}
               </div>
@@ -829,34 +834,34 @@ export function KanbanBoard({
                     ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)]"
                     : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:border-[var(--flux-secondary)] hover:text-[var(--flux-secondary)]"
                 }`}
-                title="Atalho: tecla F"
+                title={t("board.filters.shortcutTitle")}
               >
-                {focusMode ? "Foco do dia: ON" : "Foco do dia"}
+                {focusMode ? t("board.filters.focusModeOn") : t("board.filters.focusModeOff")}
               </button>
               <button
                 onClick={clearFilters}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
-                Limpar filtros
+                {t("board.filters.clear")}
               </button>
               <button
                 onClick={() => setLabelsOpen(!labelsOpen)}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] font-display shrink-0"
               >
-                <span>Rótulos</span>
+                <span>{t("board.filters.labelsButton")}</span>
                 <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
               </button>
               <button
                 onClick={() => setMapaOpen(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
-                Mapa de Produção
+                {t("board.filters.mapButton")}
               </button>
               <button
                 onClick={openDailyModal}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
-                Daily IA
+                {t("board.filters.dailyButton")}
               </button>
               <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 <input
@@ -864,20 +869,20 @@ export function KanbanBoard({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar... (/)"
+                  placeholder={t("board.filters.searchPlaceholder")}
                   className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
                 <select
                   value={csvImportMode}
                   onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
                   className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
-                  aria-label="Modo de importação CSV"
+                  aria-label={t("board.toolbar.csvImportModeAria")}
                 >
-                  <option value="replace">Substituir</option>
-                  <option value="merge">Mesclar</option>
+                  <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>
+                  <option value="merge">{t("board.toolbar.csvImportMode.merge")}</option>
                 </select>
                 <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
-                  Importar
+                  {t("board.toolbar.import")}
                   <input
                     type="file"
                     accept=".csv"
@@ -886,7 +891,7 @@ export function KanbanBoard({
                   />
                 </label>
                 <button onClick={handleExportCSV} className="btn-bar">
-                  Exportar
+                  {t("board.toolbar.export")}
                 </button>
               </div>
             </>
@@ -913,23 +918,23 @@ export function KanbanBoard({
           <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 border-t border-[rgba(255,255,255,0.06)]">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
               <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Total</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.totalLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-text)]">{cards.length}</div>
               </div>
               <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(116,185,255,0.2)] bg-[var(--flux-surface-card)] px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Em andamento</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.inProgressLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-info)]">{executionInsights.inProgress}</div>
               </div>
               <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Atrasados</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.overdueLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-danger)]">{executionInsights.overdue}</div>
               </div>
               <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,217,61,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Vence em 3d</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.dueSoonLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-warning)]">{executionInsights.dueSoon}</div>
               </div>
               <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(0,230,118,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">Taxa concluída</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.completedRateLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-success)]">{executionInsights.doneRate}%</div>
               </div>
             </div>
@@ -955,8 +960,7 @@ export function KanbanBoard({
           onDragEnd={handleDragEnd}
           accessibility={{
             screenReaderInstructions: {
-              draggable:
-                "Arraste e solte cards usando teclado. Use Tab para focar um card. Pressione Enter/Espaço para iniciar o arrasto. Use as setas para alternar entre as colunas/posições e pressione Enter/Espaço para soltar.",
+              draggable: t("board.dnd.screenReaderInstructions.draggable"),
             },
             announcements: {
               onDragStart: ({ active }) => {
@@ -964,10 +968,14 @@ export function KanbanBoard({
                 if (activeId.startsWith("card-")) {
                   const cardId = activeId.replace("card-", "");
                   const card = cards.find((c) => c.id === cardId);
-                  return card ? `Iniciando arrasto do card: ${card.title}.` : "Iniciando arrasto do card.";
+                  return card
+                    ? t("board.dnd.announcements.dragStart.cardWithTitle", { cardTitle: card.title })
+                    : t("board.dnd.announcements.dragStart.card");
                 }
                 const col = buckets.find((b) => b.key === activeId);
-                return col ? `Iniciando arrasto da coluna: ${col.label}.` : "Iniciando arrasto da coluna.";
+                return col
+                  ? t("board.dnd.announcements.dragStart.columnWithTitle", { columnLabel: col.label })
+                  : t("board.dnd.announcements.dragStart.column");
               },
               onDragOver: ({ over }) => {
                 if (!over) return;
@@ -975,27 +983,32 @@ export function KanbanBoard({
                 if (overId.startsWith("bucket-")) {
                   const bucketKey = overId.replace("bucket-", "");
                   const col = buckets.find((b) => b.key === bucketKey);
-                  return col ? `Soltar na coluna: ${col.label}.` : "Soltar na coluna.";
+                  return col
+                    ? t("board.dnd.announcements.dragOver.dropOnColumnWithTitle", { columnLabel: col.label })
+                    : t("board.dnd.announcements.dragOver.dropOnColumn");
                 }
                 const slotInfo = parseSlotId(overId);
                 if (slotInfo) {
                   const col = buckets.find((b) => b.key === slotInfo.bucketKey);
                   const pos = slotInfo.index + 1;
                   return col
-                    ? `Soltar na coluna: ${col.label}, posição ${pos}.`
-                    : `Soltar na coluna, posição ${pos}.`;
+                    ? t("board.dnd.announcements.dragOver.dropOnColumnWithPosition", {
+                        columnLabel: col.label,
+                        pos,
+                      })
+                    : t("board.dnd.announcements.dragOver.dropOnPositionOnly", { pos });
                 }
                 return;
               },
               onDragEnd: ({ over }) => {
                 if (!over) return;
                 const overId = String(over.id);
-                if (overId.startsWith("bucket-")) return "Card/coluna solto.";
+                if (overId.startsWith("bucket-")) return t("board.dnd.announcements.dragEnd.dropped");
                 const slotInfo = parseSlotId(overId);
-                if (slotInfo) return "Card/coluna solto.";
-                return "Card/coluna solto.";
+                if (slotInfo) return t("board.dnd.announcements.dragEnd.dropped");
+                return t("board.dnd.announcements.dragEnd.dropped");
               },
-              onDragCancel: () => "Arrasto cancelado.",
+              onDragCancel: () => t("board.dnd.announcements.dragCancel"),
             },
           }}
         >
@@ -1014,7 +1027,7 @@ export function KanbanBoard({
                     priority: "Média",
                     progress: "Não iniciado",
                     title: "",
-                    desc: "Sem descrição.",
+                    desc: t("board.newCard.defaultDescription"),
                     tags: [],
                     direction: null,
                     dueDate: null,
@@ -1047,7 +1060,7 @@ export function KanbanBoard({
               />
             ))}
           </SortableContext>
-          <CustomTooltip content="Nova coluna" position="right">
+          <CustomTooltip content={t("addColumnModal.title.new")} position="right">
             <button
               type="button"
               onClick={() => {
@@ -1056,7 +1069,7 @@ export function KanbanBoard({
                 setAddColumnOpen(true);
               }}
               className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
-              aria-label="Nova coluna"
+              aria-label={t("addColumnModal.title.new")}
             >
               <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
             </button>
@@ -1111,7 +1124,7 @@ export function KanbanBoard({
             })}
             <div className="w-px h-4 bg-[rgba(255,255,255,0.16)] shrink-0" />
             <div className="flex items-center gap-1 shrink-0">
-              <span className="text-xs font-bold text-[var(--flux-text-muted)]">Total</span>
+              <span className="text-xs font-bold text-[var(--flux-text-muted)]">{t("board.summary.totalLabel")}</span>
               <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">
                 {cards.length}
               </span>
@@ -1130,7 +1143,16 @@ export function KanbanBoard({
                   <span className="font-display font-bold text-[var(--flux-text)]">
                     {directionCounts[d.toLowerCase()] || 0}
                   </span>
-                  <span className="text-[var(--flux-text-muted)] font-medium">{d}</span>
+                  <span className="text-[var(--flux-text-muted)] font-medium">
+                    {(() => {
+                      const dk = d.toLowerCase();
+                      try {
+                        return t(`directions.${dk}`);
+                      } catch {
+                        return d;
+                      }
+                    })()}
+                  </span>
                 </div>
               ))}
               <div className="w-px h-4 bg-[var(--flux-text-muted)]/60" />
@@ -1138,7 +1160,7 @@ export function KanbanBoard({
                 <span className="font-display font-bold text-[var(--flux-text-muted)]">
                   {cards.length - totalWithDir}
                 </span>
-                <span className="text-[var(--flux-text-muted)] font-medium">Pendentes</span>
+                <span className="text-[var(--flux-text-muted)] font-medium">{t("board.summary.pendingLabel")}</span>
               </div>
             </div>
           )}
@@ -1147,7 +1169,7 @@ export function KanbanBoard({
           <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-2.5">
               <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-1.5">
-                Proximas melhores acoes
+                {t("board.nextActions.title")}
               </div>
               <div className="space-y-1.5">
                 {executionInsights.nextActions.map((entry) => (
@@ -1161,8 +1183,16 @@ export function KanbanBoard({
                   >
                     <div className="text-xs font-semibold text-[var(--flux-text)] truncate">{entry.card.title}</div>
                     <div className="text-[10px] text-[var(--flux-text-muted)]">
-                      {entry.card.priority} · {entry.card.progress}
-                      {entry.due !== null ? ` · prazo ${entry.due < 0 ? `${Math.abs(entry.due)}d atraso` : `${entry.due}d`}` : ""}
+                      {t(`cardModal.options.priority.${entry.card.priority}`)} · {t(`cardModal.options.progress.${entry.card.progress}`)}
+                      {entry.due !== null
+                        ? ` · ${t("board.nextActions.duePrefix")} ${
+                            entry.due < 0
+                              ? t("card.due.overdue", { days: Math.abs(entry.due) })
+                              : entry.due === 0
+                                ? t("card.due.today")
+                                : t("card.due.future", { days: entry.due })
+                          }`
+                        : ""}
                     </div>
                   </button>
                 ))}
@@ -1170,10 +1200,10 @@ export function KanbanBoard({
             </div>
             <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] p-2.5">
               <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-danger)] mb-1.5">
-                Risco de WIP por coluna
+                {t("board.wipRisk.title")}
               </div>
               {executionInsights.wipRiskColumns.length === 0 ? (
-                <p className="text-xs text-[var(--flux-text-muted)]">Sem gargalos criticos ({">="} 4 itens em andamento).</p>
+                <p className="text-xs text-[var(--flux-text-muted)]">{t("board.wipRisk.emptyMessage", { minItems: 4 })}</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {executionInsights.wipRiskColumns.map((entry) => (
@@ -1261,14 +1291,14 @@ export function KanbanBoard({
             tabIndex={-1}
           >
             <h3 id="add-column-title" className="font-display font-bold text-[var(--flux-text)] mb-4">
-              {editingColumnKey ? "Renomear coluna" : "Nova coluna"}
+              {editingColumnKey ? t("addColumnModal.title.rename") : t("addColumnModal.title.new")}
             </h3>
             <input
               type="text"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveColumn()}
-              placeholder="Ex: Backlog, Em progresso..."
+              placeholder={t("addColumnModal.placeholder")}
               className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
               ref={addColumnInputRef}
@@ -1278,13 +1308,13 @@ export function KanbanBoard({
                 onClick={() => { setAddColumnOpen(false); setNewColumnName(""); setEditingColumnKey(null); }}
                 className="btn-secondary"
               >
-                Cancelar
+                {t("addColumnModal.cancel")}
               </button>
               <button
                 onClick={saveColumn}
                 className="btn-primary"
               >
-                {editingColumnKey ? "Salvar" : "Criar"}
+                {editingColumnKey ? t("addColumnModal.save") : t("addColumnModal.create")}
               </button>
             </div>
           </div>
@@ -1303,8 +1333,12 @@ export function KanbanBoard({
           >
             <p id="confirm-delete-title" className="text-[var(--flux-text)] mb-4 font-medium">
               {confirmDelete.type === "card"
-                ? `Excluir "${cards.find((c) => c.id === confirmDelete.id)?.title}"?`
-                : `Excluir a coluna "${confirmDelete.label}"?`}
+                ? t("confirmDelete.cardTitle", {
+                    cardTitle: cards.find((c) => c.id === confirmDelete.id)?.title || "",
+                  })
+                : t("confirmDelete.columnTitle", {
+                    columnLabel: confirmDelete.label,
+                  })}
             </p>
             <div className="flex gap-3 justify-center pt-2">
               <button
@@ -1312,7 +1346,7 @@ export function KanbanBoard({
                 className="btn-secondary"
                 ref={confirmDeleteCancelRef}
               >
-                Cancelar
+                {t("confirmDelete.cancel")}
               </button>
               <button
                 onClick={() => {
@@ -1328,7 +1362,7 @@ export function KanbanBoard({
                 }}
                 className="btn-danger-solid"
               >
-                Excluir
+                {t("confirmDelete.confirm")}
               </button>
             </div>
           </div>
@@ -1337,11 +1371,11 @@ export function KanbanBoard({
 
       <ConfirmDialog
         open={dailyDeleteConfirmId !== null}
-        title="Excluir este resumo do histórico da Daily IA?"
-        description="Esta ação não pode ser desfeita."
+        title={t("dailyDelete.title")}
+        description={t("dailyDelete.description")}
         intent="danger"
-        confirmText="Excluir"
-        cancelText="Cancelar"
+        confirmText={t("confirmDelete.confirm")}
+        cancelText={t("confirmDelete.cancel")}
         onCancel={cancelDeleteDailyHistoryEntry}
         onConfirm={confirmDeleteDailyHistoryEntry}
       />
@@ -1351,22 +1385,25 @@ export function KanbanBoard({
         title={
           csvImportConfirm
             ? csvImportConfirm.mode === "replace"
-              ? `Importar ${csvImportConfirm.count} cards? Substitui os atuais.`
-              : `Mesclar ${csvImportConfirm.count} cards?`
+              ? t("csvImportConfirm.title.replace", { count: csvImportConfirm.count })
+              : t("csvImportConfirm.title.merge", { count: csvImportConfirm.count })
             : ""
         }
         description={
           csvImportConfirm
             ? csvImportConfirm.mode === "replace"
-              ? "Confirme para substituir o conteúdo atual do board."
-              : `Atualizará ${csvImportConfirm.sameIdCount} card(s) existentes e adicionará ${
-                  csvImportConfirm.count - csvImportConfirm.sameIdCount
-                }.`
+              ? t("csvImportConfirm.description.replace")
+              : t("csvImportConfirm.description.merge", {
+                  existingCount: csvImportConfirm.sameIdCount,
+                  newCount: csvImportConfirm.count - csvImportConfirm.sameIdCount,
+                })
             : undefined
         }
         intent="danger"
-        confirmText={csvImportConfirm?.mode === "merge" ? "Mesclar" : "Importar"}
-        cancelText="Cancelar"
+        confirmText={
+          csvImportConfirm?.mode === "merge" ? t("csvImportConfirm.merge") : t("csvImportConfirm.import")
+        }
+        cancelText={t("confirmDelete.cancel")}
         onCancel={() => setCsvImportConfirm(null)}
         onConfirm={() => {
           if (!csvImportConfirm) return;
@@ -1431,7 +1468,10 @@ export function KanbanBoard({
           setCsvImportConfirm(null);
           pushToast({
             kind: "success",
-            title: csvImportConfirm.mode === "merge" ? `Mesclagem concluída (${count} cards).` : `Importação concluída (${count} cards).`,
+            title:
+              csvImportConfirm.mode === "merge"
+                ? t("csvImportConfirm.toasts.mergeSuccess", { count })
+                : t("csvImportConfirm.toasts.replaceSuccess", { count }),
           });
         }}
       />

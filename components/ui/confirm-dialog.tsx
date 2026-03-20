@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import { useTranslations } from "next-intl";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -18,14 +19,17 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
+  confirmText,
+  cancelText,
   intent = "primary",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+  const t = useTranslations("confirmDialog");
+  const resolvedConfirmText = confirmText ?? t("confirm");
+  const resolvedCancelText = cancelText ?? t("cancel");
 
   useModalA11y({
     open,
@@ -60,14 +64,14 @@ export function ConfirmDialog({
 
         <div className="flex gap-3 justify-end pt-2 border-t border-[rgba(255,255,255,0.08)] mt-4">
           <button ref={cancelBtnRef} type="button" onClick={onCancel} className="btn-secondary">
-            {cancelText}
+            {resolvedCancelText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className={intent === "danger" ? "btn-danger-solid" : "btn-primary"}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </button>
         </div>
       </div>

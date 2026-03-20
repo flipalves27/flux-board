@@ -4,6 +4,7 @@ import type React from "react";
 import type { DailyInsightEntry } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { getDailyActionSuggestions, getDailyCreateSuggestions, renderOrganizedContext } from "./daily-utils";
+import { useTranslations } from "next-intl";
 
 export type DailyTab = "entrada" | "historico" | "status";
 export type DailyLogStatus = "start" | "success" | "error";
@@ -118,6 +119,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
     onExpandDailyHistoryCreatedCards,
   } = props;
 
+  const t = useTranslations("kanban");
+
   return (
     <div
       className="fixed inset-0 bg-black/50 z-[410] flex items-center justify-center p-4"
@@ -135,12 +138,14 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 id="daily-ia-title" className="font-display font-bold text-[var(--flux-text)] text-base">
-              Daily IA
+              {t("daily.title")}
             </h3>
-            <p className="text-xs text-[var(--flux-text-muted)]">Board: {boardName || "Board"}</p>
+            <p className="text-xs text-[var(--flux-text-muted)]">
+              {t("daily.boardLabel", { boardName: boardName || t("daily.boardFallback") })}
+            </p>
           </div>
           <button ref={dailyCloseRef} type="button" className="btn-secondary" onClick={onClose}>
-            Fechar
+            {t("daily.close")}
           </button>
         </div>
 
@@ -150,61 +155,62 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
             className={`btn-bar ${dailyTab === "entrada" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
             onClick={onClickNewDaily}
           >
-            Nova Daily
+            {t("daily.tabs.new")}
           </button>
           <button
             type="button"
             className={`btn-bar ${dailyTab === "historico" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
             onClick={onClickHistoryTab}
           >
-            Histórico ({dailyInsights.length})
+            {t("daily.tabs.history")} ({dailyInsights.length})
           </button>
           <button
             type="button"
             className={`btn-bar ${dailyTab === "status" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
             onClick={onClickStatusTab}
           >
-            Status {dailyGenerating ? "• em andamento" : ""}
+            {t("daily.tabs.status")}
+            {dailyGenerating ? ` ${t("daily.tabs.statusInProgressSuffix")}` : ""}
           </button>
         </div>
 
         {dailyTab === "entrada" ? (
           <div className="flex-1 min-h-0 overflow-auto">
             <p className="text-xs text-[var(--flux-text-muted)] mb-3">
-              Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.
+              {t("daily.entry.description")}
             </p>
             {dailyGenerating && (
               <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
                 <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
-                  Geracao em andamento. Acompanhe pela guia Status.
+                  {t("daily.entry.generating.title")}
                 </p>
                 <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                  Voce pode fechar e reabrir este modal sem perder o progresso atual.
+                  {t("daily.entry.generating.description")}
                 </p>
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap mb-3">
               <label className="btn-bar cursor-pointer">
-                Anexar transcrição
+                {t("daily.entry.attachLabel")}
                 <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={onLoadDailyTranscriptFile} />
               </label>
               <button type="button" className="btn-secondary" onClick={onClearDailyAttachmentAndTranscript}>
-                Excluir anexo e conteúdo
+                {t("daily.entry.clearAttachmentButton")}
               </button>
               <span className="text-xs text-[var(--flux-text-muted)]">{dailyFileName}</span>
             </div>
             <textarea
               value={dailyTranscript}
               onChange={(e) => onDailyTranscriptChange(e.target.value)}
-              placeholder="Ex: ontem finalizamos... hoje vamos... bloqueio em..."
+              placeholder={t("daily.entry.transcriptPlaceholder")}
               className="w-full min-h-[260px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
             />
             <div className="flex items-center gap-2 justify-end mt-3">
               <button type="button" className="btn-secondary" onClick={onClose}>
-                Fechar
+                {t("daily.entry.close")}
               </button>
               <button type="button" className="btn-primary" onClick={onGenerateDailyInsight} disabled={dailyGenerating}>
-                {dailyGenerating ? "Analisando e gerando com IA..." : "Gerar resumo prático"}
+                {dailyGenerating ? t("daily.entry.generateButton.generating") : t("daily.entry.generateButton.idle")}
               </button>
             </div>
           </div>
@@ -213,18 +219,18 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
             <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
-                  Acompanhamento da geração
+                  {t("daily.status.trackingTitle")}
                 </div>
                 <div className="text-[11px] text-[var(--flux-text-muted)]">
                   {dailyGenerating
-                    ? "Processando..."
+                    ? t("daily.status.phase.busy")
                     : dailyStatusPhase === "done"
-                      ? "Concluído"
+                      ? t("daily.status.phase.done")
                       : dailyStatusPhase === "error"
-                        ? "Falha"
+                        ? t("daily.status.phase.error")
                         : dailyStatusPhase === "idle"
-                          ? "Pronto"
-                          : "Aguardando"}
+                          ? t("daily.status.phase.idle")
+                          : t("daily.status.phase.waiting")}
                 </div>
               </div>
               <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
@@ -237,7 +243,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-2">
-                {["Preparando", "Enviando", "Processando", "Concluído"].map((step, idx) => {
+                {[t("daily.status.steps.preparing"), t("daily.status.steps.sending"), t("daily.status.steps.processing"), t("daily.status.steps.done")].map(
+                  (step, idx) => {
                   const stepPos = idx + 1;
                   const active = statusStepIndex >= stepPos;
                   return (
@@ -252,7 +259,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                       {step}
                     </div>
                   );
-                })}
+                  }
+                )}
               </div>
             </div>
 
@@ -261,14 +269,14 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                      Log de conectividade com IA
+                      {t("daily.status.log.title")}
                     </div>
                     <button
                       type="button"
                       className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
                       onClick={onClearDailyLogs}
                     >
-                      Limpar log
+                      {t("daily.status.log.clearButton")}
                     </button>
                   </div>
                   <div className="max-h-40 overflow-auto space-y-1 scrollbar-flux">
@@ -287,14 +295,22 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             <div>{log.message}</div>
                             {(log.provider || log.model) && (
                               <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                {log.provider && <span>LLM: {log.provider}</span>}
+                                {log.provider && (
+                                  <span>
+                                    {t("daily.status.log.llmPrefix")} {log.provider}
+                                  </span>
+                                )}
                                 {log.provider && log.model && <span> • </span>}
-                                {log.model && <span>Modelo: {log.model}</span>}
+                                {log.model && (
+                                  <span>
+                                    {t("daily.status.log.modelPrefix")} {log.model}
+                                  </span>
+                                )}
                               </div>
                             )}
                             {log.errorKind && (
                               <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                Erro IA: {log.errorKind}
+                                {t("daily.status.log.errorPrefix")} {log.errorKind}
                                 {log.errorMessage ? ` - ${log.errorMessage}` : ""}
                               </div>
                             )}
@@ -311,16 +327,18 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 </div>
               ) : (
                 <p className="text-xs text-[var(--flux-text-muted)] mt-4">
-                  O log aparecerá aqui assim que a geração for iniciada.
+                  {t("daily.status.log.emptyMessage")}
                 </p>
               )
             ) : (
               <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                    Execucoes de status
+                    {t("daily.status.exec.title")}
                   </div>
-                  <span className="text-[10px] text-[var(--flux-text-muted)]">Vinculado ao histórico</span>
+                  <span className="text-[10px] text-[var(--flux-text-muted)]">
+                    {t("daily.status.exec.linkedToHistory")}
+                  </span>
                 </div>
                 {dailyInsights.length ? (
                   <div className="space-y-2">
@@ -330,7 +348,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                       if (!entryId || !insight) return null;
 
                       const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                      const label = generatedWithAi ? "Concluído" : "Concluído (heurístico)";
+                      const label = generatedWithAi ? t("daily.status.exec.label.done") : t("daily.status.exec.label.doneHeuristic");
                       const createdAt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
                       const resumo = String(insight?.resumo || "").trim();
                       const resumoShort = resumo.length > 120 ? `${resumo.slice(0, 120)}...` : resumo;
@@ -348,25 +366,25 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                 <span className="text-[11px] font-semibold text-[var(--flux-primary-light)]">{label}</span>
                                 {generatedWithAi && (
                                   <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
-                                    IA
+                                    {t("daily.badges.ai")}
                                   </span>
                                 )}
                               </div>
                               <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
-                                {resumoShort || "Sem resumo"}
+                                {resumoShort || t("daily.status.exec.noSummary")}
                               </div>
                             </div>
                             <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-nowrap">{createdAt}</div>
                           </div>
                           <div className="mt-2 text-[10px] text-[var(--flux-text-muted)] underline underline-offset-2">
-                            Abrir no histórico
+                            {t("daily.status.exec.openInHistory")}
                           </div>
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-[var(--flux-text-muted)]">Nenhuma execução registrada ainda.</p>
+                  <p className="text-xs text-[var(--flux-text-muted)]">{t("daily.status.exec.noneYet")}</p>
                 )}
               </div>
             )}
@@ -379,7 +397,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                   <div className="flex items-end gap-2 flex-wrap">
                     <div className="min-w-[160px]">
                       <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                        De
+                        {t("daily.history.filters.fromLabel")}
                       </label>
                       <input
                         type="date"
@@ -390,7 +408,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     </div>
                     <div className="min-w-[160px]">
                       <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                        Até
+                        {t("daily.history.filters.toLabel")}
                       </label>
                       <input
                         type="date"
@@ -401,13 +419,13 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     </div>
                     <div className="flex-1 min-w-[220px]">
                       <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                        Busca textual
+                        {t("daily.history.filters.searchLabel")}
                       </label>
                       <input
                         type="text"
                         value={dailyHistorySearchQuery}
                         onChange={(e) => onSetDailyHistorySearchQuery(e.target.value)}
-                        placeholder="Buscar em resumo, contexto e listas..."
+                        placeholder={t("daily.history.filters.searchPlaceholder")}
                         className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
                       />
                     </div>
@@ -416,18 +434,21 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                       className="btn-secondary"
                       onClick={onClearDailyHistoryFilters}
                     >
-                      Limpar filtros
+                      {t("daily.history.filters.clearButton")}
                     </button>
                   </div>
                   <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                    Exibindo {filteredDailyInsights.length} de {dailyInsights.length} resumo(s).
+                    {t("daily.history.filters.countText", {
+                      filtered: filteredDailyInsights.length,
+                      total: dailyInsights.length,
+                    })}
                   </p>
                 </div>
 
                 {filteredDailyInsights.length > 0 && (
                   <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
                     <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                      Lista de históricos
+                      {t("daily.history.list.title")}
                     </div>
                     <div className="max-h-40 overflow-auto scrollbar-flux divide-y divide-[rgba(255,255,255,0.06)]">
                       {filteredDailyInsights.map((entry, idx) => {
@@ -455,16 +476,17 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">
                               <span className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
-                                {insight.resumo || "Resumo sem título"}
+                                {insight.resumo || t("daily.history.list.item.noTitle")}
                               </span>
                               <span className="text-[10px] text-[var(--flux-text-muted)]">
-                                {dt || "Sem data"} • {createItems.length} item(ns) em "Criar"
+                                {dt || t("daily.history.list.item.noDate")} •{" "}
+                                {t("daily.history.list.item.createCountText", { count: createItems.length })}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {generatedWithAi && (
                                 <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
-                                  IA
+                                  {t("daily.badges.ai")}
                                 </span>
                               )}
                               <span className="text-[10px] text-[var(--flux-text-muted)]">
@@ -482,11 +504,18 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                   const insight = entry.insight;
                   if (!insight) return null;
                   const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-                  const title = idx === 0 ? "Resumo mais recente" : `Histórico #${filteredDailyInsights.length - idx}`;
+                  const title =
+                    idx === 0
+                      ? t("daily.history.entry.title.latest")
+                      : t("daily.history.entry.title.history", {
+                          index: filteredDailyInsights.length - idx,
+                        });
                   const createItems = getDailyCreateSuggestions(entry);
                   const entryId = String(entry.id || "");
                   const isExpanded = activeDailyHistoryId === entryId;
-                  const sourceName = String(entry.sourceFileName || "Transcrição manual");
+                  const sourceName = String(
+                    entry.sourceFileName || t("daily.history.entry.sourceManualFallback")
+                  );
                   const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
                   const aiModel = String(entry?.generationMeta?.model || "").trim();
 
@@ -512,7 +541,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             {dt ? ` • ${dt}` : ""}
                           </h4>
                           <span className="text-[10px] text-[var(--flux-text-muted)]">
-                            {isExpanded ? "▲ Aberto" : "▼ Expandir"}
+                            {isExpanded ? t("daily.history.entry.expand.opened") : t("daily.history.entry.expand.collapsed")}
                           </span>
                         </button>
 
@@ -526,7 +555,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                               onCollapseDailyHistoryExpanded();
                             }}
                           >
-                            Colapsar
+                            {t("daily.history.entry.collapseButton")}
                           </button>
                         ) : (
                           <span className="text-[10px] text-[var(--flux-text-muted)]">{sourceName}</span>
@@ -542,33 +571,38 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         <div>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
                             <button type="button" className="btn-bar" onClick={() => onDownloadDailyContextDoc(entry)}>
-                              Baixar contexto
+                              {t("daily.history.entry.actions.downloadContext")}
                             </button>
                             <button type="button" className="btn-bar" onClick={() => onCopyDailyContextDoc(entry)}>
-                              Copiar contexto
+                              {t("daily.history.entry.actions.copyContext")}
                             </button>
                             <button type="button" className="btn-bar" onClick={() => onCreateCardsFromInsight(entry.id)}>
-                              Criar cards do "Criar"
+                              {t("daily.history.entry.actions.createCardsFrom")}
                             </button>
                             <button
                               type="button"
                               className="btn-danger-solid"
                               onClick={() => onDeleteDailyHistoryEntry(String(entry.id || ""))}
                             >
-                              Excluir resumo
+                              {t("daily.history.entry.actions.deleteSummary")}
                             </button>
                           </div>
                           <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                            Fonte: {sourceName}
-                            {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
+                            {t("daily.history.entry.meta.sourcePrefix")} {sourceName}
+                            {entry.transcript
+                              ? t("daily.history.entry.meta.processedChars", {
+                                  count: entry.transcript.length,
+                                })
+                              : ""}
                           </p>
 
                           {generatedWithAi && (
-                            <CustomTooltip content="Conteudo reescrito e estruturado por IA a partir da transcricao.">
+                            <CustomTooltip content={t("daily.history.entry.tooltips.rewritten")}>
                               <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
                                 <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
-                                  Texto gerado com IA{aiModel ? ` • ${aiModel}` : ""}
+                                  {t("daily.history.entry.badges.aiGeneratedText")}
+                                  {aiModel ? ` • ${aiModel}` : ""}
                                 </span>
                               </div>
                             </CustomTooltip>
@@ -579,11 +613,11 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                           <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                                Contexto organizado
+                                {t("daily.history.entry.context.organizedTitle")}
                               </div>
                               {generatedWithAi && (
                                 <div className="text-[10px] font-semibold text-[var(--flux-primary-light)]/90">
-                                  Organizado por IA
+                                  {t("daily.history.entry.context.organizedByAi")}
                                 </div>
                               )}
                             </div>
@@ -592,10 +626,10 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {[
-                              { key: "criar", label: "Criar", values: createItems },
-                              { key: "ajustar", label: "Ajustar", values: getDailyActionSuggestions(insight.ajustar) },
-                              { key: "corrigir", label: "Corrigir", values: getDailyActionSuggestions(insight.corrigir) },
-                              { key: "pendencias", label: "Pendências", values: getDailyActionSuggestions(insight.pendencias) },
+                              { key: "criar", label: t("daily.lists.create"), values: createItems },
+                              { key: "ajustar", label: t("daily.lists.adjust"), values: getDailyActionSuggestions(insight.ajustar) },
+                              { key: "corrigir", label: t("daily.lists.correct"), values: getDailyActionSuggestions(insight.corrigir) },
+                              { key: "pendencias", label: t("daily.lists.pending"), values: getDailyActionSuggestions(insight.pendencias) },
                             ].map((list) => (
                               <div
                                 key={list.key}
@@ -633,12 +667,12 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                                 <span
                                                   className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
                                                 >
-                                                  Prio: {item.prioridade}
+                                                  {t("daily.history.entry.listItem.prioPrefix")} {item.prioridade}
                                                 </span>
                                                 <span
                                                   className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
                                                 >
-                                                  Progresso: {item.progresso}
+                                                  {t("daily.history.entry.listItem.progressPrefix")} {item.progresso}
                                                 </span>
                                               </span>
                                             </div>
@@ -652,12 +686,12 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                             <div className="mt-1 flex flex-wrap gap-1">
                                               {item.coluna && (
                                                 <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                  Coluna: {item.coluna}
+                                                  {t("daily.history.entry.listItem.columnPrefix")} {item.coluna}
                                                 </span>
                                               )}
                                               {item.dataConclusao && (
                                                 <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                  Prazo: {item.dataConclusao}
+                                                  {t("daily.history.entry.listItem.duePrefix")} {item.dataConclusao}
                                                 </span>
                                               )}
                                               {item.tags?.map((tag) => (
@@ -675,7 +709,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                     })}
                                   </ul>
                                 ) : (
-                                  <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
+                                  <p className="text-xs text-[var(--flux-text-muted)]">{t("daily.history.entry.list.emptyMessage")}</p>
                                 )}
                               </div>
                             ))}
@@ -684,7 +718,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                           <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                                Cards criados a partir desta transcrição
+                                {t("daily.history.entry.createdCards.title")}
                               </div>
                               <button
                                 type="button"
@@ -692,12 +726,14 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                 onClick={() => onExpandDailyHistoryCreatedCards(String(entry.id || ""))}
                               >
                                 {activeCreatedCardsExpandedId === String(entry.id || "")
-                                  ? "Detalhes abertos"
-                                  : "Ver todas as informações"}
+                                  ? t("daily.history.entry.createdCards.detailsOpen")
+                                  : t("daily.history.entry.createdCards.viewAll")}
                               </button>
                             </div>
                             <p className="text-xs text-[var(--flux-text-muted)] mt-1">
-                              {Array.isArray(entry.createdCards) ? entry.createdCards.length : 0} card(s) registrados.
+                              {t("daily.history.entry.createdCards.countText", {
+                                count: Array.isArray(entry.createdCards) ? entry.createdCards.length : 0,
+                              })}
                             </p>
                             <div
                               className={`overflow-hidden transition-all duration-300 ease-in-out ${
@@ -715,37 +751,41 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                       className="border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2 bg-[var(--flux-surface-mid)]"
                                     >
                                       <div className="text-xs font-semibold text-[var(--flux-text)]">
-                                        {createdCard.title || "Sem título"}
+                                        {createdCard.title || t("daily.history.entry.createdCards.card.noTitle")}
                                         {createdCard.status === "existing" && (
                                           <span className="ml-2 text-[10px] font-bold px-1.5 py-[1px] rounded-full border border-[rgba(255,217,61,0.3)] text-[#F59E0B] bg-[rgba(255,217,61,0.12)]">
-                                            Card ja existente
+                                            {t("daily.history.entry.createdCards.card.alreadyExists")}
                                           </span>
                                         )}
                                       </div>
                                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        ID: {createdCard.cardId} • Coluna: {createdCard.bucket} • Prioridade: {createdCard.priority} •
-                                        Progresso: {createdCard.progress}
+                                        {t("daily.history.entry.createdCards.card.idPrefix")} {createdCard.cardId} •{" "}
+                                        {t("daily.history.entry.createdCards.card.columnPrefix")} {createdCard.bucket} •{" "}
+                                        {t("daily.history.entry.createdCards.card.priorityPrefix")} {createdCard.priority} •{" "}
+                                        {t("daily.history.entry.createdCards.card.progressPrefix")} {createdCard.progress}
                                       </div>
                                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        Direcionamento: {createdCard.direction || "-"} • Data:{" "}
+                                        {t("daily.history.entry.createdCards.card.directionPrefix")}{" "}
+                                        {createdCard.direction || t("daily.history.entry.createdCards.card.noValue")} •{" "}
+                                        {t("daily.history.entry.createdCards.card.datePrefix")}{" "}
                                         {createdCard.createdAt
                                           ? new Date(createdCard.createdAt).toLocaleString("pt-BR")
-                                          : "-"}
+                                          : t("daily.history.entry.createdCards.card.noValue")}
                                       </div>
                                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        Tags:{" "}
+                                        {t("daily.history.entry.createdCards.card.tagsPrefix")}{" "}
                                         {Array.isArray(createdCard.tags) && createdCard.tags.length
                                           ? createdCard.tags.join(", ")
-                                          : "-"}
+                                          : t("daily.history.entry.createdCards.card.noValue")}
                                       </div>
                                       <p className="text-xs text-[var(--flux-text)] mt-1 whitespace-pre-line">
-                                        {createdCard.desc || "Sem descrição."}
+                                        {createdCard.desc || t("daily.history.entry.createdCards.card.noDescription")}
                                       </p>
                                     </div>
                                   ))
                                 ) : (
                                   <p className="text-xs text-[var(--flux-text-muted)]">
-                                    Nenhum card criado para este resumo até o momento.
+                                    {t("daily.history.entry.createdCards.card.noneYet")}
                                   </p>
                                 )}
                               </div>
@@ -759,12 +799,12 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
                 {!filteredDailyInsights.length && (
                   <p className="text-xs text-[var(--flux-text-muted)]">
-                    Nenhum resumo encontrado com os filtros informados.
+                    {t("daily.history.emptyNoMatches")}
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-xs text-[var(--flux-text-muted)]">Ainda não existe resumo salvo para este board.</p>
+              <p className="text-xs text-[var(--flux-text-muted)]">{t("daily.history.emptyNoSummaryYet")}</p>
             )}
           </div>
         )}

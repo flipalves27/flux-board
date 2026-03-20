@@ -1,0 +1,977 @@
+{
+  "navigation": {
+    "boards": "Boards",
+    "discovery": "Discovery",
+    "tasks": "My tasks",
+    "users": "Users",
+    "menu": {
+      "expand": "Expand menu",
+      "collapse": "Collapse menu"
+    },
+    "theme": {
+      "light": "Light theme",
+      "dark": "Dark theme",
+      "lightTooltip": "Use light theme",
+      "darkTooltip": "Use dark theme"
+    },
+    "logout": "Sign out"
+  },
+  "appShell": {
+    "routineReminder": "Routine reminder",
+    "dueLabel": "Due:"
+  },
+  "toasts": {
+    "kinds": {
+      "success": "OK",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "closeAria": "Close notification"
+  },
+  "confirmDialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "header": {
+    "userFallback": "User"
+  },
+  "landing": {
+    "header": {
+      "tagline": "Commercial operations with clarity."
+    },
+    "nav": {
+      "why": "Why Flux-Board",
+      "platform": "Platform",
+      "how": "How it works"
+    },
+    "actions": {
+      "openDashboardLoggedIn": "Open dashboard",
+      "signIn": "Sign in",
+      "getStarted": "Get started"
+    },
+    "hero": {
+      "chip": "Visual management · AI-ready · B2B",
+      "title": {
+        "before": "The board where",
+        "highlight": "sales and operations",
+        "after": "move at the same pace."
+      },
+      "description": "Flux-Board brings together professional Kanban, day-to-day insights, and portfolio visibility—for teams that need predictable delivery and speed in conversations with customers and leadership.",
+      "primary": {
+        "loggedIn": "Go to my boards",
+        "loggedOut": "Sign up and try it"
+      },
+      "secondary": "See what the platform does",
+      "quickLine": "Quick team adoption · Responsive experience · Grows with discovery, deals, and routines built into the flow",
+      "stats": {
+        "priority": {
+          "label": "Priority",
+          "value": "Explicit"
+        },
+        "context": {
+          "label": "Context",
+          "value": "Per card"
+        },
+        "portfolio": {
+          "label": "Portfolio",
+          "value": "Visible"
+        }
+      }
+    },
+    "kanbanMock": {
+      "liveView": "Live view",
+      "columns": {
+        "prospecting": "Prospecting",
+        "proposal": "Proposal",
+        "closing": "Closing"
+      }
+    },
+    "why": {
+      "heading": "Built for teams that live by delivery and outcomes",
+      "description": "More than a pretty Kanban: an operational layer that connects day-to-day work with how the business reads progress—from each card to portfolio view."
+    },
+    "pillars": {
+      "commercialPace": {
+        "title": "Kanban that matches commercial pace",
+        "description": "Clear columns, visible priorities, and a workflow built for sales, operations, and product—without losing sight of what actually closes deals."
+      },
+      "insights": {
+        "title": "Intelligence on the board, not in stray spreadsheets",
+        "description": "Daily insights, richer context on cards, and a foundation ready for prioritization and recommendations—fewer alignment meetings, more execution."
+      },
+      "executiveView": {
+        "title": "Executive and portfolio view in one place",
+        "description": "Portfolio metrics on boards, exports when you need them, and paths to briefings—the same source of truth for the field and leadership."
+      }
+    },
+    "platform": {
+      "heading": "Everything already in Flux-Board",
+      "description": "Capabilities that reflect today's product—insights, context, portfolio, discovery, and routines—in one cohesive experience.",
+      "actions": {
+        "openPlatform": "Open the platform"
+      }
+    },
+    "capabilities": {
+      "dailyInsights": {
+        "name": "Daily insights",
+        "detail": "Read board progress to keep cadence and spot bottlenecks early."
+      },
+      "contextOnCards": {
+        "name": "Context on cards",
+        "detail": "Structured information per card for faster, more consistent decisions."
+      },
+      "executiveBrief": {
+        "name": "Executive brief",
+        "detail": "Support for distilling what matters for management and strategic follow-up."
+      },
+      "portfolioAndMetrics": {
+        "name": "Portfolio and metrics",
+        "detail": "Roll-up indicators and exports when you need to present results."
+      },
+      "discoveryAndDeals": {
+        "name": "Discovery and deals",
+        "detail": "Room to explore hypotheses and track opportunities with live context."
+      },
+      "routinesAndAlerts": {
+        "name": "Routines and alerts",
+        "detail": "Routine reminders woven into the flow so nothing critical slips through."
+      }
+    },
+    "how": {
+      "heading": "From chaos to cadence in three steps",
+      "description": "Lean onboarding, strong defaults. Your team adopts in hours—and keeps the rhythm for weeks."
+    },
+    "steps": {
+      "step1": {
+        "title": "Centralize the flow",
+        "text": "Create boards aligned to your funnel or ops model. Everyone sees the same priority picture."
+      },
+      "step2": {
+        "title": "Enrich with context",
+        "text": "Use descriptions, per-card context, and insights to turn tasks into informed decisions."
+      },
+      "step3": {
+        "title": "Scale with clarity",
+        "text": "Metrics, exports, and an executive view support growth without losing execution standards."
+      }
+    },
+    "audiences": {
+      "heading": "Who gets the most from it",
+      "sales": {
+        "title": "Sales and customer success",
+        "text": "Visible pipeline, obvious next steps, and communication aligned with the customer."
+      },
+      "operations": {
+        "title": "Operations and projects",
+        "text": "Predictable delivery with explicit prioritization and less cross-team rework."
+      },
+      "leadership": {
+        "title": "Leadership and PMO",
+        "text": "Fast portfolio reads and briefing support without juggling a dozen tools."
+      }
+    },
+    "cta": {
+      "heading": "Bring clarity to how your team works",
+      "description": "Try a solid commercial foundation: modern visuals, features aligned with sales and operations day-to-day, and room to grow with AI and integrations.",
+      "actions": {
+        "loggedIn": "Continue in Flux-Board",
+        "loggedOutPrimary": "Start for free",
+        "loggedOutSecondary": "Explore the pillars"
+      }
+    },
+    "footer": {
+      "copyright": "© {year} Flux-Board — Organize the flow. Ship what matters.",
+      "signIn": "Sign in",
+      "features": "Features"
+    }
+  },
+  "login": {
+    "loading": "Loading...",
+    "subtitle": "Organize the flow. Ship what matters.",
+    "tabs": {
+      "login": "Sign in",
+      "register": "Register"
+    },
+    "errors": {
+      "missingCredentials": "Enter username and password.",
+      "connection": "Connection error. Please try again.",
+      "missingAllFields": "Please fill in all fields.",
+      "passwordTooShort": "Password must be at least 4 characters."
+    },
+    "fields": {
+      "userOrEmail": "Username or Email",
+      "password": "Password",
+      "name": "Name",
+      "email": "Email"
+    },
+    "placeholders": {
+      "userOrEmail": "Username or Email",
+      "password": "••••••••",
+      "name": "Your full name",
+      "email": "you@email.com",
+      "passwordMin": "Minimum 4 characters"
+    },
+    "remember": {
+      "login": "Keep me connected (save in browser)",
+      "register": "Keep me connected after sign up"
+    },
+    "actions": {
+      "login": "Sign in",
+      "register": "Register"
+    }
+  },
+  "onboarding": {
+    "dragReorderAria": "Drag to reorder",
+    "header": {
+      "title": "Onboarding",
+      "backLabel": "← Boards"
+    },
+    "steps": {
+      "pill1": "Setup",
+      "pill2": "Columns",
+      "pill3": "First card"
+    },
+    "titles": {
+      "step1": "Name your board",
+      "step2": "Arrange your columns",
+      "step3": "Create your first card"
+    },
+    "descriptions": {
+      "step1": "Choose a template and a name. You can skip if you want.",
+      "step2": "Drag the columns to adjust the flow. You can skip.",
+      "step3": "One card is enough to get started. You can also skip."
+    },
+    "errors": {
+      "init": "Error while starting onboarding.",
+      "createBoard": "Error while creating the board.",
+      "saveColumns": "Error while saving columns.",
+      "createCard": "Error while creating the card."
+    },
+    "fields": {
+      "boardName": "Board name",
+      "template": "Template",
+      "cardTitle": "Title",
+      "column": "Column",
+      "priority": "Priority",
+      "progress": "Progress",
+      "descriptionOptional": "Description (optional)"
+    },
+    "placeholders": {
+      "boardName": "Ex: Sales Pipeline",
+      "cardTitle": "Ex: Alignment meeting",
+      "cardDescriptionOptional": "What needs to happen? (keep it short)"
+    },
+    "preview": {
+      "title": "Template preview",
+      "description": "When you continue, we'll create your board with these columns and you can reorder in the next step."
+    },
+    "buttons": {
+      "skip": "Skip",
+      "continue": "Continue",
+      "creating": "Creating…",
+      "saving": "Saving…",
+      "createCard": "Create card"
+    },
+    "step2": {
+      "reorderTitle": "Drag to reorder",
+      "reorderDescription": "Your cards will be created using the order/columns from this template.",
+      "boardLabel": "Board:"
+    },
+    "step3": {
+      "title": "First card",
+      "description": "Create a simple item to get started. You can skip and go straight to the board."
+    },
+    "options": {
+      "priority": {
+        "Urgente": "Urgent",
+        "Importante": "Important",
+        "Média": "Medium"
+      },
+      "progress": {
+        "Não iniciado": "Not started",
+        "Em andamento": "In progress",
+        "Concluída": "Completed"
+      }
+    },
+    "loading": {
+      "board": "Loading board…"
+    }
+  },
+  "boards": {
+    "defaults": {
+      "newBoardName": "New Board"
+    },
+    "loading": "Loading...",
+    "exports": {
+      "generatingBrief": "Generating…",
+      "executiveBrief": "Executive brief (.md)",
+      "exportingJson": "Exporting…",
+      "portfolioJson": "Portfolio JSON (BI)"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name or board ID...",
+      "sortAriaLabel": "Board sorting",
+      "sort": {
+        "recent": "Most recent",
+        "nameAZ": "Name (A-Z)"
+      }
+    },
+    "favorites": {
+      "title": "Favorites",
+      "sortAriaLabel": "Favorites sorting",
+      "sort": {
+        "nameAZ": "Name (A-Z)",
+        "mostAccessed": "Most accessed"
+      }
+    },
+    "recents": {
+      "title": "Recently accessed",
+      "clear": "Clear recents"
+    },
+    "actions": {
+      "newBoard": "+ New Board"
+    },
+    "empty": {
+      "noBoards": "No boards yet. Click \"{newBoardName}\" to create.",
+      "noResults": "No boards found for the applied filters."
+    },
+    "favoriteModes": {
+      "mostAccessed": "Most accessed",
+      "nameAZ": "Name (A-Z)"
+    },
+    "modal": {
+      "title": {
+        "new": "New Board",
+        "rename": "Rename Board"
+      },
+      "boardNameLabel": "Board name",
+      "boardNamePlaceholder": "Ex: Main Backlog",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save"
+    },
+    "confirmDelete": {
+      "title": "Delete board \"{boardName}\"?",
+      "description": "This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "errorDelete": "Error deleting."
+    }
+  },
+  "board": {
+    "loading": "Loading board...",
+    "status": {
+      "errorApi": "API error",
+      "saving": "Saving...",
+      "saved": "Saved"
+    },
+    "toasts": {
+      "noPermission": "No permission for this board.",
+      "loadError": "Error loading board.",
+      "saveError": "Failed to save changes. Check your connection and try again."
+    }
+  },
+  "kanban": {
+    "cardModal": {
+      "toasts": {
+        "missingTitle": "Please provide a title.",
+        "missingTitleAndDescription": "Please provide a title and a description to generate context."
+      },
+      "logs": {
+        "preparingContext": "Preparing AI context...",
+        "contextGenerationErrorFallback": "Error generating context.",
+        "contextGeneratedByAI": "Context generated with AI.",
+        "contextStructuredFallback": "Structured context (fallback, no AI).",
+        "contextTimeout": "Timed out while generating AI context.",
+        "contextError": "Error generating AI context.",
+        "unableToGenerateContext": "Unable to generate AI context. Adjust the title/description and try again."
+      },
+      "badges": {
+        "aiGenerated": "Generated by AI",
+        "aiFallbackStructured": "Structured context (no AI)",
+        "aiGeneratedText": "Text generated by AI",
+        "aiFallbackStructuredDescription": "Structured description (no AI)"
+      },
+      "confirmDelete": {
+        "title": "Delete this card?",
+        "description": "This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      },
+      "modePill": {
+        "edit": "Edit",
+        "create": "Create"
+      },
+      "header": {
+        "title": {
+          "edit": "Edit card",
+          "new": "New card"
+        },
+        "description": {
+          "edit": "Adjust identification, content, and status — changes reflect on the board right away.",
+          "new": "Set the essentials now; you can refine title, description, and links later."
+        }
+      },
+      "sections": {
+        "identification": {
+          "title": "Identification and column",
+          "description": "Unique ID and current position in the board flow."
+        },
+        "content": {
+          "title": "Main content",
+          "description": "Title on the board and description in blocks — use the AI button when you want suggestions based on what you already wrote."
+        },
+        "statusDue": {
+          "title": "Status and due date",
+          "description": "Priority, work stage, and target completion date."
+        },
+        "labels": {
+          "title": "Labels",
+          "description": "Select existing tags or create new ones for this board."
+        },
+        "links": {
+          "title": "Links",
+          "addButton": "+ Add link",
+          "empty": "No links. Click \"Add link\" to include one.",
+          "urlPlaceholder": "https://...",
+          "labelPlaceholder": "Label (optional)",
+          "tooltips": {
+            "view": "View link",
+            "remove": "Remove link"
+          }
+        }
+      },
+      "fields": {
+        "id": {
+          "label": "ID",
+          "placeholder": "Ex: DI-700"
+        },
+        "column": {
+          "label": "Column"
+        },
+        "title": {
+          "label": "Title",
+          "placeholder": "Card executive title"
+        },
+        "description": {
+          "label": "Description"
+        },
+        "priority": {
+          "label": "Priority"
+        },
+        "progress": {
+          "label": "Progress"
+        },
+        "dueDate": {
+          "label": "Completion date"
+        },
+        "newLabel": {
+          "srLabel": "New label",
+          "placeholder": "New label"
+        }
+      },
+      "buttons": {
+        "createLabel": "+ Create",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "tooltips": {
+        "deleteLabel": "Delete label \"{label}\"",
+        "deleteLabelAria": "Delete label {label}"
+      },
+      "aria": {
+        "close": "Close"
+      },
+      "options": {
+        "priority": {
+          "Urgente": "Urgent",
+          "Importante": "Important",
+          "Média": "Medium"
+        },
+        "progress": {
+          "Não iniciado": "Not started",
+          "Em andamento": "In progress",
+          "Concluída": "Completed"
+        }
+      },
+      "aiContext": {
+        "title": "Card AI context",
+        "boardLabel": "Board: {boardName}",
+        "boardFallback": "Board",
+        "close": "Close",
+        "trackingTitle": "Generation progress",
+        "status": {
+          "busy": "Processing...",
+          "done": "Completed",
+          "error": "Failed",
+          "idle": "Ready"
+        },
+        "steps": {
+          "preparing": "Preparing",
+          "sending": "Sending",
+          "processing": "Processing",
+          "done": "Completed"
+        },
+        "tooltips": {
+          "trigger": "Generate AI context (based on Title and Description)",
+          "triggerAria": "Generate AI context",
+          "triggerTitle": "AI Context"
+        },
+        "log": {
+          "title": "AI connectivity log",
+          "clearButton": "Clear log",
+          "emptyMessage": "The log will appear here once generation starts.",
+          "llmPrefix": "LLM:",
+          "modelPrefix": "Model:",
+          "errorPrefix": "AI error:"
+        },
+        "result": {
+          "appliedHeader": "Result applied to the card",
+          "applied": {
+            "ai": "AI applied",
+            "fallback": "fallback applied"
+          },
+          "status": {
+            "error": "failed"
+          },
+          "autoFilledText": "The Title and Description were filled automatically.",
+          "businessLabel": "Business:",
+          "objectiveLabel": "Objective:"
+        }
+      }
+    },
+    "card": {
+      "ariaLabel": "Card {cardTitle}. Column {columnLabel}. Priority {priority}. Progress {progress}.",
+      "due": {
+        "overdue": "{days}d late",
+        "today": "Today",
+        "future": "{days}d"
+      },
+      "tooltips": {
+        "description": "View description",
+        "copyCardId": "Copy card ID"
+      },
+      "actions": {
+        "copy": "Copy"
+      },
+      "direction": {
+        "heading": "Direction"
+      }
+    },
+    "column": {
+      "collapsedTooltip": "{label} - {count} card(s). Click to expand.",
+      "collapsedAriaLabel": "Column {label}. {count} card(s). Click to expand.",
+      "dragAriaLabel": "Column {label}. {count} card(s). Drag to reorder.",
+      "dropRegionAriaLabel": "Column {label}. Drop cards area.",
+      "tooltips": {
+        "newCard": "New card",
+        "renameColumn": "Rename column",
+        "expandColumn": "Expand column",
+        "collapseColumn": "Collapse column",
+        "deleteColumn": "Delete column"
+      }
+    },
+    "directions": {
+      "manter": "Maintain",
+      "priorizar": "Prioritize",
+      "adiar": "Delay",
+      "cancelar": "Cancel",
+      "reavaliar": "Re-evaluate"
+    },
+    "addColumnModal": {
+      "title": {
+        "new": "New column",
+        "rename": "Rename column"
+      },
+      "placeholder": "Ex: Backlog, In progress...",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create"
+    },
+    "confirmDelete": {
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "cardTitle": "Delete \"{cardTitle}\"?",
+      "columnTitle": "Delete the column \"{columnLabel}\"?"
+    },
+    "csvImport": {
+      "toasts": {
+        "emptyCsv": "Empty CSV.",
+        "missingTitleColumn": "Column 'Title' not found.",
+        "noCards": "No cards."
+      }
+    },
+    "csvImportConfirm": {
+      "merge": "Merge",
+      "import": "Import",
+      "title": {
+        "replace": "Import {count} cards? Replaces the current ones.",
+        "merge": "Merge {count} cards?"
+      },
+      "description": {
+        "replace": "Confirm to replace the board's current content.",
+        "merge": "It will update {existingCount} existing card(s) and add {newCount}."
+      },
+      "toasts": {
+        "mergeSuccess": "Merge completed ({count} cards).",
+        "replaceSuccess": "Import completed ({count} cards)."
+      }
+    },
+    "dailyDelete": {
+      "title": "Delete this Daily AI history summary?",
+      "description": "This action cannot be undone."
+    },
+    "descModal": {
+      "title": "Description details",
+      "aria": {
+        "close": "Close",
+        "resizeWidth": "Resize width"
+      },
+      "labels": {
+        "description": "Description",
+        "links": "Links"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "saveAndClose": "Save and close"
+      }
+    },
+    "mapaModal": {
+      "validations": {
+        "serpro": {
+          "name": "SERPRO (Federal Revenue)",
+          "description": "Validation of tax status and the CNPJ with the Federal Revenue Service, through a certified partner, ensuring compliance and the integrity of the registration for business decisions."
+        },
+        "susep": {
+          "name": "SUSEP",
+          "description": "Query to the insurance sector regulatory body to verify the broker's status and regularity, ensuring only licensed brokers operate on the platform."
+        },
+        "serasa": {
+          "name": "SERASA",
+          "description": "Credit analysis and financial health of the Insured and Policyholder through a specialized partner, supporting underwriting decisions and risk mitigation."
+        }
+      },
+      "executiveView": {
+        "badge": "EXECUTIVE VIEW",
+        "title": "Production Map — Flux-Board",
+        "description": "A consolidated view of what's already in production: business lines and integrated validations (SERPRO, SUSEP, SERASA) performed in each workflow."
+      },
+      "sections": {
+        "integrations": {
+          "title": "Integrated validations",
+          "description": "Automated checks performed by the platform to ensure compliance and support underwriting."
+        },
+        "inProduction": {
+          "title": "Records in Production",
+          "description": "Roles by team and business line, with the applied validations."
+        }
+      },
+      "fields": {
+        "role": "Role",
+        "team": "Team",
+        "businessLine": "Business line",
+        "validations": "Validations",
+        "validationsPlaceholder": "Ex: SERPRO (RF), SUSEP"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    },
+    "daily": {
+      "title": "Daily AI",
+      "boardLabel": "Board: {boardName}",
+      "boardFallback": "Board",
+      "close": "Close",
+      "tabs": {
+        "new": "New Daily",
+        "history": "History",
+        "status": "Status",
+        "statusInProgressSuffix": "• in progress"
+      },
+      "entry": {
+        "description": "Paste the daily transcript (or attach a .txt/.md file) to generate a practical view of the next steps.",
+        "generating": {
+          "title": "Generation in progress. Follow the Status tab.",
+          "description": "You can close and reopen this modal without losing the current progress."
+        },
+        "attachLabel": "Attach transcript",
+        "clearAttachmentButton": "Clear attachment and content",
+        "transcriptPlaceholder": "Ex: yesterday we finished... today we're going to... blocker on...",
+        "close": "Close",
+        "generateButton": {
+          "generating": "Analyzing and generating with AI...",
+          "idle": "Generate practical summary"
+        }
+      },
+      "status": {
+        "trackingTitle": "Generation progress",
+        "phase": {
+          "busy": "Processing...",
+          "done": "Completed",
+          "error": "Failed",
+          "idle": "Ready",
+          "waiting": "Waiting"
+        },
+        "steps": {
+          "preparing": "Preparing",
+          "sending": "Sending",
+          "processing": "Processing",
+          "done": "Completed"
+        },
+        "log": {
+          "title": "AI connectivity log",
+          "clearButton": "Clear log",
+          "emptyMessage": "The log will appear here once generation starts.",
+          "llmPrefix": "LLM:",
+          "modelPrefix": "Model:",
+          "errorPrefix": "AI error:"
+        },
+        "exec": {
+          "title": "Status executions",
+          "linkedToHistory": "Linked to history",
+          "label": {
+            "done": "Completed",
+            "doneHeuristic": "Completed (heuristic)"
+          },
+          "noSummary": "No summary",
+          "openInHistory": "Open in history",
+          "noneYet": "No executions recorded yet."
+        }
+      },
+      "badges": {
+        "ai": "AI"
+      },
+      "lists": {
+        "create": "Create",
+        "adjust": "Adjust",
+        "correct": "Correct",
+        "pending": "Pending"
+      },
+      "history": {
+        "filters": {
+          "fromLabel": "From",
+          "toLabel": "To",
+          "searchLabel": "Text search",
+          "searchPlaceholder": "Search in summary, context, and lists...",
+          "clearButton": "Clear filters",
+          "countText": "Showing {filtered} of {total} summary(s)."
+        },
+        "list": {
+          "title": "History list",
+          "item": {
+            "noTitle": "Untitled summary",
+            "noDate": "No date",
+            "createCountText": "{count} item(s) in \"Create\""
+          }
+        },
+        "entry": {
+          "title": {
+            "latest": "Latest summary",
+            "history": "History #{index}"
+          },
+          "sourceManualFallback": "Manual transcript",
+          "expand": {
+            "opened": "▲ Opened",
+            "collapsed": "▼ Expand"
+          },
+          "collapseButton": "Collapse",
+          "actions": {
+            "downloadContext": "Download context",
+            "copyContext": "Copy context",
+            "createCardsFrom": "Create cards from \"Create\"",
+            "deleteSummary": "Delete summary"
+          },
+          "meta": {
+            "sourcePrefix": "Source:",
+            "processedChars": " • {count} characters processed"
+          },
+          "tooltips": {
+            "rewritten": "Content rewritten and structured by AI from the transcript."
+          },
+          "badges": {
+            "aiGeneratedText": "Text generated with AI"
+          },
+          "context": {
+            "organizedTitle": "Organized context",
+            "organizedByAi": "Organized by AI"
+          },
+          "listItem": {
+            "prioPrefix": "Prio:",
+            "progressPrefix": "Progress:",
+            "columnPrefix": "Column:",
+            "duePrefix": "Due:"
+          },
+          "list": {
+            "emptyMessage": "No items identified."
+          },
+          "createdCards": {
+            "title": "Cards created from this transcript",
+            "detailsOpen": "Details open",
+            "viewAll": "View all information",
+            "countText": "{count} card(s) registered.",
+            "card": {
+              "noTitle": "Untitled",
+              "alreadyExists": "Card already exists",
+              "idPrefix": "ID:",
+              "columnPrefix": "Column:",
+              "priorityPrefix": "Priority:",
+              "progressPrefix": "Progress:",
+              "directionPrefix": "Direction:",
+              "noValue": "-",
+              "datePrefix": "Date:",
+              "tagsPrefix": "Tags:",
+              "noDescription": "No description.",
+              "noneYet": "No cards created for this summary yet."
+            }
+          }
+        },
+        "emptyNoMatches": "No summary found with the provided filters.",
+        "emptyNoSummaryYet": "There is no saved summary for this board yet."
+      },
+      "defaults": {
+        "noAttachment": "No file attached",
+        "fileLoaded": "{fileName} loaded"
+      },
+      "toasts": {
+        "delete": {
+          "success": "Summary deleted."
+        },
+        "createCards": {
+          "error": {
+            "notFound": "Summary not found.",
+            "noCreateItems": "No items in \"Create\" to turn into cards."
+          },
+          "success": {
+            "both": {
+              "title": "{count} card(s) created successfully.",
+              "description": "{existingCount} item(s) already existed on the board and were only flagged."
+            },
+            "single": {
+              "title": "{count} card(s) created successfully."
+            }
+          },
+          "info": {
+            "none": {
+              "title": "No new cards created.",
+              "description": "All suggested items already exist on the board."
+            }
+          }
+        },
+        "copy": {
+          "error": {
+            "noContext": "No context to copy.",
+            "couldNotCopy": "Could not copy the context."
+          },
+          "warning": {
+            "noClipboardSupport": "Your browser does not support automatic copy."
+          },
+          "success": {
+            "copied": "Context copied to clipboard."
+          }
+        },
+        "generate": {
+          "error": {
+            "noTranscript": "Provide or attach the daily transcript.",
+            "title": "Error while generating the summary with AI."
+          },
+          "errorFallback": "Error while generating summary.",
+          "timeout": "Timed out while generating the Daily AI."
+        }
+      },
+      "logs": {
+        "generate": {
+          "start": "Starting practical summary generation...",
+          "errorFallback": "Error while generating summary.",
+          "success": {
+            "aiModelGenerated": "Model generated successfully.",
+            "heuristic": "Summary structured without effective AI usage (heuristic mode)."
+          },
+          "resultSnippetPrefix": "Summary:",
+          "error": {
+            "integrationFailure": {
+              "prefix": "AI integration failure",
+              "modelLabel": "model",
+              "heuristicSuffix": "Content handled in heuristic mode."
+            },
+            "timeout": "Timed out while generating the Daily AI.",
+            "error": "Error while generating summary with AI."
+          }
+        }
+      }
+    },
+    "board": {
+      "filters": {
+        "hideTooltip": "Hide filters",
+        "showTooltip": "Show filters",
+        "title": "Filters",
+        "priorityLabel": "Priority",
+        "allLabel": "All",
+        "shortcutTitle": "Shortcut: press F key",
+        "focusModeOn": "Daily focus: ON",
+        "focusModeOff": "Daily focus",
+        "clear": "Clear filters",
+        "labelsButton": "Labels",
+        "mapButton": "Production Map",
+        "dailyButton": "Daily AI",
+        "searchPlaceholder": "Search... (/)"
+      },
+      "toolbar": {
+        "csvImportModeAria": "CSV import mode",
+        "csvImportMode": {
+          "replace": "Replace",
+          "merge": "Merge"
+        },
+        "import": "Import",
+        "export": "Export"
+      },
+      "stats": {
+        "totalLabel": "Total",
+        "inProgressLabel": "In progress",
+        "overdueLabel": "Overdue",
+        "dueSoonLabel": "Due in 3d",
+        "completedRateLabel": "Completed rate"
+      },
+      "summary": {
+        "totalLabel": "Total",
+        "pendingLabel": "Pending"
+      },
+      "nextActions": {
+        "title": "Next best actions",
+        "duePrefix": "due"
+      },
+      "wipRisk": {
+        "title": "WIP risk by column",
+        "emptyMessage": "No critical bottlenecks (>= {minItems} items in progress)."
+      },
+      "newCard": {
+        "defaultDescription": "No description."
+      },
+      "dnd": {
+        "screenReaderInstructions": {
+          "draggable": "Drag and drop cards using the keyboard. Use Tab to focus a card. Press Enter/Space to start dragging. Use the arrow keys to switch between columns/positions, then press Enter/Space to drop."
+        },
+        "announcements": {
+          "dragStart": {
+            "cardWithTitle": "Starting drag of card: {cardTitle}.",
+            "card": "Starting drag of card.",
+            "columnWithTitle": "Starting drag of column: {columnLabel}.",
+            "column": "Starting drag of column."
+          },
+          "dragOver": {
+            "dropOnColumnWithTitle": "Dropping into column: {columnLabel}.",
+            "dropOnColumn": "Dropping into column.",
+            "dropOnColumnWithPosition": "Dropping into column: {columnLabel}, position {pos}.",
+            "dropOnPositionOnly": "Dropping into column, position {pos}."
+          },
+          "dragEnd": {
+            "dropped": "Card/column dropped."
+          },
+          "dragCancel": "Drag cancelled."
+        }
+      }
+    }
+  }
+}

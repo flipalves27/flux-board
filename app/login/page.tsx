@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
 
@@ -20,13 +21,16 @@ function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
 export default function LoginPage() {
   const router = useRouter();
   const { user, login, isChecked } = useAuth();
+  const locale = useLocale();
+  const t = useTranslations("login");
+  const localeRoot = `/${locale}`;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
 
   useEffect(() => {
-    if (isChecked && user && !suppressAutoRedirect) router.replace("/boards");
+    if (isChecked && user && !suppressAutoRedirect) router.replace(`${localeRoot}/boards`);
   }, [isChecked, user, router, suppressAutoRedirect]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -36,7 +40,7 @@ export default function LoginPage() {
     const pwd = (form.elements.namedItem("password") as HTMLInputElement).value;
     const remember = (form.elements.namedItem("remember") as HTMLInputElement)?.checked ?? true;
     if (!userInput || !pwd) {
-      setError("Preencha usuário e senha.");
+      setError(t("errors.missingCredentials"));
       return;
     }
     setError("");
@@ -46,12 +50,12 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.token, result.user, remember);
-        router.replace("/boards");
+        router.replace(`${localeRoot}/boards`);
       } else {
         setError(result.error);
       }
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("errors.connection"));
     } finally {
       setLoading(false);
     }
@@ -65,11 +69,11 @@ export default function LoginPage() {
     const pwd = (form.elements.namedItem("password") as HTMLInputElement).value;
     const remember = (form.elements.namedItem("remember") as HTMLInputElement)?.checked ?? true;
     if (!name || !email || !pwd) {
-      setError("Preencha todos os campos.");
+      setError(t("errors.missingAllFields"));
       return;
     }
     if (pwd.length < 4) {
-      setError("Senha deve ter pelo menos 4 caracteres.");
+      setError(t("errors.passwordTooShort"));
       return;
     }
     setError("");
@@ -79,12 +83,12 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.token, result.user, remember);
-        router.replace("/onboarding");
+        router.replace(`${localeRoot}/onboarding`);
       } else {
         setError(result.error);
       }
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("errors.connection"));
     } finally {
       setLoading(false);
     }
@@ -98,7 +102,7 @@ export default function LoginPage() {
   if (!isChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
-        <p className="text-[var(--flux-text-muted)]">Carregando...</p>
+        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
@@ -128,7 +132,7 @@ export default function LoginPage() {
               Flux-Board
             </h1>
             <p className="text-xs text-[var(--flux-text-muted)] font-medium tracking-wide mt-0.5">
-              Organize the flow. Ship what matters.
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -143,7 +147,7 @@ export default function LoginPage() {
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
             }`}
           >
-            Entrar
+            {t("tabs.login")}
           </button>
           <button
             type="button"
@@ -154,7 +158,7 @@ export default function LoginPage() {
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
             }`}
           >
-            Cadastrar
+            {t("tabs.register")}
           </button>
         </div>
 
@@ -167,31 +171,31 @@ export default function LoginPage() {
         {activeTab === "login" && (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className={labelClass}>Usuário ou E-mail</label>
+              <label className={labelClass}>{t("fields.userOrEmail")}</label>
               <input
                 name="user"
                 type="text"
-                placeholder="Usuário ou e-mail"
+                placeholder={t("placeholders.userOrEmail")}
                 autoComplete="username"
                 className={inputClass}
               />
             </div>
             <div>
-              <label className={labelClass}>Senha</label>
+              <label className={labelClass}>{t("fields.password")}</label>
               <input
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t("placeholders.password")}
                 autoComplete="current-password"
                 className={inputClass}
               />
             </div>
             <label className="flex items-center gap-2 mb-4 cursor-pointer">
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
-              <span className="text-sm text-[var(--flux-text-muted)]">Manter conectado (gravar no navegador)</span>
+              <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.login")}</span>
             </label>
             <button type="submit" disabled={loading} className={btnClass}>
-              Entrar
+              {t("actions.login")}
             </button>
           </form>
         )}
@@ -199,41 +203,41 @@ export default function LoginPage() {
         {activeTab === "register" && (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className={labelClass}>Nome</label>
+              <label className={labelClass}>{t("fields.name")}</label>
               <input
                 name="name"
                 type="text"
-                placeholder="Seu nome completo"
+                placeholder={t("placeholders.name")}
                 autoComplete="name"
                 className={inputClass}
               />
             </div>
             <div>
-              <label className={labelClass}>E-mail</label>
+              <label className={labelClass}>{t("fields.email")}</label>
               <input
                 name="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder={t("placeholders.email")}
                 autoComplete="email"
                 className={inputClass}
               />
             </div>
             <div>
-              <label className={labelClass}>Senha</label>
+              <label className={labelClass}>{t("fields.password")}</label>
               <input
                 name="password"
                 type="password"
-                placeholder="Mínimo 4 caracteres"
+                placeholder={t("placeholders.passwordMin")}
                 autoComplete="new-password"
                 className={inputClass}
               />
             </div>
             <label className="flex items-center gap-2 mb-4 cursor-pointer">
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
-              <span className="text-sm text-[var(--flux-text-muted)]">Manter conectado após cadastro</span>
+              <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.register")}</span>
             </label>
             <button type="submit" disabled={loading} className={btnClass}>
-              Cadastrar
+              {t("actions.register")}
             </button>
           </form>
         )}

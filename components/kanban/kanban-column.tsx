@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { KanbanCard } from "./kanban-card";
 import type { CardData, BucketConfig } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { useTranslations } from "next-intl";
 
 interface KanbanColumnProps {
   bucket: BucketConfig;
@@ -52,6 +53,7 @@ export function KanbanColumn({
   directions,
   dirColors,
 }: KanbanColumnProps) {
+  const t = useTranslations("kanban");
   const {
     attributes,
     listeners,
@@ -78,14 +80,14 @@ export function KanbanColumn({
       } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
     >
       {collapsed ? (
-        <CustomTooltip content={`${bucket.label} - ${cards.length} card(s). Clique para expandir.`} position="right">
+        <CustomTooltip content={t("column.collapsedTooltip", { label: bucket.label, count: cards.length })} position="right">
           <div
             ref={setBucketRef}
             {...attributes}
             {...listeners}
             className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
             onClick={onToggleCollapse}
-            aria-label={`Coluna ${bucket.label}. ${cards.length} card(s). Clique para expandir.`}
+            aria-label={t("column.collapsedAriaLabel", { label: bucket.label, count: cards.length })}
           >
             <div
               className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
@@ -103,7 +105,7 @@ export function KanbanColumn({
         {...attributes}
         {...listeners}
         className="flex items-center gap-3 px-3 py-3 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
-        aria-label={`Coluna ${bucket.label}. ${cards.length} card(s). Arraste para reorganizar.`}
+        aria-label={t("column.dragAriaLabel", { label: bucket.label, count: cards.length })}
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
@@ -119,7 +121,7 @@ export function KanbanColumn({
           {cards.length}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <CustomTooltip content="Novo card" position="top">
+          <CustomTooltip content={t("column.tooltips.newCard")} position="top">
             <button
               type="button"
               onClick={(e) => {
@@ -127,13 +129,13 @@ export function KanbanColumn({
                 onAddCard();
               }}
               className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-              aria-label="Novo card"
+              aria-label={t("column.tooltips.newCard")}
             >
               +
             </button>
           </CustomTooltip>
           {onRenameColumn && (
-            <CustomTooltip content="Renomear coluna" position="top">
+            <CustomTooltip content={t("column.tooltips.renameColumn")} position="top">
               <button
                 type="button"
                 onClick={(e) => {
@@ -141,13 +143,13 @@ export function KanbanColumn({
                   onRenameColumn();
                 }}
                 className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-                aria-label="Renomear coluna"
+                aria-label={t("column.tooltips.renameColumn")}
               >
                 ✎
               </button>
             </CustomTooltip>
           )}
-          <CustomTooltip content={collapsed ? "Expandir coluna" : "Recolher coluna"} position="top">
+          <CustomTooltip content={collapsed ? t("column.tooltips.expandColumn") : t("column.tooltips.collapseColumn")} position="top">
             <button
               type="button"
               onClick={(e) => {
@@ -155,13 +157,13 @@ export function KanbanColumn({
                 onToggleCollapse();
               }}
               className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-              aria-label={collapsed ? "Expandir coluna" : "Recolher coluna"}
+              aria-label={collapsed ? t("column.tooltips.expandColumn") : t("column.tooltips.collapseColumn")}
             >
               ◂
             </button>
           </CustomTooltip>
           {onDeleteColumn && (
-            <CustomTooltip content="Excluir coluna" position="top">
+            <CustomTooltip content={t("column.tooltips.deleteColumn")} position="top">
               <button
                 type="button"
                 onClick={(e) => {
@@ -169,7 +171,7 @@ export function KanbanColumn({
                   onDeleteColumn();
                 }}
                 className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-                aria-label="Excluir coluna"
+                aria-label={t("column.tooltips.deleteColumn")}
               >
                 ×
               </button>
@@ -181,7 +183,7 @@ export function KanbanColumn({
         <div
           ref={setBucketRef}
           role="region"
-          aria-label={`Coluna ${bucket.label}. Área para soltar cards.`}
+          aria-label={t("column.dropRegionAriaLabel", { label: bucket.label })}
           className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
         >
           {cards.map((c, idx) => (

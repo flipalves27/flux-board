@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
+import { useTranslations } from "next-intl";
 
 interface HeaderProps {
   title?: string;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards", hideDiscovery, children }: HeaderProps) {
   const { user } = useAuth();
+  const t = useTranslations("header");
 
   return (
     <header className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.12)] sticky top-0 z-[200]">
@@ -43,7 +45,7 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           {user && (
             <span className="text-xs text-[var(--flux-text-muted)]">
-              {user.name || user.username || "Usuário"}
+              {user.name || user.username || t("userFallback")}
             </span>
           )}
           {children}

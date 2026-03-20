@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
+import type { ReactNode } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import { useTranslations } from "next-intl";
 
 interface MapaItem {
   papel: string;
@@ -24,68 +26,107 @@ const DEFAULT_MAPA: MapaItem[] = [
   { papel: "Tomador", equipe: "Comercial", linha: "Garantia", operacoes: "SERPRO (RF), SERASA" },
 ];
 
-// Descrições executivas para apresentação
-const VALIDACOES_INTEGRADAS = [
-  {
-    id: "serpro",
-    nome: "SERPRO (Receita Federal)",
-    short: "SERPRO (RF)",
-    descricao: "Validação da regularidade fiscal e do CNPJ junto à Receita Federal, por meio de parceiro certificado, garantindo conformidade e idoneidade do cadastro para decisões de negócio.",
-    icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6" />
-        <path d="M16 13H8" />
-        <path d="M16 17H8" />
-        <path d="M10 9H8" />
-      </svg>
-    ),
-    color: "text-teal-700",
-    bg: "bg-[rgba(13,148,136,0.12)]",
-    border: "border-[rgba(13,148,136,0.35)]",
-  },
-  {
-    id: "susep",
-    nome: "SUSEP",
-    short: "SUSEP",
-    descricao: "Consulta ao órgão regulador do setor de seguros para verificação do status e da regularidade do corretor, assegurando que apenas corretores habilitados operem na plataforma.",
-    icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-    color: "text-indigo-700",
-    bg: "bg-[rgba(79,70,229,0.1)]",
-    border: "border-[rgba(79,70,229,0.35)]",
-  },
-  {
-    id: "serasa",
-    nome: "SERASA",
-    short: "SERASA",
-    descricao: "Análise de crédito e saúde financeira do Segurado e do Tomador via parceiro especializado, suportando decisões de subscrição e mitigação de risco.",
-    icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v4" />
-        <path d="M12 18v4" />
-        <path d="m4.93 4.93 3.54 3.54" />
-        <path d="m15.54 15.54 3.54 3.54" />
-        <path d="M2 12h4" />
-        <path d="M18 12h4" />
-        <path d="m4.93 19.07 3.54-3.54" />
-        <path d="m15.54 8.46 3.54-3.54" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-    color: "text-rose-800",
-    bg: "bg-[rgba(185,28,28,0.1)]",
-    border: "border-[rgba(185,28,28,0.35)]",
-  },
-];
+type ValidacaoIntegrada = {
+  id: "serpro" | "susep" | "serasa";
+  nome: string;
+  short: string; // Usado para match com strings vindas de `operacoes`
+  descricao: string;
+  icon: ReactNode;
+  color: string;
+  bg: string;
+  border: string;
+};
 
-function getOpInfo(operacoesStr: string): { key: string; label: string }[] {
+function getValidacoesIntegradas(t: (key: string) => string): ValidacaoIntegrada[] {
+  return [
+    {
+      id: "serpro",
+      nome: t("mapaModal.validations.serpro.name"),
+      short: "SERPRO (RF)",
+      descricao: t("mapaModal.validations.serpro.description"),
+      icon: (
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
+          <path d="M10 9H8" />
+        </svg>
+      ),
+      color: "text-teal-700",
+      bg: "bg-[rgba(13,148,136,0.12)]",
+      border: "border-[rgba(13,148,136,0.35)]",
+    },
+    {
+      id: "susep",
+      nome: t("mapaModal.validations.susep.name"),
+      short: "SUSEP",
+      descricao: t("mapaModal.validations.susep.description"),
+      icon: (
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      ),
+      color: "text-indigo-700",
+      bg: "bg-[rgba(79,70,229,0.1)]",
+      border: "border-[rgba(79,70,229,0.35)]",
+    },
+    {
+      id: "serasa",
+      nome: t("mapaModal.validations.serasa.name"),
+      short: "SERASA",
+      descricao: t("mapaModal.validations.serasa.description"),
+      icon: (
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2v4" />
+          <path d="M12 18v4" />
+          <path d="m4.93 4.93 3.54 3.54" />
+          <path d="m15.54 15.54 3.54 3.54" />
+          <path d="M2 12h4" />
+          <path d="M18 12h4" />
+          <path d="m4.93 19.07 3.54-3.54" />
+          <path d="m15.54 8.46 3.54-3.54" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      ),
+      color: "text-rose-800",
+      bg: "bg-[rgba(185,28,28,0.1)]",
+      border: "border-[rgba(185,28,28,0.35)]",
+    },
+  ];
+}
+
+function getOpInfo(
+  operacoesStr: string,
+  validacoesIntegradas: ValidacaoIntegrada[]
+): { key: string; label: string }[] {
   const ops = (operacoesStr || "").split(/[,;]/).map((o) => o.trim()).filter(Boolean);
   return ops.map((o) => {
-    const info = VALIDACOES_INTEGRADAS.find(
+    const info = validacoesIntegradas.find(
       (v) => o.toUpperCase().includes(v.short.toUpperCase()) || (v.id === "serpro" && /RF|SERPRO/i.test(o))
     );
     return { key: info?.id ?? "outro", label: o };
@@ -100,6 +141,8 @@ function opBadgeClass(key: string): string {
 }
 
 export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
+  const t = useTranslations("kanban");
+  const validacoesIntegradas = getValidacoesIntegradas(t);
   const [data, setData] = useState<MapaItem[]>(
     mapaProducao?.length ? [...mapaProducao] : [...DEFAULT_MAPA]
   );
@@ -154,14 +197,14 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
         <div className="p-6 pb-2">
           <div className="flex items-center gap-2 mb-2">
             <span className="bg-[var(--flux-primary)] text-white px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide font-display">
-              VISÃO EXECUTIVA
+              {t("mapaModal.executiveView.badge")}
             </span>
             <span id="mapa-modal-title" className="font-display font-bold text-xl text-[var(--flux-text)]">
-              Mapa de Produção — Flux-Board
+              {t("mapaModal.executiveView.title")}
             </span>
           </div>
           <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed mb-6 max-w-[720px]">
-            Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo.
+            {t("mapaModal.executiveView.description")}
           </p>
 
           <div className="mb-8">
@@ -171,13 +214,13 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </span>
-              Validações integradas
+              {t("mapaModal.sections.integrations.title")}
             </h3>
             <p className="text-xs text-[var(--flux-text-muted)] mb-4">
-              Consultas automáticas realizadas pela plataforma para garantir conformidade e apoio à subscrição.
+              {t("mapaModal.sections.integrations.description")}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {VALIDACOES_INTEGRADAS.map((v) => (
+              {validacoesIntegradas.map((v) => (
                 <div
                   key={v.id}
                   className={`rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${v.bg} ${v.border}`}
@@ -200,10 +243,10 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                   <path d="M9 22V12h6v10" />
                 </svg>
               </span>
-              Cadastros em Produção
+              {t("mapaModal.sections.inProduction.title")}
             </h3>
             <p className="text-xs text-[var(--flux-text-muted)] mb-4">
-              Papéis por equipe e linha de negócio, com as validações aplicadas.
+              {t("mapaModal.sections.inProduction.description")}
             </p>
             <div className="space-y-3">
               {data.map((d, i) => (
@@ -224,7 +267,9 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                     </svg>
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Papel</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">
+                      {t("mapaModal.fields.role")}
+                    </label>
                     <input
                       type="text"
                       value={d.papel}
@@ -233,7 +278,9 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Equipe</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">
+                      {t("mapaModal.fields.team")}
+                    </label>
                     <input
                       type="text"
                       value={d.equipe}
@@ -242,7 +289,9 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">Linha de negócio</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-0.5 font-display">
+                      {t("mapaModal.fields.businessLine")}
+                    </label>
                     <input
                       type="text"
                       value={d.linha}
@@ -251,10 +300,12 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                     />
                   </div>
                   <div className="relative">
-                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-1.5 font-display">Validações</label>
+                    <label className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)] font-semibold block mb-1.5 font-display">
+                      {t("mapaModal.fields.validations")}
+                    </label>
                     <div className="flex flex-wrap gap-1.5">
-                      {getOpInfo(d.operacoes).map((op, j) => {
-                        const info = VALIDACOES_INTEGRADAS.find((v) => v.id === op.key);
+                      {getOpInfo(d.operacoes, validacoesIntegradas).map((op, j) => {
+                        const info = validacoesIntegradas.find((v) => v.id === op.key);
                         return (
                           <CustomTooltip key={j} content={info?.descricao || ""} disabled={!info?.descricao}>
                             <span
@@ -270,7 +321,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                       type="text"
                       value={d.operacoes}
                       onChange={(e) => update(i, "operacoes", e.target.value)}
-                      placeholder="Ex: SERPRO (RF), SUSEP"
+                      placeholder={t("mapaModal.fields.validationsPlaceholder")}
                       className="mt-1.5 w-full bg-[var(--flux-surface-elevated)] border border-[rgba(255,255,255,0.12)] rounded-lg px-2 py-1 text-xs text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/30 outline-none"
                     />
                   </div>
@@ -281,10 +332,10 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
 
           <div className="flex gap-3 justify-end pt-4 border-t border-[rgba(255,255,255,0.08)]">
             <button type="button" onClick={onClose} className="btn-secondary">
-              Cancelar
+              {t("mapaModal.buttons.cancel")}
             </button>
             <button type="button" onClick={handleSave} className="btn-primary">
-              Salvar
+              {t("mapaModal.buttons.save")}
             </button>
           </div>
         </div>
