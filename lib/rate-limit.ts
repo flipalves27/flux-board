@@ -88,7 +88,9 @@ async function rateLimitMongo({ key, limit, windowMs }: RateLimitParams): Promis
     { key, windowStartMs },
     {
       $inc: { count: 1 },
-      $setOnInsert: { key, windowStartMs, count: 0, expiresAt },
+      // Não definimos `count` em `$setOnInsert` para evitar conflito com `$inc` no mesmo campo
+      // durante o `upsert` (Mongo: ConflictUpdatingOperators).
+      $setOnInsert: { key, windowStartMs, expiresAt },
     },
     { upsert: true, returnDocument: "after" }
   );
