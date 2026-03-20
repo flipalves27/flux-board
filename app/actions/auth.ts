@@ -24,7 +24,8 @@ export async function loginAction(
   password: string
 ): Promise<AuthResult> {
   try {
-    const clientIp = getClientIpFromHeaders(headers());
+    // In Next.js 15 the `headers()` type can be `Promise<ReadonlyHeaders>` in some contexts.
+    const clientIp = getClientIpFromHeaders(await headers());
     const rl = await rateLimit({
       key: `auth:login:ip:${clientIp}`,
       limit: 5,
@@ -84,7 +85,8 @@ export async function registerAction(
   password: string
 ): Promise<AuthResult> {
   try {
-    const clientIp = getClientIpFromHeaders(headers());
+    // In Next.js 15 the `headers()` type can be `Promise<ReadonlyHeaders>` in some contexts.
+    const clientIp = getClientIpFromHeaders(await headers());
     const rl = await rateLimit({
       key: `auth:register:ip:${clientIp}`,
       limit: 3,

@@ -93,7 +93,8 @@ async function rateLimitMongo({ key, limit, windowMs }: RateLimitParams): Promis
     { upsert: true, returnDocument: "after" }
   );
 
-  const doc = r.value;
+  // Depending on the MongoDB driver version/types, `findOneAndUpdate` may return the document directly.
+  const doc = r;
   const count = typeof doc?.count === "number" ? doc.count : 1;
 
   const retryAfterMs = windowStartMs + windowMs - now;
