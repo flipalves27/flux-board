@@ -1177,6 +1177,8 @@
         "searchPlaceholder": "Buscar... (/) "
       },
       "toolbar": {
+        "sectionQuickActions": "Ações rápidas",
+        "sectionData": "Busca e CSV",
         "csvImportModeAria": "Modo de importação CSV",
         "csvImportMode": {
           "replace": "Substituir",

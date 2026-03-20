@@ -336,7 +336,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     <>
       <button
         type="button"
-        className="fixed right-4 top-[92px] z-[470] px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.10)] backdrop-blur-sm text-[var(--flux-text)] hover:border-[var(--flux-primary)] hover:bg-[rgba(108,92,231,0.18)] transition-colors"
+        className="fixed right-4 top-[92px] z-[470] flex items-center gap-2 px-4 py-2.5 rounded-full border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)]/90 backdrop-blur-md text-[var(--flux-text)] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4)] transition-all duration-200 hover:border-[var(--flux-primary)] hover:bg-[var(--flux-surface-elevated)] hover:shadow-[0_12px_36px_-8px_rgba(108,92,231,0.35)] active:scale-[0.98]"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >

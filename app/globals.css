@@ -464,6 +464,41 @@
     box-shadow: inset 0 1px 0 var(--flux-border-muted);
   }
 
+  /* Board toolbar — grupos e botões secundários (hierarquia visual) */
+  .board-toolbar-group {
+    border-radius: var(--flux-rad-lg);
+    border: 1px solid var(--flux-border-subtle);
+    background: var(--flux-surface-card);
+    box-shadow: inset 0 1px 0 var(--flux-border-muted);
+  }
+
+  .board-toolbar-btn {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium font-display transition-all duration-200 ease-out;
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  .board-toolbar-btn:hover:not(:disabled) {
+    color: var(--flux-text);
+    background: var(--flux-surface-hover);
+    border-color: var(--flux-border-subtle);
+  }
+  .board-toolbar-btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .board-toolbar-data-btn {
+    @apply inline-flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-semibold font-display transition-all duration-200 ease-out cursor-pointer;
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: 1px solid var(--flux-control-border);
+  }
+  .board-toolbar-data-btn:hover {
+    color: var(--flux-text);
+    border-color: var(--flux-primary);
+    background: var(--flux-primary-glow);
+  }
+
   /* Scrollbars — tema Flux, horizontal e vertical */
   .scrollbar-flux,
   .scrollbar-kanban {

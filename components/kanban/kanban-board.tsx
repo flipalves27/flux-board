@@ -926,156 +926,184 @@ export function KanbanBoard({
   return (
     <>
       <div
-        className="board-toolbar sticky top-[42px] z-[150] transition-all duration-300 ease-in-out overflow-hidden"
-        style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
+        className="board-toolbar sticky top-[42px] z-[150] transition-[max-height] duration-300 ease-in-out overflow-y-auto overflow-x-hidden"
+        style={{ maxHeight: priorityBarVisible ? "min(720px, 85vh)" : 56 }}
       >
-        <div className="w-full px-5 sm:px-6 lg:px-8 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
-          <CustomTooltip
-            content={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
-            position="bottom"
-          >
-            <button
-              type="button"
-              onClick={() => setPriorityBarVisible((v) => !v)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all duration-200 font-display group shrink-0"
-              aria-label={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
+        {/* Linha 1: painel principal — visão do board + (expandido) busca e CSV */}
+        <div className="w-full px-5 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 py-2.5 min-h-[48px]">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <CustomTooltip
+              content={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
+              position="bottom"
             >
-              <span className="text-xs font-semibold uppercase tracking-wider">{t("board.filters.title")}</span>
-              <span
-                className={`inline-block text-[10px] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
-                aria-hidden
+              <button
+                type="button"
+                onClick={() => setPriorityBarVisible((v) => !v)}
+                className="board-toolbar-btn gap-1.5 px-2.5 -ml-1 shrink-0"
+                aria-expanded={priorityBarVisible}
+                aria-label={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
               >
-                ▼
-              </span>
-            </button>
-          </CustomTooltip>
-          <div
-            className="board-segment flex items-center gap-0.5 p-0.5 shrink-0"
-            role="group"
-            aria-label={t("board.timeline.toggleGroupAria")}
-          >
-            <button
-              type="button"
-              onClick={() => setBoardView("kanban")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
-                boardView === "kanban"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_1px_4px_rgba(108,92,231,0.45)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-            >
-              {t("board.timeline.viewKanban")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setBoardView("timeline")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
-                boardView === "timeline"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_1px_4px_rgba(108,92,231,0.45)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-            >
-              {t("board.timeline.viewTimeline")}
-            </button>
-          </div>
-          {priorityBarVisible && (
-            <>
-              <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display shrink-0">
-                  {t("board.filters.priorityLabel")}
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--flux-text)]">
+                  {t("board.filters.title")}
                 </span>
-                {["all", ...priorities].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setActivePrio(p)}
-                    className={`btn-pill-compact transition-all duration-200 shrink-0 ${
-                      activePrio === p
-                        ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
-                    }`}
-                  >
-                    {p === "all" ? t("board.filters.allLabel") : t(`cardModal.options.priority.${p}`)}
-                  </button>
-                ))}
-              </div>
-              <div className="w-px h-5 bg-[var(--flux-hairline)] shrink-0" />
+                <span
+                  className={`inline-block text-[10px] text-[var(--flux-text-muted)] transition-transform duration-300 ease-out ${priorityBarVisible ? "rotate-0" : "-rotate-90"}`}
+                  aria-hidden
+                >
+                  ▼
+                </span>
+              </button>
+            </CustomTooltip>
+            <div
+              className="board-segment flex items-center gap-0.5 p-1 shrink-0"
+              role="group"
+              aria-label={t("board.timeline.toggleGroupAria")}
+            >
               <button
-                onClick={() => {
-                  if (focusMode) clearFilters();
-                  else {
-                    applyFocusMode();
-                    setFocusMode(true);
-                  }
-                }}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 font-display shrink-0 ${
-                  focusMode
-                    ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)]"
-                    : "border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:border-[var(--flux-secondary)] hover:text-[var(--flux-secondary)]"
+                type="button"
+                onClick={() => setBoardView("kanban")}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
+                  boardView === "kanban"
+                    ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_rgba(108,92,231,0.35)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
                 }`}
-                title={t("board.filters.shortcutTitle")}
               >
-                {focusMode ? t("board.filters.focusModeOn") : t("board.filters.focusModeOff")}
+                {t("board.timeline.viewKanban")}
               </button>
               <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+                type="button"
+                onClick={() => setBoardView("timeline")}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
+                  boardView === "timeline"
+                    ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_rgba(108,92,231,0.35)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+                }`}
               >
-                {t("board.filters.clear")}
+                {t("board.timeline.viewTimeline")}
               </button>
-              <button
-                onClick={() => setLabelsOpen(!labelsOpen)}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 border-[var(--flux-primary)] bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.2)] font-display shrink-0"
-              >
-                <span>{t("board.filters.labelsButton")}</span>
-                <span className={`transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`}>▼</span>
-              </button>
-              <button
-                onClick={() => setMapaOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
-              >
-                {t("board.filters.mapButton")}
-              </button>
-              <button
-                onClick={openDailyModal}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
-              >
-                {t("board.filters.dailyButton")}
-              </button>
-              <div className="flex items-center gap-1.5 ml-auto shrink-0">
+            </div>
+          </div>
+
+          {priorityBarVisible && (
+            <div
+              className="board-toolbar-group flex flex-wrap items-center gap-2 p-2 pl-3 w-full lg:w-auto lg:max-w-[min(100%,520px)] lg:ml-auto justify-end"
+              aria-label={t("board.toolbar.sectionData")}
+            >
+              <div className="relative flex-1 min-w-[min(100%,200px)] sm:min-w-[220px]">
+                <span
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--flux-text-muted)] opacity-50 text-sm select-none"
+                  aria-hidden
+                >
+                  ⌕
+                </span>
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("board.filters.searchPlaceholder")}
-                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  className="w-full pl-8 pr-2.5 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200"
                 />
-                <select
-                  value={csvImportMode}
-                  onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
-                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
-                  aria-label={t("board.toolbar.csvImportModeAria")}
-                >
-                  <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>
-                  <option value="merge">{t("board.toolbar.csvImportMode.merge")}</option>
-                </select>
-                <label className="btn-bar cursor-pointer inline-flex items-center justify-center gap-1">
-                  {t("board.toolbar.import")}
-                  <input
-                    type="file"
-                    accept=".csv"
-                    className="hidden"
-                    onChange={handleImportCSV}
-                  />
-                </label>
-                <button onClick={handleExportCSV} className="btn-bar">
-                  {t("board.toolbar.export")}
-                </button>
               </div>
-            </>
+              <select
+                value={csvImportMode}
+                onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
+                className="shrink-0 min-w-[100px] px-2 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] font-medium bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200 cursor-pointer"
+                aria-label={t("board.toolbar.csvImportModeAria")}
+              >
+                <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>
+                <option value="merge">{t("board.toolbar.csvImportMode.merge")}</option>
+              </select>
+              <label className="board-toolbar-data-btn cursor-pointer whitespace-nowrap">
+                {t("board.toolbar.import")}
+                <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
+              </label>
+              <button type="button" onClick={handleExportCSV} className="board-toolbar-data-btn whitespace-nowrap">
+                {t("board.toolbar.export")}
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Linha 2: prioridade e atalhos — só com filtros expandidos */}
+        {priorityBarVisible && (
+          <div className="border-t border-[var(--flux-border-muted)] px-5 sm:px-6 lg:px-8 py-3">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(300px,420px)] gap-4 xl:gap-6 xl:items-start">
+              <div className="board-toolbar-group p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2.5">
+                  {t("board.filters.priorityLabel")}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {["all", ...priorities].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setActivePrio(p)}
+                      className={`btn-pill-compact transition-all duration-200 shrink-0 ${
+                        activePrio === p
+                          ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-[0_1px_6px_rgba(108,92,231,0.35)]"
+                          : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
+                      }`}
+                    >
+                      {p === "all" ? t("board.filters.allLabel") : t(`cardModal.options.priority.${p}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="board-toolbar-group p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2.5">
+                  {t("board.toolbar.sectionQuickActions")}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (focusMode) clearFilters();
+                      else {
+                        applyFocusMode();
+                        setFocusMode(true);
+                      }
+                    }}
+                    className={
+                      focusMode
+                        ? "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold font-display transition-all duration-200 border border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)] shadow-[0_0_0_1px_rgba(0,210,211,0.12)]"
+                        : "board-toolbar-btn"
+                    }
+                    title={t("board.filters.shortcutTitle")}
+                  >
+                    {focusMode ? t("board.filters.focusModeOn") : t("board.filters.focusModeOff")}
+                  </button>
+                  <button type="button" onClick={clearFilters} className="board-toolbar-btn">
+                    {t("board.filters.clear")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLabelsOpen(!labelsOpen)}
+                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold font-display transition-all duration-200 border ${
+                      labelsOpen
+                        ? "border-[var(--flux-primary)] bg-[var(--flux-primary-glow)] text-[var(--flux-primary-light)] shadow-[inset_0_1px_0_var(--flux-border-muted)]"
+                        : "border-transparent bg-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-border-subtle)] hover:bg-[var(--flux-surface-hover)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    <span>{t("board.filters.labelsButton")}</span>
+                    <span className={`text-[10px] transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`} aria-hidden>
+                      ▼
+                    </span>
+                  </button>
+                  <button type="button" onClick={() => setMapaOpen(true)} className="board-toolbar-btn">
+                    {t("board.filters.mapButton")}
+                  </button>
+                  <button type="button" onClick={openDailyModal} className="board-toolbar-btn">
+                    {t("board.filters.dailyButton")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {priorityBarVisible && labelsOpen && (
-          <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex gap-1.5 flex-wrap border-t border-[var(--flux-border-muted)]">
+          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 flex gap-2 flex-wrap border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-mid)]/30">
             {boardLabels.map((l) => (
               <button
                 key={l}
