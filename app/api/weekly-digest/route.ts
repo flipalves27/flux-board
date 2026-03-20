@@ -7,14 +7,16 @@ import { isMongoConfigured, getDb } from "@/lib/mongo";
 import { listUsers } from "@/lib/kv-users";
 import { type Organization, ensureDefaultOrganization } from "@/lib/kv-organizations";
 import { rateLimit } from "@/lib/rate-limit";
-import { getDailyAiCallsWindowMs } from "@/lib/plan-gates";
 
 import { WeeklyDigestEmail } from "@/emails/WeeklyDigestEmail";
-import type { WeeklyDigestBoard, WeeklyDigestOverdueCard } from "@/emails/WeeklyDigestEmail";
+import type { WeeklyDigestBoard, WeeklyDigestOverdueCard, WeeklyDigestOkrSection } from "@/emails/WeeklyDigestEmail";
 
 import type { BoardData } from "@/lib/kv-boards";
 import { computeOverdueCards, computeWeeklyToolMetricsFromCopilotChats } from "@/lib/weekly-digest-metrics";
 import { generateBoardWeeklyDigestInsightAI } from "@/lib/weekly-digest-llm";
+import { generateOkrWeeklyDigestBlockAI } from "@/lib/okr-weekly-digest-llm";
+import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
+import { canUseFeature } from "@/lib/plan-gates";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -46,6 +48,13 @@ async function listBoardsForOrgMongo(orgId: string, db: any): Promise<BoardData[
       return { ...rest, id } as BoardData;
     })
     .filter(Boolean);
+}
+
+function currentQuarterLabel(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const q = Math.floor(now.getMonth() / 3) + 1;
+  return `${year}-Q${q}`;
 }
 
 function pickManagers(
@@ -159,6 +168,41 @@ export async function GET(request: NextRequest) {
 
       const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
 
+      let okrSection: WeeklyDigestOkrSection | null = null;
+      if (canUseFeature(org, "okr_engine")) {
+        try {
+          const quarter = currentQuarterLabel();
+          const projections = await loadOkrProjectionsForOrgQuarter({
+            orgId,
+            quarter,
+            boards,
+          });
+          if (projections.length) {
+            const okrBlock = await generateOkrWeeklyDigestBlockAI({
+              orgName: org.name,
+              quarter,
+              projections,
+              allowAI: togetherEnabled,
+            });
+            const riskAlerts = projections
+              .filter((p) => p.riskBelowThreshold)
+              .map((p) => ({
+                objectiveTitle: p.objectiveTitle,
+                krTitle: p.krTitle,
+                line: p.summaryLine.replace(/^⚠️\s*/, ""),
+              }));
+            okrSection = {
+              quarter,
+              headline: okrBlock.headline,
+              bullets: okrBlock.bullets,
+              riskAlerts,
+            };
+          }
+        } catch (okrErr) {
+          console.error("[weekly-digest] OKR section error:", org._id, okrErr);
+        }
+      }
+
       const boardsForEmail: WeeklyDigestBoard[] = [];
 
       for (let i = 0; i < boards.length; i++) {
@@ -245,10 +289,20 @@ export async function GET(request: NextRequest) {
           weekLabel,
           appUrl: baseAppUrl,
           boards: boardsForEmail,
+          okrSection,
         })
       );
 
-      const text = `Weekly Digest IA - ${org.name}\nPeríodo: ${weekLabel}\nBoards: ${boardsForEmail.length}`;
+      const text = [
+        `Weekly Digest IA - ${org.name}`,
+        `Período: ${weekLabel}`,
+        `Boards: ${boardsForEmail.length}`,
+        okrSection
+          ? `OKRs (${okrSection.quarter}): ${okrSection.headline} | alertas: ${okrSection.riskAlerts.length}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       for (const to of recipients) {
         await resend.emails.send({

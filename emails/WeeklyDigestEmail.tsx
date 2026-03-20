@@ -32,14 +32,23 @@ export type WeeklyDigestBoard = {
   summary: string;
 };
 
+export type WeeklyDigestOkrSection = {
+  quarter: string;
+  headline: string;
+  bullets: string[];
+  /** KRs com projeção linear abaixo do limiar (ex.: 80%). */
+  riskAlerts: Array<{ objectiveTitle: string; krTitle: string; line: string }>;
+};
+
 export type WeeklyDigestEmailProps = {
   orgName: string;
   weekLabel: string;
   appUrl?: string;
   boards: WeeklyDigestBoard[];
+  okrSection?: WeeklyDigestOkrSection | null;
 };
 
-export function WeeklyDigestEmail({ orgName, weekLabel, appUrl, boards }: WeeklyDigestEmailProps) {
+export function WeeklyDigestEmail({ orgName, weekLabel, appUrl, boards, okrSection }: WeeklyDigestEmailProps) {
   const safeAppUrl = appUrl || "#";
   return (
     <Html>
@@ -50,6 +59,38 @@ export function WeeklyDigestEmail({ orgName, weekLabel, appUrl, boards }: Weekly
           <Text style={muted}>Organização: {orgName}</Text>
           <Text style={muted}>Período: {weekLabel}</Text>
           <Hr style={hr} />
+
+          {okrSection && (
+            <Section style={card}>
+              <Heading as="h2" style={h2}>
+                IA Goals — {okrSection.quarter}
+              </Heading>
+              <Text style={p}>
+                <strong>Projeção linear + recomendação semanal</strong>
+              </Text>
+              <Text style={p}>{okrSection.headline}</Text>
+              {okrSection.riskAlerts.length > 0 && (
+                <>
+                  <Text style={label}>Alertas automáticos (risco de meta)</Text>
+                  {okrSection.riskAlerts.map((a) => (
+                    <Text key={`${a.objectiveTitle}-${a.krTitle}`} style={riskLine}>
+                      <strong>{a.objectiveTitle}</strong> — {a.krTitle}: {a.line}
+                    </Text>
+                  ))}
+                </>
+              )}
+              <Text style={label}>Recomendações</Text>
+              {okrSection.bullets.length === 0 ? (
+                <Text style={p}>(sem itens)</Text>
+              ) : (
+                okrSection.bullets.map((b, i) => (
+                  <Text key={i} style={p}>
+                    • {b}
+                  </Text>
+                ))
+              )}
+            </Section>
+          )}
 
           {boards.length === 0 ? (
             <Text style={p}>Não encontramos atividade relevante para gerar o digest desta semana.</Text>
@@ -168,6 +209,17 @@ const overdueCard: React.CSSProperties = {
   borderRadius: 10,
   padding: 12,
   marginTop: 10,
+};
+
+const riskLine: React.CSSProperties = {
+  fontSize: 14,
+  lineHeight: "20px",
+  margin: "8px 0",
+  color: "#ffb4b4",
+  backgroundColor: "rgba(255,80,80,0.08)",
+  border: "1px solid rgba(255,120,120,0.25)",
+  borderRadius: 8,
+  padding: "10px 12px",
 };
 
 const line: React.CSSProperties = {

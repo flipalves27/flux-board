@@ -30,6 +30,7 @@ import { useTranslations } from "next-intl";
 import { useDailySession } from "./hooks/useDailySession";
 import { apiGet } from "@/lib/api-client";
 import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDefinition } from "@/lib/okr-engine";
+import type { OkrKrProjection } from "@/lib/okr-projection";
 
 interface KanbanBoardProps {
   db: BoardData;
@@ -131,6 +132,8 @@ export function KanbanBoard({
 
   const [okrObjectives, setOkrObjectives] = useState<OkrsObjectiveDefinition[]>([]);
   const [okrLoadError, setOkrLoadError] = useState<string | null>(null);
+  const [okrProjections, setOkrProjections] = useState<OkrKrProjection[] | null>(null);
+  const [okrProjectionError, setOkrProjectionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,6 +181,41 @@ export function KanbanBoard({
       cancelled = true;
     };
   }, [boardId, currentQuarter, getHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProjections() {
+      setOkrProjectionError(null);
+      setOkrProjections(null);
+      if (!boardId || okrObjectives.length === 0) return;
+      try {
+        const r = await apiGet<{
+          ok?: boolean;
+          projections?: OkrKrProjection[];
+        }>(
+          `/api/okrs/projection?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
+          getHeaders()
+        );
+        if (cancelled) return;
+        if (r && Array.isArray(r.projections)) setOkrProjections(r.projections);
+        else setOkrProjections([]);
+      } catch (err) {
+        if (cancelled) return;
+        setOkrProjections(null);
+        setOkrProjectionError(err instanceof Error ? err.message : "Erro ao carregar projeções");
+      }
+    }
+    loadProjections();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, currentQuarter, getHeaders, okrObjectives.length]);
+
+  const okrProjectionByKrId = useMemo(() => {
+    const m = new Map<string, OkrKrProjection>();
+    for (const p of okrProjections ?? []) m.set(p.keyResultId, p);
+    return m;
+  }, [okrProjections]);
 
   const dailySession = useDailySession({
     db,
@@ -1374,8 +1412,13 @@ export function KanbanBoard({
 
         {(okrObjectives.length > 0 || Boolean(okrLoadError)) && (
           <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3">
-            <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-2">
-              Flux Goals (OKRs) — {currentQuarter}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)]">
+                Flux Goals (OKRs) — {currentQuarter}
+              </div>
+              <div className="text-[9px] text-[var(--flux-text-muted)] text-right max-w-[200px] leading-snug">
+                IA: projeção linear (últimas 4 sem., throughput Copilot) + alerta se &lt;80% ao fim do quarter.
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -1411,39 +1454,63 @@ export function KanbanBoard({
                       Ver KRs ({o.keyResults.length})
                     </summary>
                     <div className="mt-2 space-y-2">
-                      {o.keyResults.map((kr) => (
-                        <div
-                          key={kr.definition.id}
-                          className="border border-[rgba(255,255,255,0.08)] rounded-md bg-[rgba(255,255,255,0.04)] p-2"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
-                                {kr.definition.title}
-                              </div>
-                              {kr.linkBroken ? (
-                                <div className="text-[10px] text-[var(--flux-danger)] mt-0.5">
-                                  Link quebrado (coluna removida)
+                      {o.keyResults.map((kr) => {
+                        const proj = okrProjectionByKrId.get(kr.definition.id);
+                        return (
+                          <div
+                            key={kr.definition.id}
+                            className={`border rounded-md bg-[rgba(255,255,255,0.04)] p-2 ${
+                              proj?.riskBelowThreshold
+                                ? "border-[rgba(255,107,107,0.45)] bg-[rgba(255,80,80,0.06)]"
+                                : "border-[rgba(255,255,255,0.08)]"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
+                                  {kr.definition.title}
                                 </div>
-                              ) : (
-                                <div className="text-[10px] text-[var(--flux-text-muted)] mt-0.5">{kr.status}</div>
-                              )}
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <div className="font-display font-bold text-[11px] text-[var(--flux-text)]">{kr.pct}%</div>
-                              <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                {kr.current} / {kr.definition.target}
+                                {kr.linkBroken ? (
+                                  <div className="text-[10px] text-[var(--flux-danger)] mt-0.5">
+                                    Link quebrado (coluna removida)
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-[var(--flux-text-muted)] mt-0.5">{kr.status}</div>
+                                )}
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <div className="font-display font-bold text-[11px] text-[var(--flux-text)]">{kr.pct}%</div>
+                                <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                  {kr.current} / {kr.definition.target}
+                                </div>
+                                {proj && (
+                                  <div className="text-[9px] text-[var(--flux-text-muted)] mt-0.5">
+                                    proj. fim Q: ~{proj.projectedPctAtQuarterEnd}%
+                                  </div>
+                                )}
                               </div>
                             </div>
+                            {proj && (
+                              <div className="mt-1.5 space-y-0.5">
+                                <div
+                                  className={`text-[10px] leading-snug ${
+                                    proj.riskBelowThreshold ? "text-[var(--flux-danger)] font-semibold" : "text-[var(--flux-text)]"
+                                  }`}
+                                >
+                                  {proj.summaryLine}
+                                </div>
+                                <div className="text-[9px] text-[var(--flux-text-muted)] leading-snug">{proj.detailLine}</div>
+                              </div>
+                            )}
+                            <div className="mt-1 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                              <div
+                                className="h-full bg-[var(--flux-secondary)] transition-[width] duration-200"
+                                style={{ width: `${kr.pct}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="mt-1 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
-                            <div
-                              className="h-full bg-[var(--flux-secondary)] transition-[width] duration-200"
-                              style={{ width: `${kr.pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </details>
                 </div>
@@ -1451,6 +1518,9 @@ export function KanbanBoard({
             </div>
 
             {okrLoadError && <div className="mt-2 text-[10px] text-[var(--flux-danger)]">{okrLoadError}</div>}
+            {okrProjectionError && (
+              <div className="mt-2 text-[10px] text-[var(--flux-danger)]">{okrProjectionError}</div>
+            )}
           </div>
         )}
       </div>

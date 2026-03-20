@@ -171,6 +171,49 @@ export function buildWeeklyThroughputFromCopilot(
   return weeks.map((w, i) => ({ weekLabel: w.label, concluded: counts[i] }));
 }
 
+/** Concluídos por semana (mesma ordem de `weeks`) para um único board — base Copilot. */
+export function buildWeeklyConcludedByBoardFromCopilot(
+  copilotChats: CopilotChatDocLike[],
+  boardId: string,
+  weeks: FluxWeekRange[]
+): number[] {
+  const counts = weeks.map(() => 0);
+
+  for (const chat of copilotChats) {
+    if (typeof chat?.boardId !== "string" || chat.boardId !== boardId) continue;
+    const messages = Array.isArray(chat?.messages) ? chat.messages : [];
+
+    for (const msg of messages) {
+      if (msg?.role !== "assistant") continue;
+      const createdAtIso = msg?.createdAt;
+      if (!createdAtIso || typeof createdAtIso !== "string") continue;
+      const tsMs = new Date(createdAtIso).getTime();
+      if (Number.isNaN(tsMs)) continue;
+
+      const toolResults = msg?.meta?.toolResults;
+      if (!Array.isArray(toolResults)) continue;
+
+      for (const tr of toolResults) {
+        if (!tr?.ok) continue;
+        const tool = tr?.tool as CopilotToolName | undefined;
+        if (!tool || (tool !== "createCard" && tool !== "moveCard")) continue;
+        const concluded = extractProgressForConcluded(tool, tr.data);
+        if (!concluded) continue;
+
+        for (let wi = 0; wi < weeks.length; wi++) {
+          const w = weeks[wi];
+          if (inRange(tsMs, w.startMs, w.endMs)) {
+            counts[wi] += 1;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return counts;
+}
+
 export type LeadTimeBin = { label: string; count: number };
 
 /** Histograma de “lead time” aproximado (dias) para cards concluídos com createdAt. */

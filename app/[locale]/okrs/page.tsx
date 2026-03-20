@@ -14,6 +14,7 @@ import {
   type OkrsObjectiveDefinition,
   type OkrsMetricType,
 } from "@/lib/okr-engine";
+import type { OkrKrProjection } from "@/lib/okr-projection";
 
 type BoardRow = { id: string; name: string; ownerId?: string; lastUpdated?: string; clientLabel?: string };
 
@@ -49,9 +50,17 @@ export default function OkrsPage() {
   const [bucketKeys, setBucketKeys] = useState<Set<string>>(new Set());
 
   const [okrObjectives, setOkrObjectives] = useState<OkrsObjectiveDefinition[]>([]);
+  const [okrProjections, setOkrProjections] = useState<OkrKrProjection[] | null>(null);
+
   const okrsComputed = useMemo(() => {
     return computeOkrsProgress({ cards: boardCards, objectives: okrObjectives, bucketKeys });
   }, [boardCards, okrObjectives, bucketKeys]);
+
+  const okrProjectionByKrId = useMemo(() => {
+    const m = new Map<string, OkrKrProjection>();
+    for (const p of okrProjections ?? []) m.set(p.keyResultId, p);
+    return m;
+  }, [okrProjections]);
 
   const [objectivesList, setObjectivesList] = useState<Array<{ id: string; title: string }>>([]);
 
@@ -165,6 +174,29 @@ export default function OkrsPage() {
     refreshBoardAndOkrs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBoardId, currentQuarter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProj() {
+      setOkrProjections(null);
+      if (!selectedBoardId || okrObjectives.length === 0) return;
+      try {
+        const r = await apiGet<{ projections?: OkrKrProjection[] }>(
+          `/api/okrs/projection?boardId=${encodeURIComponent(selectedBoardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
+          getHeaders()
+        );
+        if (cancelled) return;
+        setOkrProjections(Array.isArray(r?.projections) ? r.projections : []);
+      } catch {
+        if (cancelled) return;
+        setOkrProjections(null);
+      }
+    }
+    loadProj();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBoardId, currentQuarter, okrObjectives.length, getHeaders]);
 
   // Keep selection consistent when list refreshes
   useEffect(() => {
@@ -320,7 +352,12 @@ export default function OkrsPage() {
         <section className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-lg)] p-5">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">OKRs do trimestre</h2>
-            <div className="text-xs text-[var(--flux-text-muted)]">Quarter: {currentQuarter}</div>
+            <div className="text-xs text-[var(--flux-text-muted)] text-right max-w-[280px]">
+              Quarter: {currentQuarter}
+              <div className="text-[10px] mt-1 opacity-90">
+                Projeção linear (4 sem.) e alertas usam throughput de conclusões via Copilot no board vinculado.
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -443,10 +480,16 @@ export default function OkrsPage() {
                       Ver KRs ({o.keyResults.length})
                     </summary>
                     <div className="mt-2 space-y-2">
-                      {o.keyResults.map((kr) => (
+                      {o.keyResults.map((kr) => {
+                        const proj = okrProjectionByKrId.get(kr.definition.id);
+                        return (
                         <div
                           key={kr.definition.id}
-                          className="border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] rounded-md p-2.5"
+                          className={`rounded-md p-2.5 ${
+                            proj?.riskBelowThreshold
+                              ? "border border-[rgba(255,107,107,0.45)] bg-[rgba(255,80,80,0.06)]"
+                              : "border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)]"
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -461,12 +504,29 @@ export default function OkrsPage() {
                               <div className="text-[10px] text-[var(--flux-text-muted)] mt-0.5">
                                 {kr.linkBroken ? "Link quebrado (coluna removida)" : kr.status}
                               </div>
+                              {proj && (
+                                <div className="mt-1.5 space-y-0.5">
+                                  <div
+                                    className={`text-[10px] leading-snug ${
+                                      proj.riskBelowThreshold ? "text-[var(--flux-danger)] font-semibold" : "text-[var(--flux-text)]"
+                                    }`}
+                                  >
+                                    {proj.summaryLine}
+                                  </div>
+                                  <div className="text-[9px] text-[var(--flux-text-muted)] leading-snug">{proj.detailLine}</div>
+                                </div>
+                              )}
                             </div>
                             <div className="shrink-0 text-right">
                               <div className="font-display font-bold text-[11px] text-[var(--flux-text)]">{kr.pct}%</div>
                               <div className="text-[10px] text-[var(--flux-text-muted)]">
                                 {kr.current} / {kr.definition.target}
                               </div>
+                              {proj && (
+                                <div className="text-[9px] text-[var(--flux-text-muted)] mt-0.5">
+                                  proj. fim Q: ~{proj.projectedPctAtQuarterEnd}%
+                                </div>
+                              )}
                               <div className="mt-1 flex gap-1 justify-end">
                                 <button
                                   type="button"
@@ -554,7 +614,8 @@ export default function OkrsPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </details>
                 </div>
