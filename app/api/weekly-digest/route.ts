@@ -1,0 +1,271 @@
+import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import { render } from "@react-email/render";
+import React from "react";
+
+import { isMongoConfigured, getDb } from "@/lib/mongo";
+import { listUsers } from "@/lib/kv-users";
+import { type Organization, ensureDefaultOrganization } from "@/lib/kv-organizations";
+import { rateLimit } from "@/lib/rate-limit";
+import { getDailyAiCallsWindowMs } from "@/lib/plan-gates";
+
+import { WeeklyDigestEmail } from "@/emails/WeeklyDigestEmail";
+import type { WeeklyDigestBoard, WeeklyDigestOverdueCard } from "@/emails/WeeklyDigestEmail";
+
+import type { BoardData } from "@/lib/kv-boards";
+import { computeOverdueCards, computeWeeklyToolMetricsFromCopilotChats } from "@/lib/weekly-digest-metrics";
+import { generateBoardWeeklyDigestInsightAI } from "@/lib/weekly-digest-llm";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type DigestUser = Awaited<ReturnType<typeof listUsers>>[number];
+
+function requireCronSecret(request: NextRequest): boolean {
+  const required = process.env.WEEKLY_DIGEST_SECRET;
+  if (!required) return true; // dev/local permissivo
+  const header = request.headers.get("x-cron-secret");
+  if (!header) return false;
+  return header === required;
+}
+
+function formatDateRange(weekStartMs: number, weekEndMs: number, timeZone?: string): string {
+  const tz = timeZone || process.env.DIGEST_TIMEZONE || "America/Sao_Paulo";
+  const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: tz, day: "2-digit", month: "2-digit" });
+  const a = fmt.format(new Date(weekStartMs));
+  const b = fmt.format(new Date(weekEndMs - 1)); // "até" inclusivo (visual)
+  return `${a} a ${b}`;
+}
+
+async function listBoardsForOrgMongo(orgId: string, db: any): Promise<BoardData[]> {
+  const docs = await db.collection("boards").find({ orgId }).toArray();
+  return docs
+    .map((doc: any) => {
+      const id = doc?._id;
+      if (!id || !doc) return null;
+      const { _id, ...rest } = doc;
+      return { ...rest, id } as BoardData;
+    })
+    .filter(Boolean);
+}
+
+function pickManagers(
+  users: DigestUser[],
+  params: {
+    orgOwnerId: string;
+  }
+): string[] {
+  const { orgOwnerId } = params;
+
+  // Regra solicitada: gestões/diretoria = somente o dono/criador da org.
+  const emails = users
+    .filter((u) => !!u?.email && u.id === orgOwnerId)
+    .map((u) => u.email)
+    .filter(Boolean);
+
+  const override = process.env.DIGEST_RECIPIENT_OVERRIDE_EMAILS?.trim();
+  if (override) {
+    return override.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  return emails;
+}
+
+export async function GET(request: NextRequest) {
+  if (!requireCronSecret(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!isMongoConfigured()) {
+    return NextResponse.json(
+      { error: "Digest semanal requer MongoDB (MONGODB_URI) habilitado." },
+      { status: 501 }
+    );
+  }
+
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  if (!resendApiKey || !fromEmail) {
+    return NextResponse.json({ error: "RESEND_API_KEY e RESEND_FROM_EMAIL são obrigatórios." }, { status: 500 });
+  }
+
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  if (!baseAppUrl) {
+    // Não bloqueamos o digest; só evitamos links quebrados.
+    console.warn("[weekly-digest] NEXT_PUBLIC_APP_URL não configurada. Usando '#'.");
+  }
+
+  const now = new Date();
+  const weekEndMs = now.getTime();
+  const weekStartMs = weekEndMs - 7 * DAY_MS;
+  const prevStartMs = weekStartMs - 7 * DAY_MS;
+  const weekLabel = formatDateRange(weekStartMs, weekEndMs);
+
+  const db = await getDb();
+
+  // Garante org default quando necessário (ex: ambientes de migração).
+  await ensureDefaultOrganization("admin");
+
+  const organizations = (await db.collection<Organization>("organizations").find({}).toArray()) as Organization[];
+  const orgsToProcess = organizations.length ? organizations : [];
+
+  const orgsLimit = Number(process.env.WEEKLY_DIGEST_MAX_ORGS ?? "");
+  const limitedOrgs = Number.isFinite(orgsLimit) && orgsLimit > 0 ? orgsToProcess.slice(0, orgsLimit) : orgsToProcess;
+
+  if (!limitedOrgs.length) {
+    return NextResponse.json({ ok: true, skipped: "No organizations found." });
+  }
+
+  const resend = new Resend(resendApiKey);
+
+  let totalEmailsSent = 0;
+  let totalBoardsProcessed = 0;
+
+  for (const org of limitedOrgs) {
+    try {
+      const orgId = org._id;
+      const users = await listUsers(orgId);
+      const recipients = pickManagers(users, { orgOwnerId: org.ownerId });
+      if (!recipients.length) continue;
+
+      // Deduplicação por org/semana (cron pode disparar duplicado em alguns cenários).
+      const weekKey = new Date(weekStartMs).toISOString().slice(0, 10);
+      const rlRun = await rateLimit({
+        key: `weekly-digest:org:${orgId}:week:${weekKey}`,
+        limit: 1,
+        windowMs: 8 * DAY_MS,
+      });
+      if (!rlRun.allowed) continue;
+
+      const boards = await listBoardsForOrgMongo(orgId, db);
+      const boardIds = boards.map((b) => b.id).filter(Boolean);
+      if (!boardIds.length) continue;
+
+      const weekCurrent = { startMs: weekStartMs, endMs: weekEndMs };
+      const weekPrevious = { startMs: prevStartMs, endMs: weekStartMs };
+
+      // Buscamos chats atualizados desde o início da semana anterior.
+      const prevStartIso = new Date(prevStartMs).toISOString();
+      const copilotChats = await db
+        .collection("board_copilot_chats")
+        .find({ orgId, boardId: { $in: boardIds }, updatedAt: { $gte: prevStartIso } })
+        .toArray();
+
+      const toolMetricsByBoard = computeWeeklyToolMetricsFromCopilotChats({
+        boardIds,
+        copilotChats: copilotChats as any,
+        currentRange: weekCurrent,
+        previousRange: weekPrevious,
+      });
+
+      const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+
+      const boardsForEmail: WeeklyDigestBoard[] = [];
+
+      for (let i = 0; i < boards.length; i++) {
+        const board = boards[i];
+        const boardId = board.id;
+        if (!boardId) continue;
+
+        const overdueCards = computeOverdueCards(board);
+        const metrics = toolMetricsByBoard[boardId] ?? {
+          createdCurrent: 0,
+          movedCurrent: 0,
+          concludedCurrent: 0,
+          createdPrevious: 0,
+          movedPrevious: 0,
+          concludedPrevious: 0,
+        };
+
+        // Política: se Together estiver configurado, tentamos sempre gerar insight IA
+        // para cada board incluído no email (sem desviar para heurística por cap).
+        const allowAI = togetherEnabled;
+
+        const insightResult = await generateBoardWeeklyDigestInsightAI({
+          board,
+          boardName: board.name || "Board",
+          metrics: {
+            createdCurrent: metrics.createdCurrent,
+            movedCurrent: metrics.movedCurrent,
+            concludedCurrent: metrics.concludedCurrent,
+            createdPrevious: metrics.createdPrevious,
+            movedPrevious: metrics.movedPrevious,
+            concludedPrevious: metrics.concludedPrevious,
+          },
+          overdueCards,
+          allowAI,
+        });
+
+        const emailOverdue: WeeklyDigestOverdueCard[] = overdueCards.slice(0, 5).map((c) => ({
+          title: c.title,
+          bucket: c.bucket,
+          progress: c.progress,
+          dueDate: c.dueDate,
+          daysOverdue: c.daysOverdue,
+          action: "",
+        }));
+
+        // Combina ações IA (quando retornadas) com a lista de overdue cards por título.
+        if (insightResult.overdueActions?.length) {
+          const map = new Map<string, string>();
+          for (const oa of insightResult.overdueActions) {
+            map.set(oa.title, oa.action);
+          }
+          for (const oc of emailOverdue) {
+            oc.action = map.get(oc.title) || oc.action;
+          }
+        }
+
+        // Fallback: se a ação IA não casou títulos, gera uma ação baseada no progresso.
+        for (const oc of emailOverdue) {
+          if (oc.action) continue;
+          if (oc.progress === "Não iniciado") oc.action = "Defina o próximo passo e confirme critérios de passagem.";
+          else if (oc.progress === "Em andamento") oc.action = "Identifique bloqueios e ajuste prioridades para destravar.";
+          else oc.action = "Reavalie estratégia e alinhe o card com a coluna correta.";
+        }
+
+        const boardsForBoard: WeeklyDigestBoard = {
+          boardName: board.name || "Board",
+          created: metrics.createdCurrent,
+          moved: metrics.movedCurrent,
+          concluded: metrics.concludedCurrent,
+          throughputCurrent: metrics.concludedCurrent,
+          throughputPrevious: metrics.concludedPrevious,
+          overdueCards: emailOverdue,
+          insight: insightResult.insight,
+          summary: insightResult.summary,
+        };
+
+        boardsForEmail.push(boardsForBoard);
+        totalBoardsProcessed++;
+      }
+
+      const html = await render(
+        React.createElement(WeeklyDigestEmail as any, {
+          orgName: org.name,
+          weekLabel,
+          appUrl: baseAppUrl,
+          boards: boardsForEmail,
+        })
+      );
+
+      const text = `Weekly Digest IA - ${org.name}\nPeríodo: ${weekLabel}\nBoards: ${boardsForEmail.length}`;
+
+      for (const to of recipients) {
+        await resend.emails.send({
+          from: fromEmail,
+          to,
+          subject: `Flux-Board Weekly Digest — ${weekLabel}`,
+          html,
+          text,
+        });
+        totalEmailsSent++;
+      }
+    } catch (err) {
+      console.error("[weekly-digest] Error processing org:", org._id, err);
+      // seguimos com as próximas orgs
+    }
+  }
+
+  return NextResponse.json({ ok: true, totalEmailsSent, totalBoardsProcessed });
+}
+

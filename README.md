@@ -141,3 +141,30 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 - Sincronização debounced (300ms) com API
 - Brief executivo (.md) e export JSON do portfólio na lista de boards
 - Rótulo comercial por board (`clientLabel`) e página **Negócios** com linhas de receita
+
+## Weekly Digest IA (por email)
+
+Gera um resumo semanal por board e envia para os gestores de cada organização, pela regra: `org.ownerId` (dono/criador da org), via `Vercel Cron`.
+
+### Endpoint
+
+- `GET /api/weekly-digest`
+
+### Variáveis de ambiente
+
+- `WEEKLY_DIGEST_SECRET` (opcional, recomendado): secret validado via header `x-cron-secret` para evitar chamadas públicas
+- `RESEND_API_KEY`: API key do Resend
+- `RESEND_FROM_EMAIL`: endereço remetente do email
+- `NEXT_PUBLIC_APP_URL` (opcional): base URL para links no email (senão usa `#`)
+- `DIGEST_TIMEZONE` (opcional, padrão `America/Sao_Paulo`): timezone usado para rotular a semana
+- `DIGEST_RECIPIENT_OVERRIDE_EMAILS` (opcional): lista de emails (CSV) para substituir os destinatários (útil em testes)
+- `WEEKLY_DIGEST_AI_MAX_BOARDS_PER_ORG` (opcional, padrão `10`): limite de boards para tentar IA por org
+- `TOGETHER_API_KEY` e `TOGETHER_MODEL`: habilitam geração do insight via IA (quando configurados, tentamos IA em todos os boards; fallback heurístico apenas se a IA falhar de fato)
+
+### Agendamento (Vercel Cron)
+
+Configure uma regra para disparar na **segunda-feira às 08:00** chamando:
+
+- URL: `https://SEU_DOMINIO/api/weekly-digest`
+- Header: `x-cron-secret: WEEKLY_DIGEST_SECRET`
+

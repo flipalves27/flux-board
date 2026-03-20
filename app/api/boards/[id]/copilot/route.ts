@@ -661,7 +661,13 @@ async function executeCopilotActions(params: {
           tool,
           ok: true,
           message: `Movido card ${cardId} para ${bucketKey}.`,
-          data: { cardId, bucketKey },
+          data: {
+            cardId,
+            bucketKey,
+            // Usamos isso para contabilizar "concluídos" no weekly digest quando o usuário pediu explicitamente
+            // mudar o progresso para "Concluída".
+            setProgress: setProgress ?? undefined,
+          },
         });
         continue;
       }
@@ -734,7 +740,7 @@ async function executeCopilotActions(params: {
           tool,
           ok: true,
           message: `Card criado: ${title}`,
-          data: { cardId: id },
+          data: { cardId: id, progress: prog },
         });
         continue;
       }
