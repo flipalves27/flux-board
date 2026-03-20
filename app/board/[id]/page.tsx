@@ -130,8 +130,6 @@ export default function BoardPage() {
   const { user, getHeaders, isChecked } = useAuth();
   const { pushToast } = useToast();
   const [boardName, setBoardName] = useState("Board");
-  const [clientLabel, setClientLabel] = useState("");
-  const clientLabelSavedRef = useRef("");
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -168,9 +166,6 @@ export default function BoardPage() {
       if (!r.ok) throw new Error("Erro ao carregar");
       const d = await r.json();
       setBoardName(d.name || "Board");
-      const cl = typeof d.clientLabel === "string" ? d.clientLabel : "";
-      setClientLabel(cl);
-      clientLabelSavedRef.current = cl;
       const cards = (d.cards || []).map((c: CardData, i: number) => ({
         ...c,
         order: c.order ?? i,
@@ -250,19 +245,6 @@ export default function BoardPage() {
     [db, boardId, getHeaders]
   );
 
-  const persistClientLabel = useCallback(async () => {
-    const trimmed = clientLabel.trim();
-    if (trimmed === clientLabelSavedRef.current.trim()) return;
-    try {
-      await apiPut(`/api/boards/${boardId}`, { clientLabel: trimmed }, getHeaders());
-      clientLabelSavedRef.current = trimmed;
-      setClientLabel(trimmed);
-      pushToast({ kind: "success", title: "Cliente / conta salvo." });
-    } catch {
-      pushToast({ kind: "error", title: "Não foi possível salvar o rótulo comercial." });
-    }
-  }, [boardId, clientLabel, getHeaders, pushToast]);
-
   const updateDb = useCallback(
     (updater: (prev: BoardData) => BoardData) => {
       setDb((prev) => {
@@ -289,18 +271,6 @@ export default function BoardPage() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={boardName}>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <label className="flex items-center gap-2 text-[11px] text-[var(--flux-text-muted)] max-w-[min(100%,220px)]">
-            <span className="shrink-0 font-semibold">Cliente</span>
-            <input
-              type="text"
-              value={clientLabel}
-              onChange={(e) => setClientLabel(e.target.value)}
-              onBlur={persistClientLabel}
-              maxLength={120}
-              placeholder="Conta / linha"
-              className="min-w-0 flex-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
-            />
-          </label>
           <div
             className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
               saveStatus === "idle" ? "opacity-0" : "opacity-100"
