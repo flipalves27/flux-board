@@ -85,7 +85,7 @@ export function KanbanCard({
           onEdit();
         }
       }}
-      className={`bg-[var(--flux-surface-elevated)] border border-[rgba(108,92,231,0.2)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out hover:shadow-[0_4px_20px_rgba(108,92,231,0.15)] hover:border-[var(--flux-primary)]/40 ${
+      className={`bg-[var(--flux-surface-elevated)] border border-[var(--flux-border-default)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_rgba(108,92,231,0.18)] hover:border-[var(--flux-primary)]/50 ${
         isDragging ? "opacity-40 scale-[0.98]" : ""
       }`}
     >
@@ -101,7 +101,7 @@ export function KanbanCard({
                   e.stopPropagation();
                   onOpenDesc();
                 }}
-                className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
+                className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
                 aria-label={t("card.tooltips.description")}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -120,7 +120,7 @@ export function KanbanCard({
                 void navigator.clipboard.writeText(card.id);
               }
             }}
-            className="rounded border border-[rgba(255,255,255,0.12)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+            className="rounded border border-[var(--flux-control-border)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
             title={t("card.tooltips.copyCardId")}
             aria-label={t("card.tooltips.copyCardId")}
           >
@@ -154,7 +154,7 @@ export function KanbanCard({
         {card.tags.map((t) => (
           <span
             key={t}
-            className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[rgba(255,255,255,0.06)] text-[var(--flux-text-muted)] ${
+            className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--flux-surface-hover)] text-[var(--flux-text-muted)] ${
               t === "Incidente" ? "bg-[rgba(253,167,223,0.15)] text-[var(--flux-accent)] border border-[rgba(253,167,223,0.35)] font-semibold" : ""
             }`}
           >
@@ -182,7 +182,7 @@ export function KanbanCard({
           </span>
         )}
       </div>
-      <div className="border-t border-[rgba(255,255,255,0.06)] pt-2.5 mt-2">
+      <div className="border-t border-[var(--flux-border-muted)] pt-2.5 mt-2">
         <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] uppercase block mb-2 font-display">
           {t("card.direction.heading")}
         </span>
@@ -205,7 +205,7 @@ export function KanbanCard({
                 className={`dir-btn text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
                   sel
                     ? `text-white ${dk === "manter" ? "bg-[#059669] border-[#059669]" : dk === "priorizar" ? "bg-[var(--flux-secondary)] border-[var(--flux-secondary)]" : dk === "adiar" ? "bg-[var(--flux-warning)] border-[var(--flux-warning)] text-[#1A1730]" : dk === "cancelar" ? "bg-[var(--flux-danger)] border-[var(--flux-danger)]" : "bg-[var(--flux-text-muted)] border-[var(--flux-text-muted)]"}`
-                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();

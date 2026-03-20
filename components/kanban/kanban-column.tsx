@@ -32,7 +32,7 @@ function DroppableSlot({ id }: { id: string }) {
       aria-hidden="true"
       role="presentation"
       className={`min-h-[12px] flex-shrink-0 rounded transition-all duration-200 ease-out ${
-        isOver ? "bg-[var(--flux-primary)]/20 ring-2 ring-[var(--flux-primary)]/40 scale-[1.01]" : "hover:bg-[rgba(255,255,255,0.04)]"
+        isOver ? "bg-[var(--flux-primary)]/20 ring-2 ring-[var(--flux-primary)]/40 scale-[1.01]" : "hover:bg-[var(--flux-surface-hover)]"
       }`}
     />
   );
@@ -75,9 +75,9 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
-      className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.15)] flex flex-col max-h-[calc(100vh-165px)] transition-all ${
+      className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[calc(100vh-165px)] transition-all shadow-[inset_0_1px_0_var(--flux-border-muted),0_8px_28px_-16px_rgba(0,0,0,0.35)] ${
         collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
-      } ${isOver ? "bg-[rgba(108,92,231,0.08)]" : ""}`}
+      } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""}`}
     >
       {collapsed ? (
         <CustomTooltip content={t("column.collapsedTooltip", { label: bucket.label, count: cards.length })} position="right">
@@ -85,12 +85,12 @@ export function KanbanColumn({
             ref={setBucketRef}
             {...attributes}
             {...listeners}
-            className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+            className="flex items-center gap-2 px-2 py-2 rounded-[var(--flux-rad)] cursor-grab active:cursor-grabbing hover:bg-[var(--flux-surface-hover)] transition-colors"
             onClick={onToggleCollapse}
             aria-label={t("column.collapsedAriaLabel", { label: bucket.label, count: cards.length })}
           >
             <div
-              className="w-3 h-3 rounded-full shrink-0 border border-[rgba(255,255,255,0.2)]"
+              className="w-3 h-3 rounded-full shrink-0 border border-[var(--flux-border-subtle)]"
               style={{ background: bucket.color || "#9B97C2" }}
               aria-hidden
             />
@@ -104,7 +104,7 @@ export function KanbanColumn({
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-3 px-3 py-3 border-b border-[rgba(255,255,255,0.06)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing"
+        className="flex items-center gap-3 px-3 py-3 border-b border-[var(--flux-border-muted)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing shadow-[inset_0_1px_0_var(--flux-border-muted)]"
         aria-label={t("column.dragAriaLabel", { label: bucket.label, count: cards.length })}
       >
         <div
@@ -128,7 +128,7 @@ export function KanbanColumn({
                 e.stopPropagation();
                 onAddCard();
               }}
-              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+              className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
               aria-label={t("column.tooltips.newCard")}
             >
               +
@@ -142,7 +142,7 @@ export function KanbanColumn({
                   e.stopPropagation();
                   onRenameColumn();
                 }}
-                className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                 aria-label={t("column.tooltips.renameColumn")}
               >
                 ✎
@@ -156,7 +156,7 @@ export function KanbanColumn({
                 e.stopPropagation();
                 onToggleCollapse();
               }}
-              className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+              className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-xs hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
               aria-label={collapsed ? t("column.tooltips.expandColumn") : t("column.tooltips.collapseColumn")}
             >
               ◂
@@ -170,7 +170,7 @@ export function KanbanColumn({
                   e.stopPropagation();
                   onDeleteColumn();
                 }}
-                className="w-6 h-6 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.08)]"
                 aria-label={t("column.tooltips.deleteColumn")}
               >
                 ×

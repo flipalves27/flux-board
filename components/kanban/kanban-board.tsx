@@ -926,7 +926,7 @@ export function KanbanBoard({
   return (
     <>
       <div
-        className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.15)] sticky top-[42px] z-[150] shadow-[0_2px_6px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out overflow-hidden"
+        className="board-toolbar sticky top-[42px] z-[150] transition-all duration-300 ease-in-out overflow-hidden"
         style={{ maxHeight: priorityBarVisible ? "260px" : "44px" }}
       >
         <div className="w-full px-5 sm:px-6 lg:px-8 flex items-center gap-1.5 min-h-[44px] py-1.5 flex-wrap">
@@ -950,17 +950,17 @@ export function KanbanBoard({
             </button>
           </CustomTooltip>
           <div
-            className="flex items-center gap-0.5 rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-0.5 shrink-0"
+            className="board-segment flex items-center gap-0.5 p-0.5 shrink-0"
             role="group"
             aria-label={t("board.timeline.toggleGroupAria")}
           >
             <button
               type="button"
               onClick={() => setBoardView("kanban")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
                 boardView === "kanban"
-                  ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_1px_4px_rgba(108,92,231,0.45)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
               }`}
             >
               {t("board.timeline.viewKanban")}
@@ -968,10 +968,10 @@ export function KanbanBoard({
             <button
               type="button"
               onClick={() => setBoardView("timeline")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
                 boardView === "timeline"
-                  ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_1px_4px_rgba(108,92,231,0.45)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
               }`}
             >
               {t("board.timeline.viewTimeline")}
@@ -990,14 +990,14 @@ export function KanbanBoard({
                     className={`btn-pill-compact transition-all duration-200 shrink-0 ${
                       activePrio === p
                         ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                        : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                     }`}
                   >
                     {p === "all" ? t("board.filters.allLabel") : t(`cardModal.options.priority.${p}`)}
                   </button>
                 ))}
               </div>
-              <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] shrink-0" />
+              <div className="w-px h-5 bg-[var(--flux-hairline)] shrink-0" />
               <button
                 onClick={() => {
                   if (focusMode) clearFilters();
@@ -1009,7 +1009,7 @@ export function KanbanBoard({
                 className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border transition-all duration-200 font-display shrink-0 ${
                   focusMode
                     ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)]"
-                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:border-[var(--flux-secondary)] hover:text-[var(--flux-secondary)]"
+                    : "border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:border-[var(--flux-secondary)] hover:text-[var(--flux-secondary)]"
                 }`}
                 title={t("board.filters.shortcutTitle")}
               >
@@ -1017,7 +1017,7 @@ export function KanbanBoard({
               </button>
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 {t("board.filters.clear")}
               </button>
@@ -1030,13 +1030,13 @@ export function KanbanBoard({
               </button>
               <button
                 onClick={() => setMapaOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 {t("board.filters.mapButton")}
               </button>
               <button
                 onClick={openDailyModal}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 {t("board.filters.dailyButton")}
               </button>
@@ -1047,12 +1047,12 @@ export function KanbanBoard({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("board.filters.searchPlaceholder")}
-                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] w-[140px] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                 />
                 <select
                   value={csvImportMode}
                   onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
-                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
+                  className="px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[rgba(108,92,231,0.25)] outline-none transition-all duration-200"
                   aria-label={t("board.toolbar.csvImportModeAria")}
                 >
                   <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>
@@ -1075,7 +1075,7 @@ export function KanbanBoard({
           )}
         </div>
         {priorityBarVisible && labelsOpen && (
-          <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex gap-1.5 flex-wrap border-t border-[rgba(255,255,255,0.06)]">
+          <div className="w-full px-5 sm:px-6 lg:px-8 py-2 flex gap-1.5 flex-wrap border-t border-[var(--flux-border-muted)]">
             {boardLabels.map((l) => (
               <button
                 key={l}
@@ -1083,7 +1083,7 @@ export function KanbanBoard({
                 className={`btn-pill-compact transition-all duration-200 ${
                   activeLabels.has(l)
                     ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                    : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                 }`}
               >
                 {l}
@@ -1092,25 +1092,25 @@ export function KanbanBoard({
           </div>
         )}
         {priorityBarVisible && (
-          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 border-t border-[rgba(255,255,255,0.06)]">
+          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 border-t border-[var(--flux-border-muted)]">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+              <div className="board-stat-tile px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.totalLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-text)]">{cards.length}</div>
               </div>
-              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(116,185,255,0.2)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+              <div className="board-stat-tile border-[rgba(116,185,255,0.22)] px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.inProgressLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-info)]">{executionInsights.inProgress}</div>
               </div>
-              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+              <div className="board-stat-tile border-[rgba(255,107,107,0.26)] px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.overdueLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-danger)]">{executionInsights.overdue}</div>
               </div>
-              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,217,61,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+              <div className="board-stat-tile border-[rgba(255,217,61,0.28)] px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.dueSoonLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-warning)]">{executionInsights.dueSoon}</div>
               </div>
-              <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(0,230,118,0.24)] bg-[var(--flux-surface-card)] px-2.5 py-2">
+              <div className="board-stat-tile border-[rgba(0,230,118,0.28)] px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.completedRateLabel")}</div>
                 <div className="text-sm font-display font-bold text-[var(--flux-success)]">{executionInsights.doneRate}%</div>
               </div>
@@ -1125,7 +1125,7 @@ export function KanbanBoard({
         onPointerMove={boardView === "kanban" ? handlePanPointerMove : undefined}
         onPointerUp={boardView === "kanban" ? endPan : undefined}
         onPointerCancel={boardView === "kanban" ? endPan : undefined}
-        className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
+        className={`board-canvas w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
           boardView === "kanban"
             ? `flex gap-4 overflow-x-auto items-stretch ${
                 isPanning ? "cursor-grabbing select-none" : "cursor-default"
@@ -1292,14 +1292,14 @@ export function KanbanBoard({
         ) : null}
       </div>
 
-      <div className="bg-[var(--flux-surface-mid)]/92 border-t border-x border-[rgba(108,92,231,0.28)] rounded-t-[var(--flux-rad)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] shadow-[0_-6px_18px_rgba(0,0,0,0.45)] max-w-[1200px] mx-auto">
+      <div className="board-summary-dock rounded-t-[var(--flux-rad)] border-t border-x border-[var(--flux-border-default)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] max-w-[1200px] mx-auto">
         <div className="w-full flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 text-center">
           <div className="flex items-center justify-center gap-2 overflow-x-auto flex-wrap min-w-0 scrollbar-flux pb-1">
             {buckets.map((b, i) => {
               const n = visibleCardsByBucket(b.key).length;
               return (
                 <div key={b.key} className="flex items-center gap-1 shrink-0">
-                  {i > 0 && <div className="w-px h-4 bg-[rgba(255,255,255,0.16)]" />}
+                  {i > 0 && <div className="w-px h-4 bg-[var(--flux-hairline)]" />}
                   <div className="flex items-center gap-1.5">
                     <div
                       className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -1315,7 +1315,7 @@ export function KanbanBoard({
                 </div>
               );
             })}
-            <div className="w-px h-4 bg-[rgba(255,255,255,0.16)] shrink-0" />
+            <div className="w-px h-4 bg-[var(--flux-hairline)] shrink-0" />
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-xs font-bold text-[var(--flux-text-muted)]">{t("board.summary.totalLabel")}</span>
               <span className="font-display font-bold text-xs text-[var(--flux-secondary)]">
@@ -1359,7 +1359,7 @@ export function KanbanBoard({
           )}
         </div>
         {(executionInsights.nextActions.length > 0 || executionInsights.wipRiskColumns.length > 0) && (
-          <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="mt-3 border-t border-[var(--flux-border-subtle)] pt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-2.5">
               <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-1.5">
                 {t("board.nextActions.title")}
@@ -1372,7 +1372,7 @@ export function KanbanBoard({
                       setModalCard(entry.card);
                       setModalMode("edit");
                     }}
-                    className="w-full text-left rounded-md border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 hover:border-[var(--flux-primary)] transition-colors"
+                    className="w-full text-left rounded-md border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 hover:border-[var(--flux-primary)] transition-colors"
                   >
                     <div className="text-xs font-semibold text-[var(--flux-text)] truncate">{entry.card.title}</div>
                     <div className="text-[10px] text-[var(--flux-text-muted)]">
@@ -1414,7 +1414,7 @@ export function KanbanBoard({
         )}
 
         {(okrObjectives.length > 0 || Boolean(okrLoadError)) && (
-          <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3">
+          <div className="mt-3 border-t border-[var(--flux-border-subtle)] pt-3">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)]">
                 Flux Goals (OKRs) — {currentQuarter}
@@ -1445,7 +1445,7 @@ export function KanbanBoard({
                     </div>
                   </div>
 
-                  <div className="mt-2 h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                  <div className="mt-2 h-2 rounded-full bg-[var(--flux-border-muted)] overflow-hidden">
                     <div
                       className="h-full bg-[var(--flux-primary)] transition-[width] duration-200"
                       style={{ width: `${o.objectiveCurrentPct}%` }}
@@ -1462,10 +1462,10 @@ export function KanbanBoard({
                         return (
                           <div
                             key={kr.definition.id}
-                            className={`border rounded-md bg-[rgba(255,255,255,0.04)] p-2 ${
+                            className={`border rounded-md bg-[var(--flux-surface-hover)] p-2 ${
                               proj?.riskBelowThreshold
                                 ? "border-[rgba(255,107,107,0.45)] bg-[rgba(255,80,80,0.06)]"
-                                : "border-[rgba(255,255,255,0.08)]"
+                                : "border-[var(--flux-border-subtle)]"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -1505,7 +1505,7 @@ export function KanbanBoard({
                                 <div className="text-[9px] text-[var(--flux-text-muted)] leading-snug">{proj.detailLine}</div>
                               </div>
                             )}
-                            <div className="mt-1 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                            <div className="mt-1 h-1.5 rounded-full bg-[var(--flux-border-muted)] overflow-hidden">
                               <div
                                 className="h-full bg-[var(--flux-secondary)] transition-[width] duration-200"
                                 style={{ width: `${kr.pct}%` }}
@@ -1615,7 +1615,7 @@ export function KanbanBoard({
               onChange={(e) => setNewColumnName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveColumn()}
               placeholder={t("addColumnModal.placeholder")}
-              className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
               ref={addColumnInputRef}
             />

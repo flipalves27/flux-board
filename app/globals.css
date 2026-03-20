@@ -22,6 +22,18 @@
   --flux-warning: #FFD93D;
   --flux-danger: #FF6B6B;
   --flux-info: #74B9FF;
+  /* Semantic borders & chrome — adapt in [data-theme="light"] */
+  --flux-border-muted: rgba(255, 255, 255, 0.06);
+  --flux-border-subtle: rgba(255, 255, 255, 0.1);
+  --flux-border-default: rgba(108, 92, 231, 0.22);
+  --flux-control-border: rgba(255, 255, 255, 0.12);
+  --flux-hairline: rgba(255, 255, 255, 0.14);
+  --flux-surface-hover: rgba(255, 255, 255, 0.05);
+  --flux-primary-glow: rgba(108, 92, 231, 0.14);
+  --flux-board-mesh:
+    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.16), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 210, 211, 0.07), transparent 50%),
+    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(253, 167, 223, 0.06), transparent 50%);
   --flux-rad: 10px;
   --flux-rad-sm: 6px;
   --flux-rad-lg: 16px;
@@ -41,6 +53,17 @@
   --flux-text-muted: #47427A;
   --flux-primary-light: #5A49DA;
   --flux-secondary: #008E97;
+  --flux-border-muted: rgba(26, 23, 48, 0.06);
+  --flux-border-subtle: rgba(26, 23, 48, 0.1);
+  --flux-border-default: rgba(108, 92, 231, 0.24);
+  --flux-control-border: rgba(26, 23, 48, 0.12);
+  --flux-hairline: rgba(26, 23, 48, 0.14);
+  --flux-surface-hover: rgba(108, 92, 231, 0.07);
+  --flux-primary-glow: rgba(108, 92, 231, 0.1);
+  --flux-board-mesh:
+    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.1), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 142, 151, 0.06), transparent 50%),
+    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(224, 86, 160, 0.05), transparent 50%);
   --shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
   --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
   --flux-home-hero-bg: linear-gradient(180deg, rgba(245, 244, 255, 0.45) 0%, rgba(245, 244, 255, 0.82) 100%), url("/flux-background-light.svg");
@@ -204,7 +227,7 @@
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm border transition-all duration-200 ease-out font-display;
     background: var(--flux-surface-card);
     color: var(--flux-text);
-    border-color: rgba(108, 92, 231, 0.3);
+    border-color: var(--flux-border-default);
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--flux-surface-elevated);
@@ -216,12 +239,12 @@
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm border transition-all duration-200 ease-out font-display;
     background: transparent;
     color: var(--flux-text-muted);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--flux-control-border);
   }
   .btn-ghost:hover:not(:disabled) {
     color: var(--flux-text);
     border-color: var(--flux-primary);
-    background: rgba(108, 92, 231, 0.1);
+    background: var(--flux-primary-glow);
   }
 
   .btn-pill {
@@ -242,7 +265,7 @@
     @apply px-3 py-1.5 rounded-[var(--flux-rad-sm)] font-semibold text-xs border transition-all duration-200 ease-out font-display;
     background: var(--flux-surface-card);
     color: var(--flux-text);
-    border-color: rgba(108, 92, 231, 0.3);
+    border-color: var(--flux-border-default);
   }
   .btn-bar:hover:not(:disabled) {
     background: var(--flux-surface-elevated);
@@ -389,6 +412,58 @@
     }
   }
 
+  /* Board — Kanban toolbar, canvas & summary (uses --flux-border-* tokens) */
+  .board-toolbar {
+    background: var(--flux-surface-mid);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--flux-border-default);
+    box-shadow:
+      inset 0 1px 0 var(--flux-border-muted),
+      0 10px 36px -16px rgba(0, 0, 0, 0.45);
+  }
+
+  [data-theme="light"] .board-toolbar {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.78),
+      0 12px 40px -18px rgba(96, 79, 214, 0.14);
+  }
+
+  .board-canvas {
+    background-color: var(--flux-surface-dark);
+    background-image: var(--flux-board-mesh);
+  }
+
+  .board-segment {
+    border-radius: 0.5rem;
+    border: 1px solid var(--flux-border-subtle);
+    background: var(--flux-surface-elevated);
+    box-shadow: inset 0 1px 0 var(--flux-border-muted);
+  }
+
+  .board-summary-dock {
+    border-color: var(--flux-border-default);
+    background: var(--flux-surface-mid);
+    box-shadow:
+      inset 0 1px 0 var(--flux-border-muted),
+      0 -8px 32px -12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  [data-theme="light"] .board-summary-dock {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      0 -10px 36px -14px rgba(96, 79, 214, 0.14);
+  }
+
+  .board-stat-tile {
+    border-radius: var(--flux-rad-sm);
+    border: 1px solid var(--flux-border-subtle);
+    background: var(--flux-surface-card);
+    box-shadow: inset 0 1px 0 var(--flux-border-muted);
+  }
+
   /* Scrollbars — tema Flux, horizontal e vertical */
   .scrollbar-flux,
   .scrollbar-kanban {
@@ -452,6 +527,14 @@
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-corner {
+  background: var(--flux-surface-dark);
+}
+
+[data-theme="light"] * {
+  scrollbar-color: rgba(108, 92, 231, 0.35) var(--flux-surface-dark);
+}
+[data-theme="light"] *::-webkit-scrollbar-track,
+[data-theme="light"] *::-webkit-scrollbar-corner {
   background: var(--flux-surface-dark);
 }
 
