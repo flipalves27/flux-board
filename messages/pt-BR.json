@@ -407,6 +407,41 @@
   },
   "board": {
     "loading": "Carregando board...",
+    "automations": {
+      "open": "Automações",
+      "title": "Flux Automations — regras internas",
+      "hint": "Escolha um gatilho e uma ação. Regras baseadas em tempo (atraso, prazo, % concluído) são avaliadas pelo cron a cada minuto.",
+      "close": "Fechar",
+      "save": "Salvar regras",
+      "saving": "Salvando...",
+      "loading": "Carregando...",
+      "addRule": "Adicionar regra",
+      "remove": "Remover",
+      "enabled": "Ativa",
+      "namePlaceholder": "Nome (opcional)",
+      "trigger": "Quando",
+      "action": "Então",
+      "loadError": "Erro ao carregar automações.",
+      "saveSuccess": "Regras salvas.",
+      "saveError": "Erro ao salvar regras.",
+      "triggers": {
+        "card_moved_to_column": "Card movido para a coluna…",
+        "card_created_with_tag": "Card criado com a tag…",
+        "card_stuck_in_column": "Card parado na coluna por N dias",
+        "due_date_within_days": "Prazo dentro de N dias",
+        "form_submission": "Novo envio do Flux Forms",
+        "board_completion_percent": "Board atinge N% de cards concluídos"
+      },
+      "actions": {
+        "set_priority": "Definir prioridade",
+        "set_progress": "Definir status / progresso",
+        "set_priority_and_notify_owner": "Prioridade + notificar dono do board",
+        "notify_owner_add_tag": "Notificar dono + adicionar tag",
+        "send_due_reminder_email": "Enviar lembrete por e-mail (prazo)",
+        "classify_card_with_ai": "Classificar com IA (Together)",
+        "generate_executive_brief_email": "Gerar briefing executivo por e-mail"
+      }
+    },
     "status": {
       "errorApi": "Erro API",
       "saving": "Salvando...",

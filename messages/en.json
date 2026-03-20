@@ -406,6 +406,41 @@
   },
   "board": {
     "loading": "Loading board...",
+    "automations": {
+      "open": "Automations",
+      "title": "Flux Automations — internal rules",
+      "hint": "Pick a trigger and an action. Time-based rules (stuck, due date, completion %) are evaluated by the cron job every minute.",
+      "close": "Close",
+      "save": "Save rules",
+      "saving": "Saving...",
+      "loading": "Loading...",
+      "addRule": "Add rule",
+      "remove": "Remove",
+      "enabled": "Enabled",
+      "namePlaceholder": "Name (optional)",
+      "trigger": "When",
+      "action": "Then",
+      "loadError": "Could not load automations.",
+      "saveSuccess": "Rules saved.",
+      "saveError": "Could not save rules.",
+      "triggers": {
+        "card_moved_to_column": "Card moved to column…",
+        "card_created_with_tag": "Card created with tag…",
+        "card_stuck_in_column": "Card stuck in column for N days",
+        "due_date_within_days": "Due within N days",
+        "form_submission": "New Flux Forms submission",
+        "board_completion_percent": "Board reaches N% completed cards"
+      },
+      "actions": {
+        "set_priority": "Set priority",
+        "set_progress": "Set status / progress",
+        "set_priority_and_notify_owner": "Set priority + notify board owner",
+        "notify_owner_add_tag": "Notify owner + add tag",
+        "send_due_reminder_email": "Send due-date reminder email",
+        "classify_card_with_ai": "Classify with AI (Together)",
+        "generate_executive_brief_email": "Generate executive brief email"
+      }
+    },
     "status": {
       "errorApi": "API error",
       "saving": "Saving...",

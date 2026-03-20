@@ -32,6 +32,8 @@ export interface BoardData {
   intakeForm?: unknown;
   mapaProducao?: unknown[];
   dailyInsights?: unknown[];
+  /** Estado para gatilhos por tempo (ex.: % de conclusão) — atualizado pelo cron de automações. */
+  automationBoardState?: { lastCompletionPercent?: number };
   createdAt?: string;
   lastUpdated?: string;
 }

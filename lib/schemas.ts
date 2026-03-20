@@ -171,6 +171,12 @@ export const CardDocRefSchema = z
   })
   .passthrough();
 
+export const CardAutomationStateSchema = z
+  .object({
+    lastFired: z.record(z.string(), z.string()).optional(),
+  })
+  .passthrough();
+
 export const CardDataSchema = z
   .object({
     id: z.string().trim().min(1, "ID do card e obrigatorio.").max(200),
@@ -185,8 +191,49 @@ export const CardDataSchema = z
     direction: z.string().trim().nullable().optional(),
     dueDate: z.string().trim().nullable().optional(),
     order: z.number().int().nonnegative().max(1_000_000),
+    columnEnteredAt: z.string().trim().max(80).optional(),
+    automationState: CardAutomationStateSchema.optional(),
   })
   .passthrough();
+
+// -----------------------
+// Flux Automations (regras internas)
+// -----------------------
+
+export const AutomationTriggerSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("card_moved_to_column"), columnKey: z.string().trim().min(1).max(200) }),
+  z.object({ type: z.literal("card_created_with_tag"), tag: z.string().trim().min(1).max(80) }),
+  z.object({
+    type: z.literal("card_stuck_in_column"),
+    columnKey: z.string().trim().min(1).max(200),
+    days: z.number().int().min(1).max(365),
+  }),
+  z.object({ type: z.literal("due_date_within_days"), days: z.number().int().min(0).max(90) }),
+  z.object({ type: z.literal("form_submission") }),
+  z.object({ type: z.literal("board_completion_percent"), percent: z.number().min(1).max(100) }),
+]);
+
+export const AutomationActionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("set_priority"), priority: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal("set_progress"), progress: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal("set_priority_and_notify_owner"), priority: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal("notify_owner_add_tag"), tag: z.string().trim().min(1).max(60) }),
+  z.object({ type: z.literal("send_due_reminder_email") }),
+  z.object({ type: z.literal("classify_card_with_ai") }),
+  z.object({ type: z.literal("generate_executive_brief_email") }),
+]);
+
+export const AutomationRuleSchema = z.object({
+  id: z.string().trim().min(1).max(200),
+  enabled: z.boolean().optional().default(true),
+  name: z.string().trim().max(120).optional(),
+  trigger: AutomationTriggerSchema,
+  action: AutomationActionSchema,
+});
+
+export const AutomationRulesUpsertSchema = z.object({
+  rules: z.array(AutomationRuleSchema).max(40),
+});
 
 const MapaProducaoItemSchema = z
   .object({

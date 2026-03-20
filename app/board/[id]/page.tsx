@@ -7,7 +7,8 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
-import { apiFetch, apiPut } from "@/lib/api-client";
+import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
+import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 
@@ -102,6 +103,8 @@ export interface CardData {
   direction: string | null;
   dueDate: string | null;
   order: number;
+  columnEnteredAt?: string;
+  automationState?: { lastFired?: Record<string, string> };
 }
 
 export interface BucketConfig {
@@ -154,6 +157,7 @@ export default function BoardPage() {
   const [boardName, setBoardName] = useState("Board");
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [automationsOpen, setAutomationsOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
@@ -246,7 +250,46 @@ export default function BoardPage() {
         try {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-              await apiPut(`/api/boards/${boardId}`, payload, getHeaders());
+              const res = await apiFetch(`/api/boards/${boardId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload),
+                headers: getApiHeaders(getHeaders()),
+              });
+              const data = (await res.json()) as {
+                error?: string;
+                lastUpdated?: string;
+                cards?: CardData[];
+              };
+              if (!res.ok) throw new Error(data.error || "save");
+              if (Array.isArray(data.cards)) {
+                setDb((prev) => {
+                  if (!prev) return null;
+                  const cards = data.cards!.map((c: CardData, i: number) => ({
+                    ...c,
+                    order: c.order ?? i,
+                    dueDate: c.dueDate ?? null,
+                    direction: c.direction ?? null,
+                    tags: Array.isArray(c.tags) ? c.tags : [],
+                    links: Array.isArray(c.links)
+                      ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim())
+                      : [],
+                    docRefs: Array.isArray(c.docRefs)
+                      ? c.docRefs
+                          .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
+                          .map((d) => ({
+                            docId: String(d.docId),
+                            title: d.title ? String(d.title) : undefined,
+                            excerpt: d.excerpt ? String(d.excerpt) : undefined,
+                          }))
+                      : [],
+                  }));
+                  return {
+                    ...prev,
+                    cards,
+                    lastUpdated: data.lastUpdated || prev.lastUpdated,
+                  };
+                });
+              }
               if (saveRequestSeqRef.current !== requestSeq) return;
               setSaveStatus("saved");
               setTimeout(() => {
@@ -304,6 +347,9 @@ export default function BoardPage() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={boardName}>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
+            {t("automations.open")}
+          </button>
           {formLink && (
             <button
               type="button"
@@ -351,6 +397,16 @@ export default function BoardPage() {
         priorities={PRIORITIES}
         progresses={PROGRESSES}
         directions={DIRECTIONS}
+      />
+
+      <BoardAutomationsModal
+        open={automationsOpen}
+        onClose={() => setAutomationsOpen(false)}
+        boardId={boardId}
+        bucketKeys={db.config.bucketOrder.map((b) => b.key)}
+        priorities={PRIORITIES}
+        progresses={PROGRESSES}
+        getHeaders={getHeaders}
       />
 
       <BoardCopilotPanel

@@ -9,6 +9,7 @@ import {
   isBoardRebornId,
 } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
+import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 
 export async function GET(
   request: NextRequest,
@@ -88,11 +89,25 @@ export async function PUT(
 
     // Sanitiza strings aninhadas vindas do cliente (ex.: titulo/desc em cards, tags, etc.)
     const clean = sanitizeDeep(parsed.data);
+
     const updates: Record<string, unknown> = {};
     if (clean.name !== undefined && !isBoardRebornId(boardId, payload.orgId)) {
       updates.name = String(clean.name || "").trim().slice(0, 100);
     }
-    if (clean.cards !== undefined) updates.cards = clean.cards;
+    if (clean.cards !== undefined) {
+      const prevBoard = await getBoard(boardId, payload.orgId);
+      if (!prevBoard) {
+        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
+      }
+      const { cards } = await runSyncAutomationsOnBoardPut({
+        prevBoard,
+        nextCards: clean.cards as unknown[],
+        boardId,
+        orgId: payload.orgId,
+        boardName: prevBoard.name,
+      });
+      updates.cards = cards;
+    }
     if (clean.config !== undefined) updates.config = clean.config;
     if (clean.mapaProducao !== undefined) updates.mapaProducao = clean.mapaProducao;
     if (clean.dailyInsights !== undefined) updates.dailyInsights = clean.dailyInsights;
@@ -110,6 +125,7 @@ export async function PUT(
       ok: true,
       lastUpdated: board.lastUpdated,
       cardsCount: (board.cards || []).length,
+      ...(clean.cards !== undefined ? { cards: board.cards } : {}),
     });
   } catch (err) {
     console.error("Board API error:", err);

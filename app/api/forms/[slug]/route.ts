@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBoard, updateBoardFromExisting } from "@/lib/kv-boards";
+import { runFormSubmissionAutomations } from "@/lib/automation-engine";
 import { getIntakeFormIndexBySlug } from "@/lib/kv-intake-forms";
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { classifyIntake, normalizeFormSlug } from "@/lib/forms-intake";
@@ -118,6 +119,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     };
 
     await updateBoardFromExisting(board, { cards: [...existingCards, card] });
+
+    const freshBoard = await getBoard(index.boardId, index.orgId);
+    if (freshBoard) {
+      await runFormSubmissionAutomations({ board: freshBoard, cardId: card.id });
+    }
 
     return NextResponse.json({
       ok: true,
