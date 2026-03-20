@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoardData, CardData } from "@/app/board/[id]/page";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
@@ -26,6 +26,24 @@ type BoardCopilotPanelProps = {
   boardName: string;
   getHeaders: () => Record<string, string>;
   updateDb: (updater: (prev: BoardData) => BoardData) => void;
+};
+
+type WebSpeechRecognitionInstance = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onerror: ((ev: Event) => void) | null;
+  onend: (() => void) | null;
+  onresult:
+    | ((
+        ev: {
+          resultIndex: number;
+          results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+        }
+      ) => void)
+    | null;
 };
 
 function parseEventStreamFrame(frame: string): { event: string; data: unknown } | null {
@@ -64,9 +82,13 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
   const [freeDemoRemaining, setFreeDemoRemaining] = useState<number | null>(null);
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceInterim, setVoiceInterim] = useState("");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
 
   const canSend = useMemo(() => {
     if (generating) return false;
@@ -113,7 +135,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     };
   }, []);
 
-  const streamCopilot = async (userMessage: string) => {
+  const streamCopilot = useCallback(async (userMessage: string) => {
     setGenerating(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -215,7 +237,89 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
       abortRef.current = null;
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, [boardId, freeDemoRemaining, getHeaders, pushToast, tier, updateDb]);
+
+  const stopVoice = useCallback(() => {
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // ignore
+    }
+    recognitionRef.current = null;
+    setVoiceListening(false);
+    setVoiceInterim("");
+  }, []);
+
+  useEffect(() => {
+    if (!open) stopVoice();
+  }, [open, stopVoice]);
+
+  useEffect(() => {
+    return () => {
+      stopVoice();
+    };
+  }, [stopVoice]);
+
+  const startVoice = useCallback(() => {
+    if (generating || !canSend) return;
+    if (typeof window === "undefined") return;
+    const W = window as unknown as {
+      SpeechRecognition?: new () => WebSpeechRecognitionInstance;
+      webkitSpeechRecognition?: new () => WebSpeechRecognitionInstance;
+    };
+    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
+    if (!Ctor) {
+      setVoiceError("Seu navegador não suporta reconhecimento de voz (Web Speech API).");
+      return;
+    }
+    setVoiceError(null);
+    stopVoice();
+    const rec = new Ctor();
+    rec.lang = "pt-BR";
+    rec.interimResults = true;
+    rec.continuous = false;
+    recognitionRef.current = rec as WebSpeechRecognitionInstance;
+    setVoiceListening(true);
+    setVoiceInterim("");
+
+    rec.onerror = () => {
+      setVoiceError("Não foi possível capturar o áudio. Verifique o microfone e tente de novo.");
+      stopVoice();
+    };
+
+    rec.onend = () => {
+      setVoiceListening(false);
+      setVoiceInterim("");
+      recognitionRef.current = null;
+    };
+
+    rec.onresult = (event: {
+      resultIndex: number;
+      results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+    }) => {
+      let finalText = "";
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const line = event.results[i];
+        const chunk = line[0]?.transcript ?? "";
+        if (line.isFinal) finalText += chunk;
+        else interim += chunk;
+      }
+      setVoiceInterim(interim.trim());
+      const merged = (finalText || "").trim();
+      if (merged) {
+        stopVoice();
+        void streamCopilot(merged);
+      }
+    };
+
+    try {
+      rec.start();
+    } catch {
+      setVoiceError("Não foi possível iniciar o microfone.");
+      stopVoice();
+    }
+  }, [canSend, generating, stopVoice, streamCopilot]);
 
   const freeBanner = tier === "free" && freeDemoRemaining !== null ? (
     <div className="px-3 py-2 rounded-[10px] border border-[rgba(255,217,61,0.25)] bg-[rgba(255,217,61,0.10)] mb-3">
@@ -302,6 +406,27 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
             </div>
 
             <div className="px-4 pb-3 pt-2 border-t border-[rgba(255,255,255,0.08)]">
+              {voiceListening && (
+                <div className="mb-2 flex items-center gap-2 rounded-[10px] border border-[rgba(0,201,183,0.35)] bg-[rgba(0,201,183,0.10)] px-3 py-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00C9B7] opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#00C9B7]" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-semibold text-[#00C9B7]">Ouvindo… fale agora</div>
+                    {voiceInterim ? (
+                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-0.5 truncate">{voiceInterim}</div>
+                    ) : null}
+                  </div>
+                  <button type="button" className="btn-secondary text-[10px] px-2 py-1 shrink-0" onClick={stopVoice}>
+                    Parar
+                  </button>
+                </div>
+              )}
+              {voiceError ? (
+                <div className="mb-2 text-[11px] text-[#F97373]">{voiceError}</div>
+              ) : null}
+
               <div className="flex gap-2">
                 <textarea
                   value={draft}
@@ -310,24 +435,42 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
                   className="flex-1 min-h-[44px] max-h-[120px] px-3 py-2 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-xs outline-none focus:border-[var(--flux-primary)] resize-none"
                   disabled={!canSend}
                 />
-                <button
-                  type="button"
-                  className={`btn-primary px-4 ${!canSend ? "!opacity-60" : ""}`}
-                  onClick={() => {
-                    if (!draft.trim()) return;
-                    if (!canSend) return;
-                    const msg = draft.trim();
-                    setDraft("");
-                    streamCopilot(msg);
-                  }}
-                  disabled={!canSend}
-                >
-                  {generating ? "..." : "Enviar"}
-                </button>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    title={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
+                    aria-label={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
+                    className={`btn-secondary px-3 min-h-[44px] flex items-center justify-center ${
+                      voiceListening ? "border-[rgba(0,201,183,0.45)] bg-[rgba(0,201,183,0.12)]" : ""
+                    } ${!canSend ? "!opacity-60" : ""}`}
+                    onClick={() => {
+                      if (!canSend) return;
+                      if (voiceListening) stopVoice();
+                      else startVoice();
+                    }}
+                    disabled={!canSend}
+                  >
+                    <span className="text-lg leading-none">{voiceListening ? "■" : "🎤"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-primary px-3 ${!canSend ? "!opacity-60" : ""}`}
+                    onClick={() => {
+                      if (!draft.trim()) return;
+                      if (!canSend) return;
+                      const msg = draft.trim();
+                      setDraft("");
+                      void streamCopilot(msg);
+                    }}
+                    disabled={!canSend}
+                  >
+                    {generating ? "..." : "Enviar"}
+                  </button>
+                </div>
               </div>
 
               <div className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                Dica: diga “mova o card X para Em Execução” ou “ajuste a prioridade para Urgente”.
+                Dica: use o microfone ou diga “mova o card X para Em Execução” ou “ajuste a prioridade para Urgente”.
               </div>
             </div>
           </div>

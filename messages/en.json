@@ -485,7 +485,7 @@
     "automations": {
       "open": "Automations",
       "title": "Flux Automations — internal rules",
-      "hint": "Pick a trigger and an action. Time-based rules (stuck, due date, completion %) are evaluated by the cron job every minute.",
+      "hint": "Pick a trigger and an action. Time-based rules (stuck, due date, completion %) are evaluated when the automation cron runs (daily on Vercel Hobby; upgrade to Pro for per-minute scheduling).",
       "close": "Close",
       "save": "Save rules",
       "saving": "Saving...",
@@ -515,7 +515,21 @@
         "send_due_reminder_email": "Send due-date reminder email",
         "classify_card_with_ai": "Classify with AI (Together)",
         "generate_executive_brief_email": "Generate executive brief email"
-      }
+      },
+      "nlTitle": "Natural-language rule (AI)",
+      "nlHint": "Write in Portuguese or English. AI maps your text to Flux’s technical format using this board’s columns.",
+      "nlPlaceholder": "E.g. when a card stays more than 5 days in Proposal, notify the owner and set priority to Urgent.",
+      "nlInterpret": "Interpret with AI",
+      "nlInterpreting": "Interpreting…",
+      "nlWorking": "Building preview and validating JSON…",
+      "nlPreviewLabel": "Preview",
+      "nlAddRule": "Add this rule to the list",
+      "nlDiscard": "Discard result",
+      "nlTooShort": "Write at least one full sentence.",
+      "nlInterpreted": "Rule interpreted.",
+      "nlInterpretError": "Could not interpret the rule.",
+      "nlApplied": "Rule added to the list (save to persist).",
+      "nlDefaultRuleName": "Rule (AI)"
     },
     "status": {
       "errorApi": "API error",
@@ -907,13 +921,24 @@
           "title": "Generation in progress. Follow the Status tab.",
           "description": "You can close and reopen this modal without losing the current progress."
         },
+        "transcribing": {
+          "title": "Transcribing audio with Whisper…",
+          "description": "Your file is sent securely for transcription. Review and edit the text below before generating the summary."
+        },
         "attachLabel": "Attach transcript",
+        "uploadRecordingLabel": "Upload recording",
+        "transcriptPreviewLabel": "Transcription preview",
+        "transcriptPreviewHint": "Edit the text if needed before generating insights and cards.",
         "clearAttachmentButton": "Clear attachment and content",
         "transcriptPlaceholder": "Ex: yesterday we finished... today we're going to... blocker on...",
         "close": "Close",
         "generateButton": {
           "generating": "Analyzing and generating with AI...",
           "idle": "Generate practical summary"
+        },
+        "generateAndCardsButton": {
+          "generating": "Generating and creating cards…",
+          "idle": "Generate insights + create cards"
         }
       },
       "status": {
@@ -1043,7 +1068,8 @@
       },
       "defaults": {
         "noAttachment": "No file attached",
-        "fileLoaded": "{fileName} loaded"
+        "fileLoaded": "{fileName} loaded",
+        "audioTranscribed": "Audio transcribed: {fileName}"
       },
       "toasts": {
         "delete": {
@@ -1089,9 +1115,21 @@
           },
           "errorFallback": "Error while generating summary.",
           "timeout": "Timed out while generating the Daily AI."
+        },
+        "transcribe": {
+          "success": "Transcription complete.",
+          "empty": "Empty transcription.",
+          "network": "Network error while transcribing.",
+          "errorFallback": "Failed to transcribe audio."
         }
       },
       "logs": {
+        "transcribe": {
+          "start": "Sending audio for transcription (Whisper)…",
+          "done": "Transcription received. Review the text below.",
+          "errorFallback": "Transcription failed.",
+          "network": "Network error while transcribing."
+        },
         "generate": {
           "start": "Starting practical summary generation...",
           "errorFallback": "Error while generating summary.",

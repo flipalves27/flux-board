@@ -69,6 +69,7 @@ export function useDailySession({
   const [dailyHistorySearchQuery, setDailyHistorySearchQuery] = useState("");
 
   const [dailyDeleteConfirmId, setDailyDeleteConfirmId] = useState<string | null>(null);
+  const [dailyTranscribing, setDailyTranscribing] = useState(false);
 
   const dailyRequestSeqRef = useRef(0);
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
@@ -145,7 +146,95 @@ export function useDailySession({
     };
     reader.readAsText(file, "UTF-8");
     e.target.value = "";
-  }, []);
+  }, [t]);
+
+  const transcribeDailyRecording = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      if (dailyInFlightRef.current || dailyTranscribing) return;
+
+      setDailyTranscribing(true);
+      setDailyTab("entrada");
+      setDailyLogs((prev) => [
+        {
+          timestamp: new Date().toISOString(),
+          status: "start" as DailyLogStatus,
+          message: t("daily.logs.transcribe.start"),
+        },
+        ...prev,
+      ].slice(0, 50));
+
+      try {
+        const form = new FormData();
+        form.append("file", file, file.name);
+        const headers = { ...getHeaders() };
+        delete (headers as Record<string, string>)["Content-Type"];
+
+        const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/transcribe`, {
+          method: "POST",
+          headers,
+          body: form,
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          pushToast({
+            kind: "error",
+            title: String(data?.error || t("daily.toasts.transcribe.errorFallback")),
+          });
+          setDailyLogs((prev) => [
+            {
+              timestamp: new Date().toISOString(),
+              status: "error" as DailyLogStatus,
+              message: String(data?.error || t("daily.logs.transcribe.errorFallback")),
+            },
+            ...prev,
+          ].slice(0, 50));
+          return;
+        }
+
+        const transcript = String(data?.transcript || "").trim();
+        if (!transcript) {
+          pushToast({ kind: "error", title: t("daily.toasts.transcribe.empty") });
+          return;
+        }
+
+        setDailyTranscript(transcript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
+        const srcName = String(data?.fileName || file.name).slice(0, 200);
+        setDailySourceFileName(srcName);
+        setDailyFileName(
+          t("daily.defaults.audioTranscribed", {
+            fileName: srcName,
+          })
+        );
+        pushToast({ kind: "success", title: t("daily.toasts.transcribe.success") });
+        setDailyLogs((prev) => [
+          {
+            timestamp: new Date().toISOString(),
+            status: "success" as DailyLogStatus,
+            message: t("daily.logs.transcribe.done"),
+            provider: String(data?.provider || "openai-whisper"),
+          },
+          ...prev,
+        ].slice(0, 50));
+      } catch {
+        pushToast({ kind: "error", title: t("daily.toasts.transcribe.network") });
+        setDailyLogs((prev) => [
+          {
+            timestamp: new Date().toISOString(),
+            status: "error" as DailyLogStatus,
+            message: t("daily.logs.transcribe.network"),
+          },
+          ...prev,
+        ].slice(0, 50));
+      } finally {
+        setDailyTranscribing(false);
+      }
+    },
+    [boardId, dailyTranscribing, getHeaders, pushToast, t]
+  );
 
   const clearDailyAttachmentAndTranscript = useCallback(() => {
     setDailyTranscript("");
@@ -201,8 +290,13 @@ export function useDailySession({
   );
 
   const createCardsFromInsight = useCallback(
-    (entryId?: string) => {
-      const entry = entryId ? dailyInsights.find((x) => x?.id === entryId) : dailyInsights[0];
+    (entryId?: string, entryOverride?: DailyInsightEntry | null) => {
+      const entry =
+        entryOverride && entryOverride.id
+          ? entryOverride
+          : entryId
+            ? dailyInsights.find((x) => x?.id === entryId)
+            : dailyInsights[0];
       if (!entry?.insight) {
         pushToast({ kind: "error", title: t("daily.toasts.createCards.error.notFound") });
         return;
@@ -470,7 +564,7 @@ export function useDailySession({
     setDailyTab("historico");
   }, []);
 
-  const onGenerateDailyInsight = useCallback(async () => {
+  const onGenerateDailyInsight = useCallback(async (opts?: { alsoCreateCards?: boolean }) => {
     const transcript = dailyTranscript.trim();
     if (!transcript) {
       pushToast({ kind: "error", title: t("daily.toasts.generate.error.noTranscript") });
@@ -538,6 +632,10 @@ export function useDailySession({
         const next = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
         return { ...prev, dailyInsights: next };
       });
+
+      if (opts?.alsoCreateCards && data?.entry?.id && data.entry) {
+        createCardsFromInsight(String(data.entry.id), data.entry as DailyInsightEntry);
+      }
 
       const modelName = String(data?.llmDebug?.model || data?.entry?.generationMeta?.model || "").trim();
       const providerName = String(
@@ -625,7 +723,11 @@ export function useDailySession({
         }
       }
     }
-  }, [boardId, dailySourceFileName, dailyTranscript, getHeaders, pushToast, updateDb]);
+  }, [boardId, createCardsFromInsight, dailySourceFileName, dailyTranscript, getHeaders, pushToast, updateDb]);
+
+  const onGenerateDailyInsightAndCreateCards = useCallback(() => {
+    void onGenerateDailyInsight({ alsoCreateCards: true });
+  }, [onGenerateDailyInsight]);
 
   const statusStepIndex = useMemo(() => {
     return dailyStatusPhase === "preparing"
@@ -926,7 +1028,11 @@ export function useDailySession({
     loadDailyTranscriptFile,
     clearDailyAttachmentAndTranscript,
     onGenerateDailyInsight,
+    onGenerateDailyInsightAndCreateCards,
     clearDailyLogs: () => setDailyLogs([]),
+
+    dailyTranscribing,
+    transcribeDailyRecording,
 
     onOpenDailyHistoryFromStatusEntry: openDailyHistoryFromStatusEntry,
 

@@ -185,5 +185,5 @@ Job diário que calcula z-scores (throughput, WIP, lead time) e regras diagnóst
 - `ANOMALY_CRON_SECRET` (opcional): se definido, exige `x-cron-secret` igual a este valor; senão usa `WEEKLY_DIGEST_SECRET` ou `AUTOMATION_CRON_SECRET` (mesmo padrão dos outros crons)
 - Requer MongoDB; histórico diário fica nas coleções `anomaly_daily_snapshots`, `anomaly_check_runs`, `anomaly_alerts`
 
-O repositório inclui uma entrada em `vercel.json` (`0 10 * * *` UTC — ajuste o horário conforme necessidade).
+O repositório inclui entradas em `vercel.json`: `/api/cron/anomaly-check` em `0 10 * * *` UTC e `/api/cron/automations` em `0 8 * * *` UTC. No plano **Hobby**, o Vercel falha o deploy se algum cron rodar mais de uma vez por dia; para automações mais frequentes é preciso **Pro** ou um agendador externo.
 

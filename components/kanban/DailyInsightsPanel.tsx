@@ -26,6 +26,7 @@ export type DailyInsightsPanelProps = {
 
   dailyTab: DailyTab;
   dailyGenerating: boolean;
+  dailyTranscribing?: boolean;
   dailyStatusPhase: DailyStatusPhase;
   statusStepIndex: number;
   dailyLogs: DailyLog[];
@@ -54,9 +55,11 @@ export type DailyInsightsPanelProps = {
   onClickStatusTab: () => void;
 
   onLoadDailyTranscriptFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTranscribeDailyRecording: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onClearDailyAttachmentAndTranscript: () => void;
   onDailyTranscriptChange: (value: string) => void;
   onGenerateDailyInsight: () => void | Promise<void>;
+  onGenerateDailyInsightAndCreateCards: () => void | Promise<void>;
   onClearDailyLogs: () => void;
 
   onOpenDailyHistoryFromStatusEntry: (entryId: string) => void;
@@ -81,6 +84,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
     boardName,
     dailyTab,
     dailyGenerating,
+    dailyTranscribing = false,
     dailyStatusPhase,
     statusStepIndex,
     dailyLogs,
@@ -101,9 +105,11 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
     onClickHistoryTab,
     onClickStatusTab,
     onLoadDailyTranscriptFile,
+    onTranscribeDailyRecording,
     onClearDailyAttachmentAndTranscript,
     onDailyTranscriptChange,
     onGenerateDailyInsight,
+    onGenerateDailyInsightAndCreateCards,
     onClearDailyLogs,
     onOpenDailyHistoryFromStatusEntry,
     onSetDailyHistoryDateFrom,
@@ -179,14 +185,23 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
             <p className="text-xs text-[var(--flux-text-muted)] mb-3">
               {t("daily.entry.description")}
             </p>
-            {dailyGenerating && (
+            {(dailyGenerating || dailyTranscribing) && (
               <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
                 <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
-                  {t("daily.entry.generating.title")}
+                  {dailyTranscribing
+                    ? t("daily.entry.transcribing.title")
+                    : t("daily.entry.generating.title")}
                 </p>
                 <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                  {t("daily.entry.generating.description")}
+                  {dailyTranscribing
+                    ? t("daily.entry.transcribing.description")
+                    : t("daily.entry.generating.description")}
                 </p>
+                {dailyTranscribing && (
+                  <div className="mt-2 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                    <div className="h-full w-[45%] bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] animate-pulse" />
+                  </div>
+                )}
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap mb-3">
@@ -194,10 +209,25 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 {t("daily.entry.attachLabel")}
                 <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={onLoadDailyTranscriptFile} />
               </label>
+              <label className="btn-bar cursor-pointer border-[rgba(0,201,183,0.35)] bg-[rgba(0,201,183,0.08)]">
+                {t("daily.entry.uploadRecordingLabel")}
+                <input
+                  type="file"
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/webm,.mp3,.wav,.webm"
+                  className="hidden"
+                  onChange={onTranscribeDailyRecording}
+                />
+              </label>
               <button type="button" className="btn-secondary" onClick={onClearDailyAttachmentAndTranscript}>
                 {t("daily.entry.clearAttachmentButton")}
               </button>
               <span className="text-xs text-[var(--flux-text-muted)]">{dailyFileName}</span>
+            </div>
+            <div className="mb-2">
+              <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
+                {t("daily.entry.transcriptPreviewLabel")}
+              </div>
+              <p className="text-[11px] text-[var(--flux-text-muted)] mt-0.5">{t("daily.entry.transcriptPreviewHint")}</p>
             </div>
             <textarea
               value={dailyTranscript}
@@ -205,12 +235,25 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
               placeholder={t("daily.entry.transcriptPlaceholder")}
               className="w-full min-h-[260px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
             />
-            <div className="flex items-center gap-2 justify-end mt-3">
+            <div className="flex items-center gap-2 justify-end mt-3 flex-wrap">
               <button type="button" className="btn-secondary" onClick={onClose}>
                 {t("daily.entry.close")}
               </button>
-              <button type="button" className="btn-primary" onClick={onGenerateDailyInsight} disabled={dailyGenerating}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onGenerateDailyInsight}
+                disabled={dailyGenerating || dailyTranscribing}
+              >
                 {dailyGenerating ? t("daily.entry.generateButton.generating") : t("daily.entry.generateButton.idle")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={onGenerateDailyInsightAndCreateCards}
+                disabled={dailyGenerating || dailyTranscribing}
+              >
+                {dailyGenerating ? t("daily.entry.generateAndCardsButton.generating") : t("daily.entry.generateAndCardsButton.idle")}
               </button>
             </div>
           </div>

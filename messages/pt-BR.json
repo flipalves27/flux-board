@@ -486,7 +486,7 @@
     "automations": {
       "open": "Automações",
       "title": "Flux Automations — regras internas",
-      "hint": "Escolha um gatilho e uma ação. Regras baseadas em tempo (atraso, prazo, % concluído) são avaliadas pelo cron a cada minuto.",
+      "hint": "Escolha um gatilho e uma ação. Regras baseadas em tempo (atraso, prazo, % concluído) são avaliadas quando o cron de automações roda (diário no Vercel Hobby; faça upgrade para Pro para agendar por minuto).",
       "close": "Fechar",
       "save": "Salvar regras",
       "saving": "Salvando...",
@@ -516,7 +516,21 @@
         "send_due_reminder_email": "Enviar lembrete por e-mail (prazo)",
         "classify_card_with_ai": "Classificar com IA (Together)",
         "generate_executive_brief_email": "Gerar briefing executivo por e-mail"
-      }
+      },
+      "nlTitle": "Regra em linguagem natural (IA)",
+      "nlHint": "Descreva em português ou inglês. A IA converte para o formato técnico do Flux usando as colunas deste board.",
+      "nlPlaceholder": "Ex.: quando um card ficar mais de 5 dias em Proposta, notifique o dono e mude a prioridade para Urgente.",
+      "nlInterpret": "Interpretar com IA",
+      "nlInterpreting": "Interpretando…",
+      "nlWorking": "Gerando pré-visualização e validando o JSON…",
+      "nlPreviewLabel": "Pré-visualização",
+      "nlAddRule": "Adicionar esta regra à lista",
+      "nlDiscard": "Descartar resultado",
+      "nlTooShort": "Descreva a regra com pelo menos uma frase completa.",
+      "nlInterpreted": "Regra interpretada.",
+      "nlInterpretError": "Não foi possível interpretar a regra.",
+      "nlApplied": "Regra adicionada à lista (salve para persistir).",
+      "nlDefaultRuleName": "Regra (IA)"
     },
     "status": {
       "errorApi": "Erro API",
@@ -870,13 +884,24 @@
           "title": "Geracao em andamento. Acompanhe pela guia Status.",
           "description": "Voce pode fechar e reabrir este modal sem perder o progresso atual."
         },
+        "transcribing": {
+          "title": "Transcrevendo áudio com Whisper…",
+          "description": "Enviamos o arquivo de forma segura para transcrição. Revise e edite o texto abaixo antes de gerar o resumo."
+        },
         "attachLabel": "Anexar transcrição",
+        "uploadRecordingLabel": "Upload gravação",
+        "transcriptPreviewLabel": "Preview da transcrição",
+        "transcriptPreviewHint": "Edite o texto se necessário antes de gerar insights e cards.",
         "clearAttachmentButton": "Excluir anexo e conteúdo",
         "transcriptPlaceholder": "Ex: ontem finalizamos... hoje vamos... bloqueio em...",
         "close": "Fechar",
         "generateButton": {
           "generating": "Analisando e gerando com IA...",
           "idle": "Gerar resumo prático"
+        },
+        "generateAndCardsButton": {
+          "generating": "Gerando e criando cards…",
+          "idle": "Gerar insights + criar cards"
         }
       },
       "status": {
@@ -1006,7 +1031,8 @@
       },
       "defaults": {
         "noAttachment": "Nenhum arquivo anexado",
-        "fileLoaded": "{fileName} carregado"
+        "fileLoaded": "{fileName} carregado",
+        "audioTranscribed": "Áudio transcrito: {fileName}"
       },
       "toasts": {
         "delete": {
@@ -1052,9 +1078,21 @@
           },
           "errorFallback": "Erro ao gerar resumo.",
           "timeout": "Tempo esgotado ao gerar a Daily IA."
+        },
+        "transcribe": {
+          "success": "Transcrição concluída.",
+          "empty": "Transcrição vazia.",
+          "network": "Erro de rede na transcrição.",
+          "errorFallback": "Falha ao transcrever o áudio."
         }
       },
       "logs": {
+        "transcribe": {
+          "start": "Enviando áudio para transcrição (Whisper)…",
+          "done": "Transcrição recebida. Revise o texto na área abaixo.",
+          "errorFallback": "Falha na transcrição.",
+          "network": "Erro de rede ao transcrever."
+        },
         "generate": {
           "start": "Iniciando geração do resumo prático...",
           "errorFallback": "Erro ao gerar resumo.",

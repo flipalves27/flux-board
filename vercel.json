@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/automations",
-      "schedule": "* * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/anomaly-check",

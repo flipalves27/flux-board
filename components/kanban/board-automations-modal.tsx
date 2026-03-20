@@ -48,6 +48,11 @@ export function BoardAutomationsModal({
   const [saving, setSaving] = useState(false);
   const [rules, setRules] = useState<AutomationRule[]>([]);
 
+  const [nlText, setNlText] = useState("");
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlPreview, setNlPreview] = useState<string | null>(null);
+  const [nlRule, setNlRule] = useState<AutomationRule | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -68,6 +73,15 @@ export function BoardAutomationsModal({
   useEffect(() => {
     if (open) void load();
   }, [open, load]);
+
+  useEffect(() => {
+    if (!open) {
+      setNlText("");
+      setNlPreview(null);
+      setNlRule(null);
+      setNlLoading(false);
+    }
+  }, [open]);
 
   const save = async () => {
     setSaving(true);
@@ -118,6 +132,45 @@ export function BoardAutomationsModal({
         trigger = defaultTrigger(bucketKeys);
     }
     updateRule(index, { trigger });
+  };
+
+  const interpretNlRule = async () => {
+    const text = nlText.trim();
+    if (text.length < 12) {
+      pushToast({ kind: "error", title: t("nlTooShort") });
+      return;
+    }
+    setNlLoading(true);
+    setNlPreview(null);
+    setNlRule(null);
+    try {
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/automations/interpret`, {
+        method: "POST",
+        headers: getApiHeaders(getHeaders()),
+        body: JSON.stringify({ text }),
+      });
+      const data = (await res.json()) as { ok?: boolean; preview?: string; rule?: AutomationRule; error?: string };
+      if (!res.ok) throw new Error(data.error || "interpret");
+      if (data.preview) setNlPreview(data.preview);
+      if (data.rule) setNlRule(data.rule);
+    } catch (e) {
+      pushToast({
+        kind: "error",
+        title: t("nlInterpretError"),
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setNlLoading(false);
+    }
+  };
+
+  const applyNlRule = () => {
+    if (!nlRule) return;
+    setRules((r) => [...r, { ...nlRule, id: newRuleId(), name: nlRule.name || t("nlDefaultRuleName") }]);
+    setNlText("");
+    setNlPreview(null);
+    setNlRule(null);
+    pushToast({ kind: "success", title: t("nlApplied") });
   };
 
   const setActionType = (index: number, type: AutomationAction["type"]) => {
@@ -175,6 +228,60 @@ export function BoardAutomationsModal({
 
         <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
           <p className="text-sm text-[var(--flux-text-muted)]">{t("hint")}</p>
+
+          <div className="rounded-xl border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.06)] p-4 space-y-3">
+            <div className="text-sm font-semibold text-[var(--flux-primary-light)]">{t("nlTitle")}</div>
+            <p className="text-xs text-[var(--flux-text-muted)]">{t("nlHint")}</p>
+            <textarea
+              value={nlText}
+              onChange={(e) => setNlText(e.target.value)}
+              rows={3}
+              placeholder={t("nlPlaceholder")}
+              className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+              disabled={nlLoading || loading}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn-primary text-sm"
+                onClick={() => void interpretNlRule()}
+                disabled={nlLoading || loading || !nlText.trim()}
+              >
+                {nlLoading ? t("nlInterpreting") : t("nlInterpret")}
+              </button>
+              {nlPreview ? (
+                <span className="text-[11px] text-[var(--flux-text-muted)]">{t("nlPreviewLabel")}</span>
+              ) : null}
+            </div>
+            {nlLoading ? (
+              <div className="flex items-center gap-2 text-xs text-[var(--flux-primary-light)]">
+                <span className="inline-block h-2 w-2 rounded-full bg-[var(--flux-primary)] animate-pulse" />
+                {t("nlWorking")}
+              </div>
+            ) : null}
+            {nlPreview ? (
+              <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[var(--flux-surface-elevated)]/50 p-3 text-sm text-[var(--flux-text)]">
+                {nlPreview}
+              </div>
+            ) : null}
+            {nlRule ? (
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="btn-secondary text-sm" onClick={applyNlRule}>
+                  {t("nlAddRule")}
+                </button>
+                <button
+                  type="button"
+                  className="text-xs text-[var(--flux-text-muted)] hover:underline"
+                  onClick={() => {
+                    setNlPreview(null);
+                    setNlRule(null);
+                  }}
+                >
+                  {t("nlDiscard")}
+                </button>
+              </div>
+            ) : null}
+          </div>
 
           {loading ? (
             <p className="text-sm text-[var(--flux-text-muted)]">{t("loading")}</p>

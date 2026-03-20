@@ -256,9 +256,12 @@ export function KanbanBoard({
     onCollapseDailyHistoryExpanded,
     expandDailyHistoryCreatedCards,
     loadDailyTranscriptFile,
+    transcribeDailyRecording,
     clearDailyAttachmentAndTranscript,
     onGenerateDailyInsight,
+    onGenerateDailyInsightAndCreateCards,
     clearDailyLogs,
+    dailyTranscribing,
     onOpenDailyHistoryFromStatusEntry,
     slugDaily,
     onDownloadDailyContextDoc,
@@ -1820,9 +1823,12 @@ export function KanbanBoard({
           onClickHistoryTab={openHistoryTab}
           onClickStatusTab={openStatusTab}
           onLoadDailyTranscriptFile={loadDailyTranscriptFile}
+          onTranscribeDailyRecording={transcribeDailyRecording}
           onClearDailyAttachmentAndTranscript={clearDailyAttachmentAndTranscript}
           onDailyTranscriptChange={(value) => setDailyTranscript(value)}
           onGenerateDailyInsight={onGenerateDailyInsight}
+          onGenerateDailyInsightAndCreateCards={onGenerateDailyInsightAndCreateCards}
+          dailyTranscribing={dailyTranscribing}
           onClearDailyLogs={clearDailyLogs}
           onOpenDailyHistoryFromStatusEntry={onOpenDailyHistoryFromStatusEntry}
           onSetDailyHistoryDateFrom={(value) => setDailyHistoryDateFrom(value)}
