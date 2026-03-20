@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 
 type InsightActionItem = {
@@ -463,6 +464,22 @@ export async function POST(
   const canAccess = await userCanAccessBoard(payload.id, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
+  }
+
+  const rl = await rateLimit({
+    key: `boards:daily-insights:user:${payload.id}`,
+    limit: 10,
+    windowMs: 60 * 60 * 1000, // 1 hora
+  });
+  if (!rl.allowed) {
+    console.warn("[rate-limit] blocked daily-insights", { userId: payload.id, retryAfterSeconds: rl.retryAfterSeconds });
+    return NextResponse.json(
+      { error: "Muitas requisições. Tente novamente mais tarde." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfterSeconds) },
+      }
+    );
   }
 
   try {

@@ -1,6 +1,7 @@
 "use server";
 
 import { verifyPassword, createToken, hashPassword, verifyToken } from "@/lib/auth";
+import { headers } from "next/headers";
 import {
   getUserByUsername,
   getUserByEmail,
@@ -8,10 +9,11 @@ import {
   ensureAdminUser,
   createUser,
 } from "@/lib/kv-users";
+import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 export type AuthResult =
   | { ok: true; token: string; user: { id: string; username: string; name: string; email: string; isAdmin: boolean } }
-  | { ok: false; error: string };
+  | { ok: false; error: string; retryAfterSeconds?: number };
 
 /**
  * Server Action para login. Executa no servidor, evitando 403 da Vercel
@@ -22,6 +24,24 @@ export async function loginAction(
   password: string
 ): Promise<AuthResult> {
   try {
+    const clientIp = getClientIpFromHeaders(headers());
+    const rl = await rateLimit({
+      key: `auth:login:ip:${clientIp}`,
+      limit: 5,
+      windowMs: 60 * 1000, // 1 minuto
+    });
+    if (!rl.allowed) {
+      console.warn("[rate-limit] blocked loginAction", {
+        clientIp,
+        retryAfterSeconds: rl.retryAfterSeconds,
+      });
+      return {
+        ok: false,
+        error: `Muitas tentativas. Tente novamente em ${rl.retryAfterSeconds}s.`,
+        retryAfterSeconds: rl.retryAfterSeconds,
+      };
+    }
+
     await ensureAdminUser();
     const ident = (username || "").trim();
     const user = ident.includes("@")
@@ -64,6 +84,24 @@ export async function registerAction(
   password: string
 ): Promise<AuthResult> {
   try {
+    const clientIp = getClientIpFromHeaders(headers());
+    const rl = await rateLimit({
+      key: `auth:register:ip:${clientIp}`,
+      limit: 3,
+      windowMs: 10 * 60 * 1000, // 10 minutos
+    });
+    if (!rl.allowed) {
+      console.warn("[rate-limit] blocked registerAction", {
+        clientIp,
+        retryAfterSeconds: rl.retryAfterSeconds,
+      });
+      return {
+        ok: false,
+        error: `Muitas tentativas de cadastro. Tente novamente em ${rl.retryAfterSeconds}s.`,
+        retryAfterSeconds: rl.retryAfterSeconds,
+      };
+    }
+
     await ensureAdminUser();
     const emailNorm = (email || "").trim().toLowerCase();
     const nameTrim = (name || "").trim().slice(0, 100);
