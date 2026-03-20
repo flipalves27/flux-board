@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, getDailyAiCallsCap, getDailyAiCallsWindowMs, makeDailyAiCallsRateLimitKey, PlanGateError } from "@/lib/plan-gates";
@@ -394,9 +394,17 @@ export async function POST(
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const { id: boardId } = await params;
-  if (!boardId || boardId === "boards") {
+  const { id: requestedBoardId } = await params;
+  if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
+  }
+  let boardId = requestedBoardId;
+  if (requestedBoardId === "b_reborn") {
+    const scopedRebornId = getBoardRebornId(payload.orgId);
+    if (scopedRebornId !== requestedBoardId) {
+      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
+      if (scopedBoard) boardId = scopedRebornId;
+    }
   }
 
   const org = await getOrganizationById(payload.orgId);

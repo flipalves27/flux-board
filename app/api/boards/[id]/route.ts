@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import {
   getBoard,
+  getBoardRebornId,
   updateBoard,
   deleteBoard,
   userCanAccessBoard,
@@ -18,9 +19,17 @@ export async function GET(
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const { id: boardId } = await params;
-  if (!boardId || boardId === "boards") {
+  const { id: requestedBoardId } = await params;
+  if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
+  }
+  let boardId = requestedBoardId;
+  if (requestedBoardId === "b_reborn") {
+    const scopedRebornId = getBoardRebornId(payload.orgId);
+    if (scopedRebornId !== requestedBoardId) {
+      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
+      if (scopedBoard) boardId = scopedRebornId;
+    }
   }
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
@@ -52,9 +61,17 @@ export async function PUT(
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const { id: boardId } = await params;
-  if (!boardId || boardId === "boards") {
+  const { id: requestedBoardId } = await params;
+  if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
+  }
+  let boardId = requestedBoardId;
+  if (requestedBoardId === "b_reborn") {
+    const scopedRebornId = getBoardRebornId(payload.orgId);
+    if (scopedRebornId !== requestedBoardId) {
+      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
+      if (scopedBoard) boardId = scopedRebornId;
+    }
   }
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
@@ -112,9 +129,17 @@ export async function DELETE(
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const { id: boardId } = await params;
-  if (!boardId || boardId === "boards") {
+  const { id: requestedBoardId } = await params;
+  if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
+  }
+  let boardId = requestedBoardId;
+  if (requestedBoardId === "b_reborn") {
+    const scopedRebornId = getBoardRebornId(payload.orgId);
+    if (scopedRebornId !== requestedBoardId) {
+      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
+      if (scopedBoard) boardId = scopedRebornId;
+    }
   }
 
   if (isBoardRebornId(boardId, payload.orgId) && !payload.isAdmin) {

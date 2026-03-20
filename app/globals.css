@@ -38,7 +38,9 @@
   --flux-surface-card: #FFFFFF;
   --flux-surface-elevated: #E8E6F9;
   --flux-text: #1A1730;
-  --flux-text-muted: #5C5896;
+  --flux-text-muted: #47427A;
+  --flux-primary-light: #5A49DA;
+  --flux-secondary: #008E97;
   --shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
   --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
   --flux-home-hero-bg: linear-gradient(180deg, rgba(245, 244, 255, 0.45) 0%, rgba(245, 244, 255, 0.82) 100%), url("/flux-background-light.svg");
