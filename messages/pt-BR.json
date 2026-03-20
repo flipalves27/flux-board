@@ -451,7 +451,50 @@
       "noPermission": "Sem permissão para este board.",
       "loadError": "Erro ao carregar board.",
       "saveError": "Falha ao salvar alterações. Verifique sua conexão e tente novamente."
+    },
+    "portal": {
+      "open": "Portal do cliente",
+      "title": "Portal do cliente — visibilidade externa",
+      "hint": "Compartilhe o status do projeto sem dar acesso ao board interno. O portal é somente leitura.",
+      "close": "Fechar",
+      "save": "Salvar",
+      "saving": "Salvando...",
+      "enabled": "Ativar portal público",
+      "copyLink": "Copiar link",
+      "copied": "Link copiado.",
+      "regenerateToken": "Gerar novo link",
+      "regenerateHint": "O link anterior deixa de funcionar.",
+      "passwordNew": "Nova senha",
+      "passwordPlaceholder": "Mínimo 4 caracteres",
+      "removePassword": "Remover senha atual",
+      "columns": "Colunas visíveis no portal",
+      "columnsHint": "Todas selecionadas = mostrar todas as colunas com itens.",
+      "columnsError": "Selecione ao menos uma coluna.",
+      "cardIds": "Restringir a cards (opcional)",
+      "cardIdsHint": "Um ID por linha. Se vazio, todos os cards das colunas acima entram.",
+      "branding": "Marca e cores",
+      "logoUrl": "URL do logo (https)",
+      "primaryColor": "Cor primária",
+      "secondaryColor": "Cor secundária",
+      "displayTitle": "Título exibido no portal",
+      "saveSuccess": "Portal atualizado.",
+      "saveError": "Erro ao salvar o portal."
     }
+  },
+  "portal": {
+    "loading": "Carregando portal…",
+    "notFound": "Portal não encontrado ou desativado.",
+    "unlock": "Entrar",
+    "passwordLabel": "Senha",
+    "passwordError": "Senha incorreta.",
+    "metrics": {
+      "total": "Itens",
+      "completed": "Concluídos",
+      "pct": "Conclusão"
+    },
+    "readOnly": "Somente leitura",
+    "noCards": "Nenhum item publicado no momento.",
+    "clientLabel": "Conta"
   },
   "kanban": {
     "cardModal": {

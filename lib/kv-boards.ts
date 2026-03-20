@@ -1,6 +1,7 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
+import type { BoardPortalSettings } from "./portal-types";
 import type { Db } from "mongodb";
 
 const BOARDS_PREFIX = "reborn_boards:";
@@ -34,6 +35,8 @@ export interface BoardData {
   dailyInsights?: unknown[];
   /** Estado para gatilhos por tempo (ex.: % de conclusão) — atualizado pelo cron de automações. */
   automationBoardState?: { lastCompletionPercent?: number };
+  /** Portal público somente leitura (token opaco + filtros + branding). */
+  portal?: BoardPortalSettings;
   createdAt?: string;
   lastUpdated?: string;
 }
@@ -270,6 +273,11 @@ export async function deleteBoard(boardId: string, orgId: string, userId: string
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
   if (board.ownerId !== userId && !isAdmin) return false;
+
+  if (board.portal?.token) {
+    const { deletePortalIndex } = await import("./kv-portal");
+    await deletePortalIndex(board.portal.token);
+  }
 
   if (isMongoConfigured()) {
     const db = await getDb();

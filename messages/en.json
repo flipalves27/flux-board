@@ -450,7 +450,50 @@
       "noPermission": "No permission for this board.",
       "loadError": "Error loading board.",
       "saveError": "Failed to save changes. Check your connection and try again."
+    },
+    "portal": {
+      "open": "Client portal",
+      "title": "Client portal — external visibility",
+      "hint": "Share project status without granting access to the internal board. The portal is read-only.",
+      "close": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "enabled": "Enable public portal",
+      "copyLink": "Copy link",
+      "copied": "Link copied.",
+      "regenerateToken": "Generate new link",
+      "regenerateHint": "The previous link stops working.",
+      "passwordNew": "New password",
+      "passwordPlaceholder": "At least 4 characters",
+      "removePassword": "Remove current password",
+      "columns": "Columns visible on the portal",
+      "columnsHint": "All selected = show every column that has items.",
+      "columnsError": "Select at least one column.",
+      "cardIds": "Restrict to specific cards (optional)",
+      "cardIdsHint": "One ID per line. If empty, all cards from the columns above are included.",
+      "branding": "Brand and colors",
+      "logoUrl": "Logo URL (https)",
+      "primaryColor": "Primary color",
+      "secondaryColor": "Secondary color",
+      "displayTitle": "Title on the portal",
+      "saveSuccess": "Portal updated.",
+      "saveError": "Could not save the portal."
     }
+  },
+  "portal": {
+    "loading": "Loading portal…",
+    "notFound": "Portal not found or disabled.",
+    "unlock": "Enter",
+    "passwordLabel": "Password",
+    "passwordError": "Incorrect password.",
+    "metrics": {
+      "total": "Items",
+      "completed": "Done",
+      "pct": "Completion"
+    },
+    "readOnly": "Read-only",
+    "noCards": "No items published yet.",
+    "clientLabel": "Account"
   },
   "kanban": {
     "cardModal": {

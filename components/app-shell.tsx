@@ -18,7 +18,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const localeSegment = pathname.split("/")[1];
   const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
   const isPublicRoute =
-    normalizedPath === "/" || normalizedPath === "/login" || normalizedPath === "/onboarding";
+    normalizedPath === "/" ||
+    normalizedPath === "/login" ||
+    normalizedPath === "/onboarding" ||
+    normalizedPath.startsWith("/portal/") ||
+    normalizedPath.startsWith("/forms/");
   const showSidebar = isChecked && user && !isPublicRoute;
 
   useEffect(() => {

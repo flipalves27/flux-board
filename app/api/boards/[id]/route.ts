@@ -10,6 +10,7 @@ import {
 } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
+import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
 
 export async function GET(
   request: NextRequest,
@@ -43,7 +44,11 @@ export async function GET(
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }
-    return NextResponse.json(board);
+    const safe = {
+      ...board,
+      portal: stripPortalForClient(board.portal),
+    };
+    return NextResponse.json(safe);
   } catch (err) {
     console.error("Board API error:", err);
     return NextResponse.json(
@@ -117,6 +122,16 @@ export async function PUT(
       updates.clientLabel = String(clean.clientLabel ?? "").trim().slice(0, 120);
     }
 
+    if (clean.portal !== undefined) {
+      const prevBoard = await getBoard(boardId, payload.orgId);
+      if (!prevBoard) {
+        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
+      }
+      const portalPatch = sanitizeDeep(clean.portal) as PortalBoardPatch;
+      const { portal: nextPortal } = await applyPortalPatch(prevBoard, portalPatch);
+      updates.portal = nextPortal;
+    }
+
     const board = await updateBoard(boardId, payload.orgId, updates);
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
@@ -126,6 +141,7 @@ export async function PUT(
       lastUpdated: board.lastUpdated,
       cardsCount: (board.cards || []).length,
       ...(clean.cards !== undefined ? { cards: board.cards } : {}),
+      ...(clean.portal !== undefined ? { portal: stripPortalForClient(board.portal) } : {}),
     });
   } catch (err) {
     console.error("Board API error:", err);

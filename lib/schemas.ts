@@ -302,6 +302,26 @@ export const DailyInsightEntrySchema = z
   })
   .passthrough();
 
+export const PortalBrandingSchema = z
+  .object({
+    logoUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
+    primaryColor: z.string().trim().max(32).optional().nullable(),
+    secondaryColor: z.string().trim().max(32).optional().nullable(),
+    title: z.string().trim().max(120).optional().nullable(),
+  })
+  .passthrough();
+
+export const PortalBoardUpdateSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    regenerateToken: z.boolean().optional(),
+    visibleBucketKeys: z.array(z.string().trim().max(200)).max(50).optional(),
+    cardIdsAllowlist: z.array(z.string().trim().max(200)).max(50).optional(),
+    branding: PortalBrandingSchema.optional(),
+    portalPassword: z.union([z.string().min(4).max(200), z.literal(""), z.null()]).optional(),
+  })
+  .passthrough();
+
 export const BoardUpdateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
@@ -330,6 +350,7 @@ export const BoardUpdateSchema = z
         defaultTags: z.array(z.string().trim().max(60)).max(20).optional(),
       })
       .optional(),
+    portal: PortalBoardUpdateSchema.optional(),
   })
   .passthrough();
 

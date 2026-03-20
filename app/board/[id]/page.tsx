@@ -8,6 +8,7 @@ import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
+import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
@@ -134,6 +135,7 @@ export interface BoardData {
     defaultProgress?: string;
     defaultTags?: string[];
   };
+  portal?: PortalClientState;
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
@@ -158,6 +160,7 @@ export default function BoardPage() {
   const [db, setDb] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [automationsOpen, setAutomationsOpen] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
@@ -220,6 +223,7 @@ export default function BoardPage() {
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
         intakeForm: d.intakeForm,
+        portal: d.portal,
       });
       if (user?.id) {
         registerBoardVisit(user.id, boardId);
@@ -366,6 +370,9 @@ export default function BoardPage() {
               Flux Forms
             </button>
           )}
+          <button type="button" className="btn-secondary" onClick={() => setPortalOpen(true)}>
+            {t("portal.open")}
+          </button>
           <div
             className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
               saveStatus === "idle" ? "opacity-0" : "opacity-100"
@@ -407,6 +414,18 @@ export default function BoardPage() {
         priorities={PRIORITIES}
         progresses={PROGRESSES}
         getHeaders={getHeaders}
+      />
+
+      <BoardPortalModal
+        open={portalOpen}
+        onClose={() => setPortalOpen(false)}
+        boardId={boardId}
+        bucketOrder={db.config.bucketOrder}
+        portal={db.portal}
+        getHeaders={getHeaders}
+        onSaved={(portal) => {
+          setDb((prev) => (prev ? { ...prev, portal } : null));
+        }}
       />
 
       <BoardCopilotPanel
