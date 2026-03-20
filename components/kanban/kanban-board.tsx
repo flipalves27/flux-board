@@ -927,11 +927,11 @@ export function KanbanBoard({
     <>
       <div
         className="board-toolbar sticky top-[42px] z-[150] transition-[max-height] duration-300 ease-in-out overflow-y-auto overflow-x-hidden"
-        style={{ maxHeight: priorityBarVisible ? "min(720px, 85vh)" : 56 }}
+        style={{ maxHeight: priorityBarVisible ? "min(640px, 80vh)" : 52 }}
       >
         {/* Linha 1: painel principal — visão do board + (expandido) busca e CSV */}
-        <div className="w-full px-5 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 py-2.5 min-h-[48px]">
-          <div className="flex flex-wrap items-center gap-3 min-w-0">
+        <div className="w-full px-4 sm:px-5 lg:px-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2 min-h-[42px]">
+          <div className="flex flex-wrap items-center gap-2.5 min-w-0">
             <CustomTooltip
               content={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
               position="bottom"
@@ -939,7 +939,7 @@ export function KanbanBoard({
               <button
                 type="button"
                 onClick={() => setPriorityBarVisible((v) => !v)}
-                className="board-toolbar-btn gap-1.5 px-2.5 -ml-1 shrink-0"
+                className="board-toolbar-btn gap-1 px-2 -ml-1 shrink-0"
                 aria-expanded={priorityBarVisible}
                 aria-label={priorityBarVisible ? t("board.filters.hideTooltip") : t("board.filters.showTooltip")}
               >
@@ -986,10 +986,10 @@ export function KanbanBoard({
 
           {priorityBarVisible && (
             <div
-              className="board-toolbar-group flex flex-wrap items-center gap-2 p-2 pl-3 w-full lg:w-auto lg:max-w-[min(100%,520px)] lg:ml-auto justify-end"
+              className="board-toolbar-group flex flex-wrap items-center gap-1.5 p-1.5 pl-2.5 w-full lg:w-auto lg:max-w-[min(100%,500px)] lg:ml-auto justify-end"
               aria-label={t("board.toolbar.sectionData")}
             >
-              <div className="relative flex-1 min-w-[min(100%,200px)] sm:min-w-[220px]">
+              <div className="relative flex-1 min-w-[min(100%,180px)] sm:min-w-[210px]">
                 <span
                   className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--flux-text-muted)] opacity-50 text-sm select-none"
                   aria-hidden
@@ -1002,13 +1002,13 @@ export function KanbanBoard({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("board.filters.searchPlaceholder")}
-                  className="w-full pl-8 pr-2.5 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200"
+                  className="w-full pl-8 pr-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200"
                 />
               </div>
               <select
                 value={csvImportMode}
                 onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
-                className="shrink-0 min-w-[100px] px-2 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] font-medium bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200 cursor-pointer"
+                className="shrink-0 min-w-[96px] px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] font-medium bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200 cursor-pointer"
                 aria-label={t("board.toolbar.csvImportModeAria")}
               >
                 <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>
@@ -1027,13 +1027,13 @@ export function KanbanBoard({
 
         {/* Linha 2: prioridade e atalhos — só com filtros expandidos */}
         {priorityBarVisible && (
-          <div className="border-t border-[var(--flux-border-muted)] px-5 sm:px-6 lg:px-8 py-3">
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(300px,420px)] gap-4 xl:gap-6 xl:items-start">
-              <div className="board-toolbar-group p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2.5">
+          <div className="border-t border-[var(--flux-border-muted)] px-4 sm:px-5 lg:px-6 py-2.5">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(280px,400px)] gap-3 xl:gap-4 xl:items-start">
+              <div className="board-toolbar-group p-2.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2">
                   {t("board.filters.priorityLabel")}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {["all", ...priorities].map((p) => (
                     <button
                       key={p}
@@ -1050,11 +1050,11 @@ export function KanbanBoard({
                   ))}
                 </div>
               </div>
-              <div className="board-toolbar-group p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2.5">
+              <div className="board-toolbar-group p-2.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2">
                   {t("board.toolbar.sectionQuickActions")}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -1103,7 +1103,7 @@ export function KanbanBoard({
         )}
 
         {priorityBarVisible && labelsOpen && (
-          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 flex gap-2 flex-wrap border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-mid)]/30">
+          <div className="w-full px-4 sm:px-5 lg:px-6 py-2 flex gap-1.5 flex-wrap border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-mid)]/30">
             {boardLabels.map((l) => (
               <button
                 key={l}
@@ -1120,7 +1120,7 @@ export function KanbanBoard({
           </div>
         )}
         {priorityBarVisible && (
-          <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 border-t border-[var(--flux-border-muted)]">
+          <div className="w-full px-4 sm:px-5 lg:px-6 py-2 border-t border-[var(--flux-border-muted)]">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
               <div className="board-stat-tile px-2.5 py-2">
                   <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">{t("board.stats.totalLabel")}</div>

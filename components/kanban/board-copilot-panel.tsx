@@ -336,21 +336,33 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     <>
       <button
         type="button"
-        className="fixed right-4 top-[92px] z-[470] flex items-center gap-2 px-4 py-2.5 rounded-full border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)]/90 backdrop-blur-md text-[var(--flux-text)] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4)] transition-all duration-200 hover:border-[var(--flux-primary)] hover:bg-[var(--flux-surface-elevated)] hover:shadow-[0_12px_36px_-8px_rgba(108,92,231,0.35)] active:scale-[0.98]"
+        className={`fixed z-[470] transition-all duration-200 active:scale-[0.98] ${
+          open
+            ? "right-[calc(min(440px,92vw)+16px)] top-[112px]"
+            : "right-4 top-[112px]"
+        }`}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        <span className="text-xs font-semibold">{open ? "Fechar Copiloto" : "Copiloto do Board"}</span>
-        {tier === "free" && freeDemoRemaining !== null ? (
-          <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-[rgba(255,217,61,0.35)] text-[var(--flux-warning)]">
-            {freeDemoRemaining}
+        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,rgba(108,92,231,0.22),rgba(0,210,211,0.14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[0_10px_26px_-10px_rgba(108,92,231,0.55)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[rgba(255,255,255,0.16)] bg-[rgba(13,11,26,0.36)]">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
+              <circle cx="12" cy="12" r="2.2" />
+            </svg>
           </span>
-        ) : null}
+          <span className="text-[11px] font-semibold whitespace-nowrap">{open ? "Fechar IA" : "Copiloto IA"}</span>
+          {tier === "free" && freeDemoRemaining !== null ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[rgba(255,217,61,0.4)] text-[var(--flux-warning)]">
+              {freeDemoRemaining}
+            </span>
+          ) : null}
+        </span>
       </button>
 
       {open && (
         <div className="fixed inset-0 z-[480] pointer-events-none">
-          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_rgba(0,0,0,0.45)] pointer-events-auto flex flex-col overflow-hidden">
+          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_rgba(0,0,0,0.45)] pointer-events-auto flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate">Copiloto</div>
