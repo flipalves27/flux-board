@@ -1,6 +1,7 @@
 {
   "navigation": {
     "boards": "Boards",
+    "reports": "Reports",
     "discovery": "Discovery",
     "tasks": "My tasks",
     "users": "Users",
@@ -17,6 +18,48 @@
       "darkTooltip": "Use dark theme"
     },
     "logout": "Sign out"
+  },
+  "reports": {
+    "badge": "Flux Reports",
+    "title": "Self-service BI with AI narrative",
+    "subtitle": "Live dashboard aggregating boards in your organization. Use Explain on each chart to generate an executive narrative.",
+    "loading": "Loading metrics…",
+    "loadError": "Could not load reports.",
+    "empty": "No data.",
+    "emptyChart": "Nothing to plot for this chart yet.",
+    "explain": "Explain",
+    "explaining": "Generating…",
+    "explainError": "Could not generate the narrative.",
+    "copilotHint": "Tip: weekly throughput and created vs. done use Copilot history on boards. Without MongoDB or Copilot usage, these may stay at zero.",
+    "generatedAt": "Updated at",
+    "noAssignee": "Unassigned",
+    "kpi": {
+      "boards": "Boards",
+      "avgRisk": "Average risk (index)",
+      "avgLead": "Avg. lead time (approx.)",
+      "atRiskBoards": "Boards flagged (risk < 48)"
+    },
+    "charts": {
+      "cfd": "Cumulative flow diagram (approx.)",
+      "throughput": "Weekly throughput (done via Copilot)",
+      "createdVsDone": "Created vs. done (Copilot)",
+      "leadTime": "Lead time distribution (completed)",
+      "heatmap": "Portfolio heatmap",
+      "velocity": "Cards by assignee",
+      "byColumn": "Open work by column",
+      "byPriority": "Open work by priority"
+    },
+    "hints": {
+      "leadTime": "Lead time for completed cards is estimated from card creation to last board update (approximation).",
+      "heatmap": "Color reflects risk exposure: red = more critical; green = healthier. Based on Flux-Board heuristics.",
+      "velocity": "Requires an owner (or assignee) field on cards; otherwise the chart may be empty."
+    },
+    "series": {
+      "concluded": "Completed",
+      "created": "Created (Copilot)",
+      "concludedCopilot": "Completed (Copilot)",
+      "cards": "Cards"
+    }
   },
   "appShell": {
     "routineReminder": "Routine reminder",

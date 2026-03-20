@@ -1,6 +1,7 @@
 {
   "navigation": {
     "boards": "Boards",
+    "reports": "Relatórios",
     "discovery": "Discovery",
     "tasks": "Minhas tarefas",
     "users": "Usuários",
@@ -17,6 +18,48 @@
       "darkTooltip": "Usar tema escuro"
     },
     "logout": "Sair"
+  },
+  "reports": {
+    "badge": "Flux Reports",
+    "title": "BI self-service com narrativa IA",
+    "subtitle": "Dashboard ao vivo com dados agregados dos boards da organização. Use Explicar em cada gráfico para gerar uma narrativa executiva.",
+    "loading": "Carregando métricas…",
+    "loadError": "Não foi possível carregar os relatórios.",
+    "empty": "Sem dados.",
+    "emptyChart": "Sem séries para exibir (nenhum card nas janelas consideradas).",
+    "explain": "Explicar",
+    "explaining": "Gerando…",
+    "explainError": "Não foi possível gerar a narrativa.",
+    "copilotHint": "Dica: métricas semanais de throughput e criados vs. concluídos usam o histórico do Copilot nos boards. Sem MongoDB ou sem uso do Copilot, esses valores podem ficar zerados.",
+    "generatedAt": "Atualizado em",
+    "noAssignee": "Sem responsável",
+    "kpi": {
+      "boards": "Boards",
+      "avgRisk": "Risco médio (índice)",
+      "avgLead": "Lead time médio (aprox.)",
+      "atRiskBoards": "Boards em atenção (risco < 48)"
+    },
+    "charts": {
+      "cfd": "Diagrama de fluxo cumulativo (aprox.)",
+      "throughput": "Throughput semanal (concluídos via Copilot)",
+      "createdVsDone": "Criados vs. concluídos (Copilot)",
+      "leadTime": "Distribuição de lead time (concluídos)",
+      "heatmap": "Mapa de calor do portfólio",
+      "velocity": "Cards por responsável",
+      "byColumn": "Em aberto por coluna",
+      "byPriority": "Em aberto por prioridade"
+    },
+    "hints": {
+      "leadTime": "Lead time estimado para concluídos: dias entre criação do card e última atualização do board (aproximação).",
+      "heatmap": "Cor indica exposição a risco: vermelho = mais crítico; verde = mais saudável. Baseado no índice heurístico do Flux-Board.",
+      "velocity": "Requer campo owner (ou assignee) no card. Caso contrário, o gráfico ficará vazio."
+    },
+    "series": {
+      "concluded": "Concluídos",
+      "created": "Criados (Copilot)",
+      "concludedCopilot": "Concluídos (Copilot)",
+      "cards": "Cards"
+    }
   },
   "appShell": {
     "routineReminder": "Lembrete de rotina",
