@@ -271,6 +271,41 @@ export const BoardUpdateSchema = z
     dailyInsights: z.array(DailyInsightEntrySchema).optional(),
     version: z.string().trim().max(50).optional(),
     lastUpdated: z.string().trim().max(200).optional(),
+    intakeForm: z
+      .object({
+        enabled: z.boolean().optional(),
+        slug: z.string().trim().min(3).max(80).optional(),
+        title: z.string().trim().min(1).max(120).optional(),
+        description: z.string().trim().max(400).optional().nullable(),
+        targetBucketKey: z.string().trim().min(1).max(200).optional(),
+        defaultPriority: z.string().trim().min(1).max(100).optional(),
+        defaultProgress: z.string().trim().min(1).max(100).optional(),
+        defaultTags: z.array(z.string().trim().max(60)).max(20).optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+export const IntakeFormUpsertSchema = z
+  .object({
+    enabled: z.boolean().optional().default(true),
+    slug: z.string().trim().min(3, "Slug obrigatório.").max(80),
+    title: z.string().trim().min(1, "Título obrigatório.").max(120),
+    description: z.string().trim().max(400).optional().nullable(),
+    targetBucketKey: z.string().trim().min(1, "Coluna de destino obrigatória.").max(200),
+    defaultPriority: z.string().trim().min(1).max(100).optional().default("Média"),
+    defaultProgress: z.string().trim().min(1).max(100).optional().default("Não iniciado"),
+    defaultTags: z.array(z.string().trim().max(60)).max(20).optional().default([]),
+  })
+  .passthrough();
+
+export const IntakeSubmissionSchema = z
+  .object({
+    requesterName: z.string().trim().min(1, "Nome é obrigatório.").max(120),
+    requesterEmail: z.string().trim().email("Email inválido.").max(320).optional().or(z.literal("")),
+    title: z.string().trim().min(3, "Título muito curto.").max(180),
+    description: z.string().trim().min(5, "Descreva melhor a demanda.").max(5000),
+    tags: z.array(z.string().trim().max(60)).max(10).optional(),
   })
   .passthrough();
 

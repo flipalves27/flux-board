@@ -121,6 +121,16 @@ export interface BoardData {
   };
   mapaProducao?: { papel: string; equipe: string; linha: string; operacoes: string }[];
   dailyInsights?: DailyInsightEntry[];
+  intakeForm?: {
+    enabled?: boolean;
+    slug?: string;
+    title?: string;
+    description?: string;
+    targetBucketKey?: string;
+    defaultPriority?: string;
+    defaultProgress?: string;
+    defaultTags?: string[];
+  };
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
@@ -205,6 +215,7 @@ export default function BoardPage() {
         },
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
+        intakeForm: d.intakeForm,
       });
       if (user?.id) {
         registerBoardVisit(user.id, boardId);
@@ -283,11 +294,32 @@ export default function BoardPage() {
     );
   }
   if (!db) return null;
+  const formSlug = String(db.intakeForm?.slug || "").trim();
+  const formLink =
+    formSlug && typeof window !== "undefined"
+      ? `${window.location.origin}/${locale}/forms/${encodeURIComponent(formSlug)}`
+      : "";
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={boardName}>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {formLink && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(formLink);
+                  pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
+                } catch {
+                  pushToast({ kind: "error", title: "Não foi possível copiar o link." });
+                }
+              }}
+            >
+              Flux Forms
+            </button>
+          )}
           <div
             className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
               saveStatus === "idle" ? "opacity-0" : "opacity-100"

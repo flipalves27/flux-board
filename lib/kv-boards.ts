@@ -29,6 +29,7 @@ export interface BoardData {
   version?: string;
   cards?: unknown[];
   config?: { bucketOrder: unknown[]; collapsedColumns?: string[] };
+  intakeForm?: unknown;
   mapaProducao?: unknown[];
   dailyInsights?: unknown[];
   createdAt?: string;

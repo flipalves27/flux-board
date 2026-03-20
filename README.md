@@ -108,6 +108,7 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `/login` | Login e cadastro |
 | `/boards` | Lista de boards |
 | `/board/[id]` | Kanban do board |
+| `/forms/[slug]` | Formulário público para intake de demandas |
 | `/negocios` | Hub de oportunidades comerciais (produto) |
 | `/users` | Administração de usuários (admin) |
 | `/resumo-reborn.html` | Apresentação executiva |
@@ -118,6 +119,8 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 |----------|-----------|
 | `GET /api/executive-brief` | Brief executivo em Markdown (JWT) |
 | `GET /api/portfolio-export` | JSON `flux-board.portfolio.v1` para BI / integrações (JWT) |
+| `PUT /api/boards/[id]/forms` | Configura Flux Forms no board (JWT) |
+| `POST /api/forms/[slug]` | Intake público: cria card automaticamente no board |
 
 **Freemium (opcional):** defina `FLUX_MAX_BOARDS_PER_USER` (inteiro ≥ 1) para limitar boards por usuário não-admin. `FLUX_PRO_TENANT=true` (ou `1`) remove o teto. Também é aceito o prefixo público `NEXT_PUBLIC_FLUX_MAX_BOARDS_PER_USER` para o mesmo limite (útil em builds client-side).
 
@@ -141,6 +144,7 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 - Sincronização debounced (300ms) com API
 - Brief executivo (.md) e export JSON do portfólio na lista de boards
 - Rótulo comercial por board (`clientLabel`) e página **Negócios** com linhas de receita
+- Flux Forms: formulário público com classificação automática (prioridade/tags/coluna) e criação de card
 
 ## Weekly Digest IA (por email)
 
