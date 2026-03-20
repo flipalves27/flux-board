@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import type { CardData, BucketConfig, CardLink, CardDocRef } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
@@ -25,6 +25,8 @@ interface CardModalProps {
   getHeaders: () => Record<string, string>;
   onCreateLabel?: (label: string) => void;
   onDeleteLabel?: (label: string) => void;
+  /** Outros cards do board para selecionar dependências (bloqueado por). */
+  peerCards?: CardData[];
   onClose: () => void;
   onSave: (card: CardData) => void;
   onDelete?: (cardId: string) => void;
@@ -77,6 +79,7 @@ export function CardModal({
   getHeaders,
   onCreateLabel,
   onDeleteLabel,
+  peerCards = [],
   onClose,
   onSave,
   onDelete,
@@ -110,6 +113,10 @@ export function CardModal({
   const [priority, setPriority] = useState(card.priority);
   const [progress, setProgress] = useState(card.progress);
   const [dueDate, setDueDate] = useState(card.dueDate || "");
+  const [blockedBy, setBlockedBy] = useState<string[]>(() =>
+    Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
+  );
+  const [depSearch, setDepSearch] = useState("");
   const [tags, setTags] = useState<Set<string>>(new Set(card.tags || []));
   const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
@@ -132,6 +139,22 @@ export function CardModal({
   const aiContextRequestSeqRef = useRef(0);
 
   const descriptionForSave = serializeDescriptionBlocks(descBlocks);
+
+  const selfId = useMemo(() => id.trim() || card.id, [id, card.id]);
+
+  const selectablePeers = useMemo(() => {
+    return peerCards.filter((c) => c.id && c.id !== selfId);
+  }, [peerCards, selfId]);
+
+  const filteredPeers = useMemo(() => {
+    const q = depSearch.trim().toLowerCase();
+    if (!q) return selectablePeers;
+    return selectablePeers.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q)
+    );
+  }, [selectablePeers, depSearch]);
   const aiContextCanGenerate = Boolean(title.trim() && descriptionForSave.trim());
   const aiContextBusy =
     aiContextPhase === "preparing" || aiContextPhase === "requesting" || aiContextPhase === "processing";
@@ -167,6 +190,8 @@ export function CardModal({
     setPriority(card.priority);
     setProgress(card.progress);
     setDueDate(card.dueDate || "");
+    setBlockedBy(Array.isArray(card.blockedBy) ? [...card.blockedBy] : []);
+    setDepSearch("");
     setTags(new Set(card.tags || []));
     setNewLabel("");
     setLinks(card.links && card.links.length > 0 ? [...card.links] : []);
@@ -209,6 +234,8 @@ export function CardModal({
       return;
     }
     const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
+    const validIds = new Set(selectablePeers.map((c) => c.id));
+    const nextBlocked = blockedBy.filter((bid) => validIds.has(bid));
     onSave({
       ...card,
       id: finalId,
@@ -218,6 +245,7 @@ export function CardModal({
       priority,
       progress,
       dueDate: dueDate || null,
+      blockedBy: nextBlocked,
       tags: [...tags],
       links: links.filter((l) => l.url.trim()),
       docRefs,
@@ -637,6 +665,62 @@ export function CardModal({
                 />
               </div>
             </div>
+            </CardModalSection>
+
+            <CardModalSection
+              title={t("cardModal.sections.dependencies.title")}
+              description={t("cardModal.sections.dependencies.description")}
+            >
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
+                  {t("cardModal.fields.blockedBy.label")}
+                </label>
+                <input
+                  type="search"
+                  value={depSearch}
+                  onChange={(e) => setDepSearch(e.target.value)}
+                  placeholder={t("cardModal.fields.blockedBy.placeholder")}
+                  className={inputBase}
+                  autoComplete="off"
+                />
+                <p className="text-[11px] text-[var(--flux-text-muted)]">{t("cardModal.fields.blockedBy.hint")}</p>
+                {selectablePeers.length === 0 ? (
+                  <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.fields.blockedBy.empty")}</p>
+                ) : (
+                  <ul
+                    className="max-h-48 overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.1)] divide-y divide-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.12)]"
+                    role="listbox"
+                    aria-multiselectable
+                  >
+                    {filteredPeers.map((c) => {
+                      const checked = blockedBy.includes(c.id);
+                      return (
+                        <li key={c.id} role="option" aria-selected={checked}>
+                          <label className="flex items-start gap-3 px-3 py-2.5 cursor-pointer hover:bg-[rgba(108,92,231,0.08)]">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setBlockedBy((prev) =>
+                                  prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id]
+                                )
+                              }
+                              className="mt-1 rounded border-[rgba(255,255,255,0.2)]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold text-[var(--flux-text)] truncate">{c.title}</span>
+                              <span className="block text-[11px] font-mono text-[var(--flux-text-muted)]">{c.id}</span>
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {selectablePeers.length > 0 && filteredPeers.length === 0 && depSearch.trim() ? (
+                  <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.fields.blockedBy.noMatch")}</p>
+                ) : null}
+              </div>
             </CardModalSection>
 
             <CardModalSection

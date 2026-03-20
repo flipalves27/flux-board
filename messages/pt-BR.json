@@ -550,6 +550,10 @@
           "title": "Status e prazo",
           "description": "Prioridade, estágio de trabalho e data alvo de conclusão."
         },
+        "dependencies": {
+          "title": "Dependências",
+          "description": "Cards que precisam estar prontos antes deste (bloqueado por)."
+        },
         "labels": {
           "title": "Rótulos",
           "description": "Marque tags existentes ou crie novas para este board."
@@ -589,6 +593,13 @@
         },
         "dueDate": {
           "label": "Data de Conclusão"
+        },
+        "blockedBy": {
+          "label": "Bloqueado por",
+          "placeholder": "Buscar card por título ou ID...",
+          "empty": "Nenhuma dependência.",
+          "noMatch": "Nenhum card corresponde à busca.",
+          "hint": "Marque os cards predecessores. As linhas aparecem na Timeline."
         },
         "newLabel": {
           "srLabel": "Novo rótulo",
@@ -1027,6 +1038,15 @@
       "reavaliar": "Reavaliar"
     },
     "board": {
+      "timeline": {
+        "toggleGroupAria": "Visualização do board",
+        "viewKanban": "Kanban",
+        "viewTimeline": "Timeline",
+        "columnTask": "Tarefa",
+        "emptyTitle": "Nenhum card com data de conclusão",
+        "emptyHint": "Defina uma data de conclusão nos cards para vê-los aqui. Os filtros do board também se aplicam.",
+        "barAria": "Prazo de {title}: {date}. Arraste para alterar ou use as setas."
+      },
       "filters": {
         "hideTooltip": "Ocultar filtros",
         "showTooltip": "Mostrar filtros",

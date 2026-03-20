@@ -17,6 +17,7 @@ import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortabl
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { CardModal } from "./card-modal";
+import { BoardTimelineView } from "./board-timeline-view";
 import { MapaModal } from "./mapa-modal";
 import { DescModal } from "./desc-modal";
 import { DailyInsightsPanel } from "./DailyInsightsPanel";
@@ -43,6 +44,7 @@ interface KanbanBoardProps {
 }
 
 const KANBAN_FILTERS_STORAGE_PREFIX = "flux.kanban.filters:";
+const BOARD_VIEW_STORAGE_PREFIX = "flux.board.viewMode:";
 
 const DIR_COLORS: Record<string, string> = {
   manter: "#059669",
@@ -118,6 +120,7 @@ export function KanbanBoard({
   const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
   const [priorityBarVisible, setPriorityBarVisible] = useState(true);
+  const [boardView, setBoardView] = useState<"kanban" | "timeline">("kanban");
 
   const currentQuarter = useMemo(() => {
     const now = new Date();
@@ -273,6 +276,26 @@ export function KanbanBoard({
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
   const filtersStorageKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
+  const viewStorageKey = `${BOARD_VIEW_STORAGE_PREFIX}${boardId}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const v = window.localStorage.getItem(viewStorageKey);
+      if (v === "timeline" || v === "kanban") setBoardView(v);
+    } catch {
+      // ignore
+    }
+  }, [viewStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(viewStorageKey, boardView);
+    } catch {
+      // ignore
+    }
+  }, [boardView, viewStorageKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -362,6 +385,21 @@ export function KanbanBoard({
     },
     [activePrio, activeLabels, searchQuery]
   );
+
+  const handleTimelineDueDate = useCallback(
+    (cardId: string, nextDue: string) => {
+      updateDb((prev) => ({
+        ...prev,
+        cards: prev.cards.map((c) => (c.id === cardId ? { ...c, dueDate: nextDue } : c)),
+      }));
+    },
+    [updateDb]
+  );
+
+  const handleTimelineOpenCard = useCallback((card: CardData) => {
+    setModalCard(card);
+    setModalMode("edit");
+  }, []);
 
   const cardsByBucketSorted = useMemo(() => {
     const bucketKeys = buckets.map((b) => b.key);
@@ -870,6 +908,34 @@ export function KanbanBoard({
               </span>
             </button>
           </CustomTooltip>
+          <div
+            className="flex items-center gap-0.5 rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-0.5 shrink-0"
+            role="group"
+            aria-label={t("board.timeline.toggleGroupAria")}
+          >
+            <button
+              type="button"
+              onClick={() => setBoardView("kanban")}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-colors ${
+                boardView === "kanban"
+                  ? "bg-[var(--flux-primary)] text-white shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+            >
+              {t("board.timeline.viewKanban")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBoardView("timeline")}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold font-display transition-colors ${
+                boardView === "timeline"
+                  ? "bg-[var(--flux-primary)] text-white shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+            >
+              {t("board.timeline.viewTimeline")}
+            </button>
+          </div>
           {priorityBarVisible && (
             <>
               <div className="flex items-center gap-1 flex-wrap">
@@ -1014,15 +1080,29 @@ export function KanbanBoard({
 
       <div
         ref={boardScrollRef}
-        onPointerDown={handlePanPointerDown}
-        onPointerMove={handlePanPointerMove}
-        onPointerUp={endPan}
-        onPointerCancel={endPan}
-        className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 flex gap-4 overflow-x-auto items-stretch scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
-          isPanning ? "cursor-grabbing select-none" : "cursor-default"
+        onPointerDown={boardView === "kanban" ? handlePanPointerDown : undefined}
+        onPointerMove={boardView === "kanban" ? handlePanPointerMove : undefined}
+        onPointerUp={boardView === "kanban" ? endPan : undefined}
+        onPointerCancel={boardView === "kanban" ? endPan : undefined}
+        className={`w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
+          boardView === "kanban"
+            ? `flex gap-4 overflow-x-auto items-stretch ${
+                isPanning ? "cursor-grabbing select-none" : "cursor-default"
+              }`
+            : "flex flex-col overflow-x-hidden"
         } ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}
-        style={{ touchAction: isPanning ? "none" : "pan-y" }}
+        style={{ touchAction: boardView === "kanban" ? (isPanning ? "none" : "pan-y") : undefined }}
       >
+        {boardView === "timeline" ? (
+          <BoardTimelineView
+            cards={cards}
+            buckets={buckets}
+            filterCard={filterCard}
+            onChangeDueDate={handleTimelineDueDate}
+            onOpenCard={handleTimelineOpenCard}
+          />
+        ) : null}
+        {boardView === "kanban" ? (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -1101,6 +1181,7 @@ export function KanbanBoard({
                     tags: [],
                     direction: null,
                     dueDate: null,
+                    blockedBy: [],
                     order: getCardsByBucket(b.key).length,
                   });
                   setModalMode("new");
@@ -1167,6 +1248,7 @@ export function KanbanBoard({
             ) : null}
           </DragOverlay>
         </DndContext>
+        ) : null}
       </div>
 
       <div className="bg-[var(--flux-surface-mid)]/92 border-t border-x border-[rgba(108,92,231,0.28)] rounded-t-[var(--flux-rad)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] shadow-[0_-6px_18px_rgba(0,0,0,0.45)] max-w-[1200px] mx-auto">
@@ -1386,6 +1468,7 @@ export function KanbanBoard({
           getHeaders={getHeaders}
           onCreateLabel={createLabel}
           onDeleteLabel={deleteLabel}
+          peerCards={cards.filter((c) => c.id && c.id !== modalCard.id)}
           onClose={() => setModalCard(null)}
           onSave={(updated) => {
             updateDb((prev) => {
@@ -1400,7 +1483,15 @@ export function KanbanBoard({
             setModalCard(null);
           }}
           onDelete={(id) => {
-            updateDb((prev) => ({ ...prev, cards: prev.cards.filter((c) => c.id !== id) }));
+            updateDb((prev) => ({
+              ...prev,
+              cards: prev.cards
+                .filter((c) => c.id !== id)
+                .map((c) => ({
+                  ...c,
+                  blockedBy: (c.blockedBy || []).filter((bid) => bid !== id),
+                })),
+            }));
             setModalCard(null);
           }}
         />
@@ -1503,9 +1594,15 @@ export function KanbanBoard({
               <button
                 onClick={() => {
                   if (confirmDelete.type === "card") {
+                    const removed = confirmDelete.id;
                     updateDb((prev) => ({
                       ...prev,
-                      cards: prev.cards.filter((c) => c.id !== confirmDelete.id),
+                      cards: prev.cards
+                        .filter((c) => c.id !== removed)
+                        .map((c) => ({
+                          ...c,
+                          blockedBy: (c.blockedBy || []).filter((bid) => bid !== removed),
+                        })),
                     }));
                   } else {
                     deleteColumn(confirmDelete.id);

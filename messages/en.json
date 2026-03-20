@@ -549,6 +549,10 @@
           "title": "Status and due date",
           "description": "Priority, work stage, and target completion date."
         },
+        "dependencies": {
+          "title": "Dependencies",
+          "description": "Cards that must be done before this one (blocked by)."
+        },
         "labels": {
           "title": "Labels",
           "description": "Select existing tags or create new ones for this board."
@@ -588,6 +592,13 @@
         },
         "dueDate": {
           "label": "Completion date"
+        },
+        "blockedBy": {
+          "label": "Blocked by",
+          "placeholder": "Search by title or ID...",
+          "empty": "No dependencies.",
+          "noMatch": "No cards match your search.",
+          "hint": "Select predecessor cards. Links appear on the Timeline."
         },
         "newLabel": {
           "srLabel": "New label",
@@ -1026,6 +1037,15 @@
       }
     },
     "board": {
+      "timeline": {
+        "toggleGroupAria": "Board view mode",
+        "viewKanban": "Kanban",
+        "viewTimeline": "Timeline",
+        "columnTask": "Task",
+        "emptyTitle": "No cards with a due date",
+        "emptyHint": "Set a completion date on cards to see them here. Board filters apply to this view as well.",
+        "barAria": "Due date for {title}: {date}. Drag to change or use arrow keys."
+      },
       "filters": {
         "hideTooltip": "Hide filters",
         "showTooltip": "Show filters",

@@ -190,6 +190,7 @@ export const CardDataSchema = z
     docRefs: z.array(CardDocRefSchema).optional(),
     direction: z.string().trim().nullable().optional(),
     dueDate: z.string().trim().nullable().optional(),
+    blockedBy: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
     order: z.number().int().nonnegative().max(1_000_000),
     columnEnteredAt: z.string().trim().max(80).optional(),
     automationState: CardAutomationStateSchema.optional(),

@@ -103,6 +103,8 @@ export interface CardData {
   docRefs?: CardDocRef[];
   direction: string | null;
   dueDate: string | null;
+  /** Cards que precisam concluir antes deste (IDs). */
+  blockedBy?: string[];
   order: number;
   columnEnteredAt?: string;
   automationState?: { lastFired?: Record<string, string> };
@@ -199,6 +201,9 @@ export default function BoardPage() {
         ...c,
         order: c.order ?? i,
         dueDate: c.dueDate ?? null,
+        blockedBy: Array.isArray(c.blockedBy)
+          ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
+          : [],
         direction: c.direction ?? null,
         tags: Array.isArray(c.tags) ? c.tags : [],
         links: Array.isArray(c.links) ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim()) : [],
@@ -272,6 +277,9 @@ export default function BoardPage() {
                     ...c,
                     order: c.order ?? i,
                     dueDate: c.dueDate ?? null,
+                    blockedBy: Array.isArray(c.blockedBy)
+                      ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
+                      : [],
                     direction: c.direction ?? null,
                     tags: Array.isArray(c.tags) ? c.tags : [],
                     links: Array.isArray(c.links)
