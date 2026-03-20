@@ -59,6 +59,12 @@ function toUser(doc: UserDoc): User {
 
 let userIndexesEnsured = false;
 
+// Evita reads repetidos de inicializacao (em memoria por instância).
+// TTL curto para ainda verificar periodicamente se precisa recriar algo.
+const ENSURE_ADMIN_TTL_MS = Number(process.env.ENSURE_ADMIN_TTL_MS ?? 30_000);
+let adminCache: { value: User; expiresAt: number } | null = null;
+let ensureAdminPromise: Promise<User | null> | null = null;
+
 async function ensureUserIndexes(db: Db): Promise<void> {
   if (userIndexesEnsured) return;
   const col = db.collection<UserDoc>(COL_USERS);
@@ -100,6 +106,10 @@ async function persistAdminUserKv(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
+  if (adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
+  if (ensureAdminPromise) return ensureAdminPromise;
+
+  ensureAdminPromise = (async () => {
   if (isMongoConfigured()) {
     const db = await getDb();
     const col = db.collection<UserDoc>(COL_USERS);
@@ -143,6 +153,15 @@ export async function ensureAdminUser(): Promise<User | null> {
   const admin = recreateAdminUser();
   await persistAdminUserKv(admin);
   return admin;
+  })();
+
+  try {
+    const result = await ensureAdminPromise;
+    if (result) adminCache = { value: result, expiresAt: Date.now() + ENSURE_ADMIN_TTL_MS };
+    return result;
+  } finally {
+    ensureAdminPromise = null;
+  }
 }
 
 export async function getUserById(id: string): Promise<User | null> {

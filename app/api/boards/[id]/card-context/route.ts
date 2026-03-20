@@ -38,12 +38,17 @@ const CARD_CONTEXT_LIMITS = {
   titleMaxChars: 180,
   descriptionMaxChars: 6000,
   cacheTtlMs: 5 * 60 * 1000,
+  // Limita crescimento do cache em memória do servidor.
+  maxEntries: 300,
 } as const;
 
 const cardContextCache = new Map<
   string,
   { expiresAt: number; result: LlmCardContextResult; createdAt: number }
 >();
+
+// Deduplica chamadas concorrentes para o mesmo cacheKey (evita múltiplos requests à IA).
+const cardContextInFlight = new Map<string, Promise<LlmCardContextResult>>();
 
 function extractTextFromLlmContent(
   content: string | Array<{ type?: string; text?: string }> | undefined
@@ -157,6 +162,15 @@ function writeCachedContext(cacheKey: string, result: LlmCardContextResult): voi
     createdAt: Date.now(),
     result,
   });
+
+  // Eviccao simples por idade (mais antigo sai primeiro).
+  if (cardContextCache.size > CARD_CONTEXT_LIMITS.maxEntries) {
+    const entries = [...cardContextCache.entries()].sort((a, b) => a[1].createdAt - b[1].createdAt);
+    const over = entries.length - CARD_CONTEXT_LIMITS.maxEntries;
+    for (let i = 0; i < over; i++) {
+      cardContextCache.delete(entries[i][0]);
+    }
+  }
 }
 
 function sanitizeJsonCandidate(value: string): string {
@@ -441,8 +455,19 @@ export async function POST(
       }
     }
 
-    const result = await llmCardContext({ boardName, title, description });
-    writeCachedContext(cacheKey, result);
+    let inFlight = cardContextInFlight.get(cacheKey);
+    if (!inFlight) {
+      inFlight = (async () => {
+        const res = await llmCardContext({ boardName, title, description });
+        writeCachedContext(cacheKey, res);
+        return res;
+      })().finally(() => {
+        cardContextInFlight.delete(cacheKey);
+      });
+      cardContextInFlight.set(cacheKey, inFlight);
+    }
+
+    const result = await inFlight;
     const debug: CardContextDebug = {
       source: result.generatedWithAI ? "ai" : "heuristic",
       cacheHit: false,

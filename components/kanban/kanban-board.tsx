@@ -377,6 +377,84 @@ function renderOrganizedContext(raw: string) {
   );
 }
 
+type DailyActionSuggestion = {
+  titulo: string;
+  descricao: string;
+  prioridade: string;
+  progresso: string;
+  coluna: string;
+  tags: string[];
+  dataConclusao: string;
+  direcionamento: string;
+};
+
+function normDailyPrio(value: string | undefined): string {
+  const v = String(value || "").trim().toLowerCase();
+  if (v === "urgente") return "Urgente";
+  if (v === "importante") return "Importante";
+  return "Média";
+}
+
+function normDailyProg(value: string | undefined): string {
+  const v = String(value || "").trim().toLowerCase();
+  if (v === "em andamento") return "Em andamento";
+  if (v === "concluída" || v === "concluida") return "Concluída";
+  return "Não iniciado";
+}
+
+function getDailyActionSuggestions(rawValue?: unknown): DailyActionSuggestion[] {
+  const list = Array.isArray(rawValue) ? rawValue : [];
+  return list
+    .map((item) => {
+      if (!item) return null;
+
+      if (item && typeof item === "object") {
+        const rec = item as {
+          titulo?: string;
+          title?: string;
+          descricao?: string;
+          detalhes?: string;
+          prioridade?: string;
+          progresso?: string;
+          coluna?: string;
+          tags?: string[];
+          dataConclusao?: string;
+          direcionamento?: string;
+        };
+
+        const titulo = String(rec?.titulo || rec?.title || "").trim();
+        if (!titulo) return null;
+
+        return {
+          titulo,
+          descricao: String(rec?.descricao || rec?.detalhes || "").trim(),
+          prioridade: normDailyPrio(rec?.prioridade),
+          progresso: normDailyProg(rec?.progresso),
+          coluna: String(rec?.coluna || "").trim(),
+          tags: Array.isArray(rec?.tags)
+            ? rec.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
+            : [],
+          dataConclusao: String(rec?.dataConclusao || "").trim(),
+          direcionamento: String(rec?.direcionamento || "").trim().toLowerCase(),
+        } satisfies DailyActionSuggestion;
+      }
+
+      const titulo = String(item || "").trim();
+      if (!titulo) return null;
+      return {
+        titulo,
+        descricao: "",
+        prioridade: "Média",
+        progresso: "Não iniciado",
+        coluna: "",
+        tags: [],
+        dataConclusao: "",
+        direcionamento: "",
+      } satisfies DailyActionSuggestion;
+    })
+    .filter(Boolean) as DailyActionSuggestion[];
+}
+
 export function KanbanBoard({
   db,
   updateDb,
@@ -581,20 +659,6 @@ export function KanbanBoard({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [applyFocusMode, clearFilters]);
 
-  const normDailyPrio = (value: string | undefined) => {
-    const v = String(value || "").trim().toLowerCase();
-    if (v === "urgente") return "Urgente";
-    if (v === "importante") return "Importante";
-    return "Média";
-  };
-
-  const normDailyProg = (value: string | undefined) => {
-    const v = String(value || "").trim().toLowerCase();
-    if (v === "em andamento") return "Em andamento";
-    if (v === "concluída" || v === "concluida") return "Concluída";
-    return "Não iniciado";
-  };
-
   const slugDaily = (value: string) =>
     String(value || "")
       .toLowerCase()
@@ -647,68 +711,6 @@ export function KanbanBoard({
         return {
           titulo,
           descricao: "Detalhar escopo, impacto esperado e critérios de aceite.",
-          prioridade: "Média",
-          progresso: "Não iniciado",
-          coluna: "",
-          tags: [],
-          dataConclusao: "",
-          direcionamento: "",
-        };
-      })
-      .filter(Boolean) as Array<{
-      titulo: string;
-      descricao: string;
-      prioridade: string;
-      progresso: string;
-      coluna: string;
-      tags: string[];
-      dataConclusao: string;
-      direcionamento: string;
-    }>;
-  };
-
-  const getDailyActionSuggestions = (rawValue?: unknown) => {
-    const list = Array.isArray(rawValue) ? rawValue : [];
-    return list
-      .map((item) => {
-        if (!item) return null;
-
-        if (item && typeof item === "object") {
-          const rec = item as {
-            titulo?: string;
-            title?: string;
-            descricao?: string;
-            detalhes?: string;
-            prioridade?: string;
-            progresso?: string;
-            coluna?: string;
-            tags?: string[];
-            dataConclusao?: string;
-            direcionamento?: string;
-          };
-
-          const titulo = String(rec?.titulo || rec?.title || "").trim();
-          if (!titulo) return null;
-
-          return {
-            titulo,
-            descricao: String(rec?.descricao || rec?.detalhes || "").trim(),
-            prioridade: normDailyPrio(rec?.prioridade),
-            progresso: normDailyProg(rec?.progresso),
-            coluna: String(rec?.coluna || "").trim(),
-            tags: Array.isArray(rec?.tags)
-              ? rec.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
-              : [],
-            dataConclusao: String(rec?.dataConclusao || "").trim(),
-            direcionamento: String(rec?.direcionamento || "").trim().toLowerCase(),
-          };
-        }
-
-        const titulo = String(item || "").trim();
-        if (!titulo) return null;
-        return {
-          titulo,
-          descricao: "",
           prioridade: "Média",
           progresso: "Não iniciado",
           coluna: "",
@@ -1574,40 +1576,66 @@ export function KanbanBoard({
     [dailyHistorySearchQuery, normalizeSearchText]
   );
 
-  const filteredDailyInsights = useMemo(() => {
-    return dailyInsights.filter((entry) => {
-      const entryDate = toLocalDateInputValue(entry?.createdAt);
-      if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
-      if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
-      if (!normalizedDailyHistorySearchQuery) return true;
+  const dailyInsightsSearchIndex = useMemo(() => {
+    return dailyInsights.map((entry) => {
+      const insight = (entry as { insight?: unknown } | null | undefined)?.insight as
+        | {
+            resumo?: unknown;
+            contextoOrganizado?: unknown;
+            criar?: unknown;
+            ajustar?: unknown;
+            corrigir?: unknown;
+            pendencias?: unknown;
+            criarDetalhes?: unknown;
+          }
+        | undefined;
 
-      const insight = entry?.insight;
       const searchable = [
         insight?.resumo,
         insight?.contextoOrganizado,
-        ...(Array.isArray(insight?.criar) ? insight.criar : []),
-        ...(getDailyActionSuggestions(insight?.ajustar).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
-        ...(getDailyActionSuggestions(insight?.corrigir).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
-        ...(getDailyActionSuggestions(insight?.pendencias).map((x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`)),
-        ...(Array.isArray(insight?.criarDetalhes)
-          ? insight.criarDetalhes.map((item) => String(item?.titulo || ""))
+        ...(Array.isArray(insight?.criar) ? (insight?.criar as unknown[]) : []),
+        ...(getDailyActionSuggestions((insight as any)?.ajustar).map(
+          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
+        ) ?? []),
+        ...(getDailyActionSuggestions((insight as any)?.corrigir).map(
+          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
+        ) ?? []),
+        ...(getDailyActionSuggestions((insight as any)?.pendencias).map(
+          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
+        ) ?? []),
+        ...(Array.isArray((insight as any)?.criarDetalhes)
+          ? (insight as any).criarDetalhes.map((item: any) => String(item?.titulo || ""))
           : []),
-        entry?.transcript,
-        entry?.sourceFileName,
+        (entry as any)?.transcript,
+        (entry as any)?.sourceFileName,
       ]
         .map((item) => String(item || ""))
         .join(" \n ");
 
-      return normalizeSearchText(searchable).includes(normalizedDailyHistorySearchQuery);
+      return {
+        entry,
+        normalizedSearchable: normalizeSearchText(searchable),
+      };
     });
+  }, [dailyInsights, normalizeSearchText]);
+
+  const filteredDailyInsights = useMemo(() => {
+    return dailyInsightsSearchIndex
+      .filter(({ entry, normalizedSearchable }) => {
+        const entryDate = toLocalDateInputValue((entry as any)?.createdAt);
+      if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
+      if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
+      if (!normalizedDailyHistorySearchQuery) return true;
+
+        return normalizedSearchable.includes(normalizedDailyHistorySearchQuery);
+      })
+      .map(({ entry }) => entry);
   }, [
-    dailyInsights,
+    dailyInsightsSearchIndex,
     dailyHistoryDateFrom,
     dailyHistoryDateTo,
     normalizedDailyHistorySearchQuery,
     toLocalDateInputValue,
-    normalizeSearchText,
-    getDailyActionSuggestions,
   ]);
 
   const activeDailyHistoryId = useMemo(() => {

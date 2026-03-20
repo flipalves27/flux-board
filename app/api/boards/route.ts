@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import {
   getBoardIds,
-  getBoard,
+  getBoardsByIds,
   createBoard,
   ensureBoardReborn,
   getDefaultBoardData,
@@ -37,20 +37,15 @@ export async function GET(request: NextRequest) {
     await ensureBoardReborn("admin", getDefaultBoardData);
 
     const boardIds = await getBoardIds(payload.id, payload.isAdmin);
-    const boards = [];
-    for (const bid of boardIds) {
-      const b = await getBoard(bid);
-      if (b) {
-        boards.push({
-          id: b.id,
-          name: b.name,
-          ownerId: b.ownerId,
-          clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
-          lastUpdated: b.lastUpdated,
-          portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
-        });
-      }
-    }
+    const boardRows = await getBoardsByIds(boardIds);
+    const boards = boardRows.map((b) => ({
+      id: b.id,
+      name: b.name,
+      ownerId: b.ownerId,
+      clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
+      lastUpdated: b.lastUpdated,
+      portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
+    }));
     const cap = maxBoardsPerUser();
     const pro = isProTenant();
     const plan =

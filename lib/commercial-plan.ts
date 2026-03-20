@@ -3,7 +3,7 @@
  * Sem variáveis de ambiente = sem limite (comportamento atual).
  */
 
-export function parsePositiveInt(raw: string | undefined): number | null {
+function parsePositiveInt(raw: string | undefined): number | null {
   if (raw === undefined || raw === "") return null;
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || n < 1) return null;

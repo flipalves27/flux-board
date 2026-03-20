@@ -56,6 +56,11 @@ async function nextBoardCounterMongo(db: Db): Promise<number> {
 
 let boardIndexesEnsured = false;
 
+// Evita reads repetidos de inicializacao (em memoria por instância).
+const ENSURE_BOARD_REBORN_TTL_MS = Number(process.env.ENSURE_BOARD_REBORN_TTL_MS ?? 30_000);
+const boardRebornCache = new Map<string, { value: BoardData; expiresAt: number }>();
+const ensureBoardRebornInFlight = new Map<string, Promise<BoardData>>();
+
 async function ensureBoardIndexes(db: Db): Promise<void> {
   if (boardIndexesEnsured) return;
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ ownerId: 1 });
@@ -72,9 +77,12 @@ export async function getBoardIds(userId: string, isAdmin: boolean): Promise<str
       const { listUsers } = await import("./kv-users");
       const users = await listUsers();
       const ub = db.collection<{ _id: string; boardIds: string[] }>(COL_USER_BOARDS);
-      for (const u of users) {
-        const row = await ub.findOne({ _id: u.id });
-        (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
+      const userIds = users.map((u) => u.id);
+      if (userIds.length) {
+        const rows = await ub.find({ _id: { $in: userIds } }).toArray();
+        for (const row of rows) {
+          (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
+        }
       }
       const boardReborn = await db.collection<BoardDoc>(COL_BOARDS).findOne({ _id: BOARD_REBORN_ID });
       if (boardReborn) ids.add(BOARD_REBORN_ID);
@@ -92,8 +100,10 @@ export async function getBoardIds(userId: string, isAdmin: boolean): Promise<str
   if (isAdmin) {
     const { listUsers } = await import("./kv-users");
     const users = await listUsers();
-    for (const u of users) {
-      const userIds = ((await kv.get<string[]>(userBoardsKey(u.id))) as string[]) || [];
+    const boardsPerUser = await Promise.all(
+      users.map(async (u) => ((await kv.get<string[]>(userBoardsKey(u.id))) as string[]) || [])
+    );
+    for (const userIds of boardsPerUser) {
       userIds.forEach((id) => ids.add(id));
     }
     const boardReborn = await getBoard(BOARD_REBORN_ID);
@@ -107,12 +117,35 @@ export async function getBoardIds(userId: string, isAdmin: boolean): Promise<str
 
 export async function listBoardsForUser(userId: string, isAdmin: boolean): Promise<BoardData[]> {
   const boardIds = await getBoardIds(userId, isAdmin);
-  const boards: BoardData[] = [];
-  for (const bid of boardIds) {
-    const b = await getBoard(bid);
-    if (b) boards.push(b);
+  return getBoardsByIds(boardIds);
+}
+
+export async function getBoardsByIds(boardIds: string[]): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .find({ _id: { $in: boardIds } })
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) {
+      byId.set(doc._id, boardDocToData(doc));
+    }
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
   }
-  return boards;
+
+  const kv = await getStore();
+  const results = await Promise.all(
+    boardIds.map(async (id) => {
+      const raw = await kv.get<string>(BOARD_PREFIX + id);
+      if (!raw) return null;
+      return (typeof raw === "string" ? JSON.parse(raw) : raw) as BoardData;
+    })
+  );
+  return results.filter((b): b is BoardData => Boolean(b));
 }
 
 export async function getBoard(boardId: string): Promise<BoardData | null> {
@@ -177,22 +210,32 @@ export async function createBoard(
 export async function updateBoard(boardId: string, updates: Partial<BoardData>): Promise<BoardData | null> {
   const board = await getBoard(boardId);
   if (!board) return null;
-  Object.assign(board, updates);
-  if ("clientLabel" in updates && (!updates.clientLabel || updates.clientLabel.trim() === "")) {
-    delete board.clientLabel;
+  return updateBoardFromExisting(board, updates);
+}
+
+export async function updateBoardFromExisting(board: BoardData, updates: Partial<BoardData>): Promise<BoardData> {
+  const nextBoard: BoardData = { ...board, ...updates };
+
+  // Se o clientLabel vier vazio, remove o campo para não “fixar” string vazia no layout.
+  if ("clientLabel" in updates) {
+    const v = updates.clientLabel;
+    if (!v || v.trim() === "") {
+      delete (nextBoard as BoardData).clientLabel;
+    }
   }
-  board.lastUpdated = new Date().toISOString();
+
+  nextBoard.lastUpdated = new Date().toISOString();
 
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureBoardIndexes(db);
-    await db.collection<BoardDoc>(COL_BOARDS).replaceOne({ _id: boardId }, boardDataToDoc(board));
-    return board;
+    await db.collection<BoardDoc>(COL_BOARDS).replaceOne({ _id: nextBoard.id }, boardDataToDoc(nextBoard));
+    return nextBoard;
   }
 
   const kv = await getStore();
-  await kv.set(BOARD_PREFIX + boardId, JSON.stringify(board));
-  return board;
+  await kv.set(BOARD_PREFIX + nextBoard.id, JSON.stringify(nextBoard));
+  return nextBoard;
 }
 
 export async function deleteBoard(boardId: string, userId: string, isAdmin: boolean): Promise<boolean> {
@@ -255,41 +298,58 @@ export async function ensureBoardReborn(
   adminId: string,
   getSeedData: () => ReturnType<typeof getDefaultBoardData>
 ): Promise<BoardData> {
-  const existing = await getBoard(BOARD_REBORN_ID);
-  if (existing) return existing;
+  const cached = boardRebornCache.get(adminId);
+  if (cached && Date.now() < cached.expiresAt) return cached.value;
 
-  const seedData = getSeedData();
-  const board: BoardData = {
-    id: BOARD_REBORN_ID,
-    ownerId: adminId,
-    name: "Board-Reborn",
-    version: seedData.version || "2.0",
-    cards: seedData.cards || [],
-    config: seedData.config as BoardData["config"],
-    mapaProducao: seedData.mapaProducao || [],
-    dailyInsights: seedData.dailyInsights || [],
-    createdAt: new Date().toISOString(),
-    lastUpdated: new Date().toISOString(),
-  };
+  const inFlight = ensureBoardRebornInFlight.get(adminId);
+  if (inFlight) return inFlight;
 
-  if (isMongoConfigured()) {
-    const db = await getDb();
-    await ensureBoardIndexes(db);
-    await db.collection<BoardDoc>(COL_BOARDS).insertOne(boardDataToDoc(board));
-    await db.collection<{ _id: string; boardIds: string[] }>(COL_USER_BOARDS).updateOne(
-      { _id: adminId },
-      { $addToSet: { boardIds: BOARD_REBORN_ID } },
-      { upsert: true }
-    );
+  const p = (async () => {
+    const existing = await getBoard(BOARD_REBORN_ID);
+    if (existing) return existing;
+
+    const seedData = getSeedData();
+    const board: BoardData = {
+      id: BOARD_REBORN_ID,
+      ownerId: adminId,
+      name: "Board-Reborn",
+      version: seedData.version || "2.0",
+      cards: seedData.cards || [],
+      config: seedData.config as BoardData["config"],
+      mapaProducao: seedData.mapaProducao || [],
+      dailyInsights: seedData.dailyInsights || [],
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    };
+
+    if (isMongoConfigured()) {
+      const db = await getDb();
+      await ensureBoardIndexes(db);
+      await db.collection<BoardDoc>(COL_BOARDS).insertOne(boardDataToDoc(board));
+      await db.collection<{ _id: string; boardIds: string[] }>(COL_USER_BOARDS).updateOne(
+        { _id: adminId },
+        { $addToSet: { boardIds: BOARD_REBORN_ID } },
+        { upsert: true }
+      );
+      return board;
+    }
+
+    const kv = await getStore();
+    await kv.set(BOARD_PREFIX + BOARD_REBORN_ID, JSON.stringify(board));
+    const ids = ((await kv.get<string[]>(userBoardsKey(adminId))) as string[]) || [];
+    if (!ids.includes(BOARD_REBORN_ID)) {
+      ids.push(BOARD_REBORN_ID);
+      await kv.set(userBoardsKey(adminId), ids);
+    }
     return board;
-  }
+  })();
 
-  const kv = await getStore();
-  await kv.set(BOARD_PREFIX + BOARD_REBORN_ID, JSON.stringify(board));
-  const ids = ((await kv.get<string[]>(userBoardsKey(adminId))) as string[]) || [];
-  if (!ids.includes(BOARD_REBORN_ID)) {
-    ids.push(BOARD_REBORN_ID);
-    await kv.set(userBoardsKey(adminId), ids);
+  ensureBoardRebornInFlight.set(adminId, p);
+  try {
+    const result = await p;
+    boardRebornCache.set(adminId, { value: result, expiresAt: Date.now() + ENSURE_BOARD_REBORN_TTL_MS });
+    return result;
+  } finally {
+    ensureBoardRebornInFlight.delete(adminId);
   }
-  return board;
 }

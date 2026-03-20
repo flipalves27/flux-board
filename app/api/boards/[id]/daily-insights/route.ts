@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 
 type InsightActionItem = {
   titulo: string;
@@ -520,7 +520,7 @@ export async function POST(
       },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
-    await updateBoard(boardId, { dailyInsights });
+    await updateBoardFromExisting(board, { dailyInsights });
 
     const llmDebug = {
       provider: llmResult.provider,
