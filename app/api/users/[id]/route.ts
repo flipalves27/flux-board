@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
+import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function GET(
   request: NextRequest,
@@ -72,11 +73,25 @@ export async function PUT(
   try {
     await ensureAdminUser();
     const body = await request.json();
+    const parsed = UserUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
+    }
+
+    const clean = parsed.data;
     const updates: Record<string, unknown> = {};
-    if (body.name !== undefined) updates.name = (body.name || "").trim();
-    if (body.email !== undefined) updates.email = (body.email || "").trim().toLowerCase();
-    if (body.password !== undefined && body.password.length >= 4) {
-      updates.passwordHash = hashPassword(body.password);
+    if (clean.name !== undefined) {
+      const name = sanitizeText(clean.name).trim();
+      if (!name) return NextResponse.json({ error: "Nome invalido." }, { status: 400 });
+      updates.name = name;
+    }
+    if (clean.email !== undefined) {
+      const email = sanitizeText(clean.email).trim().toLowerCase();
+      if (!email) return NextResponse.json({ error: "E-mail invalido." }, { status: 400 });
+      updates.email = email;
+    }
+    if (clean.password !== undefined) {
+      updates.passwordHash = hashPassword(clean.password);
     }
 
     const user = await updateUser(id, updates as Parameters<typeof updateUser>[1]);

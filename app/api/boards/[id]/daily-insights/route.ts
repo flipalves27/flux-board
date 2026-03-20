@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
+import { DailyInsightInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 
 type InsightActionItem = {
   titulo: string;
@@ -483,9 +484,14 @@ export async function POST(
   }
 
   try {
-    const body = (await request.json()) as { transcript?: string; fileName?: string };
-    const transcript = String(body.transcript || "").trim();
-    const sourceFileName = String(body.fileName || "").trim().slice(0, 200);
+    const body = await request.json();
+    const parsed = DailyInsightInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
+    }
+
+    const transcript = sanitizeText(parsed.data.transcript).trim();
+    const sourceFileName = parsed.data.fileName ? sanitizeText(parsed.data.fileName).trim().slice(0, 200) : "";
     if (!transcript) {
       return NextResponse.json({ error: "Transcrição é obrigatória" }, { status: 400 });
     }

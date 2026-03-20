@@ -7,6 +7,7 @@ import {
   userCanAccessBoard,
   BOARD_REBORN_ID,
 } from "@/lib/kv-boards";
+import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 
 export async function GET(
   request: NextRequest,
@@ -63,18 +64,25 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const updates: Record<string, unknown> = {};
-    if (body.name !== undefined && boardId !== BOARD_REBORN_ID) {
-      updates.name = (body.name || "").trim().slice(0, 100);
+    const parsed = BoardUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
     }
-    if (body.cards !== undefined) updates.cards = body.cards;
-    if (body.config !== undefined) updates.config = body.config;
-    if (body.mapaProducao !== undefined) updates.mapaProducao = body.mapaProducao;
-    if (body.dailyInsights !== undefined) updates.dailyInsights = body.dailyInsights;
-    if (body.version !== undefined) updates.version = body.version;
-    if (body.lastUpdated !== undefined) updates.lastUpdated = body.lastUpdated;
-    if (body.clientLabel !== undefined) {
-      updates.clientLabel = String(body.clientLabel ?? "").trim().slice(0, 120);
+
+    // Sanitiza strings aninhadas vindas do cliente (ex.: titulo/desc em cards, tags, etc.)
+    const clean = sanitizeDeep(parsed.data);
+    const updates: Record<string, unknown> = {};
+    if (clean.name !== undefined && boardId !== BOARD_REBORN_ID) {
+      updates.name = String(clean.name || "").trim().slice(0, 100);
+    }
+    if (clean.cards !== undefined) updates.cards = clean.cards;
+    if (clean.config !== undefined) updates.config = clean.config;
+    if (clean.mapaProducao !== undefined) updates.mapaProducao = clean.mapaProducao;
+    if (clean.dailyInsights !== undefined) updates.dailyInsights = clean.dailyInsights;
+    if (clean.version !== undefined) updates.version = clean.version;
+    if (clean.lastUpdated !== undefined) updates.lastUpdated = clean.lastUpdated;
+    if (clean.clientLabel !== undefined) {
+      updates.clientLabel = String(clean.clientLabel ?? "").trim().slice(0, 120);
     }
 
     const board = await updateBoard(boardId, updates);

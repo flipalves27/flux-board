@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
+import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 
 type CardContextInput = {
   title?: string;
@@ -418,10 +419,15 @@ export async function POST(
   }
 
   try {
-    const body = (await request.json()) as CardContextInput;
-    const title = String(body.title || "").trim();
-    const description = String(body.description || "").trim();
-    const forceRefresh = Boolean(body.forceRefresh);
+    const body = await request.json();
+    const parsed = CardContextInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
+    }
+
+    const title = sanitizeText(parsed.data.title).trim();
+    const description = sanitizeText(parsed.data.description).trim();
+    const forceRefresh = Boolean(parsed.data.forceRefresh);
 
     if (!title || !description) {
       return NextResponse.json({ error: "Título e descrição são obrigatórios." }, { status: 400 });

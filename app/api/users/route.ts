@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { listUsers, createUser, getUserByEmail, ensureAdminUser } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
+import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
   const payload = getAuthFromRequest(request);
@@ -31,23 +32,26 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const body = await request.json();
-    const { name, email, password } = body;
-
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Nome, e-mail e senha são obrigatórios" },
-        { status: 400 }
-      );
+    const parsed = UserCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
     }
 
-    const emailNorm = (email || "").trim().toLowerCase();
+    const name = sanitizeText(parsed.data.name).trim();
+    const emailNorm = sanitizeText(parsed.data.email).trim().toLowerCase();
+    const password = parsed.data.password;
+
+    if (!name || !emailNorm || !password) {
+      return NextResponse.json({ error: "Nome, e-mail e senha são obrigatórios" }, { status: 400 });
+    }
+
     if (await getUserByEmail(emailNorm)) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
     const user = await createUser({
       username: emailNorm,
-      name: (name || "").trim(),
+      name,
       email: emailNorm,
       passwordHash: hashPassword(password),
     });

@@ -13,6 +13,7 @@ import {
 } from "@/lib/board-portfolio-metrics";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { isProTenant, maxBoardsPerUser } from "@/lib/commercial-plan";
+import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 
 function corsHeaders() {
   return {
@@ -78,7 +79,12 @@ export async function POST(request: NextRequest) {
     await ensureBoardReborn("admin", getDefaultBoardData);
 
     const body = await request.json();
-    const name = (body.name || "Novo Board").trim().slice(0, 100);
+    const parsed = BoardCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
+    }
+
+    const name = (sanitizeText(parsed.data.name ?? "Novo Board").trim().slice(0, 100) || "Novo Board").trim();
 
     const cap = maxBoardsPerUser();
     if (!payload.isAdmin && !isProTenant() && cap !== null) {
