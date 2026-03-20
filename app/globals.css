@@ -296,6 +296,97 @@
     border-color: var(--home-cta-border, rgba(108, 92, 231, 0.3));
   }
 
+  /* Landing — malha sutil e mock Kanban */
+  .home-landing-mesh {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 92, 231, 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 210, 211, 0.12), transparent),
+      radial-gradient(ellipse 50% 35% at 0% 100%, rgba(253, 167, 223, 0.1), transparent);
+  }
+
+  [data-theme="light"] .home-landing-mesh {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 92, 231, 0.14), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 210, 211, 0.08), transparent),
+      radial-gradient(ellipse 50% 35% at 0% 100%, rgba(253, 167, 223, 0.08), transparent);
+  }
+
+  .home-kanban-mock {
+    border-color: rgba(108, 92, 231, 0.28);
+    background: linear-gradient(165deg, rgba(34, 31, 58, 0.92), rgba(13, 11, 26, 0.65));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 24px 48px rgba(13, 11, 26, 0.45);
+  }
+
+  [data-theme="light"] .home-kanban-mock {
+    border-color: rgba(108, 92, 231, 0.22);
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.95), rgba(248, 247, 255, 0.88));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 24px 48px rgba(96, 79, 214, 0.12);
+  }
+
+  .home-kanban-card {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(45, 41, 82, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  [data-theme="light"] .home-kanban-card {
+    border-color: rgba(108, 92, 231, 0.15);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  .home-kanban-col {
+    border-color: rgba(108, 92, 231, 0.12);
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="light"] .home-kanban-col {
+    background: rgba(108, 92, 231, 0.04);
+  }
+
+  .home-kanban-line {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  [data-theme="light"] .home-kanban-line {
+    background: rgba(108, 92, 231, 0.08);
+  }
+
+  .home-kanban-line-muted {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  [data-theme="light"] .home-kanban-line-muted {
+    background: rgba(108, 92, 231, 0.06);
+  }
+
+  @keyframes homeLandingFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .home-landing-reveal {
+    animation: homeLandingFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-landing-reveal {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* Scrollbars — tema Flux, horizontal e vertical */
   .scrollbar-flux,
   .scrollbar-kanban {

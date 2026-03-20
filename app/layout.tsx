@@ -20,8 +20,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Flux-Board — Organize the flow. Ship what matters.",
-  description: "Plataforma de gestão de backlog e Kanban. Organize o fluxo, entregue o que importa.",
+  title: "Flux-Board — Commercial operations with clarity",
+  description:
+    "Professional Kanban, daily insights, context on cards, and portfolio visibility. Built for sales, operations, and leadership teams.",
 };
 
 export default function RootLayout({
