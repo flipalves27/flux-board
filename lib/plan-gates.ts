@@ -8,7 +8,8 @@ export type FeatureKey =
   | "card_context"
   | "daily_insights"
   | "portfolio_export"
-  | "board_copilot";
+  | "board_copilot"
+  | "okr_engine";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   executive_brief: ["pro", "business"],
@@ -16,6 +17,7 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   daily_insights: ["pro", "business"],
   portfolio_export: ["pro", "business"],
   board_copilot: ["pro", "business"],
+  okr_engine: ["pro", "business"],
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

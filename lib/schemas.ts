@@ -265,6 +265,123 @@ export const BoardUpdateSchema = z
   })
   .passthrough();
 
+// -----------------------
+// OKRs (Objectives / Key Results)
+// -----------------------
+
+export const OkrsObjectiveCreateSchema = z
+  .object({
+    title: z.string().trim().min(1, "Título é obrigatório.").max(200, "Título excede o limite."),
+    owner: z.string().trim().max(200).optional().nullable(),
+    quarter: z.string().trim().min(1, "Quarter é obrigatório.").max(50, "Quarter excede o limite."),
+  })
+  .passthrough();
+
+export const OkrsObjectiveUpdateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    owner: z.string().trim().max(200).optional().nullable(),
+    quarter: z.string().trim().min(1).max(50).optional(),
+  })
+  .refine((data) => data.title !== undefined || data.owner !== undefined || data.quarter !== undefined, {
+    message: "Informe ao menos um campo para atualização.",
+  })
+  .passthrough();
+
+export const OkrsKeyResultMetricTypeSchema = z.enum(["card_count", "card_in_column", "Manual"]);
+
+export const OkrsKeyResultCreateSchema = z
+  .object({
+    objectiveId: z.string().trim().min(1, "objectiveId é obrigatório.").max(200),
+    title: z.string().trim().min(1, "Título é obrigatório.").max(200),
+    metric_type: OkrsKeyResultMetricTypeSchema,
+    target: z.preprocess(
+      (v) => {
+        if (typeof v === "string") {
+          const s = v.trim();
+          if (!s) return 0;
+          const n = Number(s);
+          return Number.isFinite(n) ? n : v;
+        }
+        return v;
+      },
+      z.number().finite().nonnegative().max(1_000_000_000)
+    ),
+    linkedBoardId: z.string().trim().min(1, "linkedBoardId é obrigatório.").max(200),
+    linkedColumnKey: z.string().trim().max(200).optional().nullable(),
+    manualCurrent: z.preprocess(
+      (v) => {
+        if (v === null || v === undefined) return v;
+        if (typeof v === "string") {
+          const s = v.trim();
+          if (!s) return 0;
+          const n = Number(s);
+          return Number.isFinite(n) ? n : v;
+        }
+        return v;
+      },
+      z.number().finite().nonnegative().max(1_000_000_000)
+    ).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.metric_type === "card_in_column") {
+      const col = data.linkedColumnKey;
+      if (!col || !String(col).trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "linkedColumnKey é obrigatório para card_in_column.", path: ["linkedColumnKey"] });
+      }
+    }
+  })
+  .passthrough();
+
+export const OkrsKeyResultUpdateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    metric_type: OkrsKeyResultMetricTypeSchema.optional(),
+    target: z
+      .preprocess(
+        (v) => {
+          if (typeof v === "string") {
+            const s = v.trim();
+            if (!s) return 0;
+            const n = Number(s);
+            return Number.isFinite(n) ? n : v;
+          }
+          return v;
+        },
+        z.number().finite().nonnegative().max(1_000_000_000)
+      )
+      .optional(),
+    linkedBoardId: z.string().trim().min(1).max(200).optional(),
+    linkedColumnKey: z.string().trim().max(200).optional().nullable(),
+    manualCurrent: z
+      .preprocess(
+        (v) => {
+          if (v === null || v === undefined) return v;
+          if (typeof v === "string") {
+            const s = v.trim();
+            if (!s) return 0;
+            const n = Number(s);
+            return Number.isFinite(n) ? n : v;
+          }
+          return v;
+        },
+        z.number().finite().nonnegative().max(1_000_000_000)
+      )
+      .optional()
+      .nullable(),
+  })
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.metric_type !== undefined ||
+      data.target !== undefined ||
+      data.linkedBoardId !== undefined ||
+      data.linkedColumnKey !== undefined ||
+      data.manualCurrent !== undefined,
+    { message: "Informe ao menos um campo para atualização." }
+  )
+  .passthrough();
+
 export const DailyInsightInputSchema = z
   .object({
     transcript: z

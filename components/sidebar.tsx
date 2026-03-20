@@ -87,6 +87,16 @@ function IconInvites({ className }: { className?: string }) {
   );
 }
 
+function IconGoals({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8 8-4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2 2 1-1" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -170,6 +180,7 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/boards") return normalizedPath === "/boards";
+    if (href === "/okrs") return normalizedPath === "/okrs";
     if (href === "/discovery") return normalizedPath.startsWith("/discovery");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/users") return normalizedPath === "/users";
@@ -220,6 +231,10 @@ export function Sidebar() {
         <Link href={`/${locale}/boards`} className={linkClass("/boards")}>
           <IconBoards className="w-4 h-4 shrink-0" />
           {!collapsed && <span>{t("boards")}</span>}
+        </Link>
+        <Link href={`/${locale}/okrs`} className={linkClass("/okrs")}>
+          <IconGoals className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>Flux Goals</span>}
         </Link>
         <Link href={`/${locale}/discovery`} className={linkClass("/discovery")}>
           <IconDiscovery className="w-4 h-4 shrink-0" />

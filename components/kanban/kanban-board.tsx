@@ -27,6 +27,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { useDailySession } from "./hooks/useDailySession";
+import { apiGet } from "@/lib/api-client";
+import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDefinition } from "@/lib/okr-engine";
 
 interface KanbanBoardProps {
   db: BoardData;
@@ -116,6 +118,64 @@ export function KanbanBoard({
   const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
   const [priorityBarVisible, setPriorityBarVisible] = useState(true);
+
+  const currentQuarter = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    return `${year}-Q${q}`;
+  }, []);
+
+  const [okrObjectives, setOkrObjectives] = useState<OkrsObjectiveDefinition[]>([]);
+  const [okrLoadError, setOkrLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadOkrs() {
+      setOkrLoadError(null);
+      try {
+        const r = await apiGet<{
+          ok: boolean;
+          objectives: Array<{ objective: any; keyResults: any[] }>;
+        }>(
+          `/api/okrs/by-board?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
+          getHeaders()
+        );
+
+        if (cancelled) return;
+        if (r?.ok && Array.isArray(r.objectives)) {
+          const defs: OkrsObjectiveDefinition[] = r.objectives
+            .map((g) => {
+              const obj = g.objective;
+              if (!obj) return null;
+              const keyResults: OkrsKeyResultDefinition[] = Array.isArray(g.keyResults) ? g.keyResults : [];
+              return {
+                id: String(obj.id),
+                title: String(obj.title ?? ""),
+                owner: obj.owner ?? null,
+                quarter: String(obj.quarter ?? currentQuarter),
+                keyResults,
+              };
+            })
+            .filter(Boolean) as OkrsObjectiveDefinition[];
+          setOkrObjectives(defs);
+        } else {
+          setOkrObjectives([]);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setOkrObjectives([]);
+        setOkrLoadError(err instanceof Error ? err.message : "Erro ao carregar OKRs");
+      }
+    }
+
+    if (!boardId) return;
+    loadOkrs();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, currentQuarter, getHeaders]);
+
   const dailySession = useDailySession({
     db,
     updateDb,
@@ -589,6 +649,16 @@ export function KanbanBoard({
 
     return { inProgress, doneRate, urgent, overdue, dueSoon, nextActions, wipRiskColumns };
   }, [cards, buckets, getCardsByBucket]);
+
+  const okrsComputed = useMemo(() => {
+    const bucketKeys = new Set<string>(
+      (db.config?.bucketOrder || [])
+        .map((b: any) => String(b?.key || ""))
+        .filter((k) => typeof k === "string" && k.trim().length > 0)
+    );
+
+    return computeOkrsProgress({ cards, objectives: okrObjectives, bucketKeys });
+  }, [cards, okrObjectives, db.config?.bucketOrder]);
 
   const handleExportCSV = () => {
     const sep = ";";
@@ -1217,6 +1287,88 @@ export function KanbanBoard({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {(okrObjectives.length > 0 || Boolean(okrLoadError)) && (
+          <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-2">
+              Flux Goals (OKRs) — {currentQuarter}
+            </div>
+
+            <div className="space-y-3">
+              {okrsComputed.map((o) => (
+                <div
+                  key={o.objective.id}
+                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-display font-bold text-[var(--flux-text)] truncate">
+                        {o.objective.title}
+                      </div>
+                      <div className="text-[10px] text-[var(--flux-text-muted)] mt-0.5">
+                        Status: {o.status}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-display font-bold text-xs text-[var(--flux-text)]">{o.objectiveCurrentPct}%</div>
+                      <div className="text-[10px] text-[var(--flux-text-muted)]">min dos KRs</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--flux-primary)] transition-[width] duration-200"
+                      style={{ width: `${o.objectiveCurrentPct}%` }}
+                    />
+                  </div>
+
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-[11px] text-[var(--flux-secondary)] font-semibold select-none">
+                      Ver KRs ({o.keyResults.length})
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      {o.keyResults.map((kr) => (
+                        <div
+                          key={kr.definition.id}
+                          className="border border-[rgba(255,255,255,0.08)] rounded-md bg-[rgba(255,255,255,0.04)] p-2"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
+                                {kr.definition.title}
+                              </div>
+                              {kr.linkBroken ? (
+                                <div className="text-[10px] text-[var(--flux-danger)] mt-0.5">
+                                  Link quebrado (coluna removida)
+                                </div>
+                              ) : (
+                                <div className="text-[10px] text-[var(--flux-text-muted)] mt-0.5">{kr.status}</div>
+                              )}
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <div className="font-display font-bold text-[11px] text-[var(--flux-text)]">{kr.pct}%</div>
+                              <div className="text-[10px] text-[var(--flux-text-muted)]">
+                                {kr.current} / {kr.definition.target}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-1 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                            <div
+                              className="h-full bg-[var(--flux-secondary)] transition-[width] duration-200"
+                              style={{ width: `${kr.pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+              ))}
+            </div>
+
+            {okrLoadError && <div className="mt-2 text-[10px] text-[var(--flux-danger)]">{okrLoadError}</div>}
           </div>
         )}
       </div>
