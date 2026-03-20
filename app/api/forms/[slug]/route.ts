@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBoard, updateBoardFromExisting } from "@/lib/kv-boards";
 import { runFormSubmissionAutomations } from "@/lib/automation-engine";
 import { getIntakeFormIndexBySlug } from "@/lib/kv-intake-forms";
+import { getOrganizationById } from "@/lib/kv-organizations";
+import {
+  getDailyAiCallsCap,
+  getDailyAiCallsWindowMs,
+  makeDailyAiCallsRateLimitKey,
+} from "@/lib/plan-gates";
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
-import { classifyIntake, normalizeFormSlug } from "@/lib/forms-intake";
+import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 type BoardCard = {
@@ -18,6 +24,13 @@ type BoardCard = {
   dueDate: string | null;
   order: number;
 };
+
+function priorityRank(p: string): number {
+  if (p === "Urgente") return 3;
+  if (p === "Importante") return 2;
+  if (p === "Média") return 1;
+  return 0;
+}
 
 function safePublicForm(board: any) {
   const f = board?.intakeForm || {};
@@ -73,9 +86,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!parsed.success) return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
     const clean = sanitizeDeep(parsed.data);
 
-    const classifier = classifyIntake({
-      title: String(clean.title || ""),
-      description: String(clean.description || ""),
+    const org = await getOrganizationById(index.orgId);
+    const cap = getDailyAiCallsCap(org);
+    const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+    let allowLlm = true;
+    if (cap !== null && togetherEnabled) {
+      const rlDaily = await rateLimit({
+        key: makeDailyAiCallsRateLimitKey(index.orgId),
+        limit: cap,
+        windowMs: getDailyAiCallsWindowMs(),
+      });
+      allowLlm = rlDaily.allowed;
+    }
+
+    const classifier = await classifyIntakeWithBoardContext({
+      board,
+      formDefaultTags: Array.isArray(form.defaultTags) ? form.defaultTags : [],
+      input: {
+        title: String(clean.title || ""),
+        description: String(clean.description || ""),
+      },
+      allowLlm,
     });
 
     const bucketList = Array.isArray((board as any).config?.bucketOrder) ? (board as any).config.bucketOrder : [];
@@ -87,7 +118,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         : String(bucketList[0]?.key || "Backlog");
 
     const existingCards = Array.isArray((board as any).cards) ? ((board as any).cards as BoardCard[]) : [];
-    const order = existingCards.filter((c) => c.bucket === targetBucket).length;
     const mergedTags = new Set<string>([
       ...(Array.isArray(form.defaultTags) ? form.defaultTags : []),
       ...(Array.isArray(clean.tags) ? clean.tags : []),
@@ -95,6 +125,62 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       "Flux Forms",
     ]);
 
+    const duplicateId = classifier.duplicateOfCardId || null;
+    if (duplicateId) {
+      const dupIdx = existingCards.findIndex((c) => c.id === duplicateId);
+      if (dupIdx >= 0) {
+        const existing = existingCards[dupIdx];
+        const appendBlock = [
+          "",
+          "---",
+          `[Atualização via Flux Forms — ${new Date().toISOString()}]`,
+          classifier.duplicateMergeSuggestion
+            ? `Detecção de possível duplicata: ${classifier.duplicateMergeSuggestion}`
+            : "Detecção de possível duplicata (IA).",
+          "",
+          `Título: ${String(clean.title || "").trim()}`,
+          String(clean.description || "").trim(),
+          `Solicitante: ${String(clean.requesterName || "").trim()}`,
+          clean.requesterEmail ? `Contato: ${String(clean.requesterEmail).trim()}` : "",
+          `Classificação (IA): ${classifier.rationale}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        const nextPriority =
+          classifier.priority && priorityRank(classifier.priority) > priorityRank(String(existing.priority || ""))
+            ? classifier.priority
+            : existing.priority;
+
+        const updated: BoardCard = {
+          ...existing,
+          desc: `${String(existing.desc || "").trim()}\n${appendBlock}`.trim(),
+          tags: [...mergedTags].map((t) => String(t).trim()).filter(Boolean).slice(0, 20),
+          priority: String(nextPriority || form.defaultPriority || "Média"),
+        };
+
+        const nextCards = [...existingCards];
+        nextCards[dupIdx] = updated;
+        await updateBoardFromExisting(board, { cards: nextCards });
+
+        const freshBoard = await getBoard(index.boardId, index.orgId);
+        if (freshBoard) {
+          await runFormSubmissionAutomations({ board: freshBoard, cardId: updated.id });
+        }
+
+        return NextResponse.json({
+          ok: true,
+          merged: true,
+          cardId: updated.id,
+          bucket: updated.bucket,
+          priority: updated.priority,
+          tags: updated.tags,
+          classification: { usedLlm: classifier.usedLlm ?? false, rationale: classifier.rationale },
+        });
+      }
+    }
+
+    const order = existingCards.filter((c) => c.bucket === targetBucket).length;
     const card: BoardCard = {
       id: `FORM-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase(),
       bucket: targetBucket,
@@ -127,10 +213,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({
       ok: true,
+      merged: false,
       cardId: card.id,
       bucket: card.bucket,
       priority: card.priority,
       tags: card.tags,
+      classification: { usedLlm: classifier.usedLlm ?? false, rationale: classifier.rationale },
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });

@@ -163,7 +163,7 @@ Gera um resumo semanal por board e envia para os gestores de cada organização,
 - `DIGEST_TIMEZONE` (opcional, padrão `America/Sao_Paulo`): timezone usado para rotular a semana
 - `DIGEST_RECIPIENT_OVERRIDE_EMAILS` (opcional): lista de emails (CSV) para substituir os destinatários (útil em testes)
 - `WEEKLY_DIGEST_AI_MAX_BOARDS_PER_ORG` (opcional, padrão `10`): limite de boards para tentar IA por org
-- `TOGETHER_API_KEY` e `TOGETHER_MODEL`: habilitam geração do insight via IA (quando configurados, tentamos IA em todos os boards; fallback heurístico apenas se a IA falhar de fato)
+- `TOGETHER_API_KEY` e `TOGETHER_MODEL`: habilitam geração do insight via IA, classificação de submissões do Flux Forms e outros fluxos (fallback heurístico quando a IA não está disponível ou falha)
 
 ### Agendamento (Vercel Cron)
 
