@@ -9,6 +9,8 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
 import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
+import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
+import { BoardEmbedModal } from "@/components/board/board-embed-modal";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
@@ -163,6 +165,8 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
+  const [templateExportOpen, setTemplateExportOpen] = useState(false);
+  const [embedOpen, setEmbedOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
@@ -381,6 +385,16 @@ export default function BoardPage() {
           <button type="button" className="btn-secondary" onClick={() => setPortalOpen(true)}>
             {t("portal.open")}
           </button>
+          {user.isAdmin && (
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setTemplateExportOpen(true)}>
+                Template
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setEmbedOpen(true)}>
+                Widget
+              </button>
+            </>
+          )}
           <div
             className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
               saveStatus === "idle" ? "opacity-0" : "opacity-100"
@@ -435,6 +449,15 @@ export default function BoardPage() {
           setDb((prev) => (prev ? { ...prev, portal } : null));
         }}
       />
+
+      <BoardTemplateExportModal
+        open={templateExportOpen}
+        onClose={() => setTemplateExportOpen(false)}
+        boardId={boardId}
+        getHeaders={getHeaders}
+      />
+
+      <BoardEmbedModal open={embedOpen} onClose={() => setEmbedOpen(false)} boardId={boardId} getHeaders={getHeaders} />
 
       <BoardCopilotPanel
         boardId={boardId}

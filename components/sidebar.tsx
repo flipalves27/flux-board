@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { useOrgBranding } from "@/context/org-branding-context";
 import { useTheme } from "@/context/theme-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
@@ -41,6 +42,14 @@ function IconDiscovery({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  );
+}
+
+function IconTemplates({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
     </svg>
   );
 }
@@ -151,6 +160,8 @@ const SIDEBAR_WIDTH_COLLAPSED = 72;
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout, isChecked, getHeaders } = useAuth();
+  const orgBrandingCtx = useOrgBranding();
+  const orgLogoUrl = orgBrandingCtx?.branding?.logoUrl?.trim();
   const { theme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations("navigation");
@@ -191,6 +202,7 @@ export function Sidebar() {
     if (href === "/reports") return normalizedPath === "/reports";
     if (href === "/okrs") return normalizedPath === "/okrs";
     if (href === "/discovery") return normalizedPath.startsWith("/discovery");
+    if (href === "/templates") return normalizedPath.startsWith("/templates");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/billing") return normalizedPath === "/billing";
@@ -259,13 +271,20 @@ export function Sidebar() {
       <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
         <Link href={`/${locale}/boards`} className={`flex items-center min-w-0 ${collapsed ? "justify-center shrink-0" : "gap-2"}`}>
           <div
-            className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white"
+            className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: "0 2px 8px rgba(108,92,231,0.25)",
+              background: orgLogoUrl
+                ? "var(--flux-surface-elevated)"
+                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+              boxShadow: orgLogoUrl ? "none" : "0 2px 8px rgba(108,92,231,0.25)",
             }}
           >
-            <FluxLogoIcon className="w-4 h-4" />
+            {orgLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={orgLogoUrl} alt="" className="max-w-[28px] max-h-[28px] object-contain" />
+            ) : (
+              <FluxLogoIcon className="w-4 h-4" />
+            )}
           </div>
           {!collapsed && <span className="font-display font-bold text-[var(--flux-text)] truncate text-sm">Flux-Board</span>}
         </Link>
@@ -293,6 +312,12 @@ export function Sidebar() {
           hint={t("hints.discovery")}
           icon={<IconDiscovery className="w-4 h-4 shrink-0" />}
           label={t("discovery")}
+        />
+        <NavLink
+          path="/templates"
+          hint={t("hints.templates")}
+          icon={<IconTemplates className="w-4 h-4 shrink-0" />}
+          label={t("templates")}
         />
         <NavLink
           path="/tasks"

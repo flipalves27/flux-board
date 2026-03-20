@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPut, ApiError } from "@/lib/api-client";
 import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
+import { useOrgBranding } from "@/context/org-branding-context";
 
 function slugifyLocal(input: string): string {
   return String(input || "")
@@ -25,6 +26,7 @@ export default function OrgSettingsPage() {
   const t = useTranslations("onboarding");
   const localeRoot = `/${locale}`;
   const { pushToast } = useToast();
+  const orgBranding = useOrgBranding();
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -32,7 +34,13 @@ export default function OrgSettingsPage() {
 
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
+  const [orgPlan, setOrgPlan] = useState<"free" | "pro" | "business">("free");
   const [slugTouched, setSlugTouched] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
 
   const suggestedSlug = useMemo(() => slugifyLocal(orgName), [orgName]);
 
@@ -54,6 +62,13 @@ export default function OrgSettingsPage() {
         const org = data?.organization;
         setOrgName(org?.name ?? "");
         setOrgSlug(org?.slug ?? "");
+        setOrgPlan(org?.plan === "pro" || org?.plan === "business" ? org.plan : "free");
+        const b = org?.branding;
+        setLogoUrl(typeof b?.logoUrl === "string" ? b.logoUrl : "");
+        setPrimaryColor(typeof b?.primaryColor === "string" ? b.primaryColor : "");
+        setSecondaryColor(typeof b?.secondaryColor === "string" ? b.secondaryColor : "");
+        setFaviconUrl(typeof b?.faviconUrl === "string" ? b.faviconUrl : "");
+        setCustomDomain(typeof b?.customDomain === "string" ? b.customDomain : "");
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
           router.replace(`${localeRoot}/login`);
@@ -80,9 +95,27 @@ export default function OrgSettingsPage() {
       if (!name) throw new Error("Nome é obrigatório.");
       if (!slug) throw new Error("Slug é obrigatório.");
 
-      await apiPut("/api/organizations/me", { name, slug }, getHeaders());
+      const branding =
+        orgPlan === "pro" || orgPlan === "business"
+          ? {
+              logoUrl: logoUrl.trim() || "",
+              primaryColor: primaryColor.trim() || "",
+              secondaryColor: secondaryColor.trim() || "",
+              faviconUrl: faviconUrl.trim() || "",
+              ...(orgPlan === "business" ? { customDomain: customDomain.trim() || "" } : {}),
+            }
+          : undefined;
+
+      await apiPut(
+        "/api/organizations/me",
+        branding
+          ? { name, slug, branding }
+          : { name, slug },
+        getHeaders()
+      );
       pushToast({ kind: "success", title: "Organização atualizada." });
       setSlugTouched(true);
+      await orgBranding?.refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Erro ao salvar.");
     } finally {
@@ -138,6 +171,69 @@ export default function OrgSettingsPage() {
                   </p>
                 </div>
               </div>
+
+              {(orgPlan === "pro" || orgPlan === "business") && (
+                <div className="mt-8 pt-8 border-t border-[rgba(108,92,231,0.15)]">
+                  <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Branding (app inteiro)</h3>
+                  <p className="text-sm text-[var(--flux-text-muted)] mb-4">
+                    Logo na sidebar, cores primárias e favicon. Plano Business: domínio customizado (CNAME configurado no DNS).
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Logo (URL)</label>
+                      <input
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
+                        disabled={busy}
+                        placeholder="https://…"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor primária (hex)</label>
+                      <input
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                        disabled={busy}
+                        placeholder="#6C5CE7"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor secundária (hex)</label>
+                      <input
+                        value={secondaryColor}
+                        onChange={(e) => setSecondaryColor(e.target.value)}
+                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                        disabled={busy}
+                        placeholder="#00D2D3"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Favicon (URL)</label>
+                      <input
+                        value={faviconUrl}
+                        onChange={(e) => setFaviconUrl(e.target.value)}
+                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)]"
+                        disabled={busy}
+                        placeholder="https://…/favicon.ico"
+                      />
+                    </div>
+                    {orgPlan === "business" && (
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Domínio customizado</label>
+                        <input
+                          value={customDomain}
+                          onChange={(e) => setCustomDomain(e.target.value)}
+                          className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          disabled={busy}
+                          placeholder="board.cliente.com"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 flex justify-end gap-3">
                 <button

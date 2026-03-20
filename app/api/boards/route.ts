@@ -16,6 +16,10 @@ import { ensureAdminUser } from "@/lib/kv-users";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getBoardCap } from "@/lib/plan-gates";
+import { getPublishedTemplateById } from "@/lib/kv-templates";
+import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
+import type { BoardTemplateSnapshot } from "@/lib/template-types";
+import type { AutomationRule } from "@/lib/automation-types";
 
 function corsHeaders() {
   return {
@@ -93,6 +97,11 @@ export async function POST(request: NextRequest) {
     }
 
     const name = (sanitizeText(parsed.data.name ?? "Novo Board").trim().slice(0, 100) || "Novo Board").trim();
+    const templateId = typeof parsed.data.templateId === "string" ? parsed.data.templateId.trim() : undefined;
+    const rawSnap = parsed.data.templateSnapshot as BoardTemplateSnapshot | undefined;
+    if (templateId && rawSnap) {
+      return NextResponse.json({ error: "Use apenas templateId ou templateSnapshot, não ambos." }, { status: 400 });
+    }
 
     const rebornId = getBoardRebornId(payload.orgId);
     const cap = getBoardCap(org);
@@ -107,13 +116,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const board = await createBoard(payload.orgId, payload.id, name, {
-      version: "2.0",
-      cards: [],
-      config: { bucketOrder: [], collapsedColumns: [] },
-      mapaProducao: [],
-      dailyInsights: [],
-    });
+    let board;
+    if (templateId) {
+      const tpl = await getPublishedTemplateById(templateId);
+      if (!tpl) {
+        return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
+      }
+      const snap = tpl.snapshot;
+      board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
+        ...snap,
+        automations: Array.isArray(snap.automations) ? (snap.automations as AutomationRule[]) : [],
+      });
+    } else if (rawSnap) {
+      board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
+        ...rawSnap,
+        automations: Array.isArray(rawSnap.automations) ? (rawSnap.automations as AutomationRule[]) : [],
+      });
+    } else {
+      board = await createBoard(payload.orgId, payload.id, name, {
+        version: "2.0",
+        cards: [],
+        config: { bucketOrder: [], collapsedColumns: [] },
+        mapaProducao: [],
+        dailyInsights: [],
+      });
+    }
     return NextResponse.json(
       {
         board: {

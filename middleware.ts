@@ -28,20 +28,32 @@ function isDocumentRequest(req: NextRequest) {
 
 const intlMiddleware = createMiddleware(routing);
 
+function isEmbedDocumentPath(pathname: string) {
+  return pathname.startsWith("/embed/");
+}
+
 export function middleware(req: NextRequest) {
   const res = intlMiddleware(req);
+  const pathname = req.nextUrl.pathname;
+  const embed = isEmbedDocumentPath(pathname);
 
-  for (const [k, v] of Object.entries(NON_CSP_HEADERS)) {
-    res.headers.set(k, v);
-  }
-
-  // Aplica CSP apenas para documentos (evita “poluir” recursos como _next/static).
-  if (isDocumentRequest(req)) {
-    if (process.env.NODE_ENV === "production") {
-      res.headers.set("Content-Security-Policy", CSP);
-    } else {
-      // Em desenvolvimento, evita quebra silenciosa setando Report-Only.
-      res.headers.set("Content-Security-Policy-Report-Only", CSP);
+  if (embed) {
+    // Permite iframe em sites externos; preferir CSP frame-ancestors (X-Frame-Options some browsers).
+    res.headers.delete("X-Frame-Options");
+    if (isDocumentRequest(req)) {
+      res.headers.set("Content-Security-Policy", "default-src 'self'; frame-ancestors *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;");
+    }
+  } else {
+    for (const [k, v] of Object.entries(NON_CSP_HEADERS)) {
+      res.headers.set(k, v);
+    }
+    // Aplica CSP apenas para documentos (evita “poluir” recursos como _next/static).
+    if (isDocumentRequest(req)) {
+      if (process.env.NODE_ENV === "production") {
+        res.headers.set("Content-Security-Policy", CSP);
+      } else {
+        res.headers.set("Content-Security-Policy-Report-Only", CSP);
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/context/auth-context";
+import { OrgBrandingProvider } from "@/context/org-branding-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
@@ -39,13 +40,15 @@ export default async function RootLayout({
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
-            <ToastProvider>
-              <ThemeProvider>
-                <RoutineTasksProvider>
-                  <AppShell>{children}</AppShell>
-                </RoutineTasksProvider>
-              </ThemeProvider>
-            </ToastProvider>
+            <OrgBrandingProvider>
+              <ToastProvider>
+                <ThemeProvider>
+                  <RoutineTasksProvider>
+                    <AppShell>{children}</AppShell>
+                  </RoutineTasksProvider>
+                </ThemeProvider>
+              </ToastProvider>
+            </OrgBrandingProvider>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

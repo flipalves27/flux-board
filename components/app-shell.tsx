@@ -22,7 +22,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     normalizedPath === "/login" ||
     normalizedPath === "/onboarding" ||
     normalizedPath.startsWith("/portal/") ||
-    normalizedPath.startsWith("/forms/");
+    normalizedPath.startsWith("/forms/") ||
+    normalizedPath.startsWith("/embed/");
   const showSidebar = isChecked && user && !isPublicRoute;
 
   useEffect(() => {

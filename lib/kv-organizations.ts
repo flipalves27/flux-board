@@ -1,6 +1,7 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
 import { maxBoardsPerUser } from "./commercial-plan";
+import type { OrgBranding } from "./org-branding";
 
 export interface Organization {
   _id: string; // "org_xxxxx"
@@ -10,6 +11,8 @@ export interface Organization {
   plan: "free" | "pro" | "business";
   maxUsers: number;
   maxBoards: number;
+  /** White-label (Enterprise): logo, cores, favicon; domínio customizado em plano Business. */
+  branding?: OrgBranding;
   // Billing (Stripe)
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -266,6 +269,7 @@ export async function updateOrganization(
       | "stripeStatus"
       | "stripeCurrentPeriodEnd"
       | "stripeSeats"
+      | "branding"
     >
   >
 ): Promise<Organization | null> {

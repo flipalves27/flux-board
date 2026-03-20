@@ -137,9 +137,24 @@ function isSafeLinkUrl(url: string): boolean {
 // Request body schemas
 // -----------------------
 
+export const BoardTemplateSnapshotSchema = z.object({
+  config: z.object({
+    bucketOrder: z.array(z.unknown()),
+    collapsedColumns: z.array(z.string()).optional(),
+    labels: z.array(z.string()).optional(),
+  }),
+  mapaProducao: z.array(z.unknown()),
+  labelPalette: z.array(z.string()),
+  automations: z.array(z.unknown()),
+});
+
 export const BoardCreateSchema = z
   .object({
     name: z.string().trim().min(1, "Nome do board e obrigatorio.").max(100).optional(),
+    /** Importa de template publicado no showcase. */
+    templateId: z.string().trim().min(1).max(120).optional(),
+    /** Instanciação direta (ex.: fluxo de IA) — não persistido no servidor. */
+    templateSnapshot: BoardTemplateSnapshotSchema.optional(),
   })
   .passthrough();
 
@@ -309,6 +324,39 @@ export const PortalBrandingSchema = z
     primaryColor: z.string().trim().max(32).optional().nullable(),
     secondaryColor: z.string().trim().max(32).optional().nullable(),
     title: z.string().trim().max(120).optional().nullable(),
+  })
+  .passthrough();
+
+/** Atualização parcial de branding da organização (Enterprise). */
+export const TemplateExportBodySchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional().default(""),
+  category: z.enum([
+    "sales",
+    "operations",
+    "projects",
+    "hr",
+    "marketing",
+    "customer_success",
+    "support",
+    "insurance_warranty",
+  ]),
+  pricingTier: z.enum(["free", "premium"]),
+});
+
+export const OrgBrandingUpdateSchema = z
+  .object({
+    logoUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
+    primaryColor: z.string().trim().max(32).optional().nullable(),
+    secondaryColor: z.string().trim().max(32).optional().nullable(),
+    faviconUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
+    customDomain: z
+      .string()
+      .trim()
+      .max(200)
+      .regex(/^[a-z0-9.-]*$/i, "Domínio inválido.")
+      .optional()
+      .nullable(),
   })
   .passthrough();
 
