@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { alerts, dismissAlert } = useRoutineTasks();
   const announcedAlertsRef = useRef<Set<string>>(new Set());
 
-  const isPublicRoute = pathname === "/" || pathname === "/login";
+  const isPublicRoute = pathname === "/" || pathname === "/login" || pathname === "/onboarding";
   const showSidebar = isChecked && user && !isPublicRoute;
 
   useEffect(() => {

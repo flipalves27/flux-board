@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { getOnboardingDoneStorageKey } from "@/lib/onboarding";
 import {
   clearRecentBoards,
   cleanupBoardShortcuts,
@@ -92,6 +93,20 @@ export default function BoardsPage() {
     }
     loadBoards();
   }, [isChecked, user, router]);
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    if (loading) return;
+    if (!empty) return;
+    try {
+      const doneKey = getOnboardingDoneStorageKey(user.id);
+      if (localStorage.getItem(doneKey) !== "1") {
+        router.replace("/onboarding");
+      }
+    } catch {
+      // ignore localStorage read errors
+    }
+  }, [empty, isChecked, loading, router, user]);
 
   async function loadBoards() {
     try {

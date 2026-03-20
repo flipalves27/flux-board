@@ -23,10 +23,11 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
 
   useEffect(() => {
-    if (isChecked && user) router.replace("/boards");
-  }, [isChecked, user, router]);
+    if (isChecked && user && !suppressAutoRedirect) router.replace("/boards");
+  }, [isChecked, user, router, suppressAutoRedirect]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,6 +44,7 @@ export default function LoginPage() {
     try {
       const result = await loginAction(userInput, pwd);
       if (result.ok) {
+        setSuppressAutoRedirect(true);
         login(result.token, result.user, remember);
         router.replace("/boards");
       } else {
@@ -75,8 +77,9 @@ export default function LoginPage() {
     try {
       const result = await registerAction(name, email, pwd);
       if (result.ok) {
+        setSuppressAutoRedirect(true);
         login(result.token, result.user, remember);
-        router.replace("/boards");
+        router.replace("/onboarding");
       } else {
         setError(result.error);
       }
