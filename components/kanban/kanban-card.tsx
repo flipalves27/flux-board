@@ -73,8 +73,28 @@ export function KanbanCard({
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-1.5 card-top">
-        <div className="flex items-center gap-0 card-id-wrap">
+        <div className="flex items-center gap-1 card-id-wrap">
           <span className="text-[11px] font-bold text-[var(--flux-text-muted)] font-mono card-id">{card.id}</span>
+
+          {onOpenDesc && (
+            <CustomTooltip content="Ver descrição" position="top">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDesc();
+                }}
+                className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
+                aria-label="Ver descrição"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </CustomTooltip>
+          )}
+
           <button
             type="button"
             onClick={(e) => {
@@ -83,13 +103,14 @@ export function KanbanCard({
                 void navigator.clipboard.writeText(card.id);
               }
             }}
-            className="ml-1 rounded border border-[rgba(255,255,255,0.12)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+            className="rounded border border-[rgba(255,255,255,0.12)] px-1 py-0 text-[10px] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
             title="Copiar ID do card"
             aria-label="Copiar ID do card"
           >
             Copiar
           </button>
         </div>
+
         <div className="flex items-center gap-1 card-top-right">
           <button
             type="button"
@@ -101,24 +122,6 @@ export function KanbanCard({
           >
             ✕
           </button>
-          {onOpenDesc && (
-            <CustomTooltip content="Ver descricao" position="top">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenDesc();
-                }}
-                className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
-                aria-label="Ver descricao"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-            </CustomTooltip>
-          )}
           <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${prioClass}`}>
             {card.priority}
           </span>
