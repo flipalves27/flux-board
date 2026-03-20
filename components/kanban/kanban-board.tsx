@@ -120,7 +120,7 @@ export function KanbanBoard({
   const [newColumnName, setNewColumnName] = useState("");
   const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
-  const [priorityBarVisible, setPriorityBarVisible] = useState(true);
+  const [priorityBarVisible, setPriorityBarVisible] = useState(false);
   const [boardView, setBoardView] = useState<"kanban" | "timeline">("kanban");
 
   const currentQuarter = useMemo(() => {
@@ -1028,18 +1028,18 @@ export function KanbanBoard({
         {/* Linha 2: prioridade e atalhos — só com filtros expandidos */}
         {priorityBarVisible && (
           <div className="border-t border-[var(--flux-border-muted)] px-4 sm:px-5 lg:px-6 py-2.5">
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(280px,400px)] gap-3 xl:gap-4 xl:items-start">
-              <div className="board-toolbar-group p-2.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 md:items-stretch">
+              <div className="board-toolbar-group p-2 min-w-0">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-1.5">
                   {t("board.filters.priorityLabel")}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-nowrap items-center gap-1 overflow-x-auto scrollbar-flux pb-0.5">
                   {["all", ...priorities].map((p) => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setActivePrio(p)}
-                      className={`btn-pill-compact transition-all duration-200 shrink-0 ${
+                      className={`btn-pill-compact text-[11px] leading-tight px-1.5 py-0.5 whitespace-nowrap transition-all duration-200 shrink-0 ${
                         activePrio === p
                           ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-[0_1px_6px_rgba(108,92,231,0.35)]"
                           : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
@@ -1050,11 +1050,11 @@ export function KanbanBoard({
                   ))}
                 </div>
               </div>
-              <div className="board-toolbar-group p-2.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-2">
+              <div className="board-toolbar-group p-2 min-w-0 flex flex-col">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)] mb-1.5">
                   {t("board.toolbar.sectionQuickActions")}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-flux pb-0.5 -mx-0.5 px-0.5 min-h-[28px]">
                   <button
                     type="button"
                     onClick={() => {
@@ -1066,34 +1066,34 @@ export function KanbanBoard({
                     }}
                     className={
                       focusMode
-                        ? "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold font-display transition-all duration-200 border border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)] shadow-[0_0_0_1px_rgba(0,210,211,0.12)]"
-                        : "board-toolbar-btn"
+                        ? "inline-flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold font-display transition-all duration-200 border border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)] shadow-[0_0_0_1px_rgba(0,210,211,0.12)] whitespace-nowrap"
+                        : "board-toolbar-btn-sm"
                     }
                     title={t("board.filters.shortcutTitle")}
                   >
                     {focusMode ? t("board.filters.focusModeOn") : t("board.filters.focusModeOff")}
                   </button>
-                  <button type="button" onClick={clearFilters} className="board-toolbar-btn">
+                  <button type="button" onClick={clearFilters} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                     {t("board.filters.clear")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setLabelsOpen(!labelsOpen)}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold font-display transition-all duration-200 border ${
+                    className={`inline-flex shrink-0 items-center gap-0.5 rounded-md px-2 py-1 text-[11px] font-semibold font-display transition-all duration-200 border whitespace-nowrap ${
                       labelsOpen
                         ? "border-[var(--flux-primary)] bg-[var(--flux-primary-glow)] text-[var(--flux-primary-light)] shadow-[inset_0_1px_0_var(--flux-border-muted)]"
                         : "border-transparent bg-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-border-subtle)] hover:bg-[var(--flux-surface-hover)] hover:text-[var(--flux-text)]"
                     }`}
                   >
                     <span>{t("board.filters.labelsButton")}</span>
-                    <span className={`text-[10px] transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`} aria-hidden>
+                    <span className={`text-[9px] transition-transform duration-200 ${labelsOpen ? "rotate-180" : ""}`} aria-hidden>
                       ▼
                     </span>
                   </button>
-                  <button type="button" onClick={() => setMapaOpen(true)} className="board-toolbar-btn">
+                  <button type="button" onClick={() => setMapaOpen(true)} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                     {t("board.filters.mapButton")}
                   </button>
-                  <button type="button" onClick={openDailyModal} className="board-toolbar-btn">
+                  <button type="button" onClick={openDailyModal} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                     {t("board.filters.dailyButton")}
                   </button>
                 </div>

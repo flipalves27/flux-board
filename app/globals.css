@@ -487,6 +487,21 @@
     transform: scale(0.98);
   }
 
+  .board-toolbar-btn-sm {
+    @apply inline-flex items-center justify-center rounded-md px-2 py-1 text-[11px] font-medium font-display transition-all duration-200 ease-out;
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  .board-toolbar-btn-sm:hover:not(:disabled) {
+    color: var(--flux-text);
+    background: var(--flux-surface-hover);
+    border-color: var(--flux-border-subtle);
+  }
+  .board-toolbar-btn-sm:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
   .board-toolbar-data-btn {
     @apply inline-flex items-center justify-center rounded-md px-2.5 py-1.5 text-[11px] font-semibold font-display transition-all duration-200 ease-out cursor-pointer;
     color: var(--flux-text-muted);
