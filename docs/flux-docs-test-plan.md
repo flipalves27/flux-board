@@ -24,6 +24,7 @@
 ## RAG Actions
 - In Copilot, ask a question that matches docs content and verify response contains doc-grounded context.
 - Call `POST /api/docs/generate-from-board` and verify generated doc is created.
+- Call `POST /api/docs/generate-pipeline` (SSE) with flows `board_status`, `daily_minutes`, `okr_progress`, `free_prompt` and verify events `step` → `preview` → `done` and doc tags `ia-docs`.
 - Call `POST /api/docs/[id]/summarize-to-card` and verify card description gets summary + `docRefs`.
 
 ## Flags and Metrics

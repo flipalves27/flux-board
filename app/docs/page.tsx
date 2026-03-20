@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { DocsSidebarTree } from "@/components/docs/docs-sidebar-tree";
 import { DocsSearch } from "@/components/docs/docs-search";
 import { DocsEditor } from "@/components/docs/docs-editor";
+import { DocsGenerationPanel } from "@/components/docs/docs-generation-panel";
 import type { DocData, DocTreeNode } from "@/lib/docs-types";
 
 export default function DocsPage() {
@@ -77,6 +78,13 @@ export default function DocsPage() {
       <div className="flex min-h-[calc(100vh-56px)]">
         <DocsSidebarTree docs={docsTree} selectedId={selectedId} onSelect={setSelectedId} onCreate={createDoc} />
         <div className="flex flex-1 flex-col">
+          <DocsGenerationPanel
+            getHeaders={getHeaders}
+            onDocCreated={(doc) => {
+              void loadDocs();
+              setSelectedId(doc.id);
+            }}
+          />
           <DocsSearch query={search} onQueryChange={setSearch} results={searchResults} onSelect={setSelectedId} />
           <DocsEditor
             doc={selectedDoc}
