@@ -19,11 +19,13 @@ import { KanbanCard } from "./kanban-card";
 import { CardModal } from "./card-modal";
 import { MapaModal } from "./mapa-modal";
 import { DescModal } from "./desc-modal";
-import type { BoardData, CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
+import { DailyInsightsPanel } from "./DailyInsightsPanel";
+import type { BoardData, CardData } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { useDailySession } from "./hooks/useDailySession";
 
 interface KanbanBoardProps {
   db: BoardData;
@@ -37,42 +39,6 @@ interface KanbanBoardProps {
   directions: string[];
 }
 
-type DailyLogStatus = "start" | "success" | "error";
-
-interface DailyLog {
-  timestamp: string;
-  status: DailyLogStatus;
-  message: string;
-  model?: string;
-  provider?: string;
-  // Texto opcional com o resultado retornado pela IA (resumo) ou JSON bruto truncado
-  resultSnippet?: string;
-  // Informações de erro de integração com IA (quando houver)
-  errorKind?: string;
-  errorMessage?: string;
-}
-
-type DailyStatusPhase = "idle" | "preparing" | "requesting" | "processing" | "done" | "error";
-
-type DailySessionState = {
-  transcript: string;
-  fileName: string;
-  sourceFileName: string;
-  generating: boolean;
-  tab: "entrada" | "historico" | "status";
-  logs: DailyLog[];
-  statusPhase: DailyStatusPhase;
-  historyExpandedId: string | null;
-  historyCreatedCardsExpandedId: string | null;
-  historyDateFrom: string;
-  historyDateTo: string;
-  historySearchQuery: string;
-};
-
-const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
-const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
-const DAILY_SESSION_MAX_JSON_CHARS = 120000;
-const DAILY_SESSION_WRITE_DEBOUNCE_MS = 400;
 const KANBAN_FILTERS_STORAGE_PREFIX = "flux.kanban.filters:";
 
 const DIR_COLORS: Record<string, string> = {
@@ -81,12 +47,6 @@ const DIR_COLORS: Record<string, string> = {
   adiar: "#F59E0B",
   cancelar: "#EF4444",
   reavaliar: "#6B7280",
-};
-
-type OrganizedContextSection = {
-  title: string;
-  items: string[];
-  text: string;
 };
 
 type SavedKanbanFilters = {
@@ -102,357 +62,6 @@ function daysUntilDueDate(date: string | null): number | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((due.getTime() - today.getTime()) / 86400000);
-}
-
-function stripMarkdownDecorations(input: string): string {
-  return String(input || "")
-    .replace(/\r/g, "\n")
-    // Remove common markdown bold/italic markers.
-    .replace(/\*\*/g, "")
-    .replace(/\*/g, "")
-    // Remove leading bullet-ish markers that can leak into text.
-    .replace(/^\s*[-•]\s+/g, "")
-    .trim();
-}
-
-function parseOrganizedContext(raw: string): OrganizedContextSection[] {
-  const text = String(raw || "").replace(/\r/g, "\n").trim();
-  if (!text) return [];
-
-  const lines = text
-    .split("\n")
-    .map((l) => String(l ?? "").trim())
-    .filter(Boolean)
-    .filter((l) => !l.startsWith("```"))
-    .slice(0, 250);
-
-  const sections: OrganizedContextSection[] = [];
-  let current: OrganizedContextSection | null = null;
-
-  const pushCurrent = () => {
-    if (!current) return;
-    const title = stripMarkdownDecorations(current.title || "").replace(/:\s*$/g, "").trim();
-    const items = current.items.map((x) => stripMarkdownDecorations(x)).filter(Boolean);
-    const sectionText = stripMarkdownDecorations(current.text || "");
-    const hasContent = items.length > 0 || sectionText.length > 0;
-    if (title && hasContent) sections.push({ title, items, text: sectionText });
-    current = null;
-  };
-
-  const isHeading = (line: string): string | null => {
-    const t = line.trim();
-    if (!t) return null;
-
-    // Example: **Resumo:** or **Cards em Andamento:**
-    const boldHeading = t.match(/^\*{2,}\s*([^*]+?)\s*\*{2,}\s*:?\s*$/);
-    if (boldHeading?.[1]) return boldHeading[1];
-
-    // Example: ## Título
-    const hashHeading = t.match(/^#{1,3}\s*(.+?)\s*$/);
-    if (hashHeading?.[1]) return hashHeading[1];
-
-    // Example: Resumo executivo:
-    // Keep this conservative to avoid treating sentences with colons as headings.
-    if (t.length <= 70) {
-      const plainHeading = t.match(/^([^:]{2,70}?)\s*:\s*$/);
-      if (plainHeading?.[1]) return plainHeading[1];
-    }
-
-    // Example: "Resumo" alone on its own line.
-    if (t.length <= 70 && !t.startsWith("-") && !t.startsWith("•") && !/^[0-9]+[.)]\s+/.test(t)) {
-      const looksLikeShortLabel = /^[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s-]+$/.test(t) && !t.includes("http");
-      if (looksLikeShortLabel && !t.includes(",")) return t;
-    }
-
-    return null;
-  };
-
-  const bulletItem = (line: string): string | null => {
-    const t = line.trim();
-    const bullet = t.match(/^[-•*]\s+(.*)$/);
-    if (bullet?.[1]) return bullet[1];
-    const numbered = t.match(/^\d+[.)]\s+(.*)$/);
-    if (numbered?.[1]) return numbered[1];
-    return null;
-  };
-
-  for (const rawLine of lines) {
-    const heading = isHeading(rawLine);
-    if (heading) {
-      pushCurrent();
-      current = { title: heading, items: [], text: "" };
-      continue;
-    }
-
-    const item = bulletItem(rawLine);
-    if (item) {
-      if (!current) current = { title: "Conteúdo organizado", items: [], text: "" };
-      current.items.push(stripMarkdownDecorations(item));
-      continue;
-    }
-
-    if (!current) current = { title: "Conteúdo organizado", items: [], text: "" };
-
-    // If we already have items, treat non-bullet lines as a continuation of the previous item.
-    if (current.items.length > 0) {
-      const prevIdx = current.items.length - 1;
-      current.items[prevIdx] = `${current.items[prevIdx]} ${stripMarkdownDecorations(rawLine)}`.trim();
-    } else {
-      current.text = `${current.text}${current.text ? "\n" : ""}${stripMarkdownDecorations(rawLine)}`.trim();
-    }
-  }
-
-  pushCurrent();
-
-  // Fallback: if parsing produced nothing usable, return a single section.
-  if (!sections.length) {
-    return [{ title: "Conteúdo organizado", items: [], text: text.slice(0, 4000) }];
-  }
-
-  // Avoid rendering unbounded sections.
-  return sections.slice(0, 6);
-}
-
-function sanitizeJsonCandidateForClient(value: string): string {
-  return String(value || "")
-    .replace(/^\uFEFF/, "")
-    // Remove comments that can leak from LLM responses.
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "")
-    // Remove trailing commas in objects/arrays.
-    .replace(/,\s*([}\]])/g, "$1")
-    .trim();
-}
-
-function extractBalancedJsonObjectForClient(value: string): string | null {
-  const input = String(value || "");
-  const start = input.indexOf("{");
-  if (start < 0) return null;
-
-  let inString = false;
-  let escaped = false;
-  let depth = 0;
-
-  for (let i = start; i < input.length; i++) {
-    const ch = input[i];
-
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (ch === "\\") {
-        escaped = true;
-      } else if (ch === '"') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (ch === "{") depth++;
-    if (ch === "}") {
-      depth--;
-      if (depth === 0) return input.slice(start, i + 1).trim();
-    }
-  }
-
-  return null;
-}
-
-function tryParseJsonFromRawForClient(raw: string): unknown | null {
-  const input = String(raw || "").trim();
-  if (!input) return null;
-
-  const fencedMatch = input.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  if (fencedMatch?.[1]) {
-    const candidate = sanitizeJsonCandidateForClient(fencedMatch[1].trim());
-    try {
-      return JSON.parse(candidate);
-    } catch {
-      // ignore
-    }
-  }
-
-  try {
-    return JSON.parse(sanitizeJsonCandidateForClient(input));
-  } catch {
-    // ignore
-  }
-
-  const balanced = extractBalancedJsonObjectForClient(input);
-  if (!balanced) return null;
-
-  try {
-    return JSON.parse(sanitizeJsonCandidateForClient(balanced));
-  } catch {
-    return null;
-  }
-}
-
-function renderOrganizedContext(raw: string) {
-  const rawText = String(raw || "");
-
-  // Sometimes the LLM puts a JSON blob inside `contextoOrganizado` (often wrapped in ```json ... ```).
-  // In that case, try to extract the inner `contextoOrganizado` text; otherwise, pretty-print JSON.
-  const parsed = tryParseJsonFromRawForClient(rawText);
-  if (parsed && typeof parsed === "object" && parsed !== null) {
-    const rec = parsed as Record<string, unknown>;
-    const nested = rec.contextoOrganizado;
-    if (typeof nested === "string" && nested.trim()) {
-      const sections = parseOrganizedContext(nested);
-      if (sections.length) {
-        return (
-          <div className="space-y-2">
-            {sections.map((section, idx) => (
-              <div key={`${section.title}-${idx}`} className="space-y-1">
-                <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                  {section.title}
-                </div>
-                {section.items.length ? (
-                  <ul className="list-disc pl-4 space-y-1">
-                    {section.items.map((it, i) => (
-                      <li key={`${idx}-${i}`} className="text-xs text-[var(--flux-text)] leading-relaxed">
-                        {it}
-                      </li>
-                    ))}
-                  </ul>
-                ) : section.text ? (
-                  <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">{section.text}</p>
-                ) : (
-                  <p className="text-xs text-[var(--flux-text-muted)]">Sem itens.</p>
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      }
-    }
-
-    // Render JSON directly (pretty) to avoid the UI breaking on unstructured blobs.
-    try {
-      const pretty = JSON.stringify(rec, null, 2);
-      if (pretty.trim()) {
-        return (
-          <pre className="text-xs text-[var(--flux-text)] whitespace-pre-wrap break-words leading-relaxed">
-            {pretty.slice(0, 12000)}
-          </pre>
-        );
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  const sections = parseOrganizedContext(rawText);
-  if (!sections.length) {
-    return <p className="text-xs text-[var(--flux-text-muted)]">Sem contexto organizado para este resumo.</p>;
-  }
-
-  return (
-    <div className="space-y-2">
-      {sections.map((section, idx) => (
-        <div key={`${section.title}-${idx}`} className="space-y-1">
-          <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-            {section.title}
-          </div>
-          {section.items.length ? (
-            <ul className="list-disc pl-4 space-y-1">
-              {section.items.map((it, i) => (
-                <li key={`${idx}-${i}`} className="text-xs text-[var(--flux-text)] leading-relaxed">
-                  {it}
-                </li>
-              ))}
-            </ul>
-          ) : section.text ? (
-            <p className="text-xs text-[var(--flux-text)] whitespace-pre-line leading-relaxed">{section.text}</p>
-          ) : (
-            <p className="text-xs text-[var(--flux-text-muted)]">Sem itens.</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-type DailyActionSuggestion = {
-  titulo: string;
-  descricao: string;
-  prioridade: string;
-  progresso: string;
-  coluna: string;
-  tags: string[];
-  dataConclusao: string;
-  direcionamento: string;
-};
-
-function normDailyPrio(value: string | undefined): string {
-  const v = String(value || "").trim().toLowerCase();
-  if (v === "urgente") return "Urgente";
-  if (v === "importante") return "Importante";
-  return "Média";
-}
-
-function normDailyProg(value: string | undefined): string {
-  const v = String(value || "").trim().toLowerCase();
-  if (v === "em andamento") return "Em andamento";
-  if (v === "concluída" || v === "concluida") return "Concluída";
-  return "Não iniciado";
-}
-
-function getDailyActionSuggestions(rawValue?: unknown): DailyActionSuggestion[] {
-  const list = Array.isArray(rawValue) ? rawValue : [];
-  return list
-    .map((item) => {
-      if (!item) return null;
-
-      if (item && typeof item === "object") {
-        const rec = item as {
-          titulo?: string;
-          title?: string;
-          descricao?: string;
-          detalhes?: string;
-          prioridade?: string;
-          progresso?: string;
-          coluna?: string;
-          tags?: string[];
-          dataConclusao?: string;
-          direcionamento?: string;
-        };
-
-        const titulo = String(rec?.titulo || rec?.title || "").trim();
-        if (!titulo) return null;
-
-        return {
-          titulo,
-          descricao: String(rec?.descricao || rec?.detalhes || "").trim(),
-          prioridade: normDailyPrio(rec?.prioridade),
-          progresso: normDailyProg(rec?.progresso),
-          coluna: String(rec?.coluna || "").trim(),
-          tags: Array.isArray(rec?.tags)
-            ? rec.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
-            : [],
-          dataConclusao: String(rec?.dataConclusao || "").trim(),
-          direcionamento: String(rec?.direcionamento || "").trim().toLowerCase(),
-        } satisfies DailyActionSuggestion;
-      }
-
-      const titulo = String(item || "").trim();
-      if (!titulo) return null;
-      return {
-        titulo,
-        descricao: "",
-        prioridade: "Média",
-        progresso: "Não iniciado",
-        coluna: "",
-        tags: [],
-        dataConclusao: "",
-        direcionamento: "",
-      } satisfies DailyActionSuggestion;
-    })
-    .filter(Boolean) as DailyActionSuggestion[];
 }
 
 export function KanbanBoard({
@@ -505,23 +114,60 @@ export function KanbanBoard({
   const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
   const [priorityBarVisible, setPriorityBarVisible] = useState(true);
-  const [dailyOpen, setDailyOpen] = useState(false);
-  const [dailyTranscript, setDailyTranscript] = useState("");
-  const [dailyFileName, setDailyFileName] = useState("Nenhum arquivo anexado");
-  const [dailySourceFileName, setDailySourceFileName] = useState("");
-  const [dailyGenerating, setDailyGenerating] = useState(false);
-  const [dailyTab, setDailyTab] = useState<"entrada" | "historico" | "status">("entrada");
-  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
-  const [dailyStatusPhase, setDailyStatusPhase] = useState<DailyStatusPhase>("idle");
-  const [dailyHistoryExpandedId, setDailyHistoryExpandedId] = useState<string | null>(null);
-  const [dailyHistoryCreatedCardsExpandedId, setDailyHistoryCreatedCardsExpandedId] = useState<string | null>(null);
-  const [dailyHistoryDateFrom, setDailyHistoryDateFrom] = useState("");
-  const [dailyHistoryDateTo, setDailyHistoryDateTo] = useState("");
-  const [dailyHistorySearchQuery, setDailyHistorySearchQuery] = useState("");
+  const dailySession = useDailySession({
+    db,
+    updateDb,
+    boardId,
+    getHeaders,
+    directions,
+  });
+
+  const {
+    dailyOpen,
+    closeDailyModal,
+    openDailyModal,
+    startNewDaily,
+    dailyTab,
+    openHistoryTab,
+    openStatusTab,
+    dailyGenerating,
+    dailyStatusPhase,
+    statusStepIndex,
+    dailyLogs,
+    dailyTranscript,
+    setDailyTranscript,
+    dailyFileName,
+    dailySourceFileName,
+    dailyInsights,
+    filteredDailyInsights,
+    activeDailyHistoryId,
+    activeCreatedCardsExpandedId,
+    dailyHistoryDateFrom,
+    setDailyHistoryDateFrom,
+    dailyHistoryDateTo,
+    setDailyHistoryDateTo,
+    dailyHistorySearchQuery,
+    setDailyHistorySearchQuery,
+    clearDailyHistoryFilters,
+    onToggleDailyHistoryExpanded,
+    onCollapseDailyHistoryExpanded,
+    expandDailyHistoryCreatedCards,
+    loadDailyTranscriptFile,
+    clearDailyAttachmentAndTranscript,
+    onGenerateDailyInsight,
+    clearDailyLogs,
+    onOpenDailyHistoryFromStatusEntry,
+    slugDaily,
+    onDownloadDailyContextDoc,
+    onCopyDailyContextDoc,
+    onCreateCardsFromInsight,
+    dailyDeleteConfirmId,
+    requestDeleteDailyHistoryEntry,
+    cancelDeleteDailyHistoryEntry,
+    confirmDeleteDailyHistoryEntry,
+  } = dailySession;
 
   const { pushToast } = useToast();
-
-  const [dailyDeleteConfirmId, setDailyDeleteConfirmId] = useState<string | null>(null);
   const [csvImportMode, setCsvImportMode] = useState<"replace" | "merge">("replace");
   const [csvImportConfirm, setCsvImportConfirm] = useState<{
     count: number;
@@ -530,12 +176,7 @@ export function KanbanBoard({
     sameIdCount: number;
   } | null>(null);
   const anyConfirmOpen = Boolean(dailyDeleteConfirmId || csvImportConfirm);
-
-  const dailyRequestSeqRef = useRef(0);
-  const dailyAbortControllerRef = useRef<AbortController | null>(null);
-  const dailyInFlightRef = useRef(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const DAILY_INSIGHT_TIMEOUT_MS = 60000;
 
   const addColumnDialogRef = useRef<HTMLDivElement | null>(null);
   const addColumnInputRef = useRef<HTMLInputElement | null>(null);
@@ -559,7 +200,7 @@ export function KanbanBoard({
   const dailyCloseRef = useRef<HTMLButtonElement | null>(null);
   useModalA11y({
     open: dailyOpen && !anyConfirmOpen,
-    onClose: () => setDailyOpen(false),
+    onClose: closeDailyModal,
     containerRef: dailyDialogRef,
     initialFocusRef: dailyCloseRef,
   });
@@ -569,24 +210,7 @@ export function KanbanBoard({
     db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
-  const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
   const filtersStorageKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
-
-  const normalizeSearchText = useCallback((value: string) => {
-    return String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-  }, []);
-
-  const toLocalDateInputValue = useCallback((isoDate: string | undefined) => {
-    if (!isoDate) return "";
-    const dt = new Date(isoDate);
-    if (Number.isNaN(dt.getTime())) return "";
-    const tzOffsetMs = dt.getTimezoneOffset() * 60000;
-    return new Date(dt.getTime() - tzOffsetMs).toISOString().slice(0, 10);
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -658,496 +282,6 @@ export function KanbanBoard({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [applyFocusMode, clearFilters]);
-
-  const slugDaily = (value: string) =>
-    String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-  const getDailyCreateSuggestions = (entry?: DailyInsightEntry) => {
-    const insight = entry?.insight;
-    if (!insight) return [];
-    const detailed = Array.isArray(insight.criarDetalhes)
-      ? insight.criarDetalhes
-          .map((item) => {
-            const titulo = String(item?.titulo || "").trim();
-            if (!titulo) return null;
-            return {
-              titulo,
-              descricao: String(item?.descricao || "").trim(),
-              prioridade: normDailyPrio(item?.prioridade),
-              progresso: normDailyProg(item?.progresso),
-              coluna: String(item?.coluna || "").trim(),
-              tags: Array.isArray(item?.tags)
-                ? item.tags.map((tag) => String(tag || "").trim()).filter(Boolean).slice(0, 6)
-                : [],
-              dataConclusao: String(item?.dataConclusao || "").trim(),
-              direcionamento: String(item?.direcionamento || "").trim().toLowerCase(),
-            };
-          })
-          .filter(Boolean) as Array<{
-          titulo: string;
-          descricao: string;
-          prioridade: string;
-          progresso: string;
-          coluna: string;
-          tags: string[];
-          dataConclusao: string;
-          direcionamento: string;
-        }>
-      : [];
-    if (detailed.length > 0) return detailed;
-    const fallback = Array.isArray(insight.criar) ? insight.criar : [];
-    return fallback
-      .map((txt) => {
-        const titulo =
-          txt && typeof txt === "object"
-            ? String((txt as { titulo?: string; title?: string })?.titulo || (txt as { titulo?: string; title?: string })?.title || "").trim()
-            : String(txt || "").trim();
-        if (!titulo) return null;
-        return {
-          titulo,
-          descricao: "Detalhar escopo, impacto esperado e critérios de aceite.",
-          prioridade: "Média",
-          progresso: "Não iniciado",
-          coluna: "",
-          tags: [],
-          dataConclusao: "",
-          direcionamento: "",
-        };
-      })
-      .filter(Boolean) as Array<{
-      titulo: string;
-      descricao: string;
-      prioridade: string;
-      progresso: string;
-      coluna: string;
-      tags: string[];
-      dataConclusao: string;
-      direcionamento: string;
-    }>;
-  };
-
-  const createCardsFromInsight = (entryId?: string) => {
-    const entry = entryId ? dailyInsights.find((x) => x?.id === entryId) : dailyInsights[0];
-    if (!entry?.insight) {
-      pushToast({ kind: "error", title: "Resumo não encontrado." });
-      return;
-    }
-    const suggestions = getDailyCreateSuggestions(entry);
-    if (!suggestions.length) {
-      pushToast({ kind: "error", title: "Não há itens em 'Criar' para transformar em card." });
-      return;
-    }
-    const nowIso = new Date().toISOString();
-    updateDb((prev) => {
-      const bucketOrder = prev.config.bucketOrder || [];
-      const normalizeCardTitle = (value: string) =>
-        String(value || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, " ")
-          .trim();
-      const existingCardTitles = new Set(prev.cards.map((c) => normalizeCardTitle(c.title)));
-      const backlogKey =
-        bucketOrder.find((b) => String(b.label || "").toLowerCase() === "backlog")?.key ||
-        bucketOrder[0]?.key ||
-        "Backlog";
-      const nextOrderByBucket: Record<string, number> = {};
-      const created: CardData[] = [];
-      const createdCardsPayload: DailyCreatedCard[] = [];
-      let createdCount = 0;
-      let existingCount = 0;
-
-      suggestions.forEach((s, idx) => {
-        const normalizedTitle = normalizeCardTitle(s.titulo);
-        const alreadyExists = existingCardTitles.has(normalizedTitle);
-        const lowerCol = String(s.coluna || "").trim().toLowerCase();
-        const mapped = lowerCol
-          ? bucketOrder.find(
-              (b) =>
-                String(b.key || "").toLowerCase() === lowerCol ||
-                String(b.label || "").toLowerCase() === lowerCol
-            )
-          : null;
-        const bucketKey = mapped ? mapped.key : backlogKey;
-        if (!(bucketKey in nextOrderByBucket)) {
-          nextOrderByBucket[bucketKey] = prev.cards.filter((c) => c.bucket === bucketKey).length;
-        }
-        const cardPayload: DailyCreatedCard = {
-          cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
-          title: s.titulo,
-          bucket: bucketKey,
-          priority: normDailyPrio(s.prioridade),
-          progress: normDailyProg(s.progresso),
-          desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
-          tags: s.tags?.length ? s.tags : ["Reborn"],
-          direction: directions.map((d) => d.toLowerCase()).includes(String(s.direcionamento || "").toLowerCase())
-            ? String(s.direcionamento).toLowerCase()
-            : null,
-          dueDate: s.dataConclusao || null,
-          createdAt: nowIso,
-          status: alreadyExists ? "existing" : "created",
-        };
-        if (!alreadyExists) {
-          created.push({
-            id: cardPayload.cardId,
-            bucket: cardPayload.bucket,
-            priority: cardPayload.priority,
-            progress: cardPayload.progress,
-            title: cardPayload.title,
-            desc: cardPayload.desc,
-            tags: cardPayload.tags,
-            links: [],
-            direction: cardPayload.direction,
-            dueDate: cardPayload.dueDate,
-            order: nextOrderByBucket[bucketKey]++,
-          } as CardData);
-          existingCardTitles.add(normalizedTitle);
-          createdCount++;
-        } else {
-          existingCount++;
-        }
-        createdCardsPayload.push(cardPayload);
-      });
-      const nextDailyInsights = Array.isArray(prev.dailyInsights)
-        ? prev.dailyInsights.map((insightEntry) => {
-            if (!entryId || insightEntry?.id !== entryId) return insightEntry;
-            const previousCreated = Array.isArray(insightEntry.createdCards) ? insightEntry.createdCards : [];
-            return {
-              ...insightEntry,
-              createdCards: [...createdCardsPayload, ...previousCreated].slice(0, 100),
-            };
-          })
-        : prev.dailyInsights;
-      window.setTimeout(() => {
-        if (createdCount > 0 && existingCount > 0) {
-          pushToast({
-            kind: "success",
-            title: `${createdCount} card(s) criado(s) com sucesso.`,
-            description: `${existingCount} item(ns) já existia(m) no board e foram apenas sinalizados.`,
-          });
-          return;
-        }
-        if (createdCount > 0) {
-          pushToast({ kind: "success", title: `${createdCount} card(s) criado(s) com sucesso.` });
-          return;
-        }
-        pushToast({
-          kind: "info",
-          title: "Nenhum novo card criado.",
-          description: "Todos os itens sugeridos já existem no board.",
-        });
-      }, 0);
-      return { ...prev, cards: [...prev.cards, ...created], dailyInsights: nextDailyInsights };
-    });
-    if (entryId) {
-      setDailyHistoryCreatedCardsExpandedId(entryId);
-    }
-  };
-
-  const loadDailyTranscriptFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = String(ev.target?.result || "");
-      setDailyTranscript(text.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
-      setDailyFileName(`${file.name} carregado`);
-      setDailySourceFileName(file.name);
-    };
-    reader.readAsText(file, "UTF-8");
-    e.target.value = "";
-  };
-
-  const clearDailyAttachmentAndTranscript = () => {
-    setDailyTranscript("");
-    setDailyFileName("Nenhum arquivo anexado");
-    setDailySourceFileName("");
-  };
-
-  const performDeleteDailyHistoryEntry = (entryId: string) => {
-    const nextEntry = dailyInsights.find((entry) => entry?.id && entry.id !== entryId);
-    updateDb((prev) => ({
-      ...prev,
-      dailyInsights: (Array.isArray(prev.dailyInsights) ? prev.dailyInsights : []).filter((entry) => entry?.id !== entryId),
-    }));
-    if (dailyHistoryExpandedId === entryId) setDailyHistoryExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
-    if (dailyHistoryCreatedCardsExpandedId === entryId) {
-      setDailyHistoryCreatedCardsExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
-    }
-  };
-
-  const deleteDailyHistoryEntry = (entryId: string) => {
-    setDailyDeleteConfirmId(entryId);
-  };
-
-  const buildDailyContextDoc = (entry: DailyInsightEntry) => {
-    const insight = entry?.insight;
-    const dt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-    const createItems = getDailyCreateSuggestions(entry);
-    const ajustarItems = getDailyActionSuggestions(insight?.ajustar);
-    const corrigirItems = getDailyActionSuggestions(insight?.corrigir);
-    const pendenciasItems = getDailyActionSuggestions(insight?.pendencias);
-    const curated = String(insight?.contextoOrganizado || "").trim();
-    const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-    const modelName = String(entry?.generationMeta?.model || "").trim();
-    const blocks = [
-      `Resumo Daily IA${dt ? ` - ${dt}` : ""}`,
-      "",
-      generatedWithAi ? `Texto aprimorado por IA${modelName ? ` (${modelName})` : ""}` : "Texto estruturado automaticamente",
-      "",
-      `Arquivo de origem: ${String(entry?.sourceFileName || "Transcrição colada no modal")}`,
-      "",
-      "Resumo executivo:",
-      String(insight?.resumo || "Sem resumo."),
-      "",
-      "Contexto reorganizado e revisado:",
-      curated || "Sem conteúdo estruturado para este resumo.",
-      "",
-      "Ações para criar:",
-      ...(createItems.length
-        ? createItems.map((x, i) =>
-            `${i + 1}. ${x.titulo}${
-              x.descricao ? `\n   Descrição: ${x.descricao}` : ""
-            }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
-              x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
-            }`
-          )
-        : ["- Sem itens identificados."]),
-      "",
-      "Ajustes:",
-      ...(ajustarItems.length
-        ? ajustarItems.map(
-            (x, i) =>
-              `${i + 1}. ${x.titulo}${
-                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
-              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
-                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
-              }`
-          )
-        : ["- Sem itens identificados."]),
-      "",
-      "Correções:",
-      ...(corrigirItems.length
-        ? corrigirItems.map(
-            (x, i) =>
-              `${i + 1}. ${x.titulo}${
-                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
-              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
-                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
-              }`
-          )
-        : ["- Sem itens identificados."]),
-      "",
-      "Pendências:",
-      ...(pendenciasItems.length
-        ? pendenciasItems.map(
-            (x, i) =>
-              `${i + 1}. ${x.titulo}${
-                x.descricao ? `\n   Descrição: ${x.descricao}` : ""
-              }${x.coluna ? `\n   Coluna sugerida: ${x.coluna}` : ""}${
-                x.dataConclusao ? `\n   Prazo sugerido: ${x.dataConclusao}` : ""
-              }`
-          )
-        : ["- Sem itens identificados."]),
-    ];
-    return blocks.join("\n");
-  };
-
-  const downloadDailyContextDoc = (entry: DailyInsightEntry) => {
-    const a = document.createElement("a");
-    const created = entry?.createdAt ? new Date(entry.createdAt) : new Date();
-    const stamp = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}-${String(
-      created.getDate()
-    ).padStart(2, "0")}_${String(created.getHours()).padStart(2, "0")}-${String(created.getMinutes()).padStart(2, "0")}`;
-    const content = buildDailyContextDoc(entry);
-    a.href = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-    a.download = `daily-contexto-${stamp}.txt`;
-    a.click();
-  };
-
-  const copyDailyContextDoc = async (entry: DailyInsightEntry) => {
-    const content = buildDailyContextDoc(entry);
-    if (!content.trim()) {
-      pushToast({ kind: "error", title: "Não há contexto para copiar." });
-      return;
-    }
-    if (!navigator?.clipboard?.writeText) {
-      pushToast({ kind: "warning", title: "Seu navegador não suporta cópia automática." });
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(content);
-      pushToast({ kind: "success", title: "Contexto copiado para a área de transferência." });
-    } catch {
-      pushToast({ kind: "error", title: "Não foi possível copiar o contexto." });
-    }
-  };
-
-  const openDailyHistoryFromStatusEntry = (entryId: string) => {
-    // Garante vínculo com o Histórico mesmo quando filtros estão ativos.
-    setDailyHistoryDateFrom("");
-    setDailyHistoryDateTo("");
-    setDailyHistorySearchQuery("");
-    setDailyHistoryCreatedCardsExpandedId(null);
-    setDailyHistoryExpandedId(entryId);
-    setDailyTab("historico");
-  };
-
-  const generateDailyInsight = async () => {
-    const transcript = dailyTranscript.trim();
-    if (!transcript) {
-      pushToast({ kind: "error", title: "Informe ou anexe a transcrição da daily." });
-      return;
-    }
-    // Evita reentrância / cliques duplos durante a geração.
-    if (dailyInFlightRef.current) return;
-    dailyInFlightRef.current = true;
-    const requestSeq = ++dailyRequestSeqRef.current;
-    const controller = new AbortController();
-    dailyAbortControllerRef.current = controller;
-    const timeoutId = window.setTimeout(() => controller.abort(), DAILY_INSIGHT_TIMEOUT_MS);
-
-    const startedAt = new Date().toISOString();
-    setDailyGenerating(true);
-    setDailyTab("status");
-    setDailyStatusPhase("preparing");
-    // Ao iniciar uma execução, manter o histórico colapsado (limpar contextos de UI).
-    setDailyHistoryExpandedId(null);
-    setDailyHistoryCreatedCardsExpandedId(null);
-    setDailyLogs((prev) => [
-      {
-        timestamp: startedAt,
-        status: "start" as DailyLogStatus,
-        message: "Iniciando geração do resumo prático...",
-      },
-      ...prev,
-    ].slice(0, 50));
-    try {
-      setDailyStatusPhase("requesting");
-      const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/daily-insights`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify({ transcript, fileName: dailySourceFileName || undefined }),
-        signal: controller.signal,
-      });
-      setDailyStatusPhase("processing");
-      const data = await response.json();
-      if (!response.ok) {
-        setDailyStatusPhase("error");
-        setDailyLogs((prev) => [
-          {
-            timestamp: new Date().toISOString(),
-            status: "error" as DailyLogStatus,
-            message: String(data?.error || "Erro ao gerar resumo."),
-            errorKind: data?.llmDebug?.errorKind,
-            errorMessage: data?.llmDebug?.errorMessage,
-            provider: data?.llmDebug?.provider,
-            model: data?.llmDebug?.model,
-          } as DailyLog,
-          ...prev,
-        ].slice(0, 50));
-        pushToast({ kind: "error", title: String(data?.error || "Erro ao gerar resumo.") });
-        return;
-      }
-      updateDb((prev) => {
-        const current = Array.isArray(prev.dailyInsights) ? prev.dailyInsights : [];
-        const next = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
-        return { ...prev, dailyInsights: next };
-      });
-      const modelName = String(
-        data?.llmDebug?.model || data?.entry?.generationMeta?.model || ""
-      ).trim();
-      const providerName = String(
-        data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || ""
-      ).trim();
-      const generatedWithAI = Boolean(
-        data?.llmDebug?.generatedWithAI ?? data?.entry?.generationMeta?.usedLlm
-      );
-      const errorKind = String(
-        data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || ""
-      ).trim();
-      const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
-      const hasRealLlmFailure = Boolean(errorKind) || !generatedWithAI;
-      const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
-      setDailyStatusPhase("done");
-
-      // Log de sucesso / fallback, explicitando conectividade com IA
-      setDailyLogs((prev) => [
-        {
-          timestamp: new Date().toISOString(),
-          status: "success" as DailyLogStatus,
-          message: generatedWithAI
-            ? "Modelo gerado com sucesso."
-            : "Resumo estruturado sem uso efetivo da IA (modo heurístico).",
-          model: modelName || undefined,
-          provider: providerName || undefined,
-          resultSnippet: insightResumo
-            ? `Resumo: ${insightResumo.slice(0, 200)}${insightResumo.length > 200 ? "..." : ""}`
-            : undefined,
-        } as DailyLog,
-        // Quando existir erro de integração com IA, logar claramente mesmo com fallback bem-sucedido
-        ...(hasRealLlmFailure
-          ? ([
-              {
-                timestamp: new Date().toISOString(),
-                status: "error" as DailyLogStatus,
-                message: `Falha na integração com IA${
-                  providerName ? ` (${providerName})` : ""
-                }${modelName ? ` - modelo: ${modelName}` : ""}${
-                  errorKind ? ` [${errorKind}]` : ""
-                }. Conteúdo tratado em modo heurístico.`,
-                errorKind,
-                errorMessage: errorMessage || undefined,
-                provider: providerName || undefined,
-                model: modelName || undefined,
-              } as DailyLog,
-            ] as DailyLog[])
-          : []),
-        ...prev,
-      ].slice(0, 50));
-    } catch (err) {
-      const isAbort = err instanceof Error && (err as unknown as { name?: string }).name === "AbortError";
-      setDailyStatusPhase("error");
-      setDailyLogs((prev) => [
-        {
-          timestamp: new Date().toISOString(),
-          status: "error" as DailyLogStatus,
-          message: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
-        },
-        ...prev,
-      ].slice(0, 50));
-      pushToast({
-        kind: isAbort ? "warning" : "error",
-        title: isAbort ? "Tempo esgotado ao gerar a Daily IA." : "Erro ao gerar resumo com IA.",
-      });
-    } finally {
-      window.clearTimeout(timeoutId);
-      dailyInFlightRef.current = false;
-      if (dailyAbortControllerRef.current === controller) dailyAbortControllerRef.current = null;
-      if (dailyRequestSeqRef.current === requestSeq) {
-        setDailyGenerating(false);
-        // Após finalizar a execução: voltar barra ao início e limpar contextos.
-        setDailyStatusPhase("idle");
-        setDailyLogs([]);
-        setDailyHistoryExpandedId(null);
-        setDailyHistoryCreatedCardsExpandedId(null);
-        setDailyTranscript("");
-        setDailyFileName("Nenhum arquivo anexado");
-        setDailySourceFileName("");
-        try {
-          window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
-        } catch {
-          // ignore
-        }
-      }
-    }
-  };
 
   const filterCard = useCallback(
     (c: CardData) => {
@@ -1571,90 +705,6 @@ export function KanbanBoard({
     ? cards.find((c) => c.id === activeId.replace("card-", ""))
     : null;
 
-  const normalizedDailyHistorySearchQuery = useMemo(
-    () => normalizeSearchText(dailyHistorySearchQuery),
-    [dailyHistorySearchQuery, normalizeSearchText]
-  );
-
-  const dailyInsightsSearchIndex = useMemo(() => {
-    return dailyInsights.map((entry) => {
-      const insight = (entry as { insight?: unknown } | null | undefined)?.insight as
-        | {
-            resumo?: unknown;
-            contextoOrganizado?: unknown;
-            criar?: unknown;
-            ajustar?: unknown;
-            corrigir?: unknown;
-            pendencias?: unknown;
-            criarDetalhes?: unknown;
-          }
-        | undefined;
-
-      const searchable = [
-        insight?.resumo,
-        insight?.contextoOrganizado,
-        ...(Array.isArray(insight?.criar) ? (insight?.criar as unknown[]) : []),
-        ...(getDailyActionSuggestions((insight as any)?.ajustar).map(
-          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
-        ) ?? []),
-        ...(getDailyActionSuggestions((insight as any)?.corrigir).map(
-          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
-        ) ?? []),
-        ...(getDailyActionSuggestions((insight as any)?.pendencias).map(
-          (x) => `${x.titulo} ${x.descricao} ${x.prioridade} ${x.progresso}`
-        ) ?? []),
-        ...(Array.isArray((insight as any)?.criarDetalhes)
-          ? (insight as any).criarDetalhes.map((item: any) => String(item?.titulo || ""))
-          : []),
-        (entry as any)?.transcript,
-        (entry as any)?.sourceFileName,
-      ]
-        .map((item) => String(item || ""))
-        .join(" \n ");
-
-      return {
-        entry,
-        normalizedSearchable: normalizeSearchText(searchable),
-      };
-    });
-  }, [dailyInsights, normalizeSearchText]);
-
-  const filteredDailyInsights = useMemo(() => {
-    return dailyInsightsSearchIndex
-      .filter(({ entry, normalizedSearchable }) => {
-        const entryDate = toLocalDateInputValue((entry as any)?.createdAt);
-      if (dailyHistoryDateFrom && (!entryDate || entryDate < dailyHistoryDateFrom)) return false;
-      if (dailyHistoryDateTo && (!entryDate || entryDate > dailyHistoryDateTo)) return false;
-      if (!normalizedDailyHistorySearchQuery) return true;
-
-        return normalizedSearchable.includes(normalizedDailyHistorySearchQuery);
-      })
-      .map(({ entry }) => entry);
-  }, [
-    dailyInsightsSearchIndex,
-    dailyHistoryDateFrom,
-    dailyHistoryDateTo,
-    normalizedDailyHistorySearchQuery,
-    toLocalDateInputValue,
-  ]);
-
-  const activeDailyHistoryId = useMemo(() => {
-    if (!dailyHistoryExpandedId) return null;
-    const existsInFiltered = filteredDailyInsights.some(
-      (entry) => String(entry?.id || "") === dailyHistoryExpandedId
-    );
-    return existsInFiltered ? dailyHistoryExpandedId : null;
-  }, [dailyHistoryExpandedId, filteredDailyInsights]);
-
-  const activeCreatedCardsExpandedId = useMemo(() => {
-    if (!dailyHistoryExpandedId) return null;
-    if (!dailyHistoryCreatedCardsExpandedId) return null;
-    const existsInFiltered = filteredDailyInsights.some(
-      (entry) => String(entry?.id || "") === dailyHistoryCreatedCardsExpandedId
-    );
-    return existsInFiltered ? dailyHistoryCreatedCardsExpandedId : null;
-  }, [dailyHistoryCreatedCardsExpandedId, dailyHistoryExpandedId, filteredDailyInsights]);
-
   const shouldIgnorePanStart = (target: EventTarget | null) => {
     const el = target as HTMLElement | null;
     if (!el) return true;
@@ -1668,129 +718,6 @@ export function KanbanBoard({
     }
     return false;
   };
-
-  const statusStepIndex =
-    dailyStatusPhase === "preparing"
-      ? 1
-      : dailyStatusPhase === "requesting"
-        ? 2
-        : dailyStatusPhase === "processing"
-          ? 3
-          : dailyStatusPhase === "done"
-            ? 4
-            : dailyStatusPhase === "error"
-              ? 0
-              : 0;
-
-  useEffect(() => {
-    const storage = typeof window !== "undefined" ? window.localStorage : null;
-    if (!storage) return;
-    try {
-      const raw = storage.getItem(DAILY_SESSION_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Partial<DailySessionState>;
-      if (typeof parsed.transcript === "string") setDailyTranscript(parsed.transcript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
-      if (typeof parsed.fileName === "string") setDailyFileName(parsed.fileName || "Nenhum arquivo anexado");
-      if (typeof parsed.sourceFileName === "string") setDailySourceFileName(parsed.sourceFileName);
-      if (parsed.tab === "entrada" || parsed.tab === "historico" || parsed.tab === "status") setDailyTab(parsed.tab);
-      if (Array.isArray(parsed.logs)) setDailyLogs(parsed.logs.slice(0, 50));
-      if (
-        parsed.statusPhase === "idle" ||
-        parsed.statusPhase === "preparing" ||
-        parsed.statusPhase === "requesting" ||
-        parsed.statusPhase === "processing" ||
-        parsed.statusPhase === "done" ||
-        parsed.statusPhase === "error"
-      ) {
-        setDailyStatusPhase(parsed.statusPhase);
-      }
-      if (typeof parsed.historyExpandedId === "string" || parsed.historyExpandedId === null) {
-        setDailyHistoryExpandedId(parsed.historyExpandedId ?? null);
-      }
-      if (
-        typeof parsed.historyCreatedCardsExpandedId === "string" ||
-        parsed.historyCreatedCardsExpandedId === null
-      ) {
-        setDailyHistoryCreatedCardsExpandedId(parsed.historyCreatedCardsExpandedId ?? null);
-      }
-      if (typeof parsed.historyDateFrom === "string") setDailyHistoryDateFrom(parsed.historyDateFrom);
-      if (typeof parsed.historyDateTo === "string") setDailyHistoryDateTo(parsed.historyDateTo);
-      if (typeof parsed.historySearchQuery === "string") setDailyHistorySearchQuery(parsed.historySearchQuery);
-      if (parsed.generating) {
-        setDailyGenerating(true);
-        setDailyOpen(true);
-        setDailyTab("status");
-        // Sempre abrir colapsado no histórico (requisito do usuário).
-        setDailyHistoryExpandedId(null);
-        setDailyHistoryCreatedCardsExpandedId(null);
-      }
-    } catch {
-      // Se houver lixo no storage, ignora silenciosamente.
-    }
-  }, []);
-
-  useEffect(() => {
-    const storage = typeof window !== "undefined" ? window.localStorage : null;
-    if (!storage) return;
-
-    const timeoutId = window.setTimeout(() => {
-      // Limitar tamanho para reduzir chance de quota estourar.
-      const transcriptToStore = dailyTranscript.slice(0, DAILY_SESSION_MAX_TRANSCRIPT_CHARS);
-
-      let payload: DailySessionState = {
-        transcript: transcriptToStore,
-        fileName: dailyFileName,
-        sourceFileName: dailySourceFileName,
-        generating: dailyGenerating,
-        tab: dailyTab,
-        logs: dailyLogs.slice(0, 50),
-        statusPhase: dailyStatusPhase,
-        historyExpandedId: dailyHistoryExpandedId,
-        historyCreatedCardsExpandedId: dailyHistoryCreatedCardsExpandedId,
-        historyDateFrom: dailyHistoryDateFrom,
-        historyDateTo: dailyHistoryDateTo,
-        historySearchQuery: dailyHistorySearchQuery,
-      };
-
-      try {
-        // Guard adicional: se o JSON estiver grande demais, reduz/transfoma transcript.
-        let json = JSON.stringify(payload);
-        if (json.length > DAILY_SESSION_MAX_JSON_CHARS) {
-          const hardTranscript = transcriptToStore.slice(0, Math.min(3500, DAILY_SESSION_MAX_TRANSCRIPT_CHARS));
-          payload = { ...payload, transcript: hardTranscript };
-          json = JSON.stringify(payload);
-          if (json.length > DAILY_SESSION_MAX_JSON_CHARS) {
-            payload = { ...payload, transcript: "" };
-          }
-        }
-
-        storage.setItem(DAILY_SESSION_STORAGE_KEY, JSON.stringify(payload));
-      } catch {
-        // Falha de quota/permissão não deve interromper o fluxo.
-        // Remover a chave é melhor do que ficar tentando gravar repetidamente.
-        try {
-          storage.removeItem(DAILY_SESSION_STORAGE_KEY);
-        } catch {
-          // ignore
-        }
-      }
-    }, DAILY_SESSION_WRITE_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [
-    dailyTranscript,
-    dailyFileName,
-    dailySourceFileName,
-    dailyGenerating,
-    dailyTab,
-    dailyLogs,
-    dailyStatusPhase,
-    dailyHistoryExpandedId,
-    dailyHistoryCreatedCardsExpandedId,
-    dailyHistoryDateFrom,
-    dailyHistoryDateTo,
-    dailyHistorySearchQuery,
-  ]);
 
   const handlePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -1926,30 +853,7 @@ export function KanbanBoard({
                 Mapa de Produção
               </button>
               <button
-                onClick={() => {
-                  // Sempre colapsar histórico ao abrir o modal.
-                  setDailyHistoryExpandedId(null);
-                  setDailyHistoryCreatedCardsExpandedId(null);
-
-                  if (!dailyGenerating) {
-                    // Ao abrir uma execução nova, limpar contexto de entrada (requisito do usuário).
-                    setDailyTranscript("");
-                    setDailyFileName("Nenhum arquivo anexado");
-                    setDailySourceFileName("");
-                    setDailyLogs([]);
-                    setDailyStatusPhase("idle");
-                    setDailyTab("entrada");
-                    try {
-                      window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
-                    } catch {
-                      // ignore
-                    }
-                  } else {
-                    setDailyTab("status");
-                  }
-
-                  setDailyOpen(true);
-                }}
+                onClick={openDailyModal}
                 className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 font-display shrink-0"
               >
                 Daily IA
@@ -2438,13 +1342,8 @@ export function KanbanBoard({
         intent="danger"
         confirmText="Excluir"
         cancelText="Cancelar"
-        onCancel={() => setDailyDeleteConfirmId(null)}
-        onConfirm={() => {
-          if (!dailyDeleteConfirmId) return;
-          performDeleteDailyHistoryEntry(dailyDeleteConfirmId);
-          setDailyDeleteConfirmId(null);
-          pushToast({ kind: "success", title: "Resumo excluído." });
-        }}
+        onCancel={cancelDeleteDailyHistoryEntry}
+        onConfirm={confirmDeleteDailyHistoryEntry}
       />
 
       <ConfirmDialog
@@ -2538,669 +1437,52 @@ export function KanbanBoard({
       />
 
       {dailyOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[410] flex items-center justify-center p-4" onClick={() => setDailyOpen(false)}>
-          <div
-            className="w-full max-w-5xl h-[90vh] bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] p-5 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-            ref={dailyDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="daily-ia-title"
-            tabIndex={-1}
-          >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h3 id="daily-ia-title" className="font-display font-bold text-[var(--flux-text)] text-base">
-                  Daily IA
-                </h3>
-                <p className="text-xs text-[var(--flux-text-muted)]">Board: {boardName || "Board"}</p>
-              </div>
-              <button ref={dailyCloseRef} type="button" className="btn-secondary" onClick={() => setDailyOpen(false)}>
-                Fechar
-              </button>
-            </div>
-            <div className="flex items-center gap-2 mb-3 border-b border-[rgba(255,255,255,0.08)] pb-3">
-              <button
-                type="button"
-                className={`btn-bar ${dailyTab === "entrada" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
-                onClick={() => {
-                  setDailyTab("entrada");
-                  // Sempre colapsar histórico ao iniciar "Nova Daily".
-                  setDailyHistoryExpandedId(null);
-                  setDailyHistoryCreatedCardsExpandedId(null);
-
-                  if (!dailyGenerating) {
-                    // Ao abrir uma execução nova: limpar contexto de entrada.
-                    setDailyTranscript("");
-                    setDailyFileName("Nenhum arquivo anexado");
-                    setDailySourceFileName("");
-                    setDailyLogs([]);
-                    setDailyStatusPhase("idle");
-                    try {
-                      window.localStorage?.removeItem(DAILY_SESSION_STORAGE_KEY);
-                    } catch {
-                      // ignore
-                    }
-                  }
-                }}
-              >
-                Nova Daily
-              </button>
-              <button
-                type="button"
-                className={`btn-bar ${dailyTab === "historico" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
-                onClick={() => setDailyTab("historico")}
-              >
-                Histórico ({dailyInsights.length})
-              </button>
-              <button
-                type="button"
-                className={`btn-bar ${dailyTab === "status" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
-                onClick={() => setDailyTab("status")}
-              >
-                Status {dailyGenerating ? "• em andamento" : ""}
-              </button>
-            </div>
-            {dailyTab === "entrada" ? (
-              <div className="flex-1 min-h-0 overflow-auto">
-                <p className="text-xs text-[var(--flux-text-muted)] mb-3">
-                  Cole a transcrição da daily (ou anexe arquivo .txt/.md) para gerar uma visão prática dos próximos passos.
-                </p>
-                {dailyGenerating && (
-                  <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
-                    <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
-                      Geracao em andamento. Acompanhe pela guia Status.
-                    </p>
-                    <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                      Voce pode fechar e reabrir este modal sem perder o progresso atual.
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 flex-wrap mb-3">
-                  <label className="btn-bar cursor-pointer">
-                    Anexar transcrição
-                    <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={loadDailyTranscriptFile} />
-                  </label>
-                  <button type="button" className="btn-secondary" onClick={clearDailyAttachmentAndTranscript}>
-                    Excluir anexo e conteúdo
-                  </button>
-                  <span className="text-xs text-[var(--flux-text-muted)]">{dailyFileName}</span>
-                </div>
-                <textarea
-                  value={dailyTranscript}
-                  onChange={(e) => setDailyTranscript(e.target.value)}
-                  placeholder="Ex: ontem finalizamos... hoje vamos... bloqueio em..."
-                  className="w-full min-h-[260px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
-                />
-                <div className="flex items-center gap-2 justify-end mt-3">
-                  <button className="btn-secondary" onClick={() => setDailyOpen(false)}>
-                    Fechar
-                  </button>
-                  <button className="btn-primary" onClick={generateDailyInsight} disabled={dailyGenerating}>
-                    {dailyGenerating ? "Analisando e gerando com IA..." : "Gerar resumo prático"}
-                  </button>
-                </div>
-              </div>
-            ) : dailyTab === "status" ? (
-              <div className="flex-1 min-h-0 overflow-auto">
-                <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
-                      Acompanhamento da geração
-                    </div>
-                    <div className="text-[11px] text-[var(--flux-text-muted)]">
-                      {dailyGenerating
-                        ? "Processando..."
-                        : dailyStatusPhase === "done"
-                          ? "Concluído"
-                          : dailyStatusPhase === "error"
-                            ? "Falha"
-                            : dailyStatusPhase === "idle"
-                              ? "Pronto"
-                              : "Aguardando"}
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
-                    <div
-                      className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
-                      style={{
-                        width: `${dailyStatusPhase === "idle" ? 0 : Math.max(6, Math.min(100, statusStepIndex * 25))}%`,
-                        opacity: dailyGenerating ? 0.95 : 0.8,
-                      }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 mt-2">
-                    {["Preparando", "Enviando", "Processando", "Concluído"].map((step, idx) => {
-                      const stepPos = idx + 1;
-                      const active = statusStepIndex >= stepPos;
-                      return (
-                        <div
-                          key={step}
-                          className={`text-[10px] rounded-[6px] px-2 py-1 border ${
-                            active
-                              ? "border-[rgba(108,92,231,0.45)] text-[var(--flux-primary-light)] bg-[rgba(108,92,231,0.12)]"
-                              : "border-[rgba(255,255,255,0.1)] text-[var(--flux-text-muted)]"
-                          }`}
-                        >
-                          {step}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {dailyGenerating ? (
-                  dailyLogs.length > 0 ? (
-                    <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                          Log de conectividade com IA
-                        </div>
-                        <button
-                          type="button"
-                          className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
-                          onClick={() => setDailyLogs([])}
-                        >
-                          Limpar log
-                        </button>
-                      </div>
-                      <div className="max-h-40 overflow-auto space-y-1 scrollbar-flux">
-                        {dailyLogs.map((log, index) => {
-                          const dt = new Date(log.timestamp).toLocaleTimeString("pt-BR");
-                          const baseClass =
-                            log.status === "success"
-                              ? "text-[var(--flux-primary-light)]"
-                              : log.status === "error"
-                                ? "text-[#F97373]"
-                                : "text-[var(--flux-text-muted)]";
-                          return (
-                            <div
-                              key={`${log.timestamp}-${index}`}
-                              className="text-[11px] flex items-start gap-2"
-                            >
-                              <span className="text-[10px] text-[var(--flux-text-muted)] min-w-[54px]">
-                                {dt}
-                              </span>
-                              <div className={`flex-1 ${baseClass} space-y-0.5`}>
-                                <div>{log.message}</div>
-                                {(log.provider || log.model) && (
-                                  <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                    {log.provider && <span>LLM: {log.provider}</span>}
-                                    {log.provider && log.model && <span> • </span>}
-                                    {log.model && <span>Modelo: {log.model}</span>}
-                                  </div>
-                                )}
-                                {log.errorKind && (
-                                  <div className="text-[10px] text-[var(--flux-text-muted)]">
-                                    Erro IA: {log.errorKind}
-                                    {log.errorMessage ? ` - ${log.errorMessage}` : ""}
-                                  </div>
-                                )}
-                                {log.resultSnippet && (
-                                  <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-pre-wrap">
-                                    {log.resultSnippet}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-[var(--flux-text-muted)] mt-4">
-                      O log aparecerá aqui assim que a geração for iniciada.
-                    </p>
-                  )
-                ) : (
-                  <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                        Execucoes de status
-                      </div>
-                      <span className="text-[10px] text-[var(--flux-text-muted)]">Vinculado ao histórico</span>
-                    </div>
-                    {dailyInsights.length ? (
-                      <div className="space-y-2">
-                        {dailyInsights.slice(0, 8).map((entry, idx) => {
-                          const insight = entry?.insight;
-                          const entryId = String(entry?.id || "");
-                          if (!entryId || !insight) return null;
-
-                          const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                          const label = generatedWithAi ? "Concluído" : "Concluído (heurístico)";
-                          const createdAt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-                          const resumo = String(insight?.resumo || "").trim();
-                          const resumoShort = resumo.length > 120 ? `${resumo.slice(0, 120)}...` : resumo;
-
-                          return (
-                            <button
-                              key={entryId || idx}
-                              type="button"
-                              className="w-full text-left p-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] hover:border-[rgba(108,92,231,0.35)] hover:bg-[rgba(108,92,231,0.08)] transition-colors"
-                              onClick={() => openDailyHistoryFromStatusEntry(entryId)}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[11px] font-semibold text-[var(--flux-primary-light)]">{label}</span>
-                                    {generatedWithAi && (
-                                      <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
-                                        IA
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
-                                    {resumoShort || "Sem resumo"}
-                                  </div>
-                                </div>
-                                <div className="text-[10px] text-[var(--flux-text-muted)] whitespace-nowrap">
-                                  {createdAt}
-                                </div>
-                              </div>
-                              <div className="mt-2 text-[10px] text-[var(--flux-text-muted)] underline underline-offset-2">
-                                Abrir no histórico
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-[var(--flux-text-muted)]">
-                        Nenhuma execução registrada ainda.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex-1 min-h-0 overflow-auto space-y-3">
-                {dailyInsights.length ? (
-                <>
-                  <div className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
-                    <div className="flex items-end gap-2 flex-wrap">
-                      <div className="min-w-[160px]">
-                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                          De
-                        </label>
-                        <input
-                          type="date"
-                          value={dailyHistoryDateFrom}
-                          onChange={(e) => setDailyHistoryDateFrom(e.target.value)}
-                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                        />
-                      </div>
-                      <div className="min-w-[160px]">
-                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                          Até
-                        </label>
-                        <input
-                          type="date"
-                          value={dailyHistoryDateTo}
-                          onChange={(e) => setDailyHistoryDateTo(e.target.value)}
-                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-[220px]">
-                        <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
-                          Busca textual
-                        </label>
-                        <input
-                          type="text"
-                          value={dailyHistorySearchQuery}
-                          onChange={(e) => setDailyHistorySearchQuery(e.target.value)}
-                          placeholder="Buscar em resumo, contexto e listas..."
-                          className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          setDailyHistoryDateFrom("");
-                          setDailyHistoryDateTo("");
-                          setDailyHistorySearchQuery("");
-                        }}
-                      >
-                        Limpar filtros
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                      Exibindo {filteredDailyInsights.length} de {dailyInsights.length} resumo(s).
-                    </p>
-                  </div>
-                  {filteredDailyInsights.length > 0 && (
-                    <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
-                      <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                        Lista de históricos
-                      </div>
-                      <div className="max-h-40 overflow-auto scrollbar-flux divide-y divide-[rgba(255,255,255,0.06)]">
-                        {filteredDailyInsights.map((entry, idx) => {
-                          const insight = entry.insight;
-                          if (!insight) return null;
-                          const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-                          const createItems = getDailyCreateSuggestions(entry);
-                          const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                          const isActive = activeDailyHistoryId === String(entry.id || "");
-                          return (
-                            <button
-                              key={entry.id || idx}
-                              type="button"
-                              onClick={() => {
-                                const entryId = String(entry.id || "");
-                                if (!entryId) return;
-                                if (isActive) {
-                                  setDailyHistoryExpandedId(null);
-                                  setDailyHistoryCreatedCardsExpandedId(null);
-                                } else {
-                                  setDailyHistoryExpandedId(entryId);
-                                }
-                              }}
-                              className={`w-full flex items-center justify-between gap-2 py-1.5 px-1.5 text-left transition-colors ${
-                                isActive
-                                  ? "bg-[rgba(108,92,231,0.16)]"
-                                  : "hover:bg-[rgba(108,92,231,0.08)]"
-                              }`}
-                            >
-                              <div className="flex flex-col gap-0.5 min-w-0">
-                                <span className="text-[11px] font-semibold text-[var(--flux-text)] truncate">
-                                  {insight.resumo || "Resumo sem título"}
-                                </span>
-                                <span className="text-[10px] text-[var(--flux-text-muted)]">
-                                  {dt || "Sem data"} • {createItems.length} item(ns) em "Criar"
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {generatedWithAi && (
-                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
-                                    IA
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-[var(--flux-text-muted)]">
-                                  #{filteredDailyInsights.length - idx}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {filteredDailyInsights.map((entry, idx) => {
-                  const insight = entry.insight;
-                  if (!insight) return null;
-                  const dt = entry.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
-                  const title = idx === 0 ? "Resumo mais recente" : `Histórico #${filteredDailyInsights.length - idx}`;
-                  const createItems = getDailyCreateSuggestions(entry);
-                  const isExpanded = activeDailyHistoryId === String(entry.id || "");
-                  const sourceName = String(entry.sourceFileName || "Transcrição manual");
-                  const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                  const aiModel = String(entry?.generationMeta?.model || "").trim();
-                  return (
-                    <div
-                      key={entry.id || idx}
-                      className={`bg-[var(--flux-surface-mid)] border rounded-[12px] p-3 transition-colors ${
-                        isExpanded
-                          ? "border-[rgba(108,92,231,0.35)]"
-                          : "border-[rgba(255,255,255,0.08)]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-left"
-                          onClick={() => {
-                            const entryId = String(entry.id || "");
-                            if (!entryId) return;
-                            if (isExpanded) {
-                              setDailyHistoryExpandedId(null);
-                              setDailyHistoryCreatedCardsExpandedId(null);
-                            } else {
-                              setDailyHistoryExpandedId(entryId);
-                            }
-                          }}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[0_0_10px_rgba(108,92,231,0.6)]" />
-                          <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
-                            {title}
-                            {dt ? ` • ${dt}` : ""}
-                          </h4>
-                          <span className="text-[10px] text-[var(--flux-text-muted)]">
-                            {isExpanded ? "▲ Aberto" : "▼ Expandir"}
-                          </span>
-                        </button>
-                        {isExpanded ? (
-                          <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDailyHistoryExpandedId(null);
-                              setDailyHistoryCreatedCardsExpandedId(null);
-                            }}
-                          >
-                            Colapsar
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-[var(--flux-text-muted)]">
-                            {sourceName}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          isExpanded ? "max-h-[2400px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-                        }`}
-                        aria-hidden={!isExpanded}
-                      >
-                        <div>
-                          <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <button className="btn-bar" onClick={() => downloadDailyContextDoc(entry)}>
-                              Baixar contexto
-                            </button>
-                            <button className="btn-bar" onClick={() => copyDailyContextDoc(entry)}>
-                              Copiar contexto
-                            </button>
-                            <button className="btn-bar" onClick={() => createCardsFromInsight(entry.id)}>
-                              Criar cards do "Criar"
-                            </button>
-                            <button className="btn-danger-solid" onClick={() => deleteDailyHistoryEntry(String(entry.id || ""))}>
-                              Excluir resumo
-                            </button>
-                          </div>
-                          <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                            Fonte: {sourceName}
-                            {entry.transcript ? ` • ${entry.transcript.length} caracteres processados` : ""}
-                          </p>
-                          {generatedWithAi && (
-                            <CustomTooltip content="Conteudo reescrito e estruturado por IA a partir da transcricao.">
-                              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
-                                  Texto gerado com IA{aiModel ? ` • ${aiModel}` : ""}
-                                </span>
-                              </div>
-                            </CustomTooltip>
-                          )}
-                          <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
-                          <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
-                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                              <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                                Contexto organizado
-                              </div>
-                              {generatedWithAi && (
-                                <div className="text-[10px] font-semibold text-[var(--flux-primary-light)]/90">
-                                  Organizado por IA
-                                </div>
-                              )}
-                            </div>
-                            {renderOrganizedContext(String(insight.contextoOrganizado || ""))}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {[
-                              { key: "criar", label: "Criar", values: createItems },
-                              { key: "ajustar", label: "Ajustar", values: getDailyActionSuggestions(insight.ajustar) },
-                              { key: "corrigir", label: "Corrigir", values: getDailyActionSuggestions(insight.corrigir) },
-                              { key: "pendencias", label: "Pendências", values: getDailyActionSuggestions(insight.pendencias) },
-                            ].map((list) => (
-                              <div key={list.key} className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
-                                <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
-                                  {list.label}
-                                </div>
-                                {list.values.length ? (
-                                  <ul className="space-y-1 pl-4 list-disc">
-                                    {list.values.map((item, i) => {
-                                      const prioSlug = slugDaily(item.prioridade);
-                                      const progSlug = slugDaily(item.progresso);
-                                      const prioClass =
-                                        prioSlug === "urgente"
-                                          ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
-                                          : prioSlug === "importante"
-                                            ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                            : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
-                                      const progClass =
-                                        progSlug === "em-andamento"
-                                          ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
-                                          : progSlug === "concluida"
-                                            ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                            : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
-                                      return (
-                                        <li key={`${list.key}-${i}`}>
-                                          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-2">
-                                            <div className="flex items-start justify-between gap-2">
-                                              <span className="flex-1 min-w-0 text-xs font-semibold text-[var(--flux-text)] leading-[1.35]">
-                                                {String(item.titulo || "")}
-                                              </span>
-                                              <span className="flex gap-1 flex-wrap justify-end">
-                                                <span
-                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${prioClass}`}
-                                                >
-                                                  Prio: {item.prioridade}
-                                                </span>
-                                                <span
-                                                  className={`text-[9px] font-bold px-1.5 py-[1px] rounded-full border whitespace-nowrap ${progClass}`}
-                                                >
-                                                  Progresso: {item.progresso}
-                                                </span>
-                                              </span>
-                                            </div>
-                                            {item.descricao && (
-                                              <p className="mt-1 text-[11px] text-[var(--flux-text-muted)] leading-relaxed whitespace-pre-line">
-                                                {item.descricao}
-                                              </p>
-                                            )}
-                                            <div className="mt-1 flex flex-wrap gap-1">
-                                              {item.coluna && (
-                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                  Coluna: {item.coluna}
-                                                </span>
-                                              )}
-                                              {item.dataConclusao && (
-                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
-                                                  Prazo: {item.dataConclusao}
-                                                </span>
-                                              )}
-                                              {item.tags?.map((tag) => (
-                                                <span
-                                                  key={`${item.titulo}-${tag}`}
-                                                  className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
-                                                >
-                                                  {tag}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                ) : (
-                                  <p className="text-xs text-[var(--flux-text-muted)]">Sem itens identificados.</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
-                                Cards criados a partir desta transcrição
-                              </div>
-                              <button
-                                type="button"
-                                className="btn-bar"
-                                onClick={() => setDailyHistoryCreatedCardsExpandedId(String(entry.id || ""))}
-                              >
-                                {activeCreatedCardsExpandedId === String(entry.id || "")
-                                  ? "Detalhes abertos"
-                                  : "Ver todas as informações"}
-                              </button>
-                            </div>
-                            <p className="text-xs text-[var(--flux-text-muted)] mt-1">
-                              {(Array.isArray(entry.createdCards) ? entry.createdCards.length : 0)} card(s) registrados.
-                            </p>
-                            <div
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                activeCreatedCardsExpandedId === String(entry.id || "")
-                                  ? "max-h-[1400px] opacity-100 mt-2"
-                                  : "max-h-0 opacity-0 mt-0"
-                              }`}
-                              aria-hidden={activeCreatedCardsExpandedId !== String(entry.id || "")}
-                            >
-                              <div className="space-y-2">
-                                {(Array.isArray(entry.createdCards) ? entry.createdCards : []).length ? (
-                                  (entry.createdCards || []).map((createdCard, createdIdx) => (
-                                    <div
-                                      key={`${createdCard.cardId || "card"}-${createdIdx}`}
-                                      className="border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2 bg-[var(--flux-surface-mid)]"
-                                    >
-                                      <div className="text-xs font-semibold text-[var(--flux-text)]">
-                                        {createdCard.title || "Sem título"}
-                                        {createdCard.status === "existing" && (
-                                          <span className="ml-2 text-[10px] font-bold px-1.5 py-[1px] rounded-full border border-[rgba(255,217,61,0.3)] text-[#F59E0B] bg-[rgba(255,217,61,0.12)]">
-                                            Card ja existente
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        ID: {createdCard.cardId} • Coluna: {createdCard.bucket} • Prioridade: {createdCard.priority} •
-                                        Progresso: {createdCard.progress}
-                                      </div>
-                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        Direcionamento: {createdCard.direction || "-"} • Data: {createdCard.createdAt ? new Date(createdCard.createdAt).toLocaleString("pt-BR") : "-"}
-                                      </div>
-                                      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-                                        Tags: {(Array.isArray(createdCard.tags) && createdCard.tags.length ? createdCard.tags.join(", ") : "-")}
-                                      </div>
-                                      <p className="text-xs text-[var(--flux-text)] mt-1 whitespace-pre-line">
-                                        {createdCard.desc || "Sem descrição."}
-                                      </p>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <p className="text-xs text-[var(--flux-text-muted)]">Nenhum card criado para este resumo até o momento.</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                  {!filteredDailyInsights.length && (
-                    <p className="text-xs text-[var(--flux-text-muted)]">
-                      Nenhum resumo encontrado com os filtros informados.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-xs text-[var(--flux-text-muted)]">Ainda não existe resumo salvo para este board.</p>
-              )}
-              </div>
-            )}
-          </div>
-        </div>
+        <DailyInsightsPanel
+          boardName={boardName}
+          dailyTab={dailyTab}
+          dailyGenerating={dailyGenerating}
+          dailyStatusPhase={dailyStatusPhase}
+          statusStepIndex={statusStepIndex}
+          dailyLogs={dailyLogs}
+          dailyTranscript={dailyTranscript}
+          dailyFileName={dailyFileName}
+          dailyHistoryDateFrom={dailyHistoryDateFrom}
+          dailyHistoryDateTo={dailyHistoryDateTo}
+          dailyHistorySearchQuery={dailyHistorySearchQuery}
+          dailyInsights={dailyInsights}
+          filteredDailyInsights={filteredDailyInsights}
+          activeDailyHistoryId={activeDailyHistoryId}
+          activeCreatedCardsExpandedId={activeCreatedCardsExpandedId}
+          dailyDialogRef={dailyDialogRef}
+          dailyCloseRef={dailyCloseRef}
+          slugDaily={slugDaily}
+          onClose={closeDailyModal}
+          onClickNewDaily={startNewDaily}
+          onClickHistoryTab={openHistoryTab}
+          onClickStatusTab={openStatusTab}
+          onLoadDailyTranscriptFile={loadDailyTranscriptFile}
+          onClearDailyAttachmentAndTranscript={clearDailyAttachmentAndTranscript}
+          onDailyTranscriptChange={(value) => setDailyTranscript(value)}
+          onGenerateDailyInsight={onGenerateDailyInsight}
+          onClearDailyLogs={clearDailyLogs}
+          onOpenDailyHistoryFromStatusEntry={onOpenDailyHistoryFromStatusEntry}
+          onSetDailyHistoryDateFrom={(value) => setDailyHistoryDateFrom(value)}
+          onSetDailyHistoryDateTo={(value) => setDailyHistoryDateTo(value)}
+          onSetDailyHistorySearchQuery={(value) => setDailyHistorySearchQuery(value)}
+          onClearDailyHistoryFilters={clearDailyHistoryFilters}
+          onToggleDailyHistoryExpanded={onToggleDailyHistoryExpanded}
+          onCollapseDailyHistoryExpanded={onCollapseDailyHistoryExpanded}
+          onDownloadDailyContextDoc={onDownloadDailyContextDoc}
+          onCopyDailyContextDoc={onCopyDailyContextDoc}
+          onCreateCardsFromInsight={onCreateCardsFromInsight}
+          onDeleteDailyHistoryEntry={requestDeleteDailyHistoryEntry}
+          onExpandDailyHistoryCreatedCards={expandDailyHistoryCreatedCards}
+        />
       )}
+      {/*
+        Daily IA modal movido para `DailyInsightsPanel`.
+        Mantido removido aqui para evitar duplicação de lógica/JSX.
+      */}
     </>
   );
 }
