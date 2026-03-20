@@ -17,6 +17,7 @@ import { generateBoardWeeklyDigestInsightAI } from "@/lib/weekly-digest-llm";
 import { generateOkrWeeklyDigestBlockAI } from "@/lib/okr-weekly-digest-llm";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
+import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -148,6 +149,19 @@ export async function GET(request: NextRequest) {
       const boards = await listBoardsForOrgMongo(orgId, db);
       const boardIds = boards.map((b) => b.id).filter(Boolean);
       if (!boardIds.length) continue;
+
+      let proactiveLines: string[] | null = null;
+      if (canUseFeature(org, "portfolio_export")) {
+        const since = new Date(weekStartMs).toISOString();
+        const rows = await db
+          .collection<{ message?: string }>(COL_ANOMALY_ALERTS)
+          .find({ orgId, createdAt: { $gte: since } })
+          .sort({ createdAt: -1 })
+          .limit(8)
+          .toArray();
+        proactiveLines = rows.map((r) => String(r.message || "").trim()).filter(Boolean);
+        if (proactiveLines.length === 0) proactiveLines = null;
+      }
 
       const weekCurrent = { startMs: weekStartMs, endMs: weekEndMs };
       const weekPrevious = { startMs: prevStartMs, endMs: weekStartMs };
@@ -290,6 +304,7 @@ export async function GET(request: NextRequest) {
           appUrl: baseAppUrl,
           boards: boardsForEmail,
           okrSection,
+          proactiveLines,
         })
       );
 

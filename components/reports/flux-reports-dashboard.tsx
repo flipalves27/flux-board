@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
 
 const CHART_COLORS = [
   "#6c5ce7",
@@ -213,6 +214,8 @@ export function FluxReportsDashboard() {
 
   return (
     <div className="space-y-6">
+      <ProactiveAiPanel />
+
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.boards")}</p>

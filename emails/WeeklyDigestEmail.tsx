@@ -46,9 +46,18 @@ export type WeeklyDigestEmailProps = {
   appUrl?: string;
   boards: WeeklyDigestBoard[];
   okrSection?: WeeklyDigestOkrSection | null;
+  /** Resumo opcional dos alertas Proactive AI (últimos dias). */
+  proactiveLines?: string[] | null;
 };
 
-export function WeeklyDigestEmail({ orgName, weekLabel, appUrl, boards, okrSection }: WeeklyDigestEmailProps) {
+export function WeeklyDigestEmail({
+  orgName,
+  weekLabel,
+  appUrl,
+  boards,
+  okrSection,
+  proactiveLines,
+}: WeeklyDigestEmailProps) {
   const safeAppUrl = appUrl || "#";
   return (
     <Html>
@@ -59,6 +68,20 @@ export function WeeklyDigestEmail({ orgName, weekLabel, appUrl, boards, okrSecti
           <Text style={muted}>Organização: {orgName}</Text>
           <Text style={muted}>Período: {weekLabel}</Text>
           <Hr style={hr} />
+
+          {proactiveLines && proactiveLines.length > 0 && (
+            <Section style={card}>
+              <Heading as="h2" style={h2}>
+                Proactive AI (resumo)
+              </Heading>
+              <Text style={muted}>Alertas automáticos recentes da checagem diária.</Text>
+              {proactiveLines.map((line, i) => (
+                <Text key={i} style={p}>
+                  • {line}
+                </Text>
+              ))}
+            </Section>
+          )}
 
           {okrSection && (
             <Section style={card}>

@@ -172,3 +172,18 @@ Configure uma regra para disparar na **segunda-feira às 08:00** chamando:
 - URL: `https://SEU_DOMINIO/api/weekly-digest`
 - Header: `x-cron-secret: WEEKLY_DIGEST_SECRET`
 
+## Proactive AI (checagem diária de anomalias)
+
+Job diário que calcula z-scores (throughput, WIP, lead time) e regras diagnósticas (OKR drift, estagnação, vencimentos). Resultados aparecem em **Relatórios** (Flux Reports) e alertas recentes entram no **Weekly Digest** (bloco opcional).
+
+### Endpoint
+
+- `GET` ou `POST /api/cron/anomaly-check`
+
+### Variáveis de ambiente
+
+- `ANOMALY_CRON_SECRET` (opcional): se definido, exige `x-cron-secret` igual a este valor; senão usa `WEEKLY_DIGEST_SECRET` ou `AUTOMATION_CRON_SECRET` (mesmo padrão dos outros crons)
+- Requer MongoDB; histórico diário fica nas coleções `anomaly_daily_snapshots`, `anomaly_check_runs`, `anomaly_alerts`
+
+O repositório inclui uma entrada em `vercel.json` (`0 10 * * *` UTC — ajuste o horário conforme necessidade).
+

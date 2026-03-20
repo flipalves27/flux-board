@@ -78,6 +78,34 @@
       "created": "Criados (Copilot)",
       "concludedCopilot": "Concluídos (Copilot)",
       "cards": "Cards"
+    },
+    "proactive": {
+      "title": "Proactive AI",
+      "subtitle": "Checagem diária de anomalias (throughput, WIP, lead time, OKRs e prazos) com z-score vs. linha de base. Alertas ficam registrados aqui.",
+      "loading": "Carregando Proactive AI…",
+      "loadError": "Não foi possível carregar o painel.",
+      "empty": "Sem dados.",
+      "noMongo": "Conecte MongoDB para habilitar histórico e alertas automáticos.",
+      "health": {
+        "ok": "Ativo",
+        "review": "Verificar",
+        "idle": "Sem histórico"
+      },
+      "unread": "novos",
+      "lastRun": "Última execução",
+      "neverRun": "Nenhuma execução registrada ainda. Configure o cron em /api/cron/anomaly-check (header x-cron-secret).",
+      "refresh": "Atualizar",
+      "markAllRead": "Marcar como lidos",
+      "runsTitle": "Histórico de checagens",
+      "alertsTitle": "Alertas recentes",
+      "noRuns": "Ainda não há execuções salvas.",
+      "noAlerts": "Nenhum alerta nos últimos registros.",
+      "alertSingular": "alerta",
+      "alertPlural": "alertas",
+      "board": "Board",
+      "showDiag": "Ver diagnóstico (métricas)",
+      "hideDiag": "Ocultar diagnóstico",
+      "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
     }
   },
   "appShell": {
