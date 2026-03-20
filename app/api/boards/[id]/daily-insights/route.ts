@@ -4,7 +4,13 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { DailyInsightInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import {
+  assertFeatureAllowed,
+  getDailyAiCallsCap,
+  getDailyAiCallsWindowMs,
+  makeDailyAiCallsRateLimitKey,
+  PlanGateError,
+} from "@/lib/plan-gates";
 
 type InsightActionItem = {
   titulo: string;
@@ -531,6 +537,24 @@ export async function POST(
         rec.bucket || ""
       )} | ${String(rec.desc || "").slice(0, 220)}`;
     });
+
+    // Quota de "calls/dia" apenas quando vamos de fato disparar IA via Together.ai.
+    const cap = getDailyAiCallsCap(org);
+    const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+    if (cap !== null && togetherEnabled) {
+      const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
+      const rlDaily = await rateLimit({
+        key: dailyKey,
+        limit: cap,
+        windowMs: getDailyAiCallsWindowMs(),
+      });
+      if (!rlDaily.allowed) {
+        return NextResponse.json(
+          { error: "Limite diário de chamadas de IA atingido. Faça upgrade no Stripe." },
+          { status: 403 }
+        );
+      }
+    }
 
     const llmResult = await llmInsight({
       boardName: board.name || "Board",

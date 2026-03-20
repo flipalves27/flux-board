@@ -12,6 +12,8 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   portfolio_export: ["pro", "business"],
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export class PlanGateError extends Error {
   status: number;
   constructor(message: string, status = 403) {
@@ -62,5 +64,34 @@ export function assertCanCreateUser(org: Organization | null | undefined, curren
   if (currentCount >= cap) {
     throw new PlanGateError(`Limite do plano: no máximo ${cap} usuário(s).`, 403);
   }
+}
+
+function parsePositiveInt(raw: string | undefined): number | null {
+  if (!raw) return null;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
+}
+
+/**
+ * Limite de "calls/dia" para endpoints que chamam IA (Together.ai).
+ * Free: 3 (por padrão) | Pro/Business: ilimitado (null).
+ */
+export function getDailyAiCallsCap(org: Organization | null | undefined): number | null {
+  const tier = getEffectiveTier(org);
+  if (tier !== "free") return null;
+  return (
+    parsePositiveInt(process.env.FLUX_FREE_CALLS_PER_DAY) ??
+    parsePositiveInt(process.env.NEXT_PUBLIC_FLUX_FREE_CALLS_PER_DAY) ??
+    3
+  );
+}
+
+export function makeDailyAiCallsRateLimitKey(orgId: string): string {
+  return `ai_calls:daily:org:${orgId}`;
+}
+
+export function getDailyAiCallsWindowMs(): number {
+  return DAY_MS;
 }
 

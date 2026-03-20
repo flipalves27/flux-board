@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routine-tasks-context";
 import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, getAlertSoundSettings, playAlertSound, setAlertSoundSettings } from "@/lib/alert-sounds";
+import { apiGet, ApiError } from "@/lib/api-client";
+import { getEffectiveTier, type Tier } from "@/lib/plan-gates";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -40,18 +43,46 @@ function recurrenceLabel(type: RoutineType): string {
 
 export default function TasksPage() {
   const router = useRouter();
-  const { user, isChecked } = useAuth();
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
+
+  const { user, getHeaders, isChecked } = useAuth();
   const { tasks, createTask, updateTask, deleteTask, toggleTask, completeTask } = useRoutineTasks();
 
   const [form, setForm] = useState<RoutineTaskInput>(defaultTaskInput);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [soundSettings, setSoundSettingsState] = useState(() => getAlertSoundSettings());
 
+  const [tier, setTier] = useState<Tier>("free");
+  const [loadingTier, setLoadingTier] = useState(true);
+
   useEffect(() => {
     if (!isChecked || !user) {
-      router.replace("/login");
+      router.replace(`${localeRoot}/login`);
     }
   }, [isChecked, user, router]);
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    setLoadingTier(true);
+    (async () => {
+      try {
+        const data = await apiGet<{ organization: any }>("/api/organizations/me", getHeaders());
+        const org = data?.organization;
+        const next = getEffectiveTier(org);
+        setTier(next);
+      } catch (e) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          router.replace(`${localeRoot}/login`);
+          return;
+        }
+        // fallback: assume free
+        setTier("free");
+      } finally {
+        setLoadingTier(false);
+      }
+    })();
+  }, [isChecked, user, getHeaders, router, localeRoot]);
 
   const sortedTasks = useMemo(
     () =>
@@ -117,6 +148,27 @@ export default function TasksPage() {
   }
 
   if (!user) return null;
+
+  if (!loadingTier && tier === "free") {
+    return (
+      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+        <Header title="Minhas tarefas" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
+        <main className="max-w-[780px] mx-auto px-6 py-10">
+          <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.08)] p-6">
+            <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">Routine é Pro/Business</h2>
+            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
+              Para criar e sincronizar rotinas, faça upgrade no Stripe.
+            </p>
+            <div className="mt-5">
+              <button className="btn-primary" onClick={() => router.replace(`${localeRoot}/billing`)}>
+                Ver planos e assinar
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">

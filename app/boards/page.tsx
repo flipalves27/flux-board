@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLocale, useTranslations } from "next-intl";
 import { Header } from "@/components/header";
@@ -70,6 +70,7 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 
 export default function BoardsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("boards");
@@ -104,6 +105,16 @@ export default function BoardsPage() {
     }
     loadBoards();
   }, [isChecked, user, router]);
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    const billing = searchParams.get("billing");
+    if (billing === "success") {
+      pushToast({ kind: "success", title: "Assinatura ativa!", description: "Seus recursos Pro/Business já devem estar disponíveis." });
+    } else if (billing === "cancel") {
+      pushToast({ kind: "warning", title: "Checkout cancelado", description: "Nenhuma assinatura foi criada." });
+    }
+  }, [searchParams, isChecked, user, pushToast]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
@@ -418,14 +429,21 @@ export default function BoardsPage() {
             {plan.atLimit ? (
               <>
                 <span className="font-display font-bold text-[var(--flux-text)]">Limite do plano.</span>{" "}
-                Você atingiu {plan.maxBoards} board(s). Remova um board ou aumente o limite do seu plano.
+                Você atingiu {plan.maxBoards} board(s). Remova um board ou{" "}
+                <a
+                  href={`${localeRoot}/billing`}
+                  className="text-[var(--flux-primary-light)] underline underline-offset-2 hover:text-[var(--flux-primary)]"
+                >
+                  aumente seu limite no Stripe
+                </a>
+                .
               </>
             ) : (
               <>
                 Plano atual: até <strong className="text-[var(--flux-text)]">{plan.maxBoards}</strong> boards no seu
                 espaço ({plan.currentCount} em uso).{" "}
-                <a href="/negocios" className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
-                  Ver oportunidades comerciais
+                <a href={`${localeRoot}/billing`} className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
+                  Ver planos e limites
                 </a>
               </>
             )}

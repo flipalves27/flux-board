@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, getDailyAiCallsCap, getDailyAiCallsWindowMs, makeDailyAiCallsRateLimitKey, PlanGateError } from "@/lib/plan-gates";
+import { rateLimit } from "@/lib/rate-limit";
 
 type CardContextInput = {
   title?: string;
@@ -492,6 +492,25 @@ export async function POST(
 
     let inFlight = cardContextInFlight.get(cacheKey);
     if (!inFlight) {
+      // Conta quota de calls/dia apenas quando vamos efetivamente disparar uma chamada IA
+      // (cache miss / forceRefresh) e quando Together está configurado.
+      const cap = getDailyAiCallsCap(org);
+      const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+      if (cap !== null && togetherEnabled) {
+        const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
+        const rlDaily = await rateLimit({
+          key: dailyKey,
+          limit: cap,
+          windowMs: getDailyAiCallsWindowMs(),
+        });
+        if (!rlDaily.allowed) {
+          return NextResponse.json(
+            { error: "Limite diário de chamadas de IA atingido. Faça upgrade no Stripe." },
+            { status: 403 }
+          );
+        }
+      }
+
       inFlight = (async () => {
         const res = await llmCardContext({ boardName, title, description });
         writeCachedContext(cacheKey, res);

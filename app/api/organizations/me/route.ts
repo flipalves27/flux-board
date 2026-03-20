@@ -18,6 +18,12 @@ export async function GET(request: NextRequest) {
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
       createdAt: org.createdAt,
+      // Billing (Stripe)
+      stripeCustomerId: org.stripeCustomerId ?? null,
+      stripeSubscriptionId: org.stripeSubscriptionId ?? null,
+      stripePriceId: org.stripePriceId ?? null,
+      stripeStatus: org.stripeStatus ?? null,
+      stripeCurrentPeriodEnd: org.stripeCurrentPeriodEnd ?? null,
     },
   });
 }
