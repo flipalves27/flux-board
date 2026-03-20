@@ -25,6 +25,7 @@ import {
   averageNullable,
   type BoardPortfolioMetrics,
 } from "@/lib/board-portfolio-metrics";
+import { FluxCapabilityStrip } from "@/components/boards/flux-capability-strip";
 
 interface Board {
   id: string;
@@ -417,6 +418,8 @@ export default function BoardsPage() {
             </button>
           </div>
         </div>
+
+        <FluxCapabilityStrip />
 
         {plan && plan.maxBoards !== null && !plan.isPro && (
           <div

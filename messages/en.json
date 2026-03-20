@@ -2,11 +2,30 @@
   "navigation": {
     "boards": "Boards",
     "reports": "Reports",
+    "reportsProduct": "Flux Reports",
+    "okrs": "Flux Goals",
     "discovery": "Discovery",
     "tasks": "My tasks",
     "users": "Users",
     "organization": "Organization",
+    "billing": "Billing",
     "invites": "Invites",
+    "section": {
+      "flow": "Flow",
+      "intelligence": "Intelligence",
+      "organization": "Workspace"
+    },
+    "hints": {
+      "boards": "Kanban boards — daily work and columns.",
+      "reports": "Org-wide BI with charts and Explain (AI) on each metric.",
+      "okrs": "Objectives and key results by quarter.",
+      "discovery": "Initiatives and discovery boards.",
+      "tasks": "Routine reminders (Pro/Business).",
+      "users": "Members and organization permissions.",
+      "organization": "Name, branding, and org settings.",
+      "billing": "Stripe plan and workspace limits.",
+      "invites": "Pending invites for new members."
+    },
     "menu": {
       "expand": "Expand menu",
       "collapse": "Collapse menu"
@@ -402,6 +421,35 @@
       "confirm": "Delete",
       "cancel": "Cancel",
       "errorDelete": "Error deleting."
+    },
+    "capabilityStrip": {
+      "title": "Product map",
+      "subtitle": "Where each capability lives — most of them are inside a board.",
+      "triage": {
+        "name": "Smart Triage",
+        "hint": "Flux Forms: public form that creates cards and classifies with board context."
+      },
+      "copilot": {
+        "name": "Central AI",
+        "hint": "Board copilot: chat with tools over the Kanban (panel on screen)."
+      },
+      "timeline": {
+        "name": "Timeline",
+        "hint": "On the board, switch to Timeline view (due dates on a timeline)."
+      },
+      "portal": {
+        "name": "Client portal",
+        "hint": "Client portal in the header: read-only link for external stakeholders."
+      },
+      "automations": {
+        "name": "Flux Automations",
+        "hint": "Automations modal: triggers and actions on cards and columns."
+      },
+      "reports": {
+        "name": "Flux Reports",
+        "hint": "Reports in the menu: org-wide dashboard and AI narrative per chart.",
+        "cta": "Open reports"
+      }
     }
   },
   "board": {

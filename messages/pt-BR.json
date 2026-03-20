@@ -2,11 +2,30 @@
   "navigation": {
     "boards": "Boards",
     "reports": "Relatórios",
+    "reportsProduct": "Flux Reports",
+    "okrs": "Flux Goals",
     "discovery": "Discovery",
     "tasks": "Minhas tarefas",
     "users": "Usuários",
     "organization": "Organização",
+    "billing": "Billing",
     "invites": "Convites",
+    "section": {
+      "flow": "Fluxo",
+      "intelligence": "Inteligência",
+      "organization": "Espaço da org"
+    },
+    "hints": {
+      "boards": "Quadros Kanban — trabalho diário e colunas.",
+      "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
+      "okrs": "Objetivos e resultados-chave por trimestre.",
+      "discovery": "Iniciativas e discoverys em formato de board.",
+      "tasks": "Rotinas com lembretes (Pro/Business).",
+      "users": "Membros e permissões da organização.",
+      "organization": "Nome, branding e configurações gerais.",
+      "billing": "Plano Stripe e limites do espaço.",
+      "invites": "Convites pendentes para novos membros."
+    },
     "menu": {
       "expand": "Expandir menu",
       "collapse": "Recolher menu"
@@ -403,6 +422,35 @@
       "confirm": "Excluir",
       "cancel": "Cancelar",
       "errorDelete": "Erro ao excluir."
+    },
+    "capabilityStrip": {
+      "title": "Mapa do produto",
+      "subtitle": "Recursos principais e onde encontrá-los — a maioria vive dentro de cada board.",
+      "triage": {
+        "name": "Smart Triage",
+        "hint": "Flux Forms: formulário público que cria cards e classifica com contexto do board."
+      },
+      "copilot": {
+        "name": "IA Central",
+        "hint": "Copiloto do board: chat com ferramentas sobre o Kanban (canto da tela)."
+      },
+      "timeline": {
+        "name": "Timeline",
+        "hint": "No board, alterne para a visão Timeline (prazos em linha do tempo)."
+      },
+      "portal": {
+        "name": "Client-Portal",
+        "hint": "Portal do cliente no header: link somente leitura para stakeholders externos."
+      },
+      "automations": {
+        "name": "Flux Automations",
+        "hint": "Modal Automações: gatilhos e ações sobre cards e colunas."
+      },
+      "reports": {
+        "name": "Flux Reports",
+        "hint": "Menu Relatórios: dashboard org-wide e narrativa IA por gráfico.",
+        "cta": "Abrir relatórios"
+      }
     }
   },
   "board": {

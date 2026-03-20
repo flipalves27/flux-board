@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -200,11 +200,55 @@ export function Sidebar() {
   };
 
   const linkClass = (href: string) =>
-    `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 font-display overflow-hidden
+    `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
      ${isActive(href)
        ? "bg-[rgba(108,92,231,0.2)] text-[var(--flux-primary-light)] shadow-none"
        : "text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-text)]"
      }`;
+
+  function NavSectionTitle({ children }: { children: ReactNode }) {
+    if (collapsed) return null;
+    return (
+      <div className="px-2.5 pt-3 first:pt-1 pb-1">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]/65">
+          {children}
+        </span>
+      </div>
+    );
+  }
+
+  type NavLinkProps = {
+    path: string;
+    icon: React.ReactNode;
+    label: React.ReactNode;
+    hint: string;
+    sublabel?: string;
+  };
+
+  function NavLink({ path, icon, label, hint, sublabel }: NavLinkProps) {
+    const href = `/${locale}${path}`;
+    const body = (
+      <Link href={href} className={`${linkClass(path)} ${!collapsed && sublabel ? "items-start py-2.5" : ""}`}>
+        <span className="mt-0.5 shrink-0">{icon}</span>
+        {!collapsed && (
+          <span className="flex min-w-0 flex-col gap-0 leading-tight">
+            <span>{label}</span>
+            {sublabel ? (
+              <span className="text-[10px] font-medium text-[var(--flux-text-muted)]/90">{sublabel}</span>
+            ) : null}
+          </span>
+        )}
+      </Link>
+    );
+    if (collapsed) {
+      return (
+        <CustomTooltip content={hint} position="right">
+          {body}
+        </CustomTooltip>
+      );
+    }
+    return body;
+  }
 
   return (
     <aside
@@ -236,55 +280,117 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 min-w-0">
-        <Link href={`/${locale}/boards`} className={linkClass("/boards")}>
-          <IconBoards className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{t("boards")}</span>}
-        </Link>
-        <Link href={`/${locale}/reports`} className={linkClass("/reports")}>
-          <IconReports className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{t("reports")}</span>}
-        </Link>
-        <Link href={`/${locale}/okrs`} className={linkClass("/okrs")}>
-          <IconGoals className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Flux Goals</span>}
-        </Link>
-        <Link href={`/${locale}/discovery`} className={linkClass("/discovery")}>
-          <IconDiscovery className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{t("discovery")}</span>}
-        </Link>
-        <Link href={`/${locale}/tasks`} className={linkClass("/tasks")}>
-          <IconTasks className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{t("tasks")}</span>}
-        </Link>
+      <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 min-w-0 overflow-y-auto overflow-x-hidden">
+        <NavSectionTitle>{t("section.flow")}</NavSectionTitle>
+        <NavLink
+          path="/boards"
+          hint={t("hints.boards")}
+          icon={<IconBoards className="w-4 h-4 shrink-0" />}
+          label={t("boards")}
+        />
+        <NavLink
+          path="/discovery"
+          hint={t("hints.discovery")}
+          icon={<IconDiscovery className="w-4 h-4 shrink-0" />}
+          label={t("discovery")}
+        />
+        <NavLink
+          path="/tasks"
+          hint={t("hints.tasks")}
+          icon={<IconTasks className="w-4 h-4 shrink-0" />}
+          label={t("tasks")}
+        />
+
+        <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>
+        <NavLink
+          path="/reports"
+          hint={t("hints.reports")}
+          icon={<IconReports className="w-4 h-4 shrink-0" />}
+          label={t("reports")}
+          sublabel={t("reportsProduct")}
+        />
+        <NavLink
+          path="/okrs"
+          hint={t("hints.okrs")}
+          icon={<IconGoals className="w-4 h-4 shrink-0" />}
+          label={t("okrs")}
+        />
+
         {user?.isAdmin && (
-          <Link href={`/${locale}/users`} className={linkClass("/users")}>
-            <IconUsers className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{t("users")}</span>}
-          </Link>
-        )}
-        {user?.isAdmin && (
-          <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
-            <IconSettings className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{t("organization")}</span>}
-          </Link>
-        )}
-        {user?.isAdmin && (
-          <Link href={`/${locale}/billing`} className={linkClass("/billing")}>
-            <IconBilling className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Billing</span>}
-          </Link>
-        )}
-        {user?.isAdmin && (
-          <Link href={`/${locale}/org-invites`} className={linkClass("/org-invites")}>
-            <IconInvites className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{t("invites")}</span>}
-            {activeInvites !== null && activeInvites > 0 && (
-              <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--flux-primary)] text-white">
-                {activeInvites}
-              </span>
+          <>
+            <NavSectionTitle>{t("section.organization")}</NavSectionTitle>
+            {collapsed ? (
+              <CustomTooltip content={t("hints.users")} position="right">
+                <Link href={`/${locale}/users`} className={linkClass("/users")}>
+                  <IconUsers className="w-4 h-4 shrink-0" />
+                </Link>
+              </CustomTooltip>
+            ) : (
+              <NavLink
+                path="/users"
+                hint={t("hints.users")}
+                icon={<IconUsers className="w-4 h-4 shrink-0" />}
+                label={t("users")}
+              />
             )}
-          </Link>
+            {collapsed ? (
+              <CustomTooltip content={t("hints.organization")} position="right">
+                <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
+                  <IconSettings className="w-4 h-4 shrink-0" />
+                </Link>
+              </CustomTooltip>
+            ) : (
+              <NavLink
+                path="/org-settings"
+                hint={t("hints.organization")}
+                icon={<IconSettings className="w-4 h-4 shrink-0" />}
+                label={t("organization")}
+              />
+            )}
+            {collapsed ? (
+              <CustomTooltip content={t("hints.billing")} position="right">
+                <Link href={`/${locale}/billing`} className={linkClass("/billing")}>
+                  <IconBilling className="w-4 h-4 shrink-0" />
+                </Link>
+              </CustomTooltip>
+            ) : (
+              <NavLink
+                path="/billing"
+                hint={t("hints.billing")}
+                icon={<IconBilling className="w-4 h-4 shrink-0" />}
+                label={t("billing")}
+              />
+            )}
+            {collapsed ? (
+              <CustomTooltip
+                content={
+                  activeInvites !== null && activeInvites > 0
+                    ? `${t("hints.invites")} (${activeInvites})`
+                    : t("hints.invites")
+                }
+                position="right"
+              >
+                <Link href={`/${locale}/org-invites`} className={`${linkClass("/org-invites")} relative`}>
+                  <IconInvites className="w-4 h-4 shrink-0" />
+                  {activeInvites !== null && activeInvites > 0 && (
+                    <span className="absolute right-1.5 top-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--flux-primary)] text-[10px] font-bold text-white ring-2 ring-[var(--flux-surface-dark)]">
+                      {activeInvites > 9 ? "9+" : activeInvites}
+                    </span>
+                  )}
+                </Link>
+              </CustomTooltip>
+            ) : (
+              <Link href={`/${locale}/org-invites`} className={linkClass("/org-invites")}>
+                <IconInvites className="w-4 h-4 shrink-0" />
+                <span>{t("invites")}</span>
+                {activeInvites !== null && activeInvites > 0 && (
+                  <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--flux-primary)] text-white">
+                    {activeInvites}
+                  </span>
+                )}
+              </Link>
+            )}
+          </>
         )}
       </nav>
 
