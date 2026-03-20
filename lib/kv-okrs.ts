@@ -430,3 +430,46 @@ export async function getObjectivesAndKeyResultsByBoard(params: {
   return grouped;
 }
 
+/** Lista objetivos do quarter (ou todos se quarter vazio) com todos os KRs, para visão org-wide (ex.: Copilot). */
+export async function listObjectivesWithKeyResults(
+  orgId: string,
+  quarter?: string | null
+): Promise<Array<{ objective: OkrsObjective; keyResults: OkrsKeyResult[] }>> {
+  const objectives = await listObjectives(orgId, quarter);
+  if (!objectives.length) return [];
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureOkrsIndexes(db);
+    const objectiveIds = objectives.map((o) => o.id);
+    const krs = await db
+      .collection<OkrsKeyResult>(COL_KEY_RESULTS)
+      .find({ orgId, objectiveId: { $in: objectiveIds } } as any)
+      .toArray();
+    const byObj = new Map<string, OkrsKeyResult[]>();
+    for (const kr of krs) {
+      const list = byObj.get(kr.objectiveId) ?? [];
+      list.push(kr);
+      byObj.set(kr.objectiveId, list);
+    }
+    return objectives.map((o) => ({
+      objective: o,
+      keyResults: (byObj.get(o.id) ?? []).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    }));
+  }
+
+  const store = await getStore();
+  const out: Array<{ objective: OkrsObjective; keyResults: OkrsKeyResult[] }> = [];
+  for (const o of objectives) {
+    const krIds = ((await store.get<string[]>(kvIndexKeyResultsByObjective(orgId, o.id))) as string[]) || [];
+    const krs: OkrsKeyResult[] = [];
+    for (const id of krIds) {
+      const kr = await store.get<OkrsKeyResult>(kvKeyKeyResult(orgId, id));
+      if (kr) krs.push(kr);
+    }
+    krs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    out.push({ objective: o, keyResults: krs });
+  }
+  return out;
+}
+

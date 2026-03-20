@@ -15,6 +15,7 @@ import { sanitizeText } from "@/lib/schemas";
 import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
 import { appendBoardCopilotMessages, getBoardCopilotChat, type CopilotMessageRole } from "@/lib/kv-board-copilot";
 import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
+import { buildCopilotWorldSnapshot } from "@/lib/copilot-world-snapshot";
 
 export const runtime = "nodejs";
 
@@ -468,7 +469,7 @@ async function callTogetherModelForCopilot(input: {
   userMessage: string;
   historyMessages: Array<{ role: CopilotMessageRole; content: string }>;
   tier: ReturnType<typeof getEffectiveTier>;
-  ragContext?: string;
+  worldSnapshot: string;
 }): Promise<CopilotModelOutput> {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL;
@@ -515,8 +516,9 @@ async function callTogetherModelForCopilot(input: {
   const histForPrompt = input.historyMessages.slice(-8);
 
   const system = [
-    "Você é um Copiloto de board (Flux-Board).",
-    "Você deve ler o estado completo do board fornecido (cards, métricas e histórico recente de dailies) e ajudar o usuário.",
+    "Você é um Copiloto de operações (Flux-Board): entende o board atual, OKRs da org, automações, documentos (RAG) e métricas de portfólio/relatórios.",
+    "Use o `worldSnapshot` como visão agregada da organização; use o JSON do board abaixo para detalhes e IDs dos cards deste quadro.",
+    "Priorize coerência entre OKRs, boards e docs quando a pergunta for estratégica ou cross-funcional.",
     "",
     "Regras obrigatórias:",
     "1) Responda SOMENTE com JSON puro, sem markdown, sem texto fora do JSON.",
@@ -544,7 +546,7 @@ async function callTogetherModelForCopilot(input: {
     `cards=${JSON.stringify(cardsForPrompt)}`,
     `activityHints=${JSON.stringify(ctx.activityHints.slice(0, 25))}`,
     `latestDailies=${JSON.stringify(ctx.latestDailies)}`,
-    input.ragContext ? `docsContext=${input.ragContext}` : "docsContext=sem_contexto",
+    `worldSnapshot=${input.worldSnapshot}`,
     "",
     "Histórico do chat (para manter contexto; pode ignorar se não ajudar):",
     ...(histForPrompt.map((m) => `${m.role}: ${m.content.slice(0, 1500)}`) || []),
@@ -929,13 +931,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role as CopilotMessageRole, content: m.content }));
 
-        const ragChunks = await retrieveRelevantDocChunks(payload.orgId, userMessage, 6);
-        const ragContext =
-          ragChunks.length > 0
-            ? ragChunks
-                .map((c, idx) => `[#${idx + 1}] ${c.docTitle}\n${c.text.slice(0, 500)}`)
-                .join("\n\n")
-            : "";
+        const ragChunks = await retrieveRelevantDocChunks(payload.orgId, userMessage, 12);
+        const { snapshot: worldSnapshot, ragChunksUsed } = await buildCopilotWorldSnapshot({
+          orgId: payload.orgId,
+          userId: payload.id,
+          isAdmin: payload.isAdmin,
+          boardId,
+          board,
+          userMessage,
+          org,
+          ragChunks,
+        });
 
         const modelOutput = await callTogetherModelForCopilot({
           orgId: payload.orgId,
@@ -944,7 +950,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           userMessage,
           historyMessages,
           tier,
-          ragContext,
+          worldSnapshot,
         });
 
         const actions = Array.isArray(modelOutput.actions) ? modelOutput.actions : [];
@@ -982,7 +988,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             {
               role: "assistant",
               content: finalReply,
-              meta: { toolResults, sourceDocIds: [...new Set(ragChunks.map((c) => c.docId))], sourceChunkIds: ragChunks.map((c) => c.chunkId) },
+              meta: {
+                toolResults,
+                sourceDocIds: [...new Set(ragChunksUsed.map((c) => c.docId))],
+                sourceChunkIds: ragChunksUsed.map((c) => c.chunkId),
+              },
             },
           ],
         });
