@@ -3,13 +3,19 @@ import { isProTenant } from "./commercial-plan";
 
 export type Tier = Organization["plan"]; // "free" | "pro" | "business"
 
-export type FeatureKey = "executive_brief" | "card_context" | "daily_insights" | "portfolio_export";
+export type FeatureKey =
+  | "executive_brief"
+  | "card_context"
+  | "daily_insights"
+  | "portfolio_export"
+  | "board_copilot";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   executive_brief: ["pro", "business"],
   card_context: ["pro", "business"],
   daily_insights: ["pro", "business"],
   portfolio_export: ["pro", "business"],
+  board_copilot: ["pro", "business"],
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

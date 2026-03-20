@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { apiFetch, apiPut } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
@@ -306,6 +307,13 @@ export default function BoardPage() {
         priorities={PRIORITIES}
         progresses={PROGRESSES}
         directions={DIRECTIONS}
+      />
+
+      <BoardCopilotPanel
+        boardId={boardId}
+        boardName={boardName}
+        getHeaders={getHeaders}
+        updateDb={updateDb}
       />
     </div>
   );
