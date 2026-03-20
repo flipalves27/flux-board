@@ -12,9 +12,9 @@ export async function GET(request: NextRequest) {
 
   try {
     await ensureAdminUser();
-    await ensureBoardReborn("admin", getDefaultBoardData);
+    await ensureBoardReborn(payload.orgId, "admin", getDefaultBoardData);
 
-    const boards = await listBoardsForUser(payload.id, payload.isAdmin);
+    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
     const rows = boardsToPortfolioRows(boards);
     const generatedAt = new Date().toISOString();
     const userLabel = payload.username || payload.id;

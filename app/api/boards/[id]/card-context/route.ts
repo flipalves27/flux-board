@@ -397,7 +397,7 @@ export async function POST(
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  const canAccess = await userCanAccessBoard(payload.id, payload.isAdmin, boardId);
+  const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
@@ -445,7 +445,7 @@ export async function POST(
       );
     }
 
-    const board = await getBoard(boardId);
+    const board = await getBoard(boardId, payload.orgId);
     const boardName = board?.name || "Board";
     const cacheKey = makeCacheKey({ boardId, boardName, title, description });
     const startedAt = Date.now();

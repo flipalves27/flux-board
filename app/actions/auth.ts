@@ -8,11 +8,19 @@ import {
   getUserById,
   ensureAdminUser,
   createUser,
+  listUsers,
+  deleteUser,
 } from "@/lib/kv-users";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
+import {
+  createOrganizationFromEmail,
+  updateOrganizationOwner,
+  getOrganizationById,
+} from "@/lib/kv-organizations";
+import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 
 export type AuthResult =
-  | { ok: true; token: string; user: { id: string; username: string; name: string; email: string; isAdmin: boolean } }
+  | { ok: true; token: string; user: { id: string; username: string; name: string; email: string; isAdmin: boolean; orgId: string } }
   | { ok: false; error: string; retryAfterSeconds?: number };
 
 /**
@@ -54,7 +62,7 @@ export async function loginAction(
     }
 
     const isAdmin = user.id === "admin" || !!user.isAdmin;
-    const token = createToken({ ...user, isAdmin });
+    const token = createToken({ id: user.id, username: user.username, isAdmin, orgId: user.orgId });
     return {
       ok: true,
       token,
@@ -64,6 +72,7 @@ export async function loginAction(
         name: user.name,
         email: user.email,
         isAdmin,
+        orgId: user.orgId,
       },
     };
   } catch (err) {
@@ -82,7 +91,8 @@ export async function loginAction(
 export async function registerAction(
   name: string,
   email: string,
-  password: string
+  password: string,
+  inviteCode?: string
 ): Promise<AuthResult> {
   try {
     // In Next.js 15 the `headers()` type can be `Promise<ReadonlyHeaders>` in some contexts.
@@ -104,7 +114,6 @@ export async function registerAction(
       };
     }
 
-    await ensureAdminUser();
     const emailNorm = (email || "").trim().toLowerCase();
     const nameTrim = (name || "").trim().slice(0, 100);
 
@@ -112,17 +121,70 @@ export async function registerAction(
       return { ok: false, error: "Senha deve ter pelo menos 4 caracteres." };
     }
 
+    await ensureAdminUser();
+
     const existing = await getUserByEmail(emailNorm);
     if (existing) {
       return { ok: false, error: "E-mail já cadastrado." };
     }
+
+    // Se houver invite, o usuário entra na org convidada.
+    if (inviteCode) {
+      const validated = await validateOrganizationInvite({ code: inviteCode, email: emailNorm });
+      if (!validated) return { ok: false, error: "Convite inválido ou expirado." };
+
+      // Garante limite de usuários por organização.
+      const org = await getOrganizationById(validated.orgId);
+      const members = await listUsers(validated.orgId);
+      if (org && members.length >= org.maxUsers) {
+        return { ok: false, error: `Limite do plano: no máximo ${org.maxUsers} usuário(s).` };
+      }
+
+      const user = await createUser({
+        username: emailNorm,
+        name: nameTrim || emailNorm,
+        email: emailNorm,
+        passwordHash: hashPassword(password),
+        orgId: validated.orgId,
+        isAdmin: false,
+      });
+
+      const ok = await consumeOrganizationInvite({ code: inviteCode, email: emailNorm, userId: user.id });
+      if (!ok) {
+        await deleteUser(user.id, validated.orgId);
+        return { ok: false, error: "Convite já foi utilizado." };
+      }
+
+      const token = createToken({ id: user.id, username: user.username, isAdmin: false, orgId: user.orgId });
+      return {
+        ok: true,
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          email: user.email,
+          isAdmin: false,
+          orgId: user.orgId,
+        },
+      };
+    }
+
+    // Sem convite: cria uma organization exclusiva para o usuário.
+    // Usamos domínio do e-mail para nome/slug iniciais (o usuário pode ajustar depois).
+    const orgOwnerPlaceholder = `pending_${Date.now()}`;
+    const org = await createOrganizationFromEmail(orgOwnerPlaceholder, emailNorm);
 
     const user = await createUser({
       username: emailNorm,
       name: nameTrim || emailNorm,
       email: emailNorm,
       passwordHash: hashPassword(password),
+      orgId: org._id,
+      isAdmin: true, // owner da org vira org-admin
     });
+
+    await updateOrganizationOwner(org._id, user.id);
 
     const token = createToken(user);
     return {
@@ -134,6 +196,7 @@ export async function registerAction(
         name: user.name,
         email: user.email,
         isAdmin: false,
+        orgId: user.orgId,
       },
     };
   } catch (err) {
@@ -146,7 +209,7 @@ export async function registerAction(
 }
 
 export type ValidateResult =
-  | { ok: true; user: { id: string; username: string; name: string; email: string; isAdmin: boolean } }
+  | { ok: true; user: { id: string; username: string; name: string; email: string; isAdmin: boolean; orgId: string } }
   | { ok: false };
 
 /**
@@ -157,9 +220,9 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
   try {
     const payload = verifyToken(token);
     if (!payload) return { ok: false };
-    const user = await getUserById(payload.id);
+    const user = await getUserById(payload.id, payload.orgId);
     if (!user) return { ok: false };
-    const isAdmin = user.id === "admin" || !!user.isAdmin;
+    const isAdmin = !!user.isAdmin;
     return {
       ok: true,
       user: {
@@ -168,6 +231,7 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
         name: user.name,
         email: user.email,
         isAdmin,
+        orgId: user.orgId,
       },
     };
   } catch {

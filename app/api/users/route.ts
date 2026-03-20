@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { listUsers, createUser, getUserByEmail, ensureAdminUser } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
+import { getOrganizationById } from "@/lib/kv-organizations";
 
 export async function GET(request: NextRequest) {
   const payload = getAuthFromRequest(request);
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await ensureAdminUser();
-    const users = await listUsers();
+    const users = await listUsers(payload.orgId);
     return NextResponse.json({ users });
   } catch (err) {
     console.error("Users API error:", err);
@@ -49,11 +50,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
+    const org = await getOrganizationById(payload.orgId);
+    const members = await listUsers(payload.orgId);
+    if (org && org.maxUsers !== undefined && members.length >= org.maxUsers) {
+      return NextResponse.json(
+        { error: `Limite do plano: no máximo ${org.maxUsers} usuário(s) por organização.` },
+        { status: 403 }
+      );
+    }
+
     const user = await createUser({
       username: emailNorm,
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
+      orgId: payload.orgId,
     });
 
     return NextResponse.json(

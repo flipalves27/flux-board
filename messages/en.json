@@ -4,6 +4,8 @@
     "discovery": "Discovery",
     "tasks": "My tasks",
     "users": "Users",
+    "organization": "Organization",
+    "invites": "Invites",
     "menu": {
       "expand": "Expand menu",
       "collapse": "Collapse menu"

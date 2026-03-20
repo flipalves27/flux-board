@@ -55,3 +55,11 @@ export function getOnboardingDoneStorageKey(userId: string) {
   return `reborn_onboarding_done_v1_${userId}`;
 }
 
+export function getOrganizationOnboardingDoneStorageKey(userId: string) {
+  return `reborn_org_onboarding_done_v1_${userId}`;
+}
+
+export function getOrganizationInvitesOnboardingDoneStorageKey(userId: string) {
+  return `reborn_org_invites_onboarding_done_v1_${userId}`;
+}
+

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { apiGet, ApiError } from "@/lib/api-client";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -48,6 +49,28 @@ function IconUsers({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+
+function IconSettings({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37.521-1.027.094-2.262-1.065-2.572-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.61 2.197.214 2.572-1.065z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function IconInvites({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 8-9 13-9 13S3 20 3 12a9 9 0 1118 0z" />
     </svg>
   );
 }
@@ -97,20 +120,49 @@ const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isChecked, getHeaders } = useAuth();
   const { theme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations("navigation");
 
+  const [activeInvites, setActiveInvites] = useState<number | null>(null);
+
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
   const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!isChecked || !user?.isAdmin || !user?.orgId) {
+        setActiveInvites(null);
+        return;
+      }
+      try {
+        const data = await apiGet<{ activeInvites: number }>("/api/organization-invites/active-count", getHeaders());
+        if (!cancelled) setActiveInvites(typeof data?.activeInvites === "number" ? data.activeInvites : 0);
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          setActiveInvites(null);
+          return;
+        }
+        setActiveInvites(null);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isChecked, user?.isAdmin, user?.orgId, getHeaders]);
 
   const isActive = (href: string) => {
     if (href === "/boards") return normalizedPath === "/boards";
     if (href === "/discovery") return normalizedPath.startsWith("/discovery");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/users") return normalizedPath === "/users";
+    if (href === "/org-settings") return normalizedPath === "/org-settings";
+    if (href === "/org-invites") return normalizedPath === "/org-invites";
     return normalizedPath === href;
   };
 
@@ -168,6 +220,23 @@ export function Sidebar() {
           <Link href={`/${locale}/users`} className={linkClass("/users")}>
             <IconUsers className="w-4 h-4 shrink-0" />
             {!collapsed && <span>{t("users")}</span>}
+          </Link>
+        )}
+        {user?.isAdmin && (
+          <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
+            <IconSettings className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>{t("organization")}</span>}
+          </Link>
+        )}
+        {user?.isAdmin && (
+          <Link href={`/${locale}/org-invites`} className={linkClass("/org-invites")}>
+            <IconInvites className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>{t("invites")}</span>}
+            {activeInvites !== null && activeInvites > 0 && (
+              <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--flux-primary)] text-white">
+                {activeInvites}
+              </span>
+            )}
           </Link>
         )}
       </nav>

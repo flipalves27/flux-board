@@ -5,7 +5,7 @@ import {
   updateBoard,
   deleteBoard,
   userCanAccessBoard,
-  BOARD_REBORN_ID,
+  isBoardRebornId,
 } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 
@@ -23,13 +23,13 @@ export async function GET(
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  const canAccess = await userCanAccessBoard(payload.id, payload.isAdmin, boardId);
+  const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
 
   try {
-    const board = await getBoard(boardId);
+    const board = await getBoard(boardId, payload.orgId);
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }
@@ -57,7 +57,7 @@ export async function PUT(
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  const canAccess = await userCanAccessBoard(payload.id, payload.isAdmin, boardId);
+  const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
@@ -72,7 +72,7 @@ export async function PUT(
     // Sanitiza strings aninhadas vindas do cliente (ex.: titulo/desc em cards, tags, etc.)
     const clean = sanitizeDeep(parsed.data);
     const updates: Record<string, unknown> = {};
-    if (clean.name !== undefined && boardId !== BOARD_REBORN_ID) {
+    if (clean.name !== undefined && !isBoardRebornId(boardId, payload.orgId)) {
       updates.name = String(clean.name || "").trim().slice(0, 100);
     }
     if (clean.cards !== undefined) updates.cards = clean.cards;
@@ -85,7 +85,7 @@ export async function PUT(
       updates.clientLabel = String(clean.clientLabel ?? "").trim().slice(0, 120);
     }
 
-    const board = await updateBoard(boardId, updates);
+    const board = await updateBoard(boardId, payload.orgId, updates);
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }
@@ -117,7 +117,7 @@ export async function DELETE(
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  if (boardId === BOARD_REBORN_ID && !payload.isAdmin) {
+  if (isBoardRebornId(boardId, payload.orgId) && !payload.isAdmin) {
     return NextResponse.json(
       { error: "O Board-Reborn não pode ser excluído" },
       { status: 400 }
@@ -125,7 +125,7 @@ export async function DELETE(
   }
 
   try {
-    const ok = await deleteBoard(boardId, payload.id, payload.isAdmin);
+    const ok = await deleteBoard(boardId, payload.orgId, payload.id, payload.isAdmin);
     if (!ok) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }

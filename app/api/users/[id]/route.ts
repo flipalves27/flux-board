@@ -27,7 +27,7 @@ export async function GET(
 
   try {
     await ensureAdminUser();
-    const user = await getUserById(id);
+    const user = await getUserById(id, payload.orgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
@@ -94,7 +94,7 @@ export async function PUT(
       updates.passwordHash = hashPassword(clean.password);
     }
 
-    const user = await updateUser(id, updates as Parameters<typeof updateUser>[1]);
+    const user = await updateUser(id, payload.orgId, updates as Parameters<typeof updateUser>[2]);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
@@ -139,11 +139,11 @@ export async function DELETE(
 
   try {
     await ensureAdminUser();
-    const user = await getUserById(id);
+    const user = await getUserById(id, payload.orgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
-    await deleteUser(id);
+    await deleteUser(id, payload.orgId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("User API error:", err);

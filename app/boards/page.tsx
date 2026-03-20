@@ -8,7 +8,11 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
-import { getOnboardingDoneStorageKey } from "@/lib/onboarding";
+import {
+  getOnboardingDoneStorageKey,
+  getOrganizationInvitesOnboardingDoneStorageKey,
+  getOrganizationOnboardingDoneStorageKey,
+} from "@/lib/onboarding";
 import {
   clearRecentBoards,
   cleanupBoardShortcuts,
@@ -91,6 +95,8 @@ export default function BoardsPage() {
   const [visitCounts, setVisitCounts] = useState<Record<string, number>>({});
   const { pushToast } = useToast();
 
+  const rebornId = user?.orgId ? `b_reborn_${user.orgId}` : "b_reborn";
+
   useEffect(() => {
     if (!isChecked || !user) {
       router.replace(`${localeRoot}/login`);
@@ -104,10 +110,28 @@ export default function BoardsPage() {
     if (loading) return;
     if (!empty) return;
     try {
-      const doneKey = getOnboardingDoneStorageKey(user.id);
-      if (localStorage.getItem(doneKey) !== "1") {
+      const boardDoneKey = getOnboardingDoneStorageKey(user.id);
+      if (localStorage.getItem(boardDoneKey) === "1") return;
+
+      // Só org-admin precisa configurar organização e convites.
+      if (!user.isAdmin) {
         router.replace(`${localeRoot}/onboarding`);
+        return;
       }
+
+      const orgDoneKey = getOrganizationOnboardingDoneStorageKey(user.id);
+      const invitesDoneKey = getOrganizationInvitesOnboardingDoneStorageKey(user.id);
+
+      if (localStorage.getItem(orgDoneKey) !== "1") {
+        router.replace(`${localeRoot}/onboarding-org`);
+        return;
+      }
+      if (localStorage.getItem(invitesDoneKey) !== "1") {
+        router.replace(`${localeRoot}/onboarding-invites`);
+        return;
+      }
+
+      router.replace(`${localeRoot}/onboarding`);
     } catch {
       // ignore localStorage read errors
     }
@@ -394,15 +418,12 @@ export default function BoardsPage() {
             {plan.atLimit ? (
               <>
                 <span className="font-display font-bold text-[var(--flux-text)]">Limite do plano.</span>{" "}
-                Você atingiu {plan.maxBoards} board(s). Remova um board ou defina{" "}
-                <code className="text-[11px] text-[var(--flux-primary-light)]">FLUX_PRO_TENANT=true</code> no ambiente
-                para modo ilimitado (ou aumente{" "}
-                <code className="text-[11px] text-[var(--flux-primary-light)]">FLUX_MAX_BOARDS_PER_USER</code>).
+                Você atingiu {plan.maxBoards} board(s). Remova um board ou aumente o limite do seu plano.
               </>
             ) : (
               <>
-                Plano atual: até <strong className="text-[var(--flux-text)]">{plan.maxBoards}</strong> boards por
-                usuário ({plan.currentCount} em uso).{" "}
+                Plano atual: até <strong className="text-[var(--flux-text)]">{plan.maxBoards}</strong> boards no seu
+                espaço ({plan.currentCount} em uso).{" "}
                 <a href="/negocios" className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
                   Ver oportunidades comerciais
                 </a>
@@ -427,7 +448,7 @@ export default function BoardsPage() {
               <div className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-                  {boards.filter((b) => b.id === "b_reborn").length}
+                  {boards.filter((b) => b.id === rebornId).length}
                 </p>
               </div>
             </section>
@@ -634,7 +655,7 @@ export default function BoardsPage() {
                 {t("actions.newBoard")}
               </button>
               {visibleBoards.map((b) => {
-                const isBoardReborn = b.id === "b_reborn";
+                const isBoardReborn = b.id === rebornId;
                 const isAdmin = user.isAdmin;
                 const wasUpdatedToday = (() => {
                   const d = parseDateSafe(b.lastUpdated);

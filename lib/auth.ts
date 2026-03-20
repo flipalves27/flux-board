@@ -18,29 +18,46 @@ export function verifyPassword(password: string, stored: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(computed, "hex"));
 }
 
-export function createToken(user: { id: string; username: string; isAdmin?: boolean }): string {
+export function createToken(user: { id: string; username: string; isAdmin?: boolean; orgId?: string }): string {
   return jwt.sign(
-    { id: user.id, username: user.username, isAdmin: !!user.isAdmin },
+    {
+      id: user.id,
+      username: user.username,
+      isAdmin: !!user.isAdmin,
+      // Mantemos fallback para tokens antigos (antes da migração do orgId).
+      orgId: user.orgId ? String(user.orgId) : "org_default",
+    },
     JWT_SECRET,
     { expiresIn: "7d" }
   );
 }
 
-export function verifyToken(token: string): { id: string; username: string; isAdmin: boolean } | null {
+export function verifyToken(
+  token: string
+): { id: string; username: string; isAdmin: boolean; orgId: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { id: string; username: string; isAdmin: boolean };
+    const payload = jwt.verify(token, JWT_SECRET) as { id: string; username: string; isAdmin: boolean; orgId?: string };
+    return {
+      id: payload.id,
+      username: payload.username,
+      isAdmin: !!payload.isAdmin,
+      orgId: payload.orgId ? String(payload.orgId) : "org_default",
+    };
   } catch {
     return null;
   }
 }
 
-export function getAuthFromRequest(req: NextRequest): { id: string; username: string; isAdmin: boolean } | null {
+export function getAuthFromRequest(
+  req: NextRequest
+): { id: string; username: string; isAdmin: boolean; orgId: string } | null {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
   if (!auth || !auth.startsWith("Bearer ")) return null;
   const payload = verifyToken(auth.slice(7));
   if (!payload) return null;
   return {
     ...payload,
-    isAdmin: payload.id === "admin" || payload.isAdmin,
+    // `isAdmin` aqui já deve ser escopo do tenant (org-admin).
+    isAdmin: !!payload.isAdmin,
   };
 }

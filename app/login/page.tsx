@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
@@ -20,10 +21,12 @@ function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, login, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("login");
   const localeRoot = `/${locale}`;
+  const inviteCode = searchParams.get("invite") ?? undefined;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,7 +82,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await registerAction(name, email, pwd);
+      const result = await registerAction(name, email, pwd, inviteCode);
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.token, result.user, remember);

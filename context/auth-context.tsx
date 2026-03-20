@@ -12,6 +12,7 @@ export interface AuthUser {
   name: string;
   email: string;
   isAdmin: boolean;
+  orgId: string;
 }
 
 export interface AuthState {

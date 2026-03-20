@@ -1,6 +1,7 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { hashPassword, verifyPassword } from "./auth";
+import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
 import type { Db } from "mongodb";
 
 const USERS_KEY = "reborn_users";
@@ -17,6 +18,7 @@ const ADMIN_USER = {
   email: "admin@reborn.local",
   passwordHash: null as string | null,
   isAdmin: true,
+  orgId: DEFAULT_ORG_ID,
 };
 
 export interface User {
@@ -26,6 +28,7 @@ export interface User {
   email: string;
   passwordHash: string | null;
   isAdmin: boolean;
+  orgId: string;
 }
 
 type UserDoc = {
@@ -35,6 +38,7 @@ type UserDoc = {
   email: string;
   passwordHash: string | null;
   isAdmin: boolean;
+  orgId: string;
   usernameLower: string;
   emailLower: string;
 };
@@ -54,10 +58,19 @@ function toUser(doc: UserDoc): User {
     email: doc.email,
     passwordHash: doc.passwordHash,
     isAdmin: !!doc.isAdmin,
+    orgId: doc.orgId || DEFAULT_ORG_ID,
   };
 }
 
 let userIndexesEnsured = false;
+
+let tenancyMigrationEnsured = false;
+async function ensureTenancyMigrationOnce(): Promise<void> {
+  if (tenancyMigrationEnsured) return;
+  await ensureTenancyMigrationForExistingData("admin");
+  await ensureDefaultOrganization("admin");
+  tenancyMigrationEnsured = true;
+}
 
 // Evita reads repetidos de inicializacao (em memoria por instância).
 // TTL curto para ainda verificar periodicamente se precisa recriar algo.
@@ -70,6 +83,7 @@ async function ensureUserIndexes(db: Db): Promise<void> {
   const col = db.collection<UserDoc>(COL_USERS);
   await col.createIndex({ emailLower: 1 }, { unique: true });
   await col.createIndex({ usernameLower: 1 }, { unique: true });
+  await col.createIndex({ orgId: 1 });
   userIndexesEnsured = true;
 }
 
@@ -87,6 +101,7 @@ async function persistAdminUserMongo(db: Db, admin: User): Promise<void> {
         isAdmin: true,
         usernameLower: admin.username.toLowerCase(),
         emailLower: admin.email.toLowerCase(),
+        orgId: admin.orgId,
       },
     },
     { upsert: true }
@@ -106,6 +121,10 @@ async function persistAdminUserKv(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
+  // Migra esquema multi-tenancy quando necessário.
+  await ensureTenancyMigrationForExistingData("admin");
+  await ensureDefaultOrganization("admin");
+
   if (adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
   if (ensureAdminPromise) return ensureAdminPromise;
 
@@ -126,6 +145,11 @@ export async function ensureAdminUser(): Promise<User | null> {
         await persistAdminUserMongo(db, admin);
         return admin;
       }
+        if (!existing.orgId) {
+          await col.updateOne({ _id: "admin" }, { $set: { orgId: DEFAULT_ORG_ID } });
+          const updated = await col.findOne({ _id: "admin" });
+          return updated ? toUser(updated) : existing;
+        }
       return existing;
     }
     const admin = recreateAdminUser();
@@ -147,6 +171,11 @@ export async function ensureAdminUser(): Promise<User | null> {
       await persistAdminUserKv(admin);
       return admin;
     }
+      if (!existing.orgId) {
+        const admin = { ...existing, orgId: DEFAULT_ORG_ID };
+        await persistAdminUserKv(admin);
+        return admin;
+      }
     return existing;
   }
 
@@ -164,20 +193,23 @@ export async function ensureAdminUser(): Promise<User | null> {
   }
 }
 
-export async function getUserById(id: string): Promise<User | null> {
+export async function getUserById(id: string, orgId: string): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureUserIndexes(db);
-    const doc = await db.collection<UserDoc>(COL_USERS).findOne({ _id: id });
+    const doc = await db.collection<UserDoc>(COL_USERS).findOne({ _id: id, orgId });
     return doc ? toUser(doc) : null;
   }
   const kv = await getStore();
   const raw = await kv.get<string>(USER_PREFIX + id);
   if (!raw) return null;
-  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+  const user = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+  return user.orgId === orgId ? user : null;
 }
 
 export async function getUserByUsername(username: string): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureUserIndexes(db);
@@ -189,10 +221,13 @@ export async function getUserByUsername(username: string): Promise<User | null> 
   const kv = await getStore();
   const id = await kv.get<string>(USER_BY_USERNAME + (username || "").toLowerCase());
   if (!id) return null;
-  return getUserById(id);
+  const raw = await kv.get<string>(USER_PREFIX + id);
+  if (!raw) return null;
+  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureUserIndexes(db);
@@ -204,7 +239,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const kv = await getStore();
   const id = await kv.get<string>(USER_BY_EMAIL + (email || "").toLowerCase());
   if (!id) return null;
-  return getUserById(id);
+  const raw = await kv.get<string>(USER_PREFIX + id);
+  if (!raw) return null;
+  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
 }
 
 export async function createUser(user: {
@@ -212,7 +249,10 @@ export async function createUser(user: {
   name: string;
   email: string;
   passwordHash: string;
+  orgId: string;
+  isAdmin?: boolean;
 }): Promise<User> {
+  await ensureTenancyMigrationOnce();
   const id = "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
   const doc: UserDoc = {
     _id: id,
@@ -220,7 +260,8 @@ export async function createUser(user: {
     name: user.name,
     email: user.email,
     passwordHash: user.passwordHash,
-    isAdmin: false,
+    isAdmin: !!user.isAdmin,
+    orgId: user.orgId || DEFAULT_ORG_ID,
     usernameLower: user.username.toLowerCase(),
     emailLower: user.email.toLowerCase(),
   };
@@ -243,8 +284,9 @@ export async function createUser(user: {
   return u;
 }
 
-export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
-  const user = await getUserById(id);
+export async function updateUser(id: string, orgId: string, updates: Partial<User>): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
+  const user = await getUserById(id, orgId);
   if (!user) return null;
 
   if (isMongoConfigured()) {
@@ -262,8 +304,9 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
     }
     if (updates.name !== undefined) $set.name = updates.name;
     if (updates.passwordHash !== undefined) $set.passwordHash = updates.passwordHash;
-    if (Object.keys($set).length) await col.updateOne({ _id: id }, { $set });
-    return getUserById(id);
+    // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
+    if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
+    return getUserById(id, orgId);
   }
 
   const kv = await getStore();
@@ -283,16 +326,17 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
   return user;
 }
 
-export async function listUsers(): Promise<
+export async function listUsers(orgId: string): Promise<
   { id: string; username: string; name: string; email: string; isAdmin: boolean }[]
 > {
+  await ensureTenancyMigrationOnce();
   await ensureAdminUser();
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureUserIndexes(db);
     const docs = await db
       .collection<UserDoc>(COL_USERS)
-      .find({})
+      .find({ orgId })
       .sort({ usernameLower: 1 })
       .toArray();
     return docs.map((u) => ({
@@ -307,19 +351,23 @@ export async function listUsers(): Promise<
   const ids = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
   const users = [];
   for (const id of ids) {
-    const u = await getUserById(id);
-    if (u) users.push({ id: u.id, username: u.username, name: u.name, email: u.email, isAdmin: !!u.isAdmin });
+    const raw = await kv.get<string>(USER_PREFIX + id);
+    if (!raw) continue;
+    const u = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+    if (u?.orgId !== orgId) continue;
+    users.push({ id: u.id, username: u.username, name: u.name, email: u.email, isAdmin: !!u.isAdmin });
   }
   return users;
 }
 
-export async function deleteUser(id: string): Promise<void> {
-  const user = await getUserById(id);
+export async function deleteUser(id: string, orgId: string): Promise<void> {
+  await ensureTenancyMigrationOnce();
+  const user = await getUserById(id, orgId);
   if (!user) return;
 
   if (isMongoConfigured()) {
     const db = await getDb();
-    await db.collection<UserDoc>(COL_USERS).deleteOne({ _id: id });
+    await db.collection<UserDoc>(COL_USERS).deleteOne({ _id: id, orgId });
     return;
   }
 
