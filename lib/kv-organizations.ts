@@ -45,7 +45,7 @@ const DEFAULT_ORG_DOC: Omit<Organization, "_id"> = {
   name: "Default organization",
   slug: "default",
   ownerId: "admin",
-  plan: "free",
+  plan: "business",
   maxUsers: DEFAULT_MAX_USERS,
   maxBoards: DEFAULT_MAX_BOARDS,
   createdAt: new Date().toISOString(),
@@ -78,9 +78,12 @@ export async function ensureDefaultOrganization(ownerId: string): Promise<Organi
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ _id: DEFAULT_ORG_ID });
   if (doc) {
-    // Se a org default existir sem ownerId (ou owner diferente por migração), atualizamos.
-    if (doc.ownerId !== ownerId) {
-      await col.updateOne({ _id: DEFAULT_ORG_ID }, { $set: { ownerId } });
+    // Mantém a org padrão do Admin com plano ilimitado e owner consistente.
+    const patch: Partial<Organization> = {};
+    if (doc.ownerId !== ownerId) patch.ownerId = ownerId;
+    if (doc.plan !== "business") patch.plan = "business";
+    if (Object.keys(patch).length > 0) {
+      await col.updateOne({ _id: DEFAULT_ORG_ID }, { $set: patch });
       const updated = await col.findOne({ _id: DEFAULT_ORG_ID });
       if (updated) return updated;
     }

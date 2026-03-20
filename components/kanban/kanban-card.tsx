@@ -162,6 +162,11 @@ export function KanbanCard({
           </span>
         ))}
       </div>
+      {Array.isArray(card.docRefs) && card.docRefs.length > 0 && (
+        <div className="mb-2 text-[11px] text-[var(--flux-primary-light)]">
+          {card.docRefs.length} doc(s) vinculado(s)
+        </div>
+      )}
       <div className="flex items-center gap-2 flex-wrap mb-2">
         <div className="flex items-center gap-1">
           <div

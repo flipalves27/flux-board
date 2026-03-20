@@ -35,6 +35,12 @@ export interface CardLink {
   label?: string;
 }
 
+export interface CardDocRef {
+  docId: string;
+  title?: string;
+  excerpt?: string;
+}
+
 export interface DailyInsightPayload {
   resumo?: string;
   contextoOrganizado?: string;
@@ -92,6 +98,7 @@ export interface CardData {
   desc: string;
   tags: string[];
   links?: CardLink[];
+  docRefs?: CardDocRef[];
   direction: string | null;
   dueDate: string | null;
   order: number;
@@ -178,6 +185,11 @@ export default function BoardPage() {
         direction: c.direction ?? null,
         tags: Array.isArray(c.tags) ? c.tags : [],
         links: Array.isArray(c.links) ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim()) : [],
+        docRefs: Array.isArray(c.docRefs)
+          ? c.docRefs
+              .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
+              .map((d) => ({ docId: String(d.docId), title: d.title ? String(d.title) : undefined, excerpt: d.excerpt ? String(d.excerpt) : undefined }))
+          : [],
       }));
       setDb({
         version: d.version || "2.0",

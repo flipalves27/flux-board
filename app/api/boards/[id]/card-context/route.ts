@@ -24,7 +24,7 @@ type LlmCardContextResult = CardContextResult & {
   model?: string;
   provider?: string;
   rawContent?: string;
-  errorKind?: "no_api_key" | "no_model" | "http_error" | "network_error" | "parse_error";
+  errorKind?: "no_api_key" | "no_model" | "http_error" | "network_error" | "parse_error" | "plan_blocked";
   errorMessage?: string;
 };
 
@@ -408,13 +408,16 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
+  let planBlocksAiContext = false;
   try {
     assertFeatureAllowed(org, "card_context");
   } catch (err) {
     if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
+      // Em vez de bloquear com 403, seguimos com fallback heurístico.
+      planBlocksAiContext = true;
+    } else {
+      throw err;
     }
-    throw err;
   }
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
@@ -496,6 +499,38 @@ export async function POST(
           },
         });
       }
+    }
+
+    if (planBlocksAiContext) {
+      const fallback = heuristicCardContext(title, description);
+      const result: LlmCardContextResult = {
+        ...fallback,
+        generatedWithAI: false,
+        provider: "together.ai",
+        errorKind: "plan_blocked",
+        errorMessage: "Plano atual sem acesso ao recurso de IA completo. Aplicado fallback estruturado.",
+      };
+      writeCachedContext(cacheKey, result);
+      return NextResponse.json({
+        ok: true,
+        titulo: result.titulo,
+        descricao: result.descricao,
+        resumoNegocio: result.resumoNegocio,
+        objetivo: result.objetivo,
+        generatedWithAI: false,
+        provider: result.provider,
+        model: result.model,
+        llmDebug: {
+          source: "heuristic",
+          generatedWithAI: false,
+          provider: result.provider,
+          model: result.model,
+          errorKind: result.errorKind,
+          errorMessage: result.errorMessage,
+          cacheHit: false,
+          durationMs: Date.now() - startedAt,
+        },
+      });
     }
 
     let inFlight = cardContextInFlight.get(cacheKey);

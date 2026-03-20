@@ -163,6 +163,14 @@ export const CardLinkSchema = z
   })
   .passthrough();
 
+export const CardDocRefSchema = z
+  .object({
+    docId: z.string().trim().min(1).max(200),
+    title: z.string().trim().max(200).optional(),
+    excerpt: z.string().trim().max(500).optional(),
+  })
+  .passthrough();
+
 export const CardDataSchema = z
   .object({
     id: z.string().trim().min(1, "ID do card e obrigatorio.").max(200),
@@ -173,6 +181,7 @@ export const CardDataSchema = z
     desc: z.string().trim().max(6000),
     tags: z.array(z.string().trim().max(60)).max(30).optional().default([]),
     links: z.array(CardLinkSchema).optional(),
+    docRefs: z.array(CardDocRefSchema).optional(),
     direction: z.string().trim().nullable().optional(),
     dueDate: z.string().trim().nullable().optional(),
     order: z.number().int().nonnegative().max(1_000_000),
@@ -262,6 +271,27 @@ export const BoardUpdateSchema = z
     dailyInsights: z.array(DailyInsightEntrySchema).optional(),
     version: z.string().trim().max(50).optional(),
     lastUpdated: z.string().trim().max(200).optional(),
+  })
+  .passthrough();
+
+export const DocCreateSchema = z
+  .object({
+    title: z.string().trim().min(1, "Título é obrigatório.").max(200),
+    parentId: z.string().trim().max(200).nullable().optional(),
+    contentMd: z.string().max(300_000).optional(),
+    tags: z.array(z.string().trim().max(60)).max(50).optional(),
+  })
+  .passthrough();
+
+export const DocUpdateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    parentId: z.string().trim().max(200).nullable().optional(),
+    contentMd: z.string().max(300_000).optional(),
+    tags: z.array(z.string().trim().max(60)).max(50).optional(),
+  })
+  .refine((data) => data.title !== undefined || data.parentId !== undefined || data.contentMd !== undefined || data.tags !== undefined, {
+    message: "Informe ao menos um campo para atualização.",
   })
   .passthrough();
 

@@ -9,7 +9,9 @@ export type FeatureKey =
   | "daily_insights"
   | "portfolio_export"
   | "board_copilot"
-  | "okr_engine";
+  | "okr_engine"
+  | "flux_docs"
+  | "flux_docs_rag";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   executive_brief: ["pro", "business"],
@@ -18,6 +20,8 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
   portfolio_export: ["pro", "business"],
   board_copilot: ["pro", "business"],
   okr_engine: ["pro", "business"],
+  flux_docs: ["pro", "business"],
+  flux_docs_rag: ["pro", "business"],
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -49,6 +53,14 @@ export function getUserCap(org: Organization | null | undefined): number | null 
 }
 
 export function canUseFeature(org: Organization | null | undefined, feature: FeatureKey): boolean {
+  if (feature === "flux_docs") {
+    const raw = (process.env.FLUX_DOCS_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_ENABLED || "true").toLowerCase();
+    if (raw === "false" || raw === "0" || raw === "off") return false;
+  }
+  if (feature === "flux_docs_rag") {
+    const raw = (process.env.FLUX_DOCS_RAG_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_RAG_ENABLED || "true").toLowerCase();
+    if (raw === "false" || raw === "0" || raw === "off") return false;
+  }
   const tier = getEffectiveTier(org);
   return FEATURE_ALLOWED_TIERS[feature].includes(tier);
 }

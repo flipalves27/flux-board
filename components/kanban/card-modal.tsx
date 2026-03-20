@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import type { CardData, BucketConfig, CardLink } from "@/app/board/[id]/page";
+import type { CardData, BucketConfig, CardLink, CardDocRef } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -113,6 +113,9 @@ export function CardModal({
   const [tags, setTags] = useState<Set<string>>(new Set(card.tags || []));
   const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
+  const [docRefs, setDocRefs] = useState<CardDocRef[]>(Array.isArray(card.docRefs) ? [...card.docRefs] : []);
+  const [docQuery, setDocQuery] = useState("");
+  const [docResults, setDocResults] = useState<Array<{ id: string; title: string; excerpt?: string }>>([]);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -167,7 +170,28 @@ export function CardModal({
     setTags(new Set(card.tags || []));
     setNewLabel("");
     setLinks(card.links && card.links.length > 0 ? [...card.links] : []);
+    setDocRefs(Array.isArray(card.docRefs) ? [...card.docRefs] : []);
+    setDocQuery("");
+    setDocResults([]);
   }, [card]);
+
+  useEffect(() => {
+    const q = docQuery.trim();
+    if (!q) {
+      setDocResults([]);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/docs/search?q=${encodeURIComponent(q)}&limit=8`, { headers: getHeaders() });
+        const data = (await res.json().catch(() => ({}))) as { docs?: Array<{ id: string; title: string; excerpt?: string }> };
+        setDocResults(Array.isArray(data.docs) ? data.docs : []);
+      } catch {
+        setDocResults([]);
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [docQuery, getHeaders]);
 
   const toggleTag = (t: string) => {
     setTags((prev) => {
@@ -196,6 +220,7 @@ export function CardModal({
       dueDate: dueDate || null,
       tags: [...tags],
       links: links.filter((l) => l.url.trim()),
+      docRefs,
       order: card.order ?? 0,
     });
   };
@@ -747,6 +772,56 @@ export function CardModal({
                 )}
               </ul>
             </div>
+            </CardModalSection>
+
+            <CardModalSection title="Documentos vinculados" description="Anexe docs da base de conhecimento para contexto do card.">
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={docQuery}
+                  onChange={(e) => setDocQuery(e.target.value)}
+                  placeholder="Buscar docs..."
+                  className={inputBase}
+                />
+                {docQuery.trim() && (
+                  <div className="max-h-[160px] overflow-auto rounded-xl border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)]">
+                    {docResults.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-[var(--flux-text-muted)]">Nenhum doc encontrado.</div>
+                    ) : (
+                      docResults.map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          className="block w-full border-b border-[rgba(255,255,255,0.06)] px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.04)]"
+                          onClick={() =>
+                            setDocRefs((prev) => {
+                              if (prev.some((r) => r.docId === d.id)) return prev;
+                              return [...prev, { docId: d.id, title: d.title, excerpt: d.excerpt }];
+                            })
+                          }
+                        >
+                          <div className="text-xs font-semibold text-[var(--flux-text)]">{d.title}</div>
+                          <div className="text-[11px] text-[var(--flux-text-muted)]">{d.excerpt || ""}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {docRefs.map((r) => (
+                    <span key={r.docId} className="inline-flex items-center gap-2 rounded-lg border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.12)] px-2 py-1 text-xs text-[var(--flux-primary-light)]">
+                      {r.title || r.docId}
+                      <button
+                        type="button"
+                        className="text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]"
+                        onClick={() => setDocRefs((prev) => prev.filter((x) => x.docId !== r.docId))}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </CardModalSection>
           </div>
 
