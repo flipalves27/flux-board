@@ -10,8 +10,8 @@
 | `/login` | `app/login/page.tsx` (React) | Não |
 | `/boards` | `app/boards/page.tsx` (React) | Não |
 | `/board/:id` (ex: `/board/b_reborn`) | `app/board/[id]/page.tsx` + componente `KanbanBoard` (React) | Não |
-| `/board.html` | Arquivo estático `public/board.html` | Somente se acessar esta URL explícita |
-| `/boards.html` | Arquivo estático `public/boards.html` | Somente se acessar esta URL explícita |
+| `/board.html` | Não (arquivo removido; 404) | Não |
+| `/boards.html` | Não (arquivo removido; 404) | Não |
 
 Ou seja: o fluxo normal (login → lista de boards → abrir um board) é 100% **Next.js App Router** e **componentes React**. Nenhum `board.html` ou `boards.html` entra nesse fluxo.
 
@@ -21,14 +21,12 @@ Ou seja: o fluxo normal (login → lista de boards → abrir um board) é 100% *
   - Página: `app/board/[id]/page.tsx`
   - UI do Kanban: `components/kanban/kanban-board.tsx`, `kanban-column.tsx`, `kanban-card.tsx`, `card-modal.tsx`, `mapa-modal.tsx`
   - Estilos: `app/globals.css` + classes Tailwind nos componentes
+ 
+- **Arquivos HTML estáticos “legados” (não usados e removidos do repo)**:
+  - `board.html`, `boards.html` (na raiz do projeto)
+  - `public/board.html`, `public/boards.html`
 
-- **Versão que NÃO é usada** no fluxo normal:
-  - `board.html` (na raiz do projeto)
-  - `boards.html` (na raiz)
-  - `public/board.html`
-  - `public/boards.html`
-
-Se as melhorias foram feitas em `board.html` ou `boards.html`, elas **não vão aparecer** em `/boards` nem em `/board/:id`, porque essas rotas são atendidas pelos arquivos React acima.
+Se as melhorias foram feitas nesses arquivos legados (`board.html`/`boards.html`), elas **não vão aparecer** em `/boards` nem em `/board/:id`, porque essas rotas são atendidas pelos arquivos React acima.
 
 ## Configuração atual de rotas
 
@@ -49,7 +47,7 @@ Não existe regra que envie `/boards` ou `/board` para os arquivos `.html`.
 
 3. **Arquivos .html na raiz vs em `public/`**
    - Na implantação Next.js, só o conteúdo de `public/` é servido como estático (ex.: `/board.html` = `public/board.html`).
-   - Arquivos como `board.html` e `boards.html` na **raiz** do projeto **não são servidos** em nenhuma URL; são apenas arquivos no repositório.
+   - Arquivos como `board.html` e `boards.html` na **raiz** do projeto **não eram servidos** em nenhuma URL; e atualmente foram removidos do repositório (mesmo para `public/`).
 
 4. **Cache (navegador/CDN)**
    - Se já tiver corrigido o código e mesmo assim não vir a mudança: testar em aba anônima ou com cache desabilitado; em produção, conferir se o deploy da Vercel terminou e se não há cache forte em CDN para as rotas do App.
@@ -58,8 +56,8 @@ Não existe regra que envie `/boards` ou `/board` para os arquivos `.html`.
 
 | Onde você fez a melhoria | Vai aparecer em /boards e /board/:id? |
 |--------------------------|--------------------------------------|
-| `board.html` ou `boards.html` (raiz) | Não (arquivo não é servido) |
-| `public/board.html` ou `public/boards.html` | Não (essas URLs não são usadas no fluxo normal) |
+| `board.html` ou `boards.html` (raiz) | Não (arquivos removidos; não eram servidos) |
+| `public/board.html` ou `public/boards.html` | Não (arquivos removidos; não eram usadas no fluxo normal) |
 | `app/boards/page.tsx`, `app/board/[id]/page.tsx`, `components/kanban/*.tsx`, `app/globals.css` | Sim |
 
 Para as melhorias surtirem efeito na implantação, elas precisam estar nos arquivos React e no CSS que as rotas Next.js realmente utilizam.
