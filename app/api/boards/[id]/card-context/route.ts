@@ -5,6 +5,7 @@ import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 type CardContextInput = {
   title?: string;
   description?: string;
+  forceRefresh?: boolean;
 };
 
 type CardContextResult = {
@@ -22,6 +23,27 @@ type LlmCardContextResult = CardContextResult & {
   errorKind?: "no_api_key" | "no_model" | "http_error" | "network_error" | "parse_error";
   errorMessage?: string;
 };
+
+type CardContextDebug = {
+  source: "ai" | "heuristic" | "cache";
+  cacheHit: boolean;
+  durationMs: number;
+  provider?: string;
+  model?: string;
+  errorKind?: LlmCardContextResult["errorKind"];
+  errorMessage?: string;
+};
+
+const CARD_CONTEXT_LIMITS = {
+  titleMaxChars: 180,
+  descriptionMaxChars: 6000,
+  cacheTtlMs: 5 * 60 * 1000,
+} as const;
+
+const cardContextCache = new Map<
+  string,
+  { expiresAt: number; result: LlmCardContextResult; createdAt: number }
+>();
 
 function extractTextFromLlmContent(
   content: string | Array<{ type?: string; text?: string }> | undefined
@@ -104,6 +126,37 @@ function heuristicCardContext(title: string, description: string): CardContextRe
     resumoNegocio: resumo.slice(0, 700),
     objetivo: objective.slice(0, 300),
   };
+}
+
+function normalizeInputValue(value: string): string {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function makeCacheKey(args: { boardId: string; boardName: string; title: string; description: string }): string {
+  return JSON.stringify({
+    boardId: args.boardId,
+    boardName: normalizeInputValue(args.boardName).toLowerCase(),
+    title: normalizeInputValue(args.title).toLowerCase(),
+    description: normalizeInputValue(args.description).toLowerCase(),
+  });
+}
+
+function readCachedContext(cacheKey: string): LlmCardContextResult | null {
+  const hit = cardContextCache.get(cacheKey);
+  if (!hit) return null;
+  if (hit.expiresAt <= Date.now()) {
+    cardContextCache.delete(cacheKey);
+    return null;
+  }
+  return hit.result;
+}
+
+function writeCachedContext(cacheKey: string, result: LlmCardContextResult): void {
+  cardContextCache.set(cacheKey, {
+    expiresAt: Date.now() + CARD_CONTEXT_LIMITS.cacheTtlMs,
+    createdAt: Date.now(),
+    result,
+  });
 }
 
 function sanitizeJsonCandidate(value: string): string {
@@ -295,12 +348,10 @@ async function llmCardContext(args: { boardName: string; title: string; descript
       model,
       provider: "together.ai",
       rawContent: content,
-      errorKind: hasTitulo && hasDescricao ? (parsed.recovered ? undefined : "parse_error") : "parse_error",
+      errorKind: hasTitulo && hasDescricao ? undefined : "parse_error",
       errorMessage:
         hasTitulo && hasDescricao
-          ? parsed.recovered
-            ? undefined
-            : "Falha ao recuperar JSON da IA."
+          ? undefined
           : "Resposta da IA incompleta; usando fallback estruturado.",
     };
   } catch (err) {
@@ -339,15 +390,68 @@ export async function POST(
     const body = (await request.json()) as CardContextInput;
     const title = String(body.title || "").trim();
     const description = String(body.description || "").trim();
+    const forceRefresh = Boolean(body.forceRefresh);
 
     if (!title || !description) {
       return NextResponse.json({ error: "Título e descrição são obrigatórios." }, { status: 400 });
     }
+    if (title.length > CARD_CONTEXT_LIMITS.titleMaxChars) {
+      return NextResponse.json(
+        { error: `Título excede o limite de ${CARD_CONTEXT_LIMITS.titleMaxChars} caracteres.` },
+        { status: 400 }
+      );
+    }
+    if (description.length > CARD_CONTEXT_LIMITS.descriptionMaxChars) {
+      return NextResponse.json(
+        { error: `Descrição excede o limite de ${CARD_CONTEXT_LIMITS.descriptionMaxChars} caracteres.` },
+        { status: 400 }
+      );
+    }
 
     const board = await getBoard(boardId);
     const boardName = board?.name || "Board";
+    const cacheKey = makeCacheKey({ boardId, boardName, title, description });
+    const startedAt = Date.now();
+
+    if (!forceRefresh) {
+      const cached = readCachedContext(cacheKey);
+      if (cached) {
+        const source: CardContextDebug["source"] = cached.generatedWithAI ? "ai" : "heuristic";
+        return NextResponse.json({
+          ok: true,
+          titulo: cached.titulo,
+          descricao: cached.descricao,
+          resumoNegocio: cached.resumoNegocio,
+          objetivo: cached.objetivo,
+          generatedWithAI: cached.generatedWithAI,
+          provider: cached.provider,
+          model: cached.model,
+          llmDebug: {
+            source: "cache",
+            generatedWithAI: cached.generatedWithAI,
+            provider: cached.provider,
+            model: cached.model,
+            errorKind: cached.errorKind,
+            errorMessage: cached.errorMessage,
+            cacheHit: true,
+            durationMs: Date.now() - startedAt,
+            cachedSource: source,
+          },
+        });
+      }
+    }
 
     const result = await llmCardContext({ boardName, title, description });
+    writeCachedContext(cacheKey, result);
+    const debug: CardContextDebug = {
+      source: result.generatedWithAI ? "ai" : "heuristic",
+      cacheHit: false,
+      durationMs: Date.now() - startedAt,
+      provider: result.provider,
+      model: result.model,
+      errorKind: result.errorKind,
+      errorMessage: result.errorMessage,
+    };
 
     return NextResponse.json({
       ok: true,
@@ -359,11 +463,14 @@ export async function POST(
       provider: result.provider,
       model: result.model,
       llmDebug: {
+        source: debug.source,
         generatedWithAI: result.generatedWithAI,
         provider: result.provider,
         model: result.model,
         errorKind: result.errorKind,
         errorMessage: result.errorMessage,
+        cacheHit: debug.cacheHit,
+        durationMs: debug.durationMs,
       },
     });
   } catch (err) {
