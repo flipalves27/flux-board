@@ -7,7 +7,8 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
-import type { BoardTemplateSnapshot, TemplateCategory } from "@/lib/template-types";
+import type { TemplateCategory } from "@/lib/template-types";
+import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
 
 type Row = {
   id: string;
@@ -30,9 +31,6 @@ export default function TemplatesShowcasePage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<TemplateCategory | "all">("all");
-  const [aiText, setAiText] = useState("");
-  const [aiBusy, setAiBusy] = useState(false);
-  const [aiSnapshot, setAiSnapshot] = useState<BoardTemplateSnapshot | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,43 +85,6 @@ export default function TemplatesShowcasePage() {
     }
   }
 
-  async function runAi() {
-    setAiBusy(true);
-    setAiSnapshot(null);
-    try {
-      const res = await apiPost<{ snapshot: BoardTemplateSnapshot; draft?: { title?: string } }>(
-        "/api/templates/ai-generate",
-        { description: aiText },
-        getHeaders()
-      );
-      setAiSnapshot(res?.snapshot ?? null);
-      pushToast({ kind: "success", title: "Preview gerado", description: res?.draft?.title ?? "" });
-    } catch (e) {
-      pushToast({ kind: "error", title: e instanceof ApiError ? e.message : "Falha na IA." });
-    } finally {
-      setAiBusy(false);
-    }
-  }
-
-  async function createFromAi() {
-    if (!user || !aiSnapshot) return;
-    setAiBusy(true);
-    try {
-      const name = "Board IA";
-      const res = await apiPost<{ board: { id: string } }>(
-        "/api/boards",
-        { name, templateSnapshot: aiSnapshot },
-        getHeaders()
-      );
-      const bid = res?.board?.id;
-      if (bid) router.push(`${localeRoot}/board/${encodeURIComponent(bid)}`);
-    } catch (e) {
-      pushToast({ kind: "error", title: e instanceof ApiError ? e.message : "Erro ao criar." });
-    } finally {
-      setAiBusy(false);
-    }
-  }
-
   if (!isChecked || !user) return null;
 
   return (
@@ -134,33 +95,8 @@ export default function TemplatesShowcasePage() {
 
         <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
           <h2 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("aiTitle")}</h2>
-          <p className="text-xs text-[var(--flux-text-muted)] mb-3">{t("aiHint")}</p>
-          <textarea
-            value={aiText}
-            onChange={(e) => setAiText(e.target.value)}
-            rows={4}
-            placeholder={t("aiPlaceholder")}
-            className="w-full px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm mb-3"
-          />
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-primary" disabled={aiBusy || aiText.trim().length < 10} onClick={() => void runAi()}>
-              {aiBusy ? t("aiBusy") : t("aiGenerate")}
-            </button>
-            {aiSnapshot && (
-              <button type="button" className="btn-secondary" disabled={aiBusy} onClick={() => void createFromAi()}>
-                {t("aiCreateBoard")}
-              </button>
-            )}
-          </div>
-          {aiSnapshot && (
-            <div className="mt-4 text-xs text-[var(--flux-text-muted)] space-y-1 border-t border-[var(--flux-chrome-alpha-08)] pt-4">
-              <p className="text-[var(--flux-secondary)] font-semibold">Preview</p>
-              <p>
-                Colunas: {(aiSnapshot.config.bucketOrder as { label?: string }[]).map((b) => b.label || b).join(" → ")}
-              </p>
-              {aiSnapshot.labelPalette.length > 0 && <p>Rótulos sugeridos: {aiSnapshot.labelPalette.join(", ")}</p>}
-            </div>
-          )}
+          <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("aiHint")}</p>
+          <AiTemplateConversation getHeaders={getHeaders} localeRoot={localeRoot} />
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
