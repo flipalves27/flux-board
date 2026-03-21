@@ -8,6 +8,16 @@ export type BillingNotice =
   | { kind: "trial_ended"; at: string }
   | { kind: "downgrade_grace_ended"; at: string };
 
+/** Preferências de IA (plano Business: modelo Claude e jobs em lote). */
+export type OrgAiSettings = {
+  /** Modelo Anthropic (ex.: claude-3-5-sonnet-20241022). */
+  anthropicModel?: string;
+  /** Digest/agregados sem usuário: preferir Claude vs Together quando a chave existir. */
+  batchLlmProvider?: "anthropic" | "together";
+  /** Usuários não-admin autorizados a usar a rota Claude (admin sempre pode). */
+  claudeUserIds?: string[];
+};
+
 export interface Organization {
   _id: string; // "org_xxxxx"
   name: string;
@@ -34,6 +44,8 @@ export interface Organization {
   stripeSeats?: number;
   /** Feedback opcional ao cancelar/pausar (survey). */
   billingCancellationFeedback?: { reason: string; at: string };
+  /** IA: modelo Claude, delegação e preferências de batch (Business). */
+  aiSettings?: OrgAiSettings;
   createdAt: string;
 }
 
@@ -392,6 +404,7 @@ export async function updateOrganization(
       | "stripeCurrentPeriodEnd"
       | "stripeSeats"
       | "branding"
+      | "aiSettings"
     >
   >
 ): Promise<Organization | null> {
@@ -439,6 +452,7 @@ export async function updateOrganizationWithUnset(
       | "stripeCurrentPeriodEnd"
       | "stripeSeats"
       | "branding"
+      | "aiSettings"
     >
   >,
   unsetKeys: (keyof Organization)[]

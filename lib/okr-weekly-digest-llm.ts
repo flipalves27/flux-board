@@ -1,5 +1,8 @@
-import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
+import { safeJsonParse } from "@/lib/llm-utils";
 import type { OkrKrProjection } from "@/lib/okr-projection";
+import type { Organization } from "@/lib/kv-organizations";
+import { runOrgLlmChat } from "@/lib/llm-org-chat";
+import { isCloudLlmConfigured, isTogetherApiConfigured, resolveBatchLlmRoute } from "@/lib/org-ai-routing";
 
 export type OkrWeeklyDigestBlock = {
   headline: string;
@@ -31,18 +34,25 @@ function heuristicOkrDigest(projections: OkrKrProjection[]): OkrWeeklyDigestBloc
   return { headline, bullets: bullets.slice(0, 8), generatedWithAI: false };
 }
 
+function digestProviderLabel(p: "anthropic" | "together"): "anthropic" | "together.ai" {
+  return p === "anthropic" ? "anthropic" : "together.ai";
+}
+
 export async function generateOkrWeeklyDigestBlockAI(args: {
   orgName: string;
   quarter: string;
   projections: OkrKrProjection[];
   allowAI?: boolean;
+  org?: Organization | null;
+  orgId?: string;
 }): Promise<OkrWeeklyDigestBlock> {
-  const { orgName, quarter, projections, allowAI } = args;
+  const { orgName, quarter, projections, allowAI, org, orgId } = args;
 
   const cap = process.env.WEEKLY_DIGEST_AI_CAP;
-  const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL;
+  const batchRoute = resolveBatchLlmRoute(org ?? null);
+  const canCall =
+    isCloudLlmConfigured() &&
+    ((batchRoute.route === "anthropic") || (batchRoute.route === "together" && isTogetherApiConfigured()));
 
   if (!projections.length) {
     return {
@@ -52,7 +62,7 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
     };
   }
 
-  if (!allowAI || !togetherEnabled || !apiKey || !model || (cap && Number(cap) === 0)) {
+  if (!allowAI || !canCall || (cap && Number(cap) === 0) || !orgId) {
     return heuristicOkrDigest(projections);
   }
 
@@ -83,26 +93,24 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
     snapshot,
   ].join("\n");
 
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-
   try {
-    const response = await callTogetherApi(
-      {
-        model,
-        temperature: 0.25,
-        messages: [{ role: "user", content: prompt }],
-      },
-      { apiKey, baseUrl }
-    );
+    const response = await runOrgLlmChat({
+      org: org ?? null,
+      orgId,
+      feature: "weekly_digest_okr",
+      messages: [{ role: "user", content: prompt }],
+      options: { temperature: 0.25 },
+      mode: "batch",
+    });
 
     if (!response.ok) {
       const h = heuristicOkrDigest(projections);
       return {
         ...h,
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: digestProviderLabel(response.resolvedRoute),
         errorKind: "http_error",
-        errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
+        errorMessage: response.error || "request_failed",
       };
     }
 
@@ -115,7 +123,7 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
       return {
         ...h,
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: digestProviderLabel(response.provider),
         errorKind: "bad_json",
         errorMessage: "Resposta da IA fora do formato.",
       };
@@ -131,8 +139,8 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
       headline: String(obj.headline).trim().slice(0, 240),
       bullets: bullets.length ? bullets : heuristicOkrDigest(projections).bullets,
       generatedWithAI: true,
-      model,
-      provider: "together.ai",
+      model: response.model,
+      provider: digestProviderLabel(response.provider),
     };
   } catch (err) {
     const h = heuristicOkrDigest(projections);

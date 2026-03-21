@@ -53,6 +53,11 @@ export default function OrgSettingsPage() {
   const [domainVerificationToken, setDomainVerificationToken] = useState("");
   const [customDomainVerifiedAt, setCustomDomainVerifiedAt] = useState("");
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
+  const [aiAnthropicModel, setAiAnthropicModel] = useState("");
+  const [aiBatchProvider, setAiBatchProvider] = useState<"anthropic" | "together" | "">("");
+  const [claudeUserIds, setClaudeUserIds] = useState<string[]>([]);
+  const [orgUsers, setOrgUsers] = useState<Array<{ id: string; email?: string; name?: string }>>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [invoices, setInvoices] = useState<
     Array<{
       id: string;
@@ -92,6 +97,12 @@ export default function OrgSettingsPage() {
     setDomainVerificationToken(typeof b?.domainVerificationToken === "string" ? b.domainVerificationToken : "");
     setCustomDomainVerifiedAt(typeof b?.customDomainVerifiedAt === "string" ? b.customDomainVerifiedAt : "");
     setStripeCustomerId(typeof org.stripeCustomerId === "string" ? org.stripeCustomerId : null);
+    const ai = org.aiSettings as Record<string, unknown> | undefined;
+    setAiAnthropicModel(typeof ai?.anthropicModel === "string" ? ai.anthropicModel : "");
+    const bp = ai?.batchLlmProvider;
+    setAiBatchProvider(bp === "anthropic" || bp === "together" ? bp : "");
+    const cu = ai?.claudeUserIds;
+    setClaudeUserIds(Array.isArray(cu) ? cu.map((x) => String(x)).filter(Boolean) : []);
   }
 
   useEffect(() => {
@@ -121,6 +132,24 @@ export default function OrgSettingsPage() {
       }
     })();
   }, [isChecked, user, router, localeRoot, getHeaders]);
+
+  useEffect(() => {
+    if (!isChecked || !user?.isAdmin || orgPlan !== "business") {
+      setOrgUsers([]);
+      return;
+    }
+    setUsersLoading(true);
+    (async () => {
+      try {
+        const data = await apiGet<{ users: Array<{ id: string; email?: string; name?: string }> }>("/api/users", getHeaders());
+        setOrgUsers(Array.isArray(data?.users) ? data.users : []);
+      } catch {
+        setOrgUsers([]);
+      } finally {
+        setUsersLoading(false);
+      }
+    })();
+  }, [isChecked, user?.isAdmin, orgPlan, getHeaders]);
 
   useEffect(() => {
     if (!isChecked || !user?.isAdmin || !stripeCustomerId) {
@@ -180,9 +209,20 @@ export default function OrgSettingsPage() {
             }
           : undefined;
 
+      const aiSettings =
+        orgPlan === "business"
+          ? {
+              anthropicModel: aiAnthropicModel.trim() || null,
+              batchLlmProvider: aiBatchProvider || null,
+              claudeUserIds: claudeUserIds.length ? claudeUserIds : null,
+            }
+          : undefined;
+
       const res = await apiPut<{ organization: Record<string, unknown> }>(
         "/api/organizations/me",
-        branding ? { name, slug, branding } : { name, slug },
+        branding
+          ? { name, slug, branding, ...(aiSettings ? { aiSettings } : {}) }
+          : { name, slug, ...(aiSettings ? { aiSettings } : {}) },
         getHeaders()
       );
       applyOrgPayload(res?.organization);
@@ -473,6 +513,76 @@ export default function OrgSettingsPage() {
                             <p className="text-[var(--flux-success)] pt-1">Verificado em {new Date(customDomainVerifiedAt).toLocaleString()}.</p>
                           ) : null}
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {orgPlan === "business" && (
+                <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-4">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">IA (Business)</h3>
+                    <p className="text-sm text-[var(--flux-text-muted)]">
+                      Modelo Claude para a org, digest semanal em lote e quem mais pode usar a rota Claude além dos
+                      administradores.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
+                      Modelo Anthropic (Claude)
+                    </label>
+                    <input
+                      value={aiAnthropicModel}
+                      onChange={(e) => setAiAnthropicModel(e.target.value)}
+                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                      disabled={busy}
+                      placeholder="claude-3-5-sonnet-20241022"
+                      maxLength={120}
+                    />
+                    <p className="mt-1 text-xs text-[var(--flux-text-muted)]">Vazio usa ANTHROPIC_MODEL ou o padrão do servidor.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Digest / jobs em lote</label>
+                    <select
+                      value={aiBatchProvider}
+                      onChange={(e) => setAiBatchProvider(e.target.value as "anthropic" | "together" | "")}
+                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
+                      disabled={busy}
+                    >
+                      <option value="">Padrão (Together se configurado)</option>
+                      <option value="together">Together (Llama)</option>
+                      <option value="anthropic">Anthropic (Claude)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
+                      Usuários com rota Claude (além de admins)
+                    </label>
+                    {usersLoading ? (
+                      <p className="text-xs text-[var(--flux-text-muted)]">Carregando usuários…</p>
+                    ) : (
+                      <div className="max-h-40 overflow-y-auto rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] p-2 space-y-1">
+                        {orgUsers.map((u) => {
+                          const id = String(u.id || "");
+                          if (!id) return null;
+                          const label = [u.name, u.email].filter(Boolean).join(" · ") || id;
+                          return (
+                            <label key={id} className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={claudeUserIds.includes(id)}
+                                onChange={(ev) => {
+                                  setClaudeUserIds((prev) =>
+                                    ev.target.checked ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)
+                                  );
+                                }}
+                                disabled={busy}
+                              />
+                              <span className="truncate">{label}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

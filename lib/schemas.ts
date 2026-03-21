@@ -382,6 +382,14 @@ export const OrgBrandingUpdateSchema = z
   })
   .passthrough();
 
+export const OrgAiSettingsUpdateSchema = z
+  .object({
+    anthropicModel: z.string().trim().max(120).optional().nullable(),
+    batchLlmProvider: z.enum(["anthropic", "together"]).optional().nullable(),
+    claudeUserIds: z.array(z.string().trim().max(120)).max(200).optional().nullable(),
+  })
+  .strict();
+
 export const PortalBoardUpdateSchema = z
   .object({
     enabled: z.boolean().optional(),

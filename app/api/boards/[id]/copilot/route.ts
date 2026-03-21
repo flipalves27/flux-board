@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { callTogetherApi } from "@/lib/llm-utils";
+import { runOrgLlmChat } from "@/lib/llm-org-chat";
+import { isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import type { Organization } from "@/lib/kv-organizations";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import {
@@ -450,8 +452,48 @@ function heuristicWeeklyBrief(board: any): string {
   return lines.join("\n");
 }
 
-async function callTogetherModelForCopilot(input: {
+function copilotHeuristicWhenNoLlm(input: {
+  board: any;
+  userMessage: string;
+}): CopilotModelOutput {
+  const ctx = buildCopilotContext(input.board);
+  const s = String(input.userMessage || "").toLowerCase();
+
+  if (s.includes("parad") && (s.includes("5") || s.includes("mais de"))) {
+    const stuck = ctx.activityHints
+      .filter((h: any) => h.daysSinceMentioned > 5 && h.progress !== "Concluída")
+      .sort((a: any, b: any) => b.daysSinceMentioned - a.daysSinceMentioned)
+      .slice(0, 12);
+
+    const lines: string[] = [];
+    lines.push(`# Cards possivelmente parados (> 5 dias)`);
+    if (!stuck.length) {
+      lines.push(`- Não encontrei cards com indicação de estagnação pelo histórico de dailies.`);
+    } else {
+      for (const h of stuck) {
+        const bucketKey = String(h.bucket || "");
+        lines.push(`- ${h.title} (id: ${h.cardId}) • ${bucketKey} • ${h.daysSinceMentioned} dia(s) desde última menção`);
+      }
+    }
+    return { reply: lines.join("\n"), actions: [] };
+  }
+
+  if (/(resuma|brief|diret(or|oria)|semana)/i.test(s)) {
+    return { reply: heuristicWeeklyBrief(input.board), actions: [] };
+  }
+
+  return {
+    reply:
+      "Modo sem IA cloud habilitada (configure TOGETHER_API_KEY/TOGETHER_MODEL e/ou ANTHROPIC_API_KEY). Posso responder por heurística: cards parados por dailies e brief semanal.",
+    actions: [],
+  };
+}
+
+async function callCopilotLlmModel(input: {
+  org: Organization;
   orgId: string;
+  userId: string;
+  isAdmin: boolean;
   board: any;
   boardName: string;
   userMessage: string;
@@ -459,45 +501,10 @@ async function callTogetherModelForCopilot(input: {
   tier: ReturnType<typeof getEffectiveTier>;
   worldSnapshot: string;
 }): Promise<CopilotModelOutput> {
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL;
-  if (!apiKey || !model) {
-    const ctx = buildCopilotContext(input.board);
-    const s = String(input.userMessage || "").toLowerCase();
-
-    // Heurística para o exemplo: "Quais cards estão parados há mais de 5 dias?"
-    if (s.includes("parad") && (s.includes("5") || s.includes("mais de"))) {
-      const stuck = ctx.activityHints
-        .filter((h: any) => h.daysSinceMentioned > 5 && h.progress !== "Concluída")
-        .sort((a: any, b: any) => b.daysSinceMentioned - a.daysSinceMentioned)
-        .slice(0, 12);
-
-      const lines: string[] = [];
-      lines.push(`# Cards possivelmente parados (> 5 dias)`);
-      if (!stuck.length) {
-        lines.push(`- Não encontrei cards com indicação de estagnação pelo histórico de dailies.`);
-      } else {
-        for (const h of stuck) {
-          const bucketKey = String(h.bucket || "");
-          lines.push(`- ${h.title} (id: ${h.cardId}) • ${bucketKey} • ${h.daysSinceMentioned} dia(s) desde última menção`);
-        }
-      }
-      return { reply: lines.join("\n"), actions: [] };
-    }
-
-    // Heurística para o exemplo: "Resuma o progresso desta semana..."
-    if (/(resuma|brief|diret(or|oria)|semana)/i.test(s)) {
-      return { reply: heuristicWeeklyBrief(input.board), actions: [] };
-    }
-
-    return {
-      reply:
-        "Modo sem IA habilitado (faltando TOGETHER_API_KEY/TOGETHER_MODEL). Posso responder por heurística: cards parados por dailies e brief semanal.",
-      actions: [],
-    };
+  const routePick = resolveInteractiveLlmRoute(input.org, { userId: input.userId, isAdmin: input.isAdmin });
+  if (routePick.route === "together" && !isTogetherApiConfigured()) {
+    return copilotHeuristicWhenNoLlm({ board: input.board, userMessage: input.userMessage });
   }
-
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
 
   const ctx = buildCopilotContext(input.board);
   const cardsForPrompt = ctx.cards.slice(0, MAX_MODEL_CONTEXT_CARDS);
@@ -546,14 +553,16 @@ async function callTogetherModelForCopilot(input: {
 
   const promptMessages = [{ role: "user" as const, content: system }];
 
-  const res = await callTogetherApi(
-    {
-      model,
-      temperature: 0.2,
-      messages: promptMessages,
-    },
-    { apiKey, baseUrl }
-  );
+  const res = await runOrgLlmChat({
+    org: input.org,
+    orgId: input.orgId,
+    feature: "board_copilot",
+    messages: promptMessages,
+    options: { temperature: 0.2 },
+    mode: "interactive",
+    userId: input.userId,
+    isAdmin: input.isAdmin,
+  });
 
   if (!res.ok) {
     return {
@@ -877,8 +886,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     );
   }
 
-  const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-  if (tier === "free" && togetherEnabled) {
+  const llmCloudEnabled =
+    (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
+    Boolean(process.env.ANTHROPIC_API_KEY);
+  if (tier === "free" && llmCloudEnabled) {
     const cap = getDailyAiCallsCap(org);
     if (cap !== null) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
@@ -929,8 +940,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           ragChunks,
         });
 
-        const modelOutput = await callTogetherModelForCopilot({
+        const modelOutput = await callCopilotLlmModel({
+          org,
           orgId: payload.orgId,
+          userId: payload.id,
+          isAdmin: payload.isAdmin,
           board,
           boardName: String(board.name || "Board"),
           userMessage,

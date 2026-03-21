@@ -1,5 +1,8 @@
 import type { BoardData } from "@/lib/kv-boards";
-import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
+import type { Organization } from "@/lib/kv-organizations";
+import { runOrgLlmChat } from "@/lib/llm-org-chat";
+import { isCloudLlmConfigured, isTogetherApiConfigured, resolveBatchLlmRoute } from "@/lib/org-ai-routing";
+import { safeJsonParse } from "@/lib/llm-utils";
 import type { OverdueCard, WeeklyBoardToolMetrics } from "@/lib/weekly-digest-metrics";
 
 export type OverdueAction = {
@@ -106,24 +109,31 @@ function makeHeuristicBoardInsight(args: {
   return { summary, insight: insight.replace(/^Board\s+/i, ""), overdueActions };
 }
 
+function digestProviderLabel(p: "anthropic" | "together"): "anthropic" | "together.ai" {
+  return p === "anthropic" ? "anthropic" : "together.ai";
+}
+
 export async function generateBoardWeeklyDigestInsightAI(args: {
   board: BoardData;
   boardName: string;
   metrics: WeeklyBoardToolMetrics;
   overdueCards: OverdueCard[];
   allowAI?: boolean;
+  org?: Organization | null;
+  orgId?: string;
 }): Promise<BoardWeeklyInsight> {
-  const { board, boardName, metrics, overdueCards, allowAI } = args;
+  const { board, boardName, metrics, overdueCards, allowAI, org, orgId } = args;
 
   const cap = process.env.WEEKLY_DIGEST_AI_CAP; // opcional (limite local para teste)
-  const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL;
+  const batchRoute = resolveBatchLlmRoute(org ?? null);
+  const canCall =
+    isCloudLlmConfigured() &&
+    ((batchRoute.route === "anthropic") || (batchRoute.route === "together" && isTogetherApiConfigured()));
 
   const bucketKeys = parseBucketKeys(board);
   const bucketHint = bucketKeys.length ? bucketKeys.join(", ") : "—";
 
-  if (!allowAI || !togetherEnabled || !apiKey || !model || (cap && Number(cap) === 0)) {
+  if (!allowAI || !canCall || (cap && Number(cap) === 0) || !orgId) {
     const heuristic = makeHeuristicBoardInsight({ board, boardName, metrics, overdueCards });
     return { ...heuristic, generatedWithAI: false, provider: "together.ai" };
   }
@@ -163,26 +173,24 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
     overdueSnapshot ? `overdueCards:\n${overdueSnapshot}` : "overdueCards: (vazio)",
   ].join("\n");
 
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-
   try {
-    const response = await callTogetherApi(
-      {
-        model,
-        temperature: 0.2,
-        messages: [{ role: "user", content: prompt }],
-      },
-      { apiKey, baseUrl }
-    );
+    const response = await runOrgLlmChat({
+      org: org ?? null,
+      orgId,
+      feature: "weekly_digest_board",
+      messages: [{ role: "user", content: prompt }],
+      options: { temperature: 0.2 },
+      mode: "batch",
+    });
 
     if (!response.ok) {
       const heuristic = makeHeuristicBoardInsight({ board, boardName, metrics, overdueCards });
       return {
         ...heuristic,
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: digestProviderLabel(response.resolvedRoute),
         errorKind: "http_error",
-        errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
+        errorMessage: response.error || "request_failed",
       };
     }
 
@@ -195,7 +203,7 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
       return {
         ...heuristic,
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: digestProviderLabel(response.provider),
         errorKind: "bad_json",
         errorMessage: "Resposta da IA não estava no formato esperado.",
       };
@@ -219,8 +227,8 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
       insight: String(obj.insight).trim().slice(0, 500),
       overdueActions: safeOverdueActions,
       generatedWithAI: true,
-      model,
-      provider: "together.ai",
+      model: response.model,
+      provider: digestProviderLabel(response.provider),
       errorKind: undefined,
     };
   } catch (err) {

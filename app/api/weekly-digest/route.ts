@@ -193,7 +193,9 @@ export async function GET(request: NextRequest) {
         previousRange: weekPrevious,
       });
 
-      const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+      const llmCloudEnabled =
+        (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
+        Boolean(process.env.ANTHROPIC_API_KEY);
 
       let okrSection: WeeklyDigestOkrSection | null = null;
       if (canUseFeature(org, "okr_engine")) {
@@ -209,7 +211,9 @@ export async function GET(request: NextRequest) {
               orgName: org.name,
               quarter,
               projections,
-              allowAI: togetherEnabled,
+              allowAI: llmCloudEnabled,
+              org,
+              orgId,
             });
             const riskAlerts = projections
               .filter((p) => p.riskBelowThreshold)
@@ -247,9 +251,9 @@ export async function GET(request: NextRequest) {
           concludedPrevious: 0,
         };
 
-        // Política: se Together estiver configurado, tentamos sempre gerar insight IA
+        // Política: se algum LLM cloud estiver configurado, tentamos gerar insight IA
         // para cada board incluído no email (sem desviar para heurística por cap).
-        const allowAI = togetherEnabled;
+        const allowAI = llmCloudEnabled;
 
         const insightResult = await generateBoardWeeklyDigestInsightAI({
           board,
@@ -264,6 +268,8 @@ export async function GET(request: NextRequest) {
           },
           overdueCards,
           allowAI,
+          org,
+          orgId,
         });
 
         const previousWeekSentimentScore = await getSentimentScoreForBoardWeek({

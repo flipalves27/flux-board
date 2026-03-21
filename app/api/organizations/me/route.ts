@@ -6,7 +6,9 @@ import {
   getOrganizationById,
   updateOrganization,
 } from "@/lib/kv-organizations";
-import { OrgBrandingUpdateSchema } from "@/lib/schemas";
+import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
+import { getEffectiveTier } from "@/lib/plan-gates";
+import type { OrgAiSettings } from "@/lib/kv-organizations";
 import {
   orgBrandingAllowsCustomDomain,
   orgBrandingAllowsTheming,
@@ -44,6 +46,7 @@ export async function GET(request: NextRequest) {
       stripePriceId: org.stripePriceId ?? null,
       stripeStatus: org.stripeStatus ?? null,
       stripeCurrentPeriodEnd: org.stripeCurrentPeriodEnd ?? null,
+      aiSettings: org.aiSettings ?? null,
     },
   });
 }
@@ -58,9 +61,13 @@ export async function PUT(request: NextRequest) {
   const slug = typeof body?.slug === "string" ? body.slug.trim().slice(0, 80) : undefined;
   const hasBranding = body && typeof body === "object" && "branding" in body;
   const dismissBillingNotice = body?.dismissBillingNotice === true;
+  const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
 
-  if (!name && !slug && !hasBranding && !dismissBillingNotice) {
-    return NextResponse.json({ error: "Informe `name`, `slug`, `branding` ou `dismissBillingNotice`." }, { status: 400 });
+  if (!name && !slug && !hasBranding && !dismissBillingNotice && !hasAiSettings) {
+    return NextResponse.json(
+      { error: "Informe `name`, `slug`, `branding`, `aiSettings` ou `dismissBillingNotice`." },
+      { status: 400 }
+    );
   }
 
   try {
@@ -167,11 +174,42 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    let aiSettingsPatch: OrgAiSettings | undefined;
+    if (hasAiSettings) {
+      const parsed = OrgAiSettingsUpdateSchema.safeParse(body?.aiSettings ?? {});
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
+      }
+      const tier = getEffectiveTier(current);
+      if (tier !== "business") {
+        return NextResponse.json(
+          { error: "Configurações de IA avançadas disponíveis no plano Business." },
+          { status: 403 }
+        );
+      }
+      const a = parsed.data;
+      const prev = current.aiSettings ?? {};
+      const next: OrgAiSettings = { ...prev };
+      if (a.anthropicModel !== undefined) {
+        next.anthropicModel =
+          a.anthropicModel === "" || a.anthropicModel === null ? undefined : a.anthropicModel.trim().slice(0, 120);
+      }
+      if (a.batchLlmProvider !== undefined) {
+        next.batchLlmProvider = a.batchLlmProvider === null ? undefined : a.batchLlmProvider;
+      }
+      if (a.claudeUserIds !== undefined) {
+        next.claudeUserIds =
+          a.claudeUserIds === null ? [] : [...new Set(a.claudeUserIds.map((id) => id.trim()).filter(Boolean))].slice(0, 200);
+      }
+      aiSettingsPatch = next;
+    }
+
     const org = await updateOrganization(payload.orgId, {
       ...(name !== undefined ? { name } : {}),
       ...(slug !== undefined ? { slug } : {}),
       ...(brandingPatch !== undefined ? { branding: brandingPatch } : {}),
       ...(dismissBillingNotice ? { billingNotice: null } : {}),
+      ...(aiSettingsPatch !== undefined ? { aiSettings: aiSettingsPatch } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
     return NextResponse.json({ organization: org });
