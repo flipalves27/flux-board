@@ -170,6 +170,7 @@ export function KanbanHeaderBar({
             </span>
             <input
               ref={searchInputRef}
+              data-flux-board-search
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

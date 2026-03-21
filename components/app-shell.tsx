@@ -8,6 +8,7 @@ import { SidebarLayoutProvider, useSidebarLayout } from "@/context/sidebar-layou
 import { Sidebar } from "@/components/sidebar";
 import { MobileAppHeader } from "@/components/mobile-app-header";
 import { CommandPalette } from "@/components/command-palette/command-palette";
+import { GlobalHotkeys } from "@/components/hotkeys/global-hotkeys";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
 import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
@@ -37,6 +38,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         <div className="min-h-0 min-w-0 flex-1">{children}</div>
       </div>
       <CommandPalette />
+      <GlobalHotkeys />
       <div className="pointer-events-none fixed bottom-4 right-4 z-[450] flex w-[min(360px,92vw)] flex-col gap-2">
         {alerts.map((alert) => (
           <button

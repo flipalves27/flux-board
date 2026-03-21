@@ -90,6 +90,23 @@
       "rateLimit": "Rate limit (abuse)"
     }
   },
+  "hotkeys": {
+    "title": "Keyboard shortcuts",
+    "subtitle": "Press ? outside text fields to open this sheet.",
+    "close": "Close",
+    "groups": {
+      "general": "General",
+      "board": "Board"
+    },
+    "goBoards": "Go to boards",
+    "goReports": "Go to reports",
+    "cheatsheet": "Show this help",
+    "commandPalette": "Command palette",
+    "escape": "Close dialog or palette (when one is open)",
+    "newCard": "New card (current board)",
+    "toggleFilters": "Toggle filters & search bar",
+    "focusSearch": "Focus board search"
+  },
   "rateLimitAbuse": {
     "title": "Abuse — rate limit",
     "subtitle": "Grouped by IP or user when the global API limit returns 429 (Mongo with TTL).",

@@ -4,7 +4,7 @@ import { useBoardDnd } from "./useBoardDnd";
 
 describe("useBoardDnd", () => {
   it("exposes sensors, collision detection, and null activeCard when idle", () => {
-    const moveCard = vi.fn();
+    const moveCardsBatch = vi.fn();
     const reorderColumns = vi.fn();
     const getCardsByBucket = () => [];
 
@@ -13,7 +13,7 @@ describe("useBoardDnd", () => {
         buckets: [{ key: "a", label: "A", color: "#000" }],
         cards: [],
         getCardsByBucket,
-        moveCard,
+        moveCardsBatch,
         reorderColumns,
       })
     );

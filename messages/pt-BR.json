@@ -90,6 +90,23 @@
       "rateLimit": "Rate limit (abuso)"
     }
   },
+  "hotkeys": {
+    "title": "Atalhos de teclado",
+    "subtitle": "Pressione ? fora de campos de texto para abrir esta ajuda.",
+    "close": "Fechar",
+    "groups": {
+      "general": "Geral",
+      "board": "Board"
+    },
+    "goBoards": "Ir para boards",
+    "goReports": "Ir para relatórios",
+    "cheatsheet": "Mostrar esta ajuda",
+    "commandPalette": "Paleta de comandos",
+    "escape": "Fechar diálogo ou paleta (quando estiver aberto)",
+    "newCard": "Novo card (board atual)",
+    "toggleFilters": "Alternar filtros e barra de busca",
+    "focusSearch": "Focar busca do board"
+  },
   "rateLimitAbuse": {
     "title": "Abuso — rate limit",
     "subtitle": "Agrupamento por IP ou usuário quando o limite global da API retorna 429 (Mongo com TTL).",

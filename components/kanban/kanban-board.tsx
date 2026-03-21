@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useHotkeys } from "@/hooks/use-hotkeys";
+import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -156,6 +158,33 @@ function KanbanBoardLoaded({
     nlqAllowedIds,
     forceExpandTourFilters: productTourExpandFilters,
   });
+
+  const hotkeyPatterns = useMemo(() => resolveHotkeyPatterns(), []);
+  const { setPriorityBarVisible, searchInputRef } = filters;
+
+  const boardHotkeyBindings = useMemo(() => {
+    const p = hotkeyPatterns;
+    const m: Record<string, (e: KeyboardEvent) => void> = {};
+    m[p["board.newCard"]] = (e) => {
+      e.preventDefault();
+      router.push(`${localeRoot}/board/${boardId}?newCard=1`);
+    };
+    m[p["board.toggleFilters"]] = (e) => {
+      e.preventDefault();
+      setPriorityBarVisible((v) => !v);
+    };
+    m[p["board.focusSearch"]] = (e) => {
+      e.preventDefault();
+      setPriorityBarVisible(true);
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      });
+    };
+    return m;
+  }, [boardId, hotkeyPatterns, localeRoot, router, searchInputRef, setPriorityBarVisible]);
+
+  useHotkeys(boardHotkeyBindings);
 
   const dnd = useBoardDnd({
     buckets: board.buckets,

@@ -78,33 +78,6 @@ export function useBoardFilters({
     setSearchQuery("andamento");
   }, [setActiveLabels, setActivePrio, setSearchQuery]);
 
-  useEffect(() => {
-    const onKeyDown = (ev: KeyboardEvent) => {
-      const target = ev.target as HTMLElement | null;
-      const isTypingTarget =
-        !!target &&
-        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
-      if (ev.key === "/" && !isTypingTarget) {
-        ev.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-      if ((ev.key === "f" || ev.key === "F") && !isTypingTarget) {
-        ev.preventDefault();
-        setFocusMode((prev) => {
-          if (prev) {
-            clearFilters();
-            return false;
-          }
-          applyFocusMode();
-          return true;
-        });
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [applyFocusMode, clearFilters]);
-
   const filterCard = useCallback(
     (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds),
     [activePrio, activeLabels, searchQuery, nlqAllowedIds]
