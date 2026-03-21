@@ -24,6 +24,7 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
+import { BoardProductTour, type BoardProductTourHandle } from "@/components/board/board-product-tour";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -168,12 +169,16 @@ export default function BoardPage() {
   const router = useRouter();
   const params = useParams();
   const boardId = params.id as string;
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, token, setAuth } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
   const t = useTranslations("board");
+  const tTour = useTranslations("board.productTour");
   const localeRoot = `/${locale}`;
   const [boardName, setBoardName] = useState("Board");
+  const [clientLabel, setClientLabel] = useState<string | null>(null);
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  const tourRef = useRef<BoardProductTourHandle | null>(null);
   const db = useBoardStore((s) => s.db);
   const [loading, setLoading] = useState(true);
   const [automationsOpen, setAutomationsOpen] = useState(false);
@@ -187,6 +192,7 @@ export default function BoardPage() {
 
   const authWaiting = !isChecked || !user;
   const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
+  const tourExpandFilters = tourStep === 5;
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -227,6 +233,8 @@ export default function BoardPage() {
       if (!r.ok) throw new Error("Erro ao carregar");
       const d = await r.json();
       setBoardName(d.name || "Board");
+      const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
+      setClientLabel(rawClient || null);
       const cards = (d.cards || []).map((c: CardData, i: number) => ({
         ...c,
         order: c.order ?? i,
@@ -385,8 +393,31 @@ export default function BoardPage() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <DataFadeIn active key={boardId}>
         <div>
-          <Header title={boardName}>
+          <Header
+            title={boardName}
+            titleLine2={clientLabel ? t("clientLabelInHeader", { label: clientLabel }) : undefined}
+            boardTourHeader
+          >
             <div className="flex flex-wrap items-center justify-end gap-2">
+              {tourStep !== null && (
+                <button
+                  type="button"
+                  className="btn-secondary text-xs py-1.5 px-2"
+                  onClick={() => void tourRef.current?.skip()}
+                >
+                  {tTour("skip")}
+                </button>
+              )}
+              {tourStep === null && !user?.boardProductTourCompleted && (
+                <button type="button" className="btn-secondary text-xs py-1.5 px-2" onClick={() => tourRef.current?.redo()}>
+                  {tTour("start")}
+                </button>
+              )}
+              {tourStep === null && user?.boardProductTourCompleted && (
+                <button type="button" className="btn-secondary text-xs py-1.5 px-2" onClick={() => tourRef.current?.redo()}>
+                  {tTour("redo")}
+                </button>
+              )}
               <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
                 {t("automations.open")}
               </button>
@@ -451,6 +482,7 @@ export default function BoardPage() {
             priorities={PRIORITIES}
             progresses={PROGRESSES}
             directions={DIRECTIONS}
+            productTourExpandFilters={tourExpandFilters}
           />
         </div>
       </DataFadeIn>
@@ -502,6 +534,16 @@ export default function BoardPage() {
       />
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
+
+      <BoardProductTour
+        ref={tourRef}
+        token={token}
+        user={user}
+        setAuth={setAuth}
+        getHeaders={getHeaders}
+        tourStep={tourStep}
+        onTourStepChange={setTourStep}
+      />
     </div>
   );
 }

@@ -362,9 +362,10 @@ export function Sidebar() {
     label: React.ReactNode;
     hint: string;
     sublabel?: string;
+    dataTour?: string;
   };
 
-  function NavLink({ path, icon, label, hint, sublabel }: NavLinkProps) {
+  function NavLink({ path, icon, label, hint, sublabel, dataTour }: NavLinkProps) {
     const href = `/${locale}${path}`;
     const afterNav = () => {
       if (layout === "mobile") closeMobile();
@@ -373,6 +374,7 @@ export function Sidebar() {
       <Link
         href={href}
         onClick={afterNav}
+        data-tour={dataTour}
         className={`${linkClass(path)} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
       >
         <span className="mt-0.5 shrink-0">{icon}</span>
@@ -515,6 +517,7 @@ export function Sidebar() {
             icon={<IconReports className="h-4 w-4 shrink-0" />}
             label={t("reports")}
             sublabel={t("reportsProduct")}
+            dataTour="board-reports"
           />
           <NavLink
             path="/okrs"

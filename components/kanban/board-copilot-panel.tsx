@@ -534,6 +534,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
     <>
       <button
         type="button"
+        data-tour="board-copilot"
         className={`fixed z-[470] transition-all duration-200 active:scale-[0.98] ${
           open ? "right-[calc(min(440px,92vw)+16px)] top-[112px]" : "right-4 top-[112px]"
         }`}

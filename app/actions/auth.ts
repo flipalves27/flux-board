@@ -33,6 +33,7 @@ export type AuthResult =
         isAdmin: boolean;
         orgId: string;
         themePreference?: ThemePreference;
+        boardProductTourCompleted?: boolean;
       };
     }
   | { ok: false; error: string; retryAfterSeconds?: number };
@@ -88,6 +89,7 @@ export async function loginAction(
         isAdmin,
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
+        ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
     };
   } catch (err) {
@@ -183,6 +185,7 @@ export async function registerAction(
           isAdmin: false,
           orgId: user.orgId,
           ...(user.themePreference ? { themePreference: user.themePreference } : {}),
+          ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
         },
       };
     }
@@ -215,6 +218,7 @@ export async function registerAction(
         isAdmin: false,
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
+        ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
     };
   } catch (err) {
@@ -237,6 +241,7 @@ export type ValidateResult =
         isAdmin: boolean;
         orgId: string;
         themePreference?: ThemePreference;
+        boardProductTourCompleted?: boolean;
       };
     }
   | { ok: false };
@@ -262,6 +267,7 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
         isAdmin,
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
+        ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
     };
   } catch {

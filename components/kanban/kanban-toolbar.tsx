@@ -109,7 +109,12 @@ export function KanbanToolbar({
               <button type="button" onClick={onOpenMapa} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                 {t("board.filters.mapButton")}
               </button>
-              <button type="button" onClick={onOpenDaily} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
+              <button
+                type="button"
+                data-tour="board-daily"
+                onClick={onOpenDaily}
+                className="board-toolbar-btn-sm shrink-0 whitespace-nowrap"
+              >
                 {t("board.filters.dailyButton")}
               </button>
             </div>

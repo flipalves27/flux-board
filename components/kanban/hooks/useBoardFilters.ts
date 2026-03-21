@@ -35,6 +35,8 @@ type UseBoardFiltersArgs = {
   setSearchQuery: Dispatch<SetStateAction<string>>;
   /** Quando definido, só cards com id neste conjunto passam (consulta NLQ). */
   nlqAllowedIds?: Set<string> | null;
+  /** Tour guiado: mantém a barra de filtros expandida (passo Daily Insights). */
+  forceExpandTourFilters?: boolean;
 };
 
 export function useBoardFilters({
@@ -47,11 +49,16 @@ export function useBoardFilters({
   searchQuery,
   setSearchQuery,
   nlqAllowedIds = null,
+  forceExpandTourFilters = false,
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [priorityBarVisible, setPriorityBarVisible] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (forceExpandTourFilters) setPriorityBarVisible(true);
+  }, [forceExpandTourFilters]);
 
   useEffect(() => {
     const stillFocused = activePrio === "Urgente" && activeLabels.size === 0 && searchQuery === "andamento";

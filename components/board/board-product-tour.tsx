@@ -1,0 +1,265 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  forwardRef,
+} from "react";
+import { createPortal } from "react-dom";
+import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import type { AuthUser } from "@/context/auth-context";
+import { apiFetch, getApiHeaders } from "@/lib/api-client";
+import { useSidebarLayoutOptional } from "@/context/sidebar-layout-context";
+import { useCopilotStore } from "@/stores/copilot-store";
+
+const TOUR_SELECTORS = [
+  '[data-tour="board-header"]',
+  '[data-tour="board-column"]',
+  '[data-tour="board-new-card"]',
+  '[data-tour="board-card"]',
+  '[data-tour="board-copilot"]',
+  '[data-tour="board-daily"]',
+  '[data-tour="board-reports"]',
+] as const;
+
+export type BoardProductTourHandle = {
+  skip: () => void;
+  redo: () => void;
+};
+
+type BoardProductTourProps = {
+  token: string | null;
+  user: AuthUser | null;
+  setAuth: (token: string, user: AuthUser, remember?: boolean) => void;
+  getHeaders: () => Record<string, string>;
+  tourStep: number | null;
+  onTourStepChange: (step: number | null) => void;
+};
+
+function positionPopoverNear(
+  target: HTMLElement,
+  pop: HTMLElement,
+  setPos: (p: { top: number; left: number }) => void
+) {
+  const rect = target.getBoundingClientRect();
+  const pw = Math.min(360, window.innerWidth - 32);
+  const ph = pop.offsetHeight || 220;
+  let top = rect.bottom + 10;
+  let left = rect.left + rect.width / 2 - pw / 2;
+  if (top + ph > window.innerHeight - 16) {
+    top = Math.max(16, rect.top - ph - 10);
+  }
+  left = Math.max(16, Math.min(left, window.innerWidth - pw - 16));
+  setPos({ top, left });
+}
+
+export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductTourProps>(
+  function BoardProductTour({ token, user, setAuth, getHeaders, tourStep, onTourStepChange }, ref) {
+    const t = useTranslations("board.productTour");
+    const router = useRouter();
+    const pathname = usePathname();
+    const sidebarLayout = useSidebarLayoutOptional();
+    const layout = sidebarLayout?.layout ?? "desktop";
+    const openMobile = sidebarLayout?.openMobile ?? (() => {});
+
+    const active = tourStep !== null;
+    const stepIndex = tourStep ?? 0;
+    const total = TOUR_SELECTORS.length;
+
+    const popoverRef = useRef<HTMLDivElement | null>(null);
+    const highlightRef = useRef<HTMLElement | null>(null);
+    const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 80, left: 24 });
+    const titleHeadingId = useId();
+
+    const persistCompleted = useCallback(async () => {
+      if (!token || !user) return;
+      try {
+        await apiFetch("/api/users/me/product-tour", {
+          method: "PATCH",
+          body: JSON.stringify({ completed: true }),
+          headers: getApiHeaders(getHeaders()),
+        });
+        setAuth(token, { ...user, boardProductTourCompleted: true });
+      } catch {
+        // preference syncs on next login
+      }
+    }, [token, user, setAuth, getHeaders]);
+
+    const endTour = useCallback(() => {
+      onTourStepChange(null);
+      highlightRef.current?.classList.remove("flux-tour-highlight");
+      highlightRef.current = null;
+      const pop = popoverRef.current as HTMLElement & { hidePopover?: () => void };
+      if (typeof pop?.hidePopover === "function") pop.hidePopover();
+    }, [onTourStepChange]);
+
+    const skip = useCallback(async () => {
+      await persistCompleted();
+      endTour();
+    }, [persistCompleted, endTour]);
+
+    const redo = useCallback(() => {
+      useCopilotStore.getState().setOpen(false);
+      onTourStepChange(0);
+    }, [onTourStepChange]);
+
+    useImperativeHandle(ref, () => ({ skip, redo }), [skip, redo]);
+
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      const wantTour = new URLSearchParams(window.location.search).get("tour") === "1";
+      if (!wantTour) return;
+      if (!user) return;
+      if (user.boardProductTourCompleted) {
+        router.replace(pathname, { scroll: false });
+        return;
+      }
+      useCopilotStore.getState().setOpen(false);
+      onTourStepChange(0);
+      router.replace(pathname, { scroll: false });
+    }, [user, pathname, router, onTourStepChange]);
+
+    useEffect(() => {
+      if (!active) return;
+      useCopilotStore.getState().setOpen(false);
+    }, [active]);
+
+    useLayoutEffect(() => {
+      if (!active) return;
+      const sel = TOUR_SELECTORS[stepIndex];
+      if (!sel) return;
+
+      const applyHighlight = () => {
+        highlightRef.current?.classList.remove("flux-tour-highlight");
+        let el = document.querySelector(sel) as HTMLElement | null;
+        const finish = (node: HTMLElement) => {
+          node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          node.classList.add("flux-tour-highlight");
+          highlightRef.current = node;
+          requestAnimationFrame(() => {
+            const pop = popoverRef.current;
+            if (pop) positionPopoverNear(node, pop, setPopoverPos);
+          });
+        };
+
+        if (stepIndex === 6 && layout === "mobile") {
+          openMobile();
+          requestAnimationFrame(() => {
+            el = document.querySelector(sel) as HTMLElement | null;
+            if (el) finish(el);
+          });
+          return;
+        }
+        if (el) finish(el);
+      };
+
+      const id = requestAnimationFrame(applyHighlight);
+      const onResize = () => {
+        const h = highlightRef.current;
+        const pop = popoverRef.current;
+        if (h?.classList.contains("flux-tour-highlight") && pop) {
+          positionPopoverNear(h, pop, setPopoverPos);
+        }
+      };
+      window.addEventListener("resize", onResize);
+      window.addEventListener("scroll", onResize, true);
+      return () => {
+        cancelAnimationFrame(id);
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("scroll", onResize, true);
+        highlightRef.current?.classList.remove("flux-tour-highlight");
+      };
+    }, [active, stepIndex, layout, openMobile]);
+
+    useLayoutEffect(() => {
+      if (!active) return;
+      const pop = popoverRef.current as HTMLElement & { showPopover?: () => void };
+      if (pop && typeof pop.showPopover === "function") {
+        try {
+          pop.showPopover();
+        } catch {
+          /* Popover API opcional em browsers antigos */
+        }
+      }
+      requestAnimationFrame(() => {
+        const h = highlightRef.current;
+        const p = popoverRef.current;
+        if (h && p) positionPopoverNear(h, p, setPopoverPos);
+      });
+    }, [active, stepIndex, tourStep]);
+
+    const next = useCallback(async () => {
+      if (stepIndex >= total - 1) {
+        await persistCompleted();
+        endTour();
+        return;
+      }
+      onTourStepChange(stepIndex + 1);
+    }, [stepIndex, total, persistCompleted, endTour, onTourStepChange]);
+
+    const onBackdropPointerDown = useCallback((e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, []);
+
+    if (typeof document === "undefined") return null;
+
+    const stepKey = [
+      "header",
+      "column",
+      "newCard",
+      "card",
+      "copilot",
+      "daily",
+      "reports",
+    ][stepIndex] as "header" | "column" | "newCard" | "card" | "copilot" | "daily" | "reports";
+
+    if (!active) return null;
+
+    return createPortal(
+      <>
+        <div
+          className="fixed inset-0 z-[468] bg-transparent"
+          aria-hidden
+          onPointerDown={onBackdropPointerDown}
+        />
+        <div
+          ref={popoverRef}
+          popover="manual"
+          role="dialog"
+          aria-labelledby={titleHeadingId}
+          className="flux-tour-popover m-0 flex max-w-[min(360px,calc(100vw-32px))] flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-4 text-[var(--flux-text)] shadow-[var(--flux-shadow-xl)]"
+          style={{
+            position: "fixed",
+            top: popoverPos.top,
+            left: popoverPos.left,
+            zIndex: 477,
+          }}
+        >
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)]">
+            {t("progress", { current: stepIndex + 1, total })}
+          </div>
+          <h2 id={titleHeadingId} className="font-display text-sm font-bold text-[var(--flux-text)]">
+            {t(`steps.${stepKey}.title`)}
+          </h2>
+          <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">{t(`steps.${stepKey}.body`)}</p>
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+            <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => void skip()}>
+              {t("skip")}
+            </button>
+            <button type="button" className="btn-primary px-3 py-1.5 text-xs" onClick={() => void next()}>
+              {stepIndex >= total - 1 ? t("done") : t("next")}
+            </button>
+          </div>
+        </div>
+      </>,
+      document.body
+    );
+  }
+);

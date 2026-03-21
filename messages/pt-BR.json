@@ -673,6 +673,7 @@
     }
   },
   "board": {
+    "clientLabelInHeader": "Cliente: {label}",
     "loading": "Carregando board...",
     "anomalyAlerts": {
       "open": "Alertas",
@@ -752,6 +753,44 @@
       "noPermission": "Sem permissão para este board.",
       "loadError": "Erro ao carregar board.",
       "saveError": "Falha ao salvar alterações. Verifique sua conexão e tente novamente."
+    },
+    "productTour": {
+      "skip": "Pular tour",
+      "start": "Tour guiado",
+      "redo": "Refazer tour",
+      "next": "Próximo",
+      "done": "Concluir",
+      "progress": "Passo {current} de {total}",
+      "steps": {
+        "header": {
+          "title": "Nome do board e cliente",
+          "body": "O título identifica este quadro. Quando existir, o rótulo do cliente aparece abaixo — útil para portfólio e portal."
+        },
+        "column": {
+          "title": "Colunas = estágios",
+          "body": "Cada coluna representa um estágio do fluxo (ex.: Backlog → Em execução). Arraste a coluna pelo cabeçalho para reordenar."
+        },
+        "newCard": {
+          "title": "Novo card",
+          "body": "Use o + na coluna para criar um card nesse estágio. O card herda a coluna em que foi criado."
+        },
+        "card": {
+          "title": "Arrastar entre colunas",
+          "body": "Arraste o card para outra coluna para mudar o estágio. A ordem dentro da coluna também pode ser ajustada arrastando."
+        },
+        "copilot": {
+          "title": "Copiloto IA",
+          "body": "Abra o Copiloto para perguntas em linguagem natural sobre o board, métricas e próximos passos."
+        },
+        "daily": {
+          "title": "Daily Insights",
+          "body": "Gere resumos e ações a partir de transcrições ou notas — a IA organiza o contexto e sugere cards."
+        },
+        "reports": {
+          "title": "Relatórios",
+          "body": "Em Relatórios você vê métricas agregadas da organização, gráficos e narrativa sobre o desempenho."
+        }
+      }
     },
     "portal": {
       "open": "Portal do cliente",
@@ -1429,6 +1468,7 @@
       "collapsedAriaLabel": "Coluna {label}. {count} card(s). Clique para expandir.",
       "dragAriaLabel": "Coluna {label}. {count} card(s). Arraste para reorganizar.",
       "dropRegionAriaLabel": "Coluna {label}. Área para soltar cards.",
+      "tourEmptyCardHint": "Nenhum card ainda — use + acima para criar o primeiro.",
       "tooltips": {
         "newCard": "Novo card",
         "renameColumn": "Renomear coluna",

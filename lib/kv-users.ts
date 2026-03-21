@@ -33,6 +33,8 @@ export interface User {
   isAdmin: boolean;
   orgId: string;
   themePreference?: ThemePreference;
+  /** Quando true, o tour guiado do board não inicia mais automaticamente. */
+  boardProductTourCompleted?: boolean;
 }
 
 type UserDoc = {
@@ -46,6 +48,7 @@ type UserDoc = {
   usernameLower: string;
   emailLower: string;
   themePreference?: ThemePreference;
+  boardProductTourCompleted?: boolean;
 };
 
 function recreateAdminUser(): User {
@@ -66,6 +69,7 @@ function toUser(doc: UserDoc): User {
     isAdmin: !!doc.isAdmin,
     orgId: doc.orgId || DEFAULT_ORG_ID,
     ...(tp === "light" || tp === "dark" || tp === "system" ? { themePreference: tp } : {}),
+    ...(doc.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
   };
 }
 
@@ -317,6 +321,9 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
         $set.themePreference = tp;
       }
     }
+    if (updates.boardProductTourCompleted !== undefined) {
+      $set.boardProductTourCompleted = !!updates.boardProductTourCompleted;
+    }
     // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
     if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
     return getUserById(id, orgId);
@@ -340,6 +347,9 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     if (tp === "light" || tp === "dark" || tp === "system") {
       user.themePreference = tp;
     }
+  }
+  if (updates.boardProductTourCompleted !== undefined) {
+    user.boardProductTourCompleted = !!updates.boardProductTourCompleted;
   }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
   return user;

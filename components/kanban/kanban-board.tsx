@@ -32,6 +32,8 @@ export interface KanbanBoardProps {
   priorities: string[];
   progresses: string[];
   directions: string[];
+  /** Expande filtros para o passo do tour (Daily Insights). */
+  productTourExpandFilters?: boolean;
 }
 
 function KanbanBoardLoaded({
@@ -42,6 +44,7 @@ function KanbanBoardLoaded({
   priorities,
   progresses,
   directions,
+  productTourExpandFilters,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
   const router = useRouter();
@@ -90,6 +93,7 @@ function KanbanBoardLoaded({
     searchQuery,
     setSearchQuery,
     nlqAllowedIds,
+    forceExpandTourFilters: productTourExpandFilters,
   });
 
   const dnd = useBoardDnd({

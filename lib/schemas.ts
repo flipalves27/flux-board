@@ -636,3 +636,7 @@ export const UserThemePreferenceSchema = z.object({
   themePreference: z.enum(["light", "dark", "system"]),
 });
 
+export const ProductTourPatchSchema = z.object({
+  completed: z.boolean(),
+});
+

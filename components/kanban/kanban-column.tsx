@@ -22,6 +22,8 @@ interface KanbanColumnProps {
   onOpenDesc?: (cardId: string) => void;
   directions: string[];
   dirColors: Record<string, string>;
+  /** Primeira coluna do board (marcadores do tour guiado). */
+  isFirstColumn?: boolean;
 }
 
 function DroppableSlot({ id }: { id: string }) {
@@ -52,6 +54,7 @@ export function KanbanColumn({
   onOpenDesc,
   directions,
   dirColors,
+  isFirstColumn,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
   const {
@@ -75,6 +78,7 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
+      {...(isFirstColumn ? { "data-tour": "board-column" as const } : {})}
       className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
         collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
       } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""}`}
@@ -124,6 +128,7 @@ export function KanbanColumn({
           <CustomTooltip content={t("column.tooltips.newCard")} position="top">
             <button
               type="button"
+              data-tour={isFirstColumn ? "board-new-card" : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 onAddCard();
@@ -186,6 +191,14 @@ export function KanbanColumn({
           aria-label={t("column.dropRegionAriaLabel", { label: bucket.label })}
           className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
         >
+          {isFirstColumn && cards.length === 0 ? (
+            <div
+              data-tour="board-card"
+              className="min-h-[52px] rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-black-alpha-08)] flex items-center justify-center px-2 text-center text-[11px] text-[var(--flux-text-muted)]"
+            >
+              {t("column.tourEmptyCardHint")}
+            </div>
+          ) : null}
           {cards.map((c, idx) => (
             <div key={c.id} className="flex flex-col gap-1">
               <DroppableSlot id={`slot-${bucket.key}-${idx}`} />
@@ -197,6 +210,7 @@ export function KanbanColumn({
                 onDelete={onDeleteCard}
                 onSetDirection={onSetDirection}
                 onOpenDesc={onOpenDesc}
+                tourFirstCard={!!isFirstColumn && idx === 0}
               />
             </div>
           ))}

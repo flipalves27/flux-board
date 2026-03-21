@@ -184,7 +184,7 @@ export function KanbanBoardCanvas({
           }}
         >
           <SortableContext items={buckets.map((b) => b.key)} strategy={horizontalListSortingStrategy}>
-            {buckets.map((b) => (
+            {buckets.map((b, colIdx) => (
               <KanbanColumn
                 key={b.key}
                 bucket={b}
@@ -200,6 +200,7 @@ export function KanbanBoardCanvas({
                 onOpenDesc={onOpenDesc}
                 directions={directions}
                 dirColors={DIR_COLORS}
+                isFirstColumn={colIdx === 0}
               />
             ))}
           </SortableContext>

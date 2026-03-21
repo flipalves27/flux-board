@@ -1033,6 +1033,16 @@
   }
 }
 
+/* Product tour — spotlight via large box-shadow on the target (see board-product-tour.tsx) */
+.flux-tour-highlight {
+  position: relative !important;
+  z-index: 475 !important;
+  box-shadow: 0 0 0 9999px rgba(6, 4, 12, 0.72);
+  border-radius: var(--flux-rad, 0.75rem);
+  outline: 2px solid var(--flux-primary);
+  outline-offset: 3px;
+}
+
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),

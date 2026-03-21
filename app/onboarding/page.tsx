@@ -392,7 +392,7 @@ export default function OnboardingPage() {
       );
 
       markDone();
-      router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}`);
+      router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}?tour=1`);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : t("errors.createCard");
       setInitError(msg);
@@ -416,7 +416,7 @@ export default function OnboardingPage() {
 
   const handleSkipStep3 = useCallback(async () => {
     markDone();
-    if (boardId) router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}`);
+    if (boardId) router.replace(`${localeRoot}/board/${encodeURIComponent(boardId)}?tour=1`);
     else router.replace(`${localeRoot}/boards`);
   }, [boardId, markDone, router, localeRoot]);
 

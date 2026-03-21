@@ -219,9 +219,10 @@ export default function BoardsPage() {
   async function createBoard() {
     try {
       const name = boardName.trim() || t("defaults.newBoardName");
+      const wasFirstBoard = boards.length === 0;
       const { board } = await apiPost<{ board: Board }>("/api/boards", { name }, getHeaders());
       setModalOpen(false);
-      router.push(`${localeRoot}/board/${board.id}`);
+      router.push(`${localeRoot}/board/${board.id}${wasFirstBoard ? "?tour=1" : ""}`);
     } catch {
       pushToast({ kind: "error", title: "Erro ao criar board." });
     }

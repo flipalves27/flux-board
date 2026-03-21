@@ -101,7 +101,6 @@ export function BoardTimelineView({
     const fullOrder = [...order, ...extras.sort((a, b) => a.localeCompare(b))];
 
     for (const p of fullOrder) {
-      seenPriority.add(p);
       const groupCards = withDueBase.filter((c) => c.priority === p).sort(sortCardsByDueThenTitle);
       if (groupCards.length === 0) continue;
       rows.push({ kind: "group", key: `prio:${p}`, label: p });

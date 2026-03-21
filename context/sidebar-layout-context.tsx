@@ -65,3 +65,8 @@ export function useSidebarLayout(): SidebarLayoutContextValue {
   }
   return ctx;
 }
+
+/** Quando o layout com sidebar não está montado (ex.: rota pública), retorna null. */
+export function useSidebarLayoutOptional(): SidebarLayoutContextValue | null {
+  return useContext(SidebarLayoutContext);
+}

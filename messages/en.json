@@ -672,6 +672,7 @@
     }
   },
   "board": {
+    "clientLabelInHeader": "Client: {label}",
     "loading": "Loading board...",
     "anomalyAlerts": {
       "open": "Alerts",
@@ -751,6 +752,44 @@
       "noPermission": "No permission for this board.",
       "loadError": "Error loading board.",
       "saveError": "Failed to save changes. Check your connection and try again."
+    },
+    "productTour": {
+      "skip": "Skip tour",
+      "start": "Guided tour",
+      "redo": "Replay tour",
+      "next": "Next",
+      "done": "Done",
+      "progress": "Step {current} of {total}",
+      "steps": {
+        "header": {
+          "title": "Board name and client",
+          "body": "The title identifies this board. When set, the client label appears below — useful for portfolio and the portal."
+        },
+        "column": {
+          "title": "Columns are stages",
+          "body": "Each column is a workflow stage (e.g. Backlog → In progress). Drag the column header to reorder."
+        },
+        "newCard": {
+          "title": "New card",
+          "body": "Use + on the column to create a card in that stage. The card inherits the column where it was created."
+        },
+        "card": {
+          "title": "Drag between columns",
+          "body": "Drag a card to another column to change its stage. You can also reorder within a column by dragging."
+        },
+        "copilot": {
+          "title": "AI Copilot",
+          "body": "Open Copilot for natural-language questions about the board, metrics, and next steps."
+        },
+        "daily": {
+          "title": "Daily Insights",
+          "body": "Generate summaries and actions from transcripts or notes — AI organizes context and suggests cards."
+        },
+        "reports": {
+          "title": "Reports",
+          "body": "In Reports you see org-wide metrics, charts, and narrative about performance."
+        }
+      }
     },
     "portal": {
       "open": "Client portal",
@@ -1082,6 +1121,7 @@
       "collapsedAriaLabel": "Column {label}. {count} card(s). Click to expand.",
       "dragAriaLabel": "Column {label}. {count} card(s). Drag to reorder.",
       "dropRegionAriaLabel": "Column {label}. Drop cards area.",
+      "tourEmptyCardHint": "No cards yet — use + above to create the first one.",
       "tooltips": {
         "newCard": "New card",
         "renameColumn": "Rename column",

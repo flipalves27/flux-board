@@ -15,6 +15,7 @@ export interface AuthUser {
   isAdmin: boolean;
   orgId: string;
   themePreference?: ThemePreference;
+  boardProductTourCompleted?: boolean;
 }
 
 export interface AuthState {

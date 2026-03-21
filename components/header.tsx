@@ -7,13 +7,25 @@ import { AnomalyNotificationBell } from "@/components/anomaly-notification-bell"
 
 interface HeaderProps {
   title?: string;
+  /** Linha secundária (ex.: rótulo do cliente no board). */
+  titleLine2?: string;
+  /** Quando true, agrupa título + linha 2 para o tour guiado (`data-tour`). */
+  boardTourHeader?: boolean;
   backHref?: string;
   backLabel?: string;
   hideDiscovery?: boolean;
   children?: React.ReactNode;
 }
 
-export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards", hideDiscovery, children }: HeaderProps) {
+export function Header({
+  title = "Flux-Board",
+  titleLine2,
+  boardTourHeader,
+  backHref,
+  backLabel = "← Boards",
+  hideDiscovery,
+  children,
+}: HeaderProps) {
   const { user } = useAuth();
   const t = useTranslations("header");
 
@@ -29,19 +41,40 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
               {backLabel}
             </Link>
           )}
-          <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)]">
-            <span
-              className="bg-clip-text text-transparent"
-              style={{
-                backgroundImage: "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
-              }}
-            >
-              Flux-Board
-            </span>
-            {title && title !== "Flux-Board" && (
-              <span className="text-[var(--flux-text-muted)] font-medium"> — {title}</span>
-            )}
-          </h1>
+          {boardTourHeader ? (
+            <div data-tour="board-header" className="min-w-0 flex flex-col gap-0.5">
+              <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)]">
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
+                  }}
+                >
+                  Flux-Board
+                </span>
+                {title && title !== "Flux-Board" && (
+                  <span className="text-[var(--flux-text-muted)] font-medium"> — {title}</span>
+                )}
+              </h1>
+              {titleLine2 ? (
+                <p className="text-xs text-[var(--flux-text-muted)] truncate max-w-[min(560px,70vw)]">{titleLine2}</p>
+              ) : null}
+            </div>
+          ) : (
+            <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)]">
+              <span
+                className="bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
+                }}
+              >
+                Flux-Board
+              </span>
+              {title && title !== "Flux-Board" && (
+                <span className="text-[var(--flux-text-muted)] font-medium"> — {title}</span>
+              )}
+            </h1>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           {user && (

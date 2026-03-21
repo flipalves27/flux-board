@@ -15,6 +15,7 @@ interface KanbanCardProps {
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc?: (cardId: string) => void;
   isDragging?: boolean;
+  tourFirstCard?: boolean;
 }
 
 function daysRemaining(dueDate: string | null): number | null {
@@ -33,6 +34,7 @@ function KanbanCardInner({
   onSetDirection,
   onOpenDesc,
   isDragging = false,
+  tourFirstCard,
 }: KanbanCardProps) {
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
 
@@ -89,6 +91,7 @@ function KanbanCardInner({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      data-tour={tourFirstCard ? "board-card" : undefined}
       aria-label={ariaLabel}
       onClick={(e) => {
         if (!(e.target as HTMLElement).closest(".dir-btn") && !(e.target as HTMLElement).closest(".card-delete")) {
