@@ -8,6 +8,8 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -71,6 +73,7 @@ type FluxReportsPayload = {
   }>;
   meta: { copilotHistory: boolean; boardCount: number };
   sprintPrediction: SprintPredictionPayload;
+  sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }>;
 };
 
 function riskHeatColor(risco: number | null): string {
@@ -151,6 +154,50 @@ export function FluxReportsDashboard() {
       <ProactiveAiPanel />
 
       <SprintPredictionPanel prediction={data.sprintPrediction} />
+
+      <ChartShell
+        title={t("charts.sentiment")}
+        hint={t("hints.sentiment")}
+        chartId="sentiment"
+        explainPayload={{ sentimentHistory: data.sentimentHistory }}
+      >
+        {!data.sentimentHistory.length ? (
+          <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+        ) : (
+          <div className="h-[260px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.sentimentHistory} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--flux-surface-card)",
+                    border: "1px solid var(--flux-primary-alpha-25)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(value: number) => [`${value}/100`, t("series.sentimentScore")]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line
+                  type="monotone"
+                  dataKey="avgScore"
+                  name={t("series.sentimentScore")}
+                  stroke="var(--flux-info)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </ChartShell>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">

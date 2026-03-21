@@ -173,18 +173,21 @@
       "heatmap": "Mapa de calor do portfólio",
       "velocity": "Cards por responsável",
       "byColumn": "Em aberto por coluna",
-      "byPriority": "Em aberto por prioridade"
+      "byPriority": "Em aberto por prioridade",
+      "sentiment": "Clima do time (digest semanal)"
     },
     "hints": {
       "leadTime": "Lead time estimado para concluídos: dias entre criação do card e última atualização do board (aproximação).",
       "heatmap": "Cor indica exposição a risco: vermelho = mais crítico; verde = mais saudável. Baseado no índice heurístico do Flux-Board.",
-      "velocity": "Requer campo owner (ou assignee) no card. Caso contrário, o gráfico ficará vazio."
+      "velocity": "Requer campo owner (ou assignee) no card. Caso contrário, o gráfico ficará vazio.",
+      "sentiment": "Média do score 0–100 por semana de digest a partir de textos de cards e Daily Insights (lote, sem identificação individual). Os pontos aparecem após o job do digest semanal com MongoDB ativo."
     },
     "series": {
       "concluded": "Concluídos",
       "created": "Criados (Copilot)",
       "concludedCopilot": "Concluídos (Copilot)",
-      "cards": "Cards"
+      "cards": "Cards",
+      "sentimentScore": "Clima médio"
     },
     "sprint": {
       "title": "Planejamento preditivo de sprint",

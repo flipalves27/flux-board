@@ -12,8 +12,17 @@ import { WeeklyDigestEmail } from "@/emails/WeeklyDigestEmail";
 import type { WeeklyDigestBoard, WeeklyDigestOverdueCard, WeeklyDigestOkrSection } from "@/emails/WeeklyDigestEmail";
 
 import type { BoardData } from "@/lib/kv-boards";
-import { computeOverdueCards, computeWeeklyToolMetricsFromCopilotChats } from "@/lib/weekly-digest-metrics";
+import {
+  computeOverdueCards,
+  computeWeeklyToolMetricsFromCopilotChats,
+} from "@/lib/weekly-digest-metrics";
 import { generateBoardWeeklyDigestInsightAI } from "@/lib/weekly-digest-llm";
+import { buildWeeklySentimentCorpus, generateBoardWeeklySentimentAI } from "@/lib/weekly-digest-sentiment-llm";
+import {
+  ensureBoardWeeklySentimentIndexes,
+  getSentimentScoreForBoardWeek,
+  upsertBoardWeeklySentiment,
+} from "@/lib/board-weekly-sentiment";
 import { generateOkrWeeklyDigestBlockAI } from "@/lib/okr-weekly-digest-llm";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
@@ -166,6 +175,8 @@ export async function GET(request: NextRequest) {
       const weekCurrent = { startMs: weekStartMs, endMs: weekEndMs };
       const weekPrevious = { startMs: prevStartMs, endMs: weekStartMs };
 
+      await ensureBoardWeeklySentimentIndexes(db);
+
       // Buscamos chats atualizados desde o início da semana anterior.
       const prevStartIso = new Date(prevStartMs).toISOString();
       const copilotChats = await db
@@ -253,6 +264,41 @@ export async function GET(request: NextRequest) {
           allowAI,
         });
 
+        const previousWeekSentimentScore = await getSentimentScoreForBoardWeek({
+          db,
+          orgId,
+          boardId,
+          weekStartMs: prevStartMs,
+        });
+
+        const { corpus: sentimentCorpus } = buildWeeklySentimentCorpus({
+          board,
+          boardId,
+          weekRange: weekCurrent,
+          copilotChats: copilotChats as any,
+        });
+
+        const sentimentResult = await generateBoardWeeklySentimentAI({
+          boardName: board.name || "Board",
+          corpus: sentimentCorpus,
+          previousWeekScore: previousWeekSentimentScore,
+          allowAI,
+        });
+
+        await upsertBoardWeeklySentiment({
+          db,
+          doc: {
+            orgId,
+            boardId,
+            weekStartMs,
+            weekStartIso: new Date(weekStartMs).toISOString().slice(0, 10),
+            score: sentimentResult.score,
+            category: sentimentResult.category,
+            trend: sentimentResult.trend,
+            trendDelta: sentimentResult.trendDelta,
+          },
+        });
+
         const emailOverdue: WeeklyDigestOverdueCard[] = overdueCards.slice(0, 5).map((c) => ({
           title: c.title,
           bucket: c.bucket,
@@ -291,6 +337,14 @@ export async function GET(request: NextRequest) {
           overdueCards: emailOverdue,
           insight: insightResult.insight,
           summary: insightResult.summary,
+          teamMood: {
+            emoji: sentimentResult.emoji,
+            score: sentimentResult.score,
+            trend: sentimentResult.trend,
+            trendDelta: sentimentResult.trendDelta,
+            previousScore: previousWeekSentimentScore,
+            signalExamples: sentimentResult.signalExamples.slice(0, 3),
+          },
         };
 
         boardsForEmail.push(boardsForBoard);
@@ -308,6 +362,19 @@ export async function GET(request: NextRequest) {
         })
       );
 
+      const moodLine = (b: WeeklyDigestBoard) => {
+        const m = b.teamMood;
+        if (!m) return "";
+        const arrow = m.trend === "up" ? "↑" : m.trend === "down" ? "↓" : "→";
+        const delta =
+          m.trendDelta !== null
+            ? `${m.trendDelta > 0 ? "+" : ""}${m.trendDelta} pts`
+            : m.previousScore === null
+              ? "sem baseline"
+              : "estável";
+        return `Clima do time: ${m.emoji} ${m.score}/100 (${arrow} ${delta} vs semana anterior)`;
+      };
+
       const text = [
         `Weekly Digest IA - ${org.name}`,
         `Período: ${weekLabel}`,
@@ -315,6 +382,7 @@ export async function GET(request: NextRequest) {
         okrSection
           ? `OKRs (${okrSection.quarter}): ${okrSection.headline} | alertas: ${okrSection.riskAlerts.length}`
           : "",
+        ...boardsForEmail.flatMap((b) => [`--- ${b.boardName} ---`, moodLine(b)].filter(Boolean)),
       ]
         .filter(Boolean)
         .join("\n");

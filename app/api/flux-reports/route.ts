@@ -20,8 +20,14 @@ import {
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
+import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
 
 const NUM_WEEKS = 8;
+
+function weekStartLabelFromMs(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
 /**
  * Agregação org-wide para Flux Reports (dashboard ao vivo).
@@ -54,6 +60,7 @@ export async function GET(request: NextRequest) {
     const boardIds = boards.map((b) => b.id).filter(Boolean);
 
     let copilotChats: CopilotChatDocLike[] = [];
+    const sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }> = [];
     if (isMongoConfigured() && boardIds.length) {
       const db = await getDb();
       const oldestStart = weeks[0]?.startMs ?? nowMs - NUM_WEEKS * 7 * 24 * 60 * 60 * 1000;
@@ -62,6 +69,16 @@ export async function GET(request: NextRequest) {
         .collection("board_copilot_chats")
         .find({ orgId: payload.orgId, boardId: { $in: boardIds }, updatedAt: { $gte: prevStartIso } })
         .toArray()) as CopilotChatDocLike[];
+
+      await ensureBoardWeeklySentimentIndexes(db);
+      const sentimentPts = await listOrgSentimentHistory({ db, orgId: payload.orgId, maxWeeks: NUM_WEEKS });
+      sentimentHistory.push(
+        ...sentimentPts.map((p) => ({
+          weekLabel: weekStartLabelFromMs(p.weekStartMs),
+          avgScore: p.avgScore,
+          boardCount: p.boardCount,
+        }))
+      );
     }
 
     const weeklyThroughput = buildWeeklyThroughputFromCopilot(copilotChats, boardIds, weeks);
@@ -124,6 +141,7 @@ export async function GET(request: NextRequest) {
       distribution: { byColumn, byPriority },
       portfolioHeatmap: heatmap,
       sprintPrediction,
+      sentimentHistory,
       meta: {
         copilotHistory: copilotChats.length > 0,
         boardCount: boards.length,

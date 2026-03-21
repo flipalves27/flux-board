@@ -27,6 +27,8 @@ export type WeeklyBoardToolMetrics = {
 
 type CopilotToolName = "moveCard" | "createCard" | "updatePriority" | "generateBrief";
 
+export type CopilotCardTouchTool = "createCard" | "moveCard" | "updatePriority";
+
 type CopilotToolResultLike = {
   tool?: string;
   ok?: boolean;
@@ -39,7 +41,7 @@ type CopilotMessageLike = {
   meta?: { toolResults?: CopilotToolResultLike[] } | null;
 };
 
-type CopilotChatDocLike = {
+export type CopilotChatDocLike = {
   boardId?: string;
   orgId?: string;
   updatedAt?: string;
@@ -113,6 +115,76 @@ function extractProgressForConcluded(tool: CopilotToolName, data: any): "Conclu�
     return null;
   }
   return null;
+}
+
+function parseIsoMsMaybe(raw: unknown): number | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const t = new Date(raw.trim()).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+/**
+ * IDs de cards tocados via copilot na janela (criação, movimento, prioridade).
+ */
+export function collectCardIdsTouchedInCopilotWindow(args: {
+  boardId: string;
+  copilotChats: CopilotChatDocLike[];
+  range: { startMs: number; endMs: number };
+  tools?: CopilotCardTouchTool[];
+}): Set<string> {
+  const { boardId, copilotChats, range } = args;
+  const tools = args.tools ?? (["createCard", "moveCard", "updatePriority"] as CopilotCardTouchTool[]);
+  const toolSet = new Set<string>(tools);
+  const ids = new Set<string>();
+
+  for (const chat of copilotChats) {
+    const bid = typeof chat?.boardId === "string" ? chat.boardId : undefined;
+    if (!bid || bid !== boardId) continue;
+
+    const messages = Array.isArray(chat?.messages) ? chat.messages : [];
+    for (const msg of messages) {
+      if (msg?.role !== "assistant") continue;
+      const createdAtIso = msg?.createdAt;
+      if (!createdAtIso || typeof createdAtIso !== "string") continue;
+      const tsMs = new Date(createdAtIso).getTime();
+      if (Number.isNaN(tsMs) || !inRange(tsMs, range.startMs, range.endMs)) continue;
+
+      const toolResults = msg?.meta?.toolResults;
+      if (!Array.isArray(toolResults)) continue;
+
+      for (const tr of toolResults) {
+        if (!tr?.ok) continue;
+        const tool = tr?.tool as CopilotToolName | undefined;
+        if (!tool || !toolSet.has(tool as CopilotCardTouchTool)) continue;
+        const data = tr?.data;
+        const cardId =
+          data && typeof data === "object" && typeof (data as any).cardId === "string" ? String((data as any).cardId).trim() : "";
+        if (cardId) ids.add(cardId);
+      }
+    }
+  }
+
+  return ids;
+}
+
+/**
+ * IDs de cards com columnEnteredAt ou completedAt no intervalo.
+ */
+export function collectCardIdsFromDateFieldsInWindow(board: BoardData, range: { startMs: number; endMs: number }): Set<string> {
+  const ids = new Set<string>();
+  const cards = Array.isArray(board.cards) ? board.cards : [];
+  for (const c of cards) {
+    if (!c || typeof c !== "object") continue;
+    const rec = c as Record<string, unknown>;
+    const id = typeof rec.id === "string" ? rec.id : "";
+    if (!id) continue;
+    const ce = parseIsoMsMaybe(rec.columnEnteredAt);
+    const cp = parseIsoMsMaybe(rec.completedAt);
+    const hit =
+      (ce !== null && ce >= range.startMs && ce < range.endMs) || (cp !== null && cp >= range.startMs && cp < range.endMs);
+    if (hit) ids.add(id);
+  }
+  return ids;
 }
 
 export function computeWeeklyToolMetricsFromCopilotChats(args: {

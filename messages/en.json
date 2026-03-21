@@ -173,18 +173,21 @@
       "heatmap": "Portfolio heatmap",
       "velocity": "Cards by assignee",
       "byColumn": "Open work by column",
-      "byPriority": "Open work by priority"
+      "byPriority": "Open work by priority",
+      "sentiment": "Team mood (weekly digest)"
     },
     "hints": {
       "leadTime": "Lead time for completed cards is estimated from card creation to last board update (approximation).",
       "heatmap": "Color reflects risk exposure: red = more critical; green = healthier. Based on Flux-Board heuristics.",
-      "velocity": "Requires an owner (or assignee) field on cards; otherwise the chart may be empty."
+      "velocity": "Requires an owner (or assignee) field on cards; otherwise the chart may be empty.",
+      "sentiment": "Average 0–100 mood score per digest week from card text and Daily Insights (batch, no individual attribution). Data appears after the weekly digest job runs with MongoDB enabled."
     },
     "series": {
       "concluded": "Completed",
       "created": "Created (Copilot)",
       "concludedCopilot": "Completed (Copilot)",
-      "cards": "Cards"
+      "cards": "Cards",
+      "sentimentScore": "Avg. mood"
     },
     "sprint": {
       "title": "Predictive sprint planning",

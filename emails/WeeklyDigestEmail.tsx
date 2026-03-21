@@ -20,6 +20,15 @@ export type WeeklyDigestOverdueCard = {
   action: string;
 };
 
+export type WeeklyDigestTeamMood = {
+  emoji: string;
+  score: number;
+  trend: "up" | "down" | "flat";
+  trendDelta: number | null;
+  previousScore: number | null;
+  signalExamples: string[];
+};
+
 export type WeeklyDigestBoard = {
   boardName: string;
   created: number;
@@ -30,6 +39,7 @@ export type WeeklyDigestBoard = {
   overdueCards: WeeklyDigestOverdueCard[];
   insight: string;
   summary: string;
+  teamMood?: WeeklyDigestTeamMood | null;
 };
 
 export type WeeklyDigestOkrSection = {
@@ -130,6 +140,32 @@ export function WeeklyDigestEmail({
                 <Text style={line}>
                   <strong>Concluídos:</strong> {b.concluded} | <strong>Throughput:</strong> {b.throughputCurrent} (vs {b.throughputPrevious})
                 </Text>
+
+                {b.teamMood && (
+                  <Section style={moodBox}>
+                    <Text style={moodLine}>
+                      <strong>Clima do time:</strong> {b.teamMood.emoji} Score {b.teamMood.score}/100 (
+                      {b.teamMood.trend === "up" ? "↑" : b.teamMood.trend === "down" ? "↓" : "→"}
+                      {b.teamMood.trendDelta !== null
+                        ? ` ${b.teamMood.trendDelta > 0 ? "+" : ""}${b.teamMood.trendDelta} pts`
+                        : b.teamMood.previousScore === null
+                          ? " sem baseline"
+                          : " estável"}
+                      {" "}
+                      vs semana anterior)
+                    </Text>
+                    {b.teamMood.signalExamples.length > 0 && (
+                      <>
+                        <Text style={label}>Sinais detectados (agregado, sem identificação individual)</Text>
+                        {b.teamMood.signalExamples.map((ex, j) => (
+                          <Text key={j} style={p}>
+                            • {ex}
+                          </Text>
+                        ))}
+                      </>
+                    )}
+                  </Section>
+                )}
 
                 <Text style={p}>{b.summary}</Text>
 
@@ -250,5 +286,20 @@ const line: React.CSSProperties = {
   color: "rgba(255,255,255,0.92)",
   margin: "8px 0 0",
   lineHeight: "20px",
+};
+
+const moodBox: React.CSSProperties = {
+  marginTop: 12,
+  padding: "12px 14px",
+  borderRadius: 10,
+  backgroundColor: "rgba(120, 180, 255, 0.06)",
+  border: "1px solid rgba(120, 180, 255, 0.2)",
+};
+
+const moodLine: React.CSSProperties = {
+  fontSize: 14,
+  lineHeight: "22px",
+  margin: "0 0 6px",
+  color: "rgba(255,255,255,0.95)",
 };
 
