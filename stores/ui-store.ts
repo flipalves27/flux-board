@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import type { CardData } from "@/app/board/[id]/page";
-import { BOARD_VIEW_STORAGE_PREFIX } from "@/components/kanban/kanban-constants";
+import { BOARD_VIEW_STORAGE_PREFIX, type BoardViewMode } from "@/components/kanban/kanban-constants";
 
 export type ConfirmDeleteState = { type: "card" | "bucket"; id: string; label: string } | null;
 
@@ -15,9 +15,9 @@ export type CsvImportConfirmState = {
 } | null;
 
 type KanbanUiState = {
-  boardViewByBoard: Record<string, "kanban" | "timeline">;
-  setBoardView: (boardId: string, view: "kanban" | "timeline") => void;
-  getBoardView: (boardId: string) => "kanban" | "timeline";
+  boardViewByBoard: Record<string, BoardViewMode>;
+  setBoardView: (boardId: string, view: BoardViewMode) => void;
+  getBoardView: (boardId: string) => BoardViewMode;
 
   modalCard: CardData | null;
   modalMode: "new" | "edit";
@@ -64,7 +64,10 @@ export const useKanbanUiStore = create<KanbanUiState>()(
           set((s) => ({
             boardViewByBoard: { ...s.boardViewByBoard, [boardId]: view },
           })),
-        getBoardView: (boardId) => get().boardViewByBoard[boardId] ?? "kanban",
+        getBoardView: (boardId) => {
+          const v = get().boardViewByBoard[boardId] ?? "kanban";
+          return v === "kanban" || v === "table" || v === "timeline" ? v : "kanban";
+        },
 
         modalCard: null,
         modalMode: "new",

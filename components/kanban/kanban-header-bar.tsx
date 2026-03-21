@@ -2,13 +2,14 @@
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import type { BoardViewMode } from "./kanban-constants";
 
 type KanbanHeaderBarProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
   priorityBarVisible: boolean;
   setPriorityBarVisible: Dispatch<SetStateAction<boolean>>;
-  boardView: "kanban" | "timeline";
-  setBoardView: (v: "kanban" | "timeline") => void;
+  boardView: BoardViewMode;
+  setBoardView: (v: BoardViewMode) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
@@ -17,6 +18,51 @@ type KanbanHeaderBarProps = {
   onImportCSV: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExportCSV: () => void;
 };
+
+function IconKanban({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
+    >
+      <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
+    </svg>
+  );
+}
+
+function IconTable({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
+    >
+      <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconTimeline({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
+    >
+      <path d="M4 7h5v4H4V7zm7 0h9v4h-9V7zM4 14h8v4H4v-4zm10 0h6v4h-6v-4z" />
+    </svg>
+  );
+}
 
 export function KanbanHeaderBar({
   t,
@@ -58,32 +104,55 @@ export function KanbanHeaderBar({
           </button>
         </CustomTooltip>
         <div
-          className="board-segment flex items-center gap-0.5 p-1 shrink-0"
+          className="board-segment flex items-center gap-0.5 p-1 shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]"
           role="group"
           aria-label={t("board.timeline.toggleGroupAria")}
         >
-          <button
-            type="button"
-            onClick={() => setBoardView("kanban")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
-              boardView === "kanban"
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-            }`}
-          >
-            {t("board.timeline.viewKanban")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBoardView("timeline")}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
-              boardView === "timeline"
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-            }`}
-          >
-            {t("board.timeline.viewTimeline")}
-          </button>
+          <CustomTooltip content={t("board.timeline.viewKanbanTooltip")} position="bottom">
+            <button
+              type="button"
+              onClick={() => setBoardView("kanban")}
+              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                boardView === "kanban"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+              }`}
+              aria-pressed={boardView === "kanban"}
+              aria-label={t("board.timeline.viewKanbanAria")}
+            >
+              <IconKanban active={boardView === "kanban"} />
+            </button>
+          </CustomTooltip>
+          <CustomTooltip content={t("board.timeline.viewTableTooltip")} position="bottom">
+            <button
+              type="button"
+              onClick={() => setBoardView("table")}
+              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                boardView === "table"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+              }`}
+              aria-pressed={boardView === "table"}
+              aria-label={t("board.timeline.viewTableAria")}
+            >
+              <IconTable active={boardView === "table"} />
+            </button>
+          </CustomTooltip>
+          <CustomTooltip content={t("board.timeline.viewTimelineTooltip")} position="bottom">
+            <button
+              type="button"
+              onClick={() => setBoardView("timeline")}
+              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                boardView === "timeline"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+              }`}
+              aria-pressed={boardView === "timeline"}
+              aria-label={t("board.timeline.viewTimelineAria")}
+            >
+              <IconTimeline active={boardView === "timeline"} />
+            </button>
+          </CustomTooltip>
         </div>
       </div>
 

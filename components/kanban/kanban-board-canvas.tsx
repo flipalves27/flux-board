@@ -4,9 +4,11 @@ import type { ComponentProps, RefObject } from "react";
 import { DndContext, DragOverlay, type CollisionDetection, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
+import type { BoardViewMode } from "./kanban-constants";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { BoardTimelineView } from "./board-timeline-view";
+import { BoardTableView } from "./board-table-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
@@ -14,7 +16,7 @@ import { parseSlotId } from "./kanban-dnd-utils";
 type KanbanBoardCanvasProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
   boardScrollRef: RefObject<HTMLDivElement | null>;
-  boardView: "kanban" | "timeline";
+  boardView: BoardViewMode;
   priorityBarVisible: boolean;
   isPanning: boolean;
   onPanPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -29,6 +31,12 @@ type KanbanBoardCanvasProps = {
   visibleCardsByBucket: (key: string) => CardData[];
   onTimelineDueDate: (cardId: string, nextDue: string) => void;
   onTimelineOpenCard: (card: CardData) => void;
+  priorities: string[];
+  onPatchCardFromTable: (
+    cardId: string,
+    patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+  ) => void;
+  onTableOpenCard: (card: CardData) => void;
   sensors: NonNullable<ComponentProps<typeof DndContext>["sensors"]>;
   collisionDetection: CollisionDetection;
   onDragStart: (e: DragStartEvent) => void;
@@ -63,6 +71,9 @@ export function KanbanBoardCanvas({
   visibleCardsByBucket,
   onTimelineDueDate,
   onTimelineOpenCard,
+  priorities,
+  onPatchCardFromTable,
+  onTableOpenCard,
   sensors,
   collisionDetection,
   onDragStart,
@@ -96,9 +107,20 @@ export function KanbanBoardCanvas({
         <BoardTimelineView
           cards={cards}
           buckets={buckets}
+          prioritiesOrder={priorities}
           filterCard={filterCard}
           onChangeDueDate={onTimelineDueDate}
           onOpenCard={onTimelineOpenCard}
+        />
+      ) : null}
+      {boardView === "table" ? (
+        <BoardTableView
+          cards={cards}
+          buckets={buckets}
+          filterCard={filterCard}
+          priorities={priorities}
+          onPatchCard={onPatchCardFromTable}
+          onOpenCard={onTableOpenCard}
         />
       ) : null}
       {boardView === "kanban" ? (

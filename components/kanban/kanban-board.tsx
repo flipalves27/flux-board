@@ -339,6 +339,9 @@ function KanbanBoardLoaded({
         visibleCardsByBucket={filters.visibleCardsByBucket}
         onTimelineDueDate={board.handleTimelineDueDate}
         onTimelineOpenCard={board.handleTimelineOpenCard}
+        priorities={priorities}
+        onPatchCardFromTable={board.patchCardFromTable}
+        onTableOpenCard={board.handleTimelineOpenCard}
         sensors={dnd.sensors}
         collisionDetection={dnd.collisionDetection}
         onDragStart={dnd.handleDragStart}

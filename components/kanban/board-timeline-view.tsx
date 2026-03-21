@@ -33,48 +33,94 @@ function bucketColor(buckets: BucketConfig[], bucketKey: string): string {
   return buckets.find((b) => b.key === bucketKey)?.color ?? "var(--flux-primary)";
 }
 
+type WithDue = CardData & { dueDate: string };
+
+type DisplayRow =
+  | { kind: "group"; key: string; label: string }
+  | { kind: "card"; card: WithDue };
+
+export type TimelineGroupBy = "flat" | "column" | "priority";
+
 export interface BoardTimelineViewProps {
   cards: CardData[];
   buckets: BucketConfig[];
+  /** Used for Y-axis grouping when group mode is "priority". */
+  prioritiesOrder?: string[];
   filterCard: (c: CardData) => boolean;
   onChangeDueDate: (cardId: string, nextDue: string) => void;
   onOpenCard: (card: CardData) => void;
 }
 
+function sortCardsByDueThenTitle(a: WithDue, b: WithDue): number {
+  const cmp = a.dueDate.localeCompare(b.dueDate);
+  if (cmp !== 0) return cmp;
+  return a.title.localeCompare(b.title);
+}
+
 export function BoardTimelineView({
   cards,
   buckets,
+  prioritiesOrder = ["Urgente", "Importante", "Média"],
   filterCard,
   onChangeDueDate,
   onOpenCard,
 }: BoardTimelineViewProps) {
   const t = useTranslations("kanban.board.timeline");
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState<TimelineGroupBy>("flat");
 
-  const rows = useMemo(() => {
-    const withDue = cards
+  const withDueBase = useMemo(() => {
+    return cards
       .filter((c) => Boolean(c.dueDate && String(c.dueDate).trim()))
       .filter(filterCard)
-      .map((c) => ({ ...c, dueDate: String(c.dueDate).trim() }));
-
-    withDue.sort((a, b) => {
-      const cmp = a.dueDate!.localeCompare(b.dueDate!);
-      if (cmp !== 0) return cmp;
-      return a.title.localeCompare(b.title);
-    });
-
-    return withDue;
+      .map((c) => ({ ...c, dueDate: String(c.dueDate).trim() })) as WithDue[];
   }, [cards, filterCard]);
 
+  const displayRows = useMemo((): DisplayRow[] => {
+    if (withDueBase.length === 0) return [];
+
+    if (groupBy === "flat") {
+      const sorted = [...withDueBase].sort(sortCardsByDueThenTitle);
+      return sorted.map((card) => ({ kind: "card", card }));
+    }
+
+    if (groupBy === "column") {
+      const rows: DisplayRow[] = [];
+      for (const b of buckets) {
+        const groupCards = withDueBase.filter((c) => c.bucket === b.key).sort(sortCardsByDueThenTitle);
+        if (groupCards.length === 0) continue;
+        rows.push({ kind: "group", key: `col:${b.key}`, label: b.label });
+        for (const card of groupCards) rows.push({ kind: "card", card });
+      }
+      return rows;
+    }
+
+    const rows: DisplayRow[] = [];
+    const order = [...prioritiesOrder];
+    const extras = [...new Set(withDueBase.map((c) => c.priority))].filter((p) => !order.includes(p));
+    const fullOrder = [...order, ...extras.sort((a, b) => a.localeCompare(b))];
+
+    for (const p of fullOrder) {
+      seenPriority.add(p);
+      const groupCards = withDueBase.filter((c) => c.priority === p).sort(sortCardsByDueThenTitle);
+      if (groupCards.length === 0) continue;
+      rows.push({ kind: "group", key: `prio:${p}`, label: p });
+      for (const card of groupCards) rows.push({ kind: "card", card });
+    }
+    return rows;
+  }, [withDueBase, buckets, groupBy, prioritiesOrder]);
+
+  const cardRows = useMemo(() => displayRows.filter((r): r is Extract<DisplayRow, { kind: "card" }> => r.kind === "card"), [displayRows]);
+
   const { dayLabels } = useMemo(() => {
-    if (rows.length === 0) {
+    if (cardRows.length === 0) {
       const today = formatYmd(new Date());
       return { dayLabels: [today] };
     }
-    let min = rows[0].dueDate!;
-    let max = rows[0].dueDate!;
-    for (const r of rows) {
-      const d = r.dueDate!;
+    let min = cardRows[0].card.dueDate;
+    let max = cardRows[0].card.dueDate;
+    for (const r of cardRows) {
+      const d = r.card.dueDate;
       if (d < min) min = d;
       if (d > max) max = d;
     }
@@ -90,32 +136,35 @@ export function BoardTimelineView({
       cur = n;
     }
     return { dayLabels: labels };
-  }, [rows]);
+  }, [cardRows]);
 
   const totalDays = dayLabels.length;
   const gridWidth = Math.max(totalDays * DAY_PX, 320);
 
   const idToRow = useMemo(() => {
     const m = new Map<string, number>();
-    rows.forEach((r, i) => m.set(r.id, i));
+    displayRows.forEach((r, i) => {
+      if (r.kind === "card") m.set(r.card.id, i);
+    });
     return m;
-  }, [rows]);
+  }, [displayRows]);
 
   const dependencyPaths = useMemo(() => {
     const paths: { d: string; key: string }[] = [];
-    for (const card of rows) {
+    for (const r of cardRows) {
+      const card = r.card;
       const blockers = card.blockedBy || [];
       for (const bid of blockers) {
         const from = idToRow.get(bid);
         const to = idToRow.get(card.id);
         if (from === undefined || to === undefined || from === to) continue;
 
-        const blocker = rows[from];
-        const blocked = rows[to];
+        const blocker = cardRows.find((x) => x.card.id === bid)?.card;
+        const blocked = card;
         if (!blocker || !blocked) continue;
 
-        const startIdx = dayLabels.indexOf(blocker.dueDate!);
-        const endIdx = dayLabels.indexOf(blocked.dueDate!);
+        const startIdx = dayLabels.indexOf(blocker.dueDate);
+        const endIdx = dayLabels.indexOf(blocked.dueDate);
         if (startIdx < 0 || endIdx < 0) continue;
 
         const bx1 = startIdx * DAY_PX + DAY_PX - 6;
@@ -129,7 +178,7 @@ export function BoardTimelineView({
       }
     }
     return paths;
-  }, [rows, idToRow, dayLabels]);
+  }, [cardRows, idToRow, dayLabels]);
 
   const dayIndex = useCallback(
     (ymd: string) => {
@@ -173,7 +222,7 @@ export function BoardTimelineView({
     [onChangeDueDate]
   );
 
-  if (rows.length === 0) {
+  if (cardRows.length === 0) {
     return (
       <div className="w-full py-12 flex flex-col items-center justify-center text-center border border-dashed border-[var(--flux-primary-alpha-25)] rounded-[var(--flux-rad)] bg-[var(--flux-black-alpha-12)]">
         <p className="text-sm font-display font-semibold text-[var(--flux-text)]">{t("emptyTitle")}</p>
@@ -182,9 +231,33 @@ export function BoardTimelineView({
     );
   }
 
+  const totalHeight = displayRows.length * ROW_H;
+
   return (
     <div className="w-full py-4 pb-6 overflow-x-auto scrollbar-flux min-h-[calc(100vh-200px)]">
       <div className="inline-flex min-w-full flex-col rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-mid)] overflow-hidden">
+        <div
+          className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-10)]"
+          role="group"
+          aria-label={t("groupByAria")}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--flux-text-muted)]">{t("groupByLabel")}</span>
+          {(["flat", "column", "priority"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setGroupBy(mode)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                groupBy === mode
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_6px_var(--flux-primary-alpha-35)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+              }`}
+            >
+              {mode === "flat" ? t("groupFlat") : mode === "column" ? t("groupColumn") : t("groupPriority")}
+            </button>
+          ))}
+        </div>
+
         <div className="flex border-b border-[var(--flux-chrome-alpha-08)]">
           <div
             className="shrink-0 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--flux-text-muted)] bg-[var(--flux-black-alpha-15)] flex items-end"
@@ -222,26 +295,36 @@ export function BoardTimelineView({
 
         <div className="flex relative">
           <div className="shrink-0 border-r border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]" style={{ width: LABEL_W }}>
-            {rows.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => onOpenCard(r)}
-                className="w-full text-left px-3 border-b border-[var(--flux-chrome-alpha-05)] hover:bg-[var(--flux-primary-alpha-12)] transition-colors"
-                style={{ height: ROW_H }}
-              >
-                <div className="text-xs font-semibold text-[var(--flux-text)] truncate leading-tight">{r.title}</div>
-                <div className="text-[10px] text-[var(--flux-text-muted)] truncate font-mono">{r.id}</div>
-              </button>
-            ))}
+            {displayRows.map((r) =>
+              r.kind === "group" ? (
+                <div
+                  key={r.key}
+                  className="w-full px-3 border-b border-[var(--flux-chrome-alpha-06)] flex items-center bg-[var(--flux-black-alpha-14)]"
+                  style={{ height: ROW_H }}
+                >
+                  <span className="text-[11px] font-bold text-[var(--flux-primary-light)] truncate">{r.label}</span>
+                </div>
+              ) : (
+                <button
+                  key={r.card.id}
+                  type="button"
+                  onClick={() => onOpenCard(r.card)}
+                  className="w-full text-left px-3 border-b border-[var(--flux-chrome-alpha-05)] hover:bg-[var(--flux-primary-alpha-12)] transition-colors"
+                  style={{ height: ROW_H }}
+                >
+                  <div className="text-xs font-semibold text-[var(--flux-text)] truncate leading-tight">{r.card.title}</div>
+                  <div className="text-[10px] text-[var(--flux-text-muted)] truncate font-mono">{r.card.id}</div>
+                </button>
+              )
+            )}
           </div>
 
           <div className="relative overflow-x-auto" style={{ width: gridWidth }}>
-            <div className="relative" style={{ width: gridWidth, height: rows.length * ROW_H }}>
+            <div className="relative" style={{ width: gridWidth, height: totalHeight }}>
               <svg
                 className="absolute inset-0 pointer-events-none z-[1]"
                 width={gridWidth}
-                height={rows.length * ROW_H}
+                height={totalHeight}
                 aria-hidden
               >
                 {dependencyPaths.map((p) => (
@@ -257,25 +340,35 @@ export function BoardTimelineView({
                 ))}
               </svg>
 
-              {rows.map((r, rowIdx) => {
-                const idx = dayIndex(r.dueDate!);
+              {displayRows.map((r, rowIdx) => {
+                if (r.kind === "group") {
+                  return (
+                    <div
+                      key={r.key}
+                      className="absolute left-0 right-0 border-b border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-08)]"
+                      style={{ top: rowIdx * ROW_H, height: ROW_H }}
+                    />
+                  );
+                }
+                const card = r.card;
+                const idx = dayIndex(card.dueDate);
                 const left = idx * DAY_PX + 4;
-                const col = bucketColor(buckets, r.bucket);
+                const col = bucketColor(buckets, card.bucket);
                 return (
                   <div
-                    key={r.id}
+                    key={card.id}
                     className="absolute left-0 right-0 border-b border-[var(--flux-chrome-alpha-05)]"
                     style={{ top: rowIdx * ROW_H, height: ROW_H }}
                   >
                     <div
                       role="slider"
                       tabIndex={0}
-                      aria-label={t("barAria", { title: r.title, date: r.dueDate })}
+                      aria-label={t("barAria", { title: card.title, date: card.dueDate })}
                       aria-valuemin={0}
                       aria-valuemax={totalDays - 1}
                       aria-valuenow={idx}
                       className={`absolute rounded-md shadow-sm cursor-grab active:cursor-grabbing z-[2] touch-none ${
-                        draggingId === r.id ? "ring-2 ring-[var(--flux-secondary)]" : ""
+                        draggingId === card.id ? "ring-2 ring-[var(--flux-secondary)]" : ""
                       }`}
                       style={{
                         left,
@@ -285,14 +378,14 @@ export function BoardTimelineView({
                         background: `linear-gradient(180deg, ${col}dd, ${col}99)`,
                         border: `1px solid ${col}`,
                       }}
-                      onPointerDown={(e) => onPointerDownBar(e, r)}
+                      onPointerDown={(e) => onPointerDownBar(e, card)}
                       onKeyDown={(e) => {
                         if (e.key === "ArrowLeft") {
                           e.preventDefault();
-                          onChangeDueDate(r.id, addDaysYmd(r.dueDate!, -1));
+                          onChangeDueDate(card.id, addDaysYmd(card.dueDate, -1));
                         } else if (e.key === "ArrowRight") {
                           e.preventDefault();
-                          onChangeDueDate(r.id, addDaysYmd(r.dueDate!, 1));
+                          onChangeDueDate(card.id, addDaysYmd(card.dueDate, 1));
                         }
                       }}
                     />

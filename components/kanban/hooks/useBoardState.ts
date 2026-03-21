@@ -339,6 +339,46 @@ export function useBoardState({
     setModalMode("edit");
   }, []);
 
+  const patchCardFromTable = useCallback(
+    (
+      cardId: string,
+      patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+    ) => {
+      updateDb((d) => {
+        const idx = d.cards.findIndex((c) => c.id === cardId);
+        if (idx === -1) return;
+        const card = d.cards[idx];
+        const targetBucket = patch.bucket !== undefined ? patch.bucket : card.bucket;
+
+        if (patch.bucket !== undefined && patch.bucket !== card.bucket) {
+          const withoutCard = d.cards.filter((c) => c.id !== cardId);
+          const bucketCards = withoutCard
+            .filter((c) => c.bucket === targetBucket)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          const merged: CardData = { ...card };
+          if (patch.title !== undefined) merged.title = patch.title;
+          if (patch.priority !== undefined) merged.priority = patch.priority;
+          if (patch.dueDate !== undefined) merged.dueDate = patch.dueDate;
+          if (patch.tags !== undefined) merged.tags = patch.tags;
+          merged.bucket = targetBucket;
+          bucketCards.push(merged);
+          bucketCards.forEach((c, i) => {
+            c.order = i;
+          });
+          const otherBuckets = withoutCard.filter((c) => c.bucket !== targetBucket);
+          d.cards = [...otherBuckets, ...bucketCards];
+          return;
+        }
+
+        if (patch.title !== undefined) card.title = patch.title;
+        if (patch.priority !== undefined) card.priority = patch.priority;
+        if (patch.dueDate !== undefined) card.dueDate = patch.dueDate;
+        if (patch.tags !== undefined) card.tags = patch.tags;
+      });
+    },
+    [updateDb]
+  );
+
   const { directionCounts, totalWithDir } = useMemo(() => {
     const acc: Record<string, number> = {};
     let total = 0;
@@ -708,6 +748,7 @@ export function useBoardState({
     deleteLabel,
     handleTimelineDueDate,
     handleTimelineOpenCard,
+    patchCardFromTable,
     directionCounts,
     totalWithDir,
     executionInsights,
