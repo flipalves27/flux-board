@@ -27,6 +27,8 @@ import { generateOkrWeeklyDigestBlockAI } from "@/lib/okr-weekly-digest-llm";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
 import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
+import { resolvePlatformDisplayName } from "@/lib/org-branding";
+import { buildResendFromForOrg } from "@/lib/org-branding-resend";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -351,9 +353,15 @@ export async function GET(request: NextRequest) {
         totalBoardsProcessed++;
       }
 
+      const platformLabel = resolvePlatformDisplayName(org.branding, org.name);
+      const digestLogo =
+        org.branding?.logoUrl && /^https?:\/\//i.test(org.branding.logoUrl) ? org.branding.logoUrl : undefined;
+
       const html = await render(
         React.createElement(WeeklyDigestEmail as any, {
           orgName: org.name,
+          platformLabel,
+          logoUrl: digestLogo,
           weekLabel,
           appUrl: baseAppUrl,
           boards: boardsForEmail,
@@ -376,7 +384,7 @@ export async function GET(request: NextRequest) {
       };
 
       const text = [
-        `Weekly Digest IA - ${org.name}`,
+        `Weekly Digest IA - ${platformLabel}`,
         `Período: ${weekLabel}`,
         `Boards: ${boardsForEmail.length}`,
         okrSection
@@ -387,14 +395,31 @@ export async function GET(request: NextRequest) {
         .filter(Boolean)
         .join("\n");
 
+      const fromResolved = buildResendFromForOrg(org, fromEmail);
+
       for (const to of recipients) {
-        await resend.emails.send({
-          from: fromEmail,
-          to,
-          subject: `Flux-Board Weekly Digest — ${weekLabel}`,
-          html,
-          text,
-        });
+        try {
+          await resend.emails.send({
+            from: fromResolved,
+            to,
+            subject: `${platformLabel} Weekly Digest — ${weekLabel}`,
+            html,
+            text,
+          });
+        } catch (sendErr) {
+          if (fromResolved !== fromEmail) {
+            console.warn("[weekly-digest] Resend from org falhou, usando remetente padrão:", sendErr);
+            await resend.emails.send({
+              from: fromEmail,
+              to,
+              subject: `${platformLabel} Weekly Digest — ${weekLabel}`,
+              html,
+              text,
+            });
+          } else {
+            throw sendErr;
+          }
+        }
         totalEmailsSent++;
       }
     } catch (err) {

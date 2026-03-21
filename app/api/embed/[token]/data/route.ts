@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBoard } from "@/lib/kv-boards";
 import { getEmbedByToken } from "@/lib/kv-embed";
+import { getOrganizationById } from "@/lib/kv-organizations";
+import { resolvePlatformDisplayName } from "@/lib/org-branding";
 import { computeBoardPortfolio, type PortfolioBoardLike } from "@/lib/board-portfolio-metrics";
 
 function parseCards(raw: unknown): Array<Record<string, unknown>> {
@@ -21,6 +23,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const board = await getBoard(emb.boardId, emb.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
+
+  const org = await getOrganizationById(emb.orgId);
+  const platformName = resolvePlatformDisplayName(org?.branding, org?.name);
+  const brandLogo = org?.branding?.logoUrl?.trim();
 
   const cards = parseCards(board.cards);
   const total = cards.length;
@@ -71,6 +77,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     updatedAt: board.lastUpdated ?? new Date().toISOString(),
     boardName: board.name,
     clientLabel: board.clientLabel,
+    platformName,
+    logoUrl: brandLogo,
     kind: emb.kind,
     badge: {
       total,

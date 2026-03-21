@@ -25,6 +25,7 @@ import { SprintPredictionPanel } from "@/components/reports/sprint-prediction-pa
 import { CrossBoardDependenciesPanel } from "@/components/reports/cross-board-dependencies-panel";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
+import { usePlatformDisplayName } from "@/context/org-branding-context";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
 
@@ -94,6 +95,7 @@ function riskHeatColor(risco: number | null): string {
 
 export function FluxReportsDashboard() {
   const t = useTranslations("reports");
+  const appName = usePlatformDisplayName();
   const { getHeaders } = useAuth();
   const [data, setData] = useState<FluxReportsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -365,7 +367,7 @@ export function FluxReportsDashboard() {
 
       <ChartShell
         title={t("charts.heatmap")}
-        hint={t("hints.heatmap")}
+        hint={t("hints.heatmap", { appName })}
         chartId="heatmap"
         explainPayload={{ portfolioHeatmap: data.portfolioHeatmap }}
       >

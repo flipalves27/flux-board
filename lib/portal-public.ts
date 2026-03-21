@@ -1,4 +1,6 @@
 import type { BoardData } from "@/lib/kv-boards";
+import type { OrgBranding } from "@/lib/org-branding";
+import { resolvePlatformDisplayName } from "@/lib/org-branding";
 import type { BoardPortalBranding, BoardPortalSettings } from "@/lib/portal-types";
 
 export type { BoardPortalBranding, BoardPortalSettings };
@@ -26,6 +28,8 @@ export type PublicPortalPayload = {
   boardName: string;
   clientLabel?: string;
   branding: BoardPortalBranding;
+  /** Nome white-label da organização (substitui Flux-Board no rodapé). */
+  platformName?: string;
   bucketOrder: Array<{ key: string; label: string; color: string }>;
   cards: PublicPortalCard[];
   metrics: PortalMetrics;
@@ -128,23 +132,33 @@ export function buildBucketOrderForPortal(
   return ordered;
 }
 
-export function buildPublicPortalPayload(board: BoardData, portal: BoardPortalSettings): PublicPortalPayload {
+export function buildPublicPortalPayload(
+  board: BoardData,
+  portal: BoardPortalSettings,
+  orgBranding?: OrgBranding | null,
+  orgName?: string | null
+): PublicPortalPayload {
   const filtered = filterCardsForPortal(board, portal);
   const cards = filtered
     .map((c) => toPublicCard(c as Record<string, unknown>))
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 
-  const branding = {
-    logoUrl: portal.branding?.logoUrl?.trim() || undefined,
-    primaryColor: portal.branding?.primaryColor?.trim() || undefined,
-    secondaryColor: portal.branding?.secondaryColor?.trim() || undefined,
+  const ob = orgBranding ?? {};
+  const branding: BoardPortalBranding = {
+    logoUrl: portal.branding?.logoUrl?.trim() || ob.logoUrl?.trim() || undefined,
+    primaryColor: portal.branding?.primaryColor?.trim() || ob.primaryColor?.trim() || undefined,
+    secondaryColor: portal.branding?.secondaryColor?.trim() || ob.secondaryColor?.trim() || undefined,
+    accentColor: portal.branding?.accentColor?.trim() || ob.accentColor?.trim() || undefined,
     title: portal.branding?.title?.trim() || undefined,
   };
+
+  const platformName = resolvePlatformDisplayName(ob, orgName);
 
   return {
     boardName: board.name || "Board",
     clientLabel: board.clientLabel?.trim() || undefined,
     branding,
+    platformName,
     bucketOrder: buildBucketOrderForPortal(board, portal, cards),
     cards,
     metrics: computePortalMetrics(cards),

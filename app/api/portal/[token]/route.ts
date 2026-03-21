@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBoard, type BoardData } from "@/lib/kv-boards";
+import { getOrganizationById } from "@/lib/kv-organizations";
 import { getPortalIndexByToken } from "@/lib/kv-portal";
 import { buildPublicPortalPayload } from "@/lib/portal-public";
 import type { BoardPortalSettings } from "@/lib/portal-types";
 import { PORTAL_COOKIE_NAME, verifyPortalSessionToken } from "@/lib/portal-session";
 
-function lockedPreview(board: BoardData, portal: BoardPortalSettings) {
-  const p = buildPublicPortalPayload(board, portal);
+async function lockedPreview(board: BoardData, portal: BoardPortalSettings, orgId: string) {
+  const org = await getOrganizationById(orgId);
+  const p = buildPublicPortalPayload(board, portal, org?.branding, org?.name);
   return {
     boardName: p.boardName,
     clientLabel: p.clientLabel,
     branding: p.branding,
     displayTitle: p.branding.title || p.boardName,
+    platformName: p.platformName,
   };
 }
 
@@ -39,13 +42,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({
       locked: true,
       passwordProtected: true,
-      preview: lockedPreview(board, portal),
+      preview: await lockedPreview(board, portal, index.orgId),
     });
   }
+
+  const org = await getOrganizationById(index.orgId);
 
   return NextResponse.json({
     locked: false,
     passwordProtected: Boolean(portal.passwordHash),
-    payload: buildPublicPortalPayload(board, portal),
+    payload: buildPublicPortalPayload(board, portal, org?.branding, org?.name),
   });
 }

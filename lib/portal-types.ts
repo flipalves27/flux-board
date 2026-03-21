@@ -2,6 +2,7 @@ export type BoardPortalBranding = {
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  accentColor?: string;
   /** Título exibido no portal (opcional; default = nome do board). */
   title?: string;
 };

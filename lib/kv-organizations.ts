@@ -63,6 +63,7 @@ async function ensureOrgIndexes(db: Db): Promise<void> {
   const col = db.collection<Organization>(COL_ORGS);
   await col.createIndex({ slug: 1 }, { unique: true });
   await col.createIndex({ ownerId: 1 });
+  await col.createIndex({ "branding.customDomain": 1 }, { unique: true, sparse: true });
   orgIndexesEnsured = true;
 }
 
@@ -251,6 +252,33 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ _id: orgId });
   return doc || null;
+}
+
+/** Resolve organização pelo host white-label (CNAME → Vercel). Host sem porta, lower-case. */
+export async function getOrganizationByCustomDomain(host: string): Promise<Organization | null> {
+  if (!isMongoConfigured()) return null;
+  const h = String(host || "")
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, "");
+  if (!h) return null;
+  const db = await getDb();
+  await ensureOrgIndexes(db);
+  const col = db.collection<Organization>(COL_ORGS);
+  const doc = await col.findOne({ "branding.customDomain": h });
+  return doc || null;
+}
+
+export async function findOtherOrgWithCustomDomain(domain: string, excludeOrgId: string): Promise<Organization | null> {
+  if (!isMongoConfigured()) return null;
+  const d = String(domain || "")
+    .trim()
+    .toLowerCase();
+  if (!d) return null;
+  const db = await getDb();
+  await ensureOrgIndexes(db);
+  const col = db.collection<Organization>(COL_ORGS);
+  return (await col.findOne({ _id: { $ne: excludeOrgId }, "branding.customDomain": d })) || null;
 }
 
 export async function updateOrganization(

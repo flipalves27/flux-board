@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { useOrgBranding } from "@/context/org-branding-context";
+import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { useTheme } from "@/context/theme-context";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
@@ -225,7 +225,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, logout, isChecked, getHeaders } = useAuth();
   const orgBrandingCtx = useOrgBranding();
-  const orgLogoUrl = orgBrandingCtx?.branding?.logoUrl?.trim();
+  const orgLogoUrl = orgBrandingCtx?.effectiveBranding?.logoUrl?.trim();
+  const platformName = usePlatformDisplayName();
   const { themePreference, cycleThemePreference } = useTheme();
   const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
   const [collapsed, setCollapsed] = useState(false);
@@ -468,7 +469,7 @@ export function Sidebar() {
               )}
             </div>
             {showExpandedNav && (
-              <span className="truncate font-display text-sm font-bold text-[var(--flux-text)]">Flux-Board</span>
+              <span className="truncate font-display text-sm font-bold text-[var(--flux-text)]">{platformName}</span>
             )}
           </Link>
           {layout === "desktop" ? (

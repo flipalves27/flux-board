@@ -65,9 +65,16 @@ export async function applyPortalPatch(
       logoUrl: b.logoUrl?.trim() || undefined,
       primaryColor: b.primaryColor?.trim() || undefined,
       secondaryColor: b.secondaryColor?.trim() || undefined,
+      accentColor: b.accentColor?.trim() || undefined,
       title: b.title?.trim() || undefined,
     };
-    if (!next.branding.logoUrl && !next.branding.primaryColor && !next.branding.secondaryColor && !next.branding.title) {
+    if (
+      !next.branding.logoUrl &&
+      !next.branding.primaryColor &&
+      !next.branding.secondaryColor &&
+      !next.branding.accentColor &&
+      !next.branding.title
+    ) {
       next.branding = undefined;
     }
   }

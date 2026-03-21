@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
@@ -25,6 +26,9 @@ export default function LoginPage() {
   const { user, login, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("login");
+  const platformName = usePlatformDisplayName();
+  const orgBranding = useOrgBranding();
+  const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const localeRoot = `/${locale}`;
   const inviteCode = searchParams.get("invite") ?? undefined;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -122,17 +126,24 @@ export default function LoginPage() {
       <div className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-xl)] shadow-[var(--flux-shadow-login-panel)] w-full max-w-[400px] p-8">
         <div className="flex items-center gap-3 mb-6">
           <div
-            className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: "0 8px 32px var(--flux-primary-alpha-40)",
+              background: logoUrl
+                ? "var(--flux-surface-elevated)"
+                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+              boxShadow: logoUrl ? "none" : "0 8px 32px var(--flux-primary-alpha-40)",
             }}
           >
-            <FluxLogoIcon className="w-5 h-5" />
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="max-h-8 max-w-[36px] object-contain" />
+            ) : (
+              <FluxLogoIcon className="w-5 h-5" />
+            )}
           </div>
           <div>
             <h1 className="font-display font-bold text-xl text-[var(--flux-text)] tracking-tight">
-              Flux-Board
+              {platformName}
             </h1>
             <p className="text-xs text-[var(--flux-text-muted)] font-medium tracking-wide mt-0.5">
               {t("subtitle")}

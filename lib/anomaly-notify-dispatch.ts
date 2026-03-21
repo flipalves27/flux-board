@@ -8,6 +8,8 @@ import { boardEmailGate, buildAnomalyNotifyDedupeKey } from "@/lib/anomaly-board
 import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-collections";
 import type { AnomalyAlertPayload } from "@/lib/anomaly-detection";
 import type { Organization } from "@/lib/kv-organizations";
+import { resolvePlatformDisplayName } from "@/lib/org-branding";
+import { buildResendFromForOrg } from "@/lib/org-branding-resend";
 import type { BoardData } from "@/lib/kv-boards";
 import { listUsers } from "@/lib/kv-users";
 import { fallbackAnomalySuggestion, generateAnomalySuggestedAction } from "@/lib/anomaly-suggested-action";
@@ -156,6 +158,10 @@ export async function postPersistAnomalyNotifications(args: {
         ? `${alert.boardName} (${alert.boardId})`
         : alert.boardName || (alert.boardId ? `Board ${alert.boardId}` : "Portfólio (org-wide)");
 
+    const platformLabel = resolvePlatformDisplayName(org?.branding, org?.name);
+    const anomalyLogo =
+      org?.branding?.logoUrl && /^https?:\/\//i.test(org.branding.logoUrl) ? org.branding.logoUrl : undefined;
+
     const html = await render(
       React.createElement(AnomalyAlertEmail, {
         title: alert.title,
@@ -164,19 +170,38 @@ export async function postPersistAnomalyNotifications(args: {
         suggestedAction: suggested,
         boardUrl: url || baseAppUrl() || "#",
         severity: alert.severity,
+        platformLabel,
+        logoUrl: anomalyLogo,
       })
     );
 
+    const fromResolved = org ? buildResendFromForOrg(org, fromEmail!) : fromEmail!;
+
     try {
       await resend.emails.send({
-        from: fromEmail!,
+        from: fromResolved,
         to: recipients,
-        subject: `[Flux-Board] ${alert.severity === "critical" ? "Crítico: " : ""}${alert.title}`,
+        subject: `[${platformLabel}] ${alert.severity === "critical" ? "Crítico: " : ""}${alert.title}`,
         html,
       });
       await db.collection(COL_ANOMALY_ALERTS).updateOne({ _id: oid }, { $set: { emailSentAt: sentAt } });
       await recordAnomalyNotifySent(db, orgId, dedupeKey, sentAt);
     } catch (e) {
+      if (fromResolved !== fromEmail) {
+        try {
+          await resend.emails.send({
+            from: fromEmail!,
+            to: recipients,
+            subject: `[${platformLabel}] ${alert.severity === "critical" ? "Crítico: " : ""}${alert.title}`,
+            html,
+          });
+          await db.collection(COL_ANOMALY_ALERTS).updateOne({ _id: oid }, { $set: { emailSentAt: sentAt } });
+          await recordAnomalyNotifySent(db, orgId, dedupeKey, sentAt);
+          continue;
+        } catch (e2) {
+          console.error("[anomaly-notify] Falha Resend (fallback)", e2);
+        }
+      }
       console.error("[anomaly-notify] Falha Resend", e);
     }
   }

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
+import { usePlatformDisplayName } from "@/context/org-branding-context";
 
 interface MapaItem {
   papel: string;
@@ -142,6 +143,7 @@ function opBadgeClass(key: string): string {
 
 export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
   const t = useTranslations("kanban");
+  const appName = usePlatformDisplayName();
   const validacoesIntegradas = getValidacoesIntegradas(t);
   const [data, setData] = useState<MapaItem[]>(
     mapaProducao?.length ? [...mapaProducao] : [...DEFAULT_MAPA]
@@ -200,7 +202,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
               {t("mapaModal.executiveView.badge")}
             </span>
             <span id="mapa-modal-title" className="font-display font-bold text-xl text-[var(--flux-text)]">
-              {t("mapaModal.executiveView.title")}
+              {t("mapaModal.executiveView.title", { appName })}
             </span>
           </div>
           <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed mb-6 max-w-[720px]">

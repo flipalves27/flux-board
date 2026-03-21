@@ -238,7 +238,7 @@
     },
     "hints": {
       "leadTime": "Lead time estimado para concluídos: dias entre criação do card e última atualização do board (aproximação).",
-      "heatmap": "Cor indica exposição a risco: vermelho = mais crítico; verde = mais saudável. Baseado no índice heurístico do Flux-Board.",
+      "heatmap": "Cor indica exposição a risco: vermelho = mais crítico; verde = mais saudável. Baseado no índice heurístico do {appName}.",
       "velocity": "Requer campo owner (ou assignee) no card. Caso contrário, o gráfico ficará vazio.",
       "sentiment": "Média do score 0–100 por semana de digest a partir de textos de cards e Daily Insights (lote, sem identificação individual). Os pontos aparecem após o job do digest semanal com MongoDB ativo."
     },
@@ -391,7 +391,7 @@
       "tagline": "Operações comerciais com clareza."
     },
     "nav": {
-      "why": "Por que Flux-Board",
+      "why": "Por que {appName}",
       "platform": "Plataforma",
       "how": "Como funciona"
     },
@@ -407,7 +407,7 @@
         "highlight": "vendas e operações",
         "after": "andam no mesmo ritmo."
       },
-      "description": "A Flux-Board reúne Kanban profissional, insights do dia a dia e visibilidade do portfólio — para equipes que precisam de entregas previsíveis e velocidade nas conversas com clientes e liderança.",
+      "description": "{appName} reúne Kanban profissional, insights do dia a dia e visibilidade do portfólio — para equipes que precisam de entregas previsíveis e velocidade nas conversas com clientes e liderança.",
       "primary": {
         "loggedIn": "Ir para meus boards",
         "loggedOut": "Criar conta e testar"
@@ -456,7 +456,7 @@
       }
     },
     "platform": {
-      "heading": "Tudo o que já existe na Flux-Board",
+      "heading": "Tudo o que já existe na {appName}",
       "description": "Funcionalidades que refletem o produto de hoje — insights, contexto, portfólio, discovery e rotinas — em uma experiência coesa.",
       "actions": {
         "openPlatform": "Abrir a plataforma"
@@ -525,13 +525,13 @@
       "heading": "Traga clareza sobre como seu time trabalha",
       "description": "Uma base comercial sólida: visuais modernos, recursos alinhados ao dia a dia de vendas e operações e espaço para crescer com IA e integrações.",
       "actions": {
-        "loggedIn": "Continuar no Flux-Board",
+        "loggedIn": "Continuar no {appName}",
         "loggedOutPrimary": "Começar grátis",
         "loggedOutSecondary": "Explore os pilares"
       }
     },
     "footer": {
-      "copyright": "© {year} Flux-Board — Organize o fluxo. Entregue o que importa.",
+      "copyright": "© {year} {appName} — Organize o fluxo. Entregue o que importa.",
       "signIn": "Entrar",
       "features": "Recursos"
     }
@@ -1242,7 +1242,7 @@
       },
       "executiveView": {
         "badge": "VISÃO EXECUTIVA",
-        "title": "Mapa de Produção — Flux-Board",
+        "title": "Mapa de Produção — {appName}",
         "description": "Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo."
       },
       "sections": {

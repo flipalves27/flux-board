@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
+import { usePlatformDisplayName } from "@/context/org-branding-context";
 
 function IconMenu({ className }: { className?: string }) {
   return (
@@ -15,6 +16,7 @@ function IconMenu({ className }: { className?: string }) {
 export function MobileAppHeader() {
   const { layout, mobileOpen, openMobile } = useSidebarLayout();
   const t = useTranslations("navigation.menu");
+  const platformName = usePlatformDisplayName();
 
   if (layout !== "mobile") return null;
 
@@ -30,7 +32,7 @@ export function MobileAppHeader() {
       >
         <IconMenu className="h-5 w-5" />
       </button>
-      <span className="font-display text-sm font-bold tracking-tight text-[var(--flux-text)]">Flux-Board</span>
+      <span className="font-display text-sm font-bold tracking-tight text-[var(--flux-text)]">{platformName}</span>
     </header>
   );
 }

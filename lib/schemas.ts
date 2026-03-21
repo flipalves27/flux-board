@@ -327,6 +327,7 @@ export const PortalBrandingSchema = z
     logoUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
     primaryColor: z.string().trim().max(32).optional().nullable(),
     secondaryColor: z.string().trim().max(32).optional().nullable(),
+    accentColor: z.string().trim().max(32).optional().nullable(),
     title: z.string().trim().max(120).optional().nullable(),
   })
   .passthrough();
@@ -348,12 +349,26 @@ export const TemplateExportBodySchema = z.object({
   pricingTier: z.enum(["free", "premium"]),
 });
 
+const brandingImageUrl = z.union([
+  z.string().trim().url().max(4096),
+  z
+    .string()
+    .trim()
+    .max(3_000_000)
+    .refine((s) => s.startsWith("data:image/"), "Logo/favicon: use https URL ou data:image/… base64."),
+  z.literal(""),
+  z.null(),
+]);
+
 export const OrgBrandingUpdateSchema = z
   .object({
-    logoUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
+    logoUrl: brandingImageUrl.optional().nullable(),
     primaryColor: z.string().trim().max(32).optional().nullable(),
     secondaryColor: z.string().trim().max(32).optional().nullable(),
-    faviconUrl: z.union([z.string().trim().url().max(2048), z.literal("")]).optional().nullable(),
+    accentColor: z.string().trim().max(32).optional().nullable(),
+    faviconUrl: brandingImageUrl.optional().nullable(),
+    platformName: z.string().trim().max(80).optional().nullable(),
+    emailFrom: z.string().trim().max(255).optional().nullable(),
     customDomain: z
       .string()
       .trim()
@@ -361,6 +376,8 @@ export const OrgBrandingUpdateSchema = z
       .regex(/^[a-z0-9.-]*$/i, "Domínio inválido.")
       .optional()
       .nullable(),
+    /** Gera novo token TXT sem alterar o hostname. Plano Business. */
+    regenerateDomainToken: z.boolean().optional(),
   })
   .passthrough();
 

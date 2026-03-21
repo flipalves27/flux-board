@@ -8,6 +8,8 @@ export type AnomalyAlertEmailProps = {
   suggestedAction: string;
   boardUrl: string;
   severity: string;
+  platformLabel?: string;
+  logoUrl?: string;
 };
 
 export function AnomalyAlertEmail({
@@ -17,12 +19,20 @@ export function AnomalyAlertEmail({
   suggestedAction,
   boardUrl,
   severity,
+  platformLabel,
+  logoUrl,
 }: AnomalyAlertEmailProps) {
+  const brand = platformLabel || "Flux-Board";
   return (
     <Html>
       <Head />
       <Body style={body}>
         <Container style={container}>
+          {logoUrl && /^https?:\/\//i.test(logoUrl) ? (
+            <Section style={{ marginBottom: 16, textAlign: "center" as const }}>
+              <img src={logoUrl} alt="" width={140} style={{ maxWidth: "100%", height: "auto" }} />
+            </Section>
+          ) : null}
           <Heading style={h1}>Alerta de fluxo — {severity.toUpperCase()}</Heading>
           <Text style={textStrong}>{title}</Text>
           <Section style={box}>
@@ -39,9 +49,9 @@ export function AnomalyAlertEmail({
           </Section>
           <Hr style={hr} />
           <Link href={boardUrl} style={link}>
-            Abrir no Flux-Board
+            Abrir no {brand}
           </Link>
-          <Text style={footer}>Mensagem automática do monitor de anomalias Flux-Board.</Text>
+          <Text style={footer}>Mensagem automática do monitor de anomalias {brand}.</Text>
         </Container>
       </Body>
     </Html>

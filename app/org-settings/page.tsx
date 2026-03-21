@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, apiPut, ApiError } from "@/lib/api-client";
+import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
 import { useOrgBranding } from "@/context/org-branding-context";
+import { readImageFileAsDataUrl } from "@/lib/branding-upload-client";
 
 function slugifyLocal(input: string): string {
   return String(input || "")
@@ -17,6 +18,9 @@ function slugifyLocal(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 }
+
+const CNAME_TARGET =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_CUSTOM_DOMAIN_CNAME_TARGET) || "cname.vercel-dns.com";
 
 export default function OrgSettingsPage() {
   const router = useRouter();
@@ -30,6 +34,7 @@ export default function OrgSettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [orgName, setOrgName] = useState("");
@@ -39,10 +44,33 @@ export default function OrgSettingsPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
   const [secondaryColor, setSecondaryColor] = useState("");
+  const [accentColor, setAccentColor] = useState("");
+  const [platformName, setPlatformName] = useState("");
   const [faviconUrl, setFaviconUrl] = useState("");
+  const [emailFrom, setEmailFrom] = useState("");
   const [customDomain, setCustomDomain] = useState("");
+  const [domainVerificationToken, setDomainVerificationToken] = useState("");
+  const [customDomainVerifiedAt, setCustomDomainVerifiedAt] = useState("");
 
   const suggestedSlug = useMemo(() => slugifyLocal(orgName), [orgName]);
+
+  function applyOrgPayload(org: Record<string, unknown> | null | undefined) {
+    if (!org) return;
+    setOrgName(String(org.name ?? ""));
+    setOrgSlug(String(org.slug ?? ""));
+    setOrgPlan(org.plan === "pro" || org.plan === "business" ? org.plan : "free");
+    const b = org.branding as Record<string, unknown> | undefined;
+    setLogoUrl(typeof b?.logoUrl === "string" ? b.logoUrl : "");
+    setPrimaryColor(typeof b?.primaryColor === "string" ? b.primaryColor : "");
+    setSecondaryColor(typeof b?.secondaryColor === "string" ? b.secondaryColor : "");
+    setAccentColor(typeof b?.accentColor === "string" ? b.accentColor : "");
+    setPlatformName(typeof b?.platformName === "string" ? b.platformName : "");
+    setFaviconUrl(typeof b?.faviconUrl === "string" ? b.faviconUrl : "");
+    setEmailFrom(typeof b?.emailFrom === "string" ? b.emailFrom : "");
+    setCustomDomain(typeof b?.customDomain === "string" ? b.customDomain : "");
+    setDomainVerificationToken(typeof b?.domainVerificationToken === "string" ? b.domainVerificationToken : "");
+    setCustomDomainVerifiedAt(typeof b?.customDomainVerifiedAt === "string" ? b.customDomainVerifiedAt : "");
+  }
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -58,17 +86,8 @@ export default function OrgSettingsPage() {
     setError(null);
     (async () => {
       try {
-        const data = await apiGet<{ organization: any }>("/api/organizations/me", getHeaders());
-        const org = data?.organization;
-        setOrgName(org?.name ?? "");
-        setOrgSlug(org?.slug ?? "");
-        setOrgPlan(org?.plan === "pro" || org?.plan === "business" ? org.plan : "free");
-        const b = org?.branding;
-        setLogoUrl(typeof b?.logoUrl === "string" ? b.logoUrl : "");
-        setPrimaryColor(typeof b?.primaryColor === "string" ? b.primaryColor : "");
-        setSecondaryColor(typeof b?.secondaryColor === "string" ? b.secondaryColor : "");
-        setFaviconUrl(typeof b?.faviconUrl === "string" ? b.faviconUrl : "");
-        setCustomDomain(typeof b?.customDomain === "string" ? b.customDomain : "");
+        const data = await apiGet<{ organization: Record<string, unknown> }>("/api/organizations/me", getHeaders());
+        applyOrgPayload(data?.organization);
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
           router.replace(`${localeRoot}/login`);
@@ -85,7 +104,7 @@ export default function OrgSettingsPage() {
     if (!slugTouched) setOrgSlug(suggestedSlug);
   }, [suggestedSlug, slugTouched]);
 
-  async function save() {
+  async function save(extraBranding?: Record<string, unknown>) {
     if (!user) return;
     setBusy(true);
     setError(null);
@@ -101,18 +120,21 @@ export default function OrgSettingsPage() {
               logoUrl: logoUrl.trim() || "",
               primaryColor: primaryColor.trim() || "",
               secondaryColor: secondaryColor.trim() || "",
+              accentColor: accentColor.trim() || "",
+              platformName: platformName.trim() || "",
               faviconUrl: faviconUrl.trim() || "",
+              emailFrom: emailFrom.trim() || "",
               ...(orgPlan === "business" ? { customDomain: customDomain.trim() || "" } : {}),
+              ...extraBranding,
             }
           : undefined;
 
-      await apiPut(
+      const res = await apiPut<{ organization: Record<string, unknown> }>(
         "/api/organizations/me",
-        branding
-          ? { name, slug, branding }
-          : { name, slug },
+        branding ? { name, slug, branding } : { name, slug },
         getHeaders()
       );
+      applyOrgPayload(res?.organization);
       pushToast({ kind: "success", title: "Organização atualizada." });
       setSlugTouched(true);
       await orgBranding?.refresh();
@@ -120,6 +142,49 @@ export default function OrgSettingsPage() {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Erro ao salvar.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function verifyDns() {
+    setVerifyBusy(true);
+    setError(null);
+    try {
+      const res = await apiPost<{ organization?: Record<string, unknown> }>(
+        "/api/organizations/verify-domain",
+        {},
+        getHeaders()
+      );
+      if (res?.organization) applyOrgPayload(res.organization);
+      pushToast({ kind: "success", title: "Domínio verificado." });
+      await orgBranding?.refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Falha na verificação.");
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const dataUrl = await readImageFileAsDataUrl(f);
+      setLogoUrl(dataUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Arquivo inválido.");
+    }
+  }
+
+  async function onFaviconFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const dataUrl = await readImageFileAsDataUrl(f);
+      setFaviconUrl(dataUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Arquivo inválido.");
     }
   }
 
@@ -173,62 +238,190 @@ export default function OrgSettingsPage() {
               </div>
 
               {(orgPlan === "pro" || orgPlan === "business") && (
-                <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)]">
-                  <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Branding (app inteiro)</h3>
-                  <p className="text-sm text-[var(--flux-text-muted)] mb-4">
-                    Logo na sidebar, cores primárias e favicon. Plano Business: domínio customizado (CNAME configurado no DNS).
-                  </p>
+                <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">White-label (Enterprise)</h3>
+                    <p className="text-sm text-[var(--flux-text-muted)]">
+                      Logo, cores, nome da plataforma e favicon em todo o app, portal e e-mails. Plano Business: domínio
+                      próprio e remetente no Resend.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Logo (URL)</label>
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Nome da plataforma</label>
                       <input
-                        value={logoUrl}
-                        onChange={(e) => setLogoUrl(e.target.value)}
+                        value={platformName}
+                        onChange={(e) => setPlatformName(e.target.value)}
                         className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                         disabled={busy}
-                        placeholder="https://…"
+                        placeholder="Ex.: Portal do Cliente ACME"
+                        maxLength={80}
                       />
                     </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Logo (URL ou upload PNG/SVG até 2MB)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          className="flex-1 min-w-0 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
+                          disabled={busy}
+                          placeholder="https://… ou envie um arquivo"
+                        />
+                        <label className="shrink-0 px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-xs font-semibold text-center cursor-pointer hover:border-[var(--flux-primary)]">
+                          Upload
+                          <input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" className="hidden" onChange={onLogoFile} disabled={busy} />
+                        </label>
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor primária (hex)</label>
-                      <input
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
-                        disabled={busy}
-                        placeholder="var(--flux-primary)"
-                      />
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor primária</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={primaryColor && /^#[0-9a-fA-F]{3,8}$/.test(primaryColor) ? primaryColor : "#6C5CE7"}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
+                          disabled={busy}
+                          aria-label="Cor primária"
+                        />
+                        <input
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          disabled={busy}
+                          placeholder="#6C5CE7"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor secundária (hex)</label>
-                      <input
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
-                        disabled={busy}
-                        placeholder="var(--flux-secondary)"
-                      />
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor secundária</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={secondaryColor && /^#[0-9a-fA-F]{3,8}$/.test(secondaryColor) ? secondaryColor : "#00D2D3"}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
+                          disabled={busy}
+                          aria-label="Cor secundária"
+                        />
+                        <input
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          disabled={busy}
+                          placeholder="#00D2D3"
+                        />
+                      </div>
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Favicon (URL)</label>
-                      <input
-                        value={faviconUrl}
-                        onChange={(e) => setFaviconUrl(e.target.value)}
-                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)]"
-                        disabled={busy}
-                        placeholder="https://…/favicon.ico"
-                      />
-                    </div>
-                    {orgPlan === "business" && (
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Domínio customizado</label>
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Cor de destaque (accent)</label>
+                      <div className="flex gap-2">
                         <input
-                          value={customDomain}
-                          onChange={(e) => setCustomDomain(e.target.value)}
-                          className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          type="color"
+                          value={accentColor && /^#[0-9a-fA-F]{3,8}$/.test(accentColor) ? accentColor : "#FDA7DF"}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
                           disabled={busy}
-                          placeholder="board.cliente.com"
+                          aria-label="Accent"
                         />
+                        <input
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          disabled={busy}
+                          placeholder="#FDA7DF"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Favicon (URL ou upload)</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          value={faviconUrl}
+                          onChange={(e) => setFaviconUrl(e.target.value)}
+                          className="flex-1 min-w-0 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)]"
+                          disabled={busy}
+                          placeholder="https://… ou arquivo .ico/.png"
+                        />
+                        <label className="shrink-0 px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-xs font-semibold text-center cursor-pointer hover:border-[var(--flux-primary)]">
+                          Upload
+                          <input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp,.ico" className="hidden" onChange={onFaviconFile} disabled={busy} />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">E-mail remetente (Resend)</label>
+                      <input
+                        value={emailFrom}
+                        onChange={(e) => setEmailFrom(e.target.value)}
+                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                        disabled={busy}
+                        placeholder="notificacoes@suaempresa.com"
+                      />
+                      <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
+                        O domínio do endereço deve estar verificado em{" "}
+                        <a href="https://resend.com/docs/dashboard/domains/introduction" className="underline text-[var(--flux-secondary)]" target="_blank" rel="noreferrer">
+                          Resend → Domains
+                        </a>
+                        . Usado no Weekly Digest e alertas de anomalia.
+                      </p>
+                    </div>
+
+                    {orgPlan === "business" && (
+                      <div className="md:col-span-2 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-surface-elevated)]/40 p-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Domínio customizado</label>
+                          <input
+                            value={customDomain}
+                            onChange={(e) => setCustomDomain(e.target.value)}
+                            className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                            disabled={busy}
+                            placeholder="board.cliente.com"
+                          />
+                        </div>
+                        <div className="text-xs text-[var(--flux-text-muted)] space-y-2">
+                          <p>
+                            <strong className="text-[var(--flux-text)]">SSL:</strong> adicione o hostname no painel Vercel (ou seu provedor) apontando CNAME para{" "}
+                            <code className="font-mono text-[var(--flux-text)]">{CNAME_TARGET}</code>.{" "}
+                            <a href="https://vercel.com/docs/domains/working-with-domains/add-a-domain" className="underline text-[var(--flux-secondary)]" target="_blank" rel="noreferrer">
+                              Documentação Vercel
+                            </a>
+                          </p>
+                          <p>
+                            <strong className="text-[var(--flux-text)]">Verificação DNS:</strong> crie um registro{" "}
+                            <strong>TXT</strong> no hostname acima com valor:
+                          </p>
+                          <code className="block font-mono text-[11px] break-all p-2 rounded bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
+                            flux-verify={domainVerificationToken || "…salve o domínio para gerar o token"}
+                          </code>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <button
+                              type="button"
+                              className="btn-primary text-xs py-1.5 px-3"
+                              disabled={verifyBusy || !customDomain.trim() || busy}
+                              onClick={() => void verifyDns()}
+                            >
+                              {verifyBusy ? "Verificando…" : "Verificar registro TXT"}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary text-xs py-1.5 px-3"
+                              disabled={busy || !customDomain.trim()}
+                              onClick={() => void save({ regenerateDomainToken: true })}
+                            >
+                              Novo token
+                            </button>
+                          </div>
+                          {customDomainVerifiedAt ? (
+                            <p className="text-[var(--flux-success)] pt-1">Verificado em {new Date(customDomainVerifiedAt).toLocaleString()}.</p>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -244,7 +437,7 @@ export default function OrgSettingsPage() {
                 >
                   Cancelar
                 </button>
-                <button type="button" className="btn-primary" disabled={busy} onClick={save}>
+                <button type="button" className="btn-primary" disabled={busy} onClick={() => void save()}>
                   {busy ? "Salvando..." : "Salvar"}
                 </button>
               </div>
@@ -255,4 +448,3 @@ export default function OrgSettingsPage() {
     </div>
   );
 }
-

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -72,6 +73,9 @@ export default function HomePage() {
   const locale = localeSegment === "en" ? "en" : "pt-BR";
   const localeRoot = `/${locale}`;
   const t = useTranslations("landing");
+  const appName = usePlatformDisplayName();
+  const orgBranding = useOrgBranding();
+  const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const aestheticVariant: "sober" | "vibrant" = "vibrant";
 
   const pillars = [
@@ -150,22 +154,29 @@ export default function HomePage() {
         <header className="hero-shell home-landing-reveal sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[var(--flux-rad-xl)] border px-4 py-3 backdrop-blur-md md:px-5 md:py-3.5">
           <Link href={`${localeRoot}/`} className="flex min-w-0 items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-                boxShadow: "0 8px 20px var(--flux-primary-alpha-35)",
+                background: logoUrl
+                  ? "var(--flux-surface-elevated)"
+                  : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+                boxShadow: logoUrl ? "none" : "0 8px 20px var(--flux-primary-alpha-35)",
               }}
             >
-              <FluxLogoIcon className="h-5 w-5" />
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="max-h-9 max-w-[36px] object-contain" />
+              ) : (
+                <FluxLogoIcon className="h-5 w-5" />
+              )}
             </div>
             <div className="min-w-0 text-left">
-              <p className="font-display text-base font-bold tracking-tight">Flux-Board</p>
+              <p className="font-display text-base font-bold tracking-tight">{appName}</p>
               <p className="truncate text-xs text-[var(--flux-text-muted)]">{t("header.tagline")}</p>
             </div>
           </Link>
           <nav className="order-3 flex w-full items-center justify-center gap-1 text-xs font-semibold text-[var(--flux-text-muted)] md:order-none md:w-auto md:justify-end md:gap-6 md:text-sm">
             <a href="#why" className="rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)]">
-              {t("nav.why")}
+              {t("nav.why", { appName })}
             </a>
             <a href="#platform" className="rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)]">
               {t("nav.platform")}
@@ -206,7 +217,7 @@ export default function HomePage() {
                 {t("hero.title.after")}
               </h1>
               <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--flux-text-muted)] md:text-base">
-                {t("hero.description")}
+                {t("hero.description", { appName })}
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 {user ? (
@@ -278,7 +289,7 @@ export default function HomePage() {
         <section id="platform" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24">
           <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="font-display text-2xl font-bold md:text-3xl">{t("platform.heading")}</h2>
+              <h2 className="font-display text-2xl font-bold md:text-3xl">{t("platform.heading", { appName })}</h2>
               <p className="mt-2 max-w-xl text-sm text-[var(--flux-text-muted)] md:text-base">
                 {t("platform.description")}
               </p>
@@ -356,7 +367,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               {user ? (
                 <Link href={`${localeRoot}/boards`} className="btn-primary px-8 py-3 text-[15px]">
-                  {t("cta.actions.loggedIn")}
+                  {t("cta.actions.loggedIn", { appName })}
                 </Link>
               ) : (
                 <>
@@ -373,7 +384,7 @@ export default function HomePage() {
         </section>
 
         <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[var(--flux-primary-alpha-15)] pt-8 text-center text-xs text-[var(--flux-text-muted)] md:flex-row md:text-left">
-          <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
+          <p>{t("footer.copyright", { year: new Date().getFullYear(), appName })}</p>
           <div className="flex flex-wrap justify-center gap-4 md:justify-end">
             <Link href={`${localeRoot}/login`} className="font-semibold text-[var(--flux-text)] transition-colors hover:text-[var(--flux-primary-light)]">
               {t("footer.signIn")}

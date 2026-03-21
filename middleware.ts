@@ -12,6 +12,7 @@ const NON_CSP_HEADERS = {
 
 const CSP =
   "default-src 'self'; " +
+  "img-src 'self' data: https:; " +
   "script-src 'self' 'unsafe-inline'; " +
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
   "font-src 'self' https://fonts.gstatic.com;";
@@ -107,7 +108,7 @@ export async function middleware(req: NextRequest) {
     if (isDocumentRequest(req)) {
       res.headers.set(
         "Content-Security-Policy",
-        "default-src 'self'; frame-ancestors *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+        "default-src 'self'; img-src 'self' data: https:; frame-ancestors *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
       );
     }
   } else {

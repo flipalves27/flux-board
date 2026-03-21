@@ -13,6 +13,7 @@ type ApiLocked = {
     clientLabel?: string;
     branding: PublicPortalPayload["branding"];
     displayTitle: string;
+    platformName?: string;
   };
 };
 
@@ -68,8 +69,11 @@ export default function PublicPortalPage() {
     return {
       ["--portal-primary" as string]: b.primaryColor || "var(--flux-primary)",
       ["--portal-secondary" as string]: b.secondaryColor || "var(--flux-secondary)",
+      ["--portal-accent" as string]: b.accentColor || "var(--flux-accent)",
     } as React.CSSProperties;
   }, [locked, data]);
+
+  const footerBrand = locked?.preview.platformName || data?.platformName || "Flux-Board";
 
   const columnsWithCards = useMemo(() => {
     if (!data) return [];
@@ -207,7 +211,11 @@ export default function PublicPortalPage() {
               value={data.metrics.completed}
               accent="var(--portal-secondary, var(--flux-secondary))"
             />
-            <MetricPill label={t("metrics.pct")} value={`${data.metrics.completionPercent}%`} accent="var(--flux-accent)" />
+            <MetricPill
+              label={t("metrics.pct")}
+              value={`${data.metrics.completionPercent}%`}
+              accent="var(--portal-accent, var(--flux-accent))"
+            />
           </div>
         </div>
       </header>
@@ -263,7 +271,7 @@ export default function PublicPortalPage() {
       </div>
 
       <footer className="fixed bottom-0 left-0 right-0 py-2 text-center text-[10px] text-[var(--flux-text-muted)] bg-[var(--flux-surface-dark)]/90 border-t border-[var(--flux-portal-chrome-10)]">
-        {t("readOnly")} · Flux-Board
+        {t("readOnly")} · {footerBrand}
       </footer>
     </div>
   );

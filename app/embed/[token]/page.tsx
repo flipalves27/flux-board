@@ -8,6 +8,8 @@ type EmbedPayload = {
   updatedAt: string;
   boardName: string;
   clientLabel?: string;
+  platformName?: string;
+  logoUrl?: string;
   kind: string;
   badge: { total: number; inProgress: number; done: number; overdue: number };
   portfolio: { risco: number | null; throughput: number | null; previsibilidade: number | null; cardCount: number };
@@ -68,10 +70,18 @@ export default function EmbedWidgetPage() {
       {data && (
         <>
           <div className="flex items-start justify-between gap-3 mb-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--flux-secondary)] font-display font-semibold">Flux-Board</p>
-              <h1 className="text-base font-bold font-display leading-tight">{data.boardName}</h1>
-              {data.clientLabel ? <p className="text-xs text-[var(--flux-text-muted)] mt-0.5">{data.clientLabel}</p> : null}
+            <div className="flex items-start gap-2 min-w-0">
+              {data.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={data.logoUrl} alt="" className="h-8 w-auto max-w-[100px] object-contain shrink-0 mt-0.5" />
+              ) : null}
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-[var(--flux-secondary)] font-display font-semibold truncate">
+                  {data.platformName || "Flux-Board"}
+                </p>
+                <h1 className="text-base font-bold font-display leading-tight">{data.boardName}</h1>
+                {data.clientLabel ? <p className="text-xs text-[var(--flux-text-muted)] mt-0.5">{data.clientLabel}</p> : null}
+              </div>
             </div>
             <div className="text-[10px] text-[var(--flux-text-muted)] text-right">
               Atualizado
@@ -152,9 +162,13 @@ export default function EmbedWidgetPage() {
           )}
 
           <p className="mt-4 text-center text-[10px] text-[var(--flux-text-muted)]">
-            <Link href="https://flux-board.app" className="underline hover:text-[var(--flux-secondary)]">
-              Powered by Flux-Board
-            </Link>
+            {data.platformName ? (
+              <span className="text-[var(--flux-text-muted)]">{data.platformName}</span>
+            ) : (
+              <Link href="https://flux-board.app" className="underline hover:text-[var(--flux-secondary)]">
+                Powered by Flux-Board
+              </Link>
+            )}
           </p>
         </>
       )}

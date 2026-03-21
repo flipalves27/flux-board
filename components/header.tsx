@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "next-intl";
 import { AnomalyNotificationBell } from "@/components/anomaly-notification-bell";
+import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 
 interface HeaderProps {
   title?: string;
@@ -18,7 +19,7 @@ interface HeaderProps {
 }
 
 export function Header({
-  title = "Flux-Board",
+  title,
   titleLine2,
   boardTourHeader,
   backHref,
@@ -28,6 +29,11 @@ export function Header({
 }: HeaderProps) {
   const { user } = useAuth();
   const t = useTranslations("header");
+  const platformName = usePlatformDisplayName();
+  const orgBranding = useOrgBranding();
+  const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
+  const defaultTitle = platformName;
+  const resolvedTitle = title ?? defaultTitle;
 
   return (
     <header className="bg-[var(--flux-surface-mid)] border-b border-[var(--flux-primary-alpha-12)] sticky top-0 z-[200]">
@@ -43,17 +49,21 @@ export function Header({
           )}
           {boardTourHeader ? (
             <div data-tour="board-header" className="min-w-0 flex flex-col gap-0.5">
-              <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)]">
+              <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)] flex items-center gap-2 min-w-0">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="" className="h-7 w-auto max-w-[140px] object-contain shrink-0" />
+                ) : null}
                 <span
-                  className="bg-clip-text text-transparent"
+                  className="bg-clip-text text-transparent min-w-0 truncate"
                   style={{
                     backgroundImage: "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
                   }}
                 >
-                  Flux-Board
+                  {platformName}
                 </span>
-                {title && title !== "Flux-Board" && (
-                  <span className="text-[var(--flux-text-muted)] font-medium"> — {title}</span>
+                {resolvedTitle && resolvedTitle !== platformName && (
+                  <span className="text-[var(--flux-text-muted)] font-medium truncate"> — {resolvedTitle}</span>
                 )}
               </h1>
               {titleLine2 ? (
@@ -61,17 +71,21 @@ export function Header({
               ) : null}
             </div>
           ) : (
-            <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)]">
+            <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)] flex items-center gap-2 min-w-0">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-7 w-auto max-w-[140px] object-contain shrink-0" />
+              ) : null}
               <span
-                className="bg-clip-text text-transparent"
+                className="bg-clip-text text-transparent min-w-0 truncate"
                 style={{
                   backgroundImage: "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
                 }}
               >
-                Flux-Board
+                {platformName}
               </span>
-              {title && title !== "Flux-Board" && (
-                <span className="text-[var(--flux-text-muted)] font-medium"> — {title}</span>
+              {resolvedTitle && resolvedTitle !== platformName && (
+                <span className="text-[var(--flux-text-muted)] font-medium truncate"> — {resolvedTitle}</span>
               )}
             </h1>
           )}

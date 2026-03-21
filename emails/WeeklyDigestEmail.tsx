@@ -52,6 +52,10 @@ export type WeeklyDigestOkrSection = {
 
 export type WeeklyDigestEmailProps = {
   orgName: string;
+  /** Nome white-label (cabeçalho e assunto). */
+  platformLabel?: string;
+  /** Logo https ou data URL (PNG/SVG). */
+  logoUrl?: string;
   weekLabel: string;
   appUrl?: string;
   boards: WeeklyDigestBoard[];
@@ -62,6 +66,8 @@ export type WeeklyDigestEmailProps = {
 
 export function WeeklyDigestEmail({
   orgName,
+  platformLabel,
+  logoUrl,
   weekLabel,
   appUrl,
   boards,
@@ -69,12 +75,20 @@ export function WeeklyDigestEmail({
   proactiveLines,
 }: WeeklyDigestEmailProps) {
   const safeAppUrl = appUrl || "#";
+  const brand = platformLabel || "Flux-Board";
   return (
     <Html>
       <Head />
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Weekly Digest IA</Heading>
+          {logoUrl && /^https?:\/\//i.test(logoUrl) ? (
+            <Section style={{ marginBottom: 16, textAlign: "center" as const }}>
+              <img src={logoUrl} alt="" width={160} style={{ maxWidth: "100%", height: "auto" }} />
+            </Section>
+          ) : null}
+          <Heading style={h1}>
+            Weekly Digest IA — {brand}
+          </Heading>
           <Text style={muted}>Organização: {orgName}</Text>
           <Text style={muted}>Período: {weekLabel}</Text>
           <Hr style={hr} />

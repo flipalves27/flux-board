@@ -238,7 +238,7 @@
     },
     "hints": {
       "leadTime": "Lead time for completed cards is estimated from card creation to last board update (approximation).",
-      "heatmap": "Color reflects risk exposure: red = more critical; green = healthier. Based on Flux-Board heuristics.",
+      "heatmap": "Color reflects risk exposure: red = more critical; green = healthier. Based on {appName} heuristics.",
       "velocity": "Requires an owner (or assignee) field on cards; otherwise the chart may be empty.",
       "sentiment": "Average 0–100 mood score per digest week from card text and Daily Insights (batch, no individual attribution). Data appears after the weekly digest job runs with MongoDB enabled."
     },
@@ -391,7 +391,7 @@
       "tagline": "Commercial operations with clarity."
     },
     "nav": {
-      "why": "Why Flux-Board",
+      "why": "Why {appName}",
       "platform": "Platform",
       "how": "How it works"
     },
@@ -407,7 +407,7 @@
         "highlight": "sales and operations",
         "after": "move at the same pace."
       },
-      "description": "Flux-Board brings together professional Kanban, day-to-day insights, and portfolio visibility—for teams that need predictable delivery and speed in conversations with customers and leadership.",
+      "description": "{appName} brings together professional Kanban, day-to-day insights, and portfolio visibility—for teams that need predictable delivery and speed in conversations with customers and leadership.",
       "primary": {
         "loggedIn": "Go to my boards",
         "loggedOut": "Sign up and try it"
@@ -456,7 +456,7 @@
       }
     },
     "platform": {
-      "heading": "Everything already in Flux-Board",
+      "heading": "Everything already in {appName}",
       "description": "Capabilities that reflect today's product—insights, context, portfolio, discovery, and routines—in one cohesive experience.",
       "actions": {
         "openPlatform": "Open the platform"
@@ -525,13 +525,13 @@
       "heading": "Bring clarity to how your team works",
       "description": "Try a solid commercial foundation: modern visuals, features aligned with sales and operations day-to-day, and room to grow with AI and integrations.",
       "actions": {
-        "loggedIn": "Continue in Flux-Board",
+        "loggedIn": "Continue in {appName}",
         "loggedOutPrimary": "Start for free",
         "loggedOutSecondary": "Explore the pillars"
       }
     },
     "footer": {
-      "copyright": "© {year} Flux-Board — Organize the flow. Ship what matters.",
+      "copyright": "© {year} {appName} — Organize the flow. Ship what matters.",
       "signIn": "Sign in",
       "features": "Features"
     }
@@ -1315,7 +1315,7 @@
       },
       "executiveView": {
         "badge": "EXECUTIVE VIEW",
-        "title": "Production Map — Flux-Board",
+        "title": "Production Map — {appName}",
         "description": "A consolidated view of what's already in production: business lines and integrated validations (SERPRO, SUSEP, SERASA) performed in each workflow."
       },
       "sections": {
