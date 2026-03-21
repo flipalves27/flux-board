@@ -7,8 +7,10 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { useTheme } from "@/context/theme-context";
+import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
+import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -25,7 +27,11 @@ function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
 function IconBoards({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+      />
     </svg>
   );
 }
@@ -33,7 +39,11 @@ function IconBoards({ className }: { className?: string }) {
 function IconReports({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      />
     </svg>
   );
 }
@@ -49,7 +59,11 @@ function IconDiscovery({ className }: { className?: string }) {
 function IconTemplates({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+      />
     </svg>
   );
 }
@@ -65,7 +79,11 @@ function IconTasks({ className }: { className?: string }) {
 function IconUsers({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
   );
 }
@@ -125,7 +143,11 @@ function IconLogout({ className }: { className?: string }) {
 function IconSun({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
   );
 }
@@ -154,8 +176,18 @@ function IconChevronRight({ className }: { className?: string }) {
   );
 }
 
+function IconClose({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
 const SIDEBAR_WIDTH_EXPANDED = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 72;
+const SIDEBAR_WIDTH_TABLET_RAIL = 60;
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "flux-board.sidebar.collapsed";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -163,14 +195,51 @@ export function Sidebar() {
   const orgBrandingCtx = useOrgBranding();
   const orgLogoUrl = orgBrandingCtx?.branding?.logoUrl?.trim();
   const { theme, setTheme } = useTheme();
+  const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
   const [collapsed, setCollapsed] = useState(false);
+  const [tabletHover, setTabletHover] = useState(false);
   const t = useTranslations("navigation");
+
+  const { drawerProps } = useMobileDrawerPointer({
+    enabled: layout === "mobile",
+    drawerOpen: mobileOpen,
+    onOpen: openMobile,
+    onClose: closeMobile,
+  });
 
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
   const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+      if (v === "true") setCollapsed(true);
+      if (v === "false") setCollapsed(false);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (layout !== "mobile" || !mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMobile();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [layout, mobileOpen, closeMobile]);
+
+  useEffect(() => {
+    if (layout !== "mobile" || !mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [layout, mobileOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,6 +266,34 @@ export function Sidebar() {
     };
   }, [isChecked, user?.isAdmin, user?.orgId, getHeaders]);
 
+  const showExpandedNav =
+    layout === "mobile" || (layout === "tablet" && tabletHover) || (layout === "desktop" && !collapsed);
+  const compactMode = !showExpandedNav;
+
+  const sidebarWidth =
+    layout === "tablet"
+      ? tabletHover
+        ? SIDEBAR_WIDTH_EXPANDED
+        : SIDEBAR_WIDTH_TABLET_RAIL
+      : layout === "desktop"
+        ? collapsed
+          ? SIDEBAR_WIDTH_COLLAPSED
+          : SIDEBAR_WIDTH_EXPANDED
+        : SIDEBAR_WIDTH_EXPANDED;
+
+  const toggleDesktopCollapsed = () => {
+    if (layout !== "desktop") return;
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
   const isActive = (href: string) => {
     if (href === "/boards") return normalizedPath === "/boards";
     if (href === "/reports") return normalizedPath === "/reports";
@@ -219,7 +316,7 @@ export function Sidebar() {
      }`;
 
   function NavSectionTitle({ children }: { children: ReactNode }) {
-    if (collapsed) return null;
+    if (!showExpandedNav) return null;
     return (
       <div className="px-2.5 pt-3 first:pt-1 pb-1">
         <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]/65">
@@ -239,10 +336,17 @@ export function Sidebar() {
 
   function NavLink({ path, icon, label, hint, sublabel }: NavLinkProps) {
     const href = `/${locale}${path}`;
+    const afterNav = () => {
+      if (layout === "mobile") closeMobile();
+    };
     const body = (
-      <Link href={href} className={`${linkClass(path)} ${!collapsed && sublabel ? "items-start py-2.5" : ""}`}>
+      <Link
+        href={href}
+        onClick={afterNav}
+        className={`${linkClass(path)} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
+      >
         <span className="mt-0.5 shrink-0">{icon}</span>
-        {!collapsed && (
+        {showExpandedNav && (
           <span className="flex min-w-0 flex-col gap-0 leading-tight">
             <span>{label}</span>
             {sublabel ? (
@@ -252,7 +356,7 @@ export function Sidebar() {
         )}
       </Link>
     );
-    if (collapsed) {
+    if (compactMode) {
       return (
         <CustomTooltip content={hint} position="right">
           {body}
@@ -262,188 +366,236 @@ export function Sidebar() {
     return body;
   }
 
+  const mobileClosed = layout === "mobile" && !mobileOpen;
+
   return (
-    <aside
-      className="flex flex-col shrink-0 border-r border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width] duration-300 ease-out overflow-hidden"
-      style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
-    >
-      {/* Logo + toggle — ícone sempre visível; quando recolhido mantém uma linha para não cortar o ícone */}
-      <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[var(--flux-primary-alpha-06)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
-        <Link href={`/${locale}/boards`} className={`flex items-center min-w-0 ${collapsed ? "justify-center shrink-0" : "gap-2"}`}>
-          <div
-            className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white overflow-hidden"
-            style={{
-              background: orgLogoUrl
-                ? "var(--flux-surface-elevated)"
-                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: orgLogoUrl ? "none" : "0 2px 8px var(--flux-primary-alpha-25)",
-            }}
-          >
-            {orgLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={orgLogoUrl} alt="" className="max-w-[28px] max-h-[28px] object-contain" />
-            ) : (
-              <FluxLogoIcon className="w-4 h-4" />
-            )}
-          </div>
-          {!collapsed && <span className="font-display font-bold text-[var(--flux-text)] truncate text-sm">Flux-Board</span>}
-        </Link>
+    <>
+      {layout === "mobile" && mobileOpen ? (
         <button
           type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="p-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
-          aria-label={collapsed ? t("menu.expand") : t("menu.collapse")}
+          className="fixed inset-0 z-[40] bg-[var(--flux-surface-dark)]/55 backdrop-blur-md md:hidden"
+          aria-label={t("menu.closeNavigation")}
+          onClick={closeMobile}
+        />
+      ) : null}
+
+      <aside
+        {...(layout === "mobile" ? drawerProps : {})}
+        role={layout === "mobile" && mobileOpen ? "dialog" : undefined}
+        aria-modal={layout === "mobile" && mobileOpen ? true : undefined}
+        aria-label={layout === "mobile" && mobileOpen ? t("menu.navigationPanel") : undefined}
+        aria-hidden={mobileClosed || undefined}
+        onMouseEnter={() => layout === "tablet" && setTabletHover(true)}
+        onMouseLeave={() => layout === "tablet" && setTabletHover(false)}
+        className={`flex shrink-0 flex-col overflow-hidden border-r border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width,transform] duration-300 ease-out
+          max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[50] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
+          max-md:-translate-x-full max-md:pointer-events-none max-md:data-[open]:translate-x-0 max-md:data-[open]:pointer-events-auto
+          md:relative md:z-auto md:h-auto md:max-h-none md:translate-x-0 md:pointer-events-auto md:shadow-none`}
+        style={
+          layout === "mobile"
+            ? undefined
+            : {
+                width: sidebarWidth,
+              }
+        }
+        data-open={layout === "mobile" && mobileOpen ? "" : undefined}
+      >
+        <div
+          className={`flex h-11 shrink-0 items-center gap-1.5 border-b border-[var(--flux-primary-alpha-06)] px-2.5 ${
+            compactMode ? "justify-center" : "justify-between"
+          }`}
         >
-          {collapsed ? <IconChevronRight className="w-4 h-4" /> : <IconChevronLeft className="w-4 h-4" />}
-        </button>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 min-w-0 overflow-y-auto overflow-x-hidden">
-        <NavSectionTitle>{t("section.flow")}</NavSectionTitle>
-        <NavLink
-          path="/boards"
-          hint={t("hints.boards")}
-          icon={<IconBoards className="w-4 h-4 shrink-0" />}
-          label={t("boards")}
-        />
-        <NavLink
-          path="/discovery"
-          hint={t("hints.discovery")}
-          icon={<IconDiscovery className="w-4 h-4 shrink-0" />}
-          label={t("discovery")}
-        />
-        <NavLink
-          path="/templates"
-          hint={t("hints.templates")}
-          icon={<IconTemplates className="w-4 h-4 shrink-0" />}
-          label={t("templates")}
-        />
-        <NavLink
-          path="/tasks"
-          hint={t("hints.tasks")}
-          icon={<IconTasks className="w-4 h-4 shrink-0" />}
-          label={t("tasks")}
-        />
-
-        <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>
-        <NavLink
-          path="/reports"
-          hint={t("hints.reports")}
-          icon={<IconReports className="w-4 h-4 shrink-0" />}
-          label={t("reports")}
-          sublabel={t("reportsProduct")}
-        />
-        <NavLink
-          path="/okrs"
-          hint={t("hints.okrs")}
-          icon={<IconGoals className="w-4 h-4 shrink-0" />}
-          label={t("okrs")}
-        />
-
-        {user?.isAdmin && (
-          <>
-            <NavSectionTitle>{t("section.organization")}</NavSectionTitle>
-            {collapsed ? (
-              <CustomTooltip content={t("hints.users")} position="right">
-                <Link href={`/${locale}/users`} className={linkClass("/users")}>
-                  <IconUsers className="w-4 h-4 shrink-0" />
-                </Link>
-              </CustomTooltip>
-            ) : (
-              <NavLink
-                path="/users"
-                hint={t("hints.users")}
-                icon={<IconUsers className="w-4 h-4 shrink-0" />}
-                label={t("users")}
-              />
+          <Link
+            href={`/${locale}/boards`}
+            onClick={() => layout === "mobile" && closeMobile()}
+            className={`flex min-w-0 items-center ${compactMode ? "shrink-0 justify-center" : "gap-2"}`}
+          >
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[var(--flux-rad-sm)] text-white"
+              style={{
+                background: orgLogoUrl
+                  ? "var(--flux-surface-elevated)"
+                  : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+                boxShadow: orgLogoUrl ? "none" : "0 2px 8px var(--flux-primary-alpha-25)",
+              }}
+            >
+              {orgLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={orgLogoUrl} alt="" className="max-h-[28px] max-w-[28px] object-contain" />
+              ) : (
+                <FluxLogoIcon className="h-4 w-4" />
+              )}
+            </div>
+            {showExpandedNav && (
+              <span className="truncate font-display text-sm font-bold text-[var(--flux-text)]">Flux-Board</span>
             )}
-            {collapsed ? (
-              <CustomTooltip content={t("hints.organization")} position="right">
-                <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
-                  <IconSettings className="w-4 h-4 shrink-0" />
-                </Link>
-              </CustomTooltip>
-            ) : (
-              <NavLink
-                path="/org-settings"
-                hint={t("hints.organization")}
-                icon={<IconSettings className="w-4 h-4 shrink-0" />}
-                label={t("organization")}
-              />
-            )}
-            {collapsed ? (
-              <CustomTooltip content={t("hints.billing")} position="right">
-                <Link href={`/${locale}/billing`} className={linkClass("/billing")}>
-                  <IconBilling className="w-4 h-4 shrink-0" />
-                </Link>
-              </CustomTooltip>
-            ) : (
-              <NavLink
-                path="/billing"
-                hint={t("hints.billing")}
-                icon={<IconBilling className="w-4 h-4 shrink-0" />}
-                label={t("billing")}
-              />
-            )}
-            {collapsed ? (
-              <CustomTooltip
-                content={
-                  activeInvites !== null && activeInvites > 0
-                    ? `${t("hints.invites")} (${activeInvites})`
-                    : t("hints.invites")
-                }
-                position="right"
-              >
-                <Link href={`/${locale}/org-invites`} className={`${linkClass("/org-invites")} relative`}>
-                  <IconInvites className="w-4 h-4 shrink-0" />
+          </Link>
+          {layout === "desktop" ? (
+            <button
+              type="button"
+              onClick={toggleDesktopCollapsed}
+              className="shrink-0 rounded-[var(--flux-rad-sm)] p-1.5 text-[var(--flux-text-muted)] transition-colors hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
+              aria-label={collapsed ? t("menu.expand") : t("menu.collapse")}
+            >
+              {collapsed ? <IconChevronRight className="h-4 w-4" /> : <IconChevronLeft className="h-4 w-4" />}
+            </button>
+          ) : layout === "mobile" ? (
+            <button
+              type="button"
+              onClick={closeMobile}
+              className="shrink-0 rounded-[var(--flux-rad-sm)] p-1.5 text-[var(--flux-text-muted)] transition-colors hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
+              aria-label={t("menu.closeNavigation")}
+            >
+              <IconClose className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+
+        <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3">
+          <NavSectionTitle>{t("section.flow")}</NavSectionTitle>
+          <NavLink
+            path="/boards"
+            hint={t("hints.boards")}
+            icon={<IconBoards className="h-4 w-4 shrink-0" />}
+            label={t("boards")}
+          />
+          <NavLink
+            path="/discovery"
+            hint={t("hints.discovery")}
+            icon={<IconDiscovery className="h-4 w-4 shrink-0" />}
+            label={t("discovery")}
+          />
+          <NavLink
+            path="/templates"
+            hint={t("hints.templates")}
+            icon={<IconTemplates className="h-4 w-4 shrink-0" />}
+            label={t("templates")}
+          />
+          <NavLink
+            path="/tasks"
+            hint={t("hints.tasks")}
+            icon={<IconTasks className="h-4 w-4 shrink-0" />}
+            label={t("tasks")}
+          />
+
+          <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>
+          <NavLink
+            path="/reports"
+            hint={t("hints.reports")}
+            icon={<IconReports className="h-4 w-4 shrink-0" />}
+            label={t("reports")}
+            sublabel={t("reportsProduct")}
+          />
+          <NavLink
+            path="/okrs"
+            hint={t("hints.okrs")}
+            icon={<IconGoals className="h-4 w-4 shrink-0" />}
+            label={t("okrs")}
+          />
+
+          {user?.isAdmin && (
+            <>
+              <NavSectionTitle>{t("section.organization")}</NavSectionTitle>
+              {compactMode ? (
+                <CustomTooltip content={t("hints.users")} position="right">
+                  <Link href={`/${locale}/users`} className={linkClass("/users")}>
+                    <IconUsers className="h-4 w-4 shrink-0" />
+                  </Link>
+                </CustomTooltip>
+              ) : (
+                <NavLink
+                  path="/users"
+                  hint={t("hints.users")}
+                  icon={<IconUsers className="h-4 w-4 shrink-0" />}
+                  label={t("users")}
+                />
+              )}
+              {compactMode ? (
+                <CustomTooltip content={t("hints.organization")} position="right">
+                  <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
+                    <IconSettings className="h-4 w-4 shrink-0" />
+                  </Link>
+                </CustomTooltip>
+              ) : (
+                <NavLink
+                  path="/org-settings"
+                  hint={t("hints.organization")}
+                  icon={<IconSettings className="h-4 w-4 shrink-0" />}
+                  label={t("organization")}
+                />
+              )}
+              {compactMode ? (
+                <CustomTooltip content={t("hints.billing")} position="right">
+                  <Link href={`/${locale}/billing`} className={linkClass("/billing")}>
+                    <IconBilling className="h-4 w-4 shrink-0" />
+                  </Link>
+                </CustomTooltip>
+              ) : (
+                <NavLink
+                  path="/billing"
+                  hint={t("hints.billing")}
+                  icon={<IconBilling className="h-4 w-4 shrink-0" />}
+                  label={t("billing")}
+                />
+              )}
+              {compactMode ? (
+                <CustomTooltip
+                  content={
+                    activeInvites !== null && activeInvites > 0
+                      ? `${t("hints.invites")} (${activeInvites})`
+                      : t("hints.invites")
+                  }
+                  position="right"
+                >
+                  <Link href={`/${locale}/org-invites`} className={`${linkClass("/org-invites")} relative`}>
+                    <IconInvites className="h-4 w-4 shrink-0" />
+                    {activeInvites !== null && activeInvites > 0 && (
+                      <span className="absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--flux-primary)] px-1 text-[10px] font-bold text-white ring-2 ring-[var(--flux-surface-dark)]">
+                        {activeInvites > 9 ? "9+" : activeInvites}
+                      </span>
+                    )}
+                  </Link>
+                </CustomTooltip>
+              ) : (
+                <Link href={`/${locale}/org-invites`} onClick={() => layout === "mobile" && closeMobile()} className={linkClass("/org-invites")}>
+                  <IconInvites className="h-4 w-4 shrink-0" />
+                  <span>{t("invites")}</span>
                   {activeInvites !== null && activeInvites > 0 && (
-                    <span className="absolute right-1.5 top-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--flux-primary)] text-[10px] font-bold text-white ring-2 ring-[var(--flux-surface-dark)]">
-                      {activeInvites > 9 ? "9+" : activeInvites}
+                    <span className="ml-auto rounded-full bg-[var(--flux-primary)] px-2 py-0.5 text-[10px] font-bold text-white">
+                      {activeInvites}
                     </span>
                   )}
                 </Link>
-              </CustomTooltip>
-            ) : (
-              <Link href={`/${locale}/org-invites`} className={linkClass("/org-invites")}>
-                <IconInvites className="w-4 h-4 shrink-0" />
-                <span>{t("invites")}</span>
-                {activeInvites !== null && activeInvites > 0 && (
-                  <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--flux-primary)] text-white">
-                    {activeInvites}
-                  </span>
-                )}
-              </Link>
-            )}
-          </>
-        )}
-      </nav>
+              )}
+            </>
+          )}
+        </nav>
 
-      {/* Theme + Logout */}
-      <div className="p-2.5 border-t border-[var(--flux-primary-alpha-06)] flex flex-col gap-0.5 shrink-0">
-        <CustomTooltip
-          content={theme === "dark" ? t("theme.lightTooltip") : t("theme.darkTooltip")}
-          position="right"
-        >
+        <div className="flex shrink-0 flex-col gap-0.5 border-t border-[var(--flux-primary-alpha-06)] p-2.5">
+          <CustomTooltip
+            content={theme === "dark" ? t("theme.lightTooltip") : t("theme.darkTooltip")}
+            position="right"
+          >
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className={`flex w-full items-center gap-2.5 overflow-hidden rounded-[var(--flux-rad-sm)] bg-transparent px-2.5 py-2 font-display text-sm font-semibold transition-all
+            text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
+            >
+              {theme === "dark" ? <IconSun className="h-4 w-4 shrink-0" /> : <IconMoon className="h-4 w-4 shrink-0" />}
+              {showExpandedNav && <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>}
+            </button>
+          </CustomTooltip>
           <button
             type="button"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display overflow-hidden
-            bg-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
+            onClick={logout}
+            className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[var(--flux-danger-alpha-12)] hover:!text-[var(--flux-danger)]`}
           >
-            {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
-            {!collapsed && <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>}
+            <IconLogout className="h-4 w-4 shrink-0" />
+            {showExpandedNav && <span>{t("logout")}</span>}
           </button>
-        </CustomTooltip>
-        <button
-          type="button"
-          onClick={logout}
-          className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[var(--flux-danger-alpha-12)] hover:!text-[var(--flux-danger)]`}
-        >
-          <IconLogout className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{t("logout")}</span>}
-        </button>
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </>
   );
 }

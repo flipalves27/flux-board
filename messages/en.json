@@ -30,7 +30,10 @@
     },
     "menu": {
       "expand": "Expand menu",
-      "collapse": "Collapse menu"
+      "collapse": "Collapse menu",
+      "openNavigation": "Open navigation",
+      "closeNavigation": "Close navigation",
+      "navigationPanel": "Main menu"
     },
     "theme": {
       "light": "Light theme",
