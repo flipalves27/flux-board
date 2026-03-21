@@ -36,4 +36,11 @@ describe("cardMatchesFilters", () => {
     expect(cardMatchesFilters(baseCard({ desc: "notes HERE" }), "all", new Set(), "here")).toBe(true);
     expect(cardMatchesFilters(baseCard({ tags: ["Portal"] }), "all", new Set(), "port")).toBe(true);
   });
+
+  it("restricts to nlq id set when provided", () => {
+    const c = baseCard({ id: "keep" });
+    expect(cardMatchesFilters(c, "all", new Set(), "", null)).toBe(true);
+    expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["keep"]))).toBe(true);
+    expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["other"]))).toBe(false);
+  });
 });

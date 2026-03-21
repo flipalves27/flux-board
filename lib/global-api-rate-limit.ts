@@ -19,6 +19,7 @@ const SKIP_PATH_PREFIXES = ["/api/internal/rate-limit-check", "/api/billing/webh
 
 const AI_PATH_TESTS: RegExp[] = [
   /^\/api\/boards\/[^/]+\/copilot$/,
+  /^\/api\/boards\/[^/]+\/nlq$/,
   /^\/api\/boards\/[^/]+\/card-context$/,
   /^\/api\/boards\/[^/]+\/daily-insights$/,
   /^\/api\/boards\/[^/]+\/automations\/interpret$/,

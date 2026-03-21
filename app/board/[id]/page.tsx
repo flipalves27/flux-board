@@ -19,6 +19,7 @@ import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { setBoardPersistenceHandler, useBoardStore } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
+import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
@@ -198,6 +199,13 @@ export default function BoardPage() {
     useCopilotStore.getState().resetSessionUi();
     loadBoard();
   }, [isChecked, user, boardId, router, localeRoot]);
+
+  useEffect(() => {
+    const id = boardId;
+    return () => {
+      useBoardNlqUiStore.getState().clearBoardNlq(id);
+    };
+  }, [boardId]);
 
   async function loadBoard() {
     try {

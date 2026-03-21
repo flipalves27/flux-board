@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useBoardStore } from "@/stores/board-store";
+import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardDnd } from "./hooks/useBoardDnd";
+import { BoardNlqDock } from "./board-nlq-dock";
 import { KanbanHeaderBar } from "./kanban-header-bar";
 import { KanbanToolbar } from "./kanban-toolbar";
 import { BoardMetricsStrip } from "./board-metrics-strip";
@@ -50,6 +52,12 @@ function KanbanBoardLoaded({
     setSearchQuery,
   } = persistence;
 
+  const nlqIdsArr = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
+  const nlqAllowedIds = useMemo(() => {
+    if (!nlqIdsArr) return null;
+    return new Set(nlqIdsArr);
+  }, [nlqIdsArr]);
+
   const board = useBoardState({
     boardId,
     getHeaders,
@@ -68,6 +76,7 @@ function KanbanBoardLoaded({
     setActiveLabels,
     searchQuery,
     setSearchQuery,
+    nlqAllowedIds,
   });
 
   const dnd = useBoardDnd({
@@ -157,47 +166,54 @@ function KanbanBoardLoaded({
 
   return (
     <>
-      <div
-        className="board-toolbar sticky top-[42px] z-[150] transition-[max-height] duration-300 ease-in-out overflow-y-auto overflow-x-hidden"
-        style={{ maxHeight: filters.priorityBarVisible ? "min(640px, 80vh)" : 52 }}
-      >
-        <KanbanHeaderBar
-          t={t}
-          priorityBarVisible={filters.priorityBarVisible}
-          setPriorityBarVisible={filters.setPriorityBarVisible}
-          boardView={boardView}
-          setBoardView={setBoardView}
-          searchInputRef={filters.searchInputRef}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          csvImportMode={board.csvImportMode}
-          setCsvImportMode={(v) =>
-            board.setCsvImportMode(typeof v === "function" ? v(board.csvImportMode) : v)
-          }
-          onImportCSV={board.handleImportCSV}
-          onExportCSV={board.handleExportCSV}
+      <div className="sticky top-[42px] z-[150] flex flex-col">
+        <BoardNlqDock
+          boardId={boardId}
+          getHeaders={getHeaders}
+          onExpandFilters={() => filters.setPriorityBarVisible(true)}
         />
-        <KanbanToolbar
-          t={t}
-          priorityBarVisible={filters.priorityBarVisible}
-          priorities={priorities}
-          activePrio={activePrio}
-          setActivePrio={setActivePrio}
-          focusMode={filters.focusMode}
-          setFocusMode={filters.setFocusMode}
-          clearFilters={filters.clearFilters}
-          applyFocusMode={filters.applyFocusMode}
-          labelsOpen={filters.labelsOpen}
-          setLabelsOpen={filters.setLabelsOpen}
-          onOpenMapa={() => board.setMapaOpen(true)}
-          onOpenDaily={openDailyModal}
-          boardLabels={board.boardLabels}
-          activeLabels={activeLabels}
-          onToggleLabel={filters.toggleLabel}
-        />
-        {filters.priorityBarVisible && (
-          <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
-        )}
+        <div
+          className="board-toolbar transition-[max-height] duration-300 ease-in-out overflow-y-auto overflow-x-hidden"
+          style={{ maxHeight: filters.priorityBarVisible ? "min(640px, 80vh)" : 52 }}
+        >
+          <KanbanHeaderBar
+            t={t}
+            priorityBarVisible={filters.priorityBarVisible}
+            setPriorityBarVisible={filters.setPriorityBarVisible}
+            boardView={boardView}
+            setBoardView={setBoardView}
+            searchInputRef={filters.searchInputRef}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            csvImportMode={board.csvImportMode}
+            setCsvImportMode={(v) =>
+              board.setCsvImportMode(typeof v === "function" ? v(board.csvImportMode) : v)
+            }
+            onImportCSV={board.handleImportCSV}
+            onExportCSV={board.handleExportCSV}
+          />
+          <KanbanToolbar
+            t={t}
+            priorityBarVisible={filters.priorityBarVisible}
+            priorities={priorities}
+            activePrio={activePrio}
+            setActivePrio={setActivePrio}
+            focusMode={filters.focusMode}
+            setFocusMode={filters.setFocusMode}
+            clearFilters={filters.clearFilters}
+            applyFocusMode={filters.applyFocusMode}
+            labelsOpen={filters.labelsOpen}
+            setLabelsOpen={filters.setLabelsOpen}
+            onOpenMapa={() => board.setMapaOpen(true)}
+            onOpenDaily={openDailyModal}
+            boardLabels={board.boardLabels}
+            activeLabels={activeLabels}
+            onToggleLabel={filters.toggleLabel}
+          />
+          {filters.priorityBarVisible && (
+            <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
+          )}
+        </div>
       </div>
 
       <KanbanBoardCanvas

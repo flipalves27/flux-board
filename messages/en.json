@@ -1327,6 +1327,23 @@
         "dailyButton": "Daily AI",
         "searchPlaceholder": "Search... (/)"
       },
+      "nlq": {
+        "label": "Smart board query",
+        "placeholder": "e.g. urgent cards with no owner · throughput last week",
+        "aria": "Natural language query about this board",
+        "submit": "Run query",
+        "loading": "Analyzing…",
+        "clear": "Clear",
+        "cleared": "NLQ filter and metric panel cleared.",
+        "emptyQuery": "Type your question after /query.",
+        "toastTitle": "Board query",
+        "errorGeneric": "Could not complete the query.",
+        "metricHeadline": "Throughput: {value}",
+        "compareLabel": "Baseline",
+        "seriesThroughput": "Completed",
+        "filterActive": "NLQ filter active: {count} card(s) visible.",
+        "hint": "In Copilot, use /query plus your question. Recent queries appear in the list while typing."
+      },
       "toolbar": {
         "sectionQuickActions": "Quick actions",
         "sectionData": "Search & CSV",

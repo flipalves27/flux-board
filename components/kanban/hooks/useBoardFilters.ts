@@ -6,8 +6,10 @@ export function cardMatchesFilters(
   c: CardData,
   activePrio: string,
   activeLabels: Set<string>,
-  searchQuery: string
+  searchQuery: string,
+  nlqAllowedIds: Set<string> | null = null
 ): boolean {
+  if (nlqAllowedIds && !nlqAllowedIds.has(c.id)) return false;
   if (activePrio !== "all" && c.priority !== activePrio) return false;
   if (activeLabels.size > 0 && !c.tags.some((t) => activeLabels.has(t))) return false;
   if (searchQuery) {
@@ -31,6 +33,8 @@ type UseBoardFiltersArgs = {
   setActiveLabels: Dispatch<SetStateAction<Set<string>>>;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
+  /** Quando definido, só cards com id neste conjunto passam (consulta NLQ). */
+  nlqAllowedIds?: Set<string> | null;
 };
 
 export function useBoardFilters({
@@ -42,6 +46,7 @@ export function useBoardFilters({
   setActiveLabels,
   searchQuery,
   setSearchQuery,
+  nlqAllowedIds = null,
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -94,8 +99,8 @@ export function useBoardFilters({
   }, [applyFocusMode, clearFilters]);
 
   const filterCard = useCallback(
-    (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery),
-    [activePrio, activeLabels, searchQuery]
+    (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds),
+    [activePrio, activeLabels, searchQuery, nlqAllowedIds]
   );
 
   const cardsByBucketSorted = useMemo(() => {

@@ -1328,6 +1328,23 @@
         "dailyButton": "Daily IA",
         "searchPlaceholder": "Buscar... (/) "
       },
+      "nlq": {
+        "label": "Consulta inteligente",
+        "placeholder": "Ex.: cards urgentes sem dono · throughput semana passada",
+        "aria": "Consulta em linguagem natural sobre o board",
+        "submit": "Consultar",
+        "loading": "Analisando…",
+        "clear": "Limpar",
+        "cleared": "Filtro e métricas de consulta removidos.",
+        "emptyQuery": "Digite a pergunta após /query.",
+        "toastTitle": "Consulta ao board",
+        "errorGeneric": "Não foi possível completar a consulta.",
+        "metricHeadline": "Throughput: {value}",
+        "compareLabel": "Referência",
+        "seriesThroughput": "Conclusões",
+        "filterActive": "Filtro NLQ ativo: {count} card(s) visíveis.",
+        "hint": "Também no Copiloto: /query seguido da pergunta. As últimas consultas aparecem na lista ao digitar."
+      },
       "toolbar": {
         "sectionQuickActions": "Ações rápidas",
         "sectionData": "Busca e CSV",

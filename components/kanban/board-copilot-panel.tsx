@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/shallow";
+import { useTranslations } from "next-intl";
 import type { CardData } from "@/app/board/[id]/page";
+import { formatNlqCopilotMessage, type NlqClientResponse } from "@/lib/board-nlq-format";
 import { useBoardStore } from "@/stores/board-store";
+import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useCopilotStore, type CopilotMessage, type CopilotTier } from "@/stores/copilot-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
@@ -19,6 +22,46 @@ type BoardCopilotPanelProps = {
   boardName: string;
   getHeaders: () => Record<string, string>;
 };
+
+type NlqApiBody =
+  | {
+      ok: true;
+      resultType: "cards";
+      cardIds: string[];
+      rows: Array<{ id: string; title: string; priority: string; bucketLabel: string }>;
+      explanation: string;
+    }
+  | {
+      ok: true;
+      resultType: "metric";
+      metric: "throughput";
+      primaryValue: number;
+      compareValue: number | null;
+      chart: Array<{ label: string; value: number }>;
+      explanation: string;
+    }
+  | { ok: false; fallbackMessage: string; suggestions: string[] };
+
+function nlqToClient(data: NlqApiBody): NlqClientResponse {
+  if (!data.ok) return data;
+  if (data.resultType === "metric") {
+    return {
+      ok: true,
+      resultType: "metric",
+      primaryValue: data.primaryValue,
+      compareValue: data.compareValue,
+      explanation: data.explanation,
+      chart: data.chart,
+    };
+  }
+  return {
+    ok: true,
+    resultType: "cards",
+    cardIds: data.cardIds,
+    rows: data.rows,
+    explanation: data.explanation,
+  };
+}
 
 type WebSpeechRecognitionInstance = {
   lang: string;
@@ -66,6 +109,7 @@ function parseEventStreamFrame(frame: string): { event: string; data: unknown } 
 export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopilotPanelProps) {
   const { pushToast } = useToast();
   const { user } = useAuth();
+  const tNlq = useTranslations("kanban.board.nlq");
 
   const {
     open,
@@ -166,6 +210,82 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
 
   const streamCopilot = useCallback(
     async (userMessage: string) => {
+      const trimmed = userMessage.trim();
+      if (/^\/query(\s|$)/i.test(trimmed)) {
+        if (!canSend) return;
+        const q = trimmed.replace(/^\/query\s*/i, "").trim();
+        if (!q) {
+          pushToast({ kind: "info", title: tNlq("toastTitle"), description: tNlq("emptyQuery") });
+          return;
+        }
+
+        setGenerating(true);
+        const userMsg: CopilotMessage = {
+          id: `u_${Date.now()}`,
+          role: "user",
+          content: trimmed,
+          createdAt: new Date().toISOString(),
+        };
+        const assistantId = `a_${Date.now()}`;
+        const assistantMsg: CopilotMessage = {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          createdAt: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, userMsg, assistantMsg]);
+
+        try {
+          const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/nlq`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...getHeaders() },
+            body: JSON.stringify({ query: q }),
+          });
+          const data = (await res.json().catch(() => ({}))) as NlqApiBody & { error?: string };
+
+          if (!res.ok) {
+            const txt = data.error || tNlq("errorGeneric");
+            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: txt } : m)));
+            pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
+            return;
+          }
+
+          if (!data.ok) {
+            const asClient = nlqToClient(data as NlqApiBody);
+            const content = formatNlqCopilotMessage(asClient);
+            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content } : m)));
+            pushToast({ kind: "info", title: tNlq("toastTitle"), description: data.fallbackMessage });
+            return;
+          }
+
+          const asClient = nlqToClient(data as NlqApiBody);
+          const content = formatNlqCopilotMessage(asClient);
+          setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content } : m)));
+
+          if (data.resultType === "cards") {
+            useBoardNlqUiStore.getState().setBoardNlqMetric(boardId, null);
+            useBoardNlqUiStore.getState().setBoardNlqCards(boardId, data.cardIds);
+          } else if (data.resultType === "metric") {
+            useBoardNlqUiStore.getState().setBoardNlqCards(boardId, null);
+            useBoardNlqUiStore.getState().setBoardNlqMetric(boardId, {
+              headline: tNlq("metricHeadline", { value: data.primaryValue }),
+              primaryValue: data.primaryValue,
+              compareValue: data.compareValue,
+              chart: Array.isArray(data.chart) ? data.chart : [],
+              explanation: data.explanation,
+            });
+          }
+        } catch {
+          const txt = tNlq("errorGeneric");
+          setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: txt } : m)));
+          pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
+        } finally {
+          setGenerating(false);
+          endRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+        return;
+      }
+
       setGenerating(true);
       const controller = new AbortController();
       abortRef.current = controller;
@@ -173,7 +293,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
       const userMsg: CopilotMessage = {
         id: `u_${Date.now()}`,
         role: "user",
-        content: userMessage,
+        content: trimmed,
         createdAt: new Date().toISOString(),
       };
 
@@ -191,7 +311,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/copilot`, {
           method: "POST",
           headers: getHeaders(),
-          body: JSON.stringify({ message: userMessage }),
+          body: JSON.stringify({ message: trimmed }),
           signal: controller.signal,
         });
 
@@ -269,7 +389,17 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         endRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     },
-    [boardId, getHeaders, pushToast, setDraft, setFreeDemoRemaining, setGenerating, setMessages]
+    [
+      boardId,
+      canSend,
+      getHeaders,
+      pushToast,
+      setDraft,
+      setFreeDemoRemaining,
+      setGenerating,
+      setMessages,
+      tNlq,
+    ]
   );
 
   const stopVoice = useCallback(() => {
@@ -427,7 +557,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                     {messages.length === 0 ? (
                       <div className="text-xs text-[var(--flux-text-muted)]">
                         Envie uma mensagem, por exemplo: “Quais cards estão parados há mais de 5 dias?” ou “Resuma o progresso desta
-                        semana”.
+                        semana”. Para dados estruturados no board, use <span className="font-semibold">/query</span> (ex.: «/query cards
+                        urgentes sem dono»).
                       </div>
                     ) : (
                       messages.map((m) => (
