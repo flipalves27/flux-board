@@ -135,11 +135,16 @@ async function slidingMongo({ key, limit, windowMs }: SlidingParams): Promise<Sl
 }
 
 /**
- * Sliding-window rate limit via sub-buckets + sum (Mongo) or in-memory map (sem Mongo).
+ * Sliding-window rate limit via sub-buckets + sum (Mongo) ou in-memory map (sem Mongo ou falha de conexão).
  */
 export async function slidingRateLimitConsume(params: SlidingParams): Promise<SlidingRateLimitResult> {
   if (isMongoConfigured()) {
-    return slidingMongo(params);
+    try {
+      return await slidingMongo(params);
+    } catch (err) {
+      console.warn("[sliding-rate-limit] MongoDB falhou — usando in-memory:", err instanceof Error ? err.message : err);
+      return slidingInMemory(params);
+    }
   }
   return slidingInMemory(params);
 }

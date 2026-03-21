@@ -76,8 +76,8 @@ async function applyApiGlobalRateLimit(req: NextRequest): Promise<NextResponse> 
       cache: "no-store",
     });
   } catch (e) {
-    console.error("[rate-limit] fetch interno falhou", e);
-    return NextResponse.json({ error: "Rate limit indisponível" }, { status: 503 });
+    console.error("[rate-limit] fetch interno falhou — fail-open:", e);
+    return applyNonCspSecurityHeaders(NextResponse.next());
   }
 
   if (ir.status === 429) {
@@ -87,8 +87,9 @@ async function applyApiGlobalRateLimit(req: NextRequest): Promise<NextResponse> 
   }
 
   if (ir.status !== 200) {
-    console.error("[rate-limit] resposta inesperada do check interno", ir.status);
-    return NextResponse.json({ error: "Rate limit indisponível" }, { status: 503 });
+    // Serviço de rate limit retornou status inesperado — fail-open para não bloquear API.
+    console.error("[rate-limit] resposta inesperada do check interno:", ir.status, "— passando requisição adiante.");
+    return applyNonCspSecurityHeaders(NextResponse.next());
   }
 
   const res = NextResponse.next();
