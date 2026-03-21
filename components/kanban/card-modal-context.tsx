@@ -17,9 +17,12 @@ import type { CardData, BucketConfig, CardLink, CardDocRef } from "@/app/board/[
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import {
+  createEmptyDescriptionBlocks,
   parseDescriptionToBlocks,
   serializeDescriptionBlocks,
 } from "@/components/kanban/description-blocks";
+
+export type SmartEnrichFieldKey = "description" | "priority" | "column" | "dueDate" | "tags" | "direction";
 
 export type AiContextPhase = "idle" | "preparing" | "requesting" | "processing" | "done" | "error";
 export type AiLogStatus = "start" | "success" | "error";
@@ -47,6 +50,8 @@ export interface CardModalProps {
   onCreateLabel?: (label: string) => void;
   onDeleteLabel?: (label: string) => void;
   peerCards?: CardData[];
+  /** Direcionamento do card (mesmos valores do quadro). */
+  directions?: string[];
   onClose: () => void;
   onSave: (card: CardData) => void;
   onDelete?: (cardId: string) => void;
@@ -69,6 +74,7 @@ export type CardModalContextValue = {
   onDelete?: (cardId: string) => void;
   onCreateLabel?: (label: string) => void;
   onDeleteLabel?: (label: string) => void;
+  directions: string[];
 
   id: string;
   setId: (v: string) => void;
@@ -122,6 +128,21 @@ export type CardModalContextValue = {
   aiContextStatusStepIndex: number;
   generateAiContextForCard: () => Promise<void>;
 
+  direction: string | null;
+  setDirection: (v: string | null) => void;
+  smartEnrichBusy: boolean;
+  smartEnrichPending: Set<SmartEnrichFieldKey> | null;
+  smartEnrichMeta: {
+    usedLlm: boolean;
+    priorityRationale: string;
+    dueExplanationKey: "similar" | "none";
+    similarSampleCount: number;
+  } | null;
+  acceptSmartEnrichField: (key: SmartEnrichFieldKey) => void;
+  rejectSmartEnrichField: (key: SmartEnrichFieldKey) => void;
+  dismissSmartEnrichKey: (key: SmartEnrichFieldKey) => void;
+  requestSmartEnrich: (opts?: { immediate?: boolean }) => void;
+
   toggleTag: (tag: string) => void;
   handleSave: () => void;
   handleCreateLabel: () => void;
@@ -159,10 +180,12 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     onCreateLabel,
     onDeleteLabel,
     peerCards = [],
+    directions: directionsProp,
     onClose,
     onSave,
     onDelete,
   } = props;
+  const directions = directionsProp ?? [];
 
   const [aiContextApplied, setAiContextApplied] = useState<{
     usedLlm: boolean;
@@ -180,6 +203,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   const [priority, setPriority] = useState(card.priority);
   const [progress, setProgress] = useState(card.progress);
   const [dueDate, setDueDate] = useState(card.dueDate || "");
+  const [direction, setDirection] = useState<string | null>(() =>
+    typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
+  );
   const [blockedBy, setBlockedBy] = useState<string[]>(() =>
     Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
   );
@@ -204,6 +230,26 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   const aiContextInFlightRef = useRef(false);
   const aiContextAbortControllerRef = useRef<AbortController | null>(null);
   const aiContextRequestSeqRef = useRef(0);
+
+  const [smartEnrichBusy, setSmartEnrichBusy] = useState(false);
+  const [smartEnrichPending, setSmartEnrichPending] = useState<Set<SmartEnrichFieldKey> | null>(null);
+  const [smartEnrichMeta, setSmartEnrichMeta] = useState<{
+    usedLlm: boolean;
+    priorityRationale: string;
+    dueExplanationKey: "similar" | "none";
+    similarSampleCount: number;
+  } | null>(null);
+  const smartEnrichTimerRef = useRef<number | null>(null);
+  const smartEnrichAbortRef = useRef<AbortController | null>(null);
+  const smartEnrichSeqRef = useRef(0);
+  const smartEnrichSnapshotRef = useRef<{
+    descBlocks: Record<string, string>;
+    priority: string;
+    bucket: string;
+    dueDate: string;
+    tags: string[];
+    direction: string | null;
+  } | null>(null);
 
   const descriptionForSave = serializeDescriptionBlocks(descBlocks);
 
@@ -248,6 +294,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     setPriority(card.priority);
     setProgress(card.progress);
     setDueDate(card.dueDate || "");
+    setDirection(
+      typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
+    );
     setBlockedBy(Array.isArray(card.blockedBy) ? [...card.blockedBy] : []);
     setDepSearch("");
     setTags(new Set(card.tags || []));
@@ -256,7 +305,226 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     setDocRefs(Array.isArray(card.docRefs) ? [...card.docRefs] : []);
     setDocQuery("");
     setDocResults([]);
+    setSmartEnrichPending(null);
+    setSmartEnrichMeta(null);
+    setSmartEnrichBusy(false);
+    smartEnrichSnapshotRef.current = null;
+    if (smartEnrichTimerRef.current != null) {
+      window.clearTimeout(smartEnrichTimerRef.current);
+      smartEnrichTimerRef.current = null;
+    }
+    smartEnrichAbortRef.current?.abort();
+    smartEnrichAbortRef.current = null;
   }, [card]);
+
+  const smartEnrichEligible =
+    mode === "new" && !descriptionForSave.trim() && title.trim().length >= 2;
+
+  const latestFormRef = useRef({
+    descBlocks,
+    priority,
+    bucket,
+    dueDate,
+    tags: [] as string[],
+    direction: null as string | null,
+  });
+  latestFormRef.current = {
+    descBlocks,
+    priority,
+    bucket,
+    dueDate,
+    tags: [...tags],
+    direction,
+  };
+
+  const enrichEligibleRef = useRef(false);
+  enrichEligibleRef.current = smartEnrichEligible;
+
+  const allSmartEnrichKeys = useMemo(
+    () =>
+      new Set<SmartEnrichFieldKey>(["description", "priority", "column", "dueDate", "tags", "direction"]),
+    []
+  );
+
+  const resetSmartEnrichSession = useCallback(() => {
+    setSmartEnrichPending(null);
+    setSmartEnrichMeta(null);
+    smartEnrichSnapshotRef.current = null;
+  }, []);
+
+  const dismissSmartEnrichKey = useCallback((key: SmartEnrichFieldKey) => {
+    setSmartEnrichPending((prev) => {
+      if (!prev?.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next.size ? next : null;
+    });
+  }, []);
+
+  const acceptSmartEnrichField = useCallback(
+    (key: SmartEnrichFieldKey) => {
+      dismissSmartEnrichKey(key);
+    },
+    [dismissSmartEnrichKey]
+  );
+
+  const rejectSmartEnrichField = useCallback(
+    (key: SmartEnrichFieldKey) => {
+      const snap = smartEnrichSnapshotRef.current;
+      if (snap) {
+        if (key === "description") setDescBlocks({ ...snap.descBlocks });
+        if (key === "priority") setPriority(snap.priority);
+        if (key === "column") setBucket(snap.bucket);
+        if (key === "dueDate") setDueDate(snap.dueDate);
+        if (key === "tags") setTags(new Set(snap.tags));
+        if (key === "direction") setDirection(snap.direction);
+      }
+      dismissSmartEnrichKey(key);
+    },
+    [dismissSmartEnrichKey]
+  );
+
+  const runSmartEnrich = useCallback(async () => {
+    if (!enrichEligibleRef.current) return;
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) return;
+
+    const f = latestFormRef.current;
+    smartEnrichAbortRef.current?.abort();
+    const controller = new AbortController();
+    smartEnrichAbortRef.current = controller;
+
+    setSmartEnrichBusy(true);
+    const seq = ++smartEnrichSeqRef.current;
+    smartEnrichSnapshotRef.current = {
+      descBlocks: { ...f.descBlocks },
+      priority: f.priority,
+      bucket: f.bucket,
+      dueDate: f.dueDate,
+      tags: [...f.tags],
+      direction: f.direction,
+    };
+
+    try {
+      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/smart-card-enrich`, {
+        method: "POST",
+        headers: { ...getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ title: normalizedTitle, knownTags: filterLabels }),
+        signal: controller.signal,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        usedLlm?: boolean;
+        bucketKey?: string;
+        priority?: string;
+        priorityRationale?: string;
+        tags?: string[];
+        description?: string;
+        direction?: string | null;
+        dueDate?: string | null;
+        dueExplanationKey?: "similar" | "none";
+        similarSampleCount?: number;
+        error?: string;
+      };
+
+      if (seq !== smartEnrichSeqRef.current) return;
+
+      if (!res.ok) {
+        pushToast({ kind: "error", title: String(data?.error || t("cardModal.smartEnrich.error")) });
+        resetSmartEnrichSession();
+        return;
+      }
+
+      const bucketKeys = new Set(buckets.map((b) => b.key));
+      let nextBucket = String(data.bucketKey || "").trim();
+      if (!bucketKeys.has(nextBucket)) nextBucket = buckets[0]?.key || f.bucket;
+
+      setBucket(nextBucket);
+      setPriority(String(data.priority || "Média"));
+      setDescBlocks((prev) => ({
+        ...createEmptyDescriptionBlocks(),
+        ...prev,
+        businessContext: String(data.description || "").trim() || prev.businessContext,
+      }));
+      setDueDate(String(data.dueDate || "").trim());
+      setTags(new Set(Array.isArray(data.tags) ? data.tags.map((x) => String(x).trim()).filter(Boolean) : []));
+      const dirRaw = typeof data.direction === "string" ? data.direction.trim() : "";
+      const dirLower = dirRaw.toLowerCase();
+      const dirOk = directions.some((d) => d.toLowerCase() === dirLower);
+      setDirection(dirOk && dirLower ? dirLower : null);
+
+      setSmartEnrichMeta({
+        usedLlm: Boolean(data.usedLlm),
+        priorityRationale: String(data.priorityRationale || "").trim(),
+        dueExplanationKey: data.dueExplanationKey === "similar" ? "similar" : "none",
+        similarSampleCount: typeof data.similarSampleCount === "number" ? data.similarSampleCount : 0,
+      });
+      setSmartEnrichPending(new Set(allSmartEnrichKeys));
+      setAiContextApplied(null);
+    } catch (e) {
+      if ((e as { name?: string })?.name === "AbortError") return;
+      pushToast({ kind: "error", title: t("cardModal.smartEnrich.error") });
+      resetSmartEnrichSession();
+    } finally {
+      if (seq === smartEnrichSeqRef.current) setSmartEnrichBusy(false);
+    }
+  }, [
+    title,
+    boardId,
+    getHeaders,
+    filterLabels,
+    buckets,
+    directions,
+    pushToast,
+    t,
+    resetSmartEnrichSession,
+    allSmartEnrichKeys,
+  ]);
+
+  const runSmartEnrichRef = useRef(runSmartEnrich);
+  runSmartEnrichRef.current = runSmartEnrich;
+
+  const requestSmartEnrich = useCallback((opts?: { immediate?: boolean }) => {
+    if (!enrichEligibleRef.current) return;
+    if (smartEnrichTimerRef.current != null) {
+      window.clearTimeout(smartEnrichTimerRef.current);
+      smartEnrichTimerRef.current = null;
+    }
+    if (opts?.immediate) {
+      smartEnrichAbortRef.current?.abort();
+      void runSmartEnrichRef.current();
+      return;
+    }
+    smartEnrichTimerRef.current = window.setTimeout(() => {
+      smartEnrichTimerRef.current = null;
+      void runSmartEnrichRef.current();
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    if (!smartEnrichEligible) {
+      if (smartEnrichTimerRef.current != null) {
+        window.clearTimeout(smartEnrichTimerRef.current);
+        smartEnrichTimerRef.current = null;
+      }
+      smartEnrichSeqRef.current += 1;
+      smartEnrichAbortRef.current?.abort();
+      smartEnrichAbortRef.current = null;
+      setSmartEnrichBusy(false);
+      resetSmartEnrichSession();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      smartEnrichTimerRef.current = null;
+      void runSmartEnrichRef.current();
+    }, 800);
+    smartEnrichTimerRef.current = timer;
+    return () => {
+      window.clearTimeout(timer);
+      smartEnrichSeqRef.current += 1;
+      smartEnrichAbortRef.current?.abort();
+    };
+  }, [smartEnrichEligible, title, resetSmartEnrichSession]);
 
   useEffect(() => {
     const q = docQuery.trim();
@@ -305,6 +573,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       priority,
       progress,
       dueDate: dueDate || null,
+      direction,
       blockedBy: nextBlocked,
       tags: [...tags],
       links: links.filter((l) => {
@@ -334,6 +603,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     priority,
     progress,
     dueDate,
+    direction,
     tags,
     links,
     docRefs,
@@ -519,6 +789,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       onDelete,
       onCreateLabel,
       onDeleteLabel,
+      directions,
       id,
       setId,
       title,
@@ -533,6 +804,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setProgress,
       dueDate,
       setDueDate,
+      direction,
+      setDirection,
       blockedBy,
       setBlockedBy,
       depSearch,
@@ -566,6 +839,13 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       aiContextBusy,
       aiContextStatusStepIndex,
       generateAiContextForCard,
+      smartEnrichBusy,
+      smartEnrichPending,
+      smartEnrichMeta,
+      acceptSmartEnrichField,
+      rejectSmartEnrichField,
+      dismissSmartEnrichKey,
+      requestSmartEnrich,
       toggleTag,
       handleSave,
       handleCreateLabel,
@@ -586,6 +866,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       priorities,
       progresses,
       filterLabels,
+      directions,
       peerCards,
       getHeaders,
       onClose,
@@ -600,6 +881,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       priority,
       progress,
       dueDate,
+      direction,
       blockedBy,
       depSearch,
       tags,
@@ -622,6 +904,13 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       aiContextBusy,
       aiContextStatusStepIndex,
       generateAiContextForCard,
+      smartEnrichBusy,
+      smartEnrichPending,
+      smartEnrichMeta,
+      acceptSmartEnrichField,
+      rejectSmartEnrichField,
+      dismissSmartEnrichKey,
+      requestSmartEnrich,
       toggleTag,
       handleSave,
       handleCreateLabel,

@@ -662,6 +662,15 @@
   },
   "kanban": {
     "cardModal": {
+      "smartEnrich": {
+        "badge": "Sugestão IA",
+        "accept": "Aceitar",
+        "reject": "Descartar",
+        "busy": "Gerando sugestões com base no título e no quadro…",
+        "error": "Não foi possível obter sugestões agora.",
+        "dueSimilar": "Baseado em média de {count} card(s) similar(es) concluído(s).",
+        "dueNone": "Sem amostra de cards similares concluídos; ajuste a data manualmente se precisar."
+      },
       "toasts": {
         "missingTitle": "Informe o título.",
         "missingTitleAndDescription": "Informe o título e a descrição para gerar contexto."
@@ -758,6 +767,10 @@
         },
         "dueDate": {
           "label": "Data de Conclusão"
+        },
+        "direction": {
+          "label": "Direcionamento",
+          "none": "Nenhum"
         },
         "blockedBy": {
           "label": "Bloqueado por",

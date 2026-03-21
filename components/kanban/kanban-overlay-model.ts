@@ -82,6 +82,7 @@ export function buildKanbanOverlayModel(args: {
   getHeaders: KanbanBoardOverlaysProps["getHeaders"];
   priorities: KanbanBoardOverlaysProps["priorities"];
   progresses: KanbanBoardOverlaysProps["progresses"];
+  directions: KanbanBoardOverlaysProps["directions"];
   mapaProducao: BoardData["mapaProducao"];
   board: BoardState;
   dailyOpen: boolean;
@@ -92,7 +93,8 @@ export function buildKanbanOverlayModel(args: {
   dailyDialogRef: RefObject<HTMLDivElement | null>;
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
 }): KanbanBoardOverlaysProps {
-  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, mapaProducao, t } = args;
+  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, directions, mapaProducao, t } =
+    args;
   const d = board.dailySession;
 
   const dailyPanelProps: DailyInsightsPanelProps = {
@@ -147,6 +149,7 @@ export function buildKanbanOverlayModel(args: {
     getHeaders,
     priorities,
     progresses,
+    directions,
     mapaProducao,
     modalCard: board.modalCard,
     modalMode: board.modalMode,

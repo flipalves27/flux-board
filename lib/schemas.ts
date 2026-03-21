@@ -587,6 +587,13 @@ export const CardContextInputSchema = z
   })
   .passthrough();
 
+export const SmartCardEnrichInputSchema = z
+  .object({
+    title: z.string().trim().min(1, "Titulo e obrigatorio.").max(180),
+    knownTags: z.array(z.string().trim().max(80)).max(120).optional(),
+  })
+  .passthrough();
+
 export const UserCreateSchema = z
   .object({
     name: z.string().trim().min(1, "Nome e obrigatorio.").max(200),

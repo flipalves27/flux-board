@@ -29,6 +29,7 @@ export type KanbanBoardOverlaysProps = {
   getHeaders: () => Record<string, string>;
   priorities: string[];
   progresses: string[];
+  directions: string[];
   mapaProducao: BoardData["mapaProducao"];
   modalCard: CardData | null;
   modalMode: "new" | "edit";
@@ -73,6 +74,7 @@ export function KanbanBoardOverlays({
   getHeaders,
   priorities,
   progresses,
+  directions,
   mapaProducao,
   modalCard,
   modalMode,
@@ -120,6 +122,7 @@ export function KanbanBoardOverlays({
           buckets={buckets}
           priorities={priorities}
           progresses={progresses}
+          directions={directions}
           filterLabels={boardLabels}
           boardId={boardId}
           boardName={boardName}

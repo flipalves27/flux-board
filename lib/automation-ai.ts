@@ -1,4 +1,5 @@
 import type { BoardData } from "./kv-boards";
+import type { SimilarCardRef } from "./smart-card-enrich";
 import { callTogetherApi, safeJsonParse } from "./llm-utils";
 
 export type AiCardClassification = {
@@ -138,6 +139,159 @@ Formato exato:
       isLikelyDuplicate,
       duplicateCardId: duplicateCardId === "" ? null : duplicateCardId,
       mergeSuggestion,
+    };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "network" };
+  }
+}
+
+export type SmartCardEnrichLlmPayload = {
+  description: string;
+  priority: string;
+  priorityRationale: string;
+  tags: string[];
+  bucketKey: string;
+  direction: string | null;
+};
+
+export async function enrichSmartCardWithTogether(params: {
+  board: BoardData;
+  title: string;
+  knownTags: string[];
+  similarCards: SimilarCardRef[];
+  recentCardLines: string[];
+  ragExcerpts: string[];
+  leadStats: { avgDays: number; sampleCount: number };
+  allowedDirections: string[];
+}): Promise<{ ok: boolean; data?: SmartCardEnrichLlmPayload; error?: string }> {
+  const apiKey = process.env.TOGETHER_API_KEY;
+  const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
+  const base = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
+  if (!apiKey) {
+    return { ok: false, error: "no_api_key" };
+  }
+
+  const bucketOrder = Array.isArray(params.board.config?.bucketOrder) ? params.board.config!.bucketOrder : [];
+  const columns = bucketOrder
+    .map((b) => {
+      const rec = b as { key?: string; label?: string };
+      return { key: String(rec.key || "").trim(), label: String(rec.label || rec.key || "").trim() };
+    })
+    .filter((c) => c.key)
+    .slice(0, 40);
+
+  const columnKeysJson = JSON.stringify(columns.map((c) => c.key));
+  const columnLabelsBlock = columns
+    .map((c) => `- key="${c.key}"${c.label && c.label !== c.key ? ` (${c.label})` : ""}`)
+    .join("\n");
+
+  const tagsJson = JSON.stringify(params.knownTags.slice(0, 100));
+  const directionsJson = JSON.stringify(params.allowedDirections.slice(0, 20));
+
+  const similarBlock =
+    params.similarCards.length > 0
+      ? params.similarCards
+          .map(
+            (c, i) =>
+              `${i + 1}. id=${c.id} | coluna=${c.bucket} | progresso=${c.progress} | título=${c.title.slice(0, 120)} | trecho=${c.desc
+                .replace(/\s+/g, " ")
+                .slice(0, 240)}`
+          )
+          .join("\n")
+      : "(nenhum card similar encontrado)";
+
+  const recentBlock =
+    params.recentCardLines.length > 0
+      ? params.recentCardLines.map((l, i) => `${i + 1}. ${l}`).join("\n")
+      : "(sem cards recentes)";
+
+  const ragBlock =
+    params.ragExcerpts.length > 0
+      ? params.ragExcerpts.map((x, i) => `${i + 1}. ${x}`).join("\n\n")
+      : "(nenhum trecho de documentação relevante)";
+
+  const leadHint =
+    params.leadStats.sampleCount > 0
+      ? `Cards similares concluídos: amostra=${params.leadStats.sampleCount}, lead time médio≈${params.leadStats.avgDays.toFixed(1)} dias (aproximação). A data alvo será calculada no servidor; foque no texto.`
+      : "Sem amostra de cards similares concluídos para lead time.";
+
+  const system = `Você preenche automaticamente um novo card Kanban a partir só do título.
+Responda APENAS com JSON válido (sem markdown, sem texto fora do JSON).
+
+Regras:
+- "bucketKey": exatamente uma das chaves em colunas permitidas: ${columnKeysJson}
+- "priority": uma de "Urgente", "Importante", "Média"
+- "tags": 0 a 5 strings, APENAS da lista tags_conhecidas (iguais por caractere). Se nenhuma servir, use [].
+- "description": 2 a 3 frases em português, claras, para a descrição do card (contexto + próximo passo). Sem títulos de seção.
+- "priorityRationale": 1 a 2 frases em português explicando a prioridade.
+- "direction": string exatamente uma de ${directionsJson}, ou null se não aplicável.
+
+Formato:
+{"bucketKey":"...","priority":"...","priorityRationale":"...","tags":[],"description":"...","direction":null}`;
+
+  const user = [
+    `Board: ${String(params.board.name || "Quadro").slice(0, 200)}`,
+    "",
+    "Colunas permitidas:",
+    columnLabelsBlock || "(nenhuma)",
+    "",
+    `tags_conhecidas: ${tagsJson}`,
+    "",
+    "Cards similares (referência):",
+    similarBlock,
+    "",
+    "Cards recentes (tom e escopo do board):",
+    recentBlock,
+    "",
+    "Trechos de documentação interna (RAG):",
+    ragBlock,
+    "",
+    leadHint,
+    "",
+    "Título do novo card:",
+    params.title.slice(0, 500),
+  ].join("\n");
+
+  try {
+    const r = await callTogetherApi(
+      {
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        temperature: 0.25,
+        max_tokens: 700,
+      },
+      { apiKey, baseUrl: base }
+    );
+    if (!r.ok) return { ok: false, error: r.status != null ? `http_${r.status}` : r.error };
+    const raw = r.assistantText;
+    const parsed = safeJsonParse<Record<string, unknown>>(raw);
+    if (!parsed || typeof parsed !== "object") return { ok: false, error: "parse_error" };
+
+    const bucketKey = typeof parsed.bucketKey === "string" ? parsed.bucketKey.trim() : "";
+    const priority = typeof parsed.priority === "string" ? parsed.priority.trim() : "";
+    const priorityRationale =
+      typeof parsed.priorityRationale === "string" ? parsed.priorityRationale.trim() : "";
+    const description = typeof parsed.description === "string" ? parsed.description.trim() : "";
+    const tags = Array.isArray(parsed.tags) ? parsed.tags.map((t) => String(t)).filter(Boolean).slice(0, 8) : [];
+    let direction: string | null = null;
+    if (parsed.direction === null || parsed.direction === undefined) {
+      direction = null;
+    } else if (typeof parsed.direction === "string") {
+      const d = parsed.direction.trim();
+      direction = d || null;
+    }
+
+    const data: SmartCardEnrichLlmPayload = {
+      bucketKey,
+      priority,
+      priorityRationale,
+      tags,
+      description: description.slice(0, 4000),
+      direction,
     };
     return { ok: true, data };
   } catch (e) {

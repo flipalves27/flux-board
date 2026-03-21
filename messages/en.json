@@ -661,6 +661,15 @@
   },
   "kanban": {
     "cardModal": {
+      "smartEnrich": {
+        "badge": "AI suggestion",
+        "accept": "Accept",
+        "reject": "Discard",
+        "busy": "Generating suggestions from your title and board…",
+        "error": "Could not fetch suggestions right now.",
+        "dueSimilar": "Based on average lead time from {count} similar completed card(s).",
+        "dueNone": "No similar completed cards; adjust the date manually if needed."
+      },
       "toasts": {
         "missingTitle": "Please provide a title.",
         "missingTitleAndDescription": "Please provide a title and a description to generate context."
@@ -757,6 +766,10 @@
         },
         "dueDate": {
           "label": "Completion date"
+        },
+        "direction": {
+          "label": "Direction",
+          "none": "None"
         },
         "blockedBy": {
           "label": "Blocked by",

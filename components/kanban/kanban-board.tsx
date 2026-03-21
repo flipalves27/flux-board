@@ -143,6 +143,7 @@ function KanbanBoardLoaded({
     getHeaders,
     priorities,
     progresses,
+    directions,
     mapaProducao: db.mapaProducao,
     board,
     dailyOpen,
