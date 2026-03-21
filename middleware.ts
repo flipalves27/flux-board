@@ -49,10 +49,11 @@ async function applyApiGlobalRateLimit(req: NextRequest): Promise<NextResponse> 
     return applyNonCspSecurityHeaders(NextResponse.next());
   }
 
-  const secret = process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET;
+  const rawSecret = process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET;
+  const secret = rawSecret?.trim();
   if (!secret) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[rate-limit] Defina RATE_LIMIT_INTERNAL_SECRET ou JWT_SECRET para limite global na API.");
+      console.warn("[rate-limit] Defina RATE_LIMIT_INTERNAL_SECRET no .env.local para habilitar o limite global na API.");
     }
     return applyNonCspSecurityHeaders(NextResponse.next());
   }

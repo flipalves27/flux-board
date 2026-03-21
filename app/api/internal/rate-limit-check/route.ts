@@ -4,12 +4,19 @@ import { runGlobalApiRateLimit } from "@/lib/global-api-rate-limit";
 export const runtime = "nodejs";
 
 function internalSecret(): string | null {
-  return process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET || null;
+  return (process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET)?.trim() || null;
 }
 
 export async function POST(req: NextRequest) {
   const secret = internalSecret();
-  if (!secret || req.headers.get("x-flux-rate-internal") !== secret) {
+  const incoming = req.headers.get("x-flux-rate-internal")?.trim() ?? "";
+  if (!secret || incoming !== secret) {
+    if (process.env.NODE_ENV === "development") {
+      console.error(
+        "[rate-limit-check] Segredo não confere — defina RATE_LIMIT_INTERNAL_SECRET no .env.local.",
+        { secretDefined: Boolean(secret), incomingLength: incoming.length, secretLength: secret?.length }
+      );
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
