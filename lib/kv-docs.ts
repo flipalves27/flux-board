@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { deleteDocChunksForDocument, syncDocChunksFromDocument } from "./kv-doc-chunks";
 import { getDb, isMongoConfigured } from "./mongo";
 import { getStore } from "./storage";
 
@@ -180,6 +181,9 @@ export async function createDoc(input: {
     const db = await getDb();
     await ensureDocsIndexes(db);
     await db.collection<DocDoc>(COL_DOCS).insertOne(toDoc(doc));
+    await syncDocChunksFromDocument(input.orgId, doc).catch(() => {
+      // Indexação RAG é best-effort (API Together / rede).
+    });
     return doc;
   }
 
@@ -214,6 +218,9 @@ export async function updateDoc(orgId: string, id: string, updates: Partial<DocD
     const db = await getDb();
     await ensureDocsIndexes(db);
     await db.collection<DocDoc>(COL_DOCS).replaceOne({ _id: id, orgId }, toDoc(next));
+    await syncDocChunksFromDocument(orgId, next).catch(() => {
+      // Indexação RAG é best-effort.
+    });
     return next;
   }
   const kv = await getStore();
@@ -235,6 +242,9 @@ export async function deleteDoc(orgId: string, id: string): Promise<boolean> {
     const db = await getDb();
     await ensureDocsIndexes(db);
     await db.collection<DocDoc>(COL_DOCS).updateOne({ _id: id, orgId }, { $set: { archivedAt: new Date().toISOString() } });
+    await deleteDocChunksForDocument(orgId, id).catch(() => {
+      // best-effort
+    });
     if (childIds.length) {
       await db.collection<DocDoc>(COL_DOCS).updateMany({ _id: { $in: childIds }, orgId }, { $set: { parentId: null } });
     }

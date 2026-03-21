@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useTranslations } from "next-intl";
 import type { CardData } from "@/app/board/[id]/page";
@@ -10,6 +10,7 @@ import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useCopilotStore, type CopilotMessage, type CopilotTier } from "@/stores/copilot-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
+import type { RagRetrievalDebug } from "@/lib/docs-rag";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -110,6 +111,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
   const { pushToast } = useToast();
   const { user } = useAuth();
   const tNlq = useTranslations("kanban.board.nlq");
+  const copilotDebug = process.env.NODE_ENV === "development";
+  const [ragDebug, setRagDebug] = useState<RagRetrievalDebug | null>(null);
 
   const {
     open,
@@ -287,6 +290,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
       }
 
       setGenerating(true);
+      if (copilotDebug) setRagDebug(null);
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -311,7 +315,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/copilot`, {
           method: "POST",
           headers: getHeaders(),
-          body: JSON.stringify({ message: trimmed }),
+          body: JSON.stringify({
+            message: trimmed,
+            ...(copilotDebug ? { debug: true } : {}),
+          }),
           signal: controller.signal,
         });
 
@@ -326,7 +333,14 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
 
-        const onEvent = (event: string, data: { text?: string; message?: unknown; cards?: CardData[]; phase?: string }) => {
+        const onEvent = (
+          event: string,
+          data: { text?: string; message?: unknown; cards?: CardData[]; phase?: string; method?: string; durationMs?: number; chunks?: unknown }
+        ) => {
+          if (event === "rag_debug" && copilotDebug && data && typeof data === "object") {
+            setRagDebug(data as RagRetrievalDebug);
+          }
+
           if (event === "assistant_delta") {
             const delta = typeof data?.text === "string" ? data.text : "";
             if (!delta) return;
@@ -376,7 +390,18 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
           for (const frame of frames) {
             const parsed = parseEventStreamFrame(frame);
             if (!parsed) continue;
-            onEvent(parsed.event, parsed.data as { text?: string; message?: unknown; cards?: CardData[]; phase?: string });
+            onEvent(
+              parsed.event,
+              parsed.data as {
+                text?: string;
+                message?: unknown;
+                cards?: CardData[];
+                phase?: string;
+                method?: string;
+                durationMs?: number;
+                chunks?: unknown;
+              }
+            );
           }
         }
       } catch (err) {
@@ -392,6 +417,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
     [
       boardId,
       canSend,
+      copilotDebug,
       getHeaders,
       pushToast,
       setDraft,
@@ -552,6 +578,22 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
               ) : (
                 <>
                   {freeBanner}
+
+                  {copilotDebug && ragDebug ? (
+                    <div className="mb-3 rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)] px-3 py-2 text-[10px] font-mono text-[var(--flux-text-muted)]">
+                      <div className="font-semibold text-[var(--flux-text)]">
+                        RAG debug · {ragDebug.method} · {ragDebug.durationMs}ms
+                      </div>
+                      <ul className="mt-1.5 max-h-28 space-y-0.5 overflow-auto">
+                        {ragDebug.chunks.map((c) => (
+                          <li key={`${c.chunkId}:${c.score}`}>
+                            {c.score.toFixed(3)} · {c.method} · {c.docTitle.slice(0, 40)}
+                            {c.docTitle.length > 40 ? "…" : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
 
                   <div className="space-y-2">
                     {messages.length === 0 ? (

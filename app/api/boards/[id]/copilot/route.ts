@@ -15,13 +15,15 @@ import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/schemas";
 import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
 import { appendBoardCopilotMessages, getBoardCopilotChat, type CopilotMessageRole } from "@/lib/kv-board-copilot";
-import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
+import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
 import { buildCopilotWorldSnapshot } from "@/lib/copilot-world-snapshot";
 
 export const runtime = "nodejs";
 
 type CopilotChatInput = {
   message: string;
+  /** Quando true, envia evento SSE `rag_debug` com scores e método de retrieval. */
+  debug?: boolean;
 };
 
 type CopilotToolName = "moveCard" | "updatePriority" | "createCard" | "generateBrief";
@@ -822,6 +824,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const body = (await request.json().catch(() => ({}))) as Partial<CopilotChatInput>;
+  const debugRag = Boolean(body.debug);
   const userMessage = sanitizeText(body.message).trim();
   if (!userMessage) {
     return NextResponse.json({ error: "Mensagem é obrigatória." }, { status: 400 });
@@ -910,7 +913,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => ({ role: m.role as CopilotMessageRole, content: m.content }));
 
-        const ragChunks = await retrieveRelevantDocChunks(payload.orgId, userMessage, 12);
+        const ragResult = await retrieveRelevantDocChunksWithDebug(payload.orgId, userMessage, 12);
+        const ragChunks = ragResult.chunks;
+        if (debugRag) {
+          sendEvent("rag_debug", ragResult.debug);
+        }
         const { snapshot: worldSnapshot, ragChunksUsed } = await buildCopilotWorldSnapshot({
           orgId: payload.orgId,
           userId: payload.id,

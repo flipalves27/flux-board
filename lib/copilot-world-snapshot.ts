@@ -6,7 +6,7 @@ import { computeBoardPortfolio, type PortfolioBoardLike } from "@/lib/board-port
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
 import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
-import type { DocChunk } from "@/lib/docs-rag";
+import type { DocChunkRag } from "@/lib/docs-rag";
 import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
 import { isMongoConfigured } from "@/lib/mongo";
@@ -98,8 +98,8 @@ export async function buildCopilotWorldSnapshot(params: {
   userMessage: string;
   org: Organization | null;
   /** Se já buscou chunks no route, reutiliza (evita dupla chamada RAG). */
-  ragChunks?: DocChunk[] | null;
-}): Promise<{ snapshot: string; ragChunksUsed: DocChunk[] }> {
+  ragChunks?: DocChunkRag[] | null;
+}): Promise<{ snapshot: string; ragChunksUsed: DocChunkRag[] }> {
   const { orgId, userId, isAdmin, boardId, board, userMessage, org, ragChunks: preChunks } = params;
 
   const boards = await listBoardsForUser(userId, orgId, isAdmin);
@@ -206,7 +206,7 @@ export async function buildCopilotWorldSnapshot(params: {
 
   // --- Docs RAG: top 5 trechos relevantes (dedup por doc) ---
   lines.push("## Documentos (trechos relevantes à pergunta)");
-  let ragChunksUsed: DocChunk[] = [];
+  let ragChunksUsed: DocChunkRag[] = [];
   if (canUseFeature(org, "flux_docs_rag")) {
     const chunks = preChunks?.length ? preChunks : await retrieveRelevantDocChunks(orgId, userMessage, 12);
     const seen = new Set<string>();

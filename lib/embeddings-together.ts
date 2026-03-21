@@ -1,19 +1,26 @@
 /**
  * Embeddings via API compatível com OpenAI (`/v1/embeddings`), ex.: Together.
- * Modelo padrão pode ser sobrescrito por TOGETHER_EMBEDDING_MODEL.
+ * Cards / dependências: `TOGETHER_EMBEDDING_MODEL` ou padrão UAE-Large.
+ * Flux Docs RAG: `TOGETHER_DOCS_EMBEDDING_MODEL` ou m2-bert retrieval (dimensões diferentes — não misturar índices).
  */
 
 const DEFAULT_MODEL = "WhereIsAI/UAE-Large-V1";
+
+/** Modelo focado em retrieval para indexação e query do RAG de documentos. */
+export const DEFAULT_DOCS_EMBEDDING_MODEL = "togethercomputer/m2-bert-80M-8k-retrieval";
 
 function baseUrl(): string {
   return (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
 }
 
-export async function fetchTextEmbeddings(inputs: string[]): Promise<number[][] | null> {
+export async function fetchTextEmbeddings(
+  inputs: string[],
+  opts?: { model?: string }
+): Promise<number[][] | null> {
   const apiKey = process.env.TOGETHER_API_KEY?.trim();
   if (!apiKey || !inputs.length) return null;
 
-  const model = (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_MODEL).trim();
+  const model = (opts?.model ?? process.env.TOGETHER_EMBEDDING_MODEL ?? DEFAULT_MODEL).trim();
   const url = `${baseUrl()}/embeddings`;
 
   try {
@@ -45,6 +52,12 @@ export async function fetchTextEmbeddings(inputs: string[]): Promise<number[][] 
     console.warn("[embeddings] error", e instanceof Error ? e.message : e);
     return null;
   }
+}
+
+/** Embeddings para indexação e pergunta do RAG de Flux Docs (modelo dedicado). */
+export async function fetchDocsChunkEmbeddings(inputs: string[]): Promise<number[][] | null> {
+  const model = (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim();
+  return fetchTextEmbeddings(inputs, { model });
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
