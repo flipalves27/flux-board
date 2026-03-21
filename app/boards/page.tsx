@@ -85,7 +85,6 @@ export default function BoardsPage() {
   const [boards, setBoards] = useState<Board[]>([]);
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exportBusy, setExportBusy] = useState<"brief" | "json" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -376,44 +375,6 @@ export default function BoardsPage() {
     setRecentEntries(clearRecentBoards(user.id));
   }
 
-  async function downloadExecutiveBrief() {
-    setExportBusy("brief");
-    try {
-      const data = await apiGet<{ markdown: string }>("/api/executive-brief", getHeaders());
-      const blob = new Blob([data.markdown], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `flux-brief-${new Date().toISOString().slice(0, 10)}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-      pushToast({ kind: "success", title: "Brief baixado." });
-    } catch {
-      pushToast({ kind: "error", title: "Erro ao gerar o brief executivo." });
-    } finally {
-      setExportBusy(null);
-    }
-  }
-
-  async function downloadPortfolioJson() {
-    setExportBusy("json");
-    try {
-      const data = await apiGet<unknown>("/api/portfolio-export", getHeaders());
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `flux-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      pushToast({ kind: "success", title: "JSON exportado." });
-    } catch {
-      pushToast({ kind: "error", title: "Erro ao exportar o portfólio." });
-    } finally {
-      setExportBusy(null);
-    }
-  }
-
   if (authWaiting) {
     return <BoardsRouteLoadingFallback />;
   }
@@ -422,27 +383,14 @@ export default function BoardsPage() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header hideDiscovery />
       <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <h2 className="font-display text-xl font-bold text-[var(--flux-text)]">Meus Boards</h2>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={downloadExecutiveBrief}
-              disabled={exportBusy !== null || boards.length === 0}
-              className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-40 disabled:pointer-events-none"
-            >
-              {exportBusy === "brief" ? t("exports.generatingBrief") : t("exports.executiveBrief")}
-            </button>
-            <button
-              type="button"
-              onClick={downloadPortfolioJson}
-              disabled={exportBusy !== null || boards.length === 0}
-              className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] transition-colors hover:border-[var(--flux-secondary)] disabled:opacity-40 disabled:pointer-events-none"
-            >
-              {exportBusy === "json" ? t("exports.exportingJson") : t("exports.portfolioJson")}
-            </button>
-          </div>
-        </div>
+        <header className="mb-8 border-b border-[var(--flux-chrome-alpha-12)] pb-6">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
+            {t("pageTitle")}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)]">
+            {t("pageSubtitle")}
+          </p>
+        </header>
 
         <FluxCapabilityStrip />
 
@@ -483,94 +431,11 @@ export default function BoardsPage() {
         ) : (
           <DataFadeIn active>
             <>
-            <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
-                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
-                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boards.length}</p>
-              </div>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
-                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Atualizados hoje</p>
-                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boardsUpdatedToday.length}</p>
-              </div>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
-                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-                  {boards.filter((b) => b.id === rebornId).length}
-                </p>
-              </div>
-            </section>
-
-            <section className="mb-6 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] p-5">
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
-                    Dashboard executivo · Portfólio
-                  </h3>
-                  <p className="mt-1 max-w-3xl text-xs leading-relaxed text-[var(--flux-text-muted)]">
-                    Índices de 0 a 100 por board (quanto maior, melhor).{" "}
-                    <strong className="font-semibold text-[var(--flux-text)]">Risco</strong> sintetiza atrasos, urgências
-                    em aberto e pressão de WIP; <strong className="font-semibold text-[var(--flux-text)]">Throughput</strong>{" "}
-                    combina concluídos e avanço nas colunas;{" "}
-                    <strong className="font-semibold text-[var(--flux-text)]">Previsibilidade</strong> reflete o respeito a
-                    prazos nos itens em aberto.
-                  </p>
-                </div>
-                {portfolioSummary.withCards > 0 ? (
-                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
-                    Médias sobre {portfolioSummary.withCards} board{portfolioSummary.withCards !== 1 ? "s" : ""} com itens
-                    {portfolioSummary.atRisk > 0 && (
-                      <span className="mt-1 block text-[var(--flux-danger)] sm:mt-0 sm:ml-2 sm:inline">
-                        · {portfolioSummary.atRisk} com risco &lt; 48 (atenção)
-                      </span>
-                    )}
-                  </p>
-                ) : (
-                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
-                    Adicione cards aos boards para ver médias agregadas.
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-20)] bg-[var(--flux-surface-elevated)] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    Risco
-                  </p>
-                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Menor exposição · melhor</p>
-                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
-                    {portfolioSummary.avgRisco ?? "—"}
-                  </p>
-                  <div className="mt-3">
-                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgRisco} />
-                  </div>
-                </div>
-                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-surface-elevated)] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    Throughput
-                  </p>
-                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Entrega e fluxo</p>
-                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
-                    {portfolioSummary.avgThroughput ?? "—"}
-                  </p>
-                  <div className="mt-3">
-                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgThroughput} />
-                  </div>
-                </div>
-                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-elevated)] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    Previsibilidade
-                  </p>
-                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Prazos sob controle</p>
-                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
-                    {portfolioSummary.avgPrevisibilidade ?? "—"}
-                  </p>
-                  <div className="mt-3">
-                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgPrevisibilidade} />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+            <section className="mb-6 space-y-3" aria-labelledby="boards-search-heading">
+              <h2 id="boards-search-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
+                {t("sections.search")}
+              </h2>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
               <input
                 type="text"
                 value={query}
@@ -607,6 +472,7 @@ export default function BoardsPage() {
               >
                 {showOnlyFavorites ? "Só favoritos: ON" : "Só favoritos: OFF"}
               </button>
+              </div>
             </section>
 
             {(quickFavoriteBoards.length > 0 || quickRecentBoards.length > 0) && (
@@ -694,6 +560,102 @@ export default function BoardsPage() {
               </section>
             )}
 
+            <section className="mb-6 space-y-3" aria-labelledby="boards-snapshot-heading">
+              <h2 id="boards-snapshot-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
+                {t("sections.snapshot")}
+              </h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boards.length}</p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Atualizados hoje</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boardsUpdatedToday.length}</p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
+                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
+                  {boards.filter((b) => b.id === rebornId).length}
+                </p>
+              </div>
+              </div>
+            </section>
+
+            <section className="mb-8 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] p-5">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
+                    Dashboard executivo · Portfólio
+                  </h3>
+                  <p className="mt-1 max-w-3xl text-xs leading-relaxed text-[var(--flux-text-muted)]">
+                    Índices de 0 a 100 por board (quanto maior, melhor).{" "}
+                    <strong className="font-semibold text-[var(--flux-text)]">Risco</strong> sintetiza atrasos, urgências
+                    em aberto e pressão de WIP; <strong className="font-semibold text-[var(--flux-text)]">Throughput</strong>{" "}
+                    combina concluídos e avanço nas colunas;{" "}
+                    <strong className="font-semibold text-[var(--flux-text)]">Previsibilidade</strong> reflete o respeito a
+                    prazos nos itens em aberto.
+                  </p>
+                </div>
+                {portfolioSummary.withCards > 0 ? (
+                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
+                    Médias sobre {portfolioSummary.withCards} board{portfolioSummary.withCards !== 1 ? "s" : ""} com itens
+                    {portfolioSummary.atRisk > 0 && (
+                      <span className="mt-1 block text-[var(--flux-danger)] sm:mt-0 sm:ml-2 sm:inline">
+                        · {portfolioSummary.atRisk} com risco &lt; 48 (atenção)
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="shrink-0 text-xs text-[var(--flux-text-muted)]">
+                    Adicione cards aos boards para ver médias agregadas.
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-20)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Risco
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Menor exposição · melhor</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgRisco ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgRisco} />
+                  </div>
+                </div>
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Throughput
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Entrega e fluxo</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgThroughput ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgThroughput} />
+                  </div>
+                </div>
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-elevated)] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    Previsibilidade
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">Prazos sob controle</p>
+                  <p className="mt-2 font-display text-3xl tabular-nums text-[var(--flux-text)]">
+                    {portfolioSummary.avgPrevisibilidade ?? "—"}
+                  </p>
+                  <div className="mt-3">
+                    <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgPrevisibilidade} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4" aria-labelledby="boards-grid-heading">
+              <h2 id="boards-grid-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
+                {t("sections.yourBoards")}
+              </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
               <button
                 onClick={openNewModal}
@@ -813,6 +775,7 @@ export default function BoardsPage() {
                 {t("empty.noResults")}
               </p>
             )}
+            </section>
             </>
           </DataFadeIn>
         )}

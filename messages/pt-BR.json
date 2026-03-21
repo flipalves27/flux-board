@@ -692,16 +692,17 @@
     }
   },
   "boards": {
+    "pageTitle": "Meus boards",
+    "pageSubtitle": "Busque, filtre e abra seus boards. Métricas e portfólio ficam abaixo para consulta quando precisar.",
+    "sections": {
+      "search": "Buscar e filtrar",
+      "snapshot": "Visão rápida",
+      "yourBoards": "Todos os boards"
+    },
     "defaults": {
       "newBoardName": "Novo Board"
     },
     "loading": "Carregando...",
-    "exports": {
-      "generatingBrief": "Gerando…",
-      "executiveBrief": "Brief executivo (.md)",
-      "exportingJson": "Exportando…",
-      "portfolioJson": "Portfólio JSON (BI)"
-    },
     "filters": {
       "searchPlaceholder": "Buscar por nome ou ID do board...",
       "sortAriaLabel": "Ordenação dos boards",
