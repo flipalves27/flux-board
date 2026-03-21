@@ -39,7 +39,13 @@
       "light": "Light theme",
       "dark": "Dark theme",
       "lightTooltip": "Use light theme",
-      "darkTooltip": "Use dark theme"
+      "darkTooltip": "Use dark theme",
+      "mode": {
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "cycleTooltip": "Appearance: {current}. Click to cycle system, light, and dark."
     },
     "logout": "Sign out"
   },

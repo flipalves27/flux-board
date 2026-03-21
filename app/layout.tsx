@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Outfit } from "next/font/google";
 import "./globals.css";
+import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/context/auth-context";
@@ -36,7 +37,10 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <html lang={locale} className={`${dmSans.variable} ${outfit.variable}`}>
+    <html lang={locale} suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
+      </head>
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>

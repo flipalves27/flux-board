@@ -19,9 +19,22 @@ import {
 } from "@/lib/kv-organizations";
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import { getUserCap } from "@/lib/plan-gates";
+import type { ThemePreference } from "@/lib/theme-storage";
 
 export type AuthResult =
-  | { ok: true; token: string; user: { id: string; username: string; name: string; email: string; isAdmin: boolean; orgId: string } }
+  | {
+      ok: true;
+      token: string;
+      user: {
+        id: string;
+        username: string;
+        name: string;
+        email: string;
+        isAdmin: boolean;
+        orgId: string;
+        themePreference?: ThemePreference;
+      };
+    }
   | { ok: false; error: string; retryAfterSeconds?: number };
 
 /**
@@ -74,6 +87,7 @@ export async function loginAction(
         email: user.email,
         isAdmin,
         orgId: user.orgId,
+        ...(user.themePreference ? { themePreference: user.themePreference } : {}),
       },
     };
   } catch (err) {
@@ -168,6 +182,7 @@ export async function registerAction(
           email: user.email,
           isAdmin: false,
           orgId: user.orgId,
+          ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         },
       };
     }
@@ -199,6 +214,7 @@ export async function registerAction(
         email: user.email,
         isAdmin: false,
         orgId: user.orgId,
+        ...(user.themePreference ? { themePreference: user.themePreference } : {}),
       },
     };
   } catch (err) {
@@ -211,7 +227,18 @@ export async function registerAction(
 }
 
 export type ValidateResult =
-  | { ok: true; user: { id: string; username: string; name: string; email: string; isAdmin: boolean; orgId: string } }
+  | {
+      ok: true;
+      user: {
+        id: string;
+        username: string;
+        name: string;
+        email: string;
+        isAdmin: boolean;
+        orgId: string;
+        themePreference?: ThemePreference;
+      };
+    }
   | { ok: false };
 
 /**
@@ -234,6 +261,7 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
         email: user.email,
         isAdmin,
         orgId: user.orgId,
+        ...(user.themePreference ? { themePreference: user.themePreference } : {}),
       },
     };
   } catch {

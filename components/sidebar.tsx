@@ -160,6 +160,18 @@ function IconMoon({ className }: { className?: string }) {
   );
 }
 
+function IconMonitor({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25"
+      />
+    </svg>
+  );
+}
+
 function IconChevronLeft({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -194,11 +206,17 @@ export function Sidebar() {
   const { user, logout, isChecked, getHeaders } = useAuth();
   const orgBrandingCtx = useOrgBranding();
   const orgLogoUrl = orgBrandingCtx?.branding?.logoUrl?.trim();
-  const { theme, setTheme } = useTheme();
+  const { themePreference, cycleThemePreference } = useTheme();
   const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
   const [collapsed, setCollapsed] = useState(false);
   const [tabletHover, setTabletHover] = useState(false);
   const t = useTranslations("navigation");
+  const themeModeLabel =
+    themePreference === "system"
+      ? t("theme.mode.system")
+      : themePreference === "light"
+        ? t("theme.mode.light")
+        : t("theme.mode.dark");
 
   const { drawerProps } = useMobileDrawerPointer({
     enabled: layout === "mobile",
@@ -573,17 +591,24 @@ export function Sidebar() {
 
         <div className="flex shrink-0 flex-col gap-0.5 border-t border-[var(--flux-primary-alpha-06)] p-2.5">
           <CustomTooltip
-            content={theme === "dark" ? t("theme.lightTooltip") : t("theme.darkTooltip")}
+            content={t("theme.cycleTooltip", { current: themeModeLabel })}
             position="right"
           >
             <button
               type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => cycleThemePreference()}
+              aria-label={t("theme.cycleTooltip", { current: themeModeLabel })}
               className={`flex w-full items-center gap-2.5 overflow-hidden rounded-[var(--flux-rad-sm)] bg-transparent px-2.5 py-2 font-display text-sm font-semibold transition-all
             text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
             >
-              {theme === "dark" ? <IconSun className="h-4 w-4 shrink-0" /> : <IconMoon className="h-4 w-4 shrink-0" />}
-              {showExpandedNav && <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>}
+              {themePreference === "system" ? (
+                <IconMonitor className="h-4 w-4 shrink-0" />
+              ) : themePreference === "light" ? (
+                <IconSun className="h-4 w-4 shrink-0" />
+              ) : (
+                <IconMoon className="h-4 w-4 shrink-0" />
+              )}
+              {showExpandedNav && <span>{themeModeLabel}</span>}
             </button>
           </CustomTooltip>
           <button

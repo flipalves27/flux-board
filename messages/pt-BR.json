@@ -39,7 +39,13 @@
       "light": "Tema claro",
       "dark": "Tema escuro",
       "lightTooltip": "Usar tema claro",
-      "darkTooltip": "Usar tema escuro"
+      "darkTooltip": "Usar tema escuro",
+      "mode": {
+        "system": "Sistema",
+        "light": "Claro",
+        "dark": "Escuro"
+      },
+      "cycleTooltip": "Aparência: {current}. Clique para alternar sistema, claro e escuro."
     },
     "logout": "Sair"
   },

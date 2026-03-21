@@ -603,3 +603,7 @@ export const UserUpdateSchema = z
   })
   .passthrough();
 
+export const UserThemePreferenceSchema = z.object({
+  themePreference: z.enum(["light", "dark", "system"]),
+});
+

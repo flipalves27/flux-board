@@ -2,6 +2,7 @@ import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { hashPassword, verifyPassword } from "./auth";
 import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
+import type { ThemePreference } from "./theme-storage";
 import type { Db } from "mongodb";
 
 const USERS_KEY = "reborn_users";
@@ -21,6 +22,8 @@ const ADMIN_USER = {
   orgId: DEFAULT_ORG_ID,
 };
 
+export type { ThemePreference } from "./theme-storage";
+
 export interface User {
   id: string;
   username: string;
@@ -29,6 +32,7 @@ export interface User {
   passwordHash: string | null;
   isAdmin: boolean;
   orgId: string;
+  themePreference?: ThemePreference;
 }
 
 type UserDoc = {
@@ -41,6 +45,7 @@ type UserDoc = {
   orgId: string;
   usernameLower: string;
   emailLower: string;
+  themePreference?: ThemePreference;
 };
 
 function recreateAdminUser(): User {
@@ -51,6 +56,7 @@ function recreateAdminUser(): User {
 }
 
 function toUser(doc: UserDoc): User {
+  const tp = doc.themePreference;
   return {
     id: doc._id,
     username: doc.username,
@@ -59,6 +65,7 @@ function toUser(doc: UserDoc): User {
     passwordHash: doc.passwordHash,
     isAdmin: !!doc.isAdmin,
     orgId: doc.orgId || DEFAULT_ORG_ID,
+    ...(tp === "light" || tp === "dark" || tp === "system" ? { themePreference: tp } : {}),
   };
 }
 
@@ -304,6 +311,12 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     }
     if (updates.name !== undefined) $set.name = updates.name;
     if (updates.passwordHash !== undefined) $set.passwordHash = updates.passwordHash;
+    if (updates.themePreference !== undefined) {
+      const tp = updates.themePreference;
+      if (tp === "light" || tp === "dark" || tp === "system") {
+        $set.themePreference = tp;
+      }
+    }
     // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
     if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
     return getUserById(id, orgId);
@@ -322,6 +335,12 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
   }
   if (updates.name !== undefined) user.name = updates.name;
   if (updates.passwordHash !== undefined) user.passwordHash = updates.passwordHash;
+  if (updates.themePreference !== undefined) {
+    const tp = updates.themePreference;
+    if (tp === "light" || tp === "dark" || tp === "system") {
+      user.themePreference = tp;
+    }
+  }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
   return user;
 }

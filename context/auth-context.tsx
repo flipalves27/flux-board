@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateTokenAction } from "@/app/actions/auth";
+import type { ThemePreference } from "@/lib/theme-storage";
 
 const AUTH_KEY = "reborn_auth";
 
@@ -13,6 +14,7 @@ export interface AuthUser {
   email: string;
   isAdmin: boolean;
   orgId: string;
+  themePreference?: ThemePreference;
 }
 
 export interface AuthState {

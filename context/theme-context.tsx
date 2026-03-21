@@ -1,47 +1,156 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { flushSync } from "react-dom";
+import { useAuth } from "@/context/auth-context";
+import { apiFetch } from "@/lib/api-client";
+import {
+  readThemePreferenceFromStorage,
+  writeThemePreferenceToStorage,
+  type ThemePreference,
+} from "@/lib/theme-storage";
 
-const THEME_KEY = "flux_theme";
+export type { ThemePreference };
 
-export type Theme = "dark" | "light";
+const PREF_CYCLE: ThemePreference[] = ["system", "light", "dark"];
+
+function resolveTheme(preference: ThemePreference, systemDark: boolean): "light" | "dark" {
+  if (preference === "light") return "light";
+  if (preference === "dark") return "dark";
+  return systemDark ? "dark" : "light";
+}
 
 interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
+  themePreference: ThemePreference;
+  resolvedTheme: "light" | "dark";
+  setThemePreference: (value: ThemePreference, opts?: { skipRemote?: boolean }) => void;
+  cycleThemePreference: () => void;
+  theme: "light" | "dark";
+  setTheme: (value: ThemePreference) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
-function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return "dark";
+function runWithViewTransition(update: () => void): void {
+  if (typeof window === "undefined") return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    update();
+    return;
+  }
+  const doc = document as Document & {
+    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+  };
+  if (doc.startViewTransition) {
+    doc.startViewTransition(update);
+    return;
+  }
+  const root = document.documentElement;
+  const prevTransition = root.style.transition;
+  root.style.transition = "opacity 0.2s ease";
+  root.style.opacity = "0.98";
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      update();
+      root.style.opacity = "1";
+      window.setTimeout(() => {
+        root.style.transition = prevTransition;
+      }, 220);
+    });
+  });
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const { user, isChecked, token, getHeaders } = useAuth();
+  const [preference, setPreference] = useState<ThemePreference>(() => readThemePreferenceFromStorage() ?? "system");
+  const [systemDark, setSystemDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setThemeState(getStoredTheme());
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemDark(mq.matches);
+    const fn = () => setSystemDark(mq.matches);
+    mq.addEventListener("change", fn);
     setMounted(true);
+    return () => mq.removeEventListener("change", fn);
   }, []);
 
+  const lastUserSync = useRef<string | null>(null);
   useEffect(() => {
-    if (!mounted) return;
-    const root = document.documentElement;
-    root.setAttribute("data-theme", theme);
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme, mounted]);
+    if (!isChecked || !user) {
+      if (!user) lastUserSync.current = null;
+      return;
+    }
+    const tp = user.themePreference;
+    if (tp !== "light" && tp !== "dark" && tp !== "system") return;
+    const sig = `${user.id}:${tp}`;
+    if (lastUserSync.current === sig) return;
+    lastUserSync.current = sig;
+    flushSync(() => setPreference(tp));
+    writeThemePreferenceToStorage(tp);
+  }, [isChecked, user]);
 
-  const setTheme = (value: Theme) => setThemeState(value);
-  const toggleTheme = () => setThemeState((t) => (t === "dark" ? "light" : "dark"));
+  const resolvedTheme = resolveTheme(preference, systemDark);
+
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    document.documentElement.setAttribute("data-theme", resolvedTheme);
+  }, [mounted, resolvedTheme]);
+
+  const setThemePreference = useCallback(
+    (value: ThemePreference, opts?: { skipRemote?: boolean }) => {
+      runWithViewTransition(() => {
+        flushSync(() => setPreference(value));
+      });
+      writeThemePreferenceToStorage(value);
+      if (!opts?.skipRemote && token) {
+        void apiFetch("/api/users/me/theme", {
+          method: "PATCH",
+          body: JSON.stringify({ themePreference: value }),
+          headers: getHeaders(),
+        }).catch(() => {});
+      }
+    },
+    [token, getHeaders]
+  );
+
+  const cycleThemePreference = useCallback(() => {
+    const idx = PREF_CYCLE.indexOf(preference);
+    const next = PREF_CYCLE[(idx === -1 ? 0 : idx + 1) % PREF_CYCLE.length];
+    setThemePreference(next);
+  }, [preference, setThemePreference]);
+
+  const toggleTheme = useCallback(() => {
+    setThemePreference(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setThemePreference]);
+
+  const setTheme = useCallback(
+    (value: ThemePreference) => {
+      setThemePreference(value);
+    },
+    [setThemePreference]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        themePreference: preference,
+        resolvedTheme,
+        theme: resolvedTheme,
+        setThemePreference,
+        setTheme,
+        cycleThemePreference,
+        toggleTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
