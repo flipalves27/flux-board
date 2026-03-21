@@ -700,6 +700,7 @@
           "empty": "Nenhum link. Clique em &quot;Adicionar link&quot; para incluir.",
           "urlPlaceholder": "https://...",
           "labelPlaceholder": "Rótulo (opcional)",
+          "invalidUrl": "URL inválida (use http ou https)",
           "tooltips": {
             "view": "Visualizar link",
             "remove": "Remover link"
@@ -811,6 +812,38 @@
           "businessLabel": "Negócio:",
           "objectiveLabel": "Objetivo:"
         }
+      },
+      "tabLoading": "Carregando…",
+      "tabsNavAria": "Seções do card",
+      "tabs": {
+        "edit": "Detalhes",
+        "ai": "IA",
+        "links": "Links",
+        "docs": "Docs",
+        "history": "Histórico"
+      },
+      "docRefs": {
+        "title": "Documentos vinculados",
+        "description": "Anexe docs da base de conhecimento para contexto do card.",
+        "searchPlaceholder": "Buscar docs...",
+        "empty": "Nenhum doc encontrado."
+      },
+      "history": {
+        "title": "Movimentação e automações",
+        "description": "Dados disponíveis no card sobre coluna e últimas execuções de automação.",
+        "currentColumn": "Coluna atual",
+        "columnEntered": "Entrada na coluna atual",
+        "noEnteredAt": "Sem registro de data de entrada nesta coluna.",
+        "automations": "Últimas automações"
+      },
+      "aiTab": {
+        "title": "Contexto com IA",
+        "description": "Gere título, descrição e enriquecimento a partir do que você já escreveu.",
+        "hint": "Use quando o card já tiver título e descrição preenchidos. O painel mostra o progresso e o resultado.",
+        "generate": "Gerar contexto",
+        "openPanel": "Abrir painel",
+        "needTitleDesc": "Preencha título e descrição na aba Detalhes para habilitar a geração.",
+        "lastResult": "Último resultado"
       }
     },
     "addColumnModal": {
