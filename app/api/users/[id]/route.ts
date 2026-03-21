@@ -38,6 +38,7 @@ export async function GET(
         name: user.name,
         email: user.email,
         isAdmin: !!user.isAdmin,
+        ...(user.isExecutive ? { isExecutive: true } : {}),
       },
     });
   } catch (err) {
@@ -93,6 +94,12 @@ export async function PUT(
     if (clean.password !== undefined) {
       updates.passwordHash = hashPassword(clean.password);
     }
+    if (clean.isAdmin !== undefined) {
+      updates.isAdmin = clean.isAdmin;
+    }
+    if (clean.isExecutive !== undefined) {
+      updates.isExecutive = clean.isExecutive;
+    }
 
     const user = await updateUser(id, payload.orgId, updates as Parameters<typeof updateUser>[2]);
     if (!user) {
@@ -105,6 +112,7 @@ export async function PUT(
         name: user.name,
         email: user.email,
         isAdmin: !!user.isAdmin,
+        ...(user.isExecutive ? { isExecutive: true } : {}),
       },
     });
   } catch (err) {

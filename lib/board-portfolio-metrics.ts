@@ -154,6 +154,24 @@ export function computeBoardPortfolio(board: PortfolioBoardLike): BoardPortfolio
   };
 }
 
+/**
+ * Saúde de WIP (0–100): quanto maior, melhor (menos itens “Em andamento” vs abertos).
+ * Alinhado ao penalizador de wipRatio em {@link computeBoardPortfolio}.
+ */
+export function computeBoardWipComplianceScore(board: PortfolioBoardLike): number | null {
+  const cards = parseCards(board.cards);
+  const n = cards.length;
+  if (n === 0) return null;
+  const isDone = (c: PortfolioCardLike) => c.progress === "Concluída";
+  const open = cards.filter((c) => !isDone(c));
+  if (open.length === 0) return 100;
+  const inProgress = open.filter((c) => c.progress === "Em andamento").length;
+  const wipRatio = inProgress / open.length;
+  let wipPenalty = 0;
+  if (wipRatio > 0.42) wipPenalty = clamp((wipRatio - 0.42) * 110, 0, 28);
+  return Math.round(100 - wipPenalty);
+}
+
 export function averageNullable(values: (number | null)[]): number | null {
   const nums = values.filter((v): v is number => v !== null);
   if (nums.length === 0) return null;

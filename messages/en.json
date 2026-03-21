@@ -3,6 +3,8 @@
     "boards": "Boards",
     "reports": "Reports",
     "reportsProduct": "Flux Reports",
+    "dashboard": "Executive",
+    "dashboardProduct": "Portfolio health",
     "okrs": "Flux Goals",
     "discovery": "Discovery",
     "templates": "Templates",
@@ -20,6 +22,7 @@
     "hints": {
       "boards": "Kanban boards — daily work and columns.",
       "reports": "Org-wide BI with charts and Explain (AI) on each metric.",
+      "dashboard": "C-level portfolio health, OKRs, anomalies, and throughput trend.",
       "okrs": "Objectives and key results by quarter.",
       "discovery": "Initiatives and discovery boards.",
       "templates": "Public template showcase and one-click import.",
@@ -79,6 +82,7 @@
     "nav": {
       "boards": "Boards",
       "reports": "Reports",
+      "dashboard": "Executive dashboard",
       "okrs": "Goals",
       "discovery": "Discovery",
       "templates": "Templates",
@@ -303,6 +307,52 @@
       "hideDiag": "Hide diagnostics",
       "suggested": "Suggested action",
       "cronHint": "The daily job (e.g. Vercel Cron) calls GET /api/cron/anomaly-check with the same secret as your other crons. Weekly emails can include an optional summary of these alerts."
+    }
+  },
+  "executiveDashboard": {
+    "badge": "Executive",
+    "title": "Real-time executive dashboard",
+    "subtitle": "Portfolio health score, OKR progress, active anomaly alerts, throughput trend, and top boards by risk — refreshed every few minutes.",
+    "loading": "Loading dashboard…",
+    "loadError": "Could not load the executive dashboard.",
+    "refreshHint": "Data refreshes automatically every 5 minutes.",
+    "exportPdf": "Export PDF (print)",
+    "generatedAt": "Updated at",
+    "health": {
+      "title": "Portfolio health score",
+      "throughput": "Throughput",
+      "risk": "Risk index",
+      "wip": "WIP balance",
+      "compliance": "Predictability",
+      "okr": "OKR progress"
+    },
+    "kpis": {
+      "title": "Snapshot",
+      "boards": "Boards",
+      "atRisk": "Boards at risk",
+      "quarter": "Quarter"
+    },
+    "okr": {
+      "title": "OKR progress (by objective)",
+      "empty": "No objectives for the current quarter with linked boards.",
+      "planNote": "OKR engine requires Pro/Business."
+    },
+    "anomalies": {
+      "title": "Active anomaly alerts",
+      "empty": "No recent alerts. Alerts appear when MongoDB is configured and anomaly checks run.",
+      "suggested": "Suggested:"
+    },
+    "throughput": {
+      "title": "Throughput trend (8 weeks)",
+      "series": "Completed (Copilot)",
+      "hint": "Weekly completions use Copilot history. Without MongoDB or Copilot usage, values may stay at zero."
+    },
+    "risk": {
+      "title": "Top 5 boards by risk (lowest risk index first)",
+      "empty": "No boards with cards to rank.",
+      "risk": "Risk",
+      "throughput": "Throughput",
+      "cards": "Cards"
     }
   },
   "appShell": {

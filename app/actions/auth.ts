@@ -31,6 +31,7 @@ export type AuthResult =
         name: string;
         email: string;
         isAdmin: boolean;
+        isExecutive?: boolean;
         orgId: string;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
@@ -77,7 +78,14 @@ export async function loginAction(
     }
 
     const isAdmin = user.id === "admin" || !!user.isAdmin;
-    const token = createToken({ id: user.id, username: user.username, isAdmin, orgId: user.orgId });
+    const isExecutive = !!user.isExecutive;
+    const token = createToken({
+      id: user.id,
+      username: user.username,
+      isAdmin,
+      isExecutive,
+      orgId: user.orgId,
+    });
     return {
       ok: true,
       token,
@@ -87,6 +95,7 @@ export async function loginAction(
         name: user.name,
         email: user.email,
         isAdmin,
+        ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
@@ -233,18 +242,19 @@ export async function registerAction(
 export type ValidateResult =
   | {
       ok: true;
-      user: {
-        id: string;
-        username: string;
-        name: string;
-        email: string;
-        isAdmin: boolean;
-        orgId: string;
-        themePreference?: ThemePreference;
-        boardProductTourCompleted?: boolean;
-      };
-    }
-  | { ok: false };
+        user: {
+          id: string;
+          username: string;
+          name: string;
+          email: string;
+          isAdmin: boolean;
+          isExecutive?: boolean;
+          orgId: string;
+          themePreference?: ThemePreference;
+          boardProductTourCompleted?: boolean;
+        };
+      }
+    | { ok: false };
 
 /**
  * Server Action para validar token. Evita 403 da Vercel Protection ao
@@ -257,6 +267,7 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
     const user = await getUserById(payload.id, payload.orgId);
     if (!user) return { ok: false };
     const isAdmin = !!user.isAdmin;
+    const isExecutive = !!user.isExecutive;
     return {
       ok: true,
       user: {
@@ -265,6 +276,7 @@ export async function validateTokenAction(token: string): Promise<ValidateResult
         name: user.name,
         email: user.email,
         isAdmin,
+        ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),

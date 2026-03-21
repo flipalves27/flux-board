@@ -31,6 +31,8 @@ export interface User {
   email: string;
   passwordHash: string | null;
   isAdmin: boolean;
+  /** Leitura executiva (C-level) sem permissões de administração da org. */
+  isExecutive?: boolean;
   orgId: string;
   themePreference?: ThemePreference;
   /** Quando true, o tour guiado do board não inicia mais automaticamente. */
@@ -44,6 +46,7 @@ type UserDoc = {
   email: string;
   passwordHash: string | null;
   isAdmin: boolean;
+  isExecutive?: boolean;
   orgId: string;
   usernameLower: string;
   emailLower: string;
@@ -68,6 +71,7 @@ function toUser(doc: UserDoc): User {
     passwordHash: doc.passwordHash,
     isAdmin: !!doc.isAdmin,
     orgId: doc.orgId || DEFAULT_ORG_ID,
+    ...(doc.isExecutive ? { isExecutive: true } : {}),
     ...(tp === "light" || tp === "dark" || tp === "system" ? { themePreference: tp } : {}),
     ...(doc.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
   };
@@ -324,6 +328,12 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     if (updates.boardProductTourCompleted !== undefined) {
       $set.boardProductTourCompleted = !!updates.boardProductTourCompleted;
     }
+    if (updates.isExecutive !== undefined) {
+      $set.isExecutive = !!updates.isExecutive;
+    }
+    if (updates.isAdmin !== undefined) {
+      $set.isAdmin = !!updates.isAdmin;
+    }
     // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
     if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
     return getUserById(id, orgId);
@@ -350,6 +360,13 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
   }
   if (updates.boardProductTourCompleted !== undefined) {
     user.boardProductTourCompleted = !!updates.boardProductTourCompleted;
+  }
+  if (updates.isExecutive !== undefined) {
+    if (updates.isExecutive) user.isExecutive = true;
+    else delete user.isExecutive;
+  }
+  if (updates.isAdmin !== undefined) {
+    user.isAdmin = !!updates.isAdmin;
   }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
   return user;

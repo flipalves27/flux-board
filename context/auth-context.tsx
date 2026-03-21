@@ -13,6 +13,7 @@ export interface AuthUser {
   name: string;
   email: string;
   isAdmin: boolean;
+  isExecutive?: boolean;
   orgId: string;
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;

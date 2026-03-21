@@ -118,3 +118,48 @@ export function computeOkrsProgress(args: {
   return objectives.map((o) => computeObjectiveProgress({ cards, objective: o, bucketKeys }));
 }
 
+/** Cartões do board no formato esperado por KR (multi-board por objetivo). */
+export type OrgOkrBoardLike = {
+  cards?: unknown[];
+  config?: { bucketOrder?: Array<{ key?: string }> };
+};
+
+function cardsWithBucketForOkr(board: OrgOkrBoardLike | undefined): Array<{ bucket?: string | null }> {
+  if (!board?.cards || !Array.isArray(board.cards)) return [];
+  return board.cards.map((c) => {
+    if (!c || typeof c !== "object") return {};
+    const o = c as Record<string, unknown>;
+    return { bucket: typeof o.bucket === "string" ? o.bucket : null };
+  });
+}
+
+/**
+ * Progresso de um objetivo quando cada KR pode apontar para um board diferente.
+ */
+export function computeObjectiveProgressForOrg(args: {
+  objective: OkrsObjectiveDefinition;
+  boardsById: Map<string, OrgOkrBoardLike>;
+}): OkrsObjectiveComputed {
+  const { objective, boardsById } = args;
+  const computedKrs = objective.keyResults.map((kr) => {
+    const board = boardsById.get(kr.linkedBoardId);
+    const cards = cardsWithBucketForOkr(board);
+    const order = board?.config?.bucketOrder;
+    const bucketKeys =
+      Array.isArray(order) && order.length
+        ? new Set(order.map((b) => b.key).filter((k): k is string => typeof k === "string" && k.length > 0))
+        : undefined;
+    return computeKeyResultProgress({ cards, keyResult: kr, bucketKeys });
+  });
+
+  const objectiveCurrentPct =
+    computedKrs.length === 0 ? 0 : Math.min(...computedKrs.map((k) => k.pct));
+
+  return {
+    objective,
+    keyResults: computedKrs,
+    objectiveCurrentPct,
+    status: statusFromPct(objectiveCurrentPct),
+  };
+}
+

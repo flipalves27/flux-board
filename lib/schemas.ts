@@ -629,6 +629,8 @@ export const UserUpdateSchema = z
     name: z.string().trim().min(1).max(200).optional(),
     email: z.string().trim().email("E-mail invalido.").max(320).optional(),
     password: z.string().min(4).max(200).optional(),
+    isAdmin: z.boolean().optional(),
+    isExecutive: z.boolean().optional(),
   })
   .passthrough();
 

@@ -235,6 +235,9 @@ export function CommandPalette() {
     const nav: { path: string; title: string; kw: string }[] = [
       { path: "/boards", title: t("nav.boards"), kw: "boards lista" },
       { path: "/reports", title: t("nav.reports"), kw: "reports bi" },
+      ...(user.isAdmin || user.isExecutive
+        ? [{ path: "/dashboard", title: t("nav.dashboard"), kw: "executive dashboard c-level portfolio health" }]
+        : []),
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
       { path: "/discovery", title: t("nav.discovery"), kw: "discovery" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },

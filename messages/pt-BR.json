@@ -3,6 +3,8 @@
     "boards": "Boards",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
+    "dashboard": "Executivo",
+    "dashboardProduct": "Saúde do portfólio",
     "okrs": "Flux Goals",
     "discovery": "Discovery",
     "templates": "Templates",
@@ -20,6 +22,7 @@
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
+      "dashboard": "Visão C-level: saúde do portfólio, OKRs, anomalias e tendência de throughput.",
       "okrs": "Objetivos e resultados-chave por trimestre.",
       "discovery": "Iniciativas e discoverys em formato de board.",
       "templates": "Showcase de templates públicos e importação com um clique.",
@@ -79,6 +82,7 @@
     "nav": {
       "boards": "Boards",
       "reports": "Relatórios",
+      "dashboard": "Dashboard executivo",
       "okrs": "Metas",
       "discovery": "Discovery",
       "templates": "Templates",
@@ -303,6 +307,52 @@
       "hideDiag": "Ocultar diagnóstico",
       "suggested": "Ação sugerida",
       "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
+    }
+  },
+  "executiveDashboard": {
+    "badge": "Executivo",
+    "title": "Dashboard executivo em tempo real",
+    "subtitle": "Health score do portfólio, progresso de OKRs, alertas de anomalias ativos, tendência de throughput e boards com maior risco — atualizado a cada poucos minutos.",
+    "loading": "Carregando dashboard…",
+    "loadError": "Não foi possível carregar o dashboard executivo.",
+    "refreshHint": "Os dados são atualizados automaticamente a cada 5 minutos.",
+    "exportPdf": "Exportar PDF (imprimir)",
+    "generatedAt": "Atualizado em",
+    "health": {
+      "title": "Health score do portfólio",
+      "throughput": "Throughput",
+      "risk": "Índice de risco",
+      "wip": "Equilíbrio de WIP",
+      "compliance": "Previsibilidade",
+      "okr": "Progresso OKR"
+    },
+    "kpis": {
+      "title": "Resumo",
+      "boards": "Boards",
+      "atRisk": "Boards em risco",
+      "quarter": "Trimestre"
+    },
+    "okr": {
+      "title": "Progresso de OKRs (por objetivo)",
+      "empty": "Nenhum objetivo no trimestre atual com boards vinculados.",
+      "planNote": "O motor de OKRs exige plano Pro/Business."
+    },
+    "anomalies": {
+      "title": "Alertas de anomalia ativos",
+      "empty": "Nenhum alerta recente. Alertas aparecem com MongoDB e jobs de anomalia.",
+      "suggested": "Sugestão:"
+    },
+    "throughput": {
+      "title": "Tendência de throughput (8 semanas)",
+      "series": "Concluídos (Copilot)",
+      "hint": "Conclusões semanais usam histórico do Copilot. Sem MongoDB ou uso do Copilot, os valores podem ficar em zero."
+    },
+    "risk": {
+      "title": "Top 5 boards por risco (menor índice de risco = pior)",
+      "empty": "Nenhum board com cards para ranquear.",
+      "risk": "Risco",
+      "throughput": "Throughput",
+      "cards": "Cards"
     }
   },
   "appShell": {

@@ -18,12 +18,19 @@ export function verifyPassword(password: string, stored: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(computed, "hex"));
 }
 
-export function createToken(user: { id: string; username: string; isAdmin?: boolean; orgId?: string }): string {
+export function createToken(user: {
+  id: string;
+  username: string;
+  isAdmin?: boolean;
+  isExecutive?: boolean;
+  orgId?: string;
+}): string {
   return jwt.sign(
     {
       id: user.id,
       username: user.username,
       isAdmin: !!user.isAdmin,
+      isExecutive: !!user.isExecutive,
       // Mantemos fallback para tokens antigos (antes da migração do orgId).
       orgId: user.orgId ? String(user.orgId) : "org_default",
     },
@@ -34,13 +41,20 @@ export function createToken(user: { id: string; username: string; isAdmin?: bool
 
 export function verifyToken(
   token: string
-): { id: string; username: string; isAdmin: boolean; orgId: string } | null {
+): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { id: string; username: string; isAdmin: boolean; orgId?: string };
+    const payload = jwt.verify(token, JWT_SECRET) as {
+      id: string;
+      username: string;
+      isAdmin: boolean;
+      isExecutive?: boolean;
+      orgId?: string;
+    };
     return {
       id: payload.id,
       username: payload.username,
       isAdmin: !!payload.isAdmin,
+      isExecutive: !!payload.isExecutive,
       orgId: payload.orgId ? String(payload.orgId) : "org_default",
     };
   } catch {
@@ -50,7 +64,7 @@ export function verifyToken(
 
 export function getAuthFromRequest(
   req: NextRequest
-): { id: string; username: string; isAdmin: boolean; orgId: string } | null {
+): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
   if (!auth || !auth.startsWith("Bearer ")) return null;
   const payload = verifyToken(auth.slice(7));
@@ -59,5 +73,6 @@ export function getAuthFromRequest(
     ...payload,
     // `isAdmin` aqui já deve ser escopo do tenant (org-admin).
     isAdmin: !!payload.isAdmin,
+    isExecutive: !!payload.isExecutive,
   };
 }
