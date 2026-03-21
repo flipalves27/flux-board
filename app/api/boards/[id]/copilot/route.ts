@@ -500,6 +500,16 @@ function copilotHeuristicWhenNoLlm(input: {
   };
 }
 
+function anthropicSnippetIsInsufficientCredits(snippet: string): boolean {
+  const s = snippet.toLowerCase();
+  return (
+    s.includes("credit balance") ||
+    s.includes("too low to access") ||
+    s.includes("purchase credits") ||
+    s.includes("plans & billing")
+  );
+}
+
 /** Mensagem ao usuário + log em servidor (Vercel) com corpo da API quando falha. */
 function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>): string {
   const err = failed.error || "";
@@ -527,6 +537,9 @@ function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>
         return "Acesso negado pela Anthropic (403). Confira permissões da chave, região e faturamento da conta.";
       }
       if (code === 400 || code === 404) {
+        if (anthropicSnippetIsInsufficientCredits(snippet)) {
+          return "Saldo de créditos da conta Anthropic insuficiente. Em https://console.anthropic.com acesse Plans & Billing para comprar créditos ou ativar um plano. O erro 400 neste caso não é ID do modelo.";
+        }
         const hint = snippet ? ` (${snippet.slice(0, 220)}${snippet.length > 220 ? "…" : ""})` : "";
         return `Pedido rejeitado pela Anthropic (${code}). Use o ID exato do modelo na API (Configurações da organização ou ANTHROPIC_MODEL no Vercel).${hint}`;
       }
