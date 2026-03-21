@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 type PublicFormData = {
@@ -25,6 +25,16 @@ export default function PublicIntakeFormPage() {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
 
+  const [similarMatches, setSimilarMatches] = useState<
+    Array<{ cardId: string; title: string; bucketLabel: string; score: number }>
+  >([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
+  const similarDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const similarSeqRef = useRef(0);
+
+  const [lastSubmit, setLastSubmit] = useState<"merged" | "created" | null>(null);
+  const [lastCardId, setLastCardId] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -47,6 +57,51 @@ export default function PublicIntakeFormPage() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    if (!slug || !form) return;
+    const q = title.trim();
+    if (q.length < 3) {
+      setSimilarMatches([]);
+      setSimilarLoading(false);
+      return;
+    }
+    if (similarDebounceRef.current != null) clearTimeout(similarDebounceRef.current);
+    similarDebounceRef.current = setTimeout(() => {
+      const seq = ++similarSeqRef.current;
+      setSimilarLoading(true);
+      void (async () => {
+        try {
+          const r = await fetch(`/api/forms/${encodeURIComponent(slug)}/similar-cards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: q, description: description.trim() }),
+          });
+          const data = (await r.json().catch(() => ({}))) as {
+            matches?: Array<{ cardId: string; title: string; bucketLabel: string; score: number }>;
+          };
+          if (similarSeqRef.current !== seq) return;
+          const raw = Array.isArray(data.matches) ? data.matches : [];
+          setSimilarMatches(
+            raw.slice(0, 3).map((m) => ({
+              cardId: m.cardId,
+              title: m.title,
+              bucketLabel: m.bucketLabel,
+              score: m.score,
+            }))
+          );
+        } catch {
+          if (similarSeqRef.current !== seq) return;
+          setSimilarMatches([]);
+        } finally {
+          if (similarSeqRef.current === seq) setSimilarLoading(false);
+        }
+      })();
+    }, 500);
+    return () => {
+      if (similarDebounceRef.current != null) clearTimeout(similarDebounceRef.current);
+    };
+  }, [slug, form, title, description]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -68,6 +123,8 @@ export default function PublicIntakeFormPage() {
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(String(data.error || "Falha ao enviar."));
+      setLastSubmit(data.merged ? "merged" : "created");
+      setLastCardId(typeof data.cardId === "string" ? data.cardId : null);
       setDone(true);
       setRequesterName("");
       setRequesterEmail("");
@@ -91,9 +148,31 @@ export default function PublicIntakeFormPage() {
             <h1 className="font-display text-2xl font-bold text-[var(--flux-text)]">{form.title}</h1>
             {form.description && <p className="mt-2 text-sm text-[var(--flux-text-muted)]">{form.description}</p>}
             {done && (
-              <p className="mt-4 rounded-[var(--flux-rad-sm)] border border-[var(--flux-success-alpha-40)] bg-[var(--flux-success-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]">
-                Demanda enviada com sucesso. Seu card já foi criado no board.
-              </p>
+              <div
+                className={`mt-4 rounded-[var(--flux-rad)] border px-4 py-3 text-sm leading-relaxed ${
+                  lastSubmit === "merged"
+                    ? "border-[var(--flux-warning-alpha-45)] bg-[var(--flux-warning-alpha-14)] text-[var(--flux-text)]"
+                    : "border-[var(--flux-success-alpha-40)] bg-[var(--flux-success-alpha-12)] text-[var(--flux-text)]"
+                }`}
+                role="status"
+              >
+                {lastSubmit === "merged" ? (
+                  <>
+                    <p className="font-display text-base font-bold text-[var(--flux-text)]">
+                      Possível duplicata — atualizamos um card existente
+                    </p>
+                    <p className="mt-1.5 text-[var(--flux-text-muted)]">
+                      A IA identificou forte similaridade com um card já no quadro. Seu texto foi anexado a esse card em
+                      vez de criar outro. Isso evita poluir métricas com itens repetidos.
+                    </p>
+                    {lastCardId ? (
+                      <p className="mt-2 font-mono text-xs text-[var(--flux-text-muted)]">Card: {lastCardId}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>Demanda enviada com sucesso. Seu card já foi criado no board.</p>
+                )}
+              </div>
             )}
             <form onSubmit={onSubmit} className="mt-6 grid gap-4">
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -123,6 +202,35 @@ export default function PublicIntakeFormPage() {
                   onChange={(e) => setTitle(e.target.value)}
                   className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
+                {(similarLoading || similarMatches.length > 0) && (
+                  <div
+                    className="mt-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-10)] px-3 py-2 text-sm"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                      Antes de enviar — cards similares no quadro
+                    </p>
+                    {similarLoading ? (
+                      <p className="mt-1 text-xs text-[var(--flux-text-muted)]">Verificando…</p>
+                    ) : (
+                      <ul className="mt-2 space-y-1.5">
+                        {similarMatches.map((m) => (
+                          <li key={m.cardId} className="text-xs text-[var(--flux-text)]">
+                            <span className="font-medium">{m.title}</span>
+                            <span className="text-[var(--flux-text-muted)]">
+                              {" "}
+                              · {m.bucketLabel} · {(m.score * 100).toFixed(0)}% similar
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="mt-2 text-[11px] leading-snug text-[var(--flux-text-muted)]">
+                      Se for a mesma demanda, o envio pode atualizar o card existente (detecção automática ao enviar).
+                    </p>
+                  </div>
+                )}
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
                 Descrição

@@ -55,6 +55,10 @@ export interface CardModalProps {
   onClose: () => void;
   onSave: (card: CardData) => void;
   onDelete?: (cardId: string) => void;
+  /** Criação manual: abre o modal em edição para um card já existente (duplicatas). */
+  onOpenExistingCard?: (cardId: string) => void;
+  /** Anexa o rascunho atual ao card indicado e fecha o modal. */
+  onMergeDraftIntoExisting?: (targetCardId: string, payload: { title: string; description: string; tags: string[] }) => void;
 }
 
 export type CardModalContextValue = {
@@ -154,6 +158,9 @@ export type CardModalContextValue = {
   dialogRef: RefObject<HTMLDivElement | null>;
   closeBtnRef: RefObject<HTMLButtonElement | null>;
 
+  openExistingCard?: (cardId: string) => void;
+  mergeDraftIntoExistingCard?: (targetCardId: string) => void;
+
   t: (key: string, values?: Record<string, string | number>) => string;
   pushToast: ReturnType<typeof useToast>["pushToast"];
 };
@@ -184,6 +191,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     onClose,
     onSave,
     onDelete,
+    onOpenExistingCard,
+    onMergeDraftIntoExisting,
   } = props;
   const directions = directionsProp ?? [];
 
@@ -630,6 +639,25 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     [onDeleteLabel]
   );
 
+  const openExistingCard = useCallback(
+    (cardId: string) => {
+      onOpenExistingCard?.(cardId);
+    },
+    [onOpenExistingCard]
+  );
+
+  const mergeDraftIntoExistingCard = useCallback(
+    (targetCardId: string) => {
+      if (!onMergeDraftIntoExisting) return;
+      onMergeDraftIntoExisting(targetCardId, {
+        title: title.trim(),
+        description: descriptionForSave.trim(),
+        tags: [...tags],
+      });
+    },
+    [onMergeDraftIntoExisting, title, descriptionForSave, tags]
+  );
+
   const generateAiContextForCard = useCallback(async () => {
     const normalizedTitle = title.trim();
     const d = descriptionForSave.trim();
@@ -854,6 +882,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setConfirmDeleteOpen,
       dialogRef,
       closeBtnRef,
+      openExistingCard: onOpenExistingCard ? openExistingCard : undefined,
+      mergeDraftIntoExistingCard: onMergeDraftIntoExisting ? mergeDraftIntoExistingCard : undefined,
       t,
       pushToast,
     }),
@@ -916,6 +946,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       handleCreateLabel,
       handleDeleteLabel,
       confirmDeleteOpen,
+      onOpenExistingCard,
+      onMergeDraftIntoExisting,
+      openExistingCard,
+      mergeDraftIntoExistingCard,
       t,
       pushToast,
     ]

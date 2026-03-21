@@ -1,11 +1,23 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useCardModal } from "@/components/kanban/card-modal-context";
+import { apiPost } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
+
+type DupMatch = {
+  cardId: string;
+  title: string;
+  bucketLabel: string;
+  score: number;
+  levenshteinTitleRatio: number;
+  bm25Norm: number;
+  embeddingSimilarity?: number;
+};
 
 /** Campos principais do card (aba padrão, import síncrono para abertura rápida do modal). */
 export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
@@ -56,8 +68,85 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     aiContextCanGenerate,
     aiContextBusy,
     generateAiContextForCard,
+    descriptionForSave,
+    boardId,
+    getHeaders,
+    openExistingCard,
+    mergeDraftIntoExistingCard,
     t,
   } = useCardModal();
+
+  const [dupMatches, setDupMatches] = useState<DupMatch[]>([]);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupIgnoreFingerprint, setDupIgnoreFingerprint] = useState<string | null>(null);
+  const dupDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dupSeqRef = useRef(0);
+
+  const contentFingerprint = useMemo(
+    () => `${title.trim()}|${descriptionForSave.trim()}`,
+    [title, descriptionForSave]
+  );
+
+  useEffect(() => {
+    if (mode !== "new" || (!openExistingCard && !mergeDraftIntoExistingCard)) {
+      setDupMatches([]);
+      setDupLoading(false);
+      return;
+    }
+    if (dupIgnoreFingerprint === contentFingerprint) {
+      setDupMatches([]);
+      setDupLoading(false);
+      return;
+    }
+    const q = title.trim();
+    if (q.length < 3) {
+      setDupMatches([]);
+      setDupLoading(false);
+      return;
+    }
+
+    if (dupDebounceRef.current != null) clearTimeout(dupDebounceRef.current);
+    dupDebounceRef.current = setTimeout(() => {
+      const seq = ++dupSeqRef.current;
+      setDupLoading(true);
+      void (async () => {
+        try {
+          const data = await apiPost<{ matches: DupMatch[] }>(
+            `/api/boards/${encodeURIComponent(boardId)}/card-similarity`,
+            { title: q, description: descriptionForSave.trim() },
+            getHeaders()
+          );
+          if (dupSeqRef.current !== seq) return;
+          setDupMatches(Array.isArray(data.matches) ? data.matches : []);
+        } catch {
+          if (dupSeqRef.current !== seq) return;
+          setDupMatches([]);
+        } finally {
+          if (dupSeqRef.current === seq) setDupLoading(false);
+        }
+      })();
+    }, 500);
+
+    return () => {
+      if (dupDebounceRef.current != null) clearTimeout(dupDebounceRef.current);
+    };
+  }, [
+    mode,
+    openExistingCard,
+    mergeDraftIntoExistingCard,
+    title,
+    descriptionForSave,
+    contentFingerprint,
+    dupIgnoreFingerprint,
+    boardId,
+    getHeaders,
+  ]);
+
+  const showDuplicatePanel =
+    mode === "new" &&
+    Boolean(openExistingCard || mergeDraftIntoExistingCard) &&
+    dupIgnoreFingerprint !== contentFingerprint &&
+    (dupLoading || dupMatches.length > 0);
 
   return (
     <div className="space-y-5">
@@ -152,6 +241,70 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             placeholder={t("cardModal.fields.title.placeholder")}
             className={`${inputBase} text-base font-medium`}
           />
+          {showDuplicatePanel ? (
+            <div
+              className="mt-2 rounded-xl border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] px-3 py-2.5 text-left shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]"
+              role="status"
+              aria-live="polite"
+            >
+              <p className="font-display text-[11px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                {t("cardModal.duplicate.hintTitle")}
+              </p>
+              {dupLoading ? (
+                <p className="mt-1.5 text-xs text-[var(--flux-text-muted)]">{t("cardModal.duplicate.loading")}</p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {dupMatches.map((m) => (
+                    <li
+                      key={m.cardId}
+                      className="rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)]/90 px-2.5 py-2"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold leading-snug text-[var(--flux-text)] line-clamp-2">
+                            {m.title}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-[var(--flux-text-muted)]">
+                            {t("cardModal.duplicate.column")}: {m.bucketLabel} · {t("cardModal.duplicate.score")}:{" "}
+                            {(m.score * 100).toFixed(0)}%
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap gap-1.5">
+                          {openExistingCard ? (
+                            <button
+                              type="button"
+                              className="rounded-lg border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-2 py-1 text-[11px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-18)]"
+                              onClick={() => openExistingCard(m.cardId)}
+                            >
+                              {t("cardModal.duplicate.goToCard")}
+                            </button>
+                          ) : null}
+                          {mergeDraftIntoExistingCard ? (
+                            <button
+                              type="button"
+                              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] px-2 py-1 text-[11px] font-semibold text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)]"
+                              onClick={() => mergeDraftIntoExistingCard(m.cardId)}
+                            >
+                              {t("cardModal.duplicate.mergeWith")}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!dupLoading && dupMatches.length > 0 ? (
+                <button
+                  type="button"
+                  className="mt-2 text-[11px] font-semibold text-[var(--flux-text-muted)] underline underline-offset-2 hover:text-[var(--flux-text)]"
+                  onClick={() => setDupIgnoreFingerprint(contentFingerprint)}
+                >
+                  {t("cardModal.duplicate.createAnyway")}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {mode === "new" && smartEnrichBusy ? (
             <p className="mt-1.5 text-[11px] text-[var(--flux-text-muted)]">{t("cardModal.smartEnrich.busy")}</p>
           ) : null}

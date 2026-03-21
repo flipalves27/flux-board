@@ -65,6 +65,11 @@ export type KanbanBoardOverlaysProps = {
   confirmCsvImport: () => void;
   dailyOpen: boolean;
   dailyPanelProps: DailyInsightsPanelProps;
+  onOpenExistingCard?: (cardId: string) => void;
+  onMergeDraftIntoExisting?: (
+    targetCardId: string,
+    payload: { title: string; description: string; tags: string[] }
+  ) => void;
 };
 
 export function KanbanBoardOverlays({
@@ -110,6 +115,8 @@ export function KanbanBoardOverlays({
   confirmCsvImport,
   dailyOpen,
   dailyPanelProps,
+  onOpenExistingCard,
+  onMergeDraftIntoExisting,
 }: KanbanBoardOverlaysProps) {
   const updateDb = useBoardStore((s) => s.updateDb);
 
@@ -154,6 +161,8 @@ export function KanbanBoardOverlays({
             });
             setModalCard(null);
           }}
+          onOpenExistingCard={onOpenExistingCard}
+          onMergeDraftIntoExisting={onMergeDraftIntoExisting}
         />
       )}
 

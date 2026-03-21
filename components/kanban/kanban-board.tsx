@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 import { useBoardStore } from "@/stores/board-store";
+import { useToast } from "@/context/toast-context";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
@@ -38,7 +39,9 @@ function KanbanBoardLoaded({
   directions,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
+  const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
+  const updateDb = useBoardStore((s) => s.updateDb);
 
   const persistence = useBoardPersistence(boardId);
   const {
@@ -145,7 +148,32 @@ function KanbanBoardLoaded({
     [board.setDescModalCard]
   );
 
-  const overlayProps = buildKanbanOverlayModel({
+  const onMergeDraftIntoExisting = useCallback(
+    (targetCardId: string, payload: { title: string; description: string; tags: string[] }) => {
+      const stamp = new Date().toISOString();
+      updateDb((d) => {
+        const c = d.cards.find((x) => x.id === targetCardId);
+        if (!c) return;
+        const block = [
+          "",
+          "---",
+          `[Mesclado de novo card — ${stamp}]`,
+          `**${payload.title}**`,
+          "",
+          payload.description,
+        ].join("\n");
+        c.desc = `${String(c.desc || "").trim()}\n${block}`.trim();
+        const tagSet = new Set([...(c.tags || []), ...payload.tags]);
+        c.tags = [...tagSet].map((x) => String(x).trim()).filter(Boolean).slice(0, 20);
+      });
+      pushToast({ kind: "success", title: t("cardModal.duplicate.mergeToast") });
+      board.setModalCard(null);
+    },
+    [updateDb, pushToast, t, board.setModalCard]
+  );
+
+  const overlayProps = {
+    ...buildKanbanOverlayModel({
     t,
     boardId,
     boardName,
@@ -162,7 +190,10 @@ function KanbanBoardLoaded({
     confirmDeleteCancelRef,
     dailyDialogRef,
     dailyCloseRef,
-  });
+  }),
+    onOpenExistingCard: onEditCardById,
+    onMergeDraftIntoExisting,
+  };
 
   return (
     <>

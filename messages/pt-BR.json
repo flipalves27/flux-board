@@ -769,6 +769,16 @@
         "dueSimilar": "Baseado em média de {count} card(s) similar(es) concluído(s).",
         "dueNone": "Sem amostra de cards similares concluídos; ajuste a data manualmente se precisar."
       },
+      "duplicate": {
+        "hintTitle": "Cards similares encontrados:",
+        "loading": "Verificando duplicatas…",
+        "score": "Similaridade",
+        "column": "Coluna",
+        "goToCard": "Ir para card existente",
+        "mergeWith": "Mesclar com este card",
+        "createAnyway": "Criar mesmo assim",
+        "mergeToast": "Conteúdo mesclado no card existente."
+      },
       "toasts": {
         "missingTitle": "Informe o título.",
         "missingTitleAndDescription": "Informe o título e a descrição para gerar contexto."

@@ -189,7 +189,9 @@ export default function CardDependenciesTab({ cardId }: CardModalTabBaseProps) {
 
   if (mode !== "edit") {
     return (
-      <CardModalSection title={t("cardModal.depsTab.title")} description={t("cardModal.depsTab.needSave")} />
+      <CardModalSection title={t("cardModal.depsTab.title")} description={t("cardModal.depsTab.needSave")}>
+        {null}
+      </CardModalSection>
     );
   }
 
