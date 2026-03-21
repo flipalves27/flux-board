@@ -225,6 +225,24 @@
       "avgLead": "Avg. lead time (approx.)",
       "atRiskBoards": "Boards flagged (risk < 48)"
     },
+    "cfdTabs": {
+      "accumulated": "Cumulative flow",
+      "weekly": "Weekly view (approx.)"
+    },
+    "cfdDaily": {
+      "title": "Cumulative flow",
+      "period": "Period",
+      "p14": "2 weeks",
+      "p30": "1 month",
+      "p90": "3 months",
+      "loading": "Loading CFD…",
+      "loadError": "Could not load daily CFD.",
+      "empty": "No data.",
+      "emptyChart": "No daily snapshots yet. Run the anomaly cron to record history.",
+      "wipRisingBanner": "Open WIP appears to be rising in this period — review work-in-progress limits and bottlenecks.",
+      "sparseHistory": "Fewer than 14 days with a recorded snapshot; missing days use the last known values.",
+      "tooltipWipAlert": "Alert: open WIP is trending up in this period."
+    },
     "charts": {
       "cfd": "Cumulative flow diagram (approx.)",
       "throughput": "Weekly throughput (done via Copilot)",

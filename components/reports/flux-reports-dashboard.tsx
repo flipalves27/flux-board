@@ -23,6 +23,7 @@ import { ChartShell } from "@/components/reports/chart-shell";
 import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
 import { SprintPredictionPanel } from "@/components/reports/sprint-prediction-panel";
 import { CrossBoardDependenciesPanel } from "@/components/reports/cross-board-dependencies-panel";
+import { CfdAccumulatedPanel } from "@/components/reports/cfd-accumulated-panel";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { usePlatformDisplayName } from "@/context/org-branding-context";
@@ -100,6 +101,7 @@ export function FluxReportsDashboard() {
   const [data, setData] = useState<FluxReportsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cfdTab, setCfdTab] = useState<"accumulated" | "weekly">("accumulated");
 
   useEffect(() => {
     let cancelled = false;
@@ -244,48 +246,79 @@ export function FluxReportsDashboard() {
         <p className="text-xs text-[var(--flux-text-muted)]">{t("copilotHint")}</p>
       ) : null}
 
-      <ChartShell
-        title={t("charts.cfd")}
-        hint={data.cfd.note}
-        chartId="cfd"
-        explainPayload={{ cfd: data.cfd, aggregates: data.aggregates }}
-      >
-        {data.cfd.keys.length === 0 ? (
-          <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-2">
+          <button
+            type="button"
+            onClick={() => setCfdTab("accumulated")}
+            className={`rounded-[var(--flux-rad-sm)] px-3 py-1.5 text-xs font-semibold transition-colors ${
+              cfdTab === "accumulated"
+                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
+                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            }`}
+          >
+            {t("cfdTabs.accumulated")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCfdTab("weekly")}
+            className={`rounded-[var(--flux-rad-sm)] px-3 py-1.5 text-xs font-semibold transition-colors ${
+              cfdTab === "weekly"
+                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
+                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            }`}
+          >
+            {t("cfdTabs.weekly")}
+          </button>
+        </div>
+
+        {cfdTab === "accumulated" ? (
+          <CfdAccumulatedPanel />
         ) : (
-          <div className="h-[320px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cfdChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
-                <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
-                <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--flux-surface-card)",
-                    border: "1px solid var(--flux-primary-alpha-25)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  labelStyle={{ color: "var(--flux-text)" }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {data.cfd.keys.map((k, idx) => (
-                  <Area
-                    key={k}
-                    type="monotone"
-                    dataKey={k}
-                    name={data.cfd.labels[k] ?? k}
-                    stackId="1"
-                    stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                    fill={CHART_COLORS[idx % CHART_COLORS.length]}
-                    fillOpacity={0.35}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartShell
+            title={t("charts.cfd")}
+            hint={data.cfd.note}
+            chartId="cfd"
+            explainPayload={{ cfd: data.cfd, aggregates: data.aggregates }}
+          >
+            {data.cfd.keys.length === 0 ? (
+              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+            ) : (
+              <div className="h-[320px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cfdChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
+                    <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--flux-surface-card)",
+                        border: "1px solid var(--flux-primary-alpha-25)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      labelStyle={{ color: "var(--flux-text)" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    {data.cfd.keys.map((k, idx) => (
+                      <Area
+                        key={k}
+                        type="monotone"
+                        dataKey={k}
+                        name={data.cfd.labels[k] ?? k}
+                        stackId="1"
+                        stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                        fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                        fillOpacity={0.35}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </ChartShell>
         )}
-      </ChartShell>
+      </div>
 
       <ChartShell
         title={t("charts.throughput")}

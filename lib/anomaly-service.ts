@@ -14,6 +14,7 @@ import {
 import {
   collectBucketLabelsForBoards,
   computeWipByBucket,
+  countDoneCards,
   countDueWithinDays,
   countStagnantCards,
   detectLeadTimeSpike,
@@ -143,6 +144,7 @@ async function upsertDailySnapshots(args: {
 
   for (const b of boards) {
     const wip = computeWipByBucket(b);
+    const doneB = countDoneCards(b);
     const dueB = countDueWithinDays([b], 3, todayMs);
     const leadB = averageLeadTimeDays([b]);
     const stagnantB = countStagnantCards(b, 10, todayMs);
@@ -154,6 +156,7 @@ async function upsertDailySnapshots(args: {
           boardId: b.id,
           day,
           wipByBucket: wip,
+          doneCount: doneB,
           avgLeadTimeDays: leadB,
           dueSoon3dCount: dueB,
           stagnantCardCount: stagnantB,

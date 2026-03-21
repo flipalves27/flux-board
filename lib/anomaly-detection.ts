@@ -110,6 +110,18 @@ export function computeWipByBucket(board: BoardData): WipByBucket {
   return out;
 }
 
+/** Contagem de cards concluídos (para CFD diário: faixa “Concluídos” empilhada). */
+export function countDoneCards(board: BoardData): number {
+  const cards = Array.isArray(board.cards) ? board.cards : [];
+  let n = 0;
+  for (const raw of cards) {
+    if (!raw || typeof raw !== "object") continue;
+    const c = raw as Record<string, unknown>;
+    if (String(c.progress || "") === "Concluída") n++;
+  }
+  return n;
+}
+
 export function detectThroughputDrop(args: {
   copilotChats: CopilotChatDocLike[];
   boardIds: string[];

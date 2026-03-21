@@ -225,6 +225,24 @@
       "avgLead": "Lead time médio (aprox.)",
       "atRiskBoards": "Boards em atenção (risco < 48)"
     },
+    "cfdTabs": {
+      "accumulated": "Fluxo acumulado",
+      "weekly": "Visão semanal (aprox.)"
+    },
+    "cfdDaily": {
+      "title": "Fluxo acumulado",
+      "period": "Período",
+      "p14": "2 semanas",
+      "p30": "1 mês",
+      "p90": "3 meses",
+      "loading": "Carregando CFD…",
+      "loadError": "Não foi possível carregar o CFD diário.",
+      "empty": "Sem dados.",
+      "emptyChart": "Sem snapshots diários ainda. Execute o cron de anomalias para registrar histórico.",
+      "wipRisingBanner": "WIP em aberto tende a subir no período — revisar limite de trabalho em progresso e gargalos.",
+      "sparseHistory": "Menos de 14 dias com snapshot registrado; valores faltantes usam o último dia conhecido.",
+      "tooltipWipAlert": "Alerta: WIP (colunas abertas) em tendência de alta no período."
+    },
     "charts": {
       "cfd": "Diagrama de fluxo cumulativo (aprox.)",
       "throughput": "Throughput semanal (concluídos via Copilot)",
