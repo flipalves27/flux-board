@@ -23,23 +23,56 @@ function bucketKeysExist(board: BoardData, key: string): boolean {
   return order.some((b) => String((b as { key?: string })?.key || "") === key);
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function enrichCardsColumnTimestamps(prevCards: unknown[] | undefined, nextCards: unknown[]): unknown[] {
   const prevById = new Map((prevCards || []).map((c) => [String((c as { id?: string })?.id), c]));
   const isoNow = new Date().toISOString();
+  const nowMs = Date.now();
   return nextCards.map((raw) => {
     const c = raw as Record<string, unknown>;
     const id = String(c?.id || "");
     const prev = prevById.get(id) as Record<string, unknown> | undefined;
     const nextBucket = String(c.bucket || "");
+    const nextProgress = String(c.progress || "");
+    const prevProgress = prev ? String(prev.progress || "") : "";
+
+    let completedAt: string | undefined = typeof c.completedAt === "string" ? c.completedAt : undefined;
+    let completedCycleDays: number | undefined =
+      typeof c.completedCycleDays === "number" && Number.isFinite(c.completedCycleDays)
+        ? Math.max(0, Math.floor(c.completedCycleDays))
+        : undefined;
+
+    const reopening = prev && prevProgress === "Concluída" && nextProgress !== "Concluída";
+    const completing = prev && prevProgress !== "Concluída" && nextProgress === "Concluída";
+
+    if (reopening) {
+      completedAt = undefined;
+      completedCycleDays = undefined;
+    }
+
+    if (completing && prev) {
+      const enteredRaw = typeof prev.columnEnteredAt === "string" ? prev.columnEnteredAt : null;
+      const createdRaw = typeof prev.createdAt === "string" ? prev.createdAt : null;
+      const startMs = enteredRaw
+        ? new Date(enteredRaw).getTime()
+        : createdRaw
+          ? new Date(createdRaw).getTime()
+          : nowMs;
+      const ok = !Number.isNaN(startMs);
+      completedAt = isoNow;
+      completedCycleDays = ok ? Math.max(0, Math.floor((nowMs - startMs) / DAY_MS)) : undefined;
+    }
+
     if (!prev) {
-      return { ...c, columnEnteredAt: c.columnEnteredAt || isoNow };
+      return { ...c, columnEnteredAt: c.columnEnteredAt || isoNow, completedAt, completedCycleDays };
     }
     const prevBucket = String(prev.bucket || "");
     if (prevBucket !== nextBucket) {
       const { automationState: _a, ...rest } = c;
-      return { ...rest, bucket: nextBucket, columnEnteredAt: isoNow };
+      return { ...rest, bucket: nextBucket, columnEnteredAt: isoNow, completedAt, completedCycleDays };
     }
-    return { ...c, columnEnteredAt: c.columnEnteredAt || prev.columnEnteredAt || isoNow };
+    return { ...c, columnEnteredAt: c.columnEnteredAt || prev.columnEnteredAt || isoNow, completedAt, completedCycleDays };
   });
 }
 

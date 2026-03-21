@@ -153,6 +153,23 @@
       "concludedCopilot": "Concluídos (Copilot)",
       "cards": "Cards"
     },
+    "sprint": {
+      "title": "Planejamento preditivo de sprint",
+      "hint": "Monte Carlo leve (1000 simulações): bootstrap do throughput semanal (Copilot) ou, na falta dele, distribuição empírica de tempos de ciclo (entrada na coluna → conclusão). Requer ≥4 semanas de janelas e throughput ou ≥8 conclusões com ciclo registrado.",
+      "forecastColumn": "Próxima sprint",
+      "tooltipExplain": "Cada barra mostra um percentil da distribuição simulada de conclusões por semana (P50 mediana, P70–P95 faixas superiores). A última coluna projeta a próxima sprint; as anteriores usam validação leave-one-out sobre o histórico.",
+      "recommended": "Sugestão de composição (prioridade × urgência do prazo × 1/ciclo esperado)",
+      "p50": "P50 (mediana)",
+      "p70": "P70",
+      "p85": "P85",
+      "p95": "P95",
+      "cycleHint": "ciclo esperado",
+      "noOpenCards": "Não há cards em aberto para priorizar.",
+      "unavailable": "Indisponível.",
+      "backtest": "Retrospectiva (4 semanas): precisão {accuracy}% no critério “real ≤ P85” — {pass}.",
+      "backtestPass": "meta ≥70% atingida",
+      "backtestFail": "abaixo de 70%"
+    },
     "proactive": {
       "title": "Proactive AI",
       "subtitle": "Checagem diária de anomalias (throughput, WIP, lead time, OKRs e prazos) com z-score vs. linha de base. Alertas ficam registrados aqui.",

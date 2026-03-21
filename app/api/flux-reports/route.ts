@@ -19,6 +19,7 @@ import {
   collectBucketLabels,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 
 const NUM_WEEKS = 8;
 
@@ -65,6 +66,13 @@ export async function GET(request: NextRequest) {
 
     const weeklyThroughput = buildWeeklyThroughputFromCopilot(copilotChats, boardIds, weeks);
     const createdVsDone = buildCreatedVsDoneFromCopilot(copilotChats, boardIds, weeks);
+
+    const sprintPrediction = buildSprintPredictionPayload({
+      boards,
+      weeks,
+      weeklyThroughput,
+      nowMs,
+    });
 
     const cfdRaw = buildCfdPoints(boards, weeks);
     const keySet = new Set<string>();
@@ -115,6 +123,7 @@ export async function GET(request: NextRequest) {
       teamVelocity,
       distribution: { byColumn, byPriority },
       portfolioHeatmap: heatmap,
+      sprintPrediction,
       meta: {
         copilotHistory: copilotChats.length > 0,
         boardCount: boards.length,

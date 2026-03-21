@@ -153,6 +153,23 @@
       "concludedCopilot": "Completed (Copilot)",
       "cards": "Cards"
     },
+    "sprint": {
+      "title": "Predictive sprint planning",
+      "hint": "Lightweight Monte Carlo (1000 runs): bootstrap of weekly Copilot throughput, or—if missing—empirical cycle times (column entered → done). Requires ≥4 week windows and either throughput or ≥8 completions with cycle time recorded.",
+      "forecastColumn": "Next sprint",
+      "tooltipExplain": "Each bar is a percentile of the simulated weekly completion distribution (P50 = median; P70–P95 upper bands). The last column forecasts the next sprint; earlier columns use leave-one-out validation on history.",
+      "recommended": "Suggested sprint composition (priority × due urgency × 1/expected cycle)",
+      "p50": "P50 (median)",
+      "p70": "P70",
+      "p85": "P85",
+      "p95": "P95",
+      "cycleHint": "expected cycle",
+      "noOpenCards": "No open cards to rank.",
+      "unavailable": "Unavailable.",
+      "backtest": "Backtest (4 weeks): {accuracy}% accuracy on “actual ≤ P85” — {pass}.",
+      "backtestPass": "≥70% target met",
+      "backtestFail": "below 70%"
+    },
     "proactive": {
       "title": "Proactive AI",
       "subtitle": "Daily anomaly checks (throughput, WIP, lead time, OKRs, due dates) with z-scores vs. baseline. Alerts are stored here.",

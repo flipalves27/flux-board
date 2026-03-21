@@ -208,6 +208,10 @@ export const CardDataSchema = z
     blockedBy: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
     order: z.number().int().nonnegative().max(1_000_000),
     columnEnteredAt: z.string().trim().max(80).optional(),
+    /** ISO quando progress virou Concluída (enriquecido no servidor). */
+    completedAt: z.string().trim().max(80).optional(),
+    /** Dias da coluna atual (antes de concluir) até completedAt. */
+    completedCycleDays: z.number().int().min(0).max(3650).optional(),
     automationState: CardAutomationStateSchema.optional(),
   })
   .passthrough();

@@ -119,6 +119,8 @@ export interface CardData {
   blockedBy?: string[];
   order: number;
   columnEnteredAt?: string;
+  completedAt?: string;
+  completedCycleDays?: number;
   automationState?: { lastFired?: Record<string, string> };
 }
 
