@@ -17,6 +17,10 @@ import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { setBoardPersistenceHandler, useBoardStore } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
+import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
+import { DataFadeIn } from "@/components/ui/data-fade-in";
+import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
+import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -173,6 +177,9 @@ export default function BoardPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
+
+  const authWaiting = !isChecked || !user;
+  const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
 
   useEffect(() => {
     if (!isChecked || !user) {
@@ -338,15 +345,22 @@ export default function BoardPage() {
     return () => setBoardPersistenceHandler(null);
   }, [persist]);
 
-  if (!user) return null;
-  if (loading) {
+  if (authWaiting) {
+    return <BoardRouteLoadingFallback />;
+  }
+  if (showBoardSkeleton || !db) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
-        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
+      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+        <Header title={boardName}>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
+            <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
+          </div>
+        </Header>
+        <SkeletonKanbanBoard />
       </div>
     );
   }
-  if (!db) return null;
   const formSlug = String(db.intakeForm?.slug || "").trim();
   const formLink =
     formSlug && typeof window !== "undefined"
@@ -355,70 +369,74 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title={boardName}>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
-            {t("automations.open")}
-          </button>
-          {formLink && (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(formLink);
-                  pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
-                } catch {
-                  pushToast({ kind: "error", title: "Não foi possível copiar o link." });
-                }
-              }}
-            >
-              Flux Forms
-            </button>
-          )}
-          <button type="button" className="btn-secondary" onClick={() => setPortalOpen(true)}>
-            {t("portal.open")}
-          </button>
-          {user.isAdmin && (
-            <>
-              <button type="button" className="btn-secondary" onClick={() => setTemplateExportOpen(true)}>
-                Template
+      <DataFadeIn active key={boardId}>
+        <div>
+          <Header title={boardName}>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
+                {t("automations.open")}
               </button>
-              <button type="button" className="btn-secondary" onClick={() => setEmbedOpen(true)}>
-                Widget
+              {formLink && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(formLink);
+                      pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
+                    } catch {
+                      pushToast({ kind: "error", title: "Não foi possível copiar o link." });
+                    }
+                  }}
+                >
+                  Flux Forms
+                </button>
+              )}
+              <button type="button" className="btn-secondary" onClick={() => setPortalOpen(true)}>
+                {t("portal.open")}
               </button>
-            </>
-          )}
-          <div
-            className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
-              saveStatus === "idle" ? "opacity-0" : "opacity-100"
-            } ${saveStatus === "error" ? "text-[var(--flux-danger)]" : "text-[var(--flux-secondary)]"}`}
-          >
-            <div
-              className={`w-1.5 h-1.5 rounded-full ${
-                saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
-              }`}
-            />
-            <span>
-              {saveStatus === "error"
-                ? t("status.errorApi")
-                : saveStatus === "saving"
-                  ? t("status.saving")
-                  : t("status.saved")}
-            </span>
-          </div>
-        </div>
-      </Header>
+              {user.isAdmin && (
+                <>
+                  <button type="button" className="btn-secondary" onClick={() => setTemplateExportOpen(true)}>
+                    Template
+                  </button>
+                  <button type="button" className="btn-secondary" onClick={() => setEmbedOpen(true)}>
+                    Widget
+                  </button>
+                </>
+              )}
+              <div
+                className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
+                  saveStatus === "idle" ? "opacity-0" : "opacity-100"
+                } ${saveStatus === "error" ? "text-[var(--flux-danger)]" : "text-[var(--flux-secondary)]"}`}
+              >
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
+                  }`}
+                />
+                <span>
+                  {saveStatus === "error"
+                    ? t("status.errorApi")
+                    : saveStatus === "saving"
+                      ? t("status.saving")
+                      : t("status.saved")}
+                </span>
+              </div>
+            </div>
+          </Header>
 
-      <KanbanBoard
-        boardName={boardName}
-        boardId={boardId}
-        getHeaders={getHeaders}
-        filterLabels={FILTER_LABELS}
-        priorities={PRIORITIES}
-        progresses={PROGRESSES}
-        directions={DIRECTIONS}
-      />
+          <KanbanBoard
+            boardName={boardName}
+            boardId={boardId}
+            getHeaders={getHeaders}
+            filterLabels={FILTER_LABELS}
+            priorities={PRIORITIES}
+            progresses={PROGRESSES}
+            directions={DIRECTIONS}
+          />
+        </div>
+      </DataFadeIn>
 
       <BoardAutomationsModal
         open={automationsOpen}
@@ -457,3 +475,4 @@ export default function BoardPage() {
     </div>
   );
 }
+

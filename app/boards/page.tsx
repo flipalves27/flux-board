@@ -26,6 +26,10 @@ import {
   type BoardPortfolioMetrics,
 } from "@/lib/board-portfolio-metrics";
 import { FluxCapabilityStrip } from "@/components/boards/flux-capability-strip";
+import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
+import { DataFadeIn } from "@/components/ui/data-fade-in";
+import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
+import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 
 interface Board {
   id: string;
@@ -96,6 +100,9 @@ export default function BoardsPage() {
   const [recentEntries, setRecentEntries] = useState<BoardVisitEntry[]>([]);
   const [visitCounts, setVisitCounts] = useState<Record<string, number>>({});
   const { pushToast } = useToast();
+
+  const authWaiting = !isChecked || !user;
+  const showListSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
 
   const rebornId = user?.orgId ? `b_reborn_${user.orgId}` : "b_reborn";
 
@@ -391,7 +398,9 @@ export default function BoardsPage() {
     }
   }
 
-  if (!user) return null;
+  if (authWaiting) {
+    return <BoardsRouteLoadingFallback />;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
@@ -453,10 +462,11 @@ export default function BoardsPage() {
           </div>
         )}
 
-        {loading ? (
-          <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
+        {showListSkeleton ? (
+          <SkeletonBoardList />
         ) : (
-          <>
+          <DataFadeIn active>
+            <>
             <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
@@ -787,7 +797,8 @@ export default function BoardsPage() {
                 {t("empty.noResults")}
               </p>
             )}
-          </>
+            </>
+          </DataFadeIn>
         )}
       </main>
 

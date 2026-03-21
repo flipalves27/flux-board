@@ -52,6 +52,8 @@
   --flux-transition-fast: 150ms var(--flux-ease-standard);
   --flux-transition-normal: 250ms var(--flux-ease-standard);
   --flux-transition-slow: 400ms var(--flux-ease-standard);
+  --flux-skeleton-pulse-duration: 1.35s;
+  --flux-data-fade-duration: 200ms;
 
   /* Elevation */
   --flux-shadow-sm: 0 1px 3px rgba(13, 11, 26, 0.28);
@@ -987,5 +989,46 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes flux-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+@keyframes flux-data-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .flux-animate-skeleton-pulse {
+    animation: flux-skeleton-pulse var(--flux-skeleton-pulse-duration) var(--flux-ease-standard) infinite;
+  }
+
+  .flux-animate-data-fade-in {
+    animation: flux-data-fade-in var(--flux-data-fade-duration) var(--flux-ease-standard) forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flux-animate-skeleton-pulse {
+    animation: none;
+    opacity: 0.88;
+  }
+
+  .flux-animate-data-fade-in {
+    animation: none;
+    opacity: 1;
   }
 }

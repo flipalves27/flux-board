@@ -18,6 +18,9 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
+import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
+import { DataFadeIn } from "@/components/ui/data-fade-in";
+import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
 
 const CHART_COLORS = [
   "var(--flux-primary)",
@@ -182,6 +185,8 @@ export function FluxReportsDashboard() {
     };
   }, [getHeaders, t]);
 
+  const showSkeleton = useMinimumSkeletonDuration(loading);
+
   const cfdChartData = useMemo(() => data?.cfd.rows ?? [], [data]);
 
   const throughputMerged = useMemo(() => {
@@ -200,8 +205,8 @@ export function FluxReportsDashboard() {
       : [{ name: t("noAssignee"), moves: 0 }];
   }, [data, t]);
 
-  if (loading) {
-    return <p className="text-sm text-[var(--flux-text-muted)]">{t("loading")}</p>;
+  if (showSkeleton) {
+    return <SkeletonTable rows={6} />;
   }
 
   if (error || !data) {
@@ -213,7 +218,7 @@ export function FluxReportsDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <DataFadeIn active key={data.generatedAt} className="space-y-6">
       <ProactiveAiPanel />
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -475,6 +480,6 @@ export function FluxReportsDashboard() {
         {t("generatedAt")}{" "}
         {new Date(data.generatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
       </p>
-    </div>
+    </DataFadeIn>
   );
 }

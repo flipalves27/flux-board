@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { FluxReportsDashboard } from "@/components/reports/flux-reports-dashboard";
+import { ReportsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -21,7 +22,9 @@ export default function ReportsPage() {
     }
   }, [isChecked, user, router, localeRoot]);
 
-  if (!user) return null;
+  if (!isChecked || !user) {
+    return <ReportsRouteLoadingFallback />;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">

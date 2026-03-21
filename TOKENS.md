@@ -72,8 +72,10 @@ Tailwind: `shadow-flux-md`, `shadow-flux-drag`, …
 | `--flux-transition-fast`   | `150ms` + standard ease |
 | `--flux-transition-normal` | `250ms` + standard ease |
 | `--flux-transition-slow`     | `400ms` + standard ease |
+| `--flux-skeleton-pulse-duration` | Skeleton pulse cycle (`1.35s` + standard ease) |
+| `--flux-data-fade-duration` | Real-content fade-in after load (`200ms` + standard ease) |
 
-Tailwind: `duration-flux-fast`, `ease-flux-standard`, etc.
+Tailwind: `duration-flux-fast`, `ease-flux-standard`, etc. Skeleton pulse uses global classes `flux-animate-skeleton-pulse` and `flux-animate-data-fade-in` (see `app/globals.css`).
 
 ---
 
