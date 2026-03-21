@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useBoardStore } from "@/stores/board-store";
+import { useOptionalBoardCardSelection } from "./board-card-selection-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import {
   DropdownMenu,
@@ -15,6 +16,8 @@ import { useTranslations } from "next-intl";
 
 interface KanbanCardProps {
   cardId: string;
+  /** Coluna atual (lista visível) — seleção com Shift. */
+  bucketKey: string;
   directions: string[];
   dirColors: Record<string, string>;
   onEdit: (cardId: string) => void;
@@ -33,6 +36,10 @@ interface KanbanCardProps {
   onDuplicateCard?: (cardId: string) => void;
   /** Desativa a barra (ex.: preview no DragOverlay). */
   quickActionsDisabled?: boolean;
+  /** Preview no DragOverlay — não registra segundo draggable. */
+  dragOverlayPreview?: boolean;
+  /** IDs do arrasto em curso (opacidade nos cards de origem). */
+  activeDragIds?: string[] | null;
 }
 
 function daysRemaining(dueDate: string | null): number | null {
@@ -48,6 +55,7 @@ const MOVE_CANCEL_PX = 10;
 
 function KanbanCardInner({
   cardId,
+  bucketKey,
   directions,
   dirColors: _dirColors,
   onEdit,
@@ -61,12 +69,21 @@ function KanbanCardInner({
   onPatchCard,
   onDuplicateCard,
   quickActionsDisabled = false,
+  dragOverlayPreview = false,
+  activeDragIds = null,
 }: KanbanCardProps) {
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
+  const selection = useOptionalBoardCardSelection();
+  const dragIds =
+    dragOverlayPreview || !selection ? [cardId] : selection.getOrderedDragIds(cardId);
+  const selected = selection?.isSelected(cardId) ?? false;
+  const selectionCount = selection?.selectedIds.size ?? 0;
+  const isGhostSource = Boolean(activeDragIds?.includes(cardId));
 
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: `card-${cardId}`,
-    data: card ? { card, bucket: card.bucket } : { card: null, bucket: "" },
+    disabled: dragOverlayPreview,
+    data: card ? { card, bucket: card.bucket, dragIds } : { card: null, bucket: "", dragIds: [cardId] },
   });
 
   const t = useTranslations("kanban");
@@ -212,9 +229,24 @@ function KanbanCardInner({
       ) {
         return;
       }
+      if (selection) {
+        if (e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          selection.onShiftClick(cardId, bucketKey);
+          return;
+        }
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          selection.onCtrlClick(cardId, bucketKey);
+          return;
+        }
+        selection.clearSelection();
+      }
       handleEdit();
     },
-    [handleEdit]
+    [bucketKey, cardId, handleEdit, selection]
   );
 
   const stopDrag = useCallback((e: React.SyntheticEvent) => {
@@ -266,6 +298,8 @@ function KanbanCardInner({
 
   const toolbarOn = hasQuick && !isDragging && (showToolbar || touchPinned);
 
+  const dragVisual = isDragging || isGhostSource;
+
   return (
     <div
       ref={setNodeRef}
@@ -273,10 +307,21 @@ function KanbanCardInner({
       {...attributes}
       data-tour={tourFirstCard ? "board-card" : undefined}
       aria-label={ariaLabel}
-      className={`bg-[var(--flux-surface-elevated)] border border-[var(--flux-border-default)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] hover:border-[var(--flux-primary)]/50 ${
-        isDragging ? "opacity-40 scale-[0.98]" : ""
-      }`}
+      data-selected={selected ? "true" : undefined}
+      className={`relative bg-[var(--flux-surface-elevated)] border rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] ${
+        selected
+          ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
+          : "border-[var(--flux-border-default)] hover:border-[var(--flux-primary)]/50"
+      } ${dragVisual ? "opacity-40 scale-[0.98]" : ""}`}
     >
+      {selected && selectionCount > 1 ? (
+        <span
+          className="absolute -top-2 -right-2 z-10 min-w-[22px] h-[22px] px-1 rounded-full bg-[var(--flux-primary)] text-white text-[11px] font-bold flex items-center justify-center tabular-nums shadow-md pointer-events-none"
+          aria-hidden
+        >
+          {selectionCount}
+        </span>
+      ) : null}
       <div
         ref={cardRef}
         className="relative flex flex-col min-w-0"

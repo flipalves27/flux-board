@@ -5,7 +5,10 @@ import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import type { CardData } from "@/app/board/[id]/page";
 import { BOARD_VIEW_STORAGE_PREFIX, type BoardViewMode } from "@/components/kanban/kanban-constants";
 
-export type ConfirmDeleteState = { type: "card" | "bucket"; id: string; label: string } | null;
+export type ConfirmDeleteState =
+  | { type: "card" | "bucket"; id: string; label: string }
+  | { type: "cardsBatch"; ids: string[] }
+  | null;
 
 export type CsvImportConfirmState = {
   count: number;

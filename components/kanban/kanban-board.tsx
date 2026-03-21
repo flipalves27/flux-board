@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import type { DragEndEvent } from "@dnd-kit/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -20,9 +21,69 @@ import { KanbanHeaderBar } from "./kanban-header-bar";
 import { KanbanToolbar } from "./kanban-toolbar";
 import { BoardMetricsStrip } from "./board-metrics-strip";
 import { KanbanBoardCanvas } from "./kanban-board-canvas";
+import { BoardCardSelectionProvider, useBoardCardSelection } from "./board-card-selection-context";
+import { KanbanBatchSelectionBar } from "./kanban-batch-selection-bar";
 import { BoardSummaryDock } from "./board-summary-dock";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
+
+function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
+  const { clearSelection } = useBoardCardSelection();
+  clearRef.current = clearSelection;
+  return null;
+}
+
+type KanbanBatchToolbarProps = {
+  t: (key: string, values?: Record<string, string | number>) => string;
+  boardView: string;
+  moveCardsBatch: (orderedIds: string[], newBucket: string, insertIndex: number) => void;
+  getCardsByBucket: (key: string) => import("@/app/board/[id]/page").CardData[];
+  buckets: import("@/app/board/[id]/page").BucketConfig[];
+  priorities: string[];
+  patchCardFromTable: (
+    cardId: string,
+    patch: Partial<Pick<import("@/app/board/[id]/page").CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+  ) => void;
+  setConfirmDelete: (v: import("@/stores/ui-store").ConfirmDeleteState) => void;
+};
+
+function KanbanBatchToolbarBound({
+  boardView,
+  t,
+  moveCardsBatch,
+  getCardsByBucket,
+  buckets,
+  priorities,
+  patchCardFromTable,
+  setConfirmDelete,
+}: KanbanBatchToolbarProps) {
+  if (boardView !== "kanban") return null;
+  const { selectedIds, clearSelection, getOrderedSelectionIds } = useBoardCardSelection();
+  const n = selectedIds.size;
+  if (n === 0) return null;
+  const ordered = getOrderedSelectionIds();
+  return (
+    <KanbanBatchSelectionBar
+      t={t}
+      count={n}
+      buckets={buckets}
+      priorities={priorities}
+      onMoveToBucket={(bucketKey) => {
+        const without = getCardsByBucket(bucketKey).filter((c) => !selectedIds.has(c.id));
+        moveCardsBatch(ordered, bucketKey, without.length);
+        clearSelection();
+      }}
+      onSetPriority={(prio) => {
+        for (const id of selectedIds) {
+          patchCardFromTable(id, { priority: prio });
+        }
+        clearSelection();
+      }}
+      onDelete={() => setConfirmDelete({ type: "cardsBatch", ids: [...selectedIds] })}
+      onClear={clearSelection}
+    />
+  );
+}
 
 export interface KanbanBoardProps {
   boardName: string;
@@ -100,9 +161,21 @@ function KanbanBoardLoaded({
     buckets: board.buckets,
     cards: board.cards,
     getCardsByBucket: filters.getCardsByBucket,
-    moveCard: board.moveCard,
+    moveCardsBatch: board.moveCardsBatch,
     reorderColumns: board.reorderColumns,
   });
+
+  const clearSelectionRef = useRef<(() => void) | null>(null);
+
+  const handleKanbanDragEnd = useCallback(
+    (e: DragEndEvent) => {
+      const raw = e.active.data.current as { dragIds?: string[] } | undefined;
+      const batch = (raw?.dragIds?.length ?? 0) > 1;
+      dnd.handleDragEnd(e);
+      if (e.over && batch) clearSelectionRef.current?.();
+    },
+    [dnd]
+  );
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
 
@@ -271,6 +344,7 @@ function KanbanBoardLoaded({
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
+    onCardsBatchDeleted: () => clearSelectionRef.current?.(),
   };
 
   return (
@@ -325,78 +399,92 @@ function KanbanBoardLoaded({
         </div>
       </div>
 
-      <KanbanBoardCanvas
-        t={t}
-        boardScrollRef={board.boardScrollRef}
-        boardView={boardView}
-        priorityBarVisible={filters.priorityBarVisible}
-        isPanning={board.isPanning}
-        onPanPointerDown={board.handlePanPointerDown}
-        onPanPointerMove={board.handlePanPointerMove}
-        onPanPointerUp={board.endPan}
-        onPanPointerCancel={board.endPan}
-        cards={board.cards}
-        buckets={board.buckets}
-        collapsed={board.collapsed}
-        directions={directions}
-        filterCard={filters.filterCard}
-        visibleCardsByBucket={filters.visibleCardsByBucket}
-        onTimelineDueDate={board.handleTimelineDueDate}
-        onTimelineOpenCard={board.handleTimelineOpenCard}
-        priorities={priorities}
-        onPatchCardFromTable={board.patchCardFromTable}
-        onTableOpenCard={board.handleTimelineOpenCard}
-        sensors={dnd.sensors}
-        collisionDetection={dnd.collisionDetection}
-        onDragStart={dnd.handleDragStart}
-        onDragEnd={dnd.handleDragEnd}
-        activeCard={dnd.activeCard}
-        onToggleCollapse={board.toggleCollapsed}
-        onAddCard={(bucketKey) => {
-          board.setModalCard({
-            id: "",
-            bucket: bucketKey,
-            priority: "Média",
-            progress: "Não iniciado",
-            title: "",
-            desc: t("board.newCard.defaultDescription"),
-            tags: [],
-            direction: null,
-            dueDate: null,
-            blockedBy: [],
-            order: filters.getCardsByBucket(bucketKey).length,
-          });
-          board.setModalMode("new");
-        }}
-        onEditCard={onEditCardById}
-        onDeleteCard={(id) => board.setConfirmDelete({ type: "card", id, label: "" })}
-        onRenameColumn={(b) => {
-          board.setEditingColumnKey(b.key);
-          board.setNewColumnName(b.label);
-          board.setAddColumnOpen(true);
-        }}
-        onDeleteColumn={
-          board.buckets.length > 1
-            ? (key) =>
-                board.setConfirmDelete({
-                  type: "bucket",
-                  id: key,
-                  label: board.buckets.find((x) => x.key === key)?.label || "",
-                })
-            : undefined
-        }
-        onSetDirection={updateDirection}
-        onOpenDesc={onOpenDescById}
-        onOpenAddColumn={() => {
-          board.setEditingColumnKey(null);
-          board.setNewColumnName("");
-          board.setAddColumnOpen(true);
-        }}
-        onPatchCard={board.patchCardFromTable}
-        onDuplicateCard={board.duplicateCard}
-      />
+      <BoardCardSelectionProvider buckets={board.buckets} visibleCardsByBucket={filters.visibleCardsByBucket}>
+        <SelectionClearBridge clearRef={clearSelectionRef} />
+        <KanbanBatchToolbarBound
+          boardView={boardView}
+          t={t}
+          moveCardsBatch={board.moveCardsBatch}
+          getCardsByBucket={filters.getCardsByBucket}
+          buckets={board.buckets}
+          priorities={priorities}
+          patchCardFromTable={board.patchCardFromTable}
+          setConfirmDelete={board.setConfirmDelete}
+        />
+        <KanbanBoardCanvas
+          t={t}
+          boardScrollRef={board.boardScrollRef}
+          boardView={boardView}
+          priorityBarVisible={filters.priorityBarVisible}
+          isPanning={board.isPanning}
+          onPanPointerDown={board.handlePanPointerDown}
+          onPanPointerMove={board.handlePanPointerMove}
+          onPanPointerUp={board.endPan}
+          onPanPointerCancel={board.endPan}
+          cards={board.cards}
+          buckets={board.buckets}
+          collapsed={board.collapsed}
+          directions={directions}
+          filterCard={filters.filterCard}
+          visibleCardsByBucket={filters.visibleCardsByBucket}
+          onTimelineDueDate={board.handleTimelineDueDate}
+          onTimelineOpenCard={board.handleTimelineOpenCard}
+          priorities={priorities}
+          onPatchCardFromTable={board.patchCardFromTable}
+          onTableOpenCard={board.handleTimelineOpenCard}
+          sensors={dnd.sensors}
+          collisionDetection={dnd.collisionDetection}
+          onDragStart={dnd.handleDragStart}
+          onDragEnd={handleKanbanDragEnd}
+          activeCard={dnd.activeCard}
+          activeDragCount={dnd.activeDragCount}
+          activeDragIds={dnd.activeDragIds}
+          onToggleCollapse={board.toggleCollapsed}
+          onAddCard={(bucketKey) => {
+            board.setModalCard({
+              id: "",
+              bucket: bucketKey,
+              priority: "Média",
+              progress: "Não iniciado",
+              title: "",
+              desc: t("board.newCard.defaultDescription"),
+              tags: [],
+              direction: null,
+              dueDate: null,
+              blockedBy: [],
+              order: filters.getCardsByBucket(bucketKey).length,
+            });
+            board.setModalMode("new");
+          }}
+          onEditCard={onEditCardById}
+          onDeleteCard={(id) => board.setConfirmDelete({ type: "card", id, label: "" })}
+          onRenameColumn={(b) => {
+            board.setEditingColumnKey(b.key);
+            board.setNewColumnName(b.label);
+            board.setAddColumnOpen(true);
+          }}
+          onDeleteColumn={
+            board.buckets.length > 1
+              ? (key) =>
+                  board.setConfirmDelete({
+                    type: "bucket",
+                    id: key,
+                    label: board.buckets.find((x) => x.key === key)?.label || "",
+                  })
+              : undefined
+          }
+          onSetDirection={updateDirection}
+          onOpenDesc={onOpenDescById}
+          onOpenAddColumn={() => {
+            board.setEditingColumnKey(null);
+            board.setNewColumnName("");
+            board.setAddColumnOpen(true);
+          }}
+          onPatchCard={board.patchCardFromTable}
+          onDuplicateCard={board.duplicateCard}
+        />
 
-      <BoardSummaryDock
+        <BoardSummaryDock
         t={t}
         buckets={board.buckets}
         visibleCardsByBucket={filters.visibleCardsByBucket}
@@ -415,9 +503,10 @@ function KanbanBoardLoaded({
           board.setModalCard(card);
           board.setModalMode("edit");
         }}
-      />
+        />
 
-      <KanbanBoardOverlays {...overlayProps} />
+        <KanbanBoardOverlays {...overlayProps} />
+      </BoardCardSelectionProvider>
     </>
   );
 }

@@ -31,6 +31,8 @@ interface KanbanColumnProps {
   onDuplicateCard: (cardId: string) => void;
   /** Primeira coluna do board (marcadores do tour guiado). */
   isFirstColumn?: boolean;
+  /** Arrasto multi — opacidade nos cards de origem. */
+  activeDragIds?: string[] | null;
 }
 
 function DroppableSlot({ id }: { id: string }) {
@@ -66,6 +68,7 @@ export function KanbanColumn({
   onPatchCard,
   onDuplicateCard,
   isFirstColumn,
+  activeDragIds = null,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
   const {
@@ -215,6 +218,7 @@ export function KanbanColumn({
               <DroppableSlot id={`slot-${bucket.key}-${idx}`} />
               <KanbanCard
                 cardId={c.id}
+                bucketKey={bucket.key}
                 directions={directions}
                 dirColors={dirColors}
                 onEdit={onEditCard}
@@ -226,6 +230,7 @@ export function KanbanColumn({
                 priorities={priorities}
                 onPatchCard={onPatchCard}
                 onDuplicateCard={onDuplicateCard}
+                activeDragIds={activeDragIds}
               />
             </div>
           ))}

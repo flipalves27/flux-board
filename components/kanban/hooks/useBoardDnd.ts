@@ -9,7 +9,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
-import { parseSlotId } from "../kanban-dnd-utils";
+import { adjustSlotInsertIndexForBatch, parseSlotId } from "../kanban-dnd-utils";
 
 export { parseSlotId } from "../kanban-dnd-utils";
 
@@ -17,7 +17,7 @@ type UseBoardDndArgs = {
   buckets: BucketConfig[];
   cards: CardData[];
   getCardsByBucket: (bucketKey: string) => CardData[];
-  moveCard: (cardId: string, newBucket: string, newIndex: number) => void;
+  moveCardsBatch: (orderedIds: string[], newBucket: string, newIndex: number) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
 };
 
@@ -25,22 +25,30 @@ export function useBoardDnd({
   buckets,
   cards,
   getCardsByBucket,
-  moveCard,
+  moveCardsBatch,
   reorderColumns,
 }: UseBoardDndArgs) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeDragIds, setActiveDragIds] = useState<string[] | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor)
   );
 
-  const handleDragStart = useCallback((e: DragStartEvent) => setActiveId(String(e.active.id)), []);
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    const idStr = String(e.active.id);
+    setActiveId(idStr);
+    const raw = e.active.data.current as { dragIds?: string[] } | undefined;
+    const ids = raw?.dragIds;
+    setActiveDragIds(ids?.length ? ids : null);
+  }, []);
 
   const handleDragEnd = useCallback(
     (e: DragEndEvent) => {
       const { active, over } = e;
       setActiveId(null);
+      setActiveDragIds(null);
       if (!over) return;
       const overId = String(over.id);
       const activeIdStr = String(active.id);
@@ -56,24 +64,24 @@ export function useBoardDnd({
 
       if (activeIdStr.startsWith("card-")) {
         const cardId = activeIdStr.replace("card-", "");
+        const raw = active.data.current as { dragIds?: string[] } | undefined;
+        const dragIds = raw?.dragIds?.length ? raw.dragIds : [cardId];
+        const idSet = new Set(dragIds);
         const slotInfo = parseSlotId(overId);
         if (slotInfo) {
-          const card = cards.find((c) => c.id === cardId);
-          const sameBucket = card?.bucket === slotInfo.bucketKey;
-          const dragIndex = card ? getCardsByBucket(card.bucket).findIndex((c) => c.id === cardId) : -1;
-          let insertIndex = slotInfo.index;
-          if (sameBucket && dragIndex >= 0 && dragIndex < insertIndex) insertIndex--;
-          moveCard(cardId, slotInfo.bucketKey, insertIndex);
+          const visibleDest = getCardsByBucket(slotInfo.bucketKey);
+          const insertIndex = adjustSlotInsertIndexForBatch(slotInfo.index, visibleDest, idSet);
+          moveCardsBatch(dragIds, slotInfo.bucketKey, insertIndex);
           return;
         }
         if (overId.startsWith("bucket-")) {
           const newBucket = overId.replace("bucket-", "");
-          const bucketCards = getCardsByBucket(newBucket).filter((c) => c.id !== cardId);
-          moveCard(cardId, newBucket, bucketCards.length);
+          const bucketCards = getCardsByBucket(newBucket).filter((c) => !idSet.has(c.id));
+          moveCardsBatch(dragIds, newBucket, bucketCards.length);
         }
       }
     },
-    [buckets, cards, getCardsByBucket, moveCard, reorderColumns]
+    [buckets, getCardsByBucket, moveCardsBatch, reorderColumns]
   );
 
   const activeCard =
@@ -86,6 +94,8 @@ export function useBoardDnd({
     handleDragStart,
     handleDragEnd,
     activeCard,
+    activeDragCount: activeDragIds?.length ?? 1,
+    activeDragIds,
     parseSlotId,
   };
 }

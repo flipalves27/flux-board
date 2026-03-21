@@ -1158,7 +1158,8 @@
       "cancel": "Cancel",
       "confirm": "Delete",
       "cardTitle": "Delete \"{cardTitle}\"?",
-      "columnTitle": "Delete the column \"{columnLabel}\"?"
+      "columnTitle": "Delete the column \"{columnLabel}\"?",
+      "cardsBatchTitle": "Delete {count} cards?"
     },
     "csvImport": {
       "toasts": {
@@ -1595,6 +1596,7 @@
           "dragStart": {
             "cardWithTitle": "Starting drag of card: {cardTitle}.",
             "card": "Starting drag of card.",
+            "multiCard": "Starting drag of {count} cards.",
             "columnWithTitle": "Starting drag of column: {columnLabel}.",
             "column": "Starting drag of column."
           },
@@ -1610,6 +1612,15 @@
           "dragCancel": "Drag cancelled."
         }
       }
+    },
+    "batchSelection": {
+      "toolbarAriaLabel": "Batch actions for selected cards",
+      "selectedCount": "{count} selected",
+      "moveTo": "Move to…",
+      "changePriority": "Change priority",
+      "deleteSelected": "Delete selected",
+      "clearHint": "Esc to clear",
+      "draggingCount": "Moving {count} cards"
     }
   }
 }

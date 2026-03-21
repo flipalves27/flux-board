@@ -8,10 +8,9 @@ import { DescModal } from "./desc-modal";
 import { DailyInsightsPanel, type DailyInsightsPanelProps } from "./DailyInsightsPanel";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MapaProducaoSection } from "./mapa-producao-section";
+import type { ConfirmDeleteState } from "@/stores/ui-store";
 
 type KanbanT = (key: string, values?: Record<string, string | number>) => string;
-
-type ConfirmDeleteState = { type: "card" | "bucket"; id: string; label: string } | null;
 
 type CsvImportConfirm = {
   count: number;
@@ -70,6 +69,8 @@ export type KanbanBoardOverlaysProps = {
     targetCardId: string,
     payload: { title: string; description: string; tags: string[] }
   ) => void;
+  /** Após excluir vários cards (confirmação). */
+  onCardsBatchDeleted?: () => void;
 };
 
 export function KanbanBoardOverlays({
@@ -117,6 +118,7 @@ export function KanbanBoardOverlays({
   dailyPanelProps,
   onOpenExistingCard,
   onMergeDraftIntoExisting,
+  onCardsBatchDeleted,
 }: KanbanBoardOverlaysProps) {
   const updateDb = useBoardStore((s) => s.updateDb);
 
@@ -253,9 +255,13 @@ export function KanbanBoardOverlays({
                 ? t("confirmDelete.cardTitle", {
                     cardTitle: cards.find((c) => c.id === confirmDelete.id)?.title || "",
                   })
-                : t("confirmDelete.columnTitle", {
-                    columnLabel: confirmDelete.label,
-                  })}
+                : confirmDelete.type === "bucket"
+                  ? t("confirmDelete.columnTitle", {
+                      columnLabel: confirmDelete.label,
+                    })
+                  : confirmDelete.type === "cardsBatch"
+                    ? t("confirmDelete.cardsBatchTitle", { count: confirmDelete.ids.length })
+                    : null}
             </p>
             <div className="flex gap-3 justify-center pt-2">
               <button
@@ -277,8 +283,17 @@ export function KanbanBoardOverlays({
                         if (c.blockedBy?.length) c.blockedBy = c.blockedBy.filter((bid) => bid !== removed);
                       });
                     });
-                  } else {
+                  } else if (confirmDelete.type === "bucket") {
                     deleteColumn(confirmDelete.id);
+                  } else if (confirmDelete.type === "cardsBatch") {
+                    const idSet = new Set(confirmDelete.ids);
+                    updateDb((d) => {
+                      d.cards = d.cards.filter((c) => !idSet.has(c.id));
+                      d.cards.forEach((c) => {
+                        if (c.blockedBy?.length) c.blockedBy = c.blockedBy.filter((bid) => !idSet.has(bid));
+                      });
+                    });
+                    onCardsBatchDeleted?.();
                   }
                   setConfirmDelete(null);
                 }}

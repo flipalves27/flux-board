@@ -1113,7 +1113,8 @@
       "cancel": "Cancelar",
       "confirm": "Excluir",
       "cardTitle": "Excluir \"{cardTitle}\"?",
-      "columnTitle": "Excluir a coluna \"{columnLabel}\"?"
+      "columnTitle": "Excluir a coluna \"{columnLabel}\"?",
+      "cardsBatchTitle": "Excluir {count} cards?"
     },
     "csvImport": {
       "toasts": {
@@ -1596,6 +1597,7 @@
           "dragStart": {
             "cardWithTitle": "Iniciando arrasto do card: {cardTitle}.",
             "card": "Iniciando arrasto do card.",
+            "multiCard": "Iniciando arrasto de {count} cards.",
             "columnWithTitle": "Iniciando arrasto da coluna: {columnLabel}.",
             "column": "Iniciando arrasto da coluna."
           },
@@ -1611,6 +1613,15 @@
           "dragCancel": "Arrasto cancelado."
         }
       }
+    },
+    "batchSelection": {
+      "toolbarAriaLabel": "Ações em lote nos cards selecionados",
+      "selectedCount": "{count} selecionados",
+      "moveTo": "Mover para…",
+      "changePriority": "Alterar prioridade",
+      "deleteSelected": "Deletar selecionados",
+      "clearHint": "Esc para limpar",
+      "draggingCount": "Movendo {count} cards"
     }
   }
 }

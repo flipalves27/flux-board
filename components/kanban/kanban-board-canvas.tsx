@@ -42,6 +42,8 @@ type KanbanBoardCanvasProps = {
   onDragStart: (e: DragStartEvent) => void;
   onDragEnd: (e: DragEndEvent) => void;
   activeCard: CardData | null | undefined;
+  activeDragCount: number;
+  activeDragIds: string[] | null;
   onToggleCollapse: (key: string) => void;
   onAddCard: (bucketKey: string) => void;
   onEditCard: (cardId: string) => void;
@@ -84,6 +86,8 @@ export function KanbanBoardCanvas({
   onDragStart,
   onDragEnd,
   activeCard,
+  activeDragCount,
+  activeDragIds,
   onToggleCollapse,
   onAddCard,
   onEditCard,
@@ -146,6 +150,11 @@ export function KanbanBoardCanvas({
                 if (aid.startsWith("card-")) {
                   const cardId = aid.replace("card-", "");
                   const card = cards.find((c) => c.id === cardId);
+                  const raw = active.data.current as { dragIds?: string[] } | undefined;
+                  const n = raw?.dragIds?.length ?? 1;
+                  if (n > 1) {
+                    return t("board.dnd.announcements.dragStart.multiCard", { count: n });
+                  }
                   return card
                     ? t("board.dnd.announcements.dragStart.cardWithTitle", { cardTitle: card.title })
                     : t("board.dnd.announcements.dragStart.card");
@@ -212,6 +221,7 @@ export function KanbanBoardCanvas({
                 onPatchCard={onPatchCard}
                 onDuplicateCard={onDuplicateCard}
                 isFirstColumn={colIdx === 0}
+                activeDragIds={activeDragIds}
               />
             ))}
           </SortableContext>
@@ -233,9 +243,15 @@ export function KanbanBoardCanvas({
             }}
           >
             {activeCard ? (
-              <div className="scale-[1.02] shadow-[var(--flux-shadow-kanban-card-lift)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
+              <div className="relative scale-[1.02] shadow-[var(--flux-shadow-kanban-card-lift)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
+                {activeDragCount > 1 ? (
+                  <span className="absolute -top-2 -right-2 z-20 min-w-[28px] h-7 px-1.5 rounded-full bg-[var(--flux-primary)] text-white text-xs font-bold flex items-center justify-center tabular-nums shadow-lg pointer-events-none">
+                    {t("batchSelection.draggingCount", { count: activeDragCount })}
+                  </span>
+                ) : null}
                 <KanbanCard
                   cardId={activeCard.id}
+                  bucketKey={activeCard.bucket}
                   directions={directions}
                   dirColors={DIR_COLORS}
                   onEdit={() => {}}
@@ -244,6 +260,7 @@ export function KanbanBoardCanvas({
                   onOpenDesc={undefined}
                   isDragging
                   quickActionsDisabled
+                  dragOverlayPreview
                 />
               </div>
             ) : null}

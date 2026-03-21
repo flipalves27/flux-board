@@ -233,6 +233,33 @@ export function useBoardState({
     [updateDb]
   );
 
+  /** Move vários cards na ordem dada para `newBucket` em `insertIndex` (0 = topo). */
+  const moveCardsBatch = useCallback(
+    (orderedIds: string[], newBucket: string, insertIndex: number) => {
+      if (orderedIds.length === 0) return;
+      const idSet = new Set(orderedIds);
+      updateDb((d) => {
+        const moving = orderedIds
+          .map((id) => d.cards.find((c) => c.id === id))
+          .filter((c): c is CardData => Boolean(c));
+        if (moving.length === 0) return;
+        const without = d.cards.filter((c) => !idSet.has(c.id));
+        const bucketCards = without
+          .filter((c) => c.bucket === newBucket)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const toInsert = moving.map((c) => ({ ...c, bucket: newBucket }));
+        const safeIdx = Math.max(0, Math.min(insertIndex, bucketCards.length));
+        bucketCards.splice(safeIdx, 0, ...toInsert);
+        bucketCards.forEach((c, i) => {
+          c.order = i;
+        });
+        const otherBuckets = without.filter((c) => c.bucket !== newBucket);
+        d.cards = [...otherBuckets, ...bucketCards];
+      });
+    },
+    [updateDb]
+  );
+
   const reorderColumns = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (fromIndex === toIndex) return;
@@ -771,6 +798,7 @@ export function useBoardState({
     okrsComputed,
     dailySession,
     moveCard,
+    moveCardsBatch,
     reorderColumns,
     saveColumn,
     deleteColumn,
