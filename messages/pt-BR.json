@@ -51,6 +51,45 @@
     },
     "logout": "Sair"
   },
+  "commandPalette": {
+    "ariaLabel": "Paleta de comandos",
+    "placeholder": "Buscar boards, cards, ações…",
+    "empty": "Nenhum resultado.",
+    "footer": "↑↓ navegar · Enter abrir · 1–9 atalho · Esc fechar",
+    "aiComingSoon": "Comandos em linguagem natural (/ai) serão integrados quando o Copilot com function calling estiver pronto.",
+    "groups": {
+      "recent": "Recentes",
+      "boards": "Boards",
+      "cards": "Cards",
+      "actions": "Ações",
+      "navigation": "Navegação"
+    },
+    "subtitles": {
+      "openBoard": "Abrir board",
+      "newCard": "Novo card neste board",
+      "newBoard": "Novo board no workspace",
+      "copilotOn": "Copiloto em {board}",
+      "navigate": "Ir"
+    },
+    "actions": {
+      "newBoard": "Criar board",
+      "createCardIn": "Criar card em {board}",
+      "copilot": "Abrir Copiloto"
+    },
+    "nav": {
+      "boards": "Boards",
+      "reports": "Relatórios",
+      "okrs": "Metas",
+      "discovery": "Discovery",
+      "templates": "Templates",
+      "tasks": "Minhas tarefas",
+      "users": "Usuários",
+      "orgSettings": "Config. da organização",
+      "billing": "Cobrança",
+      "invites": "Convites",
+      "rateLimit": "Rate limit (abuso)"
+    }
+  },
   "rateLimitAbuse": {
     "title": "Abuso — rate limit",
     "subtitle": "Agrupamento por IP ou usuário quando o limite global da API retorna 429 (Mongo com TTL).",

@@ -21,6 +21,7 @@ import {
   toggleBoardFavorite,
   type BoardVisitEntry,
 } from "@/lib/board-shortcuts";
+import { cleanupRecentCards } from "@/lib/recent-cards";
 import {
   averageNullable,
   type BoardPortfolioMetrics,
@@ -181,6 +182,10 @@ export default function BoardsPage() {
       user.id,
       boards.map((board) => board.id)
     );
+    cleanupRecentCards(
+      user.id,
+      new Set(boards.map((b) => b.id))
+    );
     const shortcuts = getBoardShortcuts(user.id);
     setFavoriteBoardIds(shortcuts.favorites);
     setRecentEntries(shortcuts.recents);
@@ -193,6 +198,16 @@ export default function BoardsPage() {
     setBoardName("");
     setModalOpen(true);
   }
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    if (searchParams.get("newBoard") !== "1") return;
+    setModalMode("new");
+    setEditingId(null);
+    setBoardName("");
+    setModalOpen(true);
+    router.replace(`${localeRoot}/boards`, { scroll: false });
+  }, [searchParams, isChecked, user, router, localeRoot]);
 
   function openEditModal(id: string, name: string) {
     setModalMode("edit");

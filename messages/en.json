@@ -51,6 +51,45 @@
     },
     "logout": "Sign out"
   },
+  "commandPalette": {
+    "ariaLabel": "Command palette",
+    "placeholder": "Search boards, cards, actions…",
+    "empty": "No results.",
+    "footer": "↑↓ navigate · Enter select · 1–9 quick · Esc close",
+    "aiComingSoon": "Natural language (/ai) will connect here when Copilot function calling ships.",
+    "groups": {
+      "recent": "Recent",
+      "boards": "Boards",
+      "cards": "Cards",
+      "actions": "Actions",
+      "navigation": "Navigation"
+    },
+    "subtitles": {
+      "openBoard": "Open board",
+      "newCard": "New card in this board",
+      "newBoard": "New workspace board",
+      "copilotOn": "Copilot on {board}",
+      "navigate": "Go"
+    },
+    "actions": {
+      "newBoard": "Create board",
+      "createCardIn": "Create card in {board}",
+      "copilot": "Open Copilot"
+    },
+    "nav": {
+      "boards": "Boards",
+      "reports": "Reports",
+      "okrs": "Goals",
+      "discovery": "Discovery",
+      "templates": "Templates",
+      "tasks": "My tasks",
+      "users": "Users",
+      "orgSettings": "Organization settings",
+      "billing": "Billing",
+      "invites": "Invites",
+      "rateLimit": "Rate limit (abuse)"
+    }
+  },
   "rateLimitAbuse": {
     "title": "Abuse — rate limit",
     "subtitle": "Grouped by IP or user when the global API limit returns 429 (Mongo with TTL).",

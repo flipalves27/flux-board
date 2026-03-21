@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
+import { useAuth } from "@/context/auth-context";
 import { useBoardStore } from "@/stores/board-store";
+import { useCopilotStore } from "@/stores/copilot-store";
+import { registerRecentCard } from "@/lib/recent-cards";
 import { useToast } from "@/context/toast-context";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
@@ -39,6 +44,11 @@ function KanbanBoardLoaded({
   directions,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
+  const { user } = useAuth();
   const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
   const updateDb = useBoardStore((s) => s.updateDb);
@@ -91,6 +101,70 @@ function KanbanBoardLoaded({
   });
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
+
+  useEffect(() => {
+    const cardId = searchParams.get("card");
+    const newCard = searchParams.get("newCard");
+    const copilot = searchParams.get("copilot");
+    if (!cardId && newCard !== "1" && copilot !== "1") return;
+
+    if (cardId) {
+      const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
+      if (c) {
+        board.setModalCard(c);
+        board.setModalMode("edit");
+      }
+      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (newCard === "1") {
+      const firstBucket = board.buckets[0]?.key;
+      if (firstBucket) {
+        const order = board.cards.filter((x) => x.bucket === firstBucket).length;
+        board.setModalCard({
+          id: "",
+          bucket: firstBucket,
+          priority: "Média",
+          progress: "Não iniciado",
+          title: "",
+          desc: t("board.newCard.defaultDescription"),
+          tags: [],
+          direction: null,
+          dueDate: null,
+          blockedBy: [],
+          order,
+        });
+        board.setModalMode("new");
+      }
+      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (copilot === "1") {
+      useCopilotStore.getState().setOpen(true);
+      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+    }
+  }, [
+    searchParams,
+    boardId,
+    router,
+    localeRoot,
+    board.buckets,
+    board.cards,
+    board.setModalCard,
+    board.setModalMode,
+    t,
+  ]);
+
+  useEffect(() => {
+    const card = board.modalCard;
+    if (!user?.id || board.modalMode !== "edit" || !card?.id) return;
+    registerRecentCard(user.id, {
+      boardId,
+      boardName,
+      cardId: card.id,
+      title: card.title || card.id,
+    });
+  }, [user?.id, boardId, boardName, board.modalMode, board.modalCard?.id]);
 
   const anyConfirmOpen = Boolean(dailyDeleteConfirmId || board.csvImportConfirm);
 
