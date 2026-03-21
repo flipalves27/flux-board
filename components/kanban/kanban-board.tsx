@@ -7,7 +7,7 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { useBoardStore } from "@/stores/board-store";
+import { useBoardStore, registerCsvImportInput } from "@/stores/board-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { registerRecentCard } from "@/lib/recent-cards";
 import { useToast } from "@/context/toast-context";
@@ -20,8 +20,6 @@ import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
-import { KanbanHeaderBar } from "./kanban-header-bar";
-import { KanbanToolbar } from "./kanban-toolbar";
 import { BoardMetricsStrip } from "./board-metrics-strip";
 import { KanbanBoardCanvas } from "./kanban-board-canvas";
 import { BoardCardSelectionProvider, useBoardCardSelection } from "./board-card-selection-context";
@@ -430,40 +428,21 @@ function KanbanBoardLoaded({
           onExpandFilters={() => filters.setPriorityBarVisible(true)}
           boardView={boardView}
           setBoardView={setBoardView}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchInputRef={filters.searchInputRef}
         />
         <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
-        <div className="board-toolbar">
-          <KanbanHeaderBar
-            t={t}
-            searchInputRef={filters.searchInputRef}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            csvImportMode={board.csvImportMode}
-            setCsvImportMode={(v) =>
-              board.setCsvImportMode(typeof v === "function" ? v(board.csvImportMode) : v)
-            }
-            onImportCSV={board.handleImportCSV}
-            onExportCSV={board.handleExportCSV}
-          />
-          <KanbanToolbar
-            t={t}
-            priorityBarVisible={filters.priorityBarVisible}
-            priorities={priorities}
-            activePrio={activePrio}
-            setActivePrio={setActivePrio}
-            focusMode={filters.focusMode}
-            setFocusMode={filters.setFocusMode}
-            clearFilters={filters.clearFilters}
-            applyFocusMode={filters.applyFocusMode}
-            labelsOpen={filters.labelsOpen}
-            setLabelsOpen={filters.setLabelsOpen}
-            onOpenMapa={() => board.setMapaOpen(true)}
-            boardLabels={board.boardLabels}
-            activeLabels={activeLabels}
-            onToggleLabel={filters.toggleLabel}
-          />
-        </div>
       </div>
+
+      {/* Hidden file input for CSV import — triggered from the header via the board-store bridge */}
+      <input
+        ref={(el) => registerCsvImportInput(el)}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={board.handleImportCSV}
+      />
 
       <BoardCardSelectionProvider buckets={board.buckets} visibleCardsByBucket={filters.visibleCardsByBucket}>
         <SelectionClearBridge clearRef={clearSelectionRef} />

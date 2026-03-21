@@ -17,7 +17,7 @@ import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
-import { setBoardPersistenceHandler, useBoardStore } from "@/stores/board-store";
+import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
@@ -199,6 +199,8 @@ export default function BoardPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
+  const csvImportMode = useKanbanUiStore((s) => s.csvImportMode);
+  const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
 
   const authWaiting = !isChecked || !user;
   const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
@@ -502,6 +504,38 @@ export default function BoardPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
                         Widget
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => setCsvImportMode("replace")}
+                        className={csvImportMode === "replace" ? "text-[var(--flux-primary-light)]" : ""}
+                      >
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {csvImportMode === "replace" ? "✓ " : ""}Substituir
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => setCsvImportMode("merge")}
+                        className={csvImportMode === "merge" ? "text-[var(--flux-primary-light)]" : ""}
+                      >
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        {csvImportMode === "merge" ? "✓ " : ""}Mesclar
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => triggerCsvImport()}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Importar CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => triggerCsvExport()}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar CSV
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

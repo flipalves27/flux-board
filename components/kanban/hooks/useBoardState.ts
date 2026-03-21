@@ -6,7 +6,7 @@ import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDe
 import type { OkrKrProjection } from "@/lib/okr-projection";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
-import { useBoardStore } from "@/stores/board-store";
+import { useBoardStore, registerCsvExportHandler } from "@/stores/board-store";
 import { useFilterStore } from "@/stores/filter-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useDailySession } from "./useDailySession";
@@ -775,6 +775,11 @@ export function useBoardState({
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    registerCsvExportHandler(handleExportCSV);
+    return () => registerCsvExportHandler(null);
+  }, [handleExportCSV]);
 
   return {
     boardScrollRef,

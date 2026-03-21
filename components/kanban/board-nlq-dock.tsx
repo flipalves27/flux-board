@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useState } from "react";
+import type { RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useBoardNlqUiStore, type BoardNlqMetricSnapshot } from "@/stores/board-nlq-ui-store";
@@ -81,11 +82,14 @@ type BoardNlqDockProps = {
   onExpandFilters: () => void;
   boardView: BoardViewMode;
   setBoardView: (v: BoardViewMode) => void;
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  searchInputRef: RefObject<HTMLInputElement | null>;
 };
 
 const nlqExpandedStorageKey = (boardId: string) => `flux-board.nlqDock.expanded.${boardId}`;
 
-export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, setBoardView }: BoardNlqDockProps) {
+export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, setBoardView, searchQuery, setSearchQuery, searchInputRef }: BoardNlqDockProps) {
   const t = useTranslations("kanban.board.nlq");
   const tTimeline = useTranslations("kanban.board.timeline");
   const { pushToast } = useToast();
@@ -288,6 +292,24 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
               <IconTimeline active={boardView === "timeline"} />
             </button>
           </CustomTooltip>
+        </div>
+
+        <div className="relative ml-auto shrink-0 w-[min(100%,220px)] sm:w-[240px]">
+          <span
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--flux-text-muted)] opacity-50 text-sm select-none"
+            aria-hidden
+          >
+            ⌕
+          </span>
+          <input
+            ref={searchInputRef}
+            data-flux-board-search
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Pesquisar…"
+            className="w-full pl-8 pr-2 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] outline-none transition-all duration-200"
+          />
         </div>
       </div>
 
