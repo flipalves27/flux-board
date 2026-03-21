@@ -27,6 +27,14 @@ import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import { BoardProductTour, type BoardProductTourHandle } from "@/components/board/board-product-tour";
 import { BoardPresenceAvatars } from "@/components/kanban/board-presence-avatars";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -400,37 +408,51 @@ export default function BoardPage() {
             titleLine2={clientLabel ? t("clientLabelInHeader", { label: clientLabel }) : undefined}
             boardTourHeader
           >
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+              {/* Presence */}
               <BoardPresenceAvatars />
-              {tourStep !== null && (
-                <button
-                  type="button"
-                  className="btn-secondary text-xs py-1.5 px-2"
-                  onClick={() => void tourRef.current?.skip()}
-                >
-                  {tTour("skip")}
-                </button>
-              )}
-              {tourStep === null && !user?.boardProductTourCompleted && (
-                <button type="button" className="btn-secondary text-xs py-1.5 px-2" onClick={() => tourRef.current?.redo()}>
-                  {tTour("start")}
-                </button>
-              )}
-              {tourStep === null && user?.boardProductTourCompleted && (
-                <button type="button" className="btn-secondary text-xs py-1.5 px-2" onClick={() => tourRef.current?.redo()}>
-                  {tTour("redo")}
-                </button>
-              )}
-              <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
+
+              {/* Separator */}
+              <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
+
+              {/* Feature actions */}
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                onClick={() => setAutomationsOpen(true)}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
                 {t("automations.open")}
               </button>
-              <button type="button" className="btn-secondary" onClick={() => setAnomalySettingsOpen(true)}>
+
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                onClick={() => setAnomalySettingsOpen(true)}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
                 {t("anomalyAlerts.open")}
               </button>
+
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                onClick={() => setPortalOpen(true)}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {t("portal.open")}
+              </button>
+
               {formLink && (
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(formLink);
@@ -440,22 +462,81 @@ export default function BoardPage() {
                     }
                   }}
                 >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
                   Flux Forms
                 </button>
               )}
-              <button type="button" className="btn-secondary" onClick={() => setPortalOpen(true)}>
-                {t("portal.open")}
-              </button>
+
+              {/* Admin tools — collapsed into dropdown */}
               {user.isAdmin && (
                 <>
-                  <button type="button" className="btn-secondary" onClick={() => setTemplateExportOpen(true)}>
-                    Template
-                  </button>
-                  <button type="button" className="btn-secondary" onClick={() => setEmbedOpen(true)}>
-                    Widget
-                  </button>
+                  <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                        aria-label="Opções de administrador"
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[160px]">
+                      <DropdownMenuItem onSelect={() => setTemplateExportOpen(true)}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                        </svg>
+                        Template
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => setEmbedOpen(true)}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Widget
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
+
+              {/* Tour — ghost help button, deemphasized */}
+              <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
+              {tourStep !== null ? (
+                <button
+                  type="button"
+                  className="btn-ghost flex items-center gap-1.5 py-2 px-3 text-xs"
+                  onClick={() => void tourRef.current?.skip()}
+                >
+                  {tTour("skip")}
+                </button>
+              ) : (
+                <CustomTooltip
+                  content={user?.boardProductTourCompleted ? tTour("redo") : tTour("start")}
+                  position="bottom"
+                >
+                  <button
+                    type="button"
+                    className="btn-ghost flex items-center justify-center p-2"
+                    onClick={() => tourRef.current?.redo()}
+                    aria-label={user?.boardProductTourCompleted ? tTour("redo") : tTour("start")}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </CustomTooltip>
+              )}
+
+              {/* Save status indicator */}
               <div
                 className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
                   saveStatus === "idle" ? "opacity-0" : "opacity-100"
