@@ -435,7 +435,8 @@
     "nav": {
       "why": "Por que {appName}",
       "platform": "Plataforma",
-      "how": "Como funciona"
+      "how": "Como funciona",
+      "pricing": "Preços"
     },
     "actions": {
       "openDashboardLoggedIn": "Abrir painel",
@@ -575,7 +576,105 @@
     "footer": {
       "copyright": "© {year} {appName} — Organize o fluxo. Entregue o que importa.",
       "signIn": "Entrar",
-      "features": "Recursos"
+      "features": "Recursos",
+      "pricing": "Preços",
+      "docs": "Docs",
+      "status": "Status"
+    },
+    "socialProof": {
+      "stat1": { "value": "3 min", "label": "para criar o primeiro board" },
+      "stat2": { "value": "14 dias", "label": "trial sem cartão de crédito" },
+      "stat3": { "value": "100%", "label": "visual — zero planilhas" },
+      "stat4": { "value": "∞", "label": "boards no plano Pro e acima" }
+    },
+    "pricing": {
+      "heading": "Planos para cada etapa do crescimento",
+      "description": "Comece grátis e escale conforme o time evolui. Sem surpresas na fatura.",
+      "monthly": "Mensal",
+      "yearly": "Anual",
+      "yearlyTag": "−20%",
+      "trialNote": "Trial de 14 dias nos planos Pro e Business. Sem cartão de crédito.",
+      "perSeatMonth": "/seat/mês",
+      "perSeatYearBilled": "/seat/mês, cobrado anualmente",
+      "forever": "para sempre",
+      "customPrice": "Sob consulta",
+      "customSub": "preço personalizado",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "desc": "Para quem está começando a organizar o fluxo sem custo.",
+          "cta": "Criar conta grátis",
+          "limits": "3 boards · 1 usuário · 3 chamadas IA/dia"
+        },
+        "pro": {
+          "name": "Pro",
+          "desc": "Para times pequenos que precisam de IA, OKRs e portfólio.",
+          "cta": "Testar Pro por 14 dias",
+          "limits": "Boards ilimitados · Até 10 membros · 50 chamadas IA/dia"
+        },
+        "business": {
+          "name": "Business",
+          "badge": "Mais popular",
+          "desc": "Para operações em escala com IA irrestrita, white-label e integrações.",
+          "cta": "Testar Business por 14 dias",
+          "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "desc": "Para grandes organizações com SSO, domínio próprio e SLA dedicado.",
+          "cta": "Falar com vendas"
+        }
+      },
+      "features": {
+        "kanban": "Kanban drag & drop completo",
+        "templates": "Templates de board com IA",
+        "csvExport": "Exportação CSV",
+        "activityLog90": "Log de atividade (90 dias)",
+        "activityLogUnlimited": "Log de atividade (ilimitado)",
+        "commandPalette": "Paleta de comandos + atalhos",
+        "forms": "Flux Forms (intake público)",
+        "executiveBrief": "Executive Brief",
+        "cardContext": "Card Context (IA)",
+        "dailyInsights": "Daily Insights",
+        "copilot": "Board Copilot (chat IA)",
+        "okrEngine": "OKR Engine",
+        "fluxDocs": "Flux Docs + RAG",
+        "portfolioExport": "Portfolio Export",
+        "riskScore": "Risk Score (IA)",
+        "logoOnly": "Branding com logo própria",
+        "anomalyEmail": "Alertas de anomalia por e-mail",
+        "whiteLabelFull": "White-label completo",
+        "workloadBalancer": "Balanceador de carga",
+        "orgChat": "Chat da organização",
+        "webhooksUnlimited": "Webhooks ilimitados",
+        "retroFacilitator": "Facilitador de retrospectiva",
+        "slackTeams": "Integração Slack / Teams",
+        "sso": "SSO (SAML/OIDC)",
+        "customDomain": "Domínio customizado",
+        "copilotTools": "Copilot Tools customizadas",
+        "anomalyWebhook": "Webhooks de anomalia",
+        "dedicatedSupport": "Suporte dedicado + SLA"
+      },
+      "allFree": "Tudo do Free, mais:",
+      "allPro": "Tudo do Pro, mais:",
+      "allBusiness": "Tudo do Business, mais:"
+    },
+    "faq": {
+      "heading": "Perguntas frequentes",
+      "q1": "O que está incluído no plano Grátis?",
+      "a1": "O plano Grátis dá acesso a até 3 boards Kanban, 1 usuário, 3 chamadas de IA por dia, templates públicos e log de atividade por 90 dias. Ideal para explorar o fluxo antes de escalar.",
+      "q2": "Posso testar os planos pagos antes de assinar?",
+      "a2": "Sim. Pro e Business incluem um trial de 14 dias sem precisar de cartão de crédito. Você experimenta todas as funcionalidades do plano escolhido e só paga se decidir continuar.",
+      "q3": "Como funciona o faturamento por seat?",
+      "a3": "Cada membro ativo da organização conta como um seat. Você escolhe quantos seats precisa e pode ajustar conforme o time cresce. O faturamento anual oferece 20% de desconto em relação ao mensal.",
+      "q4": "Posso fazer upgrade ou downgrade a qualquer momento?",
+      "a4": "Sim. Upgrades têm efeito imediato com crédito proporcional. Downgrades entram em vigor no final do ciclo atual, com 7 dias de graça para ajustar boards e usuários.",
+      "q5": "O que é o Board Copilot?",
+      "a5": "Um assistente de IA conversacional embutido no board. Faça perguntas em linguagem natural sobre os cards, peça resumos, identifique gargalos e execute ações — tudo sem sair da visão Kanban.",
+      "q6": "Há integração com Slack e Teams?",
+      "a6": "Sim. Business e Enterprise incluem integração nativa com Slack e Microsoft Teams para notificações de eventos, alertas de anomalia e resumos do Weekly AI Digest.",
+      "q7": "O Enterprise inclui SSO?",
+      "a7": "Sim. O Enterprise suporta SSO com SAML 2.0 e OIDC, permitindo login com credenciais corporativas e gerenciamento centralizado no seu Identity Provider."
     }
   },
   "login": {

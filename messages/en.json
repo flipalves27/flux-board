@@ -435,7 +435,8 @@
     "nav": {
       "why": "Why {appName}",
       "platform": "Platform",
-      "how": "How it works"
+      "how": "How it works",
+      "pricing": "Pricing"
     },
     "actions": {
       "openDashboardLoggedIn": "Open dashboard",
@@ -575,7 +576,105 @@
     "footer": {
       "copyright": "© {year} {appName} — Organize the flow. Ship what matters.",
       "signIn": "Sign in",
-      "features": "Features"
+      "features": "Features",
+      "pricing": "Pricing",
+      "docs": "Docs",
+      "status": "Status"
+    },
+    "socialProof": {
+      "stat1": { "value": "3 min", "label": "to create your first board" },
+      "stat2": { "value": "14 days", "label": "trial, no credit card" },
+      "stat3": { "value": "100%", "label": "visual — zero spreadsheets" },
+      "stat4": { "value": "∞", "label": "boards on Pro and above" }
+    },
+    "pricing": {
+      "heading": "Plans for every stage of growth",
+      "description": "Start free and scale as your team evolves. No surprise invoices.",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlyTag": "−20%",
+      "trialNote": "14-day trial on Pro and Business plans. No credit card required.",
+      "perSeatMonth": "/seat/month",
+      "perSeatYearBilled": "/seat/month, billed annually",
+      "forever": "forever",
+      "customPrice": "Custom pricing",
+      "customSub": "contact sales",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "desc": "For teams getting started with organized workflows at no cost.",
+          "cta": "Create free account",
+          "limits": "3 boards · 1 user · 3 AI calls/day"
+        },
+        "pro": {
+          "name": "Pro",
+          "desc": "For small teams that need AI, OKRs, and portfolio visibility.",
+          "cta": "Try Pro for 14 days",
+          "limits": "Unlimited boards · Up to 10 members · 50 AI calls/day"
+        },
+        "business": {
+          "name": "Business",
+          "badge": "Most popular",
+          "desc": "For scaled operations with unlimited AI, white-label, and integrations.",
+          "cta": "Try Business for 14 days",
+          "limits": "Unlimited boards · Up to 100 members · Unlimited AI"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "desc": "For large organizations with SSO, custom domain, and dedicated SLA.",
+          "cta": "Talk to sales"
+        }
+      },
+      "features": {
+        "kanban": "Full drag & drop Kanban",
+        "templates": "Board templates with AI",
+        "csvExport": "CSV export",
+        "activityLog90": "Activity log (90 days)",
+        "activityLogUnlimited": "Activity log (unlimited)",
+        "commandPalette": "Command palette + shortcuts",
+        "forms": "Flux Forms (public intake)",
+        "executiveBrief": "Executive Brief",
+        "cardContext": "Card Context (AI)",
+        "dailyInsights": "Daily Insights",
+        "copilot": "Board Copilot (AI chat)",
+        "okrEngine": "OKR Engine",
+        "fluxDocs": "Flux Docs + RAG",
+        "portfolioExport": "Portfolio Export",
+        "riskScore": "Risk Score (AI)",
+        "logoOnly": "Custom logo branding",
+        "anomalyEmail": "Anomaly email alerts",
+        "whiteLabelFull": "Full white-label",
+        "workloadBalancer": "Workload balancer",
+        "orgChat": "Org chat",
+        "webhooksUnlimited": "Unlimited webhooks",
+        "retroFacilitator": "Retro facilitator",
+        "slackTeams": "Slack / Teams integration",
+        "sso": "SSO (SAML/OIDC)",
+        "customDomain": "Custom domain",
+        "copilotTools": "Custom Copilot Tools",
+        "anomalyWebhook": "Anomaly webhooks",
+        "dedicatedSupport": "Dedicated support + SLA"
+      },
+      "allFree": "Everything in Free, plus:",
+      "allPro": "Everything in Pro, plus:",
+      "allBusiness": "Everything in Business, plus:"
+    },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "q1": "What is included in the Free plan?",
+      "a1": "The Free plan gives you up to 3 Kanban boards, 1 user, 3 AI calls per day, public templates, and a 90-day activity log. Perfect for exploring the workflow before scaling up.",
+      "q2": "Can I try paid plans before subscribing?",
+      "a2": "Yes. Pro and Business include a 14-day trial with no credit card required. You get full access to all features of the chosen plan and only pay if you decide to continue.",
+      "q3": "How does seat-based billing work?",
+      "a3": "Each active member of your organization counts as one seat. You choose how many seats you need and can adjust as your team grows. Annual billing saves 20% compared to monthly.",
+      "q4": "Can I upgrade or downgrade at any time?",
+      "a4": "Yes. Upgrades take effect immediately with prorated credit. Downgrades take effect at the end of the current billing cycle, with a 7-day grace period to adjust boards and users.",
+      "q5": "What is the Board Copilot?",
+      "a5": "A conversational AI assistant embedded in your board. Ask questions in natural language about cards, request summaries, spot bottlenecks, and execute actions — all without leaving the Kanban view.",
+      "q6": "Are Slack and Teams integrations available?",
+      "a6": "Yes. Business and Enterprise include native Slack and Microsoft Teams integrations for board event notifications, anomaly alerts, and Weekly AI Digest summaries.",
+      "q7": "Does Enterprise include SSO?",
+      "a7": "Yes. Enterprise supports SSO with SAML 2.0 and OIDC, enabling your team to log in with existing corporate credentials and centralizing access management in your Identity Provider."
     }
   },
   "login": {
