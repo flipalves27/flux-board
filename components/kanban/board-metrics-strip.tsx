@@ -15,7 +15,7 @@ type BoardMetricsStripProps = {
 
 export function BoardMetricsStrip({ t, totalCards, executionInsights }: BoardMetricsStripProps) {
   return (
-    <div className="w-full px-4 sm:px-5 lg:px-6 py-2 border-t border-[var(--flux-border-muted)]">
+    <div className="w-full px-4 sm:px-5 lg:px-6 py-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-06)]">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
         <div className="board-stat-tile px-2.5 py-2">
           <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">

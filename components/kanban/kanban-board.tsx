@@ -37,6 +37,30 @@ function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(
   return null;
 }
 
+function DailyIaFab({ onOpen }: { onOpen: () => void }) {
+  const tFab = useTranslations("kanban.board.filters");
+  const copilotOpen = useCopilotStore((s) => s.open);
+  const fabRight = copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4";
+  return (
+    <button
+      type="button"
+      data-tour="board-daily"
+      className={`fixed z-[467] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[280px]`}
+      onClick={onOpen}
+      aria-label={tFab("dailyButton")}
+    >
+      <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+            <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
+          </svg>
+        </span>
+        <span className="text-[11px] font-semibold whitespace-nowrap">{tFab("dailyButton")}</span>
+      </span>
+    </button>
+  );
+}
+
 type KanbanBatchToolbarProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
   boardView: string;
@@ -404,17 +428,13 @@ function KanbanBoardLoaded({
           boardId={boardId}
           getHeaders={getHeaders}
           onExpandFilters={() => filters.setPriorityBarVisible(true)}
+          boardView={boardView}
+          setBoardView={setBoardView}
         />
-        <div
-          className="board-toolbar transition-[max-height] duration-300 ease-in-out overflow-y-auto overflow-x-hidden"
-          style={{ maxHeight: filters.priorityBarVisible ? "min(640px, 80vh)" : 52 }}
-        >
+        <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
+        <div className="board-toolbar">
           <KanbanHeaderBar
             t={t}
-            priorityBarVisible={filters.priorityBarVisible}
-            setPriorityBarVisible={filters.setPriorityBarVisible}
-            boardView={boardView}
-            setBoardView={setBoardView}
             searchInputRef={filters.searchInputRef}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -438,14 +458,10 @@ function KanbanBoardLoaded({
             labelsOpen={filters.labelsOpen}
             setLabelsOpen={filters.setLabelsOpen}
             onOpenMapa={() => board.setMapaOpen(true)}
-            onOpenDaily={openDailyModal}
             boardLabels={board.boardLabels}
             activeLabels={activeLabels}
             onToggleLabel={filters.toggleLabel}
           />
-          {filters.priorityBarVisible && (
-            <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
-          )}
         </div>
       </div>
 
@@ -543,6 +559,8 @@ function KanbanBoardLoaded({
             board.setModalMode("edit");
           }}
         />
+
+        <DailyIaFab onOpen={openDailyModal} />
 
         <BoardSummaryDock
         t={t}

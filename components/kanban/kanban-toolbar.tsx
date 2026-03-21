@@ -15,7 +15,6 @@ type KanbanToolbarProps = {
   labelsOpen: boolean;
   setLabelsOpen: Dispatch<SetStateAction<boolean>>;
   onOpenMapa: () => void;
-  onOpenDaily: () => void;
   boardLabels: string[];
   activeLabels: Set<string>;
   onToggleLabel: (label: string) => void;
@@ -34,7 +33,6 @@ export function KanbanToolbar({
   labelsOpen,
   setLabelsOpen,
   onOpenMapa,
-  onOpenDaily,
   boardLabels,
   activeLabels,
   onToggleLabel,
@@ -108,14 +106,6 @@ export function KanbanToolbar({
               </button>
               <button type="button" onClick={onOpenMapa} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                 {t("board.filters.mapButton")}
-              </button>
-              <button
-                type="button"
-                data-tour="board-daily"
-                onClick={onOpenDaily}
-                className="board-toolbar-btn-sm shrink-0 whitespace-nowrap"
-              >
-                {t("board.filters.dailyButton")}
               </button>
             </div>
           </div>

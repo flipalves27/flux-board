@@ -53,7 +53,7 @@ export function useBoardFilters({
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
-  const [priorityBarVisible, setPriorityBarVisible] = useState(false);
+  const [priorityBarVisible, setPriorityBarVisible] = useState(true);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
