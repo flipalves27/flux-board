@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import type { BoardData } from "@/app/board/[id]/page";
+import { useCallback, useRef } from "react";
+import { useBoardStore } from "@/stores/board-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
@@ -16,9 +16,7 @@ import { BoardSummaryDock } from "./board-summary-dock";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 
-interface KanbanBoardProps {
-  db: BoardData;
-  updateDb: (updater: (prev: BoardData) => BoardData) => void;
+export interface KanbanBoardProps {
   boardName: string;
   boardId: string;
   getHeaders: () => Record<string, string>;
@@ -28,9 +26,7 @@ interface KanbanBoardProps {
   directions: string[];
 }
 
-export function KanbanBoard({
-  db,
-  updateDb,
+function KanbanBoardLoaded({
   boardName,
   boardId,
   getHeaders,
@@ -40,6 +36,7 @@ export function KanbanBoard({
   directions,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
+  const db = useBoardStore((s) => s.db)!;
 
   const persistence = useBoardPersistence(boardId);
   const {
@@ -54,15 +51,12 @@ export function KanbanBoard({
   } = persistence;
 
   const board = useBoardState({
-    db,
-    updateDb,
     boardId,
     getHeaders,
     filterLabels,
     priorities,
     progresses,
     directions,
-    setActiveLabels,
   });
 
   const filters = useBoardFilters({
@@ -115,16 +109,35 @@ export function KanbanBoard({
     initialFocusRef: dailyCloseRef,
   });
 
-  const updateDirection = (cardId: string, dir: string) => {
-    updateDb((prev) => ({
-      ...prev,
-      cards: prev.cards.map((c) => (c.id === cardId ? { ...c, direction: c.direction === dir ? null : dir } : c)),
-    }));
-  };
+  const updateDirection = useCallback((cardId: string, dir: string) => {
+    useBoardStore.getState().updateDb((d) => {
+      const c = d.cards.find((x) => x.id === cardId);
+      if (!c) return;
+      c.direction = c.direction === dir ? null : dir;
+    });
+  }, []);
+
+  const onEditCardById = useCallback(
+    (id: string) => {
+      const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
+      if (c) {
+        board.setModalCard(c);
+        board.setModalMode("edit");
+      }
+    },
+    [board.setModalCard, board.setModalMode]
+  );
+
+  const onOpenDescById = useCallback(
+    (id: string) => {
+      const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
+      if (c) board.setDescModalCard(c);
+    },
+    [board.setDescModalCard]
+  );
 
   const overlayProps = buildKanbanOverlayModel({
     t,
-    updateDb,
     boardId,
     boardName,
     getHeaders,
@@ -157,7 +170,9 @@ export function KanbanBoard({
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           csvImportMode={board.csvImportMode}
-          setCsvImportMode={board.setCsvImportMode}
+          setCsvImportMode={(v) =>
+            board.setCsvImportMode(typeof v === "function" ? v(board.csvImportMode) : v)
+          }
           onImportCSV={board.handleImportCSV}
           onExportCSV={board.handleExportCSV}
         />
@@ -224,10 +239,7 @@ export function KanbanBoard({
           });
           board.setModalMode("new");
         }}
-        onEditCard={(c) => {
-          board.setModalCard(c);
-          board.setModalMode("edit");
-        }}
+        onEditCard={onEditCardById}
         onDeleteCard={(id) => board.setConfirmDelete({ type: "card", id, label: "" })}
         onRenameColumn={(b) => {
           board.setEditingColumnKey(b.key);
@@ -245,7 +257,7 @@ export function KanbanBoard({
             : undefined
         }
         onSetDirection={updateDirection}
-        onOpenDesc={(c) => board.setDescModalCard(c)}
+        onOpenDesc={onOpenDescById}
         onOpenAddColumn={() => {
           board.setEditingColumnKey(null);
           board.setNewColumnName("");
@@ -277,4 +289,10 @@ export function KanbanBoard({
       <KanbanBoardOverlays {...overlayProps} />
     </>
   );
+}
+
+export function KanbanBoard(props: KanbanBoardProps) {
+  const db = useBoardStore((s) => s.db);
+  if (!db) return null;
+  return <KanbanBoardLoaded {...props} />;
 }

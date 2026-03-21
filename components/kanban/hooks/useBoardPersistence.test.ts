@@ -2,38 +2,76 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useBoardPersistence } from "./useBoardPersistence";
 import { BOARD_VIEW_STORAGE_PREFIX, KANBAN_FILTERS_STORAGE_PREFIX } from "../kanban-constants";
+import { useFilterStore } from "@/stores/filter-store";
+import { useKanbanUiStore } from "@/stores/ui-store";
 
 describe("useBoardPersistence", () => {
   const boardId = "test-board-1";
-  const viewKey = `${BOARD_VIEW_STORAGE_PREFIX}${boardId}`;
-  const filterKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
+  const legacyFilterKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
+  const legacyViewKey = `${BOARD_VIEW_STORAGE_PREFIX}${boardId}`;
 
   beforeEach(() => {
+    useFilterStore.setState({ filtersByBoard: {} });
+    useKanbanUiStore.setState({
+      boardViewByBoard: {},
+      modalCard: null,
+      modalMode: "new",
+      mapaOpen: false,
+      confirmDelete: null,
+      addColumnOpen: false,
+      newColumnName: "",
+      editingColumnKey: null,
+      descModalCard: null,
+      csvImportMode: "replace",
+      csvImportConfirm: null,
+      dailyOpen: false,
+    });
+
+    const memLocal: Record<string, string> = {};
+    const memSession: Record<string, string> = {};
     vi.stubGlobal("localStorage", {
-      store: {} as Record<string, string>,
       getItem(k: string) {
-        return this.store[k] ?? null;
+        return memLocal[k] ?? null;
       },
       setItem(k: string, v: string) {
-        this.store[k] = v;
+        memLocal[k] = v;
       },
       removeItem(k: string) {
-        delete this.store[k];
+        delete memLocal[k];
       },
       clear() {
-        this.store = {};
+        Object.keys(memLocal).forEach((k) => delete memLocal[k]);
       },
-    });
+      length: 0,
+      key: () => null,
+    } as Storage);
+
+    vi.stubGlobal("sessionStorage", {
+      getItem(k: string) {
+        return memSession[k] ?? null;
+      },
+      setItem(k: string, v: string) {
+        memSession[k] = v;
+      },
+      removeItem(k: string) {
+        delete memSession[k];
+      },
+      clear() {
+        Object.keys(memSession).forEach((k) => delete memSession[k]);
+      },
+      length: 0,
+      key: () => null,
+    } as Storage);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("hydrates board view and filters from localStorage on mount", () => {
-    window.localStorage.setItem(viewKey, "timeline");
+  it("hydrates board view from legacy localStorage and filters from legacy localStorage into session-backed store", () => {
+    window.localStorage.setItem(legacyViewKey, "timeline");
     window.localStorage.setItem(
-      filterKey,
+      legacyFilterKey,
       JSON.stringify({
         activePrio: "Urgente",
         activeLabels: ["x"],
@@ -49,16 +87,13 @@ describe("useBoardPersistence", () => {
     expect(result.current.searchQuery).toBe("q");
   });
 
-  it("persists filter changes to localStorage", () => {
+  it("updates filter slice in store when search query changes", async () => {
     const { result } = renderHook(() => useBoardPersistence(boardId));
 
-    act(() => {
+    await act(async () => {
       result.current.setSearchQuery("hello");
     });
 
-    const raw = window.localStorage.getItem(filterKey);
-    expect(raw).toBeTruthy();
-    const parsed = JSON.parse(raw!);
-    expect(parsed.searchQuery).toBe("hello");
+    expect(useFilterStore.getState().filtersByBoard[boardId]?.searchQuery).toBe("hello");
   });
 });

@@ -36,12 +36,12 @@ type KanbanBoardCanvasProps = {
   activeCard: CardData | null | undefined;
   onToggleCollapse: (key: string) => void;
   onAddCard: (bucketKey: string) => void;
-  onEditCard: (c: CardData) => void;
+  onEditCard: (cardId: string) => void;
   onDeleteCard: (id: string) => void;
   onRenameColumn: (b: BucketConfig) => void;
   onDeleteColumn: ((key: string) => void) | undefined;
   onSetDirection: (cardId: string, dir: string) => void;
-  onOpenDesc: (c: CardData) => void;
+  onOpenDesc: (cardId: string) => void;
   onOpenAddColumn: () => void;
 };
 
@@ -201,7 +201,7 @@ export function KanbanBoardCanvas({
             {activeCard ? (
               <div className="scale-[1.02] shadow-[0_12px_32px_rgba(108,92,231,0.3)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
                 <KanbanCard
-                  card={activeCard}
+                  cardId={activeCard.id}
                   directions={directions}
                   dirColors={DIR_COLORS}
                   onEdit={() => {}}

@@ -1,37 +1,87 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import type { BoardData, CardData } from "@/app/board/[id]/page";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
+import type { CardData } from "@/app/board/[id]/page";
 import { apiGet } from "@/lib/api-client";
 import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDefinition } from "@/lib/okr-engine";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
+import { useBoardStore } from "@/stores/board-store";
+import { useFilterStore } from "@/stores/filter-store";
+import { useKanbanUiStore } from "@/stores/ui-store";
 import { useDailySession } from "./useDailySession";
 import { COLUMN_COLORS } from "../kanban-constants";
 import { daysUntilDueDate } from "../utils/days-until-due";
 
 type UseBoardStateArgs = {
-  db: BoardData;
-  updateDb: (updater: (prev: BoardData) => BoardData) => void;
   boardId: string;
   getHeaders: () => Record<string, string>;
   filterLabels: string[];
   priorities: string[];
   progresses: string[];
   directions: string[];
-  setActiveLabels: Dispatch<SetStateAction<Set<string>>>;
 };
 
 export function useBoardState({
-  db,
-  updateDb,
   boardId,
   getHeaders,
   filterLabels,
   priorities,
   progresses,
   directions,
-  setActiveLabels,
 }: UseBoardStateArgs) {
+  const db = useBoardStore((s) => s.db);
+  const updateDb = useBoardStore((s) => s.updateDb);
+
+  const {
+    modalCard,
+    setModalCard,
+    modalMode,
+    setModalMode,
+    mapaOpen,
+    setMapaOpen,
+    confirmDelete,
+    setConfirmDelete,
+    addColumnOpen,
+    setAddColumnOpen,
+    newColumnName,
+    setNewColumnName,
+    editingColumnKey,
+    setEditingColumnKey,
+    descModalCard,
+    setDescModalCard,
+    csvImportMode,
+    setCsvImportMode,
+    csvImportConfirm,
+    setCsvImportConfirm,
+  } = useKanbanUiStore(
+    useShallow((s) => ({
+      modalCard: s.modalCard,
+      setModalCard: s.setModalCard,
+      modalMode: s.modalMode,
+      setModalMode: s.setModalMode,
+      mapaOpen: s.mapaOpen,
+      setMapaOpen: s.setMapaOpen,
+      confirmDelete: s.confirmDelete,
+      setConfirmDelete: s.setConfirmDelete,
+      addColumnOpen: s.addColumnOpen,
+      setAddColumnOpen: s.setAddColumnOpen,
+      newColumnName: s.newColumnName,
+      setNewColumnName: s.setNewColumnName,
+      editingColumnKey: s.editingColumnKey,
+      setEditingColumnKey: s.setEditingColumnKey,
+      descModalCard: s.descModalCard,
+      setDescModalCard: s.setDescModalCard,
+      csvImportMode: s.csvImportMode,
+      setCsvImportMode: s.setCsvImportMode,
+      csvImportConfirm: s.csvImportConfirm,
+      setCsvImportConfirm: s.setCsvImportConfirm,
+    }))
+  );
+
+  if (!db) {
+    throw new Error("useBoardStore.db is null — board must be hydrated before useBoardState.");
+  }
   const t = useTranslations("kanban");
   const { pushToast } = useToast();
 
@@ -54,27 +104,6 @@ export function useBoardState({
     moved: false,
   });
   const [isPanning, setIsPanning] = useState(false);
-
-  const [modalCard, setModalCard] = useState<CardData | null>(null);
-  const [modalMode, setModalMode] = useState<"new" | "edit">("new");
-  const [mapaOpen, setMapaOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<{
-    type: "card" | "bucket";
-    id: string;
-    label: string;
-  } | null>(null);
-  const [addColumnOpen, setAddColumnOpen] = useState(false);
-  const [newColumnName, setNewColumnName] = useState("");
-  const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
-  const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
-
-  const [csvImportMode, setCsvImportMode] = useState<"replace" | "merge">("replace");
-  const [csvImportConfirm, setCsvImportConfirm] = useState<{
-    count: number;
-    cards: CardData[];
-    mode: "replace" | "merge";
-    sameIdCount: number;
-  } | null>(null);
 
   const currentQuarter = useMemo(() => {
     const now = new Date();
@@ -173,8 +202,6 @@ export function useBoardState({
   }, [okrProjections]);
 
   const dailySession = useDailySession({
-    db,
-    updateDb,
     boardId,
     getHeaders,
     directions,
@@ -187,17 +214,20 @@ export function useBoardState({
 
   const moveCard = useCallback(
     (cardId: string, newBucket: string, newIndex: number) => {
-      updateDb((prev) => {
-        const card = prev.cards.find((c) => c.id === cardId);
-        if (!card) return prev;
-        const withoutCard = prev.cards.filter((c) => c.id !== cardId);
+      updateDb((d) => {
+        const idx = d.cards.findIndex((c) => c.id === cardId);
+        if (idx === -1) return;
+        const card = d.cards[idx];
+        const withoutCard = d.cards.filter((c) => c.id !== cardId);
         const bucketCards = withoutCard
           .filter((c) => c.bucket === newBucket)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket });
-        bucketCards.forEach((c, i) => (c.order = i));
+        bucketCards.forEach((c, i) => {
+          c.order = i;
+        });
         const otherBuckets = withoutCard.filter((c) => c.bucket !== newBucket);
-        return { ...prev, cards: [...otherBuckets, ...bucketCards] };
+        d.cards = [...otherBuckets, ...bucketCards];
       });
     },
     [updateDb]
@@ -206,11 +236,11 @@ export function useBoardState({
   const reorderColumns = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (fromIndex === toIndex) return;
-      updateDb((prev) => {
-        const newOrder = [...prev.config.bucketOrder];
+      updateDb((d) => {
+        const newOrder = [...d.config.bucketOrder];
         const [removed] = newOrder.splice(fromIndex, 1);
         newOrder.splice(toIndex, 0, removed);
-        return { ...prev, config: { ...prev.config, bucketOrder: newOrder } };
+        d.config.bucketOrder = newOrder;
       });
     },
     [updateDb]
@@ -219,78 +249,58 @@ export function useBoardState({
   const saveColumn = useCallback(() => {
     const label = newColumnName.trim() || "Nova Coluna";
     if (editingColumnKey) {
-      updateDb((prev) => ({
-        ...prev,
-        config: {
-          ...prev.config,
-          bucketOrder: prev.config.bucketOrder.map((b) =>
-            b.key === editingColumnKey ? { ...b, label } : b
-          ),
-        },
-      }));
+      updateDb((d) => {
+        d.config.bucketOrder = d.config.bucketOrder.map((b) =>
+          b.key === editingColumnKey ? { ...b, label } : b
+        );
+      });
     } else {
       const key = `col_${Date.now()}`;
       const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
-      updateDb((prev) => ({
-        ...prev,
-        config: {
-          ...prev.config,
-          bucketOrder: [...prev.config.bucketOrder, { key, label, color }],
-        },
-      }));
+      updateDb((d) => {
+        d.config.bucketOrder.push({ key, label, color });
+      });
     }
     setNewColumnName("");
     setAddColumnOpen(false);
     setEditingColumnKey(null);
-  }, [buckets.length, editingColumnKey, newColumnName, updateDb]);
+  }, [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]);
 
   const deleteColumn = useCallback(
     (key: string) => {
       const fallbackKey = buckets.find((b) => b.key !== key)?.key;
-      updateDb((prev) => ({
-        ...prev,
-        cards: prev.cards.map((c) => (c.bucket === key && fallbackKey ? { ...c, bucket: fallbackKey } : c)),
-        config: {
-          ...prev.config,
-          bucketOrder: prev.config.bucketOrder.filter((b) => b.key !== key),
-          collapsedColumns: (prev.config.collapsedColumns || []).filter((k) => k !== key),
-        },
-      }));
+      updateDb((d) => {
+        d.cards.forEach((c) => {
+          if (c.bucket === key && fallbackKey) c.bucket = fallbackKey;
+        });
+        d.config.bucketOrder = d.config.bucketOrder.filter((b) => b.key !== key);
+        d.config.collapsedColumns = (d.config.collapsedColumns || []).filter((k) => k !== key);
+      });
       setConfirmDelete(null);
     },
-    [buckets, updateDb]
+    [buckets, updateDb, setConfirmDelete]
   );
 
   const toggleCollapsed = useCallback(
     (key: string) => {
-      const next = new Set(collapsed);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      updateDb((prev) => ({
-        ...prev,
-        config: {
-          ...prev.config,
-          collapsedColumns: [...next],
-        },
-      }));
+      updateDb((d) => {
+        const next = new Set(d.config.collapsedColumns || []);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        d.config.collapsedColumns = [...next];
+      });
     },
-    [collapsed, updateDb]
+    [updateDb]
   );
 
   const createLabel = useCallback(
     (label: string) => {
       const normalized = label.trim();
       if (!normalized) return;
-      updateDb((prev) => {
-        const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
-        if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return prev;
-        return {
-          ...prev,
-          config: {
-            ...prev.config,
-            labels: [...current, normalized],
-          },
-        };
+      updateDb((d) => {
+        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return;
+        d.config.labels = [...current, normalized];
       });
     },
     [filterLabels, updateDb]
@@ -298,36 +308,28 @@ export function useBoardState({
 
   const deleteLabel = useCallback(
     (label: string) => {
-      updateDb((prev) => {
-        const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
-        if (!current.includes(label)) return prev;
-        return {
-          ...prev,
-          cards: prev.cards.map((c) => ({
-            ...c,
-            tags: c.tags.filter((t) => t !== label),
-          })),
-          config: {
-            ...prev.config,
-            labels: current.filter((l) => l !== label),
-          },
-        };
+      updateDb((d) => {
+        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        if (!current.includes(label)) return;
+        d.cards.forEach((c) => {
+          c.tags = c.tags.filter((t) => t !== label);
+        });
+        d.config.labels = current.filter((l) => l !== label);
       });
-      setActiveLabels((prev) => {
-        const next = new Set(prev);
-        next.delete(label);
-        return next;
+      const prevLabels = useFilterStore.getState().filtersByBoard[boardId]?.activeLabels ?? [];
+      useFilterStore.getState().patchFilters(boardId, {
+        activeLabels: prevLabels.filter((l) => l !== label),
       });
     },
-    [filterLabels, setActiveLabels, updateDb]
+    [boardId, filterLabels, updateDb]
   );
 
   const handleTimelineDueDate = useCallback(
     (cardId: string, nextDue: string) => {
-      updateDb((prev) => ({
-        ...prev,
-        cards: prev.cards.map((c) => (c.id === cardId ? { ...c, dueDate: nextDue } : c)),
-      }));
+      updateDb((d) => {
+        const c = d.cards.find((x) => x.id === cardId);
+        if (c) c.dueDate = nextDue;
+      });
     },
     [updateDb]
   );
@@ -536,13 +538,13 @@ export function useBoardState({
         ordByBucket[bk] = ordByBucket[bk] || 0;
         card.order = ordByBucket[bk]++;
       });
-      updateDb((prev) => ({ ...prev, cards: imported }));
+      updateDb((d) => {
+        d.cards = imported;
+      });
     } else {
-      updateDb((prev) => {
-        const prevCards = Array.isArray(prev.cards) ? prev.cards : [];
-        const configKeys = Array.isArray(prev.config.bucketOrder)
-          ? prev.config.bucketOrder.map((b) => b.key)
-          : [];
+      updateDb((d) => {
+        const prevCards = Array.isArray(d.cards) ? d.cards : [];
+        const configKeys = Array.isArray(d.config.bucketOrder) ? d.config.bucketOrder.map((b) => b.key) : [];
         const prevExtraKeys = Array.from(new Set(prevCards.map((c) => c.bucket))).filter(
           (k) => !configKeys.includes(k)
         );
@@ -578,7 +580,7 @@ export function useBoardState({
           nextCards.push(...existingInBucket);
         });
 
-        return { ...prev, cards: nextCards };
+        d.cards = nextCards;
       });
     }
 

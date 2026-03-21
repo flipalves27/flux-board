@@ -1,18 +1,19 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import type { CardData } from "@/app/board/[id]/page";
+import { useBoardStore } from "@/stores/board-store";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useTranslations } from "next-intl";
 
 interface KanbanCardProps {
-  card: CardData;
+  cardId: string;
   directions: string[];
   dirColors: Record<string, string>;
-  onEdit: () => void;
-  onDelete: () => void;
-  onSetDirection: (dir: string) => void;
-  onOpenDesc?: () => void;
+  onEdit: (cardId: string) => void;
+  onDelete: (cardId: string) => void;
+  onSetDirection: (cardId: string, dir: string) => void;
+  onOpenDesc?: (cardId: string) => void;
   isDragging?: boolean;
 }
 
@@ -23,22 +24,31 @@ function daysRemaining(dueDate: string | null): number | null {
   return Math.ceil((due - today) / 86400000);
 }
 
-export function KanbanCard({
-  card,
+function KanbanCardInner({
+  cardId,
   directions,
-  dirColors,
+  dirColors: _dirColors,
   onEdit,
   onDelete,
   onSetDirection,
   onOpenDesc,
   isDragging = false,
 }: KanbanCardProps) {
+  const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
+
   const { attributes, listeners, setNodeRef } = useDraggable({
-    id: `card-${card.id}`,
-    data: { card, bucket: card.bucket },
+    id: `card-${cardId}`,
+    data: card ? { card, bucket: card.bucket } : { card: null, bucket: "" },
   });
 
   const t = useTranslations("kanban");
+
+  const handleEdit = useCallback(() => onEdit(cardId), [cardId, onEdit]);
+  const handleDelete = useCallback(() => onDelete(cardId), [cardId, onDelete]);
+  const handleOpenDesc = useCallback(() => onOpenDesc?.(cardId), [cardId, onOpenDesc]);
+  const handleSetDir = useCallback((dir: string) => onSetDirection(cardId, dir), [cardId, onSetDirection]);
+
+  if (!card) return null;
 
   const dr = daysRemaining(card.dueDate);
   const prioLabel = t(`cardModal.options.priority.${card.priority}`);
@@ -82,7 +92,7 @@ export function KanbanCard({
       aria-label={ariaLabel}
       onClick={(e) => {
         if (!(e.target as HTMLElement).closest(".dir-btn") && !(e.target as HTMLElement).closest(".card-delete")) {
-          onEdit();
+          handleEdit();
         }
       }}
       className={`bg-[var(--flux-surface-elevated)] border border-[var(--flux-border-default)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_rgba(108,92,231,0.18)] hover:border-[var(--flux-primary)]/50 ${
@@ -99,7 +109,7 @@ export function KanbanCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onOpenDesc();
+                  handleOpenDesc();
                 }}
                 className="card-desc-btn w-[22px] h-[22px] rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-primary)] hover:text-white hover:border-[var(--flux-primary)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
                 aria-label={t("card.tooltips.description")}
@@ -133,7 +143,7 @@ export function KanbanCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              handleDelete();
             }}
             className="card-delete w-4 h-4 rounded border-none bg-transparent text-[var(--flux-text-muted)] text-[10px] flex items-center justify-center opacity-35 hover:opacity-100 hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)]"
           >
@@ -151,14 +161,14 @@ export function KanbanCard({
         {card.desc}
       </div>
       <div className="flex flex-wrap gap-1.5 mb-2">
-        {card.tags.map((t) => (
+        {card.tags.map((tag) => (
           <span
-            key={t}
+            key={tag}
             className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--flux-surface-hover)] text-[var(--flux-text-muted)] ${
-              t === "Incidente" ? "bg-[rgba(253,167,223,0.15)] text-[var(--flux-accent)] border border-[rgba(253,167,223,0.35)] font-semibold" : ""
+              tag === "Incidente" ? "bg-[rgba(253,167,223,0.15)] text-[var(--flux-accent)] border border-[rgba(253,167,223,0.35)] font-semibold" : ""
             }`}
           >
-            {t}
+            {tag}
           </span>
         ))}
       </div>
@@ -209,7 +219,7 @@ export function KanbanCard({
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSetDirection(dk);
+                  handleSetDir(dk);
                 }}
               >
                 {dirLabel}
@@ -221,3 +231,5 @@ export function KanbanCard({
     </div>
   );
 }
+
+export const KanbanCard = memo(KanbanCardInner);

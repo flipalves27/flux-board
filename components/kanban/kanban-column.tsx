@@ -14,12 +14,12 @@ interface KanbanColumnProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   onAddCard: () => void;
-  onEditCard: (card: CardData) => void;
+  onEditCard: (cardId: string) => void;
   onDeleteCard: (id: string) => void;
   onRenameColumn?: () => void;
   onDeleteColumn?: () => void;
   onSetDirection: (cardId: string, dir: string) => void;
-  onOpenDesc?: (card: CardData) => void;
+  onOpenDesc?: (cardId: string) => void;
   directions: string[];
   dirColors: Record<string, string>;
 }
@@ -190,13 +190,13 @@ export function KanbanColumn({
             <div key={c.id} className="flex flex-col gap-1">
               <DroppableSlot id={`slot-${bucket.key}-${idx}`} />
               <KanbanCard
-                card={c}
+                cardId={c.id}
                 directions={directions}
                 dirColors={dirColors}
-                onEdit={() => onEditCard(c)}
-                onDelete={() => onDeleteCard(c.id)}
-                onSetDirection={(dir) => onSetDirection(c.id, dir)}
-                onOpenDesc={onOpenDesc ? () => onOpenDesc(c) : undefined}
+                onEdit={onEditCard}
+                onDelete={onDeleteCard}
+                onSetDirection={onSetDirection}
+                onOpenDesc={onOpenDesc}
               />
             </div>
           ))}

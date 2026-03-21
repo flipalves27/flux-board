@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
-import type { BoardData, CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
+import type { CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/[id]/page";
+import { useBoardStore } from "@/stores/board-store";
+import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
@@ -35,14 +37,10 @@ const DAILY_SESSION_WRITE_DEBOUNCE_MS = 400;
 const DAILY_INSIGHT_TIMEOUT_MS = 60000;
 
 export function useDailySession({
-  db,
-  updateDb,
   boardId,
   getHeaders,
   directions,
 }: {
-  db: BoardData;
-  updateDb: (updater: (prev: BoardData) => BoardData) => void;
   boardId: string;
   getHeaders: () => Record<string, string>;
   directions: string[];
@@ -50,9 +48,11 @@ export function useDailySession({
   const { pushToast } = useToast();
   const t = useTranslations("kanban");
 
-  const dailyInsights = Array.isArray(db.dailyInsights) ? db.dailyInsights : [];
+  const db = useBoardStore((s) => s.db);
+  const updateDb = useBoardStore((s) => s.updateDb);
+  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : [];
 
-  const [dailyOpen, setDailyOpen] = useState(false);
+  const dailyOpen = useKanbanUiStore((s) => s.dailyOpen);
 
   const [dailyTranscript, setDailyTranscript] = useState("");
   const [dailyFileName, setDailyFileName] = useState(t("daily.defaults.noAttachment"));
@@ -75,7 +75,9 @@ export function useDailySession({
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
   const dailyInFlightRef = useRef(false);
 
-  const closeDailyModal = useCallback(() => setDailyOpen(false), []);
+  const closeDailyModal = useCallback(() => {
+    useKanbanUiStore.getState().setDailyOpen(false);
+  }, []);
 
   const clearDailyInput = useCallback(() => {
     setDailyTranscript("");
@@ -124,8 +126,8 @@ export function useDailySession({
       setDailyTab("status");
     }
 
-    setDailyOpen(true);
-  }, [dailyGenerating]);
+    useKanbanUiStore.getState().setDailyOpen(true);
+  }, [dailyGenerating, t]);
 
   const openHistoryTab = useCallback(() => setDailyTab("historico"), []);
   const openStatusTab = useCallback(() => setDailyTab("status"), []);
@@ -245,12 +247,11 @@ export function useDailySession({
   const performDeleteDailyHistoryEntry = useCallback(
     (entryId: string) => {
       const nextEntry = dailyInsights.find((entry) => entry?.id && entry.id !== entryId);
-      updateDb((prev) => ({
-        ...prev,
-        dailyInsights: (Array.isArray(prev.dailyInsights) ? prev.dailyInsights : []).filter(
+      updateDb((d) => {
+        d.dailyInsights = (Array.isArray(d.dailyInsights) ? d.dailyInsights : []).filter(
           (entry) => entry?.id !== entryId
-        ),
-      }));
+        );
+      });
 
       if (dailyHistoryExpandedId === entryId) {
         setDailyHistoryExpandedId(nextEntry?.id ? String(nextEntry.id) : null);
@@ -312,8 +313,8 @@ export function useDailySession({
       }
 
       const nowIso = new Date().toISOString();
-      updateDb((prev) => {
-        const bucketOrder = prev.config.bucketOrder || [];
+      updateDb((d) => {
+        const bucketOrder = d.config.bucketOrder || [];
         const normalizeCardTitle = (value: string) =>
           String(value || "")
             .toLowerCase()
@@ -322,7 +323,7 @@ export function useDailySession({
             .replace(/\s+/g, " ")
             .trim();
 
-        const existingCardTitles = new Set(prev.cards.map((c) => normalizeCardTitle(c.title)));
+        const existingCardTitles = new Set(d.cards.map((c) => normalizeCardTitle(c.title)));
         const backlogKey =
           bucketOrder.find((b) => String(b.label || "").toLowerCase() === "backlog")?.key ||
           bucketOrder[0]?.key ||
@@ -349,7 +350,7 @@ export function useDailySession({
           const bucketKey = mapped ? mapped.key : backlogKey;
 
           if (!(bucketKey in nextOrderByBucket)) {
-            nextOrderByBucket[bucketKey] = prev.cards.filter((c) => c.bucket === bucketKey).length;
+            nextOrderByBucket[bucketKey] = d.cards.filter((c) => c.bucket === bucketKey).length;
           }
 
           const directionLower = String(s.direcionamento || "").toLowerCase();
@@ -392,16 +393,18 @@ export function useDailySession({
           createdCardsPayload.push(cardPayload);
         });
 
-        const nextDailyInsights = Array.isArray(prev.dailyInsights)
-          ? prev.dailyInsights.map((insightEntry) => {
-              if (!entryId || insightEntry?.id !== entryId) return insightEntry;
-              const previousCreated = Array.isArray(insightEntry.createdCards) ? insightEntry.createdCards : [];
-              return {
-                ...insightEntry,
-                createdCards: [...createdCardsPayload, ...previousCreated].slice(0, 100),
-              };
-            })
-          : prev.dailyInsights;
+        d.cards.push(...created);
+
+        if (Array.isArray(d.dailyInsights)) {
+          d.dailyInsights = d.dailyInsights.map((insightEntry) => {
+            if (!entryId || insightEntry?.id !== entryId) return insightEntry;
+            const previousCreated = Array.isArray(insightEntry.createdCards) ? insightEntry.createdCards : [];
+            return {
+              ...insightEntry,
+              createdCards: [...createdCardsPayload, ...previousCreated].slice(0, 100),
+            };
+          });
+        }
 
         window.setTimeout(() => {
           if (createdCount > 0 && existingCount > 0) {
@@ -427,8 +430,6 @@ export function useDailySession({
             description: t("daily.toasts.createCards.info.none.description"),
           });
         }, 0);
-
-        return { ...prev, cards: [...prev.cards, ...created], dailyInsights: nextDailyInsights };
       });
 
       if (entryId) {
@@ -627,10 +628,9 @@ export function useDailySession({
         return;
       }
 
-      updateDb((prev) => {
-        const current = Array.isArray(prev.dailyInsights) ? prev.dailyInsights : [];
-        const next = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
-        return { ...prev, dailyInsights: next };
+      updateDb((d) => {
+        const current = Array.isArray(d.dailyInsights) ? d.dailyInsights : [];
+        d.dailyInsights = [data.entry, ...current.filter((x) => x?.id !== data.entry?.id)].slice(0, 20);
       });
 
       if (opts?.alsoCreateCards && data?.entry?.id && data.entry) {
@@ -915,7 +915,7 @@ export function useDailySession({
 
       if (parsed.generating) {
         setDailyGenerating(true);
-        setDailyOpen(true);
+        useKanbanUiStore.getState().setDailyOpen(true);
         setDailyTab("status");
         // Sempre abrir colapsado no histórico (requisito do usuário).
         setDailyHistoryExpandedId(null);

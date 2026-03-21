@@ -14,6 +14,9 @@ import { BoardEmbedModal } from "@/components/board/board-embed-modal";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
+import { setBoardPersistenceHandler, useBoardStore } from "@/stores/board-store";
+import { useKanbanUiStore } from "@/stores/ui-store";
+import { useCopilotStore } from "@/stores/copilot-store";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -161,7 +164,7 @@ export default function BoardPage() {
   const t = useTranslations("board");
   const localeRoot = `/${locale}`;
   const [boardName, setBoardName] = useState("Board");
-  const [db, setDb] = useState<BoardData | null>(null);
+  const db = useBoardStore((s) => s.db);
   const [loading, setLoading] = useState(true);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
@@ -180,6 +183,8 @@ export default function BoardPage() {
       router.replace(`${localeRoot}/boards`);
       return;
     }
+    useKanbanUiStore.getState().resetForBoardSwitch();
+    useCopilotStore.getState().resetSessionUi();
     loadBoard();
   }, [isChecked, user, boardId, router, localeRoot]);
 
@@ -217,7 +222,7 @@ export default function BoardPage() {
               .map((d) => ({ docId: String(d.docId), title: d.title ? String(d.title) : undefined, excerpt: d.excerpt ? String(d.excerpt) : undefined }))
           : [],
       }));
-      setDb({
+      useBoardStore.getState().hydrate(boardId, {
         version: d.version || "2.0",
         lastUpdated: d.lastUpdated || "",
         cards,
@@ -247,7 +252,7 @@ export default function BoardPage() {
 
   const persist = useCallback(
     (data?: BoardData) => {
-      const toSave = data ?? db;
+      const toSave = data ?? useBoardStore.getState().db;
       if (!toSave) return;
       const payload = {
         ...toSave,
@@ -275,35 +280,31 @@ export default function BoardPage() {
               };
               if (!res.ok) throw new Error(data.error || "save");
               if (Array.isArray(data.cards)) {
-                setDb((prev) => {
-                  if (!prev) return null;
-                  const cards = data.cards!.map((c: CardData, i: number) => ({
-                    ...c,
-                    order: c.order ?? i,
-                    dueDate: c.dueDate ?? null,
-                    blockedBy: Array.isArray(c.blockedBy)
-                      ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
-                      : [],
-                    direction: c.direction ?? null,
-                    tags: Array.isArray(c.tags) ? c.tags : [],
-                    links: Array.isArray(c.links)
-                      ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim())
-                      : [],
-                    docRefs: Array.isArray(c.docRefs)
-                      ? c.docRefs
-                          .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
-                          .map((d) => ({
-                            docId: String(d.docId),
-                            title: d.title ? String(d.title) : undefined,
-                            excerpt: d.excerpt ? String(d.excerpt) : undefined,
-                          }))
-                      : [],
-                  }));
-                  return {
-                    ...prev,
-                    cards,
-                    lastUpdated: data.lastUpdated || prev.lastUpdated,
-                  };
+                const cards = data.cards!.map((c: CardData, i: number) => ({
+                  ...c,
+                  order: c.order ?? i,
+                  dueDate: c.dueDate ?? null,
+                  blockedBy: Array.isArray(c.blockedBy)
+                    ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
+                    : [],
+                  direction: c.direction ?? null,
+                  tags: Array.isArray(c.tags) ? c.tags : [],
+                  links: Array.isArray(c.links)
+                    ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim())
+                    : [],
+                  docRefs: Array.isArray(c.docRefs)
+                    ? c.docRefs
+                        .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
+                        .map((d) => ({
+                          docId: String(d.docId),
+                          title: d.title ? String(d.title) : undefined,
+                          excerpt: d.excerpt ? String(d.excerpt) : undefined,
+                        }))
+                    : [],
+                }));
+                useBoardStore.getState().updateDbSilent((d) => {
+                  d.cards = cards;
+                  if (data.lastUpdated) d.lastUpdated = data.lastUpdated;
                 });
               }
               if (saveRequestSeqRef.current !== requestSeq) return;
@@ -329,20 +330,13 @@ export default function BoardPage() {
         }
       }, 300);
     },
-    [db, boardId, getHeaders, t]
+    [boardId, getHeaders, t]
   );
 
-  const updateDb = useCallback(
-    (updater: (prev: BoardData) => BoardData) => {
-      setDb((prev) => {
-        if (!prev) return null;
-        const next = updater(prev);
-        persist(next);
-        return next;
-      });
-    },
-    [persist]
-  );
+  useEffect(() => {
+    setBoardPersistenceHandler(() => persist());
+    return () => setBoardPersistenceHandler(null);
+  }, [persist]);
 
   if (!user) return null;
   if (loading) {
@@ -417,8 +411,6 @@ export default function BoardPage() {
       </Header>
 
       <KanbanBoard
-        db={db}
-        updateDb={updateDb}
         boardName={boardName}
         boardId={boardId}
         getHeaders={getHeaders}
@@ -446,7 +438,9 @@ export default function BoardPage() {
         portal={db.portal}
         getHeaders={getHeaders}
         onSaved={(portal) => {
-          setDb((prev) => (prev ? { ...prev, portal } : null));
+          useBoardStore.getState().updateDbSilent((d) => {
+            d.portal = portal;
+          });
         }}
       />
 
@@ -459,12 +453,7 @@ export default function BoardPage() {
 
       <BoardEmbedModal open={embedOpen} onClose={() => setEmbedOpen(false)} boardId={boardId} getHeaders={getHeaders} />
 
-      <BoardCopilotPanel
-        boardId={boardId}
-        boardName={boardName}
-        getHeaders={getHeaders}
-        updateDb={updateDb}
-      />
+      <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
     </div>
   );
 }

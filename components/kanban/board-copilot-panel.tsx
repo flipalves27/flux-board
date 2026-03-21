@@ -1,19 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { BoardData, CardData } from "@/app/board/[id]/page";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useShallow } from "zustand/shallow";
+import type { CardData } from "@/app/board/[id]/page";
+import { useBoardStore } from "@/stores/board-store";
+import { useCopilotStore, type CopilotMessage, type CopilotTier } from "@/stores/copilot-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
-
-type CopilotTier = "free" | "pro" | "business";
-
-type CopilotMessage = {
-  id: string;
-  role: "user" | "assistant" | "tool";
-  content: string;
-  createdAt: string;
-  meta?: Record<string, unknown>;
-};
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -25,7 +18,6 @@ type BoardCopilotPanelProps = {
   boardId: string;
   boardName: string;
   getHeaders: () => Record<string, string>;
-  updateDb: (updater: (prev: BoardData) => BoardData) => void;
 };
 
 type WebSpeechRecognitionInstance = {
@@ -71,20 +63,57 @@ function parseEventStreamFrame(frame: string): { event: string; data: unknown } 
   }
 }
 
-export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: BoardCopilotPanelProps) {
+export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopilotPanelProps) {
   const { pushToast } = useToast();
   const { user } = useAuth();
 
-  const [open, setOpen] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [tier, setTier] = useState<CopilotTier | null>(null);
-  const [freeDemoRemaining, setFreeDemoRemaining] = useState<number | null>(null);
-  const [messages, setMessages] = useState<CopilotMessage[]>([]);
-  const [draft, setDraft] = useState("");
-  const [voiceListening, setVoiceListening] = useState(false);
-  const [voiceInterim, setVoiceInterim] = useState("");
-  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const {
+    open,
+    toggleOpen,
+    setOpen,
+    loadingHistory,
+    setLoadingHistory,
+    generating,
+    setGenerating,
+    tier,
+    setTier,
+    freeDemoRemaining,
+    setFreeDemoRemaining,
+    messages,
+    setMessages,
+    draft,
+    setDraft,
+    voiceListening,
+    setVoiceListening,
+    voiceInterim,
+    setVoiceInterim,
+    voiceError,
+    setVoiceError,
+  } = useCopilotStore(
+    useShallow((s) => ({
+      open: s.open,
+      toggleOpen: s.toggleOpen,
+      setOpen: s.setOpen,
+      loadingHistory: s.loadingHistory,
+      setLoadingHistory: s.setLoadingHistory,
+      generating: s.generating,
+      setGenerating: s.setGenerating,
+      tier: s.tier,
+      setTier: s.setTier,
+      freeDemoRemaining: s.freeDemoRemaining,
+      setFreeDemoRemaining: s.setFreeDemoRemaining,
+      messages: s.messages,
+      setMessages: s.setMessages,
+      draft: s.draft,
+      setDraft: s.setDraft,
+      voiceListening: s.voiceListening,
+      setVoiceListening: s.setVoiceListening,
+      voiceInterim: s.voiceInterim,
+      setVoiceInterim: s.setVoiceInterim,
+      voiceError: s.voiceError,
+      setVoiceError: s.setVoiceError,
+    }))
+  );
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -107,9 +136,9 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
           headers: getHeaders(),
         });
         const data = (await res.json().catch(() => ({}))) as Partial<CopilotHistoryResponse>;
-        if (!res.ok) throw new Error(String((data as any)?.error || "Erro ao carregar histórico"));
+        if (!res.ok) throw new Error(String((data as { error?: string })?.error || "Erro ao carregar histórico"));
         if (cancelled) return;
-        setTier((data.tier as any) || null);
+        setTier((data.tier as CopilotTier) || null);
         setFreeDemoRemaining(typeof data.freeDemoRemaining === "number" ? data.freeDemoRemaining : null);
         setMessages(Array.isArray(data.messages) ? data.messages : []);
       } catch (err) {
@@ -123,7 +152,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     return () => {
       cancelled = true;
     };
-  }, [open, boardId, getHeaders, pushToast]);
+  }, [open, boardId, getHeaders, pushToast, setFreeDemoRemaining, setLoadingHistory, setMessages, setTier]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,109 +164,113 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     };
   }, []);
 
-  const streamCopilot = useCallback(async (userMessage: string) => {
-    setGenerating(true);
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const streamCopilot = useCallback(
+    async (userMessage: string) => {
+      setGenerating(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    const userMsg: CopilotMessage = {
-      id: `u_${Date.now()}`,
-      role: "user",
-      content: userMessage,
-      createdAt: new Date().toISOString(),
-    };
-
-    const assistantId = `a_${Date.now()}`;
-    const assistantMsg: CopilotMessage = {
-      id: assistantId,
-      role: "assistant",
-      content: "",
-      createdAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMsg, assistantMsg]);
-
-    try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/copilot`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify({ message: userMessage }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as any;
-        throw new Error(data?.error || `Erro ${res.status}`);
-      }
-
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("Sem stream no response.");
-
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-
-      const onEvent = (event: string, data: any) => {
-        if (event === "assistant_delta") {
-          const delta = typeof data?.text === "string" ? data.text : "";
-          if (!delta) return;
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantId ? { ...m, content: `${m.content}${delta}` } : m))
-          );
-        }
-
-        if (event === "chat_persisted" && tier === "free") {
-          setFreeDemoRemaining((prev) => {
-            if (typeof prev !== "number") return prev;
-            return Math.max(0, prev - 1);
-          });
-        }
-
-        if (event === "tool_result" && data?.message) {
-          setMessages((prev) => {
-            // Mantém curto: apenas adiciona quando não for uma tool flood.
-            const toolMsg: CopilotMessage = {
-              id: `tool_${Date.now()}_${Math.random().toString(16).slice(2, 5)}`,
-              role: "tool",
-              content: String(data.message || ""),
-              createdAt: new Date().toISOString(),
-            };
-            return [...prev, toolMsg].slice(-120);
-          });
-        }
-
-        if (event === "board_update" && Array.isArray(data?.cards)) {
-          const cards = data.cards as CardData[];
-          updateDb((prev) => ({ ...prev, cards }));
-        }
-
-        if (event === "status" && data?.phase === "started") {
-          // noop
-        }
+      const userMsg: CopilotMessage = {
+        id: `u_${Date.now()}`,
+        role: "user",
+        content: userMessage,
+        createdAt: new Date().toISOString(),
       };
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      const assistantId = `a_${Date.now()}`;
+      const assistantMsg: CopilotMessage = {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        createdAt: new Date().toISOString(),
+      };
 
-        const frames = buffer.split("\n\n");
-        buffer = frames.pop() || "";
-        for (const frame of frames) {
-          const parsed = parseEventStreamFrame(frame);
-          if (!parsed) continue;
-          onEvent(parsed.event, parsed.data);
+      setMessages((prev) => [...prev, userMsg, assistantMsg]);
+
+      try {
+        const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/copilot`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({ message: userMessage }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(errBody?.error || `Erro ${res.status}`);
         }
+
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("Sem stream no response.");
+
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        const onEvent = (event: string, data: { text?: string; message?: unknown; cards?: CardData[]; phase?: string }) => {
+          if (event === "assistant_delta") {
+            const delta = typeof data?.text === "string" ? data.text : "";
+            if (!delta) return;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, content: `${m.content}${delta}` } : m))
+            );
+          }
+
+          if (event === "chat_persisted" && useCopilotStore.getState().tier === "free") {
+            setFreeDemoRemaining((prev) => {
+              if (typeof prev !== "number") return prev;
+              return Math.max(0, prev - 1);
+            });
+          }
+
+          if (event === "tool_result" && data?.message) {
+            setMessages((prev) => {
+              const toolMsg: CopilotMessage = {
+                id: `tool_${Date.now()}_${Math.random().toString(16).slice(2, 5)}`,
+                role: "tool",
+                content: String(data.message || ""),
+                createdAt: new Date().toISOString(),
+              };
+              return [...prev, toolMsg].slice(-120);
+            });
+          }
+
+          if (event === "board_update" && Array.isArray(data?.cards)) {
+            const cards = data.cards as CardData[];
+            useBoardStore.getState().updateDb((d) => {
+              d.cards = cards;
+            });
+          }
+
+          if (event === "status" && data?.phase === "started") {
+            // noop
+          }
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const frames = buffer.split("\n\n");
+          buffer = frames.pop() || "";
+          for (const frame of frames) {
+            const parsed = parseEventStreamFrame(frame);
+            if (!parsed) continue;
+            onEvent(parsed.event, parsed.data as { text?: string; message?: unknown; cards?: CardData[]; phase?: string });
+          }
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Erro interno ao gerar.";
+        pushToast({ kind: "error", title: "Copiloto", description: message });
+      } finally {
+        setGenerating(false);
+        setDraft("");
+        abortRef.current = null;
+        endRef.current?.scrollIntoView({ behavior: "smooth" });
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro interno ao gerar.";
-      pushToast({ kind: "error", title: "Copiloto", description: message });
-    } finally {
-      setGenerating(false);
-      setDraft("");
-      abortRef.current = null;
-      endRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [boardId, freeDemoRemaining, getHeaders, pushToast, tier, updateDb]);
+    },
+    [boardId, getHeaders, pushToast, setDraft, setFreeDemoRemaining, setGenerating, setMessages]
+  );
 
   const stopVoice = useCallback(() => {
     try {
@@ -248,7 +281,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     recognitionRef.current = null;
     setVoiceListening(false);
     setVoiceInterim("");
-  }, []);
+  }, [setVoiceInterim, setVoiceListening]);
 
   useEffect(() => {
     if (!open) stopVoice();
@@ -319,29 +352,36 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
       setVoiceError("Não foi possível iniciar o microfone.");
       stopVoice();
     }
-  }, [canSend, generating, stopVoice, streamCopilot]);
+  }, [
+    canSend,
+    generating,
+    setVoiceError,
+    setVoiceInterim,
+    setVoiceListening,
+    stopVoice,
+    streamCopilot,
+  ]);
 
-  const freeBanner = tier === "free" && freeDemoRemaining !== null ? (
-    <div className="px-3 py-2 rounded-[10px] border border-[rgba(255,217,61,0.25)] bg-[rgba(255,217,61,0.10)] mb-3">
-      <div className="text-xs font-semibold text-[var(--flux-warning)]">
-        Modo demo: {freeDemoRemaining} mensagem(ns) restante(s).
+  const freeBanner =
+    tier === "free" && freeDemoRemaining !== null ? (
+      <div className="px-3 py-2 rounded-[10px] border border-[rgba(255,217,61,0.25)] bg-[rgba(255,217,61,0.10)] mb-3">
+        <div className="text-xs font-semibold text-[var(--flux-warning)]">
+          Modo demo: {freeDemoRemaining} mensagem(ns) restante(s).
+        </div>
+        <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+          Faça upgrade para Pro/Business para usar o Copiloto ilimitadamente.
+        </div>
       </div>
-      <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-        Faça upgrade para Pro/Business para usar o Copiloto ilimitadamente.
-      </div>
-    </div>
-  ) : null;
+    ) : null;
 
   return (
     <>
       <button
         type="button"
         className={`fixed z-[470] transition-all duration-200 active:scale-[0.98] ${
-          open
-            ? "right-[calc(min(440px,92vw)+16px)] top-[112px]"
-            : "right-4 top-[112px]"
+          open ? "right-[calc(min(440px,92vw)+16px)] top-[112px]" : "right-4 top-[112px]"
         }`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => toggleOpen()}
         aria-expanded={open}
       >
         <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,rgba(108,92,231,0.22),rgba(0,210,211,0.14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[0_10px_26px_-10px_rgba(108,92,231,0.55)] backdrop-blur-md hover:border-[var(--flux-primary)]">
@@ -367,7 +407,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
               <div className="min-w-0">
                 <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate">Copiloto</div>
                 <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
-                  {boardName || "Board"}{user?.username ? ` • ${user.username}` : ""}
+                  {boardName || "Board"}
+                  {user?.username ? ` • ${user.username}` : ""}
                 </div>
               </div>
               <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => setOpen(false)}>
@@ -385,7 +426,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
                   <div className="space-y-2">
                     {messages.length === 0 ? (
                       <div className="text-xs text-[var(--flux-text-muted)]">
-                        Envie uma mensagem, por exemplo: “Quais cards estão parados há mais de 5 dias?” ou “Resuma o progresso desta semana”.
+                        Envie uma mensagem, por exemplo: “Quais cards estão parados há mais de 5 dias?” ou “Resuma o progresso desta
+                        semana”.
                       </div>
                     ) : (
                       messages.map((m) => (
@@ -435,9 +477,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
                   </button>
                 </div>
               )}
-              {voiceError ? (
-                <div className="mb-2 text-[11px] text-[#F97373]">{voiceError}</div>
-              ) : null}
+              {voiceError ? <div className="mb-2 text-[11px] text-[#F97373]">{voiceError}</div> : null}
 
               <div className="flex gap-2">
                 <textarea
@@ -491,4 +531,3 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, updateDb }: 
     </>
   );
 }
-

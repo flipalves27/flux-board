@@ -2,6 +2,7 @@
 
 import type { RefObject } from "react";
 import type { BoardData, CardData } from "@/app/board/[id]/page";
+import { useBoardStore } from "@/stores/board-store";
 import { CardModal } from "./card-modal";
 import { DescModal } from "./desc-modal";
 import { DailyInsightsPanel, type DailyInsightsPanelProps } from "./DailyInsightsPanel";
@@ -23,7 +24,6 @@ type BoardBuckets = BoardData["config"]["bucketOrder"];
 
 export type KanbanBoardOverlaysProps = {
   t: KanbanT;
-  updateDb: (updater: (prev: BoardData) => BoardData) => void;
   boardId: string;
   boardName: string;
   getHeaders: () => Record<string, string>;
@@ -68,7 +68,6 @@ export type KanbanBoardOverlaysProps = {
 
 export function KanbanBoardOverlays({
   t,
-  updateDb,
   boardId,
   boardName,
   getHeaders,
@@ -110,6 +109,8 @@ export function KanbanBoardOverlays({
   dailyOpen,
   dailyPanelProps,
 }: KanbanBoardOverlaysProps) {
+  const updateDb = useBoardStore((s) => s.updateDb);
+
   return (
     <>
       {modalCard && (
@@ -128,30 +129,26 @@ export function KanbanBoardOverlays({
           peerCards={cards.filter((c) => c.id && c.id !== modalCard.id)}
           onClose={() => setModalCard(null)}
           onSave={(updated) => {
-            updateDb((prev) => {
+            updateDb((d) => {
               if (modalMode === "new") {
-                return {
-                  ...prev,
-                  cards: [...prev.cards, { ...updated, order: prev.cards.filter((c) => c.bucket === updated.bucket).length }],
-                };
+                d.cards.push({
+                  ...updated,
+                  order: d.cards.filter((c) => c.bucket === updated.bucket).length,
+                });
+              } else {
+                const i = d.cards.findIndex((c) => c.id === updated.id);
+                if (i >= 0) d.cards[i] = { ...d.cards[i], ...updated };
               }
-              return {
-                ...prev,
-                cards: prev.cards.map((c) => (c.id === updated.id ? updated : c)),
-              };
             });
             setModalCard(null);
           }}
           onDelete={(id) => {
-            updateDb((prev) => ({
-              ...prev,
-              cards: prev.cards
-                .filter((c) => c.id !== id)
-                .map((c) => ({
-                  ...c,
-                  blockedBy: (c.blockedBy || []).filter((bid) => bid !== id),
-                })),
-            }));
+            updateDb((d) => {
+              d.cards = d.cards.filter((c) => c.id !== id);
+              d.cards.forEach((c) => {
+                if (c.blockedBy?.length) c.blockedBy = c.blockedBy.filter((bid) => bid !== id);
+              });
+            });
             setModalCard(null);
           }}
         />
@@ -162,10 +159,10 @@ export function KanbanBoardOverlays({
           card={descModalCard}
           onClose={() => setDescModalCard(null)}
           onSave={(cardId, desc) => {
-            updateDb((prev) => ({
-              ...prev,
-              cards: prev.cards.map((c) => (c.id === cardId ? { ...c, desc } : c)),
-            }));
+            updateDb((d) => {
+              const c = d.cards.find((x) => x.id === cardId);
+              if (c) c.desc = desc;
+            });
             setDescModalCard(null);
           }}
         />
@@ -175,7 +172,11 @@ export function KanbanBoardOverlays({
         open={mapaOpen}
         onClose={() => setMapaOpen(false)}
         mapaProducao={mapaProducao || []}
-        onSave={(arr) => updateDb((prev) => ({ ...prev, mapaProducao: arr }))}
+        onSave={(arr) =>
+          updateDb((d) => {
+            d.mapaProducao = arr;
+          })
+        }
       />
 
       {addColumnOpen && (
@@ -258,15 +259,12 @@ export function KanbanBoardOverlays({
                 onClick={() => {
                   if (confirmDelete.type === "card") {
                     const removed = confirmDelete.id;
-                    updateDb((prev) => ({
-                      ...prev,
-                      cards: prev.cards
-                        .filter((c) => c.id !== removed)
-                        .map((c) => ({
-                          ...c,
-                          blockedBy: (c.blockedBy || []).filter((bid) => bid !== removed),
-                        })),
-                    }));
+                    updateDb((d) => {
+                      d.cards = d.cards.filter((c) => c.id !== removed);
+                      d.cards.forEach((c) => {
+                        if (c.blockedBy?.length) c.blockedBy = c.blockedBy.filter((bid) => bid !== removed);
+                      });
+                    });
                   } else {
                     deleteColumn(confirmDelete.id);
                   }

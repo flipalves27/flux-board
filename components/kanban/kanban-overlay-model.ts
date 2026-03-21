@@ -77,7 +77,6 @@ type BoardState = {
 
 export function buildKanbanOverlayModel(args: {
   t: KanbanBoardOverlaysProps["t"];
-  updateDb: KanbanBoardOverlaysProps["updateDb"];
   boardId: string;
   boardName: string;
   getHeaders: KanbanBoardOverlaysProps["getHeaders"];
@@ -93,7 +92,7 @@ export function buildKanbanOverlayModel(args: {
   dailyDialogRef: RefObject<HTMLDivElement | null>;
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
 }): KanbanBoardOverlaysProps {
-  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, mapaProducao, t, updateDb } = args;
+  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, mapaProducao, t } = args;
   const d = board.dailySession;
 
   const dailyPanelProps: DailyInsightsPanelProps = {
@@ -143,7 +142,6 @@ export function buildKanbanOverlayModel(args: {
 
   return {
     t,
-    updateDb,
     boardId,
     boardName,
     getHeaders,
