@@ -224,9 +224,23 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         description={t("cardModal.sections.content.description")}
       >
         <div>
-          <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-            {t("cardModal.fields.title.label")}
-          </label>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
+              {t("cardModal.fields.title.label")}
+            </label>
+            <span
+              className={`font-mono text-[10px] tabular-nums transition-all duration-200 ${
+                title.length === 0
+                  ? "opacity-0"
+                  : title.length > 80
+                  ? "text-[var(--flux-warning)] opacity-100"
+                  : "text-[var(--flux-text-muted)]/45 opacity-100"
+              }`}
+              aria-live="polite"
+            >
+              {title.length}
+            </span>
+          </div>
           <input
             type="text"
             value={title}
@@ -518,6 +532,13 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
       <CardModalSection
         title={t("cardModal.sections.dependencies.title")}
         description={t("cardModal.sections.dependencies.description")}
+        headerRight={
+          blockedBy.length > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-[var(--flux-warning-alpha-12)] border border-[var(--flux-warning-alpha-35)] px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--flux-warning)]">
+              {blockedBy.length}
+            </span>
+          ) : undefined
+        }
       >
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
@@ -574,6 +595,13 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
       <CardModalSection
         title={t("cardModal.sections.labels.title")}
         description={t("cardModal.sections.labels.description")}
+        headerRight={
+          tags.size > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-[var(--flux-primary-alpha-18)] border border-[var(--flux-primary-alpha-35)] px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--flux-primary-light)]">
+              {tags.size}
+            </span>
+          ) : undefined
+        }
       >
         <SmartEnrichFieldShell
           active={Boolean(smartEnrichPending?.has("tags"))}

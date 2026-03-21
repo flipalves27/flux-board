@@ -922,6 +922,12 @@
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
+  .card-modal-tab-panel-in {
+    animation: cardModalTabIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .card-modal-footer-enter {
+    animation: cardModalFooterEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
   .modal-overlay-animate {
     animation: modalOverlayFade 0.28s ease forwards;
@@ -965,10 +971,34 @@
   }
 }
 
+@keyframes cardModalTabIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardModalFooterEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-modal-backdrop,
   .card-modal-content,
-  .card-modal-accent {
+  .card-modal-accent,
+  .card-modal-tab-panel-in,
+  .card-modal-footer-enter {
     animation: none !important;
   }
   .card-modal-content {
