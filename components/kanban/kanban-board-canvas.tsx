@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, RefObject } from "react";
+import { useEffect, type ComponentProps, type RefObject } from "react";
 import { DndContext, DragOverlay, type CollisionDetection, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
@@ -58,6 +58,8 @@ type KanbanBoardCanvasProps = {
     patch: Partial<Pick<CardData, "priority" | "bucket">>
   ) => void;
   onDuplicateCard: (cardId: string) => void;
+  /** Coluna com maior visibilidade no scroll (presença em tempo real). */
+  onVisibleColumnKeyChange?: (columnKey: string | null) => void;
 };
 
 export function KanbanBoardCanvas({
@@ -99,7 +101,41 @@ export function KanbanBoardCanvas({
   onOpenAddColumn,
   onPatchCard,
   onDuplicateCard,
+  onVisibleColumnKeyChange,
 }: KanbanBoardCanvasProps) {
+  useEffect(() => {
+    if (boardView !== "kanban" || !onVisibleColumnKeyChange) return;
+    const root = boardScrollRef.current;
+    if (!root) return;
+
+    let cancelled = false;
+    let io: IntersectionObserver | null = null;
+    const raf = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const cols = root.querySelectorAll<HTMLElement>("[data-flux-column-key]");
+      if (!cols.length) return;
+      io = new IntersectionObserver(
+        (entries) => {
+          let best: { key: string; ratio: number } | null = null;
+          for (const e of entries) {
+            const key = e.target.getAttribute("data-flux-column-key");
+            if (!key) continue;
+            if (!best || e.intersectionRatio > best.ratio) best = { key, ratio: e.intersectionRatio };
+          }
+          if (best && best.ratio > 0.04) onVisibleColumnKeyChange(best.key);
+        },
+        { root, rootMargin: "0px", threshold: [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1] }
+      );
+      cols.forEach((c) => io?.observe(c));
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      io?.disconnect();
+    };
+  }, [boardScrollRef, boardView, buckets, onVisibleColumnKeyChange]);
+
   return (
     <div
       ref={boardScrollRef}

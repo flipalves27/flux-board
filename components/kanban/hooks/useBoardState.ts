@@ -20,6 +20,9 @@ type UseBoardStateArgs = {
   priorities: string[];
   progresses: string[];
   directions: string[];
+  /** Colunas afetadas após movimentação de cards — colaboração em tempo real. */
+  onAfterCardBucketsChange?: (bucketKeys: string[]) => void;
+  onAfterColumnReorder?: () => void;
 };
 
 export function useBoardState({
@@ -29,6 +32,8 @@ export function useBoardState({
   priorities,
   progresses,
   directions,
+  onAfterCardBucketsChange,
+  onAfterColumnReorder,
 }: UseBoardStateArgs) {
   const db = useBoardStore((s) => s.db);
   const updateDb = useBoardStore((s) => s.updateDb);
@@ -214,6 +219,7 @@ export function useBoardState({
 
   const moveCard = useCallback(
     (cardId: string, newBucket: string, newIndex: number) => {
+      const oldBucket = db.cards.find((c) => c.id === cardId)?.bucket;
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
         if (idx === -1) return;
@@ -229,8 +235,10 @@ export function useBoardState({
         const otherBuckets = withoutCard.filter((c) => c.bucket !== newBucket);
         d.cards = [...otherBuckets, ...bucketCards];
       });
+      const buckets = [newBucket, ...(oldBucket && oldBucket !== newBucket ? [oldBucket] : [])];
+      onAfterCardBucketsChange?.([...new Set(buckets)]);
     },
-    [updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb]
   );
 
   /** Move vários cards na ordem dada para `newBucket` em `insertIndex` (0 = topo). */
@@ -238,6 +246,13 @@ export function useBoardState({
     (orderedIds: string[], newBucket: string, insertIndex: number) => {
       if (orderedIds.length === 0) return;
       const idSet = new Set(orderedIds);
+      const fromBuckets = [
+        ...new Set(
+          orderedIds
+            .map((id) => db.cards.find((c) => c.id === id)?.bucket)
+            .filter((k): k is string => Boolean(k))
+        ),
+      ];
       updateDb((d) => {
         const moving = orderedIds
           .map((id) => d.cards.find((c) => c.id === id))
@@ -256,8 +271,9 @@ export function useBoardState({
         const otherBuckets = without.filter((c) => c.bucket !== newBucket);
         d.cards = [...otherBuckets, ...bucketCards];
       });
+      onAfterCardBucketsChange?.([...new Set([...fromBuckets, newBucket])]);
     },
-    [updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb]
   );
 
   const reorderColumns = useCallback(
@@ -269,8 +285,9 @@ export function useBoardState({
         newOrder.splice(toIndex, 0, removed);
         d.config.bucketOrder = newOrder;
       });
+      onAfterColumnReorder?.();
     },
-    [updateDb]
+    [onAfterColumnReorder, updateDb]
   );
 
   const saveColumn = useCallback(() => {

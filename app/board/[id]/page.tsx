@@ -26,6 +26,7 @@ import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import { BoardProductTour, type BoardProductTourHandle } from "@/components/board/board-product-tour";
+import { BoardPresenceAvatars } from "@/components/kanban/board-presence-avatars";
 
 const FILTER_LABELS = [
   "Comercial",
@@ -400,6 +401,7 @@ export default function BoardPage() {
             boardTourHeader
           >
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <BoardPresenceAvatars />
               {tourStep !== null && (
                 <button
                   type="button"
@@ -484,6 +486,7 @@ export default function BoardPage() {
             progresses={PROGRESSES}
             directions={DIRECTIONS}
             productTourExpandFilters={tourExpandFilters}
+            allowExternalMerge={saveStatus !== "saving"}
           />
         </div>
       </DataFadeIn>

@@ -863,6 +863,13 @@
       "loadError": "Erro ao carregar board.",
       "saveError": "Falha ao salvar alterações. Verifique sua conexão e tente novamente."
     },
+    "collab": {
+      "presenceAria": "Pessoas neste board",
+      "peerTooltipWithColumn": "{name} · coluna: {column}",
+      "live": "Colaboração em tempo real ativa",
+      "pollingHint": "Tempo real indisponível; o board é atualizado periodicamente.",
+      "remoteLock": "Card sendo editado por {name}"
+    },
     "productTour": {
       "skip": "Pular tour",
       "start": "Tour guiado",

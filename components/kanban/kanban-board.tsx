@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { useBoardState } from "./hooks/useBoardState";
+import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
 import { KanbanHeaderBar } from "./kanban-header-bar";
@@ -97,6 +98,8 @@ export interface KanbanBoardProps {
   directions: string[];
   /** Expande filtros para o passo do tour (Daily Insights). */
   productTourExpandFilters?: boolean;
+  /** Quando false, polling remoto não sobrescreve o board (ex.: salvando). */
+  allowExternalMerge?: boolean;
 }
 
 function KanbanBoardLoaded({
@@ -108,6 +111,7 @@ function KanbanBoardLoaded({
   progresses,
   directions,
   productTourExpandFilters,
+  allowExternalMerge = true,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
   const router = useRouter();
@@ -118,6 +122,20 @@ function KanbanBoardLoaded({
   const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
   const updateDb = useBoardStore((s) => s.updateDb);
+
+  const [visibleColumnKey, setVisibleColumnKey] = useState<string | null>(null);
+  const onVisibleColumnKeyChange = useCallback((key: string | null) => {
+    setVisibleColumnKey(key);
+  }, []);
+
+  const collab = useBoardRealtime({
+    boardId,
+    getHeaders,
+    userId: user?.id ?? "",
+    displayName: (user?.name?.trim() || user?.username || "").trim(),
+    allowExternalMerge,
+    visibleColumnKey,
+  });
 
   const persistence = useBoardPersistence(boardId);
   const {
@@ -144,6 +162,8 @@ function KanbanBoardLoaded({
     priorities,
     progresses,
     directions,
+    onAfterCardBucketsChange: collab.notifyBucketsChanged,
+    onAfterColumnReorder: collab.notifyColumnReorder,
   });
 
   const filters = useBoardFilters({
@@ -511,6 +531,7 @@ function KanbanBoardLoaded({
           }}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
+          onVisibleColumnKeyChange={onVisibleColumnKeyChange}
         />
 
         <BoardSummaryDock

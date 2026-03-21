@@ -862,6 +862,13 @@
       "loadError": "Error loading board.",
       "saveError": "Failed to save changes. Check your connection and try again."
     },
+    "collab": {
+      "presenceAria": "People on this board",
+      "peerTooltipWithColumn": "{name} · column: {column}",
+      "live": "Real-time collaboration active",
+      "pollingHint": "Real-time unavailable; the board refreshes periodically.",
+      "remoteLock": "Card is being edited by {name}"
+    },
     "productTour": {
       "skip": "Skip tour",
       "start": "Guided tour",

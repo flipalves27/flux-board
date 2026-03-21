@@ -1,6 +1,10 @@
 "use client";
 
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useTranslations as useCollabTranslations } from "next-intl";
+import { useAuth } from "@/context/auth-context";
+import { apiFetch, getApiHeaders } from "@/lib/api-client";
+import { useBoardCollabStore } from "@/stores/board-collab-store";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { CardModalAiOverlay } from "@/components/kanban/card-modal-ai-overlay";
@@ -42,6 +46,8 @@ export function CardModalLayout() {
   const {
     card,
     mode,
+    boardId,
+    getHeaders,
     onClose,
     handleSave,
     onDelete,
@@ -51,6 +57,32 @@ export function CardModalLayout() {
     closeBtnRef,
     t,
   } = useCardModal();
+  const tCollab = useCollabTranslations("board.collab");
+  const { user } = useAuth();
+  const connectionId = useBoardCollabStore((s) => s.connectionId);
+  const clientId = useBoardCollabStore((s) => s.clientId);
+  const cardLocks = useBoardCollabStore((s) => s.cardLocks);
+
+  const remoteLock = mode === "edit" && card.id ? cardLocks[card.id] : undefined;
+  const showRemoteLockBanner = Boolean(remoteLock && remoteLock.userId !== user?.id);
+
+  useEffect(() => {
+    if (mode !== "edit" || !card.id?.trim() || !connectionId || !clientId) return;
+    const url = `/api/boards/${encodeURIComponent(boardId)}/presence`;
+    const base = { clientId, connectionId, cardId: card.id };
+    void apiFetch(url, {
+      method: "POST",
+      body: JSON.stringify({ ...base, action: "lock" }),
+      headers: getApiHeaders(getHeaders()),
+    });
+    return () => {
+      void apiFetch(url, {
+        method: "POST",
+        body: JSON.stringify({ ...base, action: "unlock" }),
+        headers: getApiHeaders(getHeaders()),
+      });
+    };
+  }, [mode, card.id, boardId, clientId, connectionId, getHeaders]);
 
   const [activeTab, setActiveTabState] = useState<CardModalTabId>(() => readStoredTab(card.id));
 
@@ -137,6 +169,14 @@ export function CardModalLayout() {
             backgroundSize: "200% 100%",
           }}
         />
+
+        {showRemoteLockBanner && remoteLock ? (
+          <div className="px-8 pt-4" role="status">
+            <div className="rounded-lg border border-[var(--flux-warning)]/45 bg-[var(--flux-warning)]/12 px-3 py-2 text-sm text-[var(--flux-text)]">
+              {tCollab("remoteLock", { name: remoteLock.userName?.trim() || "…" })}
+            </div>
+          </div>
+        ) : null}
 
         <header className="relative shrink-0 overflow-hidden border-b border-[var(--flux-chrome-alpha-06)] px-8 pb-5 pt-7">
           <div

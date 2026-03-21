@@ -92,6 +92,7 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
+      data-flux-column-key={bucket.key}
       {...(isFirstColumn ? { "data-tour": "board-column" as const } : {})}
       className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
         collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""

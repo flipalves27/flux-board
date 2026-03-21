@@ -126,34 +126,31 @@ export async function appendBoardCopilotMessages(params: {
     await ensureIndexes(db);
     const col = db.collection<CopilotChatDoc>(COL_COPILOT_CHATS);
 
-    const base = {
-      orgId,
-      boardId,
-      userId,
-      updatedAt: createdAt,
+    // O segundo argumento de updateOne deve usar só operadores ($set, $push, …).
+    // Campos literais no topo (ex.: orgId, updatedAt) causam:
+    // "Update document requires atomic operators".
+    const update: Record<string, unknown> = {
+      $set: { updatedAt: createdAt },
       $setOnInsert: {
+        orgId,
+        boardId,
+        userId,
         createdAt,
         freeDemoUsed: 0,
         messages: [],
       },
-    } as const;
-
-    const inc = incrementFreeDemoUsed ? { freeDemoUsed: 1 } : undefined;
-
-    await col.updateOne(
-      { orgId, boardId, userId },
-      {
-        ...base,
-        ...(inc ? { $inc: inc } : {}),
-        $push: {
-          messages: {
-            $each: newMessages,
-            $slice: -MAX_MESSAGES_PER_CHAT,
-          },
+      $push: {
+        messages: {
+          $each: newMessages,
+          $slice: -MAX_MESSAGES_PER_CHAT,
         },
-      } as any,
-      { upsert: true }
-    );
+      },
+    };
+    if (incrementFreeDemoUsed) {
+      update.$inc = { freeDemoUsed: 1 };
+    }
+
+    await col.updateOne({ orgId, boardId, userId }, update, { upsert: true });
 
     // Rebusca para retornar o doc final (simples/robusto).
     const doc = await col.findOne({ orgId, boardId, userId });
