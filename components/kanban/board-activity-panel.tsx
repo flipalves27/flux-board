@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardActivityStore } from "@/stores/board-activity-store";
+import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
 import { BOARD_ACTIVITY_ACTIONS, type BoardActivityAction } from "@/lib/board-activity-types";
 
 export type BoardActivityEntry = {
@@ -138,6 +139,7 @@ export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelPr
   const onOpenToggle = () => {
     if (!open) {
       setCopilotOpen(false);
+      useBoardExecutionInsightsStore.getState().setOpen(false);
     }
     toggleOpen();
   };

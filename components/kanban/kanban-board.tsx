@@ -27,6 +27,7 @@ import { KanbanBoardCanvas } from "./kanban-board-canvas";
 import { BoardCardSelectionProvider, useBoardCardSelection } from "./board-card-selection-context";
 import { KanbanBatchSelectionBar } from "./kanban-batch-selection-bar";
 import { BoardSummaryDock } from "./board-summary-dock";
+import { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 
@@ -534,6 +535,15 @@ function KanbanBoardLoaded({
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
         />
 
+        <BoardExecutionInsightsPanel
+          executionInsights={board.executionInsights}
+          t={t}
+          onOpenCard={(card) => {
+            board.setModalCard(card);
+            board.setModalMode("edit");
+          }}
+        />
+
         <BoardSummaryDock
         t={t}
         buckets={board.buckets}
@@ -542,17 +552,12 @@ function KanbanBoardLoaded({
         directions={directions}
         directionCounts={board.directionCounts}
         totalWithDir={board.totalWithDir}
-        executionInsights={board.executionInsights}
         okrObjectivesLength={board.okrObjectives.length}
         okrLoadError={board.okrLoadError}
         okrProjectionError={board.okrProjectionError}
         currentQuarter={board.currentQuarter}
         okrsComputed={board.okrsComputed}
         okrProjectionByKrId={board.okrProjectionByKrId}
-        onOpenCard={(card) => {
-          board.setModalCard(card);
-          board.setModalMode("edit");
-        }}
         />
 
         <KanbanBoardOverlays {...overlayProps} />

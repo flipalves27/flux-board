@@ -193,17 +193,71 @@ function resolveBucketKey(board: any, bucketKeyOrLabel?: string, bucketLabelOrKe
     .map((b: any) => ({ key: String(b.key || ""), label: String(b.label || "") }))
     .filter((b: any) => b.key);
 
+  if (list.length === 0) return null;
+
   const byKey = list.find((b: any) => b.key.toLowerCase() === String(bucketKeyOrLabel || "").trim().toLowerCase());
   if (byKey) return byKey.key;
 
   const byLabel = list.find((b: any) => b.label.toLowerCase() === String(bucketLabelOrKey || bucketKeyOrLabel || "").trim().toLowerCase());
   if (byLabel) return byLabel.key;
 
-  // Matching parcial (ex.: "Em Execução" vs label completa).
   const raw = String(bucketLabelOrKey || bucketKeyOrLabel || "").trim().toLowerCase();
   if (!raw) return null;
-  const partial = list.find((b: any) => b.label.toLowerCase().includes(raw));
-  return partial?.key ?? null;
+
+  const labelIncludes = list.find((b: any) => b.label.toLowerCase().includes(raw));
+  if (labelIncludes) return labelIncludes.key;
+
+  const keyIncludes = list.find((b: any) => b.key.toLowerCase().includes(raw));
+  if (keyIncludes) return keyIncludes.key;
+
+  if (raw.length >= 2) {
+    const rawIncludesLabel = list.find(
+      (b: any) => b.label.toLowerCase().length >= 2 && raw.includes(b.label.toLowerCase())
+    );
+    if (rawIncludesLabel) return rawIncludesLabel.key;
+
+    const rawIncludesKey = list.find((b: any) => b.key.toLowerCase().length >= 2 && raw.includes(b.key.toLowerCase()));
+    if (rawIncludesKey) return rawIncludesKey.key;
+  }
+
+  return null;
+}
+
+/** Campos que o modelo costuma usar em vez de bucketKey/bucketLabel. */
+const BUCKET_TOOL_ARG_ALIASES = [
+  "bucketKey",
+  "bucketLabel",
+  "bucket",
+  "column",
+  "coluna",
+  "targetBucket",
+  "columnKey",
+  "columnLabel",
+  "para",
+  "destino",
+] as const;
+
+function firstBucketKey(board: any): string | null {
+  const bucketOrder = Array.isArray(board?.config?.bucketOrder) ? board.config.bucketOrder : [];
+  const first = bucketOrder.find((b: any) => b && String(b.key || "").trim());
+  return first ? String(first.key) : null;
+}
+
+function resolveBucketKeyFromToolArgs(board: any, args: Record<string, unknown>): string | null {
+  const bk = args.bucketKey != null ? String(args.bucketKey).trim() : "";
+  const bl = args.bucketLabel != null ? String(args.bucketLabel).trim() : "";
+  const fromPair = resolveBucketKey(board, bk || undefined, bl || undefined);
+  if (fromPair) return fromPair;
+
+  for (const key of BUCKET_TOOL_ARG_ALIASES) {
+    const v = args[key];
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (!s) continue;
+    const resolved = resolveBucketKey(board, s, s);
+    if (resolved) return resolved;
+  }
+  return null;
 }
 
 function resolveCardId(cards: any[], cardIdOrTitle: string): string | null {
@@ -613,9 +667,9 @@ async function callCopilotLlmModel(input: {
     "5) Quando o usuário pedir um resumo/brief para diretoria, você pode usar tool `generateBrief` (não altera o board).",
     "",
     "Schema de ferramentas (tool-use):",
-    "- moveCard: { tool: 'moveCard', args: { cardId: string, bucketKey?: string, bucketLabel?: string, targetIndex?: number, setProgress?: 'Não iniciado'|'Em andamento'|'Concluída' } }",
+    "- moveCard: { tool: 'moveCard', args: { cardId: string, bucketKey?: string, bucketLabel?: string, bucket?: string, column?: string, targetIndex?: number, setProgress?: 'Não iniciado'|'Em andamento'|'Concluída' } } — para a coluna de destino use bucketKey OU bucketLabel igual a um item de `bucketOrder` (key ou label); `bucket`/`column` são sinônimos aceitos.",
     "- updatePriority: { tool: 'updatePriority', args: { cardId: string, priority: 'Urgente'|'Importante'|'Média' } }",
-    "- createCard: { tool: 'createCard', args: { bucketKey?: string, bucketLabel?: string, title: string, desc?: string, tags?: string[], priority: 'Urgente'|'Importante'|'Média', progress: 'Não iniciado'|'Em andamento'|'Concluída', direction?: string|null, dueDate?: string|null } }",
+    "- createCard: { tool: 'createCard', args: { bucketKey?: string, bucketLabel?: string, bucket?: string, column?: string, title: string, desc?: string, tags?: string[], priority: 'Urgente'|'Importante'|'Média', progress: 'Não iniciado'|'Em andamento'|'Concluída', direction?: string|null, dueDate?: string|null } } — se não informar coluna, use bucketKey/bucketLabel da primeira coluna em `bucketOrder`.",
     "- generateBrief: { tool: 'generateBrief', args: { scope?: string } }",
     "",
     "Valores válidos (use exatamente):",
@@ -730,7 +784,7 @@ async function executeCopilotActions(params: {
         const cardIdx = cards.findIndex((c: any) => String(c.id) === cardId);
         if (cardIdx < 0) throw new Error(`Card não encontrado: ${cardId}`);
 
-        const bucketKey = resolveBucketKey(board, args.bucketKey ? String(args.bucketKey) : undefined, args.bucketLabel ? String(args.bucketLabel) : undefined);
+        const bucketKey = resolveBucketKeyFromToolArgs(board, args);
         if (!bucketKey) throw new Error("bucketKey/bucketLabel inválido ou ausente.");
 
         const targetIndexRaw = args.targetIndex;
@@ -802,8 +856,9 @@ async function executeCopilotActions(params: {
         const title = String(args.title || "").trim();
         if (!title) throw new Error("title obrigatório para createCard.");
 
-        const bucketKey = resolveBucketKey(board, args.bucketKey ? String(args.bucketKey) : undefined, args.bucketLabel ? String(args.bucketLabel) : undefined);
-        if (!bucketKey) throw new Error("bucketKey/bucketLabel inválido ou ausente.");
+        let bucketKey = resolveBucketKeyFromToolArgs(board, args);
+        if (!bucketKey) bucketKey = firstBucketKey(board);
+        if (!bucketKey) throw new Error("bucketKey/bucketLabel inválido ou ausente (e não há colunas no board).");
 
         const prio = prioritySafe(args.priority) || "Média";
         const prog = progressSafe(args.progress) || "Não iniciado";

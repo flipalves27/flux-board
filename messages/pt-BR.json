@@ -1636,6 +1636,13 @@
         "board.settings_changed": "Configurações do board"
       }
     },
+    "executionInsights": {
+      "fabOpen": "Execução",
+      "fabClose": "Fechar execução",
+      "title": "Execução e foco",
+      "subtitle": "Próximas melhores ações e risco de WIP por coluna",
+      "emptyNextActions": "Nenhum card em aberto para priorizar no momento."
+    },
     "board": {
       "timeline": {
         "toggleGroupAria": "Visualização do board",
@@ -1685,6 +1692,9 @@
       },
       "nlq": {
         "label": "Consulta inteligente",
+        "showPanel": "Mostrar consulta inteligente",
+        "hidePanel": "Ocultar consulta inteligente",
+        "activeBadge": "Ativo",
         "placeholder": "Ex.: cards urgentes sem dono · throughput semana passada",
         "aria": "Consulta em linguagem natural sobre o board",
         "submit": "Consultar",

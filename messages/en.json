@@ -1288,6 +1288,13 @@
         "board.settings_changed": "Board settings"
       }
     },
+    "executionInsights": {
+      "fabOpen": "Execution",
+      "fabClose": "Close execution",
+      "title": "Execution & focus",
+      "subtitle": "Next best actions and WIP risk by column",
+      "emptyNextActions": "No open cards to prioritize right now."
+    },
     "addColumnModal": {
       "title": {
         "new": "New column",
@@ -1684,6 +1691,9 @@
       },
       "nlq": {
         "label": "Smart board query",
+        "showPanel": "Show smart query",
+        "hidePanel": "Hide smart query",
+        "activeBadge": "Active",
         "placeholder": "e.g. urgent cards with no owner · throughput last week",
         "aria": "Natural language query about this board",
         "submit": "Run query",

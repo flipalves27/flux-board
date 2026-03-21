@@ -8,5 +8,6 @@ export { DescModal } from "./desc-modal";
 export { DailyInsightsPanel } from "./DailyInsightsPanel";
 export { BoardCopilotPanel } from "./board-copilot-panel";
 export { BoardActivityPanel } from "./board-activity-panel";
+export { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
 export { BoardAutomationsModal } from "./board-automations-modal";
 export { BoardPortalModal } from "./board-portal-modal";
