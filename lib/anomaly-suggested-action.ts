@@ -54,18 +54,24 @@ function compactBoardContext(board: BoardData, alert: AnomalyAlertPayload): stri
   return lines.join("\n");
 }
 
+export type AnomalySuggestedActionResult = {
+  text: string;
+  llmModel?: string;
+  llmProvider?: string;
+};
+
 /**
  * Gera recomendação acionável em PT-BR (1–3 frases). Usa Together quando configurado.
  */
 export async function generateAnomalySuggestedAction(args: {
   alert: AnomalyAlertPayload;
   board?: BoardData | null;
-}): Promise<string> {
+}): Promise<AnomalySuggestedActionResult> {
   const { alert, board } = args;
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL;
   if (!apiKey || !model) {
-    return fallbackAnomalySuggestion(alert);
+    return { text: fallbackAnomalySuggestion(alert) };
   }
 
   const sys =
@@ -98,13 +104,13 @@ export async function generateAnomalySuggestedAction(args: {
 
   if (!res.ok) {
     console.warn("[anomaly-suggested-action]", res.error);
-    return fallbackAnomalySuggestion(alert);
+    return { text: fallbackAnomalySuggestion(alert) };
   }
 
   const parsed = safeJsonParse<{ suggestedAction?: string }>(res.assistantText);
   const text = typeof parsed?.suggestedAction === "string" ? parsed.suggestedAction.trim() : "";
   if (!text) {
-    return fallbackAnomalySuggestion(alert);
+    return { text: fallbackAnomalySuggestion(alert) };
   }
-  return text.slice(0, 400);
+  return { text: text.slice(0, 400), llmModel: model, llmProvider: "together.ai" };
 }

@@ -189,7 +189,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           bucket: updated.bucket,
           priority: updated.priority,
           tags: updated.tags,
-          classification: { usedLlm: classifier.usedLlm ?? false, rationale: classifier.rationale },
+          classification: {
+            usedLlm: classifier.usedLlm ?? false,
+            rationale: classifier.rationale,
+            ...(classifier.llmModel ? { llmModel: classifier.llmModel, llmProvider: classifier.llmProvider } : {}),
+          },
         });
       }
     }
@@ -245,7 +249,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       bucket: card.bucket,
       priority: card.priority,
       tags: card.tags,
-      classification: { usedLlm: classifier.usedLlm ?? false, rationale: classifier.rationale },
+      classification: {
+        usedLlm: classifier.usedLlm ?? false,
+        rationale: classifier.rationale,
+        ...(classifier.llmModel ? { llmModel: classifier.llmModel, llmProvider: classifier.llmProvider } : {}),
+      },
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });

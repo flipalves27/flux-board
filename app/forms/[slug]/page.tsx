@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type PublicFormData = {
   enabled: boolean;
@@ -34,6 +35,7 @@ export default function PublicIntakeFormPage() {
 
   const [lastSubmit, setLastSubmit] = useState<"merged" | "created" | null>(null);
   const [lastCardId, setLastCardId] = useState<string | null>(null);
+  const [lastClassificationLlm, setLastClassificationLlm] = useState<{ model?: string; provider?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +127,12 @@ export default function PublicIntakeFormPage() {
       if (!r.ok) throw new Error(String(data.error || "Falha ao enviar."));
       setLastSubmit(data.merged ? "merged" : "created");
       setLastCardId(typeof data.cardId === "string" ? data.cardId : null);
+      const cls = data.classification as { llmModel?: string; llmProvider?: string; usedLlm?: boolean } | undefined;
+      if (cls?.usedLlm && (cls.llmModel || cls.llmProvider)) {
+        setLastClassificationLlm({ model: cls.llmModel, provider: cls.llmProvider });
+      } else {
+        setLastClassificationLlm(null);
+      }
       setDone(true);
       setRequesterName("");
       setRequesterEmail("");
@@ -168,10 +176,20 @@ export default function PublicIntakeFormPage() {
                     {lastCardId ? (
                       <p className="mt-2 font-mono text-xs text-[var(--flux-text-muted)]">Card: {lastCardId}</p>
                     ) : null}
+                    {lastClassificationLlm ? (
+                      <div className="mt-2">
+                        <AiModelHint model={lastClassificationLlm.model} provider={lastClassificationLlm.provider} />
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <p>Demanda enviada com sucesso. Seu card já foi criado no board.</p>
                 )}
+                {lastSubmit === "created" && lastClassificationLlm ? (
+                  <div className="mt-2">
+                    <AiModelHint model={lastClassificationLlm.model} provider={lastClassificationLlm.provider} />
+                  </div>
+                ) : null}
               </div>
             )}
             <form onSubmit={onSubmit} className="mt-6 grid gap-4">

@@ -91,6 +91,14 @@ export async function GET(request: NextRequest) {
           typeof (a as unknown as { suggestedAction?: unknown }).suggestedAction === "string"
             ? (a as unknown as { suggestedAction: string }).suggestedAction
             : undefined,
+        suggestedActionModel:
+          typeof (a as unknown as { suggestedActionModel?: unknown }).suggestedActionModel === "string"
+            ? (a as unknown as { suggestedActionModel: string }).suggestedActionModel
+            : undefined,
+        suggestedActionProvider:
+          typeof (a as unknown as { suggestedActionProvider?: unknown }).suggestedActionProvider === "string"
+            ? (a as unknown as { suggestedActionProvider: string }).suggestedActionProvider
+            : undefined,
         emailSentAt:
           typeof (a as unknown as { emailSentAt?: unknown }).emailSentAt === "string"
             ? (a as unknown as { emailSentAt: string }).emailSentAt

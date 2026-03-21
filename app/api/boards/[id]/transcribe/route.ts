@@ -130,6 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       transcript: transcript.slice(0, 40000),
       fileName: name.slice(0, 200),
       provider: "openai-whisper",
+      model: "whisper-1",
     });
   } catch (err) {
     console.error("[transcribe] network", err);

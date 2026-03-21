@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type RecentPayload = {
   mongo: boolean;
@@ -20,6 +21,8 @@ type RecentPayload = {
     read: boolean;
     createdAt: string;
     suggestedAction?: string;
+    suggestedActionModel?: string;
+    suggestedActionProvider?: string;
   }>;
 };
 
@@ -139,10 +142,15 @@ export function AnomalyNotificationBell() {
                   >
                     <p className="text-xs font-semibold text-[var(--flux-text)]">{a.title}</p>
                     {a.suggestedAction ? (
-                      <p className="mt-1 text-[11px] leading-snug text-[var(--flux-secondary-light)]">
-                        <span className="font-semibold text-[var(--flux-text-muted)]">{t("suggested")}: </span>
-                        {a.suggestedAction}
-                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <p className="text-[11px] leading-snug text-[var(--flux-secondary-light)]">
+                          <span className="font-semibold text-[var(--flux-text-muted)]">{t("suggested")}: </span>
+                          {a.suggestedAction}
+                        </p>
+                        {(a.suggestedActionModel || a.suggestedActionProvider) && (
+                          <AiModelHint model={a.suggestedActionModel} provider={a.suggestedActionProvider} />
+                        )}
+                      </div>
                     ) : (
                       <p className="mt-1 text-[11px] leading-snug text-[var(--flux-text-muted)]">{a.message}</p>
                     )}

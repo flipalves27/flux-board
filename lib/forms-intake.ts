@@ -27,6 +27,8 @@ export type IntakeClassifierOutput = {
   duplicateOfCardId?: string | null;
   duplicateMergeSuggestion?: string;
   usedLlm?: boolean;
+  llmModel?: string;
+  llmProvider?: string;
 };
 
 const TAG_RULES: Array<{ tag: string; keywords: string[] }> = [
@@ -279,5 +281,7 @@ export async function classifyIntakeWithBoardContext(params: {
     duplicateOfCardId: duplicateOfCardId ?? null,
     duplicateMergeSuggestion,
     usedLlm: true,
+    llmModel: llm.model,
+    llmProvider: llm.provider,
   };
 }

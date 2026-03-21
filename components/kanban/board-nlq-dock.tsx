@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useBoardNlqUiStore, type BoardNlqMetricSnapshot } from "@/stores/board-nlq-ui-store";
 import { useToast } from "@/context/toast-context";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type NlqApiResponse =
   | {
@@ -25,6 +26,8 @@ type NlqApiResponse =
     }
   | { ok: false; fallbackMessage: string; suggestions: string[] };
 
+type NlqPostBody = NlqApiResponse & { llmModel?: string; error?: string };
+
 type BoardNlqDockProps = {
   boardId: string;
   getHeaders: () => Record<string, string>;
@@ -41,8 +44,10 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
 
   const metric = useBoardNlqUiStore((s) => s.metricByBoard[boardId]);
   const nlqCardIds = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
+  const nlqLlmMeta = useBoardNlqUiStore((s) => s.nlqLlmMetaByBoard[boardId]);
   const setBoardNlqCards = useBoardNlqUiStore((s) => s.setBoardNlqCards);
   const setBoardNlqMetric = useBoardNlqUiStore((s) => s.setBoardNlqMetric);
+  const setNlqLlmMeta = useBoardNlqUiStore((s) => s.setNlqLlmMeta);
   const clearBoardNlq = useBoardNlqUiStore((s) => s.clearBoardNlq);
 
   const hasNlq = Boolean(metric || nlqCardIds !== undefined);
@@ -72,7 +77,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
           headers: { "Content-Type": "application/json", ...getHeaders() },
           body: JSON.stringify({ query: q }),
         });
-        const data = (await res.json().catch(() => ({}))) as NlqApiResponse & { error?: string };
+        const data = (await res.json().catch(() => ({}))) as NlqPostBody;
         if (!res.ok) {
           pushToast({
             kind: "error",
@@ -81,6 +86,11 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
           });
           return;
         }
+        const llmMeta =
+          typeof data.llmModel === "string" && data.llmModel.trim()
+            ? { model: data.llmModel.trim(), provider: "Together" as const }
+            : null;
+        setNlqLlmMeta(boardId, llmMeta);
         if (!data.ok) {
           pushToast({
             kind: "info",
@@ -121,7 +131,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
         setLoading(false);
       }
     },
-    [boardId, getHeaders, loadRecent, onExpandFilters, pushToast, setBoardNlqCards, setBoardNlqMetric, t]
+    [boardId, getHeaders, loadRecent, onExpandFilters, pushToast, setBoardNlqCards, setBoardNlqMetric, setNlqLlmMeta, t]
   );
 
   return (
@@ -187,6 +197,11 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
             ) : null}
           </div>
           <p className="text-[11px] text-[var(--flux-text-muted)] mt-1 leading-relaxed">{metric.explanation}</p>
+          {nlqLlmMeta ? (
+            <div className="mt-1.5">
+              <AiModelHint model={nlqLlmMeta.model} provider={nlqLlmMeta.provider} />
+            </div>
+          ) : null}
           {metric.chart.length > 0 ? (
             <div className="h-[120px] w-full mt-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -214,9 +229,10 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters }: BoardNlqD
         </div>
       ) : null}
       {nlqCardIds !== undefined ? (
-        <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-          {t("filterActive", { count: nlqCardIds.length })}
-        </p>
+        <div className="mt-2 space-y-1">
+          <p className="text-[11px] text-[var(--flux-text-muted)]">{t("filterActive", { count: nlqCardIds.length })}</p>
+          {nlqLlmMeta ? <AiModelHint model={nlqLlmMeta.model} provider={nlqLlmMeta.provider} /> : null}
+        </div>
       ) : null}
       <p className="text-[10px] text-[var(--flux-text-muted)] mt-1.5 opacity-90">{t("hint")}</p>
     </div>

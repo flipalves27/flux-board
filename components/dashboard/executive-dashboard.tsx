@@ -19,6 +19,7 @@ import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 const CHART_COLORS = [
   "var(--flux-primary)",
@@ -80,6 +81,8 @@ export type ExecutiveDashboardPayload = {
     message: string;
     boardName?: string;
     suggestedAction?: string;
+    suggestedActionModel?: string;
+    suggestedActionProvider?: string;
     createdAt: string;
     read: boolean;
   }>;
@@ -311,9 +314,14 @@ export function ExecutiveDashboard() {
                       <p className="mt-1 text-sm font-semibold text-[var(--flux-text)]">{a.title}</p>
                       <p className="mt-0.5 text-xs text-[var(--flux-text-muted)]">{a.message}</p>
                       {a.suggestedAction ? (
-                        <p className="mt-2 text-[11px] text-[var(--flux-primary-light)]">
-                          <span className="font-semibold">{t("anomalies.suggested")}</span> {a.suggestedAction}
-                        </p>
+                        <div className="mt-2 space-y-0.5">
+                          <p className="text-[11px] text-[var(--flux-primary-light)]">
+                            <span className="font-semibold">{t("anomalies.suggested")}</span> {a.suggestedAction}
+                          </p>
+                          {(a.suggestedActionModel || a.suggestedActionProvider) && (
+                            <AiModelHint model={a.suggestedActionModel} provider={a.suggestedActionProvider} />
+                          )}
+                        </div>
                       ) : null}
                     </li>
                   ))}

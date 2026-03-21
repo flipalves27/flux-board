@@ -170,6 +170,8 @@ export async function GET(request: NextRequest) {
       message: string;
       boardName?: string;
       suggestedAction?: string;
+      suggestedActionModel?: string;
+      suggestedActionProvider?: string;
       createdAt: string;
       read: boolean;
     }> = [];
@@ -200,6 +202,14 @@ export async function GET(request: NextRequest) {
           suggestedAction:
             typeof (a as { suggestedAction?: unknown }).suggestedAction === "string"
               ? String((a as unknown as { suggestedAction: string }).suggestedAction)
+              : undefined,
+          suggestedActionModel:
+            typeof (a as { suggestedActionModel?: unknown }).suggestedActionModel === "string"
+              ? String((a as unknown as { suggestedActionModel: string }).suggestedActionModel)
+              : undefined,
+          suggestedActionProvider:
+            typeof (a as { suggestedActionProvider?: unknown }).suggestedActionProvider === "string"
+              ? String((a as unknown as { suggestedActionProvider: string }).suggestedActionProvider)
               : undefined,
           createdAt: String(a.createdAt ?? ""),
           read: Boolean(a.read),

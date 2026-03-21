@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
           read: 1,
           createdAt: 1,
           suggestedAction: 1,
+          suggestedActionModel: 1,
+          suggestedActionProvider: 1,
         })
         .toArray(),
     ]);
@@ -81,6 +83,14 @@ export async function GET(request: NextRequest) {
         suggestedAction:
           typeof (a as unknown as { suggestedAction?: unknown }).suggestedAction === "string"
             ? (a as unknown as { suggestedAction: string }).suggestedAction
+            : undefined,
+        suggestedActionModel:
+          typeof (a as unknown as { suggestedActionModel?: unknown }).suggestedActionModel === "string"
+            ? (a as unknown as { suggestedActionModel: string }).suggestedActionModel
+            : undefined,
+        suggestedActionProvider:
+          typeof (a as unknown as { suggestedActionProvider?: unknown }).suggestedActionProvider === "string"
+            ? (a as unknown as { suggestedActionProvider: string }).suggestedActionProvider
             : undefined,
       })),
     });

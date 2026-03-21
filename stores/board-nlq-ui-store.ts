@@ -11,11 +11,16 @@ export type BoardNlqMetricSnapshot = {
   explanation: string;
 };
 
+export type NlqLlmMeta = { model?: string; provider?: string };
+
 type BoardNlqUiState = {
   allowedIdsByBoard: Record<string, string[]>;
   metricByBoard: Record<string, BoardNlqMetricSnapshot>;
+  /** Última consulta NLQ com metadados de modelo (Together quando aplicável). */
+  nlqLlmMetaByBoard: Record<string, NlqLlmMeta | undefined>;
   setBoardNlqCards: (boardId: string, ids: string[] | null) => void;
   setBoardNlqMetric: (boardId: string, snapshot: BoardNlqMetricSnapshot | null) => void;
+  setNlqLlmMeta: (boardId: string, meta: NlqLlmMeta | null) => void;
   clearBoardNlq: (boardId: string) => void;
 };
 
@@ -26,6 +31,7 @@ export const useBoardNlqUiStore = create<BoardNlqUiState>()(
     (set) => ({
       allowedIdsByBoard: {},
       metricByBoard: {},
+      nlqLlmMetaByBoard: {},
       setBoardNlqCards: (boardId, ids) =>
         set((s) => {
           const allowedIdsByBoard = { ...s.allowedIdsByBoard };
@@ -47,13 +53,22 @@ export const useBoardNlqUiStore = create<BoardNlqUiState>()(
           else delete metricByBoard[boardId];
           return { allowedIdsByBoard, metricByBoard };
         }),
+      setNlqLlmMeta: (boardId, meta) =>
+        set((s) => {
+          const nlqLlmMetaByBoard = { ...s.nlqLlmMetaByBoard };
+          if (meta == null) delete nlqLlmMetaByBoard[boardId];
+          else nlqLlmMetaByBoard[boardId] = meta;
+          return { nlqLlmMetaByBoard };
+        }),
       clearBoardNlq: (boardId) =>
         set((s) => {
           const allowedIdsByBoard = { ...s.allowedIdsByBoard };
           const metricByBoard = { ...s.metricByBoard };
+          const nlqLlmMetaByBoard = { ...s.nlqLlmMetaByBoard };
           delete allowedIdsByBoard[boardId];
           delete metricByBoard[boardId];
-          return { allowedIdsByBoard, metricByBoard };
+          delete nlqLlmMetaByBoard[boardId];
+          return { allowedIdsByBoard, metricByBoard, nlqLlmMetaByBoard };
         }),
     }),
     { name: "FluxBoardNlq", enabled: devEnabled }

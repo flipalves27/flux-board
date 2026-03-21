@@ -25,7 +25,14 @@ export async function classifyIntakeFormWithTogether(params: {
   description: string;
   knownTags: string[];
   similarCards: Array<{ id: string; title: string; desc: string; bucket: string }>;
-}): Promise<{ ok: boolean; data?: IntakeFormLlmClassification; error?: string }> {
+}): Promise<{
+  ok: boolean;
+  data?: IntakeFormLlmClassification;
+  error?: string;
+  /** Preenchido quando `ok` e chamada Together bem-sucedida. */
+  model?: string;
+  provider?: string;
+}> {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
   const base = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
@@ -140,7 +147,7 @@ Formato exato:
       duplicateCardId: duplicateCardId === "" ? null : duplicateCardId,
       mergeSuggestion,
     };
-    return { ok: true, data };
+    return { ok: true, data, model, provider: "Together" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "network" };
   }

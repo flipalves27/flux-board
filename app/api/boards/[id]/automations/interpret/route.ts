@@ -210,6 +210,7 @@ ${schemaDoc}`;
       rule,
       preview,
       model,
+      llmProvider: "Together",
     });
   } catch (err) {
     console.error("[automations/interpret]", err);

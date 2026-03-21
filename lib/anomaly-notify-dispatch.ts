@@ -124,17 +124,25 @@ export async function postPersistAnomalyNotifications(args: {
     const targetBoard = alert.boardId ? boardById.get(alert.boardId) : undefined;
     const ctxBoard = targetBoard ?? board ?? null;
 
-    const suggested = skipNotifyDedupe
-      ? fallbackAnomalySuggestion(alert)
+    const suggestedResult = skipNotifyDedupe
+      ? { text: fallbackAnomalySuggestion(alert) }
       : await generateAnomalySuggestedAction({
           alert,
           board: ctxBoard,
         });
+    const suggested = suggestedResult.text;
 
     const sentAt = new Date(nowMs).toISOString();
+    const llmMeta =
+      suggestedResult.llmModel != null && String(suggestedResult.llmModel).trim()
+        ? {
+            suggestedActionModel: String(suggestedResult.llmModel).trim(),
+            suggestedActionProvider: String(suggestedResult.llmProvider || "together.ai").trim(),
+          }
+        : {};
     await db.collection(COL_ANOMALY_ALERTS).updateOne(
       { _id: oid },
-      { $set: { suggestedAction: suggested, dedupeKey, suggestedActionAt: sentAt } }
+      { $set: { suggestedAction: suggested, dedupeKey, suggestedActionAt: sentAt, ...llmMeta } }
     );
 
     if (!send || skipNotifyDedupe) {

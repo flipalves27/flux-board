@@ -86,6 +86,17 @@ type WebSpeechRecognitionInstance = {
     | null;
 };
 
+/** NLQ no copiloto: `/query …` ou verbos em PT (ex.: «pesquisar atividades urgentes»). */
+function extractNlqQueryFromCopilotInput(trimmed: string): { mode: "nlq"; query: string } | { mode: "none" } {
+  if (/^\/query(\s|$)/i.test(trimmed)) {
+    return { mode: "nlq", query: trimmed.replace(/^\/query\s*/i, "").trim() };
+  }
+  const m = trimmed.match(/^(pesquisar|buscar|listar|mostrar|filtrar)\s+(.+)$/i);
+  const rest = m?.[2]?.trim();
+  if (rest && rest.length >= 2) return { mode: "nlq", query: rest };
+  return { mode: "none" };
+}
+
 function parseEventStreamFrame(frame: string): { event: string; data: unknown } | null {
   const lines = frame.split("\n").filter(Boolean);
   if (!lines.length) return null;
@@ -218,9 +229,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
   const streamCopilot = useCallback(
     async (userMessage: string) => {
       const trimmed = userMessage.trim();
-      if (/^\/query(\s|$)/i.test(trimmed)) {
+      const nlqRoute = extractNlqQueryFromCopilotInput(trimmed);
+      if (nlqRoute.mode === "nlq") {
         if (!canSend) return;
-        const q = trimmed.replace(/^\/query\s*/i, "").trim();
+        const q = nlqRoute.query;
         if (!q) {
           pushToast({ kind: "info", title: tNlq("toastTitle"), description: tNlq("emptyQuery") });
           return;
@@ -265,6 +277,11 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
             pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
             return;
           }
+
+          useBoardNlqUiStore.getState().setNlqLlmMeta(
+            boardId,
+            nlqLlmMeta ? { model: nlqLlmMeta.llmModel, provider: nlqLlmMeta.llmProvider } : null
+          );
 
           if (!data.ok) {
             const asClient = nlqToClient(data as NlqApiBody);
@@ -369,6 +386,18 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
             source?: string;
           }
         ) => {
+          if (event === "error") {
+            const msg =
+              typeof (data as { message?: string })?.message === "string"
+                ? String((data as { message: string }).message).trim()
+                : "Erro no Copiloto.";
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, content: m.content || msg } : m))
+            );
+            pushToast({ kind: "error", title: "Copiloto", description: msg });
+            return;
+          }
+
           if (event === "rag_debug" && copilotDebug && data && typeof data === "object") {
             setRagDebug(data as RagRetrievalDebug);
           }

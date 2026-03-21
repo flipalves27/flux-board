@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type AnomalyInsightsPayload = {
   schema: string;
@@ -21,6 +22,8 @@ type AnomalyInsightsPayload = {
     read: boolean;
     createdAt: string;
     suggestedAction?: string;
+    suggestedActionModel?: string;
+    suggestedActionProvider?: string;
   }>;
   unreadCount: number;
   health: { status: "healthy" | "attention" | "no_data"; lastRunAt: string | null };
@@ -218,10 +221,15 @@ export function ProactiveAiPanel() {
                       <p className="font-semibold text-[var(--flux-text)]">{a.title}</p>
                       <p className="mt-0.5 leading-relaxed text-[var(--flux-text-muted)]">{a.message}</p>
                       {a.suggestedAction ? (
-                        <p className="mt-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-06)] px-2 py-1.5 text-[11px] leading-relaxed text-[var(--flux-secondary-light)]">
-                          <span className="font-semibold text-[var(--flux-text)]">{t("suggested")}: </span>
-                          {a.suggestedAction}
-                        </p>
+                        <div className="mt-1.5 space-y-0.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-06)] px-2 py-1.5">
+                          <p className="text-[11px] leading-relaxed text-[var(--flux-secondary-light)]">
+                            <span className="font-semibold text-[var(--flux-text)]">{t("suggested")}: </span>
+                            {a.suggestedAction}
+                          </p>
+                          {(a.suggestedActionModel || a.suggestedActionProvider) && (
+                            <AiModelHint model={a.suggestedActionModel} provider={a.suggestedActionProvider} />
+                          )}
+                        </div>
                       ) : null}
                       {a.boardName ? (
                         <p className="mt-1 text-[10px] text-[var(--flux-text-muted)]">

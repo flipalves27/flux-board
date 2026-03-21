@@ -6,6 +6,7 @@ import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useToast } from "@/context/toast-context";
 import type { AutomationAction, AutomationRule, AutomationTrigger } from "@/lib/automation-types";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 function newRuleId(): string {
   return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
@@ -52,6 +53,7 @@ export function BoardAutomationsModal({
   const [nlLoading, setNlLoading] = useState(false);
   const [nlPreview, setNlPreview] = useState<string | null>(null);
   const [nlRule, setNlRule] = useState<AutomationRule | null>(null);
+  const [nlInterpretLlm, setNlInterpretLlm] = useState<{ model?: string; provider?: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +81,7 @@ export function BoardAutomationsModal({
       setNlText("");
       setNlPreview(null);
       setNlRule(null);
+      setNlInterpretLlm(null);
       setNlLoading(false);
     }
   }, [open]);
@@ -143,16 +146,27 @@ export function BoardAutomationsModal({
     setNlLoading(true);
     setNlPreview(null);
     setNlRule(null);
+    setNlInterpretLlm(null);
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/automations/interpret`, {
         method: "POST",
         headers: getApiHeaders(getHeaders()),
         body: JSON.stringify({ text }),
       });
-      const data = (await res.json()) as { ok?: boolean; preview?: string; rule?: AutomationRule; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        preview?: string;
+        rule?: AutomationRule;
+        model?: string;
+        llmProvider?: string;
+        error?: string;
+      };
       if (!res.ok) throw new Error(data.error || "interpret");
       if (data.preview) setNlPreview(data.preview);
       if (data.rule) setNlRule(data.rule);
+      if (typeof data.model === "string" && data.model.trim()) {
+        setNlInterpretLlm({ model: data.model.trim(), provider: data.llmProvider?.trim() || "Together" });
+      }
     } catch (e) {
       pushToast({
         kind: "error",
@@ -170,6 +184,7 @@ export function BoardAutomationsModal({
     setNlText("");
     setNlPreview(null);
     setNlRule(null);
+    setNlInterpretLlm(null);
     pushToast({ kind: "success", title: t("nlApplied") });
   };
 
@@ -260,8 +275,11 @@ export function BoardAutomationsModal({
               </div>
             ) : null}
             {nlPreview ? (
-              <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)]/50 p-3 text-sm text-[var(--flux-text)]">
-                {nlPreview}
+              <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)]/50 p-3 text-sm text-[var(--flux-text)] space-y-1.5">
+                <div>{nlPreview}</div>
+                {nlInterpretLlm ? (
+                  <AiModelHint model={nlInterpretLlm.model} provider={nlInterpretLlm.provider} />
+                ) : null}
               </div>
             ) : null}
             {nlRule ? (
@@ -275,6 +293,7 @@ export function BoardAutomationsModal({
                   onClick={() => {
                     setNlPreview(null);
                     setNlRule(null);
+                    setNlInterpretLlm(null);
                   }}
                 >
                   {t("nlDiscard")}

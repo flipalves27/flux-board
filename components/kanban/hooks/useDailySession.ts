@@ -218,6 +218,7 @@ export function useDailySession({
             status: "success" as DailyLogStatus,
             message: t("daily.logs.transcribe.done"),
             provider: String(data?.provider || "openai-whisper"),
+            model: typeof data?.model === "string" && data.model.trim() ? data.model.trim() : "whisper-1",
           },
           ...prev,
         ].slice(0, 50));

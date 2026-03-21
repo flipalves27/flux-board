@@ -990,7 +990,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           return exec.toolResults;
         })();
 
-        // Persist board changes if any mutation happened (cards array will still be returned even if empty changes).
+        // Só notifica o cliente quando houve mutação real — evita `updateDb`+persist desnecessários a cada mensagem.
         const mutationTools = toolResults.filter((r) => r.ok && (r.tool === "moveCard" || r.tool === "updatePriority" || r.tool === "createCard"));
         if (mutationTools.length && Array.isArray(updatedCards)) {
           const nextBoard = await updateBoardFromExisting(board, { cards: updatedCards }, {
@@ -1000,8 +1000,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           });
           updatedCards = nextBoard.cards as any[];
           sendEvent("board_update", { cards: updatedCards, lastUpdated: nextBoard.lastUpdated });
-        } else {
-          sendEvent("board_update", { cards: board.cards, lastUpdated: board.lastUpdated });
         }
 
         for (const r of toolResults) sendEvent("tool_result", r);
