@@ -1,0 +1,715 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import type { BoardData, CardData } from "@/app/board/[id]/page";
+import { apiGet } from "@/lib/api-client";
+import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDefinition } from "@/lib/okr-engine";
+import type { OkrKrProjection } from "@/lib/okr-projection";
+import { useToast } from "@/context/toast-context";
+import { useTranslations } from "next-intl";
+import { useDailySession } from "./useDailySession";
+import { COLUMN_COLORS } from "../kanban-constants";
+import { daysUntilDueDate } from "../utils/days-until-due";
+
+type UseBoardStateArgs = {
+  db: BoardData;
+  updateDb: (updater: (prev: BoardData) => BoardData) => void;
+  boardId: string;
+  getHeaders: () => Record<string, string>;
+  filterLabels: string[];
+  priorities: string[];
+  progresses: string[];
+  directions: string[];
+  setActiveLabels: Dispatch<SetStateAction<Set<string>>>;
+};
+
+export function useBoardState({
+  db,
+  updateDb,
+  boardId,
+  getHeaders,
+  filterLabels,
+  priorities,
+  progresses,
+  directions,
+  setActiveLabels,
+}: UseBoardStateArgs) {
+  const t = useTranslations("kanban");
+  const { pushToast } = useToast();
+
+  const boardScrollRef = useRef<HTMLDivElement | null>(null);
+  const panRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+    moved: boolean;
+  }>({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+    moved: false,
+  });
+  const [isPanning, setIsPanning] = useState(false);
+
+  const [modalCard, setModalCard] = useState<CardData | null>(null);
+  const [modalMode, setModalMode] = useState<"new" | "edit">("new");
+  const [mapaOpen, setMapaOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: "card" | "bucket";
+    id: string;
+    label: string;
+  } | null>(null);
+  const [addColumnOpen, setAddColumnOpen] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+  const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
+  const [descModalCard, setDescModalCard] = useState<CardData | null>(null);
+
+  const [csvImportMode, setCsvImportMode] = useState<"replace" | "merge">("replace");
+  const [csvImportConfirm, setCsvImportConfirm] = useState<{
+    count: number;
+    cards: CardData[];
+    mode: "replace" | "merge";
+    sameIdCount: number;
+  } | null>(null);
+
+  const currentQuarter = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    return `${year}-Q${q}`;
+  }, []);
+
+  const [okrObjectives, setOkrObjectives] = useState<OkrsObjectiveDefinition[]>([]);
+  const [okrLoadError, setOkrLoadError] = useState<string | null>(null);
+  const [okrProjections, setOkrProjections] = useState<OkrKrProjection[] | null>(null);
+  const [okrProjectionError, setOkrProjectionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadOkrs() {
+      setOkrLoadError(null);
+      try {
+        const r = await apiGet<{
+          ok: boolean;
+          objectives: Array<{ objective: unknown; keyResults: unknown[] }>;
+        }>(
+          `/api/okrs/by-board?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
+          getHeaders()
+        );
+
+        if (cancelled) return;
+        if (r?.ok && Array.isArray(r.objectives)) {
+          const defs: OkrsObjectiveDefinition[] = r.objectives
+            .map((g) => {
+              const obj = g.objective as Record<string, unknown> | null | undefined;
+              if (!obj) return null;
+              const keyResults: OkrsKeyResultDefinition[] = Array.isArray(g.keyResults)
+                ? (g.keyResults as OkrsKeyResultDefinition[])
+                : [];
+              return {
+                id: String(obj.id),
+                title: String(obj.title ?? ""),
+                owner: obj.owner ?? null,
+                quarter: String(obj.quarter ?? currentQuarter),
+                keyResults,
+              };
+            })
+            .filter(Boolean) as OkrsObjectiveDefinition[];
+          setOkrObjectives(defs);
+        } else {
+          setOkrObjectives([]);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setOkrObjectives([]);
+        setOkrLoadError(err instanceof Error ? err.message : "Erro ao carregar OKRs");
+      }
+    }
+
+    if (!boardId) return;
+    loadOkrs();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, currentQuarter, getHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProjections() {
+      setOkrProjectionError(null);
+      setOkrProjections(null);
+      if (!boardId || okrObjectives.length === 0) return;
+      try {
+        const r = await apiGet<{
+          ok?: boolean;
+          projections?: OkrKrProjection[];
+        }>(
+          `/api/okrs/projection?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
+          getHeaders()
+        );
+        if (cancelled) return;
+        if (r && Array.isArray(r.projections)) setOkrProjections(r.projections);
+        else setOkrProjections([]);
+      } catch (err) {
+        if (cancelled) return;
+        setOkrProjections(null);
+        setOkrProjectionError(err instanceof Error ? err.message : "Erro ao carregar projeções");
+      }
+    }
+    loadProjections();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, currentQuarter, getHeaders, okrObjectives.length]);
+
+  const okrProjectionByKrId = useMemo(() => {
+    const m = new Map<string, OkrKrProjection>();
+    for (const p of okrProjections ?? []) m.set(p.keyResultId, p);
+    return m;
+  }, [okrProjections]);
+
+  const dailySession = useDailySession({
+    db,
+    updateDb,
+    boardId,
+    getHeaders,
+    directions,
+  });
+
+  const buckets = db.config.bucketOrder;
+  const boardLabels = db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
+  const collapsed = new Set(db.config.collapsedColumns || []);
+  const cards = db.cards;
+
+  const moveCard = useCallback(
+    (cardId: string, newBucket: string, newIndex: number) => {
+      updateDb((prev) => {
+        const card = prev.cards.find((c) => c.id === cardId);
+        if (!card) return prev;
+        const withoutCard = prev.cards.filter((c) => c.id !== cardId);
+        const bucketCards = withoutCard
+          .filter((c) => c.bucket === newBucket)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket });
+        bucketCards.forEach((c, i) => (c.order = i));
+        const otherBuckets = withoutCard.filter((c) => c.bucket !== newBucket);
+        return { ...prev, cards: [...otherBuckets, ...bucketCards] };
+      });
+    },
+    [updateDb]
+  );
+
+  const reorderColumns = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+      updateDb((prev) => {
+        const newOrder = [...prev.config.bucketOrder];
+        const [removed] = newOrder.splice(fromIndex, 1);
+        newOrder.splice(toIndex, 0, removed);
+        return { ...prev, config: { ...prev.config, bucketOrder: newOrder } };
+      });
+    },
+    [updateDb]
+  );
+
+  const saveColumn = useCallback(() => {
+    const label = newColumnName.trim() || "Nova Coluna";
+    if (editingColumnKey) {
+      updateDb((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          bucketOrder: prev.config.bucketOrder.map((b) =>
+            b.key === editingColumnKey ? { ...b, label } : b
+          ),
+        },
+      }));
+    } else {
+      const key = `col_${Date.now()}`;
+      const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
+      updateDb((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          bucketOrder: [...prev.config.bucketOrder, { key, label, color }],
+        },
+      }));
+    }
+    setNewColumnName("");
+    setAddColumnOpen(false);
+    setEditingColumnKey(null);
+  }, [buckets.length, editingColumnKey, newColumnName, updateDb]);
+
+  const deleteColumn = useCallback(
+    (key: string) => {
+      const fallbackKey = buckets.find((b) => b.key !== key)?.key;
+      updateDb((prev) => ({
+        ...prev,
+        cards: prev.cards.map((c) => (c.bucket === key && fallbackKey ? { ...c, bucket: fallbackKey } : c)),
+        config: {
+          ...prev.config,
+          bucketOrder: prev.config.bucketOrder.filter((b) => b.key !== key),
+          collapsedColumns: (prev.config.collapsedColumns || []).filter((k) => k !== key),
+        },
+      }));
+      setConfirmDelete(null);
+    },
+    [buckets, updateDb]
+  );
+
+  const toggleCollapsed = useCallback(
+    (key: string) => {
+      const next = new Set(collapsed);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      updateDb((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          collapsedColumns: [...next],
+        },
+      }));
+    },
+    [collapsed, updateDb]
+  );
+
+  const createLabel = useCallback(
+    (label: string) => {
+      const normalized = label.trim();
+      if (!normalized) return;
+      updateDb((prev) => {
+        const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
+        if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return prev;
+        return {
+          ...prev,
+          config: {
+            ...prev.config,
+            labels: [...current, normalized],
+          },
+        };
+      });
+    },
+    [filterLabels, updateDb]
+  );
+
+  const deleteLabel = useCallback(
+    (label: string) => {
+      updateDb((prev) => {
+        const current = prev.config.labels && prev.config.labels.length > 0 ? prev.config.labels : filterLabels;
+        if (!current.includes(label)) return prev;
+        return {
+          ...prev,
+          cards: prev.cards.map((c) => ({
+            ...c,
+            tags: c.tags.filter((t) => t !== label),
+          })),
+          config: {
+            ...prev.config,
+            labels: current.filter((l) => l !== label),
+          },
+        };
+      });
+      setActiveLabels((prev) => {
+        const next = new Set(prev);
+        next.delete(label);
+        return next;
+      });
+    },
+    [filterLabels, setActiveLabels, updateDb]
+  );
+
+  const handleTimelineDueDate = useCallback(
+    (cardId: string, nextDue: string) => {
+      updateDb((prev) => ({
+        ...prev,
+        cards: prev.cards.map((c) => (c.id === cardId ? { ...c, dueDate: nextDue } : c)),
+      }));
+    },
+    [updateDb]
+  );
+
+  const handleTimelineOpenCard = useCallback((card: CardData) => {
+    setModalCard(card);
+    setModalMode("edit");
+  }, []);
+
+  const { directionCounts, totalWithDir } = useMemo(() => {
+    const acc: Record<string, number> = {};
+    let total = 0;
+    for (const c of cards) {
+      if (!c.direction) continue;
+      const key = c.direction.toLowerCase();
+      acc[key] = (acc[key] ?? 0) + 1;
+      total += 1;
+    }
+    return { directionCounts: acc, totalWithDir: total };
+  }, [cards]);
+
+  const executionInsights = useMemo(() => {
+    const inProgress = cards.filter((c) => c.progress === "Em andamento").length;
+    const done = cards.filter((c) => c.progress === "Concluída").length;
+    const urgent = cards.filter((c) => c.priority === "Urgente").length;
+    const overdue = cards.filter((c) => {
+      const days = daysUntilDueDate(c.dueDate);
+      return days !== null && days < 0 && c.progress !== "Concluída";
+    }).length;
+    const dueSoon = cards.filter((c) => {
+      const days = daysUntilDueDate(c.dueDate);
+      return days !== null && days >= 0 && days <= 3 && c.progress !== "Concluída";
+    }).length;
+    const doneRate = cards.length > 0 ? Math.round((done / cards.length) * 100) : 0;
+
+    const priorityWeight: Record<string, number> = { Urgente: 4, Importante: 2, "Média": 1 };
+    const progressWeight: Record<string, number> = { "Não iniciado": 2, "Em andamento": 3, "Concluída": 0 };
+    const nextActions = [...cards]
+      .filter((c) => c.progress !== "Concluída")
+      .map((c) => {
+        const due = daysUntilDueDate(c.dueDate);
+        const dueScore = due === null ? 0 : due < 0 ? 5 : due <= 2 ? 4 : due <= 5 ? 2 : 1;
+        const score =
+          (priorityWeight[c.priority] ?? 1) +
+          (progressWeight[c.progress] ?? 1) +
+          dueScore +
+          (c.direction === "priorizar" ? 2 : 0);
+        return { card: c, score, due };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    const wipRiskColumns = buckets
+      .map((bucket) => {
+        const count = cards.filter((c) => c.bucket === bucket.key && c.progress === "Em andamento").length;
+        return { key: bucket.key, label: bucket.label, count };
+      })
+      .filter((entry) => entry.count >= 4)
+      .sort((a, b) => b.count - a.count);
+
+    return { inProgress, doneRate, urgent, overdue, dueSoon, nextActions, wipRiskColumns };
+  }, [cards, buckets]);
+
+  const okrsComputed = useMemo(() => {
+    const bucketKeys = new Set<string>(
+      (db.config?.bucketOrder || [])
+        .map((b: { key?: string }) => String(b?.key || ""))
+        .filter((k) => typeof k === "string" && k.trim().length > 0)
+    );
+
+    return computeOkrsProgress({ cards, objectives: okrObjectives, bucketKeys });
+  }, [cards, okrObjectives, db.config?.bucketOrder]);
+
+  const handleExportCSV = useCallback(() => {
+    const sep = ";";
+    const nl = "\r\n";
+    const hdr = [
+      "ID",
+      "Coluna",
+      "Prioridade",
+      "Progresso",
+      "Título",
+      "Descrição",
+      "Rótulos",
+      "Direcionamento",
+      "Data de Conclusão",
+    ];
+    let csv = hdr.join(sep) + nl;
+    cards.forEach((c) => {
+      csv +=
+        [
+          c.id,
+          c.bucket,
+          c.priority,
+          c.progress,
+          `"${(c.title || "").replace(/"/g, '""')}"`,
+          `"${(c.desc || "").replace(/"/g, '""')}"`,
+          `"${(c.tags || []).join(", ")}"`,
+          c.direction || "",
+          c.dueDate || "",
+        ].join(sep) + nl;
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "backlog_reborn_export.csv";
+    a.click();
+  }, [cards]);
+
+  const handleImportCSV = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let raw = (ev.target?.result as string) || "";
+        if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
+        const rows = raw.split(/\r?\n/).filter((r) => r.trim());
+        if (rows.length < 2) {
+          pushToast({ kind: "error", title: t("csvImport.toasts.emptyCsv") });
+          return;
+        }
+        const parseRow = (line: string) => {
+          const r: string[] = [];
+          let c = "";
+          let q = false;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') q = !q;
+            else if (!q && (ch === ";" || ch === ",")) {
+              r.push(c);
+              c = "";
+            } else c += ch;
+          }
+          r.push(c);
+          return r;
+        };
+        const hdr = parseRow(rows[0])
+          .map((h) => h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+        const idx: Record<string, number> = {};
+        hdr.forEach((h, i) => (idx[h] = i));
+        const iT = idx["titulo"] ?? idx["título"] ?? -1;
+        if (iT === -1) {
+          pushToast({ kind: "error", title: t("csvImport.toasts.missingTitleColumn") });
+          return;
+        }
+        const nc: CardData[] = [];
+        for (let i = 1; i < rows.length; i++) {
+          const row = parseRow(rows[i]);
+          if (row.length < 2) continue;
+          const g = (k: number) => (k >= 0 && row[k] !== undefined ? String(row[k]).trim() : "");
+          const tagsRaw = g(idx["rotulos"] ?? idx["rótulos"] ?? -1);
+          const tags = tagsRaw ? tagsRaw.split(/[;,]/).map((x) => x.trim()).filter(Boolean) : [];
+          const bucketRaw = g(idx["coluna"] ?? -1) || "Backlog";
+          const bucket =
+            buckets.find((b) => b.key === bucketRaw || b.label === bucketRaw)?.key || "Backlog";
+          let dirVal = g(idx["direcionamento"] ?? -1);
+          dirVal =
+            dirVal && directions.map((d) => d.toLowerCase()).includes(dirVal.toLowerCase())
+              ? dirVal.toLowerCase()
+              : "";
+          const prioVal = g(idx["prioridade"] ?? -1) || "Média";
+          const prio = priorities.find((p) => p.toLowerCase() === prioVal.toLowerCase()) || "Média";
+          const progVal = g(idx["progresso"] ?? -1) || "Não iniciado";
+          const prog = progresses.find((p) => p.toLowerCase() === progVal.toLowerCase()) || "Não iniciado";
+          nc.push({
+            id: g(idx["id"] ?? -1) || `IMP-${i}`,
+            bucket,
+            priority: prio,
+            progress: prog,
+            title: g(iT),
+            desc: g(idx["descricao"] ?? idx["descrição"] ?? -1) || "",
+            tags,
+            direction: dirVal || null,
+            dueDate: g(idx["data de conclusao"] ?? idx["data de conclusão"] ?? idx["duedate"] ?? -1) || null,
+            order: i - 1,
+          });
+        }
+        if (!nc.length) {
+          pushToast({ kind: "error", title: t("csvImport.toasts.noCards") });
+          return;
+        }
+        const mode = csvImportMode;
+        let sameIdCount = 0;
+        if (mode === "merge") {
+          const existingIds = new Set(cards.map((c) => c.id));
+          sameIdCount = nc.filter((c) => existingIds.has(c.id)).length;
+        }
+        setCsvImportConfirm({ count: nc.length, cards: nc, mode, sameIdCount });
+      };
+      reader.readAsText(file, "UTF-8");
+      e.target.value = "";
+    },
+    [buckets, cards, csvImportMode, directions, priorities, progresses, pushToast, t]
+  );
+
+  const confirmCsvImport = useCallback(() => {
+    if (!csvImportConfirm) return;
+    const imported = csvImportConfirm.cards.map((c) => ({ ...c }));
+    const count = csvImportConfirm.count;
+    const mode = csvImportConfirm.mode;
+
+    if (mode === "replace") {
+      const ordByBucket: Record<string, number> = {};
+      imported.forEach((card) => {
+        const bk = card.bucket;
+        ordByBucket[bk] = ordByBucket[bk] || 0;
+        card.order = ordByBucket[bk]++;
+      });
+      updateDb((prev) => ({ ...prev, cards: imported }));
+    } else {
+      updateDb((prev) => {
+        const prevCards = Array.isArray(prev.cards) ? prev.cards : [];
+        const configKeys = Array.isArray(prev.config.bucketOrder)
+          ? prev.config.bucketOrder.map((b) => b.key)
+          : [];
+        const prevExtraKeys = Array.from(new Set(prevCards.map((c) => c.bucket))).filter(
+          (k) => !configKeys.includes(k)
+        );
+        const importedExtraKeys = Array.from(new Set(imported.map((c) => c.bucket))).filter(
+          (k) => !configKeys.includes(k) && !prevExtraKeys.includes(k)
+        );
+        const bucketKeys = [...configKeys, ...prevExtraKeys, ...importedExtraKeys];
+
+        const nextCards: CardData[] = [];
+        bucketKeys.forEach((bucketKey) => {
+          const existingInBucket = prevCards
+            .filter((c) => c.bucket === bucketKey)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((c) => ({ ...c }));
+
+          const idxById = new Map<string, number>(existingInBucket.map((c, i) => [c.id, i]));
+
+          imported
+            .filter((c) => c.bucket === bucketKey)
+            .forEach((ic) => {
+              const idx = idxById.get(ic.id);
+              if (idx !== undefined) {
+                existingInBucket[idx] = { ...existingInBucket[idx], ...ic };
+              } else {
+                existingInBucket.push({ ...ic });
+              }
+            });
+
+          existingInBucket.forEach((c, i) => {
+            c.order = i;
+          });
+
+          nextCards.push(...existingInBucket);
+        });
+
+        return { ...prev, cards: nextCards };
+      });
+    }
+
+    setCsvImportConfirm(null);
+    pushToast({
+      kind: "success",
+      title:
+        mode === "merge"
+          ? t("csvImportConfirm.toasts.mergeSuccess", { count })
+          : t("csvImportConfirm.toasts.replaceSuccess", { count }),
+    });
+  }, [csvImportConfirm, pushToast, t, updateDb]);
+
+  const shouldIgnorePanStart = useCallback((target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    if (!el) return true;
+    if (
+      el.closest(
+        'button, a, input, textarea, select, option, [role="button"], [contenteditable="true"], .cursor-grab, .cursor-grabbing'
+      )
+    ) {
+      return true;
+    }
+    return false;
+  }, []);
+
+  const handlePanPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      const scroller = boardScrollRef.current;
+      if (!scroller) return;
+      if (e.target !== e.currentTarget) return;
+      if (shouldIgnorePanStart(e.target)) return;
+
+      panRef.current.active = true;
+      panRef.current.pointerId = e.pointerId;
+      panRef.current.startX = e.clientX;
+      panRef.current.startY = e.clientY;
+      panRef.current.startScrollLeft = scroller.scrollLeft;
+      panRef.current.startScrollTop = scroller.scrollTop;
+      panRef.current.moved = false;
+      setIsPanning(true);
+
+      scroller.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    },
+    [shouldIgnorePanStart]
+  );
+
+  const handlePanPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = boardScrollRef.current;
+    if (!scroller) return;
+    if (!panRef.current.active) return;
+    if (panRef.current.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - panRef.current.startX;
+    const dy = e.clientY - panRef.current.startY;
+    if (!panRef.current.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) panRef.current.moved = true;
+
+    scroller.scrollLeft = panRef.current.startScrollLeft - dx;
+    scroller.scrollTop = panRef.current.startScrollTop - dy;
+    e.preventDefault();
+  }, []);
+
+  const endPan = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const scroller = boardScrollRef.current;
+    if (!scroller) return;
+    if (!panRef.current.active) return;
+    if (panRef.current.pointerId !== e.pointerId) return;
+
+    panRef.current.active = false;
+    panRef.current.pointerId = null;
+    setIsPanning(false);
+    try {
+      scroller.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  return {
+    boardScrollRef,
+    isPanning,
+    handlePanPointerDown,
+    handlePanPointerMove,
+    endPan,
+    buckets,
+    boardLabels,
+    collapsed,
+    cards,
+    modalCard,
+    setModalCard,
+    modalMode,
+    setModalMode,
+    mapaOpen,
+    setMapaOpen,
+    confirmDelete,
+    setConfirmDelete,
+    addColumnOpen,
+    setAddColumnOpen,
+    newColumnName,
+    setNewColumnName,
+    editingColumnKey,
+    setEditingColumnKey,
+    descModalCard,
+    setDescModalCard,
+    csvImportMode,
+    setCsvImportMode,
+    csvImportConfirm,
+    setCsvImportConfirm,
+    confirmCsvImport,
+    currentQuarter,
+    okrObjectives,
+    okrLoadError,
+    okrProjectionError,
+    okrProjectionByKrId,
+    okrsComputed,
+    dailySession,
+    moveCard,
+    reorderColumns,
+    saveColumn,
+    deleteColumn,
+    toggleCollapsed,
+    createLabel,
+    deleteLabel,
+    handleTimelineDueDate,
+    handleTimelineOpenCard,
+    directionCounts,
+    totalWithDir,
+    executionInsights,
+    handleExportCSV,
+    handleImportCSV,
+  };
+}

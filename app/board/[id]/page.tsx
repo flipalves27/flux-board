@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { KanbanBoard } from "@/components/kanban";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
 import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
