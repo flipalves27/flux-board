@@ -11,6 +11,7 @@
     "organization": "Organization",
     "billing": "Billing",
     "invites": "Invites",
+    "rateLimitAbuse": "Rate limit",
     "section": {
       "flow": "Flow",
       "intelligence": "Intelligence",
@@ -26,7 +27,8 @@
       "users": "Members and organization permissions.",
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
-      "invites": "Pending invites for new members."
+      "invites": "Pending invites for new members.",
+      "rateLimitAbuse": "API rate-limit blocks (abuse)."
     },
     "menu": {
       "expand": "Expand menu",
@@ -48,6 +50,23 @@
       "cycleTooltip": "Appearance: {current}. Click to cycle system, light, and dark."
     },
     "logout": "Sign out"
+  },
+  "rateLimitAbuse": {
+    "title": "Abuse — rate limit",
+    "subtitle": "Grouped by IP or user when the global API limit returns 429 (Mongo with TTL).",
+    "period": "Period:",
+    "days": "days",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "loadError": "Could not load data.",
+    "empty": "No blocks recorded in this period.",
+    "col": {
+      "identifier": "Identifier",
+      "category": "Category",
+      "hits": "Blocks",
+      "lastAt": "Last",
+      "lastPath": "Path"
+    }
   },
   "templates": {
     "title": "Templates & showcase",

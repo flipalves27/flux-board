@@ -1,6 +1,8 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
 
+export { getClientIpFromHeaders } from "./client-ip";
+
 type RateLimitResult = {
   allowed: boolean;
   retryAfterSeconds: number;
@@ -15,27 +17,6 @@ type RateLimitParams = {
   limit: number;
   windowMs: number;
 };
-
-function normalizeIp(ip: string): string {
-  // Remove porta e espaços extras
-  const s = String(ip || "").trim();
-  if (!s) return "unknown";
-  // Formato comum: "x.x.x.x" ou "x.x.x.x:port"
-  return s.split(",")[0].split(":")[0] || "unknown";
-}
-
-export function getClientIpFromHeaders(headers: { get(name: string): string | null | undefined }): string {
-  const xff = headers.get("x-forwarded-for");
-  if (xff) return normalizeIp(xff);
-
-  const cf = headers.get("cf-connecting-ip");
-  if (cf) return normalizeIp(cf);
-
-  const xr = headers.get("x-real-ip");
-  if (xr) return normalizeIp(xr);
-
-  return "unknown";
-}
 
 const memoryCounters = new Map<
   string,

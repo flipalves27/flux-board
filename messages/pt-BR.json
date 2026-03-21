@@ -11,6 +11,7 @@
     "organization": "Organização",
     "billing": "Billing",
     "invites": "Convites",
+    "rateLimitAbuse": "Rate limit",
     "section": {
       "flow": "Fluxo",
       "intelligence": "Inteligência",
@@ -26,7 +27,8 @@
       "users": "Membros e permissões da organização.",
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
-      "invites": "Convites pendentes para novos membros."
+      "invites": "Convites pendentes para novos membros.",
+      "rateLimitAbuse": "Bloqueios por limite de API (abuso)."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -48,6 +50,23 @@
       "cycleTooltip": "Aparência: {current}. Clique para alternar sistema, claro e escuro."
     },
     "logout": "Sair"
+  },
+  "rateLimitAbuse": {
+    "title": "Abuso — rate limit",
+    "subtitle": "Agrupamento por IP ou usuário quando o limite global da API retorna 429 (Mongo com TTL).",
+    "period": "Período:",
+    "days": "dias",
+    "refresh": "Atualizar",
+    "loading": "Carregando…",
+    "loadError": "Não foi possível carregar os dados.",
+    "empty": "Nenhum bloqueio registrado neste período.",
+    "col": {
+      "identifier": "Identificador",
+      "category": "Categoria",
+      "hits": "Bloqueios",
+      "lastAt": "Último",
+      "lastPath": "Rota"
+    }
   },
   "templates": {
     "title": "Templates & showcase",
