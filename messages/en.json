@@ -1114,6 +1114,13 @@
       },
       "direction": {
         "heading": "Direction"
+      },
+      "quickActions": {
+        "copyTitleSuffix": "(copy)",
+        "priorityTooltip": "Change priority",
+        "moveTooltip": "Move to column",
+        "duplicateTooltip": "Duplicate card",
+        "deleteTooltip": "Delete card"
       }
     },
     "column": {

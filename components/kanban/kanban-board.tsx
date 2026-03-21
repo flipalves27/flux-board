@@ -392,6 +392,8 @@ function KanbanBoardLoaded({
           board.setNewColumnName("");
           board.setAddColumnOpen(true);
         }}
+        onPatchCard={board.patchCardFromTable}
+        onDuplicateCard={board.duplicateCard}
       />
 
       <BoardSummaryDock

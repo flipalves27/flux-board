@@ -339,6 +339,37 @@ export function useBoardState({
     setModalMode("edit");
   }, []);
 
+  const duplicateCard = useCallback(
+    (cardId: string) => {
+      const copySuffix = t("card.quickActions.copyTitleSuffix");
+      updateDb((d) => {
+        const source = d.cards.find((c) => c.id === cardId);
+        if (!source) return;
+        const newId =
+          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? `COPY-${crypto.randomUUID().slice(0, 8)}`
+            : `COPY-${Date.now()}`;
+        const titleBase = String(source.title || "").trim();
+        const dup: CardData = {
+          ...source,
+          id: newId,
+          title: titleBase ? `${titleBase} ${copySuffix}` : copySuffix,
+          blockedBy: [],
+        };
+        const bucketCards = d.cards
+          .filter((c) => c.bucket === source.bucket)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        bucketCards.push(dup);
+        bucketCards.forEach((c, i) => {
+          c.order = i;
+        });
+        const otherBuckets = d.cards.filter((c) => c.bucket !== source.bucket);
+        d.cards = [...otherBuckets, ...bucketCards];
+      });
+    },
+    [updateDb, t]
+  );
+
   const patchCardFromTable = useCallback(
     (
       cardId: string,
@@ -748,6 +779,7 @@ export function useBoardState({
     deleteLabel,
     handleTimelineDueDate,
     handleTimelineOpenCard,
+    duplicateCard,
     patchCardFromTable,
     directionCounts,
     totalWithDir,

@@ -22,6 +22,13 @@ interface KanbanColumnProps {
   onOpenDesc?: (cardId: string) => void;
   directions: string[];
   dirColors: Record<string, string>;
+  boardBuckets: BucketConfig[];
+  priorities: string[];
+  onPatchCard: (
+    cardId: string,
+    patch: Partial<Pick<CardData, "priority" | "bucket">>
+  ) => void;
+  onDuplicateCard: (cardId: string) => void;
   /** Primeira coluna do board (marcadores do tour guiado). */
   isFirstColumn?: boolean;
 }
@@ -54,6 +61,10 @@ export function KanbanColumn({
   onOpenDesc,
   directions,
   dirColors,
+  boardBuckets,
+  priorities,
+  onPatchCard,
+  onDuplicateCard,
   isFirstColumn,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
@@ -211,6 +222,10 @@ export function KanbanColumn({
                 onSetDirection={onSetDirection}
                 onOpenDesc={onOpenDesc}
                 tourFirstCard={!!isFirstColumn && idx === 0}
+                buckets={boardBuckets}
+                priorities={priorities}
+                onPatchCard={onPatchCard}
+                onDuplicateCard={onDuplicateCard}
               />
             </div>
           ))}

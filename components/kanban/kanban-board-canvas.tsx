@@ -51,6 +51,11 @@ type KanbanBoardCanvasProps = {
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc: (cardId: string) => void;
   onOpenAddColumn: () => void;
+  onPatchCard: (
+    cardId: string,
+    patch: Partial<Pick<CardData, "priority" | "bucket">>
+  ) => void;
+  onDuplicateCard: (cardId: string) => void;
 };
 
 export function KanbanBoardCanvas({
@@ -88,6 +93,8 @@ export function KanbanBoardCanvas({
   onSetDirection,
   onOpenDesc,
   onOpenAddColumn,
+  onPatchCard,
+  onDuplicateCard,
 }: KanbanBoardCanvasProps) {
   return (
     <div
@@ -200,6 +207,10 @@ export function KanbanBoardCanvas({
                 onOpenDesc={onOpenDesc}
                 directions={directions}
                 dirColors={DIR_COLORS}
+                boardBuckets={buckets}
+                priorities={priorities}
+                onPatchCard={onPatchCard}
+                onDuplicateCard={onDuplicateCard}
                 isFirstColumn={colIdx === 0}
               />
             ))}
@@ -232,6 +243,7 @@ export function KanbanBoardCanvas({
                   onSetDirection={() => {}}
                   onOpenDesc={undefined}
                   isDragging
+                  quickActionsDisabled
                 />
               </div>
             ) : null}
