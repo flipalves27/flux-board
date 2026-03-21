@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { callTogetherApi } from "@/lib/llm-utils";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import {
@@ -70,21 +71,6 @@ function daysUntilDue(date: string | null | undefined): number | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((due.getTime() - today.getTime()) / 86400000);
-}
-
-function extractTextFromLlmContent(
-  content: string | Array<{ type?: string; text?: string }> | undefined
-): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (!part || typeof part !== "object") return "";
-      return String(part.text || "").trim();
-    })
-    .filter(Boolean)
-    .join("\n")
-    .trim();
 }
 
 function sanitizeJsonCandidate(value: string): string {
@@ -558,18 +544,14 @@ async function callTogetherModelForCopilot(input: {
 
   const promptMessages = [{ role: "user" as const, content: system }];
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
+  const res = await callTogetherApi(
+    {
       model,
       temperature: 0.2,
       messages: promptMessages,
-    }),
-  });
+    },
+    { apiKey, baseUrl }
+  );
 
   if (!res.ok) {
     return {
@@ -578,10 +560,7 @@ async function callTogetherModelForCopilot(input: {
     };
   }
 
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-  };
-  const content = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
+  const content = res.assistantText || "";
   const parsed = parseJsonFromLlmContent(content);
 
   const obj = parsed.parsed && typeof parsed.parsed === "object" ? (parsed.parsed as any) : null;

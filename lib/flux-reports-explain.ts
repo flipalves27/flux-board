@@ -1,20 +1,4 @@
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object") {
-          const text = (p as { text?: string }).text;
-          if (typeof text === "string") return text;
-          const t = (p as { content?: string }).content;
-          if (typeof t === "string") return t;
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
+import { callTogetherApi } from "./llm-utils";
 
 export type FluxReportExplainResult = {
   narrative: string;
@@ -65,19 +49,15 @@ export async function generateFluxReportExplain(opts: {
   ].join("\n");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.25,
         max_tokens: 400,
         messages: [{ role: "user", content: prompt }],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
       return {
@@ -85,14 +65,11 @@ export async function generateFluxReportExplain(opts: {
         generatedWithAI: false,
         provider: "together.ai",
         errorKind: "http_error",
-        errorMessage: `HTTP ${response.status}`,
+        errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
       };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: unknown } }>;
-    };
-    const raw = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
+    const raw = response.assistantText || "";
     const narrative = raw.trim().slice(0, 2000);
     if (!narrative) {
       return {

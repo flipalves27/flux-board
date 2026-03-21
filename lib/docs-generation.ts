@@ -1,28 +1,11 @@
 import type { BoardData } from "@/lib/kv-boards";
+import { callTogetherApi } from "@/lib/llm-utils";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
 import { chunkDocMarkdown } from "@/lib/docs-rag";
 import type { DocData } from "@/lib/kv-docs";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 
 export type DocsGenerationFlow = "board_status" | "daily_minutes" | "okr_progress" | "free_prompt";
-
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object") {
-          const text = (p as { text?: string }).text;
-          if (typeof text === "string") return text;
-          const t = (p as { content?: string }).content;
-          if (typeof t === "string") return t;
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
 
 function togetherEnabled(): boolean {
   return Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
@@ -43,27 +26,20 @@ export async function generateMarkdownWithTogether(args: {
   const prompt = [`### Instruções do sistema\n${args.system}`, "", "### Dados de entrada\n", args.user].join("\n");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: args.temperature ?? 0.3,
         messages: [{ role: "user", content: prompt }],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
-      return { ok: false, markdown: "", error: `HTTP ${response.status}` };
+      return { ok: false, markdown: "", error: `HTTP ${response.status ?? "?"}` };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-    };
-    const raw = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
+    const raw = response.assistantText || "";
     const md = String(raw || "").trim();
     if (!md) {
       return { ok: false, markdown: "", error: "Resposta vazia da IA." };

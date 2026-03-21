@@ -10,7 +10,8 @@
     "lint:css": "stylelint \"app/**/*.css\"",
     "lint:flux-colors": "eslint --quiet -c eslint.flux-colors.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage:llm-utils": "vitest run lib/llm-utils.test.ts --coverage"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -39,6 +40,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.0.0",
     "happy-dom": "^20.8.4",

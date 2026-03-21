@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { callTogetherApi } from "@/lib/llm-utils";
 import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -53,21 +54,6 @@ const cardContextCache = new Map<
 
 // Deduplica chamadas concorrentes para o mesmo cacheKey (evita múltiplos requests à IA).
 const cardContextInFlight = new Map<string, Promise<LlmCardContextResult>>();
-
-function extractTextFromLlmContent(
-  content: string | Array<{ type?: string; text?: string }> | undefined
-): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (!part || typeof part !== "object") return "";
-      return String(part.text || "").trim();
-    })
-    .filter(Boolean)
-    .join("\n")
-    .trim();
-}
 
 function limitToWords(text: string, maxWords: number): string {
   const words = String(text || "")
@@ -314,24 +300,18 @@ async function llmCardContext(args: { boardName: string; title: string; descript
   ].join("\n");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.25,
         messages: [{ role: "user", content: prompt }],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      const message = `HTTP ${response.status} ${response.statusText}${
-        errorBody ? ` - ${errorBody.slice(0, 400)}` : ""
-      }`;
+      const errorBody = response.bodySnippet || "";
+      const message = `HTTP ${response.status ?? "?"}${errorBody ? ` - ${errorBody.slice(0, 400)}` : ""}`;
       const heuristic = heuristicCardContext(args.title, args.description);
       return {
         ...heuristic,
@@ -343,10 +323,7 @@ async function llmCardContext(args: { boardName: string; title: string; descript
       };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-    };
-    const content = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "{}";
+    const content = response.assistantText || "{}";
     const parsed = parseJsonFromLlmContent(content);
 
     const heuristic = heuristicCardContext(args.title, args.description);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { callTogetherApi } from "@/lib/llm-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { DailyInsightInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
@@ -48,21 +49,6 @@ type ParseOutcome = {
   parsed: unknown;
   recovered: boolean;
 };
-
-function extractTextFromLlmContent(
-  content: string | Array<{ type?: string; text?: string }> | undefined
-): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (!part || typeof part !== "object") return "";
-      return String(part.text || "").trim();
-    })
-    .filter(Boolean)
-    .join("\n")
-    .trim();
-}
 
 function normalizeTitleList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -395,26 +381,18 @@ async function llmInsight(args: {
   ].join("\n");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.2,
         messages: [{ role: "user", content: prompt }],
-        // Não usamos response_format para manter compatibilidade ampla;
-        // o prompt já obriga retorno como JSON puro.
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      const message = `HTTP ${response.status} ${response.statusText}${
-        errorBody ? ` - ${errorBody.slice(0, 400)}` : ""
-      }`;
+      const errorBody = response.bodySnippet || "";
+      const message = `HTTP ${response.status ?? "?"}${errorBody ? ` - ${errorBody.slice(0, 400)}` : ""}`;
       console.error("Daily insights LLM HTTP error:", message);
       return {
         insight: heuristicInsight(args.transcript),
@@ -426,10 +404,7 @@ async function llmInsight(args: {
       };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-    };
-    const content = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "{}";
+    const content = response.assistantText || "{}";
     const parsed = parseJsonFromLlmContent(content);
     return {
       insight: safeInsight(parsed.parsed),

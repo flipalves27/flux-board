@@ -1,3 +1,4 @@
+import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 
 export type OkrWeeklyDigestBlock = {
@@ -9,41 +10,6 @@ export type OkrWeeklyDigestBlock = {
   errorKind?: string;
   errorMessage?: string;
 };
-
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object") {
-          const text = (p as { text?: string }).text;
-          if (typeof text === "string") return text;
-          const t = (p as { content?: string }).content;
-          if (typeof t === "string") return t;
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
-
-function safeJsonParseCandidate(raw: string): unknown | null {
-  const s = String(raw || "").trim();
-  if (!s) return null;
-  const unFenced = s
-    .replace(/```(?:json)?/gi, "")
-    .replace(/```/g, "")
-    .trim();
-  const firstBrace = unFenced.indexOf("{");
-  const lastBrace = unFenced.lastIndexOf("}");
-  const candidate = firstBrace >= 0 && lastBrace > firstBrace ? unFenced.slice(firstBrace, lastBrace + 1) : unFenced;
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    return null;
-  }
-}
 
 function heuristicOkrDigest(projections: OkrKrProjection[]): OkrWeeklyDigestBlock {
   const risks = projections.filter((p) => p.riskBelowThreshold);
@@ -120,18 +86,14 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
   const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.25,
         messages: [{ role: "user", content: prompt }],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
       const h = heuristicOkrDigest(projections);
@@ -140,15 +102,12 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
         generatedWithAI: false,
         provider: "together.ai",
         errorKind: "http_error",
-        errorMessage: `HTTP ${response.status}`,
+        errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
       };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-    };
-    const raw = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
-    const parsed = safeJsonParseCandidate(raw);
+    const raw = response.assistantText || "";
+    const parsed = safeJsonParse(raw);
     const obj = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
 
     if (!obj || typeof obj.headline !== "string" || !Array.isArray(obj.bullets)) {

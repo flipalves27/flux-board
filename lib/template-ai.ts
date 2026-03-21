@@ -1,4 +1,4 @@
-import { safeJsonParse } from "./template-ai-parse";
+import { callTogetherApi, safeJsonParse } from "./llm-utils";
 import type { BoardTemplateSnapshot } from "./template-types";
 
 export type AiTemplateDraft = {
@@ -9,23 +9,6 @@ export type AiTemplateDraft = {
   labelPalette: string[];
   automationIdeas: string[];
 };
-
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object") {
-          const text = (p as { text?: string }).text;
-          if (typeof text === "string") return text;
-        }
-        return "";
-      })
-      .join("")
-      .trim();
-  }
-  return "";
-}
 
 const CATEGORIES = [
   "sales",
@@ -61,30 +44,25 @@ Responda APENAS JSON válido (sem markdown). Campos obrigatórios:
 
   const user = `Descreva o trabalho do time:\n${teamDescription.slice(0, 4000)}`;
 
-  const res = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const res = await callTogetherApi(
+    {
       model,
       temperature: 0.35,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-    }),
-  });
+    },
+    { apiKey, baseUrl: base }
+  );
 
   if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    return { ok: false, error: `LLM HTTP ${res.status}: ${t.slice(0, 200)}` };
+    const t = res.bodySnippet || "";
+    return { ok: false, error: `LLM HTTP ${res.status ?? "?"}: ${t.slice(0, 200)}` };
   }
 
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: unknown } }> };
-  const raw = extractTextFromLlmContent(data?.choices?.[0]?.message?.content);
-  const parsed = safeJsonParse(raw) as Record<string, unknown> | null;
+  const raw = res.assistantText;
+  const parsed = safeJsonParse<Record<string, unknown>>(raw);
   if (!parsed || typeof parsed !== "object") {
     return { ok: false, error: "Resposta do modelo inválida." };
   }

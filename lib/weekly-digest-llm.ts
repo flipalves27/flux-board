@@ -1,4 +1,5 @@
 import type { BoardData } from "@/lib/kv-boards";
+import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
 import type { OverdueCard, WeeklyBoardToolMetrics } from "@/lib/weekly-digest-metrics";
 
 export type OverdueAction = {
@@ -16,45 +17,6 @@ export type BoardWeeklyInsight = {
   errorKind?: string;
   errorMessage?: string;
 };
-
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object") {
-          const text = (p as any).text;
-          if (typeof text === "string") return text;
-          const t = (p as any).content;
-          if (typeof t === "string") return t;
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
-
-function safeJsonParseCandidate(raw: string): unknown | null {
-  const s = String(raw || "").trim();
-  if (!s) return null;
-
-  // Remove markdown fences (```json ... ```).
-  const unFenced = s
-    .replace(/```(?:json)?/gi, "")
-    .replace(/```/g, "")
-    .trim();
-
-  // Tenta extrair o primeiro objeto JSON.
-  const firstBrace = unFenced.indexOf("{");
-  const lastBrace = unFenced.lastIndexOf("}");
-  const candidate = firstBrace >= 0 && lastBrace > firstBrace ? unFenced.slice(firstBrace, lastBrace + 1) : unFenced;
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    return null;
-  }
-}
 
 function daysUntilDue(date: string | null | undefined): number | null {
   if (!date || typeof date !== "string") return null;
@@ -204,18 +166,14 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
   const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.2,
         messages: [{ role: "user", content: prompt }],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
       const heuristic = makeHeuristicBoardInsight({ board, boardName, metrics, overdueCards });
@@ -224,15 +182,12 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
         generatedWithAI: false,
         provider: "together.ai",
         errorKind: "http_error",
-        errorMessage: `HTTP ${response.status} ${response.statusText}`,
+        errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
       };
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-    };
-    const raw = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
-    const parsed = safeJsonParseCandidate(raw);
+    const raw = response.assistantText || "";
+    const parsed = safeJsonParse(raw);
     const obj = parsed && typeof parsed === "object" ? (parsed as any) : null;
 
     if (!obj || typeof obj.summary !== "string" || typeof obj.insight !== "string") {

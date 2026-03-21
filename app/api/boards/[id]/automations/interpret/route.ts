@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { AutomationRuleSchema, zodErrorToMessage } from "@/lib/schemas";
@@ -8,34 +9,6 @@ import { z } from "zod";
 const BodySchema = z.object({
   text: z.string().trim().min(12, "Descreva a regra com mais detalhes.").max(4000),
 });
-
-function extractTextFromLlmContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (p && typeof p === "object" && "text" in p) return String((p as { text?: string }).text || "");
-        return "";
-      })
-      .join("")
-      .trim();
-  }
-  return "";
-}
-
-function safeJsonParse(raw: string): unknown | null {
-  const s = String(raw || "").trim();
-  if (!s) return null;
-  const unfenced = s.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
-  const first = unfenced.indexOf("{");
-  const last = unfenced.lastIndexOf("}");
-  const candidate = first >= 0 && last > first ? unfenced.slice(first, last + 1) : unfenced;
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    return null;
-  }
-}
 
 function previewFromRule(rule: z.infer<typeof AutomationRuleSchema>): string {
   const tr = rule.trigger;
@@ -197,32 +170,25 @@ ${schemaDoc}`;
   ].join("\n");
 
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    const response = await callTogetherApi(
+      {
         model,
         temperature: 0.1,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
         ],
-      }),
-    });
+      },
+      { apiKey, baseUrl }
+    );
 
     if (!response.ok) {
-      const errBody = await response.text().catch(() => "");
+      const errBody = response.bodySnippet || "";
       console.error("[automations/interpret] HTTP", response.status, errBody.slice(0, 400));
       return NextResponse.json({ error: "Falha ao interpretar com a IA." }, { status: 502 });
     }
 
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: unknown } }>;
-    };
-    const raw = extractTextFromLlmContent(data.choices?.[0]?.message?.content) || "";
+    const raw = response.assistantText || "";
     const parsedObj = safeJsonParse(raw);
     if (!parsedObj || typeof parsedObj !== "object") {
       return NextResponse.json({ error: "A IA não retornou JSON válido. Reformule a regra." }, { status: 422 });
