@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WEBHOOK_EVENT_TYPES } from "./webhook-types";
 
 /**
  * Sanitiza texto removendo HTML potencialmente perigoso.
@@ -658,4 +659,27 @@ export const UserThemePreferenceSchema = z.object({
 export const ProductTourPatchSchema = z.object({
   completed: z.boolean(),
 });
+
+const webhookEventEnum = z.enum(WEBHOOK_EVENT_TYPES);
+
+export const WebhookSubscriptionCreateSchema = z
+  .object({
+    url: z.string().trim().url("URL invalida.").max(2048),
+    secret: z.string().trim().min(8, "Secret deve ter ao menos 8 caracteres.").max(256).optional(),
+    events: z.array(webhookEventEnum).min(1, "Selecione ao menos um evento."),
+    active: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const WebhookSubscriptionUpdateSchema = z
+  .object({
+    url: z.string().trim().url("URL invalida.").max(2048).optional(),
+    secret: z.string().trim().min(8).max(256).optional(),
+    events: z.array(webhookEventEnum).min(1).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((d) => d.url !== undefined || d.secret !== undefined || d.events !== undefined || d.active !== undefined, {
+    message: "Informe ao menos um campo para atualizar.",
+  })
+  .passthrough();
 

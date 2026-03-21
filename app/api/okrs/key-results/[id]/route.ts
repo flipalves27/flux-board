@@ -5,6 +5,7 @@ import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { deleteKeyResult, getKeyResult, updateKeyResult } from "@/lib/kv-okrs";
 import { OkrsKeyResultUpdateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
 
 export async function PATCH(
   request: NextRequest,
@@ -57,6 +58,26 @@ export async function PATCH(
 
     const kr = await updateKeyResult(payload.orgId, id, parsed.data);
     if (!kr) return NextResponse.json({ error: "Key Result não encontrado" }, { status: 404 });
+
+    const progressRelevant =
+      existing.manualCurrent !== kr.manualCurrent ||
+      existing.target !== kr.target ||
+      existing.metric_type !== kr.metric_type ||
+      existing.linkedBoardId !== kr.linkedBoardId ||
+      existing.linkedColumnKey !== kr.linkedColumnKey;
+    if (progressRelevant) {
+      void enqueueWebhookDeliveriesForEvent(payload.orgId, "okr.progress_changed", {
+        key_result_id: kr.id,
+        objective_id: kr.objectiveId,
+        title: kr.title,
+        metric_type: kr.metric_type,
+        target: kr.target,
+        manual_current: kr.manualCurrent,
+        linked_board_id: kr.linkedBoardId,
+        linked_column_key: kr.linkedColumnKey,
+      });
+    }
+
     return NextResponse.json({ ok: true, keyResult: kr });
   } catch (err) {
     console.error("OKRs key-result PATCH error:", err);

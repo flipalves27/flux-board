@@ -9,6 +9,7 @@ import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { readImageFileAsDataUrl } from "@/lib/branding-upload-client";
+import { OrgWebhooksSettings } from "@/components/org-webhooks-settings";
 
 function slugifyLocal(input: string): string {
   return String(input || "")
@@ -441,6 +442,8 @@ export default function OrgSettingsPage() {
                   {busy ? "Salvando..." : "Salvar"}
                 </button>
               </div>
+
+              <OrgWebhooksSettings />
             </>
           )}
         </div>

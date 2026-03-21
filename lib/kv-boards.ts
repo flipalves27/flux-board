@@ -7,6 +7,7 @@ import type { Db } from "mongodb";
 import type { BoardActivityContext } from "./board-activity-types";
 import { diffBoardActivity } from "./board-activity-diff";
 import { scheduleBoardActivityWrites } from "./board-activity-log";
+import { scheduleWebhookBoardPersist } from "./webhook-emit";
 
 const BOARDS_PREFIX = "reborn_boards:";
 const BOARD_PREFIX = "reborn_board:";
@@ -280,12 +281,14 @@ export async function updateBoardFromExisting(
       .collection<BoardDoc>(COL_BOARDS)
       .replaceOne({ _id: nextBoard.id, orgId: nextBoard.orgId }, boardDataToDoc(nextBoard));
     scheduleBoardActivityAfterPersist(board, nextBoard, activity);
+    scheduleWebhookBoardPersist(board, nextBoard);
     return nextBoard;
   }
 
   const kv = await getStore();
   await kv.set(BOARD_PREFIX + nextBoard.id, JSON.stringify(nextBoard));
   scheduleBoardActivityAfterPersist(board, nextBoard, activity);
+  scheduleWebhookBoardPersist(board, nextBoard);
   return nextBoard;
 }
 

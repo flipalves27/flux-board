@@ -30,6 +30,7 @@ import { postPersistAnomalyNotifications } from "@/lib/anomaly-notify-dispatch";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
 import { getOrganizationById, type Organization } from "@/lib/kv-organizations";
+import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
 
 export { COL_ANOMALY_ALERTS, COL_ANOMALY_RUNS, COL_ANOMALY_SNAPSHOTS } from "@/lib/anomaly-collections";
 
@@ -206,6 +207,22 @@ async function persistRunAndAlerts(
   const ins = await db.collection(COL_ANOMALY_ALERTS).insertMany(docs);
   const ids = alerts.map((_, i) => ins.insertedIds[i]).filter(Boolean) as ObjectId[];
 
+  for (let i = 0; i < alerts.length; i++) {
+    const a = alerts[i];
+    const oid = ids[i];
+    if (!a || !oid) continue;
+    void enqueueWebhookDeliveriesForEvent(orgId, "anomaly.triggered", {
+      alert_id: oid.toHexString(),
+      kind: a.kind,
+      severity: a.severity,
+      title: a.title,
+      message: a.message,
+      diagnostics: a.diagnostics ?? null,
+      board_id: a.boardId ?? null,
+      board_name: a.boardName ?? null,
+    });
+  }
+
   await postPersistAnomalyNotifications({
     db,
     orgId,
@@ -246,6 +263,22 @@ export async function insertAnomalyAlertsAndNotify(args: {
   }));
   const ins = await db.collection(COL_ANOMALY_ALERTS).insertMany(docs);
   const ids = alerts.map((_, i) => ins.insertedIds[i]).filter(Boolean) as ObjectId[];
+
+  for (let i = 0; i < alerts.length; i++) {
+    const a = alerts[i];
+    const oid = ids[i];
+    if (!a || !oid) continue;
+    void enqueueWebhookDeliveriesForEvent(orgId, "anomaly.triggered", {
+      alert_id: oid.toHexString(),
+      kind: a.kind,
+      severity: a.severity,
+      title: a.title,
+      message: a.message,
+      diagnostics: a.diagnostics ?? null,
+      board_id: a.boardId ?? null,
+      board_name: a.boardName ?? null,
+    });
+  }
 
   await postPersistAnomalyNotifications({
     db,

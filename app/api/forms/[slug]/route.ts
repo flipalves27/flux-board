@@ -11,6 +11,7 @@ import {
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
+import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
 
 type BoardCard = {
   id: string;
@@ -172,6 +173,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           await runFormSubmissionAutomations({ board: freshBoard, cardId: updated.id });
         }
 
+        void enqueueWebhookDeliveriesForEvent(index.orgId, "form.submitted", {
+          form_slug: slug,
+          board_id: index.boardId,
+          card_id: updated.id,
+          merged: true,
+          requester_name: String(clean.requesterName || "").trim(),
+          requester_email: clean.requesterEmail ? String(clean.requesterEmail).trim() : null,
+        });
+
         return NextResponse.json({
           ok: true,
           merged: true,
@@ -218,6 +228,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (freshBoard) {
       await runFormSubmissionAutomations({ board: freshBoard, cardId: card.id });
     }
+
+    void enqueueWebhookDeliveriesForEvent(index.orgId, "form.submitted", {
+      form_slug: slug,
+      board_id: index.boardId,
+      card_id: card.id,
+      merged: false,
+      requester_name: String(clean.requesterName || "").trim(),
+      requester_email: clean.requesterEmail ? String(clean.requesterEmail).trim() : null,
+    });
 
     return NextResponse.json({
       ok: true,
