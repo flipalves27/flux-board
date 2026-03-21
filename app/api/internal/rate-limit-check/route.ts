@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     method?: string;
     clientIp?: string;
     authHeader?: string | null;
+    cookieHeader?: string | null;
     cronSecret?: string | null;
   } | null;
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
     method: String(body?.method || "GET"),
     clientIp: String(body?.clientIp || ""),
     authHeader: body?.authHeader ?? null,
+    cookieHeader: body?.cookieHeader ?? null,
     cronSecretHeader: body?.cronSecret ?? null,
   });
 

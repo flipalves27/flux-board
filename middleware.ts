@@ -63,6 +63,7 @@ async function applyApiGlobalRateLimit(req: NextRequest): Promise<NextResponse> 
         method: req.method,
         clientIp: getClientIpFromHeaders(req.headers),
         authHeader: req.headers.get("authorization"),
+        cookieHeader: req.headers.get("cookie"),
         cronSecret: req.headers.get("x-cron-secret"),
       }),
       cache: "no-store",

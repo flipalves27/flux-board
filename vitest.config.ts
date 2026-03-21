@@ -5,6 +5,9 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   test: {
+    env: {
+      JWT_SECRET: "vitest-jwt-secret-placeholder-min-32chars!",
+    },
     environment: "jsdom",
     globals: true,
     include: ["**/*.{test,spec}.{ts,tsx}"],

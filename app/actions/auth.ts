@@ -1,11 +1,10 @@
 "use server";
 
-import { verifyPassword, createToken, hashPassword, verifyToken } from "@/lib/auth";
+import { verifyPassword, hashPassword } from "@/lib/auth";
 import { headers } from "next/headers";
 import {
   getUserByUsername,
   getUserByEmail,
-  getUserById,
   ensureAdminUser,
   createUser,
   listUsers,
@@ -20,11 +19,14 @@ import {
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import { getUserCap } from "@/lib/plan-gates";
 import type { ThemePreference } from "@/lib/theme-storage";
+import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
+import type { ValidateResult } from "@/lib/auth-types";
+
+export type { ValidateResult } from "@/lib/auth-types";
 
 export type AuthResult =
   | {
       ok: true;
-      token: string;
       user: {
         id: string;
         username: string;
@@ -42,13 +44,14 @@ export type AuthResult =
 /**
  * Server Action para login. Executa no servidor, evitando 403 da Vercel
  * Deployment Protection (que bloqueia requisições POST do cliente).
+ * Define cookies httpOnly (access + refresh); não devolve JWT ao cliente.
  */
 export async function loginAction(
   username: string,
-  password: string
+  password: string,
+  remember = true
 ): Promise<AuthResult> {
   try {
-    // In Next.js 15 the `headers()` type can be `Promise<ReadonlyHeaders>` in some contexts.
     const clientIp = getClientIpFromHeaders(await headers());
     const rl = await rateLimit({
       key: `auth:login:ip:${clientIp}`,
@@ -79,16 +82,18 @@ export async function loginAction(
 
     const isAdmin = user.id === "admin" || !!user.isAdmin;
     const isExecutive = !!user.isExecutive;
-    const token = createToken({
-      id: user.id,
-      username: user.username,
-      isAdmin,
-      isExecutive,
-      orgId: user.orgId,
-    });
+    await issueSessionForCredentials(
+      {
+        id: user.id,
+        username: user.username,
+        isAdmin,
+        ...(isExecutive ? { isExecutive: true } : {}),
+        orgId: user.orgId,
+      },
+      remember
+    );
     return {
       ok: true,
-      token,
       user: {
         id: user.id,
         username: user.username,
@@ -118,10 +123,10 @@ export async function registerAction(
   name: string,
   email: string,
   password: string,
-  inviteCode?: string
+  inviteCode?: string,
+  remember = true
 ): Promise<AuthResult> {
   try {
-    // In Next.js 15 the `headers()` type can be `Promise<ReadonlyHeaders>` in some contexts.
     const clientIp = getClientIpFromHeaders(await headers());
     const rl = await rateLimit({
       key: `auth:register:ip:${clientIp}`,
@@ -154,12 +159,10 @@ export async function registerAction(
       return { ok: false, error: "E-mail já cadastrado." };
     }
 
-    // Se houver invite, o usuário entra na org convidada.
     if (inviteCode) {
       const validated = await validateOrganizationInvite({ code: inviteCode, email: emailNorm });
       if (!validated) return { ok: false, error: "Convite inválido ou expirado." };
 
-      // Garante limite de usuários por organização.
       const org = await getOrganizationById(validated.orgId);
       const members = await listUsers(validated.orgId);
       const cap = getUserCap(org);
@@ -182,10 +185,17 @@ export async function registerAction(
         return { ok: false, error: "Convite já foi utilizado." };
       }
 
-      const token = createToken({ id: user.id, username: user.username, isAdmin: false, orgId: user.orgId });
+      await issueSessionForCredentials(
+        {
+          id: user.id,
+          username: user.username,
+          isAdmin: false,
+          orgId: user.orgId,
+        },
+        remember
+      );
       return {
         ok: true,
-        token,
         user: {
           id: user.id,
           username: user.username,
@@ -199,8 +209,6 @@ export async function registerAction(
       };
     }
 
-    // Sem convite: cria uma organization exclusiva para o usuário.
-    // Usamos domínio do e-mail para nome/slug iniciais (o usuário pode ajustar depois).
     const orgOwnerPlaceholder = `pending_${Date.now()}`;
     const org = await createTrialOrganizationForSignup(orgOwnerPlaceholder, emailNorm);
 
@@ -210,15 +218,22 @@ export async function registerAction(
       email: emailNorm,
       passwordHash: hashPassword(password),
       orgId: org._id,
-      isAdmin: true, // owner da org vira org-admin
+      isAdmin: true,
     });
 
     await updateOrganizationOwner(org._id, user.id);
 
-    const token = createToken(user);
+    await issueSessionForCredentials(
+      {
+        id: user.id,
+        username: user.username,
+        isAdmin: true,
+        orgId: user.orgId,
+      },
+      remember
+    );
     return {
       ok: true,
-      token,
       user: {
         id: user.id,
         username: user.username,
@@ -239,49 +254,12 @@ export async function registerAction(
   }
 }
 
-export type ValidateResult =
-  | {
-      ok: true;
-        user: {
-          id: string;
-          username: string;
-          name: string;
-          email: string;
-          isAdmin: boolean;
-          isExecutive?: boolean;
-          orgId: string;
-          themePreference?: ThemePreference;
-          boardProductTourCompleted?: boolean;
-        };
-      }
-    | { ok: false };
-
 /**
- * Server Action para validar token. Evita 403 da Vercel Protection ao
- * validar sessão sem chamar /api/auth/me.
+ * Valida sessão (cookies httpOnly) ou renova access via refresh com rotação.
  */
-export async function validateTokenAction(token: string): Promise<ValidateResult> {
+export async function validateSessionAction(): Promise<ValidateResult> {
   try {
-    const payload = verifyToken(token);
-    if (!payload) return { ok: false };
-    const user = await getUserById(payload.id, payload.orgId);
-    if (!user) return { ok: false };
-    const isAdmin = !!user.isAdmin;
-    const isExecutive = !!user.isExecutive;
-    return {
-      ok: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        isAdmin,
-        ...(isExecutive ? { isExecutive: true } : {}),
-        orgId: user.orgId,
-        ...(user.themePreference ? { themePreference: user.themePreference } : {}),
-        ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
-      },
-    };
+    return await validateSessionFromCookies();
   } catch {
     return { ok: false };
   }

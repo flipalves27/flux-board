@@ -171,7 +171,7 @@ export default function BoardPage() {
   const router = useRouter();
   const params = useParams();
   const boardId = params.id as string;
-  const { user, getHeaders, isChecked, token, setAuth } = useAuth();
+  const { user, getHeaders, isChecked, setAuth } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
   const t = useTranslations("board");
@@ -543,7 +543,6 @@ export default function BoardPage() {
 
       <BoardProductTour
         ref={tourRef}
-        token={token}
         user={user}
         setAuth={setAuth}
         getHeaders={getHeaders}

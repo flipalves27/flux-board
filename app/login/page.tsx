@@ -53,10 +53,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await loginAction(userInput, pwd);
+      const result = await loginAction(userInput, pwd, remember);
       if (result.ok) {
         setSuppressAutoRedirect(true);
-        login(result.token, result.user, remember);
+        login(result.user, remember);
         router.replace(`${localeRoot}/boards`);
       } else {
         setError(result.error);
@@ -86,10 +86,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await registerAction(name, email, pwd, inviteCode);
+      const result = await registerAction(name, email, pwd, inviteCode, remember);
       if (result.ok) {
         setSuppressAutoRedirect(true);
-        login(result.token, result.user, remember);
+        login(result.user, remember);
         router.replace(`${localeRoot}/onboarding`);
       } else {
         setError(result.error);

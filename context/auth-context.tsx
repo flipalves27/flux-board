@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
-import { validateTokenAction } from "@/app/actions/auth";
+import { validateSessionAction } from "@/app/actions/auth";
 import type { ThemePreference } from "@/lib/theme-storage";
 
-const AUTH_KEY = "reborn_auth";
+const LEGACY_AUTH_KEY = "reborn_auth";
 
 export interface AuthUser {
   id: string;
@@ -20,97 +20,80 @@ export interface AuthUser {
 }
 
 export interface AuthState {
-  token: string | null;
   user: AuthUser | null;
   isLoading: boolean;
   isChecked: boolean;
 }
 
 interface AuthContextType extends AuthState {
-  login: (token: string, user: AuthUser, remember?: boolean) => void;
-  logout: () => void;
-  setAuth: (token: string, user: AuthUser, remember?: boolean) => void;
+  login: (user: AuthUser, remember?: boolean) => void;
+  logout: () => Promise<void>;
+  setAuth: (user: AuthUser, remember?: boolean) => void;
   getHeaders: () => Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function getStoredAuth(): { token: string; user?: AuthUser } | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
-  if (!raw) return null;
+function clearLegacyStorage(): void {
+  if (typeof window === "undefined") return;
   try {
-    const data = JSON.parse(raw);
-    return data?.token ? data : null;
+    localStorage.removeItem(LEGACY_AUTH_KEY);
+    sessionStorage.removeItem(LEGACY_AUTH_KEY);
   } catch {
-    return null;
-  }
-}
-
-function clearStoredAuth(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(AUTH_KEY);
+    /* ignore */
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
-    token: null,
     user: null,
     isLoading: true,
     isChecked: false,
   });
 
-  const setAuth = useCallback((token: string, user: AuthUser, remember = true) => {
-    const data = { token, user };
-    if (typeof window !== "undefined") {
-      if (remember) localStorage.setItem(AUTH_KEY, JSON.stringify(data));
-      else sessionStorage.setItem(AUTH_KEY, JSON.stringify(data));
+  const setAuth = useCallback((user: AuthUser, _remember = true) => {
+    setState({ user, isLoading: false, isChecked: true });
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* ignore */
     }
-    setState({ token, user, isLoading: false, isChecked: true });
+    clearLegacyStorage();
+    setState({ user: null, isLoading: false, isChecked: true });
   }, []);
 
-  const logout = useCallback(() => {
-    clearStoredAuth();
-    setState({ token: null, user: null, isLoading: false, isChecked: true });
-  }, []);
-
-  const login = useCallback((token: string, user: AuthUser, remember = true) => {
-    setAuth(token, user, remember);
-  }, [setAuth]);
+  const login = useCallback(
+    (user: AuthUser, remember = true) => {
+      clearLegacyStorage();
+      setAuth(user, remember);
+    },
+    [setAuth]
+  );
 
   const getHeaders = useCallback(() => {
-    return getApiHeaders(
-      state.token ? { Authorization: `Bearer ${state.token}` } : undefined
-    );
-  }, [state.token]);
+    return getApiHeaders(undefined);
+  }, []);
 
   useEffect(() => {
-    const stored = getStoredAuth();
-    if (!stored) {
-      setState((s) => ({ ...s, isLoading: false, isChecked: true }));
-      return;
-    }
+    clearLegacyStorage();
 
-    // Usa Server Action para validar token (evita 403 da Vercel Protection)
-    validateTokenAction(stored.token)
+    validateSessionAction()
       .then((result) => {
         if (result.ok) {
           setState({
-            token: stored.token,
             user: result.user,
             isLoading: false,
             isChecked: true,
           });
         } else {
-          clearStoredAuth();
-          setState({ token: null, user: null, isLoading: false, isChecked: true });
+          setState({ user: null, isLoading: false, isChecked: true });
         }
       })
       .catch(() => {
-        clearStoredAuth();
-        setState({ token: null, user: null, isLoading: false, isChecked: true });
+        setState({ user: null, isLoading: false, isChecked: true });
       });
   }, []);
 

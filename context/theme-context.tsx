@@ -69,7 +69,7 @@ function runWithViewTransition(update: () => void): void {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { user, isChecked, token, getHeaders } = useAuth();
+  const { user, isChecked, getHeaders } = useAuth();
   const [preference, setPreference] = useState<ThemePreference>(() => readThemePreferenceFromStorage() ?? "system");
   const [systemDark, setSystemDark] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -111,7 +111,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         flushSync(() => setPreference(value));
       });
       writeThemePreferenceToStorage(value);
-      if (!opts?.skipRemote && token) {
+      if (!opts?.skipRemote && user) {
         void apiFetch("/api/users/me/theme", {
           method: "PATCH",
           body: JSON.stringify({ themePreference: value }),
@@ -119,7 +119,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }).catch(() => {});
       }
     },
-    [token, getHeaders]
+    [user, getHeaders]
   );
 
   const cycleThemePreference = useCallback(() => {

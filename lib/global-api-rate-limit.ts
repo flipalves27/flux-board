@@ -52,9 +52,10 @@ function shouldSkipCron(pathname: string, cronSecret: string | null): boolean {
   return Boolean(cronSecret && secrets.includes(cronSecret));
 }
 
-function buildAuthRequest(authHeader: string | null): NextRequest {
+function buildAuthRequest(authHeader: string | null, cookieHeader: string | null): NextRequest {
   const h = new Headers();
   if (authHeader) h.set("authorization", authHeader);
+  if (cookieHeader) h.set("cookie", cookieHeader);
   return new NextRequest("http://internal/rl", { headers: h });
 }
 
@@ -64,6 +65,8 @@ export type GlobalApiRateLimitInput = {
   /** IP já normalizado pelo middleware (fonte: request original). */
   clientIp: string;
   authHeader: string | null;
+  /** Cookie header bruto (ex.: flux_access para JWT em cookie httpOnly). */
+  cookieHeader: string | null;
   cronSecretHeader: string | null;
 };
 
@@ -85,7 +88,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     return { ok: true, category: "skipped", headers: {} };
   }
 
-  const payload = getAuthFromRequest(buildAuthRequest(input.authHeader));
+  const payload = getAuthFromRequest(buildAuthRequest(input.authHeader, input.cookieHeader));
   const ip = input.clientIp || "unknown";
 
   let category: RateLimitCategory;

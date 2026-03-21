@@ -25,18 +25,34 @@ export function getApiHeaders(extra?: Record<string, string>): Record<string, st
   return headers;
 }
 
-export type ApiFetchOptions = RequestInit & { headers?: Record<string, string> };
+export type ApiFetchOptions = RequestInit & {
+  headers?: Record<string, string>;
+  _fluxRefreshAttempted?: boolean;
+};
 
-export function apiFetch(
-  url: string,
-  options: ApiFetchOptions = {}
-): Promise<Response> {
-  const { headers: customHeaders, ...rest } = options;
+export async function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Response> {
+  const { headers: customHeaders, _fluxRefreshAttempted, ...rest } = options;
   const headers = {
     ...getApiHeaders(),
     ...customHeaders,
   };
-  return fetch(url, { ...rest, headers, credentials: "same-origin" });
+  const res = await fetch(url, { ...rest, headers, credentials: "same-origin" });
+
+  if (
+    res.status === 401 &&
+    typeof window !== "undefined" &&
+    !_fluxRefreshAttempted &&
+    typeof url === "string" &&
+    !url.includes("/api/auth/refresh") &&
+    !url.includes("/api/auth/logout")
+  ) {
+    const refresh = await fetch("/api/auth/refresh", { method: "POST", credentials: "same-origin" });
+    if (refresh.ok) {
+      return apiFetch(url, { ...options, _fluxRefreshAttempted: true });
+    }
+  }
+
+  return res;
 }
 
 export class ApiError extends Error {

@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { NextRequest } from "next/server";
+import { getJwtSecret } from "./jwt-secret";
+import { ACCESS_COOKIE } from "./auth-cookie-names";
+import { accessTokenExpiresSeconds } from "./session-ttl";
 
-const JWT_SECRET = process.env.JWT_SECRET || "seguradora-reborn-secret-change-in-production";
 const SALT_LEN = 16;
 
 export function hashPassword(password: string): string {
@@ -25,17 +27,18 @@ export function createToken(user: {
   isExecutive?: boolean;
   orgId?: string;
 }): string {
+  const secret = getJwtSecret();
+  const expiresIn = accessTokenExpiresSeconds();
   return jwt.sign(
     {
       id: user.id,
       username: user.username,
       isAdmin: !!user.isAdmin,
       isExecutive: !!user.isExecutive,
-      // Mantemos fallback para tokens antigos (antes da migração do orgId).
       orgId: user.orgId ? String(user.orgId) : "org_default",
     },
-    JWT_SECRET,
-    { expiresIn: "7d" }
+    secret,
+    { expiresIn }
   );
 }
 
@@ -43,7 +46,8 @@ export function verifyToken(
   token: string
 ): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
+    const secret = getJwtSecret();
+    const payload = jwt.verify(token, secret) as {
       id: string;
       username: string;
       isAdmin: boolean;
@@ -66,12 +70,27 @@ export function getAuthFromRequest(
   req: NextRequest
 ): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!auth || !auth.startsWith("Bearer ")) return null;
-  const payload = verifyToken(auth.slice(7));
-  if (!payload) return null;
+  if (auth?.startsWith("Bearer ")) {
+    const payload = verifyToken(auth.slice(7));
+    if (payload) return enrichAuthPayload(payload);
+  }
+  const cookieToken = req.cookies.get(ACCESS_COOKIE)?.value;
+  if (cookieToken) {
+    const payload = verifyToken(cookieToken);
+    if (payload) return enrichAuthPayload(payload);
+  }
+  return null;
+}
+
+function enrichAuthPayload(payload: {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  isExecutive?: boolean;
+  orgId: string;
+}) {
   return {
     ...payload,
-    // `isAdmin` aqui já deve ser escopo do tenant (org-admin).
     isAdmin: !!payload.isAdmin,
     isExecutive: !!payload.isExecutive,
   };

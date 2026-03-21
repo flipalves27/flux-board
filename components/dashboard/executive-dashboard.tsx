@@ -144,14 +144,14 @@ function OkrRing({ title, pct, color }: { title: string; pct: number; color: str
 
 export function ExecutiveDashboard() {
   const t = useTranslations("executiveDashboard");
-  const { getHeaders, token } = useAuth();
+  const { getHeaders, user } = useAuth();
 
   const fetcher = useCallback(async () => {
     return apiGet<ExecutiveDashboardPayload>("/api/executive-dashboard", getHeaders());
   }, [getHeaders]);
 
   const { data, error, isLoading } = useSWR<ExecutiveDashboardPayload>(
-    token ? ["/api/executive-dashboard", token] : null,
+    user ? ["/api/executive-dashboard", user.id] : null,
     fetcher,
     SWR_OPTS
   );

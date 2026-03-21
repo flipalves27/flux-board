@@ -34,9 +34,8 @@ export type BoardProductTourHandle = {
 };
 
 type BoardProductTourProps = {
-  token: string | null;
   user: AuthUser | null;
-  setAuth: (token: string, user: AuthUser, remember?: boolean) => void;
+  setAuth: (user: AuthUser, remember?: boolean) => void;
   getHeaders: () => Record<string, string>;
   tourStep: number | null;
   onTourStepChange: (step: number | null) => void;
@@ -60,7 +59,7 @@ function positionPopoverNear(
 }
 
 export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductTourProps>(
-  function BoardProductTour({ token, user, setAuth, getHeaders, tourStep, onTourStepChange }, ref) {
+  function BoardProductTour({ user, setAuth, getHeaders, tourStep, onTourStepChange }, ref) {
     const t = useTranslations("board.productTour");
     const router = useRouter();
     const pathname = usePathname();
@@ -78,18 +77,18 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     const titleHeadingId = useId();
 
     const persistCompleted = useCallback(async () => {
-      if (!token || !user) return;
+      if (!user) return;
       try {
         await apiFetch("/api/users/me/product-tour", {
           method: "PATCH",
           body: JSON.stringify({ completed: true }),
           headers: getApiHeaders(getHeaders()),
         });
-        setAuth(token, { ...user, boardProductTourCompleted: true });
+        setAuth({ ...user, boardProductTourCompleted: true });
       } catch {
         // preference syncs on next login
       }
-    }, [token, user, setAuth, getHeaders]);
+    }, [user, setAuth, getHeaders]);
 
     const endTour = useCallback(() => {
       onTourStepChange(null);
