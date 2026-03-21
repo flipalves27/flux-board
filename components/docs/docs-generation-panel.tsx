@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DocData } from "@/lib/docs-types";
 import type { DocsGenerationFlow } from "@/lib/docs-generation";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type BoardListItem = { id: string; name: string };
 
@@ -88,6 +89,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
   const [preview, setPreview] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState<boolean | null>(null);
+  const [lastPipelineLlmModel, setLastPipelineLlmModel] = useState<string | null>(null);
 
   const loadBoards = useCallback(async () => {
     const res = await fetch("/api/boards", { headers: getHeaders() });
@@ -148,6 +150,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
     setPreview("");
     setError(null);
     setUsedAi(null);
+    setLastPipelineLlmModel(null);
   };
 
   const run = async () => {
@@ -223,6 +226,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
             const doc = data.doc as DocData;
             onDocCreated(doc);
             if (typeof data.usedAi === "boolean") setUsedAi(data.usedAi);
+            if (typeof data.llmModel === "string" && data.llmModel.trim()) setLastPipelineLlmModel(data.llmModel.trim());
           }
 
           if (event === "error") {
@@ -390,7 +394,10 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                 </li>
               ))}
             </ol>
-            <div className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pré-visualização</div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pré-visualização</div>
+              {lastPipelineLlmModel ? <AiModelHint model={lastPipelineLlmModel} provider="Together" /> : null}
+            </div>
             <pre className="mt-2 max-h-[220px] flex-1 overflow-auto whitespace-pre-wrap rounded border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-20)] p-2 font-mono text-[11px] leading-relaxed text-[var(--flux-text)]">
               {preview || (generating ? "Aguardando conteúdo…" : "—")}
             </pre>

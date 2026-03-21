@@ -141,6 +141,8 @@ export type CardModalContextValue = {
     priorityRationale: string;
     dueExplanationKey: "similar" | "none";
     similarSampleCount: number;
+    llmModel?: string;
+    llmProvider?: string;
   } | null;
   acceptSmartEnrichField: (key: SmartEnrichFieldKey) => void;
   rejectSmartEnrichField: (key: SmartEnrichFieldKey) => void;
@@ -247,6 +249,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     priorityRationale: string;
     dueExplanationKey: "similar" | "none";
     similarSampleCount: number;
+    llmModel?: string;
+    llmProvider?: string;
   } | null>(null);
   const smartEnrichTimerRef = useRef<number | null>(null);
   const smartEnrichAbortRef = useRef<AbortController | null>(null);
@@ -424,6 +428,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         usedLlm?: boolean;
+        llmModel?: string;
+        llmProvider?: string;
         bucketKey?: string;
         priority?: string;
         priorityRationale?: string;
@@ -467,6 +473,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
         priorityRationale: String(data.priorityRationale || "").trim(),
         dueExplanationKey: data.dueExplanationKey === "similar" ? "similar" : "none",
         similarSampleCount: typeof data.similarSampleCount === "number" ? data.similarSampleCount : 0,
+        llmModel: typeof data.llmModel === "string" ? data.llmModel : undefined,
+        llmProvider: typeof data.llmProvider === "string" ? data.llmProvider : undefined,
       });
       setSmartEnrichPending(new Set(allSmartEnrichKeys));
       setAiContextApplied(null);

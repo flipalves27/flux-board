@@ -94,9 +94,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .filter((b) => b.key);
 
   let plan = tryNlqHeuristic(query);
+  let nlqLlmModel: string | undefined;
   if (!plan) {
-    const llmPlan = await parseNlqWithLlm(query, bucketHints);
-    if (llmPlan) plan = llmPlan;
+    const parsed = await parseNlqWithLlm(query, bucketHints);
+    if (parsed) {
+      nlqLlmModel = parsed.model;
+      if (parsed.plan) plan = parsed.plan;
+    }
   }
 
   if (!plan) {
@@ -105,7 +109,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       plan: { kind: "unparseable" },
       copilotChats,
     });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, llmModel: nlqLlmModel });
   }
 
   const result = executeNlqPlan({ board, plan, copilotChats });
@@ -119,5 +123,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({ ...result, llmModel: nlqLlmModel });
 }

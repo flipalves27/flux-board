@@ -7,6 +7,7 @@ import { apiPost } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
+import { AiModelHint } from "@/components/ai-model-hint";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
 
 type DupMatch = {
@@ -307,6 +308,11 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           ) : null}
           {mode === "new" && smartEnrichBusy ? (
             <p className="mt-1.5 text-[11px] text-[var(--flux-text-muted)]">{t("cardModal.smartEnrich.busy")}</p>
+          ) : null}
+          {mode === "new" && smartEnrichMeta?.usedLlm && (smartEnrichMeta.llmModel || smartEnrichMeta.llmProvider) ? (
+            <div className="mt-1.5">
+              <AiModelHint model={smartEnrichMeta.llmModel} provider={smartEnrichMeta.llmProvider} />
+            </div>
           ) : null}
           {aiContextApplied && (
             <div className="mt-2">

@@ -446,7 +446,12 @@ function planFromLlmJson(obj: LlmNlqShape): NlqPlan | null {
   return null;
 }
 
-export async function parseNlqWithLlm(query: string, bucketHints: Array<{ key: string; label: string }>): Promise<NlqPlan | null> {
+export type NlqLlmParseOutcome = { plan: NlqPlan | null; model?: string };
+
+export async function parseNlqWithLlm(
+  query: string,
+  bucketHints: Array<{ key: string; label: string }>
+): Promise<NlqLlmParseOutcome | null> {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL;
   if (!apiKey?.trim() || !model?.trim()) return null;
@@ -481,11 +486,12 @@ export async function parseNlqWithLlm(query: string, bucketHints: Array<{ key: s
     { apiKey: apiKey.trim() }
   );
 
-  if (!res.ok) return null;
+  const modelId = model.trim();
+  if (!res.ok) return { plan: null, model: modelId };
   const text = extractTextFromLlmContent(res.assistantText);
   const parsed = safeJsonParse<LlmNlqShape>(text);
-  if (!parsed || typeof parsed !== "object") return null;
-  return planFromLlmJson(parsed);
+  if (!parsed || typeof parsed !== "object") return { plan: null, model: modelId };
+  return { plan: planFromLlmJson(parsed), model: modelId };
 }
 
 export function executeNlqPlan(args: {

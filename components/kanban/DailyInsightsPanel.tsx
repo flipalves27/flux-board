@@ -5,6 +5,7 @@ import type { DailyInsightEntry } from "@/app/board/[id]/page";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { getDailyActionSuggestions, getDailyCreateSuggestions, renderOrganizedContext } from "./daily-utils";
 import { useTranslations } from "next-intl";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 export type DailyTab = "entrada" | "historico" | "status";
 export type DailyLogStatus = "start" | "success" | "error";
@@ -391,6 +392,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                       if (!entryId || !insight) return null;
 
                       const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
+                      const gm = entry?.generationMeta as { model?: string; provider?: string } | undefined;
                       const label = generatedWithAi ? t("daily.status.exec.label.done") : t("daily.status.exec.label.doneHeuristic");
                       const createdAt = entry?.createdAt ? new Date(entry.createdAt).toLocaleString("pt-BR") : "";
                       const resumo = String(insight?.resumo || "").trim();
@@ -412,6 +414,9 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                     {t("daily.badges.ai")}
                                   </span>
                                 )}
+                                {gm?.model || gm?.provider ? (
+                                  <AiModelHint model={gm?.model} provider={gm?.provider} />
+                                ) : null}
                               </div>
                               <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
                                 {resumoShort || t("daily.status.exec.noSummary")}

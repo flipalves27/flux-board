@@ -12,6 +12,7 @@ import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
 import type { RagRetrievalDebug } from "@/lib/docs-rag";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -43,6 +44,8 @@ type NlqApiBody =
       explanation: string;
     }
   | { ok: false; fallbackMessage: string; suggestions: string[] };
+
+type NlqResponsePayload = NlqApiBody & { error?: string; llmModel?: string };
 
 function nlqToClient(data: NlqApiBody): NlqClientResponse {
   if (!data.ok) return data;
@@ -245,11 +248,20 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
             headers: { "Content-Type": "application/json", ...getHeaders() },
             body: JSON.stringify({ query: q }),
           });
-          const data = (await res.json().catch(() => ({}))) as NlqApiBody & { error?: string };
+          const data = (await res.json().catch(() => ({}))) as NlqResponsePayload;
+
+          const nlqLlmMeta =
+            typeof data.llmModel === "string" && data.llmModel.trim()
+              ? { llmModel: data.llmModel.trim(), llmProvider: "Together" as const }
+              : undefined;
 
           if (!res.ok) {
             const txt = data.error || tNlq("errorGeneric");
-            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: txt } : m)));
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: txt, ...(nlqLlmMeta ? { meta: { ...m.meta, ...nlqLlmMeta } } : {}) } : m
+              )
+            );
             pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
             return;
           }
@@ -257,14 +269,22 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
           if (!data.ok) {
             const asClient = nlqToClient(data as NlqApiBody);
             const content = formatNlqCopilotMessage(asClient);
-            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content } : m)));
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content, ...(nlqLlmMeta ? { meta: { ...m.meta, ...nlqLlmMeta } } : {}) } : m
+              )
+            );
             pushToast({ kind: "info", title: tNlq("toastTitle"), description: data.fallbackMessage });
             return;
           }
 
           const asClient = nlqToClient(data as NlqApiBody);
           const content = formatNlqCopilotMessage(asClient);
-          setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content } : m)));
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, content, ...(nlqLlmMeta ? { meta: { ...m.meta, ...nlqLlmMeta } } : {}) } : m
+            )
+          );
 
           if (data.resultType === "cards") {
             useBoardNlqUiStore.getState().setBoardNlqMetric(boardId, null);
@@ -336,10 +356,31 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
 
         const onEvent = (
           event: string,
-          data: { text?: string; message?: unknown; cards?: CardData[]; phase?: string; method?: string; durationMs?: number; chunks?: unknown }
+          data: {
+            text?: string;
+            message?: unknown;
+            cards?: CardData[];
+            phase?: string;
+            method?: string;
+            durationMs?: number;
+            chunks?: unknown;
+            model?: string;
+            provider?: string;
+            source?: string;
+          }
         ) => {
           if (event === "rag_debug" && copilotDebug && data && typeof data === "object") {
             setRagDebug(data as RagRetrievalDebug);
+          }
+
+          if (event === "llm_meta") {
+            const model = typeof data?.model === "string" ? data.model : undefined;
+            const provider = typeof data?.provider === "string" ? data.provider : undefined;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, meta: { ...m.meta, llmModel: model, llmProvider: provider } } : m
+              )
+            );
           }
 
           if (event === "assistant_delta") {
@@ -401,6 +442,9 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                 method?: string;
                 durationMs?: number;
                 chunks?: unknown;
+                model?: string;
+                provider?: string;
+                source?: string;
               }
             );
           }
@@ -625,6 +669,14 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                           <div className="text-xs text-[var(--flux-text)] mt-1 whitespace-pre-wrap leading-relaxed">
                             {m.content}
                           </div>
+                          {m.role === "assistant" && (m.meta?.llmModel || m.meta?.llmProvider) ? (
+                            <div className="mt-2">
+                              <AiModelHint
+                                model={m.meta?.llmModel != null ? String(m.meta.llmModel) : undefined}
+                                provider={m.meta?.llmProvider != null ? String(m.meta.llmProvider) : undefined}
+                              />
+                            </div>
+                          ) : null}
                         </div>
                       ))
                     )}

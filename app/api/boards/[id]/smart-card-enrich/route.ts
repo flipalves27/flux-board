@@ -293,7 +293,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       usedLlm,
     });
 
-    return NextResponse.json({ ok: true, usedLlm, ...normalized });
+    return NextResponse.json({
+      ok: true,
+      usedLlm,
+      llmModel: usedLlm ? process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo" : undefined,
+      llmProvider: usedLlm ? "together.ai" : undefined,
+      ...normalized,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },

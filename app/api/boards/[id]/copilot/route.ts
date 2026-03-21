@@ -38,6 +38,8 @@ type CopilotAction = {
 type CopilotModelOutput = {
   reply: string;
   actions?: CopilotAction[];
+  /** Metadados para UI (modelo / modo). */
+  llm?: { model?: string; provider?: string; source: "cloud" | "heuristic" };
 };
 
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
@@ -475,17 +477,26 @@ function copilotHeuristicWhenNoLlm(input: {
         lines.push(`- ${h.title} (id: ${h.cardId}) • ${bucketKey} • ${h.daysSinceMentioned} dia(s) desde última menção`);
       }
     }
-    return { reply: lines.join("\n"), actions: [] };
+    return {
+      reply: lines.join("\n"),
+      actions: [],
+      llm: { source: "heuristic", model: "Heurístico local" },
+    };
   }
 
   if (/(resuma|brief|diret(or|oria)|semana)/i.test(s)) {
-    return { reply: heuristicWeeklyBrief(input.board), actions: [] };
+    return {
+      reply: heuristicWeeklyBrief(input.board),
+      actions: [],
+      llm: { source: "heuristic", model: "Heurístico local" },
+    };
   }
 
   return {
     reply:
       "Modo sem IA cloud habilitada (configure TOGETHER_API_KEY/TOGETHER_MODEL e/ou ANTHROPIC_API_KEY). Posso responder por heurística: cards parados por dailies e brief semanal.",
     actions: [],
+    llm: { source: "heuristic", model: "Heurístico local" },
   };
 }
 
@@ -505,6 +516,8 @@ async function callCopilotLlmModel(input: {
   if (routePick.route === "together" && !isTogetherApiConfigured()) {
     return copilotHeuristicWhenNoLlm({ board: input.board, userMessage: input.userMessage });
   }
+
+  const providerLabel = (p: string) => (p === "anthropic" ? "Anthropic" : "Together");
 
   const ctx = buildCopilotContext(input.board);
   const cardsForPrompt = ctx.cards.slice(0, MAX_MODEL_CONTEXT_CARDS);
@@ -565,9 +578,18 @@ async function callCopilotLlmModel(input: {
   });
 
   if (!res.ok) {
+    const modelHint =
+      res.resolvedRoute === "anthropic"
+        ? routePick.anthropicModel
+        : process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
     return {
       reply: "Falha ao chamar o modelo para responder. Tente novamente em instantes.",
       actions: [],
+      llm: {
+        source: "cloud",
+        model: modelHint,
+        provider: providerLabel(res.resolvedRoute === "anthropic" ? "anthropic" : "together"),
+      },
     };
   }
 
@@ -583,6 +605,11 @@ async function callCopilotLlmModel(input: {
     actions: actions
       .filter((a: any) => a && typeof a === "object" && typeof a.tool === "string")
       .map((a: any) => ({ tool: a.tool as CopilotToolName, args: (a.args && typeof a.args === "object" ? a.args : {}) as any })),
+    llm: {
+      source: "cloud",
+      model: res.model,
+      provider: providerLabel(res.provider),
+    },
   };
 }
 
@@ -994,6 +1021,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               content: finalReply,
               meta: {
                 toolResults,
+                llmModel: modelOutput.llm?.model,
+                llmProvider: modelOutput.llm?.provider,
+                llmSource: modelOutput.llm?.source,
                 sourceDocIds: [...new Set(ragChunksUsed.map((c) => c.docId))],
                 sourceChunkIds: ragChunksUsed.map((c) => c.chunkId),
               },
@@ -1002,6 +1032,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
 
         sendEvent("chat_persisted", { ok: true, messageCount: persisted.messages.length });
+
+        sendEvent("llm_meta", {
+          model: modelOutput.llm?.model,
+          provider: modelOutput.llm?.provider,
+          source: modelOutput.llm?.source,
+        });
 
         sendEvent("reply_start", { ok: true });
 

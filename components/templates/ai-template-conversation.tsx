@@ -8,6 +8,7 @@ import { aiDraftToSnapshot } from "@/lib/template-ai";
 import type { AiTemplateDraft, ConversationAnswers } from "@/lib/template-ai";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
+import { AiModelHint } from "@/components/ai-model-hint";
 import { useToast } from "@/context/toast-context";
 
 type Props = {
@@ -39,6 +40,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
   const [busy, setBusy] = useState(false);
   const [exportBoardId, setExportBoardId] = useState<string | null>(null);
   const [publishAfterCreate, setPublishAfterCreate] = useState(false);
+  const [lastLlmModel, setLastLlmModel] = useState<string | null>(null);
 
   const snapshot: BoardTemplateSnapshot | null = useMemo(
     () => (draft ? aiDraftToSnapshot(draft) : null),
@@ -105,13 +107,14 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
         turnIndex,
         answers: baseAnswers,
       };
-      const res = await apiPost<{ draft: AiTemplateDraft; snapshot: BoardTemplateSnapshot }>(
+      const res = await apiPost<{ draft: AiTemplateDraft; snapshot: BoardTemplateSnapshot; llmModel?: string }>(
         "/api/templates/ai-generate",
         payload,
         getHeaders()
       );
       if (res?.draft) {
         setDraft(res.draft);
+        setLastLlmModel(typeof res.llmModel === "string" ? res.llmModel : null);
         setActiveStep((s) => Math.min(s + 1, 4));
       }
     } catch (e) {
@@ -161,6 +164,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
     setAnswers({ teamType: "", process: "", metrics: "", automation: "" });
     setDraft(null);
     setPublishAfterCreate(false);
+    setLastLlmModel(null);
   }
 
   const doneQuestions = activeStep >= 4;
@@ -269,7 +273,10 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
         {draft && (
           <div className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)]/50 p-4 space-y-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("aiConv.previewTitle")}</p>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("aiConv.previewTitle")}</p>
+                {lastLlmModel ? <AiModelHint model={lastLlmModel} provider="Together" /> : null}
+              </div>
               <p className="text-sm font-display font-semibold text-[var(--flux-text)] mt-1">{draft.title}</p>
               <p className="text-xs text-[var(--flux-text-muted)] mt-1 leading-relaxed">{draft.description}</p>
             </div>

@@ -242,7 +242,13 @@ export async function POST(request: NextRequest) {
         const ragChunks = ragChunkCountAfterSave(doc);
         sendEvent("step", { id: "rag", label: "Indexando para o Copilot (RAG)", status: "done", chunkCount: ragChunks });
 
-        sendEvent("done", { ok: true, doc, usedAi, ragChunks });
+        sendEvent("done", {
+          ok: true,
+          doc,
+          usedAi,
+          ragChunks,
+          llmModel: ai.ok ? ai.model : undefined,
+        });
         controller.close();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro ao gerar documento.";

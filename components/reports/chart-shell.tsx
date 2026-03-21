@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiPost, ApiError } from "@/lib/api-client";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 export function ChartShell({
   title,
@@ -23,15 +24,21 @@ export function ChartShell({
   const [busy, setBusy] = useState(false);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [explainModel, setExplainModel] = useState<string | null>(null);
+  const [explainProvider, setExplainProvider] = useState<string | null>(null);
 
   const explain = useCallback(async () => {
     setBusy(true);
     setErr(null);
+    setExplainModel(null);
+    setExplainProvider(null);
     try {
       const data = await apiPost<{
         narrative: string;
         generatedWithAI?: boolean;
         errorMessage?: string;
+        model?: string;
+        provider?: string;
       }>(
         "/api/flux-reports/explain",
         {
@@ -42,6 +49,8 @@ export function ChartShell({
         getHeaders()
       );
       setNarrative(data.narrative);
+      setExplainModel(typeof data.model === "string" ? data.model : null);
+      setExplainProvider(typeof data.provider === "string" ? data.provider : null);
     } catch (e) {
       if (e instanceof ApiError) {
         setErr(e.message);
@@ -74,6 +83,11 @@ export function ChartShell({
       {narrative ? (
         <div className="mt-3 rounded-[var(--flux-rad-sm)] border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-3 py-2.5 text-sm leading-relaxed text-[var(--flux-text)]">
           {narrative}
+          {(explainModel || explainProvider) && (
+            <div className="mt-2 pt-2 border-t border-[var(--flux-chrome-alpha-08)]">
+              <AiModelHint model={explainModel ?? undefined} provider={explainProvider ?? undefined} />
+            </div>
+          )}
         </div>
       ) : null}
     </section>

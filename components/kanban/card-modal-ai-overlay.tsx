@@ -1,6 +1,7 @@
 "use client";
 
 import { useCardModal } from "@/components/kanban/card-modal-context";
+import { AiModelHint } from "@/components/ai-model-hint";
 
 export function CardModalAiOverlay() {
   const {
@@ -158,19 +159,24 @@ export function CardModalAiOverlay() {
           )
         ) : (
           <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[var(--flux-primary-alpha-35)] rounded-[10px] p-3">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                 {t("cardModal.aiContext.result.appliedHeader")}
               </div>
-              <span className="text-[10px] text-[var(--flux-text-muted)]">
-                {aiContextPhase === "done"
-                  ? aiContextApplied?.usedLlm
-                    ? t("cardModal.aiContext.result.applied.ai")
-                    : t("cardModal.aiContext.result.applied.fallback")
-                  : aiContextPhase === "error"
-                    ? t("cardModal.aiContext.result.status.error")
-                    : ""}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[10px] text-[var(--flux-text-muted)]">
+                  {aiContextPhase === "done"
+                    ? aiContextApplied?.usedLlm
+                      ? t("cardModal.aiContext.result.applied.ai")
+                      : t("cardModal.aiContext.result.applied.fallback")
+                    : aiContextPhase === "error"
+                      ? t("cardModal.aiContext.result.status.error")
+                      : ""}
+                </span>
+                {aiContextPhase === "done" && aiContextApplied && (aiContextApplied.model || aiContextApplied.provider) ? (
+                  <AiModelHint model={aiContextApplied.model} provider={aiContextApplied.provider} />
+                ) : null}
+              </div>
             </div>
 
             {aiContextPhase === "done" && aiContextApplied ? (

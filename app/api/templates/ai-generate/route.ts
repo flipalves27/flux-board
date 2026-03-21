@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
       draft: gen.draft,
       snapshot,
       automationIdeas: gen.draft.automationIdeas,
+      llmModel: gen.llmModel,
     });
   }
 
@@ -87,5 +88,6 @@ export async function POST(request: NextRequest) {
     draft: gen.draft,
     snapshot,
     automationIdeas: gen.draft.automationIdeas,
+    llmModel: gen.llmModel,
   });
 }

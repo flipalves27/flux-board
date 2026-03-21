@@ -142,6 +142,7 @@ async function callTogetherForJson(system: string, user: string): Promise<{
   ok: boolean;
   parsed?: Record<string, unknown>;
   error?: string;
+  model?: string;
 }> {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
@@ -150,9 +151,11 @@ async function callTogetherForJson(system: string, user: string): Promise<{
     return { ok: false, error: "LLM não configurado (TOGETHER_API_KEY)." };
   }
 
+  const modelId = model.trim();
+
   const res = await callTogetherApi(
     {
-      model,
+      model: modelId,
       temperature: 0.35,
       messages: [
         { role: "system", content: system },
@@ -164,15 +167,15 @@ async function callTogetherForJson(system: string, user: string): Promise<{
 
   if (!res.ok) {
     const t = res.bodySnippet || "";
-    return { ok: false, error: `LLM HTTP ${res.status ?? "?"}: ${t.slice(0, 200)}` };
+    return { ok: false, error: `LLM HTTP ${res.status ?? "?"}: ${t.slice(0, 200)}`, model: modelId };
   }
 
   const raw = res.assistantText;
   const parsed = safeJsonParse<Record<string, unknown>>(raw);
   if (!parsed || typeof parsed !== "object") {
-    return { ok: false, error: "Resposta do modelo inválida." };
+    return { ok: false, error: "Resposta do modelo inválida.", model: modelId };
   }
-  return { ok: true, parsed };
+  return { ok: true, parsed, model: modelId };
 }
 
 /** Fluxo conversacional: turnIndex 0..3 — OKRs apenas no turno 3. */
@@ -183,6 +186,7 @@ export async function generateTemplateFromConversationTurn(
   ok: boolean;
   draft?: AiTemplateDraft;
   error?: string;
+  llmModel?: string;
 }> {
   if (turnIndex < 0 || turnIndex > 3) {
     return { ok: false, error: "Etapa inválida." };
@@ -193,24 +197,29 @@ export async function generateTemplateFromConversationTurn(
   const user = `${buildConversationBody(answers, turnIndex).slice(0, 8000)}`;
 
   const res = await callTogetherForJson(system, user);
-  if (!res.ok || !res.parsed) return { ok: false, error: res.error };
+  if (!res.ok || !res.parsed) return { ok: false, error: res.error, llmModel: res.model };
 
   const draft = normalizeDraft(res.parsed, { requireOkrs: includeOkrs });
   if (!draft) {
-    return { ok: false, error: includeOkrs ? "Modelo não retornou colunas ou OKRs suficientes." : "Modelo não retornou colunas suficientes." };
+    return {
+      ok: false,
+      error: includeOkrs ? "Modelo não retornou colunas ou OKRs suficientes." : "Modelo não retornou colunas suficientes.",
+      llmModel: res.model,
+    };
   }
 
   if (!includeOkrs) {
     draft.initialOkrs = [];
   }
 
-  return { ok: true, draft };
+  return { ok: true, draft, llmModel: res.model };
 }
 
 export async function generateTemplateDraftWithTogether(teamDescription: string): Promise<{
   ok: boolean;
   draft?: AiTemplateDraft;
   error?: string;
+  llmModel?: string;
 }> {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
@@ -219,12 +228,14 @@ export async function generateTemplateDraftWithTogether(teamDescription: string)
     return { ok: false, error: "LLM não configurado (TOGETHER_API_KEY)." };
   }
 
+  const modelId = model.trim();
+
   const system = baseSystemPrompt(false);
   const user = `Descreva o trabalho do time (uma única mensagem):\n${teamDescription.slice(0, 4000)}`;
 
   const res = await callTogetherApi(
     {
-      model,
+      model: modelId,
       temperature: 0.35,
       messages: [
         { role: "system", content: system },
@@ -236,21 +247,21 @@ export async function generateTemplateDraftWithTogether(teamDescription: string)
 
   if (!res.ok) {
     const t = res.bodySnippet || "";
-    return { ok: false, error: `LLM HTTP ${res.status ?? "?"}: ${t.slice(0, 200)}` };
+    return { ok: false, error: `LLM HTTP ${res.status ?? "?"}: ${t.slice(0, 200)}`, llmModel: modelId };
   }
 
   const raw = res.assistantText;
   const parsed = safeJsonParse<Record<string, unknown>>(raw);
   if (!parsed || typeof parsed !== "object") {
-    return { ok: false, error: "Resposta do modelo inválida." };
+    return { ok: false, error: "Resposta do modelo inválida.", llmModel: modelId };
   }
 
   const draft = normalizeDraft(parsed, { requireOkrs: false });
   if (!draft) {
-    return { ok: false, error: "Modelo não retornou colunas suficientes." };
+    return { ok: false, error: "Modelo não retornou colunas suficientes.", llmModel: modelId };
   }
 
-  return { ok: true, draft };
+  return { ok: true, draft, llmModel: modelId };
 }
 
 export function aiDraftToSnapshot(draft: AiTemplateDraft): BoardTemplateSnapshot {
