@@ -29,15 +29,15 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const t = useTranslations("appShell");
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh]">
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden">
       <Sidebar />
       <div
-        className={`flex min-h-0 min-w-0 flex-1 flex-col touch-pan-y ${layout === "mobile" ? "max-md:min-h-[100dvh]" : ""}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
         <MobileAppHeader />
         <TrialBillingBanner />
-        <div className="min-h-0 min-w-0 flex-1">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
       </div>
       <CommandPalette />
       <GlobalHotkeys />

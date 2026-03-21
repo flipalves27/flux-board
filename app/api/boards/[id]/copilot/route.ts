@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { runOrgLlmChat } from "@/lib/llm-org-chat";
+import { runOrgLlmChat, type OrgLlmChatResult } from "@/lib/llm-org-chat";
 import { isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
 import type { Organization } from "@/lib/kv-organizations";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
@@ -500,6 +500,70 @@ function copilotHeuristicWhenNoLlm(input: {
   };
 }
 
+/** Mensagem ao usuário + log em servidor (Vercel) com corpo da API quando falha. */
+function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>): string {
+  const err = failed.error || "";
+  const status = failed.status;
+  const snippet = failed.bodySnippet?.slice(0, 600) ?? "";
+
+  console.error("[copilot] LLM call failed", {
+    resolvedRoute: failed.resolvedRoute,
+    provider: failed.provider,
+    error: err,
+    status,
+    bodySnippet: snippet,
+  });
+
+  if (failed.resolvedRoute === "anthropic") {
+    if (err === "no_api_key") {
+      return "ANTHROPIC_API_KEY não está disponível neste deploy. Confira variáveis de ambiente no Vercel (Production vs Preview).";
+    }
+    if (err.startsWith("http_")) {
+      const code = Number(err.slice(5));
+      if (code === 401) {
+        return "A API Anthropic recusou a chave (401). Verifique se ANTHROPIC_API_KEY está correta, sem espaços extras, e ligada ao ambiente que você usa (Production/Preview/Development).";
+      }
+      if (code === 403) {
+        return "Acesso negado pela Anthropic (403). Confira permissões da chave, região e faturamento da conta.";
+      }
+      if (code === 400 || code === 404) {
+        const hint = snippet ? ` (${snippet.slice(0, 220)}${snippet.length > 220 ? "…" : ""})` : "";
+        return `Pedido rejeitado pela Anthropic (${code}). Use o ID exato do modelo na API (Configurações da organização ou ANTHROPIC_MODEL no Vercel).${hint}`;
+      }
+      if (code === 429) {
+        return "Limite de uso da API Anthropic (429). Aguarde e tente de novo.";
+      }
+      if (code === 503 || code === 529) {
+        return "Serviço Anthropic sobrecarregado ou indisponível. Tente novamente em instantes.";
+      }
+    }
+    if (err === "network_error" || err.includes("fetch")) {
+      return "Falha de rede ao contactar a API Anthropic. Tente de novo ou confira firewall/DNS no ambiente de deploy.";
+    }
+  }
+
+  if (failed.resolvedRoute === "together") {
+    if (err === "no_api_key") {
+      return "TOGETHER_API_KEY não configurada neste deploy.";
+    }
+    if (err.startsWith("http_")) {
+      const code = Number(err.slice(5));
+      if (code === 401) {
+        return "A API Together recusou a chave (401). Verifique TOGETHER_API_KEY no Vercel.";
+      }
+      if (code === 429) {
+        return "Limite de uso da API Together (429). Tente novamente em instantes.";
+      }
+    }
+  }
+
+  if (failed.error === "missing_user") {
+    return "Sessão inválida para chamar o modelo.";
+  }
+
+  return `Falha ao chamar o modelo (${err || "erro desconhecido"}). Tente novamente em instantes.`;
+}
+
 async function callCopilotLlmModel(input: {
   org: Organization;
   orgId: string;
@@ -583,7 +647,7 @@ async function callCopilotLlmModel(input: {
         ? routePick.anthropicModel
         : process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
     return {
-      reply: "Falha ao chamar o modelo para responder. Tente novamente em instantes.",
+      reply: copilotLlmFailureReply(res),
       actions: [],
       llm: {
         source: "cloud",
