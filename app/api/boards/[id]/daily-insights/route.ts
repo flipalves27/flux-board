@@ -554,7 +554,11 @@ export async function POST(
       },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
-    await updateBoardFromExisting(board, { dailyInsights });
+    await updateBoardFromExisting(board, { dailyInsights }, {
+      userId: payload.id,
+      userName: payload.username,
+      orgId: payload.orgId,
+    });
 
     const llmDebug = {
       provider: llmResult.provider,

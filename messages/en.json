@@ -1144,6 +1144,34 @@
       "cancelar": "Cancel",
       "reavaliar": "Re-evaluate"
     },
+    "activity": {
+      "fabOpen": "Activity",
+      "fabClose": "Close activity",
+      "title": "Activity",
+      "subtitle": "Change history for this board",
+      "loadError": "Could not load activity.",
+      "empty": "No activity recorded yet.",
+      "filterUser": "User",
+      "filterUserAll": "All",
+      "filterAction": "Type",
+      "filterActionAll": "All",
+      "filterFrom": "From",
+      "filterTo": "To",
+      "applyFilters": "Apply",
+      "clearFilters": "Clear",
+      "retentionHint": "Free plan: last {days} days.",
+      "retentionPro": "Pro/Business: full history.",
+      "noMongo": "Activity history requires MongoDB (MONGODB_URI).",
+      "actions": {
+        "card.created": "Card created",
+        "card.moved": "Card moved",
+        "card.updated": "Card updated",
+        "card.deleted": "Card deleted",
+        "column.added": "Column added",
+        "column.removed": "Column removed",
+        "board.settings_changed": "Board settings"
+      }
+    },
     "addColumnModal": {
       "title": {
         "new": "New column",

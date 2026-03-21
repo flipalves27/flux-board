@@ -140,7 +140,11 @@ export async function PUT(
       }
     }
 
-    const board = await updateBoard(boardId, payload.orgId, updates);
+    const board = await updateBoard(boardId, payload.orgId, updates, {
+      userId: payload.id,
+      userName: payload.username,
+      orgId: payload.orgId,
+    });
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }

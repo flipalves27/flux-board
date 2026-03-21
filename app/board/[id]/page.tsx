@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
+import { BoardActivityPanel } from "@/components/kanban/board-activity-panel";
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
 import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
@@ -534,6 +535,8 @@ export default function BoardPage() {
       />
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
+
+      <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} />
 
       <BoardProductTour
         ref={tourRef}

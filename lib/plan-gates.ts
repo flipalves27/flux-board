@@ -1,6 +1,9 @@
 import type { Organization } from "./kv-organizations";
 import { isProTenant } from "./commercial-plan";
 
+/** Audit log retention for Free tier (days). Pro/Business: unlimited (no TTL window). */
+const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
+
 export type Tier = Organization["plan"]; // "free" | "pro" | "business"
 
 export type FeatureKey =
@@ -38,6 +41,13 @@ export function getEffectiveTier(org: Organization | null | undefined): Tier {
   // Override de ambiente (dev/test): mantém comportamento legado.
   if (isProTenant()) return "pro";
   return (org?.plan ?? "free") as Tier;
+}
+
+/** Free: 90 dias; Pro/Business: ilimitado (null). */
+export function getBoardActivityRetentionDays(org: Organization | null | undefined): number | null {
+  const tier = getEffectiveTier(org);
+  if (tier === "free") return BOARD_ACTIVITY_FREE_RETENTION_DAYS;
+  return null;
 }
 
 export function getBoardCap(org: Organization | null | undefined): number | null {

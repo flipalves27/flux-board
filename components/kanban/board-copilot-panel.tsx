@@ -8,6 +8,7 @@ import { formatNlqCopilotMessage, type NlqClientResponse } from "@/lib/board-nlq
 import { useBoardStore } from "@/stores/board-store";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useCopilotStore, type CopilotMessage, type CopilotTier } from "@/stores/copilot-store";
+import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
 import type { RagRetrievalDebug } from "@/lib/docs-rag";
@@ -538,7 +539,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         className={`fixed z-[470] transition-all duration-200 active:scale-[0.98] ${
           open ? "right-[calc(min(440px,92vw)+16px)] top-[112px]" : "right-4 top-[112px]"
         }`}
-        onClick={() => toggleOpen()}
+        onClick={() => {
+          if (!open) useBoardActivityStore.getState().setOpen(false);
+          toggleOpen();
+        }}
         aria-expanded={open}
       >
         <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">

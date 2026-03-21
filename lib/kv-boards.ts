@@ -4,6 +4,9 @@ import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
 import type { BoardPortalSettings } from "./portal-types";
 import type { BoardAnomalyNotifications } from "./anomaly-board-settings";
 import type { Db } from "mongodb";
+import type { BoardActivityContext } from "./board-activity-types";
+import { diffBoardActivity } from "./board-activity-diff";
+import { scheduleBoardActivityWrites } from "./board-activity-log";
 
 const BOARDS_PREFIX = "reborn_boards:";
 const BOARD_PREFIX = "reborn_board:";
@@ -238,13 +241,22 @@ export async function createBoard(
   return board;
 }
 
-export async function updateBoard(boardId: string, orgId: string, updates: Partial<BoardData>): Promise<BoardData | null> {
+export async function updateBoard(
+  boardId: string,
+  orgId: string,
+  updates: Partial<BoardData>,
+  activity?: BoardActivityContext
+): Promise<BoardData | null> {
   const board = await getBoard(boardId, orgId);
   if (!board) return null;
-  return updateBoardFromExisting(board, updates);
+  return updateBoardFromExisting(board, updates, activity);
 }
 
-export async function updateBoardFromExisting(board: BoardData, updates: Partial<BoardData>): Promise<BoardData> {
+export async function updateBoardFromExisting(
+  board: BoardData,
+  updates: Partial<BoardData>,
+  activity?: BoardActivityContext
+): Promise<BoardData> {
   const nextBoard: BoardData = { ...board, ...updates };
 
   // Se o clientLabel vier vazio, remove o campo para não “fixar” string vazia no layout.
@@ -267,12 +279,35 @@ export async function updateBoardFromExisting(board: BoardData, updates: Partial
     await db
       .collection<BoardDoc>(COL_BOARDS)
       .replaceOne({ _id: nextBoard.id, orgId: nextBoard.orgId }, boardDataToDoc(nextBoard));
+    scheduleBoardActivityAfterPersist(board, nextBoard, activity);
     return nextBoard;
   }
 
   const kv = await getStore();
   await kv.set(BOARD_PREFIX + nextBoard.id, JSON.stringify(nextBoard));
+  scheduleBoardActivityAfterPersist(board, nextBoard, activity);
   return nextBoard;
+}
+
+function scheduleBoardActivityAfterPersist(
+  prev: BoardData,
+  next: BoardData,
+  activity: BoardActivityContext | undefined
+): void {
+  if (!activity || !isMongoConfigured()) return;
+  try {
+    const deltas = diffBoardActivity(prev, next);
+    if (deltas.length) {
+      scheduleBoardActivityWrites(deltas, {
+        userId: activity.userId,
+        userName: activity.userName,
+        orgId: activity.orgId,
+        boardId: next.id,
+      });
+    }
+  } catch (e) {
+    console.error("[board-activity] diff", e);
+  }
 }
 
 export async function deleteBoard(boardId: string, orgId: string, userId: string, isAdmin: boolean): Promise<boolean> {

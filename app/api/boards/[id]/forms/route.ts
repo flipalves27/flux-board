@@ -53,7 +53,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Slug inválido (mínimo 3 caracteres)." }, { status: 400 });
     }
 
-    const board = await updateBoard(boardId, payload.orgId, {
+    const board = await updateBoard(
+      boardId,
+      payload.orgId,
+      {
       intakeForm: {
         enabled: Boolean(clean.enabled ?? true),
         slug,
@@ -64,7 +67,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         defaultProgress: String(clean.defaultProgress || "Não iniciado").trim(),
         defaultTags: Array.isArray(clean.defaultTags) ? clean.defaultTags.map((v) => String(v).trim()).filter(Boolean) : [],
       } as any,
-    } as any);
+    } as any,
+      {
+        userId: payload.id,
+        userName: payload.username,
+        orgId: payload.orgId,
+      }
+    );
 
     if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
     await upsertIntakeFormIndex({

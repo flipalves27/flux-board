@@ -1492,6 +1492,34 @@
       "cancelar": "Cancelar",
       "reavaliar": "Reavaliar"
     },
+    "activity": {
+      "fabOpen": "Atividade",
+      "fabClose": "Fechar atividade",
+      "title": "Atividade",
+      "subtitle": "Histórico de alterações neste board",
+      "loadError": "Não foi possível carregar o histórico.",
+      "empty": "Nenhuma atividade registrada ainda.",
+      "filterUser": "Usuário",
+      "filterUserAll": "Todos",
+      "filterAction": "Tipo",
+      "filterActionAll": "Todos",
+      "filterFrom": "De",
+      "filterTo": "Até",
+      "applyFilters": "Aplicar",
+      "clearFilters": "Limpar",
+      "retentionHint": "Plano Free: últimos {days} dias.",
+      "retentionPro": "Pro/Business: histórico completo.",
+      "noMongo": "O histórico de atividade requer MongoDB (MONGODB_URI).",
+      "actions": {
+        "card.created": "Card criado",
+        "card.moved": "Card movido",
+        "card.updated": "Card atualizado",
+        "card.deleted": "Card excluído",
+        "column.added": "Coluna adicionada",
+        "column.removed": "Coluna removida",
+        "board.settings_changed": "Configurações do board"
+      }
+    },
     "board": {
       "timeline": {
         "toggleGroupAria": "Visualização do board",

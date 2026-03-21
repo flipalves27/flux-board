@@ -7,5 +7,6 @@ export { MapaModal } from "./mapa-modal";
 export { DescModal } from "./desc-modal";
 export { DailyInsightsPanel } from "./DailyInsightsPanel";
 export { BoardCopilotPanel } from "./board-copilot-panel";
+export { BoardActivityPanel } from "./board-activity-panel";
 export { BoardAutomationsModal } from "./board-automations-modal";
 export { BoardPortalModal } from "./board-portal-modal";

@@ -40,7 +40,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     (cards[idx] as any).docRefs = [...refs, { docId: doc.id, title: doc.title, excerpt: doc.excerpt }];
   }
 
-  const nextBoard = await updateBoardFromExisting(board, { cards });
+  const nextBoard = await updateBoardFromExisting(board, { cards }, {
+    userId: payload.id,
+    userName: payload.username,
+    orgId: payload.orgId,
+  });
   logDocsMetric("docs.summarize_to_card", { orgId: payload.orgId, boardId, docId, cardId });
   return NextResponse.json({ ok: true, cards: nextBoard.cards });
 }

@@ -161,7 +161,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         const nextCards = [...existingCards];
         nextCards[dupIdx] = updated;
-        await updateBoardFromExisting(board, { cards: nextCards });
+        await updateBoardFromExisting(board, { cards: nextCards }, {
+          userId: "__flux_forms__",
+          userName: `${String(clean.requesterName || "").trim().slice(0, 80) || "Flux Forms"} (formulário)`,
+          orgId: index.orgId,
+        });
 
         const freshBoard = await getBoard(index.boardId, index.orgId);
         if (freshBoard) {
@@ -204,7 +208,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       order,
     };
 
-    await updateBoardFromExisting(board, { cards: [...existingCards, card] });
+    await updateBoardFromExisting(board, { cards: [...existingCards, card] }, {
+      userId: "__flux_forms__",
+      userName: `${String(clean.requesterName || "").trim().slice(0, 80) || "Flux Forms"} (formulário)`,
+      orgId: index.orgId,
+    });
 
     const freshBoard = await getBoard(index.boardId, index.orgId);
     if (freshBoard) {
