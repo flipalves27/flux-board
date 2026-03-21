@@ -206,6 +206,19 @@
       "backtestPass": "≥70% target met",
       "backtestFail": "below 70%"
     },
+    "dependencies": {
+      "title": "Dependency map (cross-board)",
+      "hint": "Interactive D3 graph of links between cards. Adjust minimum confidence or switch board vs. org view.",
+      "scope": "View",
+      "scopeBoard": "Board (use ?boardId= in the URL)",
+      "scopeOrg": "Organization",
+      "minConfidence": "Minimum confidence",
+      "refresh": "Refresh",
+      "loading": "Loading graph…",
+      "loadError": "Could not load the map.",
+      "empty": "No links match the current filters.",
+      "needBoard": "To filter by board, add ?boardId= when opening Reports or use the Org view."
+    },
     "proactive": {
       "title": "Proactive AI",
       "subtitle": "Daily anomaly checks (throughput, WIP, lead time, OKRs, due dates) with z-scores vs. baseline. Alerts are stored here.",
@@ -945,7 +958,33 @@
         "ai": "AI",
         "links": "Links",
         "docs": "Docs",
-        "history": "History"
+        "history": "History",
+        "deps": "Dependencies"
+      },
+      "depsTab": {
+        "title": "Cross-board dependencies",
+        "description": "Link this card to cards on other boards in the same organization.",
+        "hintKinds": "depends_on: this card depends on the other (the other is the blocker) · blocks: this card blocks the other · related_to: related without a blocking role.",
+        "emptyLinks": "No cross-board links yet.",
+        "remove": "Remove",
+        "addTitle": "Add link",
+        "kindLabel": "Relationship type",
+        "kind": {
+          "depends_on": "This card depends on the other",
+          "blocks": "This card blocks the other",
+          "related_to": "Related"
+        },
+        "searchPlaceholder": "Search other boards (min. 2 characters)…",
+        "addButton": "Add link",
+        "suggestionsTitle": "Automatic suggestions (AI)",
+        "suggestionsHint": "Pairs with similarity ≥0.85 on title/description (daily job with embeddings). Accept creates a “related” link with the shown confidence.",
+        "noSuggestions": "No suggestions for this card.",
+        "acceptSuggestion": "Accept as related",
+        "refresh": "Reload list",
+        "loadError": "Could not load dependencies.",
+        "saveError": "Could not save the link.",
+        "deleteError": "Could not remove the link.",
+        "needSave": "Save the card before managing cross-board dependencies."
       },
       "docRefs": {
         "title": "Linked documents",

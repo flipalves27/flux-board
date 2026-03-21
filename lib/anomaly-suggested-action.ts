@@ -16,6 +16,8 @@ export function fallbackAnomalySuggestion(alert: AnomalyAlertPayload): string {
       return "Realoque esforço para KRs em risco, corta escopo ou ajuste meta com sponsor — documente a decisão.";
     case "overdue_cascade":
       return "Priorize o que vence em 72h, negocie datas com cliente e concentre o time nos itens de maior risco.";
+    case "cross_board_blocker_overdue":
+      return "Alinhe com o time dono do bloqueador, negocie data ou desbloqueio, e atualize a dependência no card se o cenário mudou.";
     default:
       return "Revise o board com o time, priorize desbloqueios e alinhe expectativas com stakeholders.";
   }

@@ -11,12 +11,13 @@ const CardAiContextTab = lazy(() => import("@/components/kanban/card-modal-tabs/
 const CardLinksPanel = lazy(() => import("@/components/kanban/card-modal-tabs/card-links-panel"));
 const CardDocRefsPanel = lazy(() => import("@/components/kanban/card-modal-tabs/card-doc-refs-panel"));
 const CardHistoryTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-history-tab"));
+const CardDependenciesTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-dependencies-tab"));
 
 const TAB_STORAGE_PREFIX = "flux-card-modal-tab:";
 
-export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history";
+export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history" | "deps";
 
-const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history"]);
+const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history", "deps"]);
 
 function readStoredTab(cardId: string): CardModalTabId {
   if (typeof window === "undefined") return "edit";
@@ -95,12 +96,16 @@ export function CardModalLayout() {
     return () => cancelAnimationFrame(raf);
   }, [card.id]);
 
-  const tabItems: { id: CardModalTabId; labelKey: "edit" | "ai" | "links" | "docs" | "history" }[] = [
+  const tabItems: {
+    id: CardModalTabId;
+    labelKey: "edit" | "ai" | "links" | "docs" | "history" | "deps";
+  }[] = [
     { id: "edit", labelKey: "edit" },
     { id: "ai", labelKey: "ai" },
     { id: "links", labelKey: "links" },
     { id: "docs", labelKey: "docs" },
     { id: "history", labelKey: "history" },
+    { id: "deps", labelKey: "deps" },
   ];
 
   const tabSuspense = (
@@ -227,6 +232,11 @@ export function CardModalLayout() {
           {activeTab === "history" && (
             <Suspense fallback={tabSuspense}>
               <CardHistoryTab cardId={card.id} />
+            </Suspense>
+          )}
+          {activeTab === "deps" && (
+            <Suspense fallback={tabSuspense}>
+              <CardDependenciesTab cardId={card.id} />
             </Suspense>
           )}
 

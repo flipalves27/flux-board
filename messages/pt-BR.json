@@ -206,6 +206,19 @@
       "backtestPass": "meta ≥70% atingida",
       "backtestFail": "abaixo de 70%"
     },
+    "dependencies": {
+      "title": "Mapa de dependências (cross-board)",
+      "hint": "Grafo interativo (D3) dos vínculos entre cards. Ajuste a confiança mínima ou alterne vista por board vs. organização.",
+      "scope": "Vista",
+      "scopeBoard": "Board (use ?boardId= na URL)",
+      "scopeOrg": "Organização",
+      "minConfidence": "Confiança mínima",
+      "refresh": "Atualizar",
+      "loading": "Carregando grafo…",
+      "loadError": "Não foi possível carregar o mapa.",
+      "empty": "Sem vínculos com os filtros atuais.",
+      "needBoard": "Para filtrar por board, adicione ?boardId= ao abrir Relatórios ou use a vista Org."
+    },
     "proactive": {
       "title": "Proactive AI",
       "subtitle": "Checagem diária de anomalias (throughput, WIP, lead time, OKRs e prazos) com z-score vs. linha de base. Alertas ficam registrados aqui.",
@@ -946,7 +959,33 @@
         "ai": "IA",
         "links": "Links",
         "docs": "Docs",
-        "history": "Histórico"
+        "history": "Histórico",
+        "deps": "Dependências"
+      },
+      "depsTab": {
+        "title": "Dependências entre boards",
+        "description": "Vincule este card a cards de outros quadros da mesma organização.",
+        "hintKinds": "depends_on: este card depende do outro (o outro é bloqueador) · blocks: este card bloqueia o outro · related_to: relação sem papel de bloqueio.",
+        "emptyLinks": "Nenhum vínculo cross-board.",
+        "remove": "Remover",
+        "addTitle": "Adicionar vínculo",
+        "kindLabel": "Tipo de relação",
+        "kind": {
+          "depends_on": "Este card depende do outro",
+          "blocks": "Este card bloqueia o outro",
+          "related_to": "Relacionado"
+        },
+        "searchPlaceholder": "Buscar em outros boards (mín. 2 caracteres)…",
+        "addButton": "Adicionar vínculo",
+        "suggestionsTitle": "Sugestões automáticas (IA)",
+        "suggestionsHint": "Pares com similaridade ≥0,85 entre títulos/descrições (job diário com embeddings). Aceitar cria vínculo “relacionado” com a confiança indicada.",
+        "noSuggestions": "Sem sugestões para este card.",
+        "acceptSuggestion": "Aceitar como relacionado",
+        "refresh": "Recarregar lista",
+        "loadError": "Não foi possível carregar dependências.",
+        "saveError": "Não foi possível salvar o vínculo.",
+        "deleteError": "Não foi possível remover o vínculo.",
+        "needSave": "Salve o card antes de gerir dependências entre boards."
       },
       "docRefs": {
         "title": "Documentos vinculados",

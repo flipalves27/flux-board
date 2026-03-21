@@ -14,7 +14,8 @@ export type AnomalyKind =
   | "lead_time_spike"
   | "stagnation_cluster"
   | "okr_drift"
-  | "overdue_cascade";
+  | "overdue_cascade"
+  | "cross_board_blocker_overdue";
 
 export type AnomalySeverity = "info" | "warning" | "critical";
 

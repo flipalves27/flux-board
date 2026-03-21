@@ -217,6 +217,47 @@ async function persistRunAndAlerts(
   });
 }
 
+/** Insere alertas sem registrar linha em anomaly_check_runs (ex.: cron de dependências cross-board). */
+export async function insertAnomalyAlertsAndNotify(args: {
+  db: Db;
+  orgId: string;
+  org: Organization | null;
+  boards: BoardData[];
+  alerts: AnomalyAlertPayload[];
+  nowMs: number;
+}): Promise<void> {
+  const { db, orgId, org, boards, alerts, nowMs } = args;
+  if (!alerts.length) return;
+  await ensureAnomalyIndexes(db);
+  const runAt = new Date(nowMs).toISOString();
+  const depRunId = new ObjectId().toHexString();
+  const docs = alerts.map((a) => ({
+    orgId,
+    runId: depRunId,
+    kind: a.kind,
+    severity: a.severity,
+    title: a.title,
+    message: a.message,
+    diagnostics: a.diagnostics,
+    boardId: a.boardId,
+    boardName: a.boardName,
+    read: false,
+    createdAt: runAt,
+  }));
+  const ins = await db.collection(COL_ANOMALY_ALERTS).insertMany(docs);
+  const ids = alerts.map((_, i) => ins.insertedIds[i]).filter(Boolean) as ObjectId[];
+
+  await postPersistAnomalyNotifications({
+    db,
+    orgId,
+    org,
+    boards,
+    alerts,
+    alertObjectIds: ids,
+    nowMs,
+  });
+}
+
 export async function runAnomalyCheckForOrg(args: {
   orgId: string;
   org: Organization | null;

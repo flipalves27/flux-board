@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -22,6 +22,7 @@ import { apiGet, ApiError } from "@/lib/api-client";
 import { ChartShell } from "@/components/reports/chart-shell";
 import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
 import { SprintPredictionPanel } from "@/components/reports/sprint-prediction-panel";
+import { CrossBoardDependenciesPanel } from "@/components/reports/cross-board-dependencies-panel";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
@@ -74,6 +75,13 @@ type FluxReportsPayload = {
   meta: { copilotHistory: boolean; boardCount: number };
   sprintPrediction: SprintPredictionPayload;
   sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }>;
+  dependencySuggestions?: Array<{
+    boardIdA: string;
+    cardIdA: string;
+    boardIdB: string;
+    cardIdB: string;
+    score: number;
+  }>;
 };
 
 function riskHeatColor(risco: number | null): string {
@@ -152,6 +160,16 @@ export function FluxReportsDashboard() {
   return (
     <DataFadeIn active key={data.generatedAt} className="space-y-6">
       <ProactiveAiPanel />
+
+      <Suspense
+        fallback={
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] px-4 py-6 text-sm text-[var(--flux-text-muted)]">
+            {t("dependencies.loading")}
+          </div>
+        }
+      >
+        <CrossBoardDependenciesPanel />
+      </Suspense>
 
       <SprintPredictionPanel prediction={data.sprintPrediction} />
 

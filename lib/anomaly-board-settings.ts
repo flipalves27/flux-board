@@ -8,6 +8,7 @@ export const ANOMALY_NOTIFY_KIND_OPTIONS = [
   "stagnation_cluster",
   "okr_drift",
   "overdue_cascade",
+  "cross_board_blocker_overdue",
 ] as const satisfies readonly AnomalyKind[];
 
 export type AnomalyNotifyKind = (typeof ANOMALY_NOTIFY_KIND_OPTIONS)[number];
@@ -70,6 +71,9 @@ export function buildAnomalyNotifyDedupeKey(alert: AnomalyAlertPayload): string 
   }
   if (kind === "okr_drift" && typeof d.keyResultId === "string" && d.keyResultId) {
     return `${bid}:${kind}:${d.keyResultId}`;
+  }
+  if (kind === "cross_board_blocker_overdue" && typeof d.blockerCardId === "string" && d.blockerCardId) {
+    return `${bid}:${kind}:${d.blockerCardId}`;
   }
   return `${bid}:${kind}`;
 }

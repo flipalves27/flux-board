@@ -8,6 +8,8 @@ import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
 import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import type { DocChunk } from "@/lib/docs-rag";
 import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
+import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
+import { isMongoConfigured } from "@/lib/mongo";
 
 /** ~4k tokens em contexto compacto PT-BR (heurística: ~4 chars/token). */
 const MAX_SNAPSHOT_CHARS = 14_000;
@@ -236,6 +238,27 @@ export async function buildCopilotWorldSnapshot(params: {
   const open = cards.filter((c) => String(c?.progress || "") !== "Concluída").length;
   const done = cards.length - open;
   lines.push(`progresso: abertos~${open} concluidos~${done}`);
+
+  lines.push("");
+  lines.push("## Possíveis dependências cross-board (embeddings, score≥0.85)");
+  if (isMongoConfigured() && canUseFeature(org, "portfolio_export")) {
+    try {
+      const sugs = await listDependencySuggestionsForOrg(orgId, { boardId, minScore: 0.85, limit: 20 });
+      if (!sugs.length) {
+        lines.push("(nenhum par sugerido no último job — ajuste cards ou aguarde o cron)");
+      } else {
+        for (const s of sugs.slice(0, 12)) {
+          lines.push(
+            `- ${s.boardIdA}/${s.cardIdA} ↔ ${s.boardIdB}/${s.cardIdB} score=${s.score.toFixed(3)}`
+          );
+        }
+      }
+    } catch {
+      lines.push("(sugestões indisponíveis no momento)");
+    }
+  } else {
+    lines.push("(requer MongoDB + plano com relatórios)");
+  }
 
   const snapshot = lines.join("\n");
   const out =

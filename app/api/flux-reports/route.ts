@@ -21,6 +21,7 @@ import {
 } from "@/lib/flux-reports-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
+import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
 
 const NUM_WEEKS = 8;
 
@@ -118,9 +119,25 @@ export async function GET(request: NextRequest) {
 
     const generatedAt = new Date().toISOString();
 
+    let dependencySuggestions: Array<{
+      boardIdA: string;
+      cardIdA: string;
+      boardIdB: string;
+      cardIdB: string;
+      score: number;
+    }> = [];
+    if (isMongoConfigured()) {
+      try {
+        dependencySuggestions = await listDependencySuggestionsForOrg(payload.orgId, { minScore: 0.85, limit: 50 });
+      } catch {
+        dependencySuggestions = [];
+      }
+    }
+
     return NextResponse.json({
       schema: "flux-board.reports.v1",
       generatedAt,
+      dependencySuggestions,
       userId: payload.id,
       aggregates: {
         ...aggregates,
