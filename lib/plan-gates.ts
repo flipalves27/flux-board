@@ -6,9 +6,13 @@ import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
 const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 
 /** Plano efetivo para gates (trial ativo conta como Pro; grace pós-downgrade mantém tier pago). */
-export type EffectiveGateTier = "free" | "pro" | "business";
+export type EffectiveGateTier = "free" | "pro" | "business" | "enterprise";
 
 export type Tier = Organization["plan"];
+
+const PAID: EffectiveGateTier[] = ["pro", "business", "enterprise"];
+const BIZ_UP: EffectiveGateTier[] = ["business", "enterprise"];
+const ENT_ONLY: EffectiveGateTier[] = ["enterprise"];
 
 export type FeatureKey =
   | "executive_brief"
@@ -18,17 +22,43 @@ export type FeatureKey =
   | "board_copilot"
   | "okr_engine"
   | "flux_docs"
-  | "flux_docs_rag";
+  | "flux_docs_rag"
+  | "anomaly_email"
+  | "anomaly_webhook"
+  | "org_chat"
+  | "retro_facilitator"
+  | "workload_balancer"
+  | "risk_score"
+  | "scope_creep_alert"
+  | "knowledge_graph"
+  | "sso_saml"
+  | "custom_domain"
+  | "white_label_full"
+  | "api_webhook_unlimited"
+  | "copilot_tools_custom";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
-  executive_brief: ["pro", "business"],
-  card_context: ["pro", "business"],
-  daily_insights: ["pro", "business"],
-  portfolio_export: ["pro", "business"],
-  board_copilot: ["pro", "business"],
-  okr_engine: ["pro", "business"],
-  flux_docs: ["pro", "business"],
-  flux_docs_rag: ["pro", "business"],
+  executive_brief: PAID,
+  card_context: PAID,
+  daily_insights: PAID,
+  portfolio_export: PAID,
+  board_copilot: PAID,
+  okr_engine: PAID,
+  flux_docs: PAID,
+  flux_docs_rag: PAID,
+  anomaly_email: BIZ_UP,
+  anomaly_webhook: ENT_ONLY,
+  org_chat: BIZ_UP,
+  retro_facilitator: BIZ_UP,
+  workload_balancer: BIZ_UP,
+  risk_score: PAID,
+  scope_creep_alert: PAID,
+  knowledge_graph: BIZ_UP,
+  sso_saml: ENT_ONLY,
+  custom_domain: ENT_ONLY,
+  white_label_full: BIZ_UP,
+  api_webhook_unlimited: BIZ_UP,
+  copilot_tools_custom: ENT_ONLY,
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -53,10 +83,12 @@ export function getEffectiveTier(org: Organization | null | undefined): Effectiv
   if (plan === "free" && org?.downgradeGraceEndsAt) {
     const g = new Date(org.downgradeGraceEndsAt).getTime();
     if (Number.isFinite(g) && g > Date.now()) {
+      if (org.downgradeFromTier === "enterprise") return "business";
       return org.downgradeFromTier === "business" ? "business" : "pro";
     }
   }
 
+  if (plan === "enterprise") return "enterprise";
   if (plan === "pro" || plan === "business") return plan;
 
   return "free";
@@ -123,7 +155,7 @@ export function canUseFeature(org: Organization | null | undefined, feature: Fea
 
 export function assertFeatureAllowed(org: Organization | null | undefined, feature: FeatureKey): void {
   if (canUseFeature(org, feature)) return;
-  throw new PlanGateError("Recurso disponível apenas para planos Pro/Business.");
+  throw new PlanGateError("Recurso disponível apenas para planos pagos (Pro, Business ou Enterprise).");
 }
 
 export function assertCanCreateBoard(org: Organization | null | undefined, currentCount: number): void {

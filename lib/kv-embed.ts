@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
+import { addDaysIso } from "./billing-limits";
 
 const COL = "board_embeds";
 
@@ -13,6 +14,8 @@ export type BoardEmbedRecord = {
   orgId: string;
   kind: EmbedWidgetKind;
   createdAt: string;
+  /** ISO — após esta data o token deixa de servir dados (padrão 90 dias na criação). */
+  expiresAt?: string;
 };
 
 const memoryEmbeds = new Map<string, BoardEmbedRecord>();
@@ -30,6 +33,12 @@ function makeToken(): string {
   return randomBytes(24).toString("base64url");
 }
 
+function embedTtlDays(): number {
+  const raw = process.env.FLUX_EMBED_TOKEN_TTL_DAYS;
+  const n = raw ? Number.parseInt(raw, 10) : 90;
+  return Number.isFinite(n) && n >= 1 ? n : 90;
+}
+
 export async function createBoardEmbed(params: {
   boardId: string;
   orgId: string;
@@ -44,6 +53,7 @@ export async function createBoardEmbed(params: {
     orgId: params.orgId,
     kind: params.kind,
     createdAt: now,
+    expiresAt: addDaysIso(embedTtlDays(), new Date()),
   };
 
   if (isMongoConfigured()) {

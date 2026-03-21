@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { createCheckoutSession } from "@/lib/billing";
+import { createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
 
 type BillingPlan = "pro" | "business";
 
@@ -19,8 +19,11 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const planRaw = body?.plan as unknown;
   const seatsRaw = body?.seats as unknown;
+  const intervalRaw = body?.interval as unknown;
 
   const plan: BillingPlan = planRaw === "pro" || planRaw === "business" ? planRaw : "pro";
+  const interval: CheckoutBillingInterval =
+    intervalRaw === "year" || intervalRaw === "annual" ? "year" : "month";
 
   const seatsCandidate = typeof seatsRaw === "number" ? seatsRaw : undefined;
   const seats =
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
   if (seats < 1) return NextResponse.json({ error: "seats deve ser >= 1" }, { status: 400 });
 
   try {
-    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats });
+    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats, interval });
     return NextResponse.json({ url: session.url, sessionId: session.sessionId });
   } catch (err) {
     return NextResponse.json(

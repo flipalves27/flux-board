@@ -15,6 +15,7 @@ import {
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/schemas";
+import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
 import { appendBoardCopilotMessages, getBoardCopilotChat, type CopilotMessageRole } from "@/lib/kv-board-copilot";
 import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
@@ -993,7 +994,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const body = (await request.json().catch(() => ({}))) as Partial<CopilotChatInput>;
   const debugRag = Boolean(body.debug);
-  const userMessage = sanitizeText(body.message).trim();
+  const rawMsg = sanitizeText(body.message).trim();
+  const guarded = guardUserPromptForLlm(rawMsg);
+  const userMessage = guarded.text;
   if (!userMessage) {
     return NextResponse.json({ error: "Mensagem é obrigatória." }, { status: 400 });
   }

@@ -409,11 +409,12 @@ const AnomalyNotifyKindZ = z.enum([
   "okr_drift",
   "overdue_cascade",
   "cross_board_blocker_overdue",
+  "scope_creep",
 ]);
 
 export const BoardAnomalyNotificationsSchema = z.object({
   emailEnabled: z.boolean().optional(),
-  notifyKinds: z.array(AnomalyNotifyKindZ).max(7).optional(),
+  notifyKinds: z.array(AnomalyNotifyKindZ).max(8).optional(),
   minSeverity: z.enum(["warning", "critical"]).optional(),
   recipientEmails: z.array(z.string().trim().email("Email inválido.").max(320)).max(15).optional(),
 });

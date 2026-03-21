@@ -40,7 +40,7 @@ export default function OrgSettingsPage() {
 
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
-  const [orgPlan, setOrgPlan] = useState<"free" | "trial" | "pro" | "business">("free");
+  const [orgPlan, setOrgPlan] = useState<"free" | "trial" | "pro" | "business" | "enterprise">("free");
   const [slugTouched, setSlugTouched] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
@@ -79,7 +79,7 @@ export default function OrgSettingsPage() {
     setOrgName(String(org.name ?? ""));
     setOrgSlug(String(org.slug ?? ""));
     setOrgPlan(
-      org.plan === "pro" || org.plan === "business"
+      org.plan === "pro" || org.plan === "business" || org.plan === "enterprise"
         ? org.plan
         : org.plan === "trial"
           ? "trial"
@@ -134,7 +134,7 @@ export default function OrgSettingsPage() {
   }, [isChecked, user, router, localeRoot, getHeaders]);
 
   useEffect(() => {
-    if (!isChecked || !user?.isAdmin || orgPlan !== "business") {
+    if (!isChecked || !user?.isAdmin || (orgPlan !== "business" && orgPlan !== "enterprise")) {
       setOrgUsers([]);
       return;
     }
@@ -195,7 +195,7 @@ export default function OrgSettingsPage() {
       if (!slug) throw new Error("Slug é obrigatório.");
 
       const branding =
-        orgPlan === "pro" || orgPlan === "business"
+        orgPlan === "pro" || orgPlan === "business" || orgPlan === "enterprise"
           ? {
               logoUrl: logoUrl.trim() || "",
               primaryColor: primaryColor.trim() || "",
@@ -204,13 +204,13 @@ export default function OrgSettingsPage() {
               platformName: platformName.trim() || "",
               faviconUrl: faviconUrl.trim() || "",
               emailFrom: emailFrom.trim() || "",
-              ...(orgPlan === "business" ? { customDomain: customDomain.trim() || "" } : {}),
+              ...(orgPlan === "business" || orgPlan === "enterprise" ? { customDomain: customDomain.trim() || "" } : {}),
               ...extraBranding,
             }
           : undefined;
 
       const aiSettings =
-        orgPlan === "business"
+        orgPlan === "business" || orgPlan === "enterprise"
           ? {
               anthropicModel: aiAnthropicModel.trim() || null,
               batchLlmProvider: aiBatchProvider || null,
@@ -328,7 +328,7 @@ export default function OrgSettingsPage() {
                 </div>
               </div>
 
-              {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "trial") && (
+              {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "enterprise" || orgPlan === "trial") && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">White-label (Enterprise)</h3>
@@ -464,7 +464,7 @@ export default function OrgSettingsPage() {
                       </p>
                     </div>
 
-                    {orgPlan === "business" && (
+                    {(orgPlan === "business" || orgPlan === "enterprise") && (
                       <div className="md:col-span-2 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-surface-elevated)]/40 p-4">
                         <div>
                           <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Domínio customizado</label>
@@ -519,10 +519,10 @@ export default function OrgSettingsPage() {
                 </div>
               )}
 
-              {orgPlan === "business" && (
+              {(orgPlan === "business" || orgPlan === "enterprise") && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-4">
                   <div>
-                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">IA (Business)</h3>
+                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">IA (Business / Enterprise)</h3>
                     <p className="text-sm text-[var(--flux-text-muted)]">
                       Modelo Claude para a org, digest semanal em lote e quem mais pode usar a rota Claude além dos
                       administradores.

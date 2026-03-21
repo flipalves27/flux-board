@@ -10,18 +10,19 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
+import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
 
-type Plan = "free" | "trial" | "pro" | "business";
+type Plan = "free" | "trial" | "pro" | "business" | "enterprise";
 
-const MATRIX: { label: string; free: string; pro: string; business: string }[] = [
-  { label: "Boards", free: "3", pro: "Ilimitado", business: "Ilimitado" },
-  { label: "Usuários", free: "1", pro: "Até 10 (seats)", business: "Conforme seats" },
-  { label: "IA (calls/dia)", free: "3", pro: "Ilimitado", business: "Ilimitado" },
-  { label: "Daily IA, Card Context, Brief", free: "—", pro: "Incluso", business: "Incluso" },
-  { label: "Portfolio, OKRs, Copilot", free: "—", pro: "Incluso", business: "Incluso" },
-  { label: "White-label / branding", free: "—", pro: "Incluso", business: "Incluso" },
-  { label: "Domínio customizado", free: "—", pro: "—", business: "Incluso" },
+const MATRIX: { label: string; free: string; pro: string; business: string; enterprise: string }[] = [
+  { label: "Boards", free: "3", pro: "Ilimitado", business: "Ilimitado", enterprise: "Ilimitado" },
+  { label: "Usuários", free: "1", pro: "Até 10 (seats)", business: "Até 100", enterprise: "Ilimitado" },
+  { label: "IA (calls/dia)", free: "3", pro: "50", business: "Ilimitado", enterprise: "Ilimitado" },
+  { label: "Daily IA, Card Context, Brief", free: "—", pro: "Incluso", business: "Incluso", enterprise: "Incluso" },
+  { label: "Portfolio, OKRs, Copilot", free: "—", pro: "Incluso", business: "Incluso", enterprise: "Incluso" },
+  { label: "White-label / branding", free: "—", pro: "Logo", business: "Completo", enterprise: "Completo + domínio" },
+  { label: "SSO / SLA", free: "—", pro: "—", business: "—", enterprise: "Incluso" },
 ];
 
 export default function BillingPage() {
@@ -58,15 +59,18 @@ export default function BillingPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("too_expensive");
   const [cancelDetail, setCancelDetail] = useState("");
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
 
   const isAdmin = Boolean(user?.isAdmin);
-  const isProOrBusiness = plan === "pro" || plan === "business";
+  const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
   const proCap = getProMaxUsers();
 
   const planBadge = useMemo(() => {
     if (plan === "free") return "Free";
     if (plan === "trial") return "Trial Pro";
     if (plan === "pro") return "Pro";
+    if (plan === "business") return "Business";
+    if (plan === "enterprise") return "Enterprise";
     return "Business";
   }, [plan]);
 
@@ -87,7 +91,11 @@ export default function BillingPage() {
         const org = orgData?.organization;
         const rawPlan = String(org?.plan ?? "free");
         const nextPlan: Plan =
-          rawPlan === "pro" || rawPlan === "business" || rawPlan === "trial" || rawPlan === "free"
+          rawPlan === "pro" ||
+          rawPlan === "business" ||
+          rawPlan === "enterprise" ||
+          rawPlan === "trial" ||
+          rawPlan === "free"
             ? (rawPlan as Plan)
             : "free";
         setPlan(nextPlan);
@@ -106,7 +114,7 @@ export default function BillingPage() {
           return prev;
         });
 
-        if (nextPlan === "pro" || nextPlan === "business") {
+        if (nextPlan === "pro" || nextPlan === "business" || nextPlan === "enterprise") {
           const imp = await apiGet<{
             impact: {
               lostFeatures: string[];
@@ -134,7 +142,7 @@ export default function BillingPage() {
     })();
   }, [isChecked, user, isAdmin, getHeaders, router, localeRoot]);
 
-  async function startCheckout(nextPlan: Exclude<Plan, "free" | "trial">) {
+  async function startCheckout(nextPlan: "pro" | "business") {
     if (!user) return;
     setBusy(true);
     setError(null);
@@ -142,7 +150,11 @@ export default function BillingPage() {
       const seatsToSend =
         nextPlan === "pro" ? Math.min(Math.max(1, seats), proCap) : Math.max(1, seats);
 
-      const res = await apiPost<{ url: string }>("/api/billing/checkout", { plan: nextPlan, seats: seatsToSend }, getHeaders());
+      const res = await apiPost<{ url: string }>("/api/billing/checkout", {
+        plan: nextPlan,
+        seats: seatsToSend,
+        interval: billingInterval === "year" ? "year" : "month",
+      }, getHeaders());
       if (!res?.url) throw new Error("Stripe não retornou URL.");
       window.location.href = res.url;
     } catch (e) {
@@ -293,13 +305,14 @@ export default function BillingPage() {
 
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)] overflow-x-auto">
               <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-4">Comparativo</h3>
-              <table className="w-full min-w-[640px] text-sm border-collapse">
+              <table className="w-full min-w-[880px] text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--flux-chrome-alpha-12)]">
                     <th className="text-left py-2 pr-2 text-[var(--flux-text-muted)] font-semibold">Recurso</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-text)] font-semibold">Free</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-primary-light)] font-semibold">Pro</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-secondary)] font-semibold">Business</th>
+                    <th className="text-left py-2 px-2 text-[var(--flux-text)] font-semibold">Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -309,6 +322,7 @@ export default function BillingPage() {
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.free}</td>
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.pro}</td>
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.business}</td>
+                      <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.enterprise}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -317,7 +331,31 @@ export default function BillingPage() {
 
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
               <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-4">Assinar</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <span className="text-xs font-semibold text-[var(--flux-text-muted)]">Cobrança</span>
+                <div className="inline-flex rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded-[calc(var(--flux-rad)-2px)] ${
+                      billingInterval === "month" ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-text)]" : "text-[var(--flux-text-muted)]"
+                    }`}
+                    onClick={() => setBillingInterval("month")}
+                  >
+                    Mensal
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded-[calc(var(--flux-rad)-2px)] ${
+                      billingInterval === "year" ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-text)]" : "text-[var(--flux-text-muted)]"
+                    }`}
+                    onClick={() => setBillingInterval("year")}
+                  >
+                    Anual (−20%)
+                  </button>
+                </div>
+                <span className="text-[11px] text-[var(--flux-text-muted)]">Cupons de desconto podem ser aplicados no checkout Stripe.</span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "free" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
@@ -337,7 +375,14 @@ export default function BillingPage() {
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "pro" ? "border-[var(--flux-primary-alpha-55)] bg-[var(--flux-primary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pro</p>
-                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">Stripe</p>
+                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">
+                    {billingInterval === "year"
+                      ? `${formatBrl(PRICING_BRL.proSeatYear)}/seat/mês`
+                      : `${formatBrl(PRICING_BRL.proSeatMonth)}/seat/mês`}
+                  </p>
+                  {billingInterval === "year" ? (
+                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(PRICING_BRL.proSeatYear)}/mês).</p>
+                  ) : null}
                   <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
                     {PRO_FEATURE_LABELS_PT.slice(0, 5).map((x) => (
                       <li key={x.key}>{x.label}</li>
@@ -375,7 +420,14 @@ export default function BillingPage() {
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "business" ? "border-[var(--flux-secondary-alpha-55)] bg-[var(--flux-secondary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Business</p>
-                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">Stripe</p>
+                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">
+                    {billingInterval === "year"
+                      ? `${formatBrl(PRICING_BRL.businessSeatYear)}/seat/mês`
+                      : `${formatBrl(PRICING_BRL.businessSeatMonth)}/seat/mês`}
+                  </p>
+                  {billingInterval === "year" ? (
+                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(PRICING_BRL.businessSeatYear)}/mês).</p>
+                  ) : null}
                   <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
                     <li>Tudo do Pro</li>
                     <li>Domínio customizado</li>
@@ -404,6 +456,32 @@ export default function BillingPage() {
                       <button disabled={busy || seats < 1} className="btn-primary w-full" onClick={() => startCheckout("business")}>
                         {busy ? "Indo para Stripe..." : "Upgrade Business"}
                       </button>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-[var(--flux-rad)] border p-5 ${plan === "enterprise" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Enterprise</p>
+                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">Sob consulta</p>
+                  <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
+                    <li>SSO (SAML/OIDC), SLA dedicado</li>
+                    <li>Copilot com tools custom, domínio próprio</li>
+                    <li>Contrato e faturamento invoice (Stripe Invoicing)</li>
+                  </ul>
+                  <div className="mt-5">
+                    {plan === "enterprise" ? (
+                      <button disabled className="btn-secondary w-full">
+                        Enterprise ativo
+                      </button>
+                    ) : (
+                      <a
+                        href={`mailto:${process.env.NEXT_PUBLIC_SALES_EMAIL ?? "vendas@fluxboard.app"}?subject=${encodeURIComponent("Flux-Board Enterprise")}`}
+                        className="btn-secondary w-full inline-flex justify-center items-center"
+                      >
+                        Fale com vendas
+                      </a>
                     )}
                   </div>
                 </div>

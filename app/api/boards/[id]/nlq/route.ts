@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
 import { sanitizeText } from "@/lib/schemas";
+import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { executeNlqPlan, parseNlqWithLlm, tryNlqHeuristic } from "@/lib/board-nlq";
 import type { CopilotChatDocLike } from "@/lib/flux-reports-metrics";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
@@ -65,7 +66,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const body = (await request.json().catch(() => ({}))) as { query?: string };
-  const query = sanitizeText(body.query ?? "").trim().slice(0, 500);
+  const rawQuery = sanitizeText(body.query ?? "").trim().slice(0, 500);
+  const query = guardUserPromptForLlm(rawQuery).text;
   if (!query) {
     return NextResponse.json({ error: "Consulta é obrigatória." }, { status: 400 });
   }

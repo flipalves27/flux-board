@@ -19,7 +19,8 @@ import {
   PAUSE_BILLING_DAYS,
 } from "./billing-limits";
 
-type BillingPlan = Exclude<Organization["plan"], "free" | "trial">; // pro | business
+/** Planos cobrados via Stripe (Enterprise é contrato manual / fora do checkout). */
+type BillingPlan = "pro" | "business";
 
 function readEnv(name: string): string {
   const v = process.env[name];
@@ -43,7 +44,9 @@ function getStripePriceIds() {
   const business = process.env.STRIPE_PRICE_ID_BUSINESS;
   if (!pro) throw new Error("Missing env var: STRIPE_PRICE_ID_PRO");
   if (!business) throw new Error("Missing env var: STRIPE_PRICE_ID_BUSINESS");
-  return { pro, business };
+  const proAnnual = process.env.STRIPE_PRICE_ID_PRO_ANNUAL?.trim() || "";
+  const businessAnnual = process.env.STRIPE_PRICE_ID_BUSINESS_ANNUAL?.trim() || "";
+  return { pro, business, proAnnual, businessAnnual };
 }
 
 let stripeSingleton: Stripe | null = null;
@@ -53,12 +56,16 @@ function stripe(): Stripe {
   return stripeSingleton;
 }
 
+export type CheckoutBillingInterval = "month" | "year";
+
 export async function createCheckoutSession(input: {
   orgId: string;
   plan: BillingPlan;
   seats: number;
+  /** Mensal (Stripe default) ou anual (`STRIPE_PRICE_ID_*_ANNUAL`). */
+  interval?: CheckoutBillingInterval;
 }): Promise<{ url: string; sessionId: string }> {
-  const { pro: proPriceId, business: businessPriceId } = getStripePriceIds();
+  const ids = getStripePriceIds();
 
   const org = await getOrganizationById(input.orgId);
   if (!org) throw new Error("Organization não encontrada");
@@ -72,7 +79,21 @@ export async function createCheckoutSession(input: {
     if (seats > cap) throw new Error(`Tier Pro comporta até ${cap} usuário(s).`);
   }
 
-  const priceId = plan === "pro" ? proPriceId : businessPriceId;
+  const wantYear = input.interval === "year";
+  let priceId: string;
+  if (plan === "pro") {
+    priceId = wantYear && ids.proAnnual ? ids.proAnnual : ids.pro;
+    if (wantYear && !ids.proAnnual) {
+      console.warn("[billing] STRIPE_PRICE_ID_PRO_ANNUAL ausente — usando preço mensal.");
+      priceId = ids.pro;
+    }
+  } else {
+    priceId = wantYear && ids.businessAnnual ? ids.businessAnnual : ids.business;
+    if (wantYear && !ids.businessAnnual) {
+      console.warn("[billing] STRIPE_PRICE_ID_BUSINESS_ANNUAL ausente — usando preço mensal.");
+      priceId = ids.business;
+    }
+  }
   const customerId = org.stripeCustomerId;
 
   const owner = await getUserById(org.ownerId, org._id).catch(() => null);
@@ -87,6 +108,7 @@ export async function createCheckoutSession(input: {
     orgId: input.orgId,
     plan,
     seats: String(seats),
+    billingInterval: wantYear ? "year" : "month",
   };
 
   const session = await stripe().checkout.sessions.create({
@@ -96,7 +118,7 @@ export async function createCheckoutSession(input: {
       ? `${successUrl}&session_id={CHECKOUT_SESSION_ID}`
       : `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl,
-    allow_promotion_codes: false,
+    allow_promotion_codes: true,
     customer: customerId || undefined,
     customer_email: customerEmail,
     subscription_data: {
@@ -175,11 +197,11 @@ function resolveBillingTierFromSubscription(subscription: Stripe.Subscription): 
   const metaPlan = subscription.metadata?.plan;
   if (metaPlan === "pro" || metaPlan === "business") return metaPlan;
 
-  const { pro: proPriceId, business: businessPriceId } = getStripePriceIds();
+  const ids = getStripePriceIds();
   const priceId = subscription.items.data?.[0]?.price?.id;
   if (!priceId) return null;
-  if (priceId === proPriceId) return "pro";
-  if (priceId === businessPriceId) return "business";
+  if (priceId === ids.pro || (ids.proAnnual && priceId === ids.proAnnual)) return "pro";
+  if (priceId === ids.business || (ids.businessAnnual && priceId === ids.businessAnnual)) return "business";
   return null;
 }
 
@@ -209,6 +231,7 @@ async function applySubscriptionStateToOrganization(params: {
       const nextSeats = typeof seats === "number" ? Math.min(seats, cap) : cap;
       next.maxUsers = nextSeats;
     } else {
+      // business (Stripe)
       next.maxUsers = typeof seats === "number" ? seats : getBusinessMaxUsers();
     }
   } else {

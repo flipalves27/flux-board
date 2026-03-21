@@ -4,6 +4,9 @@ import { getEmbedByToken } from "@/lib/kv-embed";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { resolvePlatformDisplayName } from "@/lib/org-branding";
 import { computeBoardPortfolio, type PortfolioBoardLike } from "@/lib/board-portfolio-metrics";
+import { rateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
 
 function parseCards(raw: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(raw)) return [];
@@ -18,8 +21,27 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { token } = await params;
   if (!token) return NextResponse.json({ error: "Token inválido." }, { status: 400 });
 
+  const rl = await rateLimit({
+    key: `embed:data:${token.slice(0, 48)}`,
+    limit: 100,
+    windowMs: 60 * 1000,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições para este embed." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
+  }
+
   const emb = await getEmbedByToken(token);
   if (!emb) return NextResponse.json({ error: "Widget não encontrado." }, { status: 404 });
+
+  if (emb.expiresAt) {
+    const ex = new Date(emb.expiresAt).getTime();
+    if (Number.isFinite(ex) && ex < Date.now()) {
+      return NextResponse.json({ error: "Link de embed expirado. Gere um novo na configuração do board." }, { status: 410 });
+    }
+  }
 
   const board = await getBoard(emb.boardId, emb.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });

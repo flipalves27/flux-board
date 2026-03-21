@@ -10,6 +10,10 @@ const NON_CSP_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
 } as const;
 
+/** HSTS — reforça HTTPS em clientes (deploy atrás de proxy TLS). */
+const HSTS_PROD =
+  "max-age=63072000; includeSubDomains; preload";
+
 const CSP =
   "default-src 'self'; " +
   "img-src 'self' data: https:; " +
@@ -33,6 +37,9 @@ function isEmbedDocumentPath(pathname: string) {
 function applyNonCspSecurityHeaders(res: NextResponse) {
   for (const [k, v] of Object.entries(NON_CSP_HEADERS)) {
     res.headers.set(k, v);
+  }
+  if (process.env.NODE_ENV === "production") {
+    res.headers.set("Strict-Transport-Security", HSTS_PROD);
   }
   return res;
 }

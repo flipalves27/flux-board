@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { callTogetherApi } from "@/lib/llm-utils";
 import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, getDailyAiCallsCap, getDailyAiCallsWindowMs, makeDailyAiCallsRateLimitKey, PlanGateError } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -425,8 +426,8 @@ export async function POST(
       return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
     }
 
-    const title = sanitizeText(parsed.data.title).trim();
-    const description = sanitizeText(parsed.data.description).trim();
+    const title = guardUserPromptForLlm(sanitizeText(parsed.data.title).trim()).text;
+    const description = guardUserPromptForLlm(sanitizeText(parsed.data.description).trim()).text;
     const forceRefresh = Boolean(parsed.data.forceRefresh);
 
     if (!title || !description) {

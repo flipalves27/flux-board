@@ -23,14 +23,14 @@ export interface Organization {
   name: string;
   slug: string; // URL-friendly
   ownerId: string; // quem criou
-  plan: "free" | "trial" | "pro" | "business";
+  plan: "free" | "trial" | "pro" | "business" | "enterprise";
   maxUsers: number;
   maxBoards: number;
   /** Fim do trial (signup); aplicado com downgrade lazy para Free. */
   trialEndsAt?: string;
   /** Após cancelamento Stripe: acesso Pro com limites antigos até esta data (export). */
   downgradeGraceEndsAt?: string;
-  downgradeFromTier?: "pro" | "business";
+  downgradeFromTier?: "pro" | "business" | "enterprise";
   /** Avisos in-app (ex.: trial encerrado). */
   billingNotice?: BillingNotice | null;
   /** White-label (Enterprise): logo, cores, favicon; domínio customizado em plano Business. */
