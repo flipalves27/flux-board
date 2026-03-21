@@ -127,18 +127,22 @@ export async function appendBoardCopilotMessages(params: {
     const col = db.collection<CopilotChatDoc>(COL_COPILOT_CHATS);
 
     // O segundo argumento de updateOne deve usar só operadores ($set, $push, …).
-    // Campos literais no topo (ex.: orgId, updatedAt) causam:
-    // "Update document requires atomic operators".
+    // Não misturar o mesmo path em $setOnInsert e noutro operador (ex.: `messages`
+    // em $setOnInsert + $push → "conflict at 'messages'").
+    // Idem `freeDemoUsed`: não usar $setOnInsert { freeDemoUsed: 0 } com $inc no mesmo path.
+    const setOnInsert: Record<string, unknown> = {
+      orgId,
+      boardId,
+      userId,
+      createdAt,
+    };
+    if (!incrementFreeDemoUsed) {
+      setOnInsert.freeDemoUsed = 0;
+    }
+
     const update: Record<string, unknown> = {
       $set: { updatedAt: createdAt },
-      $setOnInsert: {
-        orgId,
-        boardId,
-        userId,
-        createdAt,
-        freeDemoUsed: 0,
-        messages: [],
-      },
+      $setOnInsert: setOnInsert,
       $push: {
         messages: {
           $each: newMessages,
