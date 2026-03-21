@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
       plan: org.plan,
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
+      trialEndsAt: org.trialEndsAt ?? null,
+      downgradeGraceEndsAt: org.downgradeGraceEndsAt ?? null,
+      downgradeFromTier: org.downgradeFromTier ?? null,
+      billingNotice: org.billingNotice ?? null,
       createdAt: org.createdAt,
       branding: org.branding ?? null,
       // Billing (Stripe)
@@ -53,9 +57,10 @@ export async function PUT(request: NextRequest) {
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : undefined;
   const slug = typeof body?.slug === "string" ? body.slug.trim().slice(0, 80) : undefined;
   const hasBranding = body && typeof body === "object" && "branding" in body;
+  const dismissBillingNotice = body?.dismissBillingNotice === true;
 
-  if (!name && !slug && !hasBranding) {
-    return NextResponse.json({ error: "Informe `name`, `slug` ou `branding`." }, { status: 400 });
+  if (!name && !slug && !hasBranding && !dismissBillingNotice) {
+    return NextResponse.json({ error: "Informe `name`, `slug`, `branding` ou `dismissBillingNotice`." }, { status: 400 });
   }
 
   try {
@@ -166,6 +171,7 @@ export async function PUT(request: NextRequest) {
       ...(name !== undefined ? { name } : {}),
       ...(slug !== undefined ? { slug } : {}),
       ...(brandingPatch !== undefined ? { branding: brandingPatch } : {}),
+      ...(dismissBillingNotice ? { billingNotice: null } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
     return NextResponse.json({ organization: org });

@@ -40,7 +40,7 @@ export default function OrgSettingsPage() {
 
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
-  const [orgPlan, setOrgPlan] = useState<"free" | "pro" | "business">("free");
+  const [orgPlan, setOrgPlan] = useState<"free" | "trial" | "pro" | "business">("free");
   const [slugTouched, setSlugTouched] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
@@ -52,6 +52,20 @@ export default function OrgSettingsPage() {
   const [customDomain, setCustomDomain] = useState("");
   const [domainVerificationToken, setDomainVerificationToken] = useState("");
   const [customDomainVerifiedAt, setCustomDomainVerifiedAt] = useState("");
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<
+    Array<{
+      id: string;
+      number: string | null;
+      status: string | null;
+      created: number;
+      amountDue: number;
+      currency: string;
+      invoicePdf: string | null;
+      hostedInvoiceUrl: string | null;
+    }>
+  >([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   const suggestedSlug = useMemo(() => slugifyLocal(orgName), [orgName]);
 
@@ -59,7 +73,13 @@ export default function OrgSettingsPage() {
     if (!org) return;
     setOrgName(String(org.name ?? ""));
     setOrgSlug(String(org.slug ?? ""));
-    setOrgPlan(org.plan === "pro" || org.plan === "business" ? org.plan : "free");
+    setOrgPlan(
+      org.plan === "pro" || org.plan === "business"
+        ? org.plan
+        : org.plan === "trial"
+          ? "trial"
+          : "free"
+    );
     const b = org.branding as Record<string, unknown> | undefined;
     setLogoUrl(typeof b?.logoUrl === "string" ? b.logoUrl : "");
     setPrimaryColor(typeof b?.primaryColor === "string" ? b.primaryColor : "");
@@ -71,6 +91,7 @@ export default function OrgSettingsPage() {
     setCustomDomain(typeof b?.customDomain === "string" ? b.customDomain : "");
     setDomainVerificationToken(typeof b?.domainVerificationToken === "string" ? b.domainVerificationToken : "");
     setCustomDomainVerifiedAt(typeof b?.customDomainVerifiedAt === "string" ? b.customDomainVerifiedAt : "");
+    setStripeCustomerId(typeof org.stripeCustomerId === "string" ? org.stripeCustomerId : null);
   }
 
   useEffect(() => {
@@ -100,6 +121,35 @@ export default function OrgSettingsPage() {
       }
     })();
   }, [isChecked, user, router, localeRoot, getHeaders]);
+
+  useEffect(() => {
+    if (!isChecked || !user?.isAdmin || !stripeCustomerId) {
+      setInvoices([]);
+      return;
+    }
+    setInvoicesLoading(true);
+    (async () => {
+      try {
+        const data = await apiGet<{
+          invoices: Array<{
+            id: string;
+            number: string | null;
+            status: string | null;
+            created: number;
+            amountDue: number;
+            currency: string;
+            invoicePdf: string | null;
+            hostedInvoiceUrl: string | null;
+          }>;
+        }>("/api/billing/invoices", getHeaders());
+        setInvoices(Array.isArray(data?.invoices) ? data.invoices : []);
+      } catch {
+        setInvoices([]);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    })();
+  }, [isChecked, user?.isAdmin, stripeCustomerId, getHeaders]);
 
   useEffect(() => {
     if (!slugTouched) setOrgSlug(suggestedSlug);
@@ -238,7 +288,7 @@ export default function OrgSettingsPage() {
                 </div>
               </div>
 
-              {(orgPlan === "pro" || orgPlan === "business") && (
+              {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "trial") && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">White-label (Enterprise)</h3>
@@ -442,6 +492,51 @@ export default function OrgSettingsPage() {
                   {busy ? "Salvando..." : "Salvar"}
                 </button>
               </div>
+
+              {user?.isAdmin && stripeCustomerId ? (
+                <div className="mt-10 pt-10 border-t border-[var(--flux-primary-alpha-15)]">
+                  <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Faturas (Stripe)</h3>
+                  <p className="text-sm text-[var(--flux-text-muted)] mb-4">
+                    Histórico de cobranças. PDF e página hospedada vêm do Stripe.
+                  </p>
+                  {invoicesLoading ? (
+                    <p className="text-sm text-[var(--flux-text-muted)]">Carregando faturas…</p>
+                  ) : invoices.length === 0 ? (
+                    <p className="text-sm text-[var(--flux-text-muted)]">Nenhuma fatura ainda.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {invoices.map((inv) => {
+                        const date = new Date(inv.created * 1000).toLocaleDateString(locale === "en" ? "en-US" : "pt-BR");
+                        const href = inv.invoicePdf || inv.hostedInvoiceUrl;
+                        return (
+                          <li
+                            key={inv.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+                          >
+                            <span className="text-[var(--flux-text)]">
+                              {inv.number || inv.id}
+                              <span className="text-[var(--flux-text-muted)]"> · {date}</span>
+                              {inv.status ? (
+                                <span className="ml-2 text-xs uppercase text-[var(--flux-text-muted)]">{inv.status}</span>
+                              ) : null}
+                            </span>
+                            {href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                              >
+                                PDF / Ver fatura
+                              </a>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
 
               <OrgWebhooksSettings />
             </>

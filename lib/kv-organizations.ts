@@ -2,15 +2,27 @@ import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
 import { maxBoardsPerUser } from "./commercial-plan";
 import type { OrgBranding } from "./org-branding";
+import { addDaysIso, getFreeMaxBoards, getFreeMaxUsers, getPaidMaxBoards, getProMaxUsers, TRIAL_DAYS } from "./billing-limits";
+
+export type BillingNotice =
+  | { kind: "trial_ended"; at: string }
+  | { kind: "downgrade_grace_ended"; at: string };
 
 export interface Organization {
   _id: string; // "org_xxxxx"
   name: string;
   slug: string; // URL-friendly
   ownerId: string; // quem criou
-  plan: "free" | "pro" | "business";
+  plan: "free" | "trial" | "pro" | "business";
   maxUsers: number;
   maxBoards: number;
+  /** Fim do trial (signup); aplicado com downgrade lazy para Free. */
+  trialEndsAt?: string;
+  /** Após cancelamento Stripe: acesso Pro com limites antigos até esta data (export). */
+  downgradeGraceEndsAt?: string;
+  downgradeFromTier?: "pro" | "business";
+  /** Avisos in-app (ex.: trial encerrado). */
+  billingNotice?: BillingNotice | null;
   /** White-label (Enterprise): logo, cores, favicon; domínio customizado em plano Business. */
   branding?: OrgBranding;
   // Billing (Stripe)
@@ -20,6 +32,8 @@ export interface Organization {
   stripeStatus?: string;
   stripeCurrentPeriodEnd?: string; // ISO
   stripeSeats?: number;
+  /** Feedback opcional ao cancelar/pausar (survey). */
+  billingCancellationFeedback?: { reason: string; at: string };
   createdAt: string;
 }
 
@@ -161,6 +175,58 @@ function makeOrgId(): string {
   return `org_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Downgrades lazy: trial expirado → Free; grace de downgrade pago → limites Free. */
+async function applyBillingTransitionIfNeeded(doc: Organization): Promise<Organization> {
+  if (!isMongoConfigured()) return doc;
+  const now = Date.now();
+  let needsTrialExpiry = false;
+  let needsGraceExpiry = false;
+
+  if (doc.plan === "trial" && doc.trialEndsAt) {
+    const end = new Date(doc.trialEndsAt).getTime();
+    if (Number.isFinite(end) && end <= now) needsTrialExpiry = true;
+  }
+  if (doc.plan === "free" && doc.downgradeGraceEndsAt) {
+    const g = new Date(doc.downgradeGraceEndsAt).getTime();
+    if (Number.isFinite(g) && g <= now) needsGraceExpiry = true;
+  }
+  if (!needsTrialExpiry && !needsGraceExpiry) return doc;
+
+  const db = await getDb();
+  await ensureOrgIndexes(db);
+  const col = db.collection<Organization>(COL_ORGS);
+
+  if (needsTrialExpiry) {
+    await col.updateOne(
+      { _id: doc._id },
+      {
+        $set: {
+          plan: "free",
+          maxUsers: getFreeMaxUsers(),
+          maxBoards: getFreeMaxBoards(),
+          billingNotice: { kind: "trial_ended", at: new Date().toISOString() },
+        },
+        $unset: { trialEndsAt: "" },
+      }
+    );
+  } else if (needsGraceExpiry) {
+    await col.updateOne(
+      { _id: doc._id },
+      {
+        $set: {
+          maxUsers: getFreeMaxUsers(),
+          maxBoards: getFreeMaxBoards(),
+          billingNotice: { kind: "downgrade_grace_ended", at: new Date().toISOString() },
+        },
+        $unset: { downgradeGraceEndsAt: "", downgradeFromTier: "" },
+      }
+    );
+  }
+
+  const next = await col.findOne({ _id: doc._id });
+  return next ?? doc;
+}
+
 export async function createOrganization(params: {
   ownerId: string;
   name?: string;
@@ -168,10 +234,19 @@ export async function createOrganization(params: {
   plan?: Organization["plan"];
   maxUsers?: number;
   maxBoards?: number;
+  trialEndsAt?: string;
 }): Promise<Organization> {
   const plan = params.plan ?? "free";
-  const maxUsers = typeof params.maxUsers === "number" ? params.maxUsers : DEFAULT_ORG_DOC.maxUsers;
-  const maxBoards = typeof params.maxBoards === "number" ? params.maxBoards : DEFAULT_ORG_DOC.maxBoards;
+  let maxUsers = typeof params.maxUsers === "number" ? params.maxUsers : DEFAULT_ORG_DOC.maxUsers;
+  let maxBoards = typeof params.maxBoards === "number" ? params.maxBoards : DEFAULT_ORG_DOC.maxBoards;
+  const trialEndsAt =
+    plan === "trial"
+      ? params.trialEndsAt ?? addDaysIso(TRIAL_DAYS)
+      : undefined;
+  if (plan === "trial") {
+    maxUsers = getProMaxUsers();
+    maxBoards = getPaidMaxBoards();
+  }
 
   const resolved = (() => {
     if (params.name && params.slug) return { name: params.name, slug: params.slug };
@@ -190,6 +265,7 @@ export async function createOrganization(params: {
       plan,
       maxUsers,
       maxBoards,
+      ...(trialEndsAt ? { trialEndsAt } : {}),
       createdAt: new Date().toISOString(),
     };
     // Sem persistência em KV-memory quando Mongo não existe; retorna para fluxo.
@@ -225,11 +301,23 @@ export async function createOrganization(params: {
     plan,
     maxUsers,
     maxBoards,
+    ...(trialEndsAt ? { trialEndsAt } : {}),
     createdAt: new Date().toISOString(),
   };
 
   await col.insertOne(org);
   return org;
+}
+
+/** Novo signup sem convite: trial 14 dias com limites equivalentes ao Pro. */
+export async function createTrialOrganizationForSignup(ownerId: string, email: string): Promise<Organization> {
+  const derived = deriveOrgFromEmail(email);
+  return createOrganization({
+    ownerId,
+    name: derived.name,
+    slug: derived.slug,
+    plan: "trial",
+  });
 }
 
 export async function createOrganizationFromEmail(ownerId: string, email: string): Promise<Organization> {
@@ -251,7 +339,8 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ _id: orgId });
-  return doc || null;
+  if (!doc) return null;
+  return applyBillingTransitionIfNeeded(doc);
 }
 
 /** Resolve organização pelo host white-label (CNAME → Vercel). Host sem porta, lower-case. */
@@ -291,6 +380,11 @@ export async function updateOrganization(
       | "plan"
       | "maxBoards"
       | "maxUsers"
+      | "trialEndsAt"
+      | "downgradeGraceEndsAt"
+      | "downgradeFromTier"
+      | "billingNotice"
+      | "billingCancellationFeedback"
       | "stripeCustomerId"
       | "stripeSubscriptionId"
       | "stripePriceId"
@@ -315,8 +409,49 @@ export async function updateOrganization(
     updates.slug = slugify(slug);
   }
 
-  await col.updateOne({ _id: orgId }, { $set: updates });
-  return await getOrganizationById(orgId);
+  const op: Record<string, unknown> = { $set: updates };
+  await col.updateOne({ _id: orgId }, op);
+  const doc = await col.findOne({ _id: orgId });
+  if (!doc) return null;
+  return applyBillingTransitionIfNeeded(doc);
+}
+
+/** Atualiza campos e opcionalmente remove chaves (ex.: limpar grace após reativar Stripe). */
+export async function updateOrganizationWithUnset(
+  orgId: string,
+  updates: Partial<
+    Pick<
+      Organization,
+      | "name"
+      | "slug"
+      | "plan"
+      | "maxBoards"
+      | "maxUsers"
+      | "trialEndsAt"
+      | "downgradeGraceEndsAt"
+      | "downgradeFromTier"
+      | "billingNotice"
+      | "billingCancellationFeedback"
+      | "stripeCustomerId"
+      | "stripeSubscriptionId"
+      | "stripePriceId"
+      | "stripeStatus"
+      | "stripeCurrentPeriodEnd"
+      | "stripeSeats"
+      | "branding"
+    >
+  >,
+  unsetKeys: (keyof Organization)[]
+): Promise<Organization | null> {
+  if (!isMongoConfigured()) return null;
+  const db = await getDb();
+  await ensureOrgIndexes(db);
+  const col = db.collection<Organization>(COL_ORGS);
+  const $unset = Object.fromEntries(unsetKeys.map((k) => [k, ""])) as Record<string, "">;
+  await col.updateOne({ _id: orgId }, { $set: updates, $unset } as Parameters<typeof col.updateOne>[1]);
+  const doc = await col.findOne({ _id: orgId });
+  if (!doc) return null;
+  return applyBillingTransitionIfNeeded(doc);
 }
 
 export async function updateOrganizationOwner(orgId: string, ownerId: string): Promise<void> {

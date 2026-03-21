@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { SidebarLayoutProvider, useSidebarLayout } from "@/context/sidebar-layout-context";
 import { Sidebar } from "@/components/sidebar";
 import { MobileAppHeader } from "@/components/mobile-app-header";
+import { TrialBillingBanner } from "@/components/trial-billing-banner";
 import { CommandPalette } from "@/components/command-palette/command-palette";
 import { GlobalHotkeys } from "@/components/hotkeys/global-hotkeys";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
@@ -35,6 +36,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
         <MobileAppHeader />
+        <TrialBillingBanner />
         <div className="min-h-0 min-w-0 flex-1">{children}</div>
       </div>
       <CommandPalette />

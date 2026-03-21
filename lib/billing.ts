@@ -1,11 +1,25 @@
 import Stripe from "stripe";
 import type { NextRequest } from "next/server";
 
-import { getOrganizationById, updateOrganization } from "./kv-organizations";
+import {
+  getOrganizationById,
+  updateOrganization,
+  updateOrganizationWithUnset,
+} from "./kv-organizations";
 import type { Organization } from "./kv-organizations";
 import { getUserById } from "./kv-users";
+import {
+  addDaysIso,
+  DOWNGRADE_GRACE_DAYS,
+  getBusinessMaxUsers,
+  getFreeMaxBoards,
+  getFreeMaxUsers,
+  getPaidMaxBoards,
+  getProMaxUsers,
+  PAUSE_BILLING_DAYS,
+} from "./billing-limits";
 
-type BillingPlan = Exclude<Organization["plan"], "free">; // "pro" | "business"
+type BillingPlan = Exclude<Organization["plan"], "free" | "trial">; // pro | business
 
 function readEnv(name: string): string {
   const v = process.env[name];
@@ -22,38 +36,6 @@ function appBaseUrl(): string {
   if (!v) return "http://localhost:3000";
   const withProto = v.startsWith("http://") || v.startsWith("https://") ? v : `https://${v}`;
   return withProto.replace(/\/+$/, "");
-}
-
-function getFreeMaxBoards(): number {
-  const fromEnv = Number(process.env.FLUX_FREE_MAX_BOARDS ?? "");
-  if (Number.isFinite(fromEnv) && fromEnv >= 1) return fromEnv;
-  return 3;
-}
-
-function getFreeMaxUsers(): number {
-  const fromEnvLegacy = Number(process.env.FLUX_MAX_USERS_PER_ORG ?? "");
-  if (Number.isFinite(fromEnvLegacy) && fromEnvLegacy >= 1) return fromEnvLegacy;
-  const fromEnvFree = Number(process.env.FLUX_FREE_MAX_USERS_PER_ORG ?? "");
-  if (Number.isFinite(fromEnvFree) && fromEnvFree >= 1) return fromEnvFree;
-  return 1;
-}
-
-function getProMaxUsers(): number {
-  const fromEnv = Number(process.env.FLUX_PRO_MAX_USERS_PER_ORG ?? "");
-  if (Number.isFinite(fromEnv) && fromEnv >= 1) return fromEnv;
-  return 10;
-}
-
-function getBusinessMaxUsers(): number {
-  const fromEnv = Number(process.env.FLUX_BUSINESS_MAX_USERS_PER_ORG ?? "");
-  if (Number.isFinite(fromEnv) && fromEnv >= 1) return fromEnv;
-  return 1_000_000; // "ilimitado" operacionalmente
-}
-
-function getPaidMaxBoards(): number {
-  const fromEnv = Number(process.env.FLUX_PAID_MAX_BOARDS ?? "");
-  if (Number.isFinite(fromEnv) && fromEnv >= 1) return fromEnv;
-  return 1_000_000;
 }
 
 function getStripePriceIds() {
@@ -87,14 +69,12 @@ export async function createCheckoutSession(input: {
   const plan = input.plan;
   if (plan === "pro") {
     const cap = getProMaxUsers();
-    // Pro é limitado por tier (10 usuários na imagem, por default).
     if (seats > cap) throw new Error(`Tier Pro comporta até ${cap} usuário(s).`);
   }
 
   const priceId = plan === "pro" ? proPriceId : businessPriceId;
   const customerId = org.stripeCustomerId;
 
-  // Email ajuda Stripe a criar o customer corretamente quando não temos `stripeCustomerId` ainda.
   const owner = await getUserById(org.ownerId, org._id).catch(() => null);
   const customerEmail = owner?.email || undefined;
 
@@ -134,7 +114,7 @@ export async function createPortalSession(input: { orgId: string }): Promise<{ u
   if (!org) throw new Error("Organization não encontrada");
   if (!org.stripeCustomerId) throw new Error("Organization sem stripeCustomerId.");
 
-  const returnUrl = process.env.STRIPE_PORTAL_RETURN_URL || `${appBaseUrl()}/boards`;
+  const returnUrl = process.env.STRIPE_PORTAL_RETURN_URL || `${appBaseUrl()}/billing`;
 
   const session = await stripe().billingPortal.sessions.create({
     customer: org.stripeCustomerId,
@@ -142,6 +122,48 @@ export async function createPortalSession(input: { orgId: string }): Promise<{ u
   });
 
   return { url: session.url };
+}
+
+export type StripeInvoiceRow = {
+  id: string;
+  number: string | null;
+  status: string | null;
+  created: number;
+  amountDue: number;
+  currency: string;
+  invoicePdf: string | null;
+  hostedInvoiceUrl: string | null;
+};
+
+export async function listStripeInvoicesForOrg(orgId: string): Promise<StripeInvoiceRow[]> {
+  const org = await getOrganizationById(orgId);
+  if (!org?.stripeCustomerId) return [];
+  const invoices = await stripe().invoices.list({
+    customer: org.stripeCustomerId,
+    limit: 40,
+  });
+  return invoices.data.map((inv) => ({
+    id: inv.id,
+    number: inv.number ?? null,
+    status: inv.status ?? null,
+    created: inv.created,
+    amountDue: inv.amount_due,
+    currency: inv.currency,
+    invoicePdf: inv.invoice_pdf ?? null,
+    hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+  }));
+}
+
+export async function pauseSubscriptionForOrg(orgId: string): Promise<void> {
+  const org = await getOrganizationById(orgId);
+  if (!org?.stripeSubscriptionId) throw new Error("Nenhuma assinatura Stripe vinculada.");
+  const resumesAt = Math.floor(Date.now() / 1000) + PAUSE_BILLING_DAYS * 24 * 60 * 60;
+  await stripe().subscriptions.update(org.stripeSubscriptionId, {
+    pause_collection: {
+      behavior: "void",
+      resumes_at: resumesAt,
+    },
+  });
 }
 
 function isoFromUnixSeconds(s: number | null | undefined): string | undefined {
@@ -191,20 +213,23 @@ async function applySubscriptionStateToOrganization(params: {
     }
   } else {
     next.plan = "free";
-    next.maxBoards = getFreeMaxBoards();
-    next.maxUsers = getFreeMaxUsers();
+    next.downgradeGraceEndsAt = addDaysIso(DOWNGRADE_GRACE_DAYS);
+    next.downgradeFromTier = tier;
+    // Mantém maxUsers/maxBoards até `downgradeGraceEndsAt` (sync lazy em kv-organizations).
   }
 
-  // Billing metadata (mantemos stripeCustomerId quando disponível).
   if (customerId) next.stripeCustomerId = customerId;
   next.stripeSubscriptionId = subscription.id;
   if (priceId) next.stripePriceId = priceId;
   next.stripeStatus = subscription.status;
-  // `current_period_end` pode variar entre versões tipadas do Stripe.
   next.stripeCurrentPeriodEnd = isoFromUnixSeconds((subscription as any).current_period_end);
   if (typeof seats === "number") next.stripeSeats = seats;
 
-  await updateOrganization(orgId, next as any);
+  if (isActive) {
+    await updateOrganizationWithUnset(orgId, next as any, ["trialEndsAt", "downgradeGraceEndsAt", "downgradeFromTier"]);
+  } else {
+    await updateOrganizationWithUnset(orgId, next as any, ["trialEndsAt"]);
+  }
 }
 
 export async function handleStripeWebhook(request: NextRequest): Promise<{ handled: boolean }> {
@@ -223,7 +248,6 @@ export async function handleStripeWebhook(request: NextRequest): Promise<{ handl
   const orgId = subscription.metadata?.orgId;
   if (!orgId) return { handled: false };
 
-  // Deleted -> downgrade para free.
   if (type === "customer.subscription.deleted") {
     const tier = resolveBillingTierFromSubscription(subscription) ?? "pro";
     await applySubscriptionStateToOrganization({
@@ -248,4 +272,3 @@ export async function handleStripeWebhook(request: NextRequest): Promise<{ handl
 
   return { handled: true };
 }
-

@@ -13,7 +13,7 @@ import {
 } from "@/lib/kv-users";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import {
-  createOrganizationFromEmail,
+  createTrialOrganizationForSignup,
   updateOrganizationOwner,
   getOrganizationById,
 } from "@/lib/kv-organizations";
@@ -202,7 +202,7 @@ export async function registerAction(
     // Sem convite: cria uma organization exclusiva para o usuário.
     // Usamos domínio do e-mail para nome/slug iniciais (o usuário pode ajustar depois).
     const orgOwnerPlaceholder = `pending_${Date.now()}`;
-    const org = await createOrganizationFromEmail(orgOwnerPlaceholder, emailNorm);
+    const org = await createTrialOrganizationForSignup(orgOwnerPlaceholder, emailNorm);
 
     const user = await createUser({
       username: emailNorm,

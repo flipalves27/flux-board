@@ -1,10 +1,14 @@
 import type { Organization } from "./kv-organizations";
 import { isProTenant } from "./commercial-plan";
+import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
 
 /** Audit log retention for Free tier (days). Pro/Business: unlimited (no TTL window). */
 const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 
-export type Tier = Organization["plan"]; // "free" | "pro" | "business"
+/** Plano efetivo para gates (trial ativo conta como Pro; grace pós-downgrade mantém tier pago). */
+export type EffectiveGateTier = "free" | "pro" | "business";
+
+export type Tier = Organization["plan"];
 
 export type FeatureKey =
   | "executive_brief"
@@ -16,7 +20,7 @@ export type FeatureKey =
   | "flux_docs"
   | "flux_docs_rag";
 
-const FEATURE_ALLOWED_TIERS: Record<FeatureKey, Tier[]> = {
+const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: ["pro", "business"],
   card_context: ["pro", "business"],
   daily_insights: ["pro", "business"],
@@ -37,10 +41,52 @@ export class PlanGateError extends Error {
   }
 }
 
-export function getEffectiveTier(org: Organization | null | undefined): Tier {
-  // Override de ambiente (dev/test): mantém comportamento legado.
+export function getEffectiveTier(org: Organization | null | undefined): EffectiveGateTier {
   if (isProTenant()) return "pro";
-  return (org?.plan ?? "free") as Tier;
+  const plan = org?.plan ?? "free";
+
+  if (plan === "trial" && org?.trialEndsAt) {
+    const end = new Date(org.trialEndsAt).getTime();
+    if (Number.isFinite(end) && end > Date.now()) return "pro";
+  }
+
+  if (plan === "free" && org?.downgradeGraceEndsAt) {
+    const g = new Date(org.downgradeGraceEndsAt).getTime();
+    if (Number.isFinite(g) && g > Date.now()) {
+      return org.downgradeFromTier === "business" ? "business" : "pro";
+    }
+  }
+
+  if (plan === "pro" || plan === "business") return plan;
+
+  return "free";
+}
+
+/** Rótulos para UI de downgrade / trial expirado (PT). */
+export const PRO_FEATURE_LABELS_PT: { key: FeatureKey; label: string }[] = [
+  { key: "executive_brief", label: "Executive Brief" },
+  { key: "card_context", label: "Card Context (IA)" },
+  { key: "daily_insights", label: "Daily Insights" },
+  { key: "portfolio_export", label: "Portfolio export" },
+  { key: "board_copilot", label: "Board Copilot" },
+  { key: "okr_engine", label: "OKR engine" },
+  { key: "flux_docs", label: "Flux Docs" },
+  { key: "flux_docs_rag", label: "Flux Docs RAG" },
+];
+
+export function describeDowngradeImpact(params: {
+  boardsCount: number;
+  usersCount: number;
+}): { lostFeatures: string[]; boardsOver: number; usersOver: number; freeMaxBoards: number; freeMaxUsers: number } {
+  const freeMaxBoards = getFreeMaxBoards();
+  const freeMaxUsers = getFreeMaxUsers();
+  return {
+    lostFeatures: PRO_FEATURE_LABELS_PT.map((x) => x.label),
+    boardsOver: Math.max(0, params.boardsCount - freeMaxBoards),
+    usersOver: Math.max(0, params.usersCount - freeMaxUsers),
+    freeMaxBoards,
+    freeMaxUsers,
+  };
 }
 
 /** Free: 90 dias; Pro/Business: ilimitado (null). */
