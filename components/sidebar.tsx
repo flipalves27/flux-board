@@ -214,8 +214,8 @@ export function Sidebar() {
   const linkClass = (href: string) =>
     `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
      ${isActive(href)
-       ? "bg-[rgba(108,92,231,0.2)] text-[var(--flux-primary-light)] shadow-none"
-       : "text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-text)]"
+       ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)] shadow-none"
+       : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
      }`;
 
   function NavSectionTitle({ children }: { children: ReactNode }) {
@@ -264,11 +264,11 @@ export function Sidebar() {
 
   return (
     <aside
-      className="flex flex-col shrink-0 border-r border-[rgba(108,92,231,0.08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width] duration-300 ease-out overflow-hidden"
+      className="flex flex-col shrink-0 border-r border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width] duration-300 ease-out overflow-hidden"
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
     >
       {/* Logo + toggle — ícone sempre visível; quando recolhido mantém uma linha para não cortar o ícone */}
-      <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[rgba(108,92,231,0.06)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
+      <div className={`flex items-center gap-1.5 h-11 px-2.5 border-b border-[var(--flux-primary-alpha-06)] shrink-0 ${collapsed ? "justify-center" : "justify-between"}`}>
         <Link href={`/${locale}/boards`} className={`flex items-center min-w-0 ${collapsed ? "justify-center shrink-0" : "gap-2"}`}>
           <div
             className="w-8 h-8 rounded-[var(--flux-rad-sm)] flex items-center justify-center shrink-0 text-white overflow-hidden"
@@ -276,7 +276,7 @@ export function Sidebar() {
               background: orgLogoUrl
                 ? "var(--flux-surface-elevated)"
                 : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: orgLogoUrl ? "none" : "0 2px 8px rgba(108,92,231,0.25)",
+              boxShadow: orgLogoUrl ? "none" : "0 2px 8px var(--flux-primary-alpha-25)",
             }}
           >
             {orgLogoUrl ? (
@@ -291,7 +291,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="p-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
+          className="p-1.5 rounded-[var(--flux-rad-sm)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)] transition-colors shrink-0"
           aria-label={collapsed ? t("menu.expand") : t("menu.collapse")}
         >
           {collapsed ? <IconChevronRight className="w-4 h-4" /> : <IconChevronLeft className="w-4 h-4" />}
@@ -420,7 +420,7 @@ export function Sidebar() {
       </nav>
 
       {/* Theme + Logout */}
-      <div className="p-2.5 border-t border-[rgba(108,92,231,0.06)] flex flex-col gap-0.5 shrink-0">
+      <div className="p-2.5 border-t border-[var(--flux-primary-alpha-06)] flex flex-col gap-0.5 shrink-0">
         <CustomTooltip
           content={theme === "dark" ? t("theme.lightTooltip") : t("theme.darkTooltip")}
           position="right"
@@ -429,7 +429,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display overflow-hidden
-            bg-transparent text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.06)] hover:text-[var(--flux-primary)]`}
+            bg-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
           >
             {theme === "dark" ? <IconSun className="w-4 h-4 shrink-0" /> : <IconMoon className="w-4 h-4 shrink-0" />}
             {!collapsed && <span>{theme === "dark" ? t("theme.light") : t("theme.dark")}</span>}
@@ -438,7 +438,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={logout}
-          className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[rgba(255,107,107,0.12)] hover:!text-[var(--flux-danger)]`}
+          className={`${linkClass("")} text-[var(--flux-danger)] hover:!bg-[var(--flux-danger-alpha-12)] hover:!text-[var(--flux-danger)]`}
         >
           <IconLogout className="w-4 h-4 shrink-0" />
           {!collapsed && <span>{t("logout")}</span>}

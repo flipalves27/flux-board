@@ -56,12 +56,12 @@ export default function EmbedWidgetPage() {
     : "—";
 
   return (
-    <div className="min-h-[200px] bg-[var(--flux-surface-card)] text-[var(--flux-text)] rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.2)] p-4 shadow-[0_8px_28px_rgba(0,0,0,0.25)]">
+    <div className="min-h-[200px] bg-[var(--flux-surface-card)] text-[var(--flux-text)] rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] p-4 shadow-[var(--flux-shadow-embed-widget)]">
       {loading && !data && (
         <div className="space-y-3 animate-pulse">
-          <div className="h-4 w-1/3 rounded bg-[rgba(255,255,255,0.08)]" />
-          <div className="h-10 w-full rounded bg-[rgba(255,255,255,0.06)]" />
-          <div className="h-3 w-2/3 rounded bg-[rgba(255,255,255,0.05)]" />
+          <div className="h-4 w-1/3 rounded bg-[var(--flux-chrome-alpha-08)]" />
+          <div className="h-10 w-full rounded bg-[var(--flux-chrome-alpha-06)]" />
+          <div className="h-3 w-2/3 rounded bg-[var(--flux-chrome-alpha-05)]" />
         </div>
       )}
       {error && <p className="text-sm text-[var(--flux-danger)]">{error}</p>}
@@ -94,12 +94,12 @@ export default function EmbedWidgetPage() {
               {data.miniKanban.map((col) => (
                 <div
                   key={col.key}
-                  className="min-w-[140px] max-w-[180px] rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[rgba(255,255,255,0.06)] p-2"
+                  className="min-w-[140px] max-w-[180px] rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-chrome-alpha-06)] p-2"
                 >
                   <p className="text-[10px] font-semibold text-[var(--flux-text-muted)] truncate mb-2">{col.label}</p>
                   <ul className="space-y-1.5">
                     {col.cards.map((c, i) => (
-                      <li key={i} className="text-[11px] leading-snug rounded px-2 py-1 bg-[rgba(0,0,0,0.2)]">
+                      <li key={i} className="text-[11px] leading-snug rounded px-2 py-1 bg-[var(--flux-black-alpha-20)]">
                         {c.title}
                       </li>
                     ))}
@@ -117,7 +117,7 @@ export default function EmbedWidgetPage() {
               {data.heatmap.map((h, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-[10px] text-[var(--flux-text-muted)] w-28 truncate">{h.column}</span>
-                  <div className="flex-1 h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                  <div className="flex-1 h-2 rounded-full bg-[var(--flux-chrome-alpha-06)] overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary)] transition-all"
                       style={{ width: `${Math.round(h.intensity)}%` }}
@@ -137,13 +137,13 @@ export default function EmbedWidgetPage() {
                     <span className="truncate">{b.label}</span>
                     <span className="font-mono">{b.percent}%</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden">
                     <div className="h-full rounded-full bg-[var(--flux-success)]" style={{ width: `${b.percent}%` }} />
                   </div>
                 </div>
               ))}
               {data.portfolio.risco !== null && (
-                <p className="text-[10px] text-[var(--flux-text-muted)] pt-2 border-t border-[rgba(255,255,255,0.06)]">
+                <p className="text-[10px] text-[var(--flux-text-muted)] pt-2 border-t border-[var(--flux-chrome-alpha-06)]">
                   Portfólio — risco {data.portfolio.risco} · throughput {data.portfolio.throughput} · previsibilidade{" "}
                   {data.portfolio.previsibilidade}
                 </p>
@@ -164,7 +164,7 @@ export default function EmbedWidgetPage() {
 
 function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
-    <div className="rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] px-2 py-2 border border-[rgba(255,255,255,0.06)]">
+    <div className="rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] px-2 py-2 border border-[var(--flux-chrome-alpha-06)]">
       <p className="text-[10px] text-[var(--flux-text-muted)]">{label}</p>
       <p className={`text-xl font-bold font-display tabular-nums ${accent ?? "text-[var(--flux-text)]"}`}>{value}</p>
     </div>

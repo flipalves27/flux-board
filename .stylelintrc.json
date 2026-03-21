@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "function-disallowed-list": [
+      ["rgb", "rgba", "hsl", "hsla"],
+      {
+        "message": "Define colors as Flux tokens in app/globals.css (use CSS custom properties), not raw color functions in component-level CSS."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["app/globals.css"],
+      "rules": {
+        "function-disallowed-list": null
+      }
+    }
+  ],
+  "ignoreFiles": ["**/node_modules/**", ".next/**"]
+}

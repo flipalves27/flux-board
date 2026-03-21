@@ -17,7 +17,7 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
   const t = useTranslations("header");
 
   return (
-    <header className="bg-[var(--flux-surface-mid)] border-b border-[rgba(108,92,231,0.12)] sticky top-0 z-[200]">
+    <header className="bg-[var(--flux-surface-mid)] border-b border-[var(--flux-primary-alpha-12)] sticky top-0 z-[200]">
       <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           {backHref && (

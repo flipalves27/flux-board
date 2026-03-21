@@ -129,7 +129,7 @@ export default function OrgSettingsPage() {
         <div className="text-xs text-[var(--flux-text-muted)]">{t("steps.pill1")}</div>
       </Header>
       <main className="max-w-[780px] mx-auto px-6 py-10">
-        <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
           <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">Configuração da Organização</h2>
           <p className="text-sm text-[var(--flux-text-muted)] mb-6">
             O `slug` é usado para URLs/escopo do tenant. Ele precisa ser único.
@@ -140,7 +140,7 @@ export default function OrgSettingsPage() {
           ) : (
             <>
               {error && (
-                <div className="mb-4 bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
+                <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
                   {error}
                 </div>
               )}
@@ -151,7 +151,7 @@ export default function OrgSettingsPage() {
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                    className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                     disabled={busy}
                   />
                 </div>
@@ -163,7 +163,7 @@ export default function OrgSettingsPage() {
                       setSlugTouched(true);
                       setOrgSlug(e.target.value);
                     }}
-                    className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)] font-mono"
+                    className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)] font-mono"
                     disabled={busy}
                   />
                   <p className="mt-2 text-xs text-[var(--flux-text-muted)]">
@@ -173,7 +173,7 @@ export default function OrgSettingsPage() {
               </div>
 
               {(orgPlan === "pro" || orgPlan === "business") && (
-                <div className="mt-8 pt-8 border-t border-[rgba(108,92,231,0.15)]">
+                <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)]">
                   <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Branding (app inteiro)</h3>
                   <p className="text-sm text-[var(--flux-text-muted)] mb-4">
                     Logo na sidebar, cores primárias e favicon. Plano Business: domínio customizado (CNAME configurado no DNS).
@@ -184,7 +184,7 @@ export default function OrgSettingsPage() {
                       <input
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
-                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
+                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                         disabled={busy}
                         placeholder="https://…"
                       />
@@ -194,9 +194,9 @@ export default function OrgSettingsPage() {
                       <input
                         value={primaryColor}
                         onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                         disabled={busy}
-                        placeholder="#6C5CE7"
+                        placeholder="var(--flux-primary)"
                       />
                     </div>
                     <div>
@@ -204,9 +204,9 @@ export default function OrgSettingsPage() {
                       <input
                         value={secondaryColor}
                         onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                         disabled={busy}
-                        placeholder="#00D2D3"
+                        placeholder="var(--flux-secondary)"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -214,7 +214,7 @@ export default function OrgSettingsPage() {
                       <input
                         value={faviconUrl}
                         onChange={(e) => setFaviconUrl(e.target.value)}
-                        className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)]"
+                        className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)]"
                         disabled={busy}
                         placeholder="https://…/favicon.ico"
                       />
@@ -225,7 +225,7 @@ export default function OrgSettingsPage() {
                         <input
                           value={customDomain}
                           onChange={(e) => setCustomDomain(e.target.value)}
-                          className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
+                          className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                           disabled={busy}
                           placeholder="board.cliente.com"
                         />

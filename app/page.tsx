@@ -8,11 +8,11 @@ import { useAuth } from "@/context/auth-context";
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 44 44" fill="none" className={className} aria-hidden>
-      <path d="M8 32L16 20L24 26L36 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M30 10H36V16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="20" r="2.5" fill="rgba(253,167,223,0.8)" />
-      <circle cx="24" cy="26" r="2.5" fill="rgba(0,210,211,0.8)" />
-      <path d="M8 36H36" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
+      <path d="M8 32L16 20L24 26L36 10" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M30 10H36V16" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="16" cy="20" r="2.5" fill="var(--flux-accent-alpha-80)" />
+      <circle cx="24" cy="26" r="2.5" fill="var(--flux-secondary-alpha-80)" />
+      <path d="M8 36H36" stroke="var(--flux-chrome-alpha-30)" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -30,7 +30,7 @@ function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
     >
       <div className="pointer-events-none absolute -right-8 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[var(--flux-primary)]/15 blur-3xl" />
       <div className="pointer-events-none absolute -left-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/12 blur-3xl" />
-      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[rgba(108,92,231,0.15)] pb-3">
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[var(--flux-primary-alpha-15)] pb-3">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[var(--flux-danger)]/80" />
           <span className="h-2 w-2 rounded-full bg-[var(--flux-warning)]/80" />
@@ -52,7 +52,7 @@ function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
                   key={i}
                   className="home-kanban-card rounded-md border px-2 py-2.5 md:py-3"
                 >
-                  <div className="mb-2 h-1.5 rounded-full bg-[rgba(108,92,231,0.25)]" style={{ width: c.w }} />
+                  <div className="mb-2 h-1.5 rounded-full bg-[var(--flux-primary-alpha-25)]" style={{ width: c.w }} />
                   <div className="home-kanban-line h-1 rounded" />
                   <div className="home-kanban-line-muted mt-1.5 h-1 w-4/5 rounded" />
                 </div>
@@ -153,7 +153,7 @@ export default function HomePage() {
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
               style={{
                 background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-                boxShadow: "0 8px 20px rgba(108,92,231,0.35)",
+                boxShadow: "0 8px 20px var(--flux-primary-alpha-35)",
               }}
             >
               <FluxLogoIcon className="h-5 w-5" />
@@ -229,7 +229,7 @@ export default function HomePage() {
                 className="absolute -inset-1 rounded-[calc(var(--flux-rad-xl)+4px)] opacity-70 blur-xl"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(108,92,231,0.35), rgba(0,210,211,0.2), rgba(253,167,223,0.25))",
+                    "var(--flux-gradient-landing-cta)",
                 }}
                 aria-hidden
               />
@@ -239,7 +239,7 @@ export default function HomePage() {
                   {heroStats.map((row) => (
                     <div
                       key={row.k}
-                      className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)]/80 px-2 py-2 backdrop-blur-sm"
+                      className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/80 px-2 py-2 backdrop-blur-sm"
                     >
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)]">{row.k}</p>
                       <p className="mt-0.5 font-display text-sm font-bold text-[var(--flux-text)]">{row.v}</p>
@@ -262,7 +262,7 @@ export default function HomePage() {
             {pillars.map((p) => (
               <article
                 key={p.title}
-                className="group relative overflow-hidden rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--shadow-md)] transition-transform duration-300 hover:-translate-y-0.5"
+                className="group relative overflow-hidden rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--shadow-md)] transition-transform duration-300 hover:-translate-y-0.5"
               >
                 <div
                   className={`pointer-events-none absolute -right-4 -top-4 h-28 w-28 rounded-full bg-gradient-to-br ${p.accent} opacity-80 blur-2xl transition-opacity group-hover:opacity-100`}
@@ -293,7 +293,7 @@ export default function HomePage() {
             {capabilities.map((cap) => (
               <article
                 key={cap.name}
-                className="tone-card flex flex-col rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-5 shadow-[var(--shadow-md)] transition-colors hover:border-[rgba(0,210,211,0.35)]"
+                className="tone-card flex flex-col rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-5 shadow-[var(--shadow-md)] transition-colors hover:border-[var(--flux-secondary-alpha-35)]"
               >
                 <div className="mb-3 h-px w-10 rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary)]" />
                 <h3 className="font-display text-base font-semibold">{cap.name}</h3>
@@ -312,7 +312,7 @@ export default function HomePage() {
             {steps.map((s, i) => (
               <li
                 key={s.step}
-                className="relative rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)]/90 p-6 backdrop-blur-sm"
+                className="relative rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/90 p-6 backdrop-blur-sm"
               >
                 <span className="font-display text-3xl font-bold tabular-nums text-[var(--flux-primary)]/40">{s.step}</span>
                 <h3 className="mt-2 font-display text-lg font-semibold">{s.title}</h3>
@@ -344,7 +344,7 @@ export default function HomePage() {
           <div
             className="pointer-events-none absolute inset-0 opacity-30"
             style={{
-              background: "radial-gradient(ellipse 70% 80% at 50% 120%, rgba(108,92,231,0.35), transparent)",
+              background: "radial-gradient(ellipse 70% 80% at 50% 120%, var(--flux-primary-alpha-35), transparent)",
             }}
             aria-hidden
           />
@@ -372,7 +372,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[rgba(108,92,231,0.15)] pt-8 text-center text-xs text-[var(--flux-text-muted)] md:flex-row md:text-left">
+        <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[var(--flux-primary-alpha-15)] pt-8 text-center text-xs text-[var(--flux-text-muted)] md:flex-row md:text-left">
           <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
           <div className="flex flex-wrap justify-center gap-4 md:justify-end">
             <Link href={`${localeRoot}/login`} className="font-semibold text-[var(--flux-text)] transition-colors hover:text-[var(--flux-primary-light)]">

@@ -58,7 +58,7 @@ export function BoardSummaryDock({
               <div key={b.key} className="flex items-center gap-1 shrink-0">
                 {i > 0 && <div className="w-px h-4 bg-[var(--flux-hairline)]" />}
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: b.color || "#9B97C2" }} />
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: b.color || "var(--flux-text-muted)" }} />
                   <span className="text-xs text-[var(--flux-text-muted)] font-medium whitespace-nowrap">
                     {b.label || ""}
                   </span>
@@ -105,7 +105,7 @@ export function BoardSummaryDock({
       </div>
       {(executionInsights.nextActions.length > 0 || executionInsights.wipRiskColumns.length > 0) && (
         <div className="mt-3 border-t border-[var(--flux-border-subtle)] pt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-2.5">
+          <div className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-2.5">
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)] mb-1.5">
               {t("board.nextActions.title")}
             </div>
@@ -135,7 +135,7 @@ export function BoardSummaryDock({
               ))}
             </div>
           </div>
-          <div className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,107,107,0.24)] bg-[var(--flux-surface-card)] p-2.5">
+          <div className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-danger-alpha-24)] bg-[var(--flux-surface-card)] p-2.5">
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-danger)] mb-1.5">
               {t("board.wipRisk.title")}
             </div>
@@ -146,7 +146,7 @@ export function BoardSummaryDock({
                 {executionInsights.wipRiskColumns.map((entry) => (
                   <span
                     key={entry.key}
-                    className="rounded-full border border-[rgba(255,107,107,0.4)] bg-[rgba(255,107,107,0.14)] px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-text)]"
+                    className="rounded-full border border-[var(--flux-danger-alpha-40)] bg-[var(--flux-danger-alpha-14)] px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-text)]"
                   >
                     {entry.label}: {entry.count}
                   </span>
@@ -172,7 +172,7 @@ export function BoardSummaryDock({
             {okrsComputed.map((o) => (
               <div
                 key={o.objective.id}
-                className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-3"
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -204,7 +204,7 @@ export function BoardSummaryDock({
                           key={kr.definition.id}
                           className={`border rounded-md bg-[var(--flux-surface-hover)] p-2 ${
                             proj?.riskBelowThreshold
-                              ? "border-[rgba(255,107,107,0.45)] bg-[rgba(255,80,80,0.06)]"
+                              ? "border-[var(--flux-danger-alpha-45)] bg-[var(--flux-danger-soft-06)]"
                               : "border-[var(--flux-border-subtle)]"
                           }`}
                         >

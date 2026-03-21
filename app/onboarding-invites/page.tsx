@@ -100,14 +100,14 @@ export default function OrganizationInvitesOnboardingPage() {
       </Header>
 
       <main className="max-w-[780px] mx-auto px-6 py-10">
-        <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
           <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">Convites</h2>
           <p className="text-sm text-[var(--flux-text-muted)] mb-6">
             Gere um link/código de convite. O convidado usará esse código ao se cadastrar.
           </p>
 
           {error && (
-            <div className="mb-4 bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
+            <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
               {error}
             </div>
           )}
@@ -118,7 +118,7 @@ export default function OrganizationInvitesOnboardingPage() {
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 disabled={busy}
               />
             </div>
@@ -128,7 +128,7 @@ export default function OrganizationInvitesOnboardingPage() {
           </div>
 
           {inviteUrl && (
-            <div className="mt-6 p-4 rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-[rgba(0,210,211,0.08)]">
+            <div className="mt-6 p-4 rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-secondary-alpha-08)]">
               <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Link de convite</p>
               <div className="mt-2 flex flex-col gap-2">
                 <code className="break-all text-[12px] text-[var(--flux-text)]">{inviteUrl}</code>

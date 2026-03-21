@@ -72,10 +72,10 @@ function KanbanCardInner({
 
   const prioClass =
     card.priority === "Urgente"
-      ? "bg-[rgba(255,107,107,0.15)] text-[var(--flux-danger)] border border-[rgba(255,107,107,0.35)]"
+      ? "bg-[var(--flux-danger-alpha-15)] text-[var(--flux-danger)] border border-[var(--flux-danger-alpha-35)]"
       : card.priority === "Importante"
-        ? "bg-[rgba(255,217,61,0.12)] text-[var(--flux-warning)] border border-[rgba(255,217,61,0.35)]"
-        : "bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]";
+        ? "bg-[var(--flux-warning-alpha-12)] text-[var(--flux-warning)] border border-[var(--flux-warning-alpha-35)]"
+        : "bg-[var(--flux-info-alpha-12)] text-[var(--flux-info)] border border-[var(--flux-info-alpha-35)]";
 
   const progColor =
     card.progress === "Em andamento"
@@ -95,7 +95,7 @@ function KanbanCardInner({
           handleEdit();
         }
       }}
-      className={`bg-[var(--flux-surface-elevated)] border border-[var(--flux-border-default)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_rgba(108,92,231,0.18)] hover:border-[var(--flux-primary)]/50 ${
+      className={`bg-[var(--flux-surface-elevated)] border border-[var(--flux-border-default)] rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] hover:border-[var(--flux-primary)]/50 ${
         isDragging ? "opacity-40 scale-[0.98]" : ""
       }`}
     >
@@ -145,7 +145,7 @@ function KanbanCardInner({
               e.stopPropagation();
               handleDelete();
             }}
-            className="card-delete w-4 h-4 rounded border-none bg-transparent text-[var(--flux-text-muted)] text-[10px] flex items-center justify-center opacity-35 hover:opacity-100 hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)]"
+            className="card-delete w-4 h-4 rounded border-none bg-transparent text-[var(--flux-text-muted)] text-[10px] flex items-center justify-center opacity-35 hover:opacity-100 hover:bg-[var(--flux-danger-alpha-15)] hover:text-[var(--flux-danger)]"
           >
             ✕
           </button>
@@ -165,7 +165,7 @@ function KanbanCardInner({
           <span
             key={tag}
             className={`text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-[var(--flux-surface-hover)] text-[var(--flux-text-muted)] ${
-              tag === "Incidente" ? "bg-[rgba(253,167,223,0.15)] text-[var(--flux-accent)] border border-[rgba(253,167,223,0.35)] font-semibold" : ""
+              tag === "Incidente" ? "bg-[var(--flux-accent-alpha-15)] text-[var(--flux-accent)] border border-[var(--flux-accent-alpha-35)] font-semibold" : ""
             }`}
           >
             {tag}
@@ -214,7 +214,7 @@ function KanbanCardInner({
                 type="button"
                 className={`dir-btn text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
                   sel
-                    ? `text-white ${dk === "manter" ? "bg-[#059669] border-[#059669]" : dk === "priorizar" ? "bg-[var(--flux-secondary)] border-[var(--flux-secondary)]" : dk === "adiar" ? "bg-[var(--flux-warning)] border-[var(--flux-warning)] text-[#1A1730]" : dk === "cancelar" ? "bg-[var(--flux-danger)] border-[var(--flux-danger)]" : "bg-[var(--flux-text-muted)] border-[var(--flux-text-muted)]"}`
+                    ? `text-white ${dk === "manter" ? "bg-[var(--flux-success-solid-dark)] border-[var(--flux-success-solid-dark)]" : dk === "priorizar" ? "bg-[var(--flux-secondary)] border-[var(--flux-secondary)]" : dk === "adiar" ? "bg-[var(--flux-warning)] border-[var(--flux-warning)] text-[var(--flux-ink-on-bright)]" : dk === "cancelar" ? "bg-[var(--flux-danger)] border-[var(--flux-danger)]" : "bg-[var(--flux-text-muted)] border-[var(--flux-text-muted)]"}`
                     : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                 }`}
                 onClick={(e) => {

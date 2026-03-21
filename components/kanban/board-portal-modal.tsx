@@ -140,7 +140,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
         role="dialog"
         aria-modal="true"
         aria-labelledby="portal-modal-title"
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.35)] bg-[var(--flux-surface-card)] shadow-[var(--shadow-md)] p-6"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-card)] shadow-[var(--shadow-md)] p-6"
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
@@ -201,7 +201,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
               value={cardIdsText}
               onChange={(e) => setCardIdsText(e.target.value)}
               rows={4}
-              className="w-full rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs font-mono text-[var(--flux-text)]"
+              className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs font-mono text-[var(--flux-text)]"
               placeholder="card_1&#10;card_2"
             />
           </div>
@@ -214,7 +214,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
                 placeholder={t("logoUrl")}
-                className="w-full rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -222,14 +222,14 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   placeholder={t("primaryColor")}
-                  className="rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
+                  className="rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
                 />
                 <input
                   type="text"
                   value={secondaryColor}
                   onChange={(e) => setSecondaryColor(e.target.value)}
                   placeholder={t("secondaryColor")}
-                  className="rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
+                  className="rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
                 />
               </div>
               <input
@@ -237,12 +237,12 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
                 value={displayTitle}
                 onChange={(e) => setDisplayTitle(e.target.value)}
                 placeholder={t("displayTitle")}
-                className="w-full rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)]"
               />
             </div>
           </div>
 
-          <div className="border-t border-[rgba(155,151,194,0.15)] pt-4">
+          <div className="border-t border-[var(--flux-portal-chrome-15)] pt-4">
             <p className="text-xs font-semibold text-[var(--flux-text-muted)] mb-2">{t("passwordNew")}</p>
             {portal?.passwordProtected ? (
               <label className="flex items-center gap-2 text-xs text-[var(--flux-text)] mb-2">
@@ -257,7 +257,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={removePassword}
               placeholder={t("passwordPlaceholder")}
-              className="w-full rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)] disabled:opacity-50"
+              className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)] disabled:opacity-50"
             />
           </div>
         </div>

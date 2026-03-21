@@ -20,14 +20,14 @@ import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
 
 const CHART_COLORS = [
-  "#6c5ce7",
-  "#00d2d3",
-  "#f59e0b",
-  "#ff6b6b",
-  "#a29bfe",
-  "#26de81",
-  "#fd79a8",
-  "#74b9ff",
+  "var(--flux-primary)",
+  "var(--flux-secondary)",
+  "var(--flux-warning-foreground)",
+  "var(--flux-danger)",
+  "var(--flux-primary-light)",
+  "var(--flux-success)",
+  "var(--flux-accent-dark)",
+  "var(--flux-info)",
 ];
 
 type FluxReportsPayload = {
@@ -67,11 +67,11 @@ type FluxReportsPayload = {
 };
 
 function riskHeatColor(risco: number | null): string {
-  if (risco === null) return "rgba(255,255,255,0.08)";
+  if (risco === null) return "var(--flux-chrome-alpha-08)";
   const danger = 100 - risco;
-  if (danger >= 55) return "rgba(255,107,107,0.55)";
-  if (danger >= 35) return "rgba(245,158,11,0.45)";
-  return "rgba(38,222,129,0.35)";
+  if (danger >= 55) return "var(--flux-danger-alpha-55)";
+  if (danger >= 35) return "var(--flux-amber-alpha-45)";
+  return "var(--flux-reports-heat-low)";
 }
 
 function ChartShell({
@@ -123,7 +123,7 @@ function ChartShell({
   }, [chartId, explainPayload, getHeaders, title, t]);
 
   return (
-    <section className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
+    <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{title}</h3>
@@ -133,7 +133,7 @@ function ChartShell({
           type="button"
           onClick={explain}
           disabled={busy}
-          className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.4)] bg-[rgba(108,92,231,0.15)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-50"
+          className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-40)] bg-[var(--flux-primary-alpha-15)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-50"
         >
           {busy ? t("explaining") : t("explain")}
         </button>
@@ -141,7 +141,7 @@ function ChartShell({
       {children}
       {err ? <p className="mt-3 text-xs text-[var(--flux-danger)]">{err}</p> : null}
       {narrative ? (
-        <div className="mt-3 rounded-[var(--flux-rad-sm)] border border-[rgba(0,210,211,0.25)] bg-[rgba(0,210,211,0.06)] px-3 py-2.5 text-sm leading-relaxed text-[var(--flux-text)]">
+        <div className="mt-3 rounded-[var(--flux-rad-sm)] border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-3 py-2.5 text-sm leading-relaxed text-[var(--flux-text)]">
           {narrative}
         </div>
       ) : null}
@@ -206,7 +206,7 @@ export function FluxReportsDashboard() {
 
   if (error || !data) {
     return (
-      <div className="rounded-[var(--flux-rad)] border border-[rgba(255,107,107,0.35)] bg-[rgba(255,107,107,0.08)] px-4 py-3 text-sm text-[var(--flux-text)]">
+      <div className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
         {error ?? t("empty")}
       </div>
     );
@@ -217,21 +217,21 @@ export function FluxReportsDashboard() {
       <ProactiveAiPanel />
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-4">
+        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.boards")}</p>
           <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.boardCount}</p>
         </div>
-        <div className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-[var(--flux-surface-card)] p-4">
+        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgRisk")}</p>
           <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.avgRisco ?? "—"}</p>
         </div>
-        <div className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.1)] bg-[var(--flux-surface-card)] p-4">
+        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgLead")}</p>
           <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
             {data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
           </p>
         </div>
-        <div className="rounded-[var(--flux-rad)] border border-[rgba(245,158,11,0.28)] bg-[var(--flux-surface-card)] p-4">
+        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-amber-alpha-28)] bg-[var(--flux-surface-card)] p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.atRiskBoards")}</p>
           <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.atRiskCount}</p>
         </div>
@@ -253,13 +253,13 @@ export function FluxReportsDashboard() {
           <div className="h-[320px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={cfdChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{
                     background: "var(--flux-surface-card)",
-                    border: "1px solid rgba(108,92,231,0.25)",
+                    border: "1px solid var(--flux-primary-alpha-25)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
@@ -292,18 +292,18 @@ export function FluxReportsDashboard() {
         <div className="h-[280px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
                   background: "var(--flux-surface-card)",
-                  border: "1px solid rgba(108,92,231,0.25)",
+                  border: "1px solid var(--flux-primary-alpha-25)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="concluded" name={t("series.concluded")} fill="#00d2d3" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="concluded" name={t("series.concluded")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -317,20 +317,20 @@ export function FluxReportsDashboard() {
         <div className="h-[280px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
                   background: "var(--flux-surface-card)",
-                  border: "1px solid rgba(108,92,231,0.25)",
+                  border: "1px solid var(--flux-primary-alpha-25)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="created" name={t("series.created")} fill="#6c5ce7" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="concluded" name={t("series.concludedCopilot")} fill="#00d2d3" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="created" name={t("series.created")} fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="concluded" name={t("series.concludedCopilot")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -345,18 +345,18 @@ export function FluxReportsDashboard() {
         <div className="h-[260px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.leadTimeHistogram} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="label" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
                   background: "var(--flux-surface-card)",
-                  border: "1px solid rgba(108,92,231,0.25)",
+                  border: "1px solid var(--flux-primary-alpha-25)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="count" name={t("series.cards")} fill="#a29bfe" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" name={t("series.cards")} fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -372,7 +372,7 @@ export function FluxReportsDashboard() {
           {data.portfolioHeatmap.map((cell) => (
             <div
               key={cell.boardId}
-              className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.08)] px-3 py-2.5 text-left transition-transform hover:scale-[1.02]"
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-08)] px-3 py-2.5 text-left transition-transform hover:scale-[1.02]"
               style={{ background: riskHeatColor(cell.risco) }}
             >
               <p className="truncate text-xs font-bold text-[var(--flux-text)]">{cell.name}</p>
@@ -393,7 +393,7 @@ export function FluxReportsDashboard() {
         <div className="h-[280px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <YAxis
                 type="category"
@@ -404,7 +404,7 @@ export function FluxReportsDashboard() {
               <Tooltip
                 contentStyle={{
                   background: "var(--flux-surface-card)",
-                  border: "1px solid rgba(108,92,231,0.25)",
+                  border: "1px solid var(--flux-primary-alpha-25)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -428,18 +428,18 @@ export function FluxReportsDashboard() {
           <div className="h-[240px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byColumn} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                 <XAxis dataKey="label" angle={-25} textAnchor="end" interval={0} height={48} tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{
                     background: "var(--flux-surface-card)",
-                    border: "1px solid rgba(108,92,231,0.25)",
+                    border: "1px solid var(--flux-primary-alpha-25)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="count" fill="#6c5ce7" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -453,18 +453,18 @@ export function FluxReportsDashboard() {
           <div className="h-[240px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byPriority} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                 <XAxis dataKey="priority" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{
                     background: "var(--flux-surface-card)",
-                    border: "1px solid rgba(108,92,231,0.25)",
+                    border: "1px solid var(--flux-primary-alpha-25)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="var(--flux-warning-foreground)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

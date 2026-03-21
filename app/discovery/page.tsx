@@ -46,7 +46,7 @@ export default function DiscoveryHomePage() {
         <button
           type="button"
           onClick={() => pushToast({ kind: "info", title: "Criação de novos Discoverys em breve." })}
-          className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[rgba(108,92,231,0.3)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[rgba(108,92,231,0.08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
+          className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[var(--flux-primary-alpha-30)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
         >
           + Novo Discovery
         </button>
@@ -55,7 +55,7 @@ export default function DiscoveryHomePage() {
           <Link
             key={d.id}
             href={d.path}
-            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
           >
             <h3 className="font-display font-bold text-[var(--flux-text)]">{d.name}</h3>
             {d.description && (

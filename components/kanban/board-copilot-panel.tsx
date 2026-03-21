@@ -364,7 +364,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
 
   const freeBanner =
     tier === "free" && freeDemoRemaining !== null ? (
-      <div className="px-3 py-2 rounded-[10px] border border-[rgba(255,217,61,0.25)] bg-[rgba(255,217,61,0.10)] mb-3">
+      <div className="px-3 py-2 rounded-[10px] border border-[var(--flux-warning-alpha-25)] bg-[var(--flux-warning-alpha-10)] mb-3">
         <div className="text-xs font-semibold text-[var(--flux-warning)]">
           Modo demo: {freeDemoRemaining} mensagem(ns) restante(s).
         </div>
@@ -384,8 +384,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         onClick={() => toggleOpen()}
         aria-expanded={open}
       >
-        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,rgba(108,92,231,0.22),rgba(0,210,211,0.14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[0_10px_26px_-10px_rgba(108,92,231,0.55)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[rgba(255,255,255,0.16)] bg-[rgba(13,11,26,0.36)]">
+        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
               <circle cx="12" cy="12" r="2.2" />
@@ -393,7 +393,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
           </span>
           <span className="text-[11px] font-semibold whitespace-nowrap">{open ? "Fechar IA" : "Copiloto IA"}</span>
           {tier === "free" && freeDemoRemaining !== null ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[rgba(255,217,61,0.4)] text-[var(--flux-warning)]">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
               {freeDemoRemaining}
             </span>
           ) : null}
@@ -402,8 +402,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
 
       {open && (
         <div className="fixed inset-0 z-[480] pointer-events-none">
-          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_rgba(0,0,0,0.45)] pointer-events-auto flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] flex items-start justify-between gap-3">
+          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] pointer-events-auto flex flex-col overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--flux-chrome-alpha-08)] flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate">Copiloto</div>
                 <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
@@ -435,10 +435,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                           key={m.id}
                           className={`rounded-[10px] border px-3 py-2 ${
                             m.role === "user"
-                              ? "border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)]"
+                              ? "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-12)]"
                               : m.role === "tool"
-                                ? "border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)]"
-                                : "border-[rgba(255,255,255,0.12)] bg-[rgba(0,0,0,0.12)]"
+                                ? "border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)]"
+                                : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)]"
                           }`}
                         >
                           <div className="text-[10px] uppercase tracking-wide font-bold text-[var(--flux-text-muted)]">
@@ -459,15 +459,15 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
               )}
             </div>
 
-            <div className="px-4 pb-3 pt-2 border-t border-[rgba(255,255,255,0.08)]">
+            <div className="px-4 pb-3 pt-2 border-t border-[var(--flux-chrome-alpha-08)]">
               {voiceListening && (
-                <div className="mb-2 flex items-center gap-2 rounded-[10px] border border-[rgba(0,201,183,0.35)] bg-[rgba(0,201,183,0.10)] px-3 py-2">
+                <div className="mb-2 flex items-center gap-2 rounded-[10px] border border-[var(--flux-teal-alpha-35)] bg-[var(--flux-teal-alpha-10)] px-3 py-2">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00C9B7] opacity-60" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#00C9B7]" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--flux-teal-brand)] opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--flux-teal-brand)]" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-semibold text-[#00C9B7]">Ouvindo… fale agora</div>
+                    <div className="text-[11px] font-semibold text-[var(--flux-teal-brand)]">Ouvindo… fale agora</div>
                     {voiceInterim ? (
                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-0.5 truncate">{voiceInterim}</div>
                     ) : null}
@@ -477,14 +477,14 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                   </button>
                 </div>
               )}
-              {voiceError ? <div className="mb-2 text-[11px] text-[#F97373]">{voiceError}</div> : null}
+              {voiceError ? <div className="mb-2 text-[11px] text-[var(--flux-danger-bright)]">{voiceError}</div> : null}
 
               <div className="flex gap-2">
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Pergunte ou peça uma ação..."
-                  className="flex-1 min-h-[44px] max-h-[120px] px-3 py-2 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-xs outline-none focus:border-[var(--flux-primary)] resize-none"
+                  className="flex-1 min-h-[44px] max-h-[120px] px-3 py-2 rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-xs outline-none focus:border-[var(--flux-primary)] resize-none"
                   disabled={!canSend}
                 />
                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -493,7 +493,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
                     title={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
                     aria-label={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
                     className={`btn-secondary px-3 min-h-[44px] flex items-center justify-center ${
-                      voiceListening ? "border-[rgba(0,201,183,0.45)] bg-[rgba(0,201,183,0.12)]" : ""
+                      voiceListening ? "border-[var(--flux-teal-alpha-45)] bg-[var(--flux-teal-alpha-12)]" : ""
                     } ${!canSend ? "!opacity-60" : ""}`}
                     onClick={() => {
                       if (!canSend) return;

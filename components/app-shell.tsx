@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             key={alert.id}
             type="button"
             onClick={() => dismissAlert(alert.id)}
-            className="pointer-events-auto text-left border border-[rgba(0,210,211,0.35)] bg-[var(--flux-surface-card)]/95 backdrop-blur-sm rounded-[var(--flux-rad)] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.3)] animate-[cardModalSlideIn_0.3s_ease]"
+            className="pointer-events-auto text-left border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-surface-card)]/95 backdrop-blur-sm rounded-[var(--flux-rad)] px-4 py-3 shadow-[var(--flux-shadow-toast-strong)] animate-[cardModalSlideIn_0.3s_ease]"
           >
             <p className="text-[11px] font-semibold tracking-wide text-[var(--flux-secondary)] font-display uppercase">
               {t("routineReminder")}

@@ -129,11 +129,11 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[410] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[410] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl h-[90vh] bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] p-5 flex flex-col"
+        className="w-full max-w-5xl h-[90vh] bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] p-5 flex flex-col"
         onClick={(e) => e.stopPropagation()}
         ref={dailyDialogRef}
         role="dialog"
@@ -155,7 +155,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 mb-3 border-b border-[rgba(255,255,255,0.08)] pb-3">
+        <div className="flex items-center gap-2 mb-3 border-b border-[var(--flux-chrome-alpha-08)] pb-3">
           <button
             type="button"
             className={`btn-bar ${dailyTab === "entrada" ? "!border-[var(--flux-primary)] !text-[var(--flux-primary-light)]" : ""}`}
@@ -186,7 +186,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
               {t("daily.entry.description")}
             </p>
             {(dailyGenerating || dailyTranscribing) && (
-              <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2">
+              <div className="mb-3 rounded-[10px] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-12)] px-3 py-2">
                 <p className="text-xs text-[var(--flux-primary-light)] font-semibold">
                   {dailyTranscribing
                     ? t("daily.entry.transcribing.title")
@@ -198,7 +198,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     : t("daily.entry.generating.description")}
                 </p>
                 {dailyTranscribing && (
-                  <div className="mt-2 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                  <div className="mt-2 h-1.5 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden">
                     <div className="h-full w-[45%] bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] animate-pulse" />
                   </div>
                 )}
@@ -209,7 +209,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 {t("daily.entry.attachLabel")}
                 <input type="file" accept=".txt,.md,.log,.csv" className="hidden" onChange={onLoadDailyTranscriptFile} />
               </label>
-              <label className="btn-bar cursor-pointer border-[rgba(0,201,183,0.35)] bg-[rgba(0,201,183,0.08)]">
+              <label className="btn-bar cursor-pointer border-[var(--flux-teal-alpha-35)] bg-[var(--flux-teal-alpha-08)]">
                 {t("daily.entry.uploadRecordingLabel")}
                 <input
                   type="file"
@@ -233,7 +233,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
               value={dailyTranscript}
               onChange={(e) => onDailyTranscriptChange(e.target.value)}
               placeholder={t("daily.entry.transcriptPlaceholder")}
-              className="w-full min-h-[260px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
+              className="w-full min-h-[260px] p-3 rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
             />
             <div className="flex items-center gap-2 justify-end mt-3 flex-wrap">
               <button type="button" className="btn-secondary" onClick={onClose}>
@@ -259,7 +259,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
           </div>
         ) : dailyTab === "status" ? (
           <div className="flex-1 min-h-0 overflow-auto">
-            <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
+            <div className="mb-3 rounded-[10px] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-mid)] p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
                   {t("daily.status.trackingTitle")}
@@ -276,7 +276,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                           : t("daily.status.phase.waiting")}
                 </div>
               </div>
-              <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+              <div className="h-2 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden">
                 <div
                   className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
                   style={{
@@ -295,8 +295,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                       key={step}
                       className={`text-[10px] rounded-[6px] px-2 py-1 border ${
                         active
-                          ? "border-[rgba(108,92,231,0.45)] text-[var(--flux-primary-light)] bg-[rgba(108,92,231,0.12)]"
-                          : "border-[rgba(255,255,255,0.1)] text-[var(--flux-text-muted)]"
+                          ? "border-[var(--flux-primary-alpha-45)] text-[var(--flux-primary-light)] bg-[var(--flux-primary-alpha-12)]"
+                          : "border-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)]"
                       }`}
                     >
                       {step}
@@ -309,7 +309,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
             {dailyGenerating ? (
               dailyLogs.length > 0 ? (
-                <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+                <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[var(--flux-primary-alpha-35)] rounded-[10px] p-3">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                       {t("daily.status.log.title")}
@@ -329,7 +329,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         log.status === "success"
                           ? "text-[var(--flux-primary-light)]"
                           : log.status === "error"
-                            ? "text-[#F97373]"
+                            ? "text-[var(--flux-danger-bright)]"
                             : "text-[var(--flux-text-muted)]";
                       return (
                         <div key={`${log.timestamp}-${index}`} className="text-[11px] flex items-start gap-2">
@@ -374,7 +374,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 </p>
               )
             ) : (
-              <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+              <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[var(--flux-primary-alpha-35)] rounded-[10px] p-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                     {t("daily.status.exec.title")}
@@ -400,7 +400,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         <button
                           key={entryId || idx}
                           type="button"
-                          className="w-full text-left p-2 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] hover:border-[rgba(108,92,231,0.35)] hover:bg-[rgba(108,92,231,0.08)] transition-colors"
+                          className="w-full text-left p-2 rounded-[8px] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] hover:border-[var(--flux-primary-alpha-35)] hover:bg-[var(--flux-primary-alpha-08)] transition-colors"
                           onClick={() => onOpenDailyHistoryFromStatusEntry(entryId)}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -408,7 +408,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-[11px] font-semibold text-[var(--flux-primary-light)]">{label}</span>
                                 {generatedWithAi && (
-                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
+                                  <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[var(--flux-primary-alpha-50)] text-[var(--flux-primary-light)]">
                                     {t("daily.badges.ai")}
                                   </span>
                                 )}
@@ -436,7 +436,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
           <div className="flex-1 min-h-0 overflow-auto space-y-3">
             {dailyInsights.length ? (
               <>
-                <div className="bg-[var(--flux-surface-mid)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3">
+                <div className="bg-[var(--flux-surface-mid)] border border-[var(--flux-chrome-alpha-08)] rounded-[12px] p-3">
                   <div className="flex items-end gap-2 flex-wrap">
                     <div className="min-w-[160px]">
                       <label className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] block mb-1">
@@ -446,7 +446,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         type="date"
                         value={dailyHistoryDateFrom}
                         onChange={(e) => onSetDailyHistoryDateFrom(e.target.value)}
-                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                       />
                     </div>
                     <div className="min-w-[160px]">
@@ -457,7 +457,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         type="date"
                         value={dailyHistoryDateTo}
                         onChange={(e) => onSetDailyHistoryDateTo(e.target.value)}
-                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                       />
                     </div>
                     <div className="flex-1 min-w-[220px]">
@@ -469,7 +469,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                         value={dailyHistorySearchQuery}
                         onChange={(e) => onSetDailyHistorySearchQuery(e.target.value)}
                         placeholder={t("daily.history.filters.searchPlaceholder")}
-                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+                        className="w-full px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] text-xs bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
                       />
                     </div>
                     <button
@@ -489,11 +489,11 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                 </div>
 
                 {filteredDailyInsights.length > 0 && (
-                  <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[10px] p-2">
+                  <div className="mt-3 bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-08)] rounded-[10px] p-2">
                     <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
                       {t("daily.history.list.title")}
                     </div>
-                    <div className="max-h-40 overflow-auto scrollbar-flux divide-y divide-[rgba(255,255,255,0.06)]">
+                    <div className="max-h-40 overflow-auto scrollbar-flux divide-y divide-[var(--flux-chrome-alpha-06)]">
                       {filteredDailyInsights.map((entry, idx) => {
                         const insight = entry.insight;
                         if (!insight) return null;
@@ -513,8 +513,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             }}
                             className={`w-full flex items-center justify-between gap-2 py-1.5 px-1.5 text-left transition-colors ${
                               isActive
-                                ? "bg-[rgba(108,92,231,0.16)]"
-                                : "hover:bg-[rgba(108,92,231,0.08)]"
+                                ? "bg-[var(--flux-primary-alpha-16)]"
+                                : "hover:bg-[var(--flux-primary-alpha-08)]"
                             }`}
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">
@@ -528,7 +528,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {generatedWithAi && (
-                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.5)] text-[var(--flux-primary-light)]">
+                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[var(--flux-primary-alpha-50)] text-[var(--flux-primary-light)]">
                                   {t("daily.badges.ai")}
                                 </span>
                               )}
@@ -566,7 +566,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     <div
                       key={entry.id || idx}
                       className={`bg-[var(--flux-surface-mid)] border rounded-[12px] p-3 transition-colors ${
-                        isExpanded ? "border-[rgba(108,92,231,0.35)]" : "border-[rgba(255,255,255,0.08)]"
+                        isExpanded ? "border-[var(--flux-primary-alpha-35)]" : "border-[var(--flux-chrome-alpha-08)]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -578,7 +578,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             onToggleDailyHistoryExpanded(entryId);
                           }}
                         >
-                          <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[0_0_10px_rgba(108,92,231,0.6)]" />
+                          <span className="w-2 h-2 rounded-full bg-[var(--flux-primary)] shadow-[var(--flux-shadow-primary-dot)]" />
                           <h4 className="font-display font-bold text-sm text-[var(--flux-text)]">
                             {title}
                             {dt ? ` • ${dt}` : ""}
@@ -641,8 +641,8 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
                           {generatedWithAi && (
                             <CustomTooltip content={t("daily.history.entry.tooltips.rewritten")}>
-                              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.14)] px-2 py-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[0_0_8px_rgba(108,92,231,0.6)]" />
+                              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] px-2 py-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--flux-primary)] shadow-[var(--flux-shadow-primary-dot-sm)]" />
                                 <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
                                   {t("daily.history.entry.badges.aiGeneratedText")}
                                   {aiModel ? ` • ${aiModel}` : ""}
@@ -653,7 +653,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
                           <p className="text-xs text-[var(--flux-text-muted)] mt-2">{insight.resumo || ""}</p>
 
-                          <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
+                          <div className="mt-2 mb-2 bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-08)] rounded-[8px] p-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                                 {t("daily.history.entry.context.organizedTitle")}
@@ -676,7 +676,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             ].map((list) => (
                               <div
                                 key={list.key}
-                                className="bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2"
+                                className="bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-08)] rounded-[8px] p-2"
                               >
                                 <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)] mb-1">
                                   {list.label}
@@ -688,20 +688,20 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                       const progSlug = slugDaily(item.progresso);
                                       const prioClass =
                                         prioSlug === "urgente"
-                                          ? "bg-[rgba(255,107,107,0.12)] text-[#EF4444] border-[rgba(255,107,107,0.3)]"
+                                          ? "bg-[var(--flux-danger-alpha-12)] text-[var(--flux-danger-accent)] border-[var(--flux-danger-alpha-30)]"
                                           : prioSlug === "importante"
-                                            ? "bg-[rgba(255,217,61,0.12)] text-[#F59E0B] border-[rgba(255,217,61,0.3)]"
-                                            : "bg-[rgba(116,185,255,0.12)] text-[#74B9FF] border-[rgba(116,185,255,0.3)]";
+                                            ? "bg-[var(--flux-warning-alpha-12)] text-[var(--flux-warning-foreground)] border-[var(--flux-warning-alpha-30)]"
+                                            : "bg-[var(--flux-info-alpha-12)] text-[var(--flux-info)] border-[var(--flux-info-alpha-30)]";
                                       const progClass =
                                         progSlug === "em-andamento"
-                                          ? "bg-[rgba(0,201,183,0.12)] text-[#009E90] border-[rgba(0,201,183,0.35)]"
+                                          ? "bg-[var(--flux-teal-alpha-12)] text-[var(--flux-teal-foreground)] border-[var(--flux-teal-alpha-35)]"
                                           : progSlug === "concluida"
-                                            ? "bg-[rgba(16,185,129,0.12)] text-[#00E676] border-[rgba(16,185,129,0.35)]"
-                                            : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)]";
+                                            ? "bg-[var(--flux-emerald-alpha-12)] text-[var(--flux-success)] border-[var(--flux-emerald-alpha-35)]"
+                                            : "bg-[var(--flux-surface-mid)] text-[var(--flux-text-muted)] border-[var(--flux-chrome-alpha-12)]";
 
                                       return (
                                         <li key={`${list.key}-${i}`}>
-                                          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-2">
+                                          <div className="rounded-[8px] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-mid)] p-2">
                                             <div className="flex items-start justify-between gap-2">
                                               <span className="flex-1 min-w-0 text-xs font-semibold text-[var(--flux-text)] leading-[1.35]">
                                                 {String(item.titulo || "")}
@@ -728,19 +728,19 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
                                             <div className="mt-1 flex flex-wrap gap-1">
                                               {item.coluna && (
-                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[var(--flux-chrome-alpha-14)] text-[var(--flux-text-muted)]">
                                                   {t("daily.history.entry.listItem.columnPrefix")} {item.coluna}
                                                 </span>
                                               )}
                                               {item.dataConclusao && (
-                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(255,255,255,0.14)] text-[var(--flux-text-muted)]">
+                                                <span className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[var(--flux-chrome-alpha-14)] text-[var(--flux-text-muted)]">
                                                   {t("daily.history.entry.listItem.duePrefix")} {item.dataConclusao}
                                                 </span>
                                               )}
                                               {item.tags?.map((tag) => (
                                                 <span
                                                   key={`${item.titulo}-${tag}`}
-                                                  className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                                                  className="text-[9px] font-semibold px-1.5 py-[1px] rounded-full border border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
                                                 >
                                                   {tag}
                                                 </span>
@@ -758,7 +758,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                             ))}
                           </div>
 
-                          <div className="mt-3 bg-[var(--flux-surface-card)] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2">
+                          <div className="mt-3 bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-08)] rounded-[8px] p-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                                 {t("daily.history.entry.createdCards.title")}
@@ -791,12 +791,12 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                   entry.createdCards.map((createdCard, createdIdx) => (
                                     <div
                                       key={`${createdCard.cardId || "card"}-${createdIdx}`}
-                                      className="border border-[rgba(255,255,255,0.08)] rounded-[8px] p-2 bg-[var(--flux-surface-mid)]"
+                                      className="border border-[var(--flux-chrome-alpha-08)] rounded-[8px] p-2 bg-[var(--flux-surface-mid)]"
                                     >
                                       <div className="text-xs font-semibold text-[var(--flux-text)]">
                                         {createdCard.title || t("daily.history.entry.createdCards.card.noTitle")}
                                         {createdCard.status === "existing" && (
-                                          <span className="ml-2 text-[10px] font-bold px-1.5 py-[1px] rounded-full border border-[rgba(255,217,61,0.3)] text-[#F59E0B] bg-[rgba(255,217,61,0.12)]">
+                                          <span className="ml-2 text-[10px] font-bold px-1.5 py-[1px] rounded-full border border-[var(--flux-warning-alpha-30)] text-[var(--flux-warning-foreground)] bg-[var(--flux-warning-alpha-12)]">
                                             {t("daily.history.entry.createdCards.card.alreadyExists")}
                                           </span>
                                         )}

@@ -57,7 +57,7 @@ export function KanbanToolbar({
                   onClick={() => setActivePrio(p)}
                   className={`btn-pill-compact text-[11px] leading-tight px-1.5 py-0.5 whitespace-nowrap transition-all duration-200 shrink-0 ${
                     activePrio === p
-                      ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-[0_1px_6px_rgba(108,92,231,0.35)]"
+                      ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-[var(--flux-shadow-primary-soft)]"
                       : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[var(--flux-control-border)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
                   }`}
                 >
@@ -82,7 +82,7 @@ export function KanbanToolbar({
                 }}
                 className={
                   focusMode
-                    ? "inline-flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold font-display transition-all duration-200 border border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.14)] text-[var(--flux-secondary)] shadow-[0_0_0_1px_rgba(0,210,211,0.12)] whitespace-nowrap"
+                    ? "inline-flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-[11px] font-semibold font-display transition-all duration-200 border border-[var(--flux-secondary)] bg-[var(--flux-secondary-alpha-14)] text-[var(--flux-secondary)] shadow-[var(--flux-shadow-secondary-outline)] whitespace-nowrap"
                     : "board-toolbar-btn-sm"
                 }
                 title={t("board.filters.shortcutTitle")}

@@ -26,14 +26,16 @@ type AnomalyInsightsPayload = {
 };
 
 function healthStyles(status: AnomalyInsightsPayload["health"]["status"]): string {
-  if (status === "healthy") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-200";
-  if (status === "attention") return "border-amber-500/45 bg-amber-500/10 text-amber-100";
-  return "border-white/15 bg-white/[0.04] text-[var(--flux-text-muted)]";
+  if (status === "healthy")
+    return "border-[var(--flux-success-alpha-40)] bg-[var(--flux-success-alpha-10)] text-[var(--flux-secondary-light)]";
+  if (status === "attention")
+    return "border-[var(--flux-amber-alpha-45)] bg-[var(--flux-amber-alpha-12)] text-[var(--flux-warning)]";
+  return "border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)]";
 }
 
 function severityDot(sev: string): string {
   if (sev === "critical") return "bg-[var(--flux-danger)]";
-  if (sev === "warning") return "bg-amber-400";
+  if (sev === "warning") return "bg-[var(--flux-warning)]";
   return "bg-[var(--flux-primary-light)]";
 }
 
@@ -95,7 +97,7 @@ export function ProactiveAiPanel() {
 
   if (loading) {
     return (
-      <section className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.22)] bg-[var(--flux-surface-card)] p-5">
+      <section className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-22)] bg-[var(--flux-surface-card)] p-5">
         <p className="text-sm text-[var(--flux-text-muted)]">{t("loading")}</p>
       </section>
     );
@@ -103,7 +105,7 @@ export function ProactiveAiPanel() {
 
   if (error || !data) {
     return (
-      <section className="rounded-[var(--flux-rad)] border border-[rgba(255,107,107,0.3)] bg-[rgba(255,107,107,0.06)] px-4 py-3 text-sm text-[var(--flux-text)]">
+      <section className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-30)] bg-[var(--flux-danger-alpha-06)] px-4 py-3 text-sm text-[var(--flux-text)]">
         {error ?? t("empty")}
       </section>
     );
@@ -111,7 +113,7 @@ export function ProactiveAiPanel() {
 
   if (!data.mongo) {
     return (
-      <section className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-5">
+      <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-5">
         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("title")}</h3>
         <p className="mt-2 text-sm text-[var(--flux-text-muted)]">{t("noMongo")}</p>
       </section>
@@ -121,7 +123,7 @@ export function ProactiveAiPanel() {
   const health = data.health.status;
 
   return (
-    <section className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-gradient-to-br from-[rgba(0,210,211,0.07)] to-[rgba(108,92,231,0.06)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]">
+    <section className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-gradient-to-br from-[var(--flux-secondary-alpha-07)] to-[var(--flux-primary-alpha-06)] p-5 shadow-[var(--flux-shadow-inset-hairline)]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +138,7 @@ export function ProactiveAiPanel() {
               {health === "healthy" ? t("health.ok") : health === "attention" ? t("health.review") : t("health.idle")}
             </span>
             {data.unreadCount > 0 ? (
-              <span className="rounded-full bg-[rgba(108,92,231,0.35)] px-2 py-0.5 text-[10px] font-bold text-white">
+              <span className="rounded-full bg-[var(--flux-primary-alpha-35)] px-2 py-0.5 text-[10px] font-bold text-[var(--flux-text-on-primary)]">
                 {data.unreadCount} {t("unread")}
               </span>
             ) : null}
@@ -147,14 +149,14 @@ export function ProactiveAiPanel() {
               {t("lastRun")}: <span className="text-[var(--flux-text)]">{fmtTime(data.health.lastRunAt)}</span>
             </p>
           ) : (
-            <p className="mt-2 text-xs text-amber-200/90">{t("neverRun")}</p>
+            <p className="mt-2 text-xs text-[var(--flux-warning)]">{t("neverRun")}</p>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
           <button
             type="button"
             onClick={() => load()}
-            className="rounded-[var(--flux-rad-sm)] border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)] transition-colors hover:bg-white/10"
+            className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-05)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)] transition-colors hover:bg-[var(--flux-chrome-alpha-10)]"
           >
             {t("refresh")}
           </button>
@@ -163,7 +165,7 @@ export function ProactiveAiPanel() {
               type="button"
               disabled={markBusy}
               onClick={markAllRead}
-              className="rounded-[var(--flux-rad-sm)] border border-[rgba(108,92,231,0.45)] bg-[rgba(108,92,231,0.2)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-50"
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-20)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-50"
             >
               {markBusy ? "…" : t("markAllRead")}
             </button>
@@ -183,7 +185,7 @@ export function ProactiveAiPanel() {
               data.runs.map((r) => (
                 <li
                   key={r.id}
-                  className="flex items-center justify-between gap-2 rounded-[var(--flux-rad-sm)] border border-white/10 bg-black/15 px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-15)] px-3 py-2 text-xs"
                 >
                   <span className="text-[var(--flux-text)]">{fmtTime(r.runAt)}</span>
                   <span className="text-[var(--flux-text-muted)]">
@@ -206,7 +208,7 @@ export function ProactiveAiPanel() {
                 <li
                   key={a.id}
                   className={`rounded-[var(--flux-rad-sm)] border px-3 py-2 text-xs ${
-                    a.read ? "border-white/8 bg-black/10 opacity-80" : "border-[rgba(108,92,231,0.25)] bg-black/20"
+                    a.read ? "border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-10)] opacity-80" : "border-[var(--flux-primary-alpha-25)] bg-[var(--flux-black-alpha-20)]"
                   }`}
                 >
                   <div className="flex items-start gap-2">
@@ -227,7 +229,7 @@ export function ProactiveAiPanel() {
                         {expanded === a.id ? t("hideDiag") : t("showDiag")}
                       </button>
                       {expanded === a.id ? (
-                        <pre className="mt-2 max-h-32 overflow-auto rounded border border-white/10 bg-black/30 p-2 text-[10px] leading-relaxed text-emerald-100/90">
+                        <pre className="mt-2 max-h-32 overflow-auto rounded border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-30)] p-2 text-[10px] leading-relaxed text-[var(--flux-secondary-light)]">
                           {JSON.stringify(a.diagnostics, null, 2)}
                         </pre>
                       ) : null}
@@ -240,7 +242,7 @@ export function ProactiveAiPanel() {
         </div>
       </div>
 
-      <p className="mt-4 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">
+      <p className="mt-4 border-t border-[var(--flux-chrome-alpha-10)] pt-3 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">
         {t("cronHint")}
       </p>
     </section>

@@ -21,7 +21,7 @@ export default function CardDocRefsPanel({ cardId: _cardId }: CardModalTabBasePr
           className={inputBase}
         />
         {docQuery.trim() && (
-          <div className="max-h-[160px] overflow-auto rounded-xl border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)]">
+          <div className="max-h-[160px] overflow-auto rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-mid)]">
             {docResults.length === 0 ? (
               <div className="px-3 py-2 text-xs text-[var(--flux-text-muted)]">{t("cardModal.docRefs.empty")}</div>
             ) : (
@@ -29,7 +29,7 @@ export default function CardDocRefsPanel({ cardId: _cardId }: CardModalTabBasePr
                 <button
                   key={d.id}
                   type="button"
-                  className="block w-full border-b border-[rgba(255,255,255,0.06)] px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.04)]"
+                  className="block w-full border-b border-[var(--flux-chrome-alpha-06)] px-3 py-2 text-left hover:bg-[var(--flux-chrome-alpha-04)]"
                   onClick={() =>
                     setDocRefs((prev) => {
                       if (prev.some((r) => r.docId === d.id)) return prev;
@@ -48,7 +48,7 @@ export default function CardDocRefsPanel({ cardId: _cardId }: CardModalTabBasePr
           {docRefs.map((r) => (
             <span
               key={r.docId}
-              className="inline-flex items-center gap-2 rounded-lg border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.12)] px-2 py-1 text-xs text-[var(--flux-primary-light)]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-12)] px-2 py-1 text-xs text-[var(--flux-primary-light)]"
             >
               {r.title || r.docId}
               <button

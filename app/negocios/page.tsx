@@ -65,18 +65,18 @@ export default function NegociosPage() {
           </p>
         </header>
 
-        <section className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-5 space-y-4">
+        <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-5 space-y-4">
           <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">Ações rápidas</h3>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/boards"
-              className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.1)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
             >
               Ver portfólio e exportar brief
             </Link>
             <Link
               href="/discovery"
-              className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.08)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] hover:border-[var(--flux-secondary)]"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-08)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] hover:border-[var(--flux-secondary)]"
             >
               Discovery
             </Link>
@@ -87,7 +87,7 @@ export default function NegociosPage() {
           {IDEIAS.map((item, i) => (
             <article
               key={item.titulo}
-              className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] p-5"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-5"
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
                 Ideia {i + 1}

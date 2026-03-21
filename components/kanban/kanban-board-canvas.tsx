@@ -185,7 +185,7 @@ export function KanbanBoardCanvas({
             <button
               type="button"
               onClick={onOpenAddColumn}
-              className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[rgba(108,92,231,0.3)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
+              className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
               aria-label={t("addColumnModal.title.new")}
             >
               <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>
@@ -199,7 +199,7 @@ export function KanbanBoardCanvas({
             }}
           >
             {activeCard ? (
-              <div className="scale-[1.02] shadow-[0_12px_32px_rgba(108,92,231,0.3)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
+              <div className="scale-[1.02] shadow-[var(--flux-shadow-kanban-card-lift)] ring-2 ring-[var(--flux-primary)]/50 rounded-xl transition-all duration-200 ease-out">
                 <KanbanCard
                   cardId={activeCard.id}
                   directions={directions}

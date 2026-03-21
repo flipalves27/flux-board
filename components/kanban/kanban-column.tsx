@@ -75,7 +75,7 @@ export function KanbanColumn({
     <div
       ref={setSortableRef}
       style={style}
-      className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[calc(100vh-165px)] transition-all shadow-[inset_0_1px_0_var(--flux-border-muted),0_8px_28px_-16px_rgba(0,0,0,0.35)] ${
+      className={`min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
         collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
       } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""}`}
     >
@@ -91,7 +91,7 @@ export function KanbanColumn({
           >
             <div
               className="w-3 h-3 rounded-full shrink-0 border border-[var(--flux-border-subtle)]"
-              style={{ background: bucket.color || "#9B97C2" }}
+              style={{ background: bucket.color || "var(--flux-text-muted)" }}
               aria-hidden
             />
             <span className="font-display font-bold text-sm text-[var(--flux-text)] tabular-nums">
@@ -109,14 +109,14 @@ export function KanbanColumn({
       >
         <div
           className="w-2 h-2 rounded-full shrink-0"
-          style={{ background: bucket.color || "#9B97C2" }}
+          style={{ background: bucket.color || "var(--flux-text-muted)" }}
         />
         <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate">
           {bucket.label}
         </div>
         <div
           className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0"
-          style={{ background: bucket.color || "#9B97C2" }}
+          style={{ background: bucket.color || "var(--flux-text-muted)" }}
         >
           {cards.length}
         </div>
@@ -170,7 +170,7 @@ export function KanbanColumn({
                   e.stopPropagation();
                   onDeleteColumn();
                 }}
-                className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.08)]"
+                className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)] hover:bg-[var(--flux-danger-alpha-08)]"
                 aria-label={t("column.tooltips.deleteColumn")}
               >
                 ×

@@ -90,13 +90,13 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
       role="dialog"
       aria-modal="true"
       aria-labelledby="desc-modal-title"
     >
       <div
-        className="relative bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl min-h-[280px] max-h-[90vh] overflow-hidden shadow-xl modal-content-animate flex flex-col"
+        className="relative bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-2xl min-h-[280px] max-h-[90vh] overflow-hidden shadow-xl modal-content-animate flex flex-col"
         ref={panelRef}
         tabIndex={-1}
         style={{
@@ -116,11 +116,11 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
         />
         <div
           onMouseDown={handleDragStart}
-          className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 border-b border-[rgba(255,255,255,0.06)] cursor-move select-none bg-[var(--flux-surface-elevated)]/40"
+          className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 border-b border-[var(--flux-chrome-alpha-06)] cursor-move select-none bg-[var(--flux-surface-elevated)]/40"
         >
           <div id="desc-modal-title" className="font-display font-bold text-base text-[var(--flux-text)] flex items-center gap-2">
             {t("descModal.title")}
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-[rgba(116,185,255,0.12)] text-[var(--flux-info)] border border-[rgba(116,185,255,0.35)]">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-[var(--flux-info-alpha-12)] text-[var(--flux-info)] border border-[var(--flux-info-alpha-35)]">
               {card.id}
             </span>
           </div>
@@ -128,7 +128,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
             type="button"
             onClick={onClose}
             ref={closeBtnRef}
-            className="w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-colors flex-shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[var(--flux-chrome-alpha-08)] hover:text-[var(--flux-text)] transition-colors flex-shrink-0 cursor-pointer"
             aria-label={t("descModal.aria.close")}
           >
             ×
@@ -137,7 +137,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
         <div className="p-5 overflow-y-auto flex-1 scrollbar-kanban">
           <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-2 font-display">{card.title}</p>
           {card.links && card.links.length > 0 && (
-            <div className="mb-4 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[var(--flux-surface-elevated)]/50 p-3">
+            <div className="mb-4 rounded-lg border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-surface-elevated)]/50 p-3">
               <span className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider block mb-2 font-display">
                 {t("descModal.labels.links")}
               </span>
@@ -163,7 +163,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
           >
             {t("descModal.labels.description")}
           </label>
-          <div className="rounded-[10px] border border-[rgba(108,92,231,0.35)] bg-[var(--flux-surface-mid)] p-3">
+          <div className="rounded-[10px] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-mid)] p-3">
             <div className="space-y-3">
               {DESCRIPTION_BLOCKS.map((block) => (
                 <div key={block.key}>
@@ -178,18 +178,18 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
                       setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
                     }}
                     placeholder={block.placeholder}
-                    className="w-full min-h-[100px] p-3 rounded-[10px] border border-[rgba(255,255,255,0.10)] font-sans text-sm text-[var(--flux-text)] bg-[rgba(255,255,255,0.04)] placeholder-[var(--flux-text-muted)] resize-y outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] whitespace-pre-wrap leading-relaxed transition-all duration-200"
+                    className="w-full min-h-[100px] p-3 rounded-[10px] border border-[var(--flux-chrome-alpha-10)] font-sans text-sm text-[var(--flux-text)] bg-[var(--flux-chrome-alpha-04)] placeholder-[var(--flux-text-muted)] resize-y outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] whitespace-pre-wrap leading-relaxed transition-all duration-200"
                   />
                 </div>
               ))}
             </div>
           </div>
         </div>
-        <div className="flex gap-3 justify-end p-5 pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div className="flex gap-3 justify-end p-5 pt-3 border-t border-[var(--flux-chrome-alpha-06)] flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl font-semibold text-sm text-[var(--flux-text-muted)] bg-[var(--flux-surface-elevated)] hover:bg-[rgba(255,255,255,0.08)] transition-colors font-display"
+            className="px-4 py-2 rounded-xl font-semibold text-sm text-[var(--flux-text-muted)] bg-[var(--flux-surface-elevated)] hover:bg-[var(--flux-chrome-alpha-08)] transition-colors font-display"
           >
             {t("descModal.buttons.cancel")}
           </button>
@@ -206,7 +206,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
           className="absolute top-0 right-0 w-2 h-full cursor-ew-resize resize-handle group"
           aria-label={t("descModal.aria.resizeWidth")}
         >
-          <span className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-12 rounded-full bg-[rgba(255,255,255,0.2)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <span className="absolute top-1/2 right-0 -translate-y-1/2 w-1 h-12 rounded-full bg-[var(--flux-chrome-alpha-20)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </div>
       </div>
     </div>

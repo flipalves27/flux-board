@@ -66,8 +66,8 @@ export default function PublicPortalPage() {
     const b = locked?.preview.branding || data?.branding;
     if (!b) return undefined;
     return {
-      ["--portal-primary" as string]: b.primaryColor || "#6C5CE7",
-      ["--portal-secondary" as string]: b.secondaryColor || "#00D2D3",
+      ["--portal-primary" as string]: b.primaryColor || "var(--flux-primary)",
+      ["--portal-secondary" as string]: b.secondaryColor || "var(--flux-secondary)",
     } as React.CSSProperties;
   }, [locked, data]);
 
@@ -130,7 +130,7 @@ export default function PublicPortalPage() {
         className="min-h-screen flex flex-col items-center justify-center bg-[var(--flux-surface-dark)] px-4 py-12"
         style={cssVars}
       >
-        <div className="w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
+        <div className="w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
           <div className="flex flex-col items-center gap-3 text-center mb-6">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -154,7 +154,7 @@ export default function PublicPortalPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-[var(--flux-rad)] border border-[rgba(155,151,194,0.35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-sm text-[var(--flux-text)]"
               />
             </div>
             {unlockError ? <p className="text-sm text-[var(--flux-danger)]">{unlockError}</p> : null}
@@ -180,7 +180,7 @@ export default function PublicPortalPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)] pb-16" style={cssVars}>
-      <header className="border-b border-[rgba(155,151,194,0.15)] bg-[var(--flux-surface-mid)]/80 backdrop-blur-sm">
+      <header className="border-b border-[var(--flux-portal-chrome-15)] bg-[var(--flux-surface-mid)]/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
             {logo ? (
@@ -220,10 +220,10 @@ export default function PublicPortalPage() {
             {columnsWithCards.map(({ bucket, cards }) => (
               <section
                 key={bucket.key}
-                className="rounded-[var(--flux-rad-lg)] border border-[rgba(155,151,194,0.18)] bg-[var(--flux-surface-card)] flex flex-col min-h-[120px]"
+                className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-portal-chrome-18)] bg-[var(--flux-surface-card)] flex flex-col min-h-[120px]"
               >
                 <div
-                  className="px-3 py-2 border-b border-[rgba(155,151,194,0.12)] rounded-t-[var(--flux-rad-lg)]"
+                  className="px-3 py-2 border-b border-[var(--flux-portal-chrome-12)] rounded-t-[var(--flux-rad-lg)]"
                   style={{ borderLeftWidth: 4, borderLeftColor: bucket.color }}
                 >
                   <h2 className="text-sm font-semibold text-[var(--flux-text)]">{bucket.label}</h2>
@@ -235,7 +235,7 @@ export default function PublicPortalPage() {
                     cards.map((c) => (
                       <li
                         key={c.id}
-                        className="rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)]/80 px-3 py-2 border border-[rgba(155,151,194,0.1)]"
+                        className="rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)]/80 px-3 py-2 border border-[var(--flux-portal-chrome-10)]"
                       >
                         <p className="text-sm font-medium text-[var(--flux-text)]">{c.title}</p>
                         <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
@@ -262,7 +262,7 @@ export default function PublicPortalPage() {
         )}
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 py-2 text-center text-[10px] text-[var(--flux-text-muted)] bg-[var(--flux-surface-dark)]/90 border-t border-[rgba(155,151,194,0.1)]">
+      <footer className="fixed bottom-0 left-0 right-0 py-2 text-center text-[10px] text-[var(--flux-text-muted)] bg-[var(--flux-surface-dark)]/90 border-t border-[var(--flux-portal-chrome-10)]">
         {t("readOnly")} · Flux-Board
       </footer>
     </div>
@@ -272,7 +272,7 @@ export default function PublicPortalPage() {
 function MetricPill({ label, value, accent }: { label: string; value: string | number; accent: string }) {
   return (
     <div
-      className="rounded-[var(--flux-rad)] px-3 py-2 min-w-[100px] border border-[rgba(155,151,194,0.2)] bg-[var(--flux-surface-card)]"
+      className="rounded-[var(--flux-rad)] px-3 py-2 min-w-[100px] border border-[var(--flux-portal-chrome-20)] bg-[var(--flux-surface-card)]"
       style={{ boxShadow: `0 0 0 1px ${accent}22` }}
     >
       <p className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)]">{label}</p>

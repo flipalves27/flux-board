@@ -21,17 +21,17 @@ export default function CardLinksPanel({ cardId: _cardId }: CardModalTabBaseProp
 
   return (
     <CardModalSection title={t("cardModal.sections.links.title")}>
-      <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[var(--flux-surface-elevated)]/50 overflow-hidden transition-all duration-200">
-        <div className="flex items-center justify-end px-4 py-2.5 border-b border-[rgba(255,255,255,0.06)]">
+      <div className="rounded-xl border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-surface-elevated)]/50 overflow-hidden transition-all duration-200">
+        <div className="flex items-center justify-end px-4 py-2.5 border-b border-[var(--flux-chrome-alpha-06)]">
           <button
             type="button"
             onClick={() => setLinks((prev) => [...prev, { url: "", label: "" }])}
-            className="text-xs font-semibold text-[var(--flux-primary-light)] hover:text-[var(--flux-primary)] px-2 py-1 rounded-lg hover:bg-[rgba(108,92,231,0.12)] transition-colors"
+            className="text-xs font-semibold text-[var(--flux-primary-light)] hover:text-[var(--flux-primary)] px-2 py-1 rounded-lg hover:bg-[var(--flux-primary-alpha-12)] transition-colors"
           >
             {t("cardModal.sections.links.addButton")}
           </button>
         </div>
-        <ul className="divide-y divide-[rgba(255,255,255,0.06)] max-h-[min(50vh,320px)] overflow-y-auto scrollbar-kanban">
+        <ul className="divide-y divide-[var(--flux-chrome-alpha-06)] max-h-[min(50vh,320px)] overflow-y-auto scrollbar-kanban">
           {links.length === 0 ? (
             <li className="px-4 py-4 text-center text-xs text-[var(--flux-text-muted)]">
               {t("cardModal.sections.links.empty")}
@@ -55,7 +55,7 @@ export default function CardLinksPanel({ cardId: _cardId }: CardModalTabBaseProp
                       placeholder={t("cardModal.sections.links.urlPlaceholder")}
                       aria-invalid={!urlOk}
                       className={`w-full px-3 py-2 text-sm border rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all ${
-                        !urlOk ? "border-[rgba(249,115,115,0.55)]" : "border-[rgba(255,255,255,0.12)]"
+                        !urlOk ? "border-[var(--flux-error-input-ring)]" : "border-[var(--flux-chrome-alpha-12)]"
                       }`}
                     />
                     {!urlOk ? (
@@ -74,7 +74,7 @@ export default function CardLinksPanel({ cardId: _cardId }: CardModalTabBaseProp
                         })
                       }
                       placeholder={t("cardModal.sections.links.labelPlaceholder")}
-                      className="w-full sm:w-32 px-3 py-2 text-sm border border-[rgba(255,255,255,0.12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
+                      className="w-full sm:w-32 px-3 py-2 text-sm border border-[var(--flux-chrome-alpha-12)] rounded-lg bg-[var(--flux-surface-card)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/20 outline-none transition-all"
                     />
                     {link.url.trim() && urlOk ? (
                       <CustomTooltip content={t("cardModal.sections.links.tooltips.view")}>
@@ -82,7 +82,7 @@ export default function CardLinksPanel({ cardId: _cardId }: CardModalTabBaseProp
                           href={link.url.trim()}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.15)] transition-colors shrink-0"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-15)] transition-colors shrink-0"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -100,7 +100,7 @@ export default function CardLinksPanel({ cardId: _cardId }: CardModalTabBaseProp
                       <button
                         type="button"
                         onClick={() => setLinks((prev) => prev.filter((_, i) => i !== idx))}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.15)] hover:text-[var(--flux-danger)] transition-colors opacity-70 group-hover:opacity-100"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-15)] hover:text-[var(--flux-danger)] transition-colors opacity-70 group-hover:opacity-100"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path

@@ -145,7 +145,7 @@ export function CustomTooltip({
             <div
               ref={tooltipRef}
               role="tooltip"
-              className={`pointer-events-none fixed z-[9999] max-w-[260px] rounded-lg border border-[rgba(108,92,231,0.35)] bg-[rgba(20,16,44,0.95)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--flux-text)] shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm ${className}`}
+              className={`pointer-events-none fixed z-[9999] max-w-[260px] rounded-lg border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-tooltip-surface)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--flux-text)] shadow-[0_10px_30px_var(--flux-black-alpha-45)] backdrop-blur-sm ${className}`}
               style={{ top: coords.top, left: coords.left }}
             >
               {content}

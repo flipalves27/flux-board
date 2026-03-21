@@ -49,15 +49,15 @@ export default function CardAiContextTab({ cardId: _cardId }: CardModalTabBasePr
             <span
               className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] border font-semibold ${
                 aiContextApplied.usedLlm
-                  ? "bg-[rgba(108,92,231,0.12)] border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
-                  : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
+                  ? "bg-[var(--flux-primary-alpha-12)] border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
+                  : "bg-[var(--flux-chrome-alpha-04)] border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)]"
               }`}
             >
               {aiContextApplied.usedLlm ? t("cardModal.badges.aiGenerated") : t("cardModal.badges.aiFallbackStructured")}
             </span>
           ) : null}
           {(aiContextBusinessSummary || aiContextObjective) && (
-            <div className="rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3 mt-2">
+            <div className="rounded-[10px] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] p-3 mt-2">
               {aiContextBusinessSummary ? (
                 <div className="text-[11px] mb-2">
                   <span className="font-semibold text-[var(--flux-text)]">{t("cardModal.aiContext.result.businessLabel")}</span>{" "}

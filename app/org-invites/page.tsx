@@ -143,11 +143,11 @@ export default function OrgInvitesPage() {
         <div className="text-xs text-[var(--flux-text-muted)]">Gerencie convites da sua organização.</div>
       </Header>
       <main className="max-w-[980px] mx-auto px-6 py-10">
-        <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
           <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">Convites</h2>
 
           {error && (
-            <div className="mb-4 bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
+            <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
               {error}
             </div>
           )}
@@ -160,7 +160,7 @@ export default function OrgInvitesPage() {
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 disabled={busy}
               />
             </div>
@@ -170,7 +170,7 @@ export default function OrgInvitesPage() {
           </div>
 
           {inviteUrl && (
-            <div className="mt-6 p-4 rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-[rgba(0,210,211,0.08)]">
+            <div className="mt-6 p-4 rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-secondary-alpha-08)]">
               <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Link de convite</p>
               <div className="mt-2 flex flex-col gap-2">
                 <code className="break-all text-[12px] text-[var(--flux-text)]">{inviteUrl}</code>
@@ -254,17 +254,17 @@ export default function OrgInvitesPage() {
                       const status = used ? "Usado" : expired ? "Expirado" : "Ativo";
                       const canExpire = !used && !expired;
                       return (
-                        <tr key={inv._id} className="border-b border-[rgba(255,255,255,0.06)]">
+                        <tr key={inv._id} className="border-b border-[var(--flux-chrome-alpha-06)]">
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{inv.emailLower}</td>
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{formatDateShort(inv.expiresAt)}</td>
                           <td className="px-4 py-3">
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                                 used
-                                  ? "bg-[rgba(0,210,211,0.18)] text-[var(--flux-secondary)]"
+                                  ? "bg-[var(--flux-secondary-alpha-18)] text-[var(--flux-secondary)]"
                                   : expired
-                                    ? "bg-[rgba(255,107,107,0.12)] text-[var(--flux-danger)]"
-                                    : "bg-[rgba(108,92,231,0.14)] text-[var(--flux-primary-light)]"
+                                    ? "bg-[var(--flux-danger-alpha-12)] text-[var(--flux-danger)]"
+                                    : "bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)]"
                               }`}
                             >
                               {status}
@@ -279,7 +279,7 @@ export default function OrgInvitesPage() {
                             {canExpire ? (
                               <button
                                 type="button"
-                                className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.1)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                                className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-10)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
                                 onClick={() => expireInvite(inv._id)}
                                 disabled={busy}
                               >

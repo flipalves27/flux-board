@@ -144,7 +144,7 @@ export default function UsersPage() {
         {loading ? (
           <p className="text-[var(--flux-text-muted)]">Carregando...</p>
         ) : (
-          <div className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] shadow-[var(--shadow-md)] overflow-hidden">
+          <div className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] shadow-[var(--shadow-md)] overflow-hidden">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
@@ -166,7 +166,7 @@ export default function UsersPage() {
                 {users.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-b border-[rgba(255,255,255,0.06)] hover:bg-[rgba(108,92,231,0.06)]"
+                    className="border-b border-[var(--flux-chrome-alpha-06)] hover:bg-[var(--flux-primary-alpha-06)]"
                   >
                     <td className="px-4 py-3 text-[var(--flux-text)]">{u.name}</td>
                     <td className="px-4 py-3 text-[var(--flux-text-muted)]">{u.email}</td>
@@ -184,13 +184,13 @@ export default function UsersPage() {
                         <div className="flex gap-3">
                           <button
                             onClick={() => openEditModal(u)}
-                            className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.1)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-10)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => deleteUser(u.id, u.name)}
-                            className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
                           >
                             Excluir
                           </button>
@@ -209,11 +209,11 @@ export default function UsersPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center"
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center"
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[360px] max-w-[95%]"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[360px] max-w-[95%]"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-display font-bold mb-4 text-[var(--flux-text)]">
@@ -232,7 +232,7 @@ export default function UsersPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Nome completo"
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
               <div>
@@ -245,7 +245,7 @@ export default function UsersPage() {
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="email@exemplo.com"
                   disabled={modalMode === "edit"}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] disabled:opacity-60 focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] disabled:opacity-60 focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
               <div>
@@ -257,11 +257,11 @@ export default function UsersPage() {
                   value={formPwd}
                   onChange={(e) => setFormPwd(e.target.value)}
                   placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 4 caracteres"}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[rgba(255,255,255,0.08)]">
+            <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
               <button
                 onClick={() => setModalOpen(false)}
                 className="btn-secondary"

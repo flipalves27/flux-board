@@ -17,11 +17,275 @@
   --flux-surface-card: #221F3A;
   --flux-surface-elevated: #2D2952;
   --flux-text: #F0EEFF;
+  --flux-text-on-primary: #ffffff;
   --flux-text-muted: #9B97C2;
   --flux-success: #00E676;
   --flux-warning: #FFD93D;
   --flux-danger: #FF6B6B;
   --flux-info: #74B9FF;
+
+  /* Spacing scale (~geometric), px for stable UI chrome */
+  --flux-space-1: 4px;
+  --flux-space-2: 5px;
+  --flux-space-3: 6px;
+  --flux-space-4: 8px;
+  --flux-space-5: 10px;
+  --flux-space-6: 12px;
+  --flux-space-7: 16px;
+  --flux-space-8: 20px;
+  --flux-space-9: 24px;
+  --flux-space-10: 32px;
+  --flux-space-11: 40px;
+  --flux-space-12: 48px;
+
+  /* Typography scale (semantic names) */
+  --flux-text-xs: 11px;
+  --flux-text-sm: 13px;
+  --flux-text-base: 14px;
+  --flux-text-lg: 16px;
+  --flux-text-xl: 20px;
+  --flux-text-2xl: 24px;
+  --flux-text-3xl: 30px;
+
+  /* Motion */
+  --flux-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --flux-transition-fast: 150ms var(--flux-ease-standard);
+  --flux-transition-normal: 250ms var(--flux-ease-standard);
+  --flux-transition-slow: 400ms var(--flux-ease-standard);
+
+  /* Elevation */
+  --flux-shadow-sm: 0 1px 3px rgba(13, 11, 26, 0.28);
+  --flux-shadow-md: 0 4px 16px rgba(13, 11, 26, 0.4);
+  --flux-shadow-lg: 0 12px 40px -8px rgba(13, 11, 26, 0.45);
+  --flux-shadow-xl: 0 24px 64px -12px rgba(13, 11, 26, 0.55);
+  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
+  --flux-shadow-elevated-card: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.18);
+  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.35);
+  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.35);
+  --flux-shadow-secondary-outline: 0 0 0 1px rgba(0, 210, 211, 0.12);
+  --flux-shadow-primary-dot: 0 0 10px rgba(108, 92, 231, 0.6);
+  --flux-shadow-primary-dot-sm: 0 0 8px rgba(108, 92, 231, 0.6);
+  --flux-shadow-inset-hairline: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 16px 48px -20px rgba(0, 0, 0, 0.5);
+  --flux-shadow-modal-depth: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 96px -24px rgba(0, 0, 0, 0.65),
+    0 0 120px -40px rgba(108, 92, 231, 0.35);
+  --flux-shadow-logo-underlay: 0 2px 8px rgba(108, 92, 231, 0.25);
+
+  /* Gradients & panels */
+  --flux-gradient-panel-sheen: linear-gradient(
+    148deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  --flux-gradient-landing-cta: linear-gradient(
+    135deg,
+    rgba(108, 92, 231, 0.35),
+    rgba(0, 210, 211, 0.2),
+    rgba(253, 167, 223, 0.25)
+  );
+
+  /* Brand alpha ramps */
+  --flux-primary-alpha-06: rgba(108, 92, 231, 0.06);
+  --flux-primary-alpha-07: rgba(108, 92, 231, 0.07);
+  --flux-primary-alpha-08: rgba(108, 92, 231, 0.08);
+  --flux-primary-alpha-10: rgba(108, 92, 231, 0.1);
+  --flux-primary-alpha-11: rgba(108, 92, 231, 0.11);
+  --flux-primary-alpha-12: rgba(108, 92, 231, 0.12);
+  --flux-primary-alpha-13: rgba(108, 92, 231, 0.13);
+  --flux-primary-alpha-14: rgba(108, 92, 231, 0.14);
+  --flux-primary-alpha-15: rgba(108, 92, 231, 0.15);
+  --flux-primary-alpha-16: rgba(108, 92, 231, 0.16);
+  --flux-primary-alpha-18: rgba(108, 92, 231, 0.18);
+  --flux-primary-alpha-20: rgba(108, 92, 231, 0.2);
+  --flux-primary-alpha-22: rgba(108, 92, 231, 0.22);
+  --flux-primary-alpha-24: rgba(108, 92, 231, 0.24);
+  --flux-primary-alpha-25: rgba(108, 92, 231, 0.25);
+  --flux-primary-alpha-26: rgba(108, 92, 231, 0.26);
+  --flux-primary-alpha-28: rgba(108, 92, 231, 0.28);
+  --flux-primary-alpha-30: rgba(108, 92, 231, 0.3);
+  --flux-primary-alpha-35: rgba(108, 92, 231, 0.35);
+  --flux-primary-alpha-38: rgba(108, 92, 231, 0.38);
+  --flux-primary-alpha-45: rgba(108, 92, 231, 0.45);
+  --flux-primary-alpha-50: rgba(108, 92, 231, 0.5);
+  --flux-primary-alpha-40: rgba(108, 92, 231, 0.4);
+  --flux-primary-alpha-55: rgba(108, 92, 231, 0.55);
+  --flux-primary-alpha-05: rgba(108, 92, 231, 0.05);
+
+  --flux-secondary-alpha-04: rgba(0, 210, 211, 0.04);
+  --flux-secondary-alpha-06: rgba(0, 210, 211, 0.06);
+  --flux-secondary-alpha-07: rgba(0, 210, 211, 0.07);
+  --flux-secondary-alpha-08: rgba(0, 210, 211, 0.08);
+  --flux-secondary-alpha-09: rgba(0, 210, 211, 0.09);
+  --flux-secondary-alpha-10: rgba(0, 210, 211, 0.1);
+  --flux-secondary-alpha-12: rgba(0, 210, 211, 0.12);
+  --flux-secondary-alpha-14: rgba(0, 210, 211, 0.14);
+  --flux-secondary-alpha-21: rgba(0, 210, 211, 0.21);
+  --flux-secondary-alpha-22: rgba(0, 210, 211, 0.22);
+  --flux-secondary-alpha-25: rgba(0, 210, 211, 0.25);
+  --flux-secondary-alpha-28: rgba(0, 210, 211, 0.28);
+  --flux-secondary-alpha-32: rgba(0, 210, 211, 0.32);
+  --flux-secondary-alpha-35: rgba(0, 210, 211, 0.35);
+  --flux-secondary-alpha-38: rgba(0, 210, 211, 0.38);
+  --flux-secondary-alpha-55: rgba(0, 210, 211, 0.55);
+  --flux-secondary-alpha-80: rgba(0, 210, 211, 0.8);
+  --flux-secondary-alpha-18: rgba(0, 210, 211, 0.18);
+
+  /* Neutral chrome (dark: light mist; light: ink mist) */
+  --flux-chrome-alpha-03: rgba(255, 255, 255, 0.03);
+  --flux-chrome-alpha-04: rgba(255, 255, 255, 0.04);
+  --flux-chrome-alpha-05: rgba(255, 255, 255, 0.05);
+  --flux-chrome-alpha-06: rgba(255, 255, 255, 0.06);
+  --flux-chrome-alpha-07: rgba(255, 255, 255, 0.07);
+  --flux-chrome-alpha-08: rgba(255, 255, 255, 0.08);
+  --flux-chrome-alpha-09: rgba(255, 255, 255, 0.09);
+  --flux-chrome-alpha-10: rgba(255, 255, 255, 0.1);
+  --flux-chrome-alpha-12: rgba(255, 255, 255, 0.12);
+  --flux-chrome-alpha-14: rgba(255, 255, 255, 0.14);
+  --flux-chrome-alpha-15: rgba(255, 255, 255, 0.15);
+  --flux-chrome-alpha-16: rgba(255, 255, 255, 0.16);
+  --flux-chrome-alpha-18: rgba(255, 255, 255, 0.18);
+  --flux-chrome-alpha-20: rgba(255, 255, 255, 0.2);
+  --flux-chrome-alpha-30: rgba(255, 255, 255, 0.3);
+  --flux-chrome-alpha-80: rgba(255, 255, 255, 0.8);
+  --flux-chrome-alpha-90: rgba(255, 255, 255, 0.9);
+
+  --flux-black-alpha-08: rgba(0, 0, 0, 0.08);
+  --flux-black-alpha-10: rgba(0, 0, 0, 0.1);
+  --flux-black-alpha-12: rgba(0, 0, 0, 0.12);
+  --flux-black-alpha-15: rgba(0, 0, 0, 0.15);
+  --flux-black-alpha-20: rgba(0, 0, 0, 0.2);
+  --flux-black-alpha-30: rgba(0, 0, 0, 0.3);
+  --flux-black-alpha-45: rgba(0, 0, 0, 0.45);
+  --flux-black-alpha-50: rgba(0, 0, 0, 0.5);
+  --flux-black-alpha-65: rgba(0, 0, 0, 0.65);
+  --flux-black-alpha-35: rgba(0, 0, 0, 0.35);
+
+  --flux-backdrop-scrim: rgba(0, 0, 0, 0.4);
+  --flux-backdrop-scrim-strong: rgba(0, 0, 0, 0.5);
+
+  --flux-danger-alpha-06: rgba(255, 107, 107, 0.06);
+  --flux-danger-alpha-10: rgba(255, 107, 107, 0.1);
+  --flux-danger-alpha-12: rgba(255, 107, 107, 0.12);
+  --flux-danger-alpha-14: rgba(255, 107, 107, 0.14);
+  --flux-danger-alpha-20: rgba(255, 107, 107, 0.2);
+  --flux-danger-alpha-30: rgba(255, 107, 107, 0.3);
+  --flux-danger-alpha-35: rgba(255, 107, 107, 0.35);
+  --flux-danger-alpha-08: rgba(255, 107, 107, 0.08);
+  --flux-danger-alpha-15: rgba(255, 107, 107, 0.15);
+  --flux-danger-alpha-24: rgba(255, 107, 107, 0.24);
+  --flux-danger-alpha-26: rgba(255, 107, 107, 0.26);
+  --flux-danger-alpha-38: rgba(255, 107, 107, 0.38);
+  --flux-danger-alpha-40: rgba(255, 107, 107, 0.4);
+  --flux-danger-alpha-45: rgba(255, 107, 107, 0.45);
+  --flux-danger-alpha-55: rgba(255, 107, 107, 0.55);
+  --flux-danger-soft-06: rgba(255, 80, 80, 0.06);
+  --flux-red-500-alpha-08: rgba(239, 68, 68, 0.08);
+  --flux-indigo-500-alpha-12: rgba(99, 102, 241, 0.12);
+  --flux-danger-bright: #f97373;
+  --flux-danger-accent: #ef4444;
+  --flux-error-input-ring: rgba(249, 115, 115, 0.55);
+
+  --flux-info-alpha-10: rgba(116, 185, 255, 0.1);
+  --flux-info-alpha-12: rgba(116, 185, 255, 0.12);
+  --flux-info-alpha-30: rgba(116, 185, 255, 0.3);
+  --flux-info-alpha-35: rgba(116, 185, 255, 0.35);
+  --flux-info-alpha-22: rgba(116, 185, 255, 0.22);
+  --flux-info-alpha-38: rgba(116, 185, 255, 0.38);
+
+  --flux-accent-alpha-14: rgba(253, 167, 223, 0.14);
+  --flux-accent-alpha-18: rgba(253, 167, 223, 0.18);
+  --flux-accent-alpha-80: rgba(253, 167, 223, 0.8);
+  --flux-accent-alpha-15: rgba(253, 167, 223, 0.15);
+  --flux-accent-alpha-20: rgba(253, 167, 223, 0.2);
+  --flux-accent-alpha-35: rgba(253, 167, 223, 0.35);
+
+  --flux-warning-alpha-10: rgba(255, 217, 61, 0.1);
+  --flux-warning-alpha-12: rgba(255, 217, 61, 0.12);
+  --flux-warning-alpha-30: rgba(255, 217, 61, 0.3);
+  --flux-warning-alpha-90: rgba(255, 217, 61, 0.9);
+  --flux-warning-alpha-25: rgba(255, 217, 61, 0.25);
+  --flux-warning-alpha-35: rgba(255, 217, 61, 0.35);
+  --flux-warning-alpha-38: rgba(255, 217, 61, 0.38);
+  --flux-warning-alpha-40: rgba(255, 217, 61, 0.4);
+  --flux-warning-alpha-28: rgba(255, 217, 61, 0.28);
+  --flux-warning-foreground: #f59e0b;
+
+  --flux-amber-alpha-12: rgba(245, 158, 11, 0.12);
+  --flux-amber-alpha-28: rgba(245, 158, 11, 0.28);
+  --flux-amber-alpha-45: rgba(245, 158, 11, 0.45);
+
+  --flux-gold-alpha-08: rgba(255, 215, 0, 0.08);
+  --flux-gold-alpha-10: rgba(255, 215, 0, 0.1);
+  --flux-gold-alpha-12: rgba(255, 215, 0, 0.12);
+  --flux-gold-alpha-15: rgba(255, 215, 0, 0.15);
+  --flux-gold-alpha-25: rgba(255, 215, 0, 0.25);
+  --flux-gold-alpha-48: rgba(255, 215, 0, 0.48);
+  --flux-gold-alpha-35: rgba(255, 215, 0, 0.35);
+  --flux-gold-alpha-50: rgba(255, 215, 0, 0.5);
+
+  --flux-success-alpha-08: rgba(0, 230, 118, 0.08);
+  --flux-success-alpha-10: rgba(0, 230, 118, 0.1);
+  --flux-success-alpha-12: rgba(0, 230, 118, 0.12);
+  --flux-success-alpha-30: rgba(0, 230, 118, 0.3);
+  --flux-success-alpha-35: rgba(0, 230, 118, 0.35);
+  --flux-success-alpha-40: rgba(0, 230, 118, 0.4);
+  --flux-success-alpha-45: rgba(0, 230, 118, 0.45);
+  --flux-success-alpha-28: rgba(0, 230, 118, 0.28);
+  --flux-success-solid-dark: #059669;
+
+  --flux-teal-alpha-08: rgba(0, 201, 183, 0.08);
+  --flux-teal-alpha-12: rgba(0, 201, 183, 0.12);
+  --flux-teal-alpha-35: rgba(0, 201, 183, 0.35);
+  --flux-teal-alpha-10: rgba(0, 201, 183, 0.1);
+  --flux-teal-alpha-45: rgba(0, 201, 183, 0.45);
+  --flux-teal-foreground: #009e90;
+  --flux-teal-brand: #00c9b7;
+
+  --flux-ink-on-bright: #1a1730;
+
+  --flux-emerald-alpha-12: rgba(16, 185, 129, 0.12);
+  --flux-emerald-alpha-35: rgba(16, 185, 129, 0.35);
+
+  --flux-portal-chrome-10: rgba(155, 151, 194, 0.1);
+  --flux-portal-chrome-12: rgba(155, 151, 194, 0.12);
+  --flux-portal-chrome-15: rgba(155, 151, 194, 0.15);
+  --flux-portal-chrome-18: rgba(155, 151, 194, 0.18);
+  --flux-portal-chrome-25: rgba(155, 151, 194, 0.25);
+  --flux-portal-chrome-35: rgba(155, 151, 194, 0.35);
+  --flux-portal-chrome-20: rgba(155, 151, 194, 0.2);
+
+  --flux-surface-card-deep-85: rgba(34, 31, 58, 0.85);
+  --flux-void-nested-36: rgba(13, 11, 26, 0.36);
+  --flux-shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --flux-shadow-toast-strong: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --flux-shadow-copilot-bubble: 0 10px 26px -10px rgba(108, 92, 231, 0.55);
+  --flux-shadow-embed-widget: 0 8px 28px rgba(0, 0, 0, 0.25);
+  --flux-shadow-login-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --flux-shadow-kanban-card-lift: 0 12px 32px rgba(108, 92, 231, 0.3);
+  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px rgba(0, 0, 0, 0.35);
+  --flux-tooltip-surface: rgba(20, 16, 44, 0.95);
+  --flux-primary-alpha-03: rgba(108, 92, 231, 0.03);
+
+  --flux-mapa-teal-12: rgba(13, 148, 136, 0.12);
+  --flux-mapa-teal-14: rgba(13, 148, 136, 0.14);
+  --flux-mapa-teal-35: rgba(13, 148, 136, 0.35);
+  --flux-mapa-teal-40: rgba(13, 148, 136, 0.4);
+  --flux-mapa-indigo-10: rgba(79, 70, 229, 0.1);
+  --flux-mapa-indigo-12: rgba(79, 70, 229, 0.12);
+  --flux-mapa-indigo-35: rgba(79, 70, 229, 0.35);
+  --flux-mapa-red-10: rgba(185, 28, 28, 0.1);
+  --flux-mapa-red-12: rgba(185, 28, 28, 0.12);
+  --flux-mapa-red-35: rgba(185, 28, 28, 0.35);
+  --flux-mapa-red-40: rgba(185, 28, 28, 0.4);
+  --flux-mapa-text-teal: #0d9488;
+  --flux-mapa-text-indigo: #4f46e5;
+  --flux-mapa-text-red: #b91c1c;
+
+  --flux-reports-heat-low: rgba(38, 222, 129, 0.35);
+
   /* Semantic borders & chrome — adapt in [data-theme="light"] */
   --flux-border-muted: rgba(255, 255, 255, 0.06);
   --flux-border-subtle: rgba(255, 255, 255, 0.1);
@@ -38,8 +302,8 @@
   --flux-rad-sm: 6px;
   --flux-rad-lg: 16px;
   --flux-rad-xl: 20px;
-  --shadow-md: 0 4px 16px rgba(13, 11, 26, 0.4);
-  --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
+  --shadow-md: var(--flux-shadow-md);
+  --shadow-drag: var(--flux-shadow-drag);
   --flux-home-hero-bg: linear-gradient(180deg, rgba(13, 11, 26, 0.55) 0%, rgba(13, 11, 26, 0.82) 100%), url("/flux-background.svg");
 }
 
@@ -50,6 +314,7 @@
   --flux-surface-card: #FFFFFF;
   --flux-surface-elevated: #E8E6F9;
   --flux-text: #1A1730;
+  --flux-text-on-primary: #ffffff;
   --flux-text-muted: #47427A;
   --flux-primary-light: #5A49DA;
   --flux-secondary: #008E97;
@@ -64,8 +329,65 @@
     radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.1), transparent 55%),
     radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 142, 151, 0.06), transparent 50%),
     radial-gradient(ellipse 45% 38% at 0% 100%, rgba(224, 86, 160, 0.05), transparent 50%);
-  --shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
-  --shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
+  --flux-shadow-sm: 0 1px 3px rgba(96, 79, 214, 0.12);
+  --flux-shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
+  --flux-shadow-lg: 0 12px 40px -8px rgba(96, 79, 214, 0.14);
+  --flux-shadow-xl: 0 24px 64px -12px rgba(96, 79, 214, 0.16);
+  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
+  --flux-shadow-elevated-card: 0 10px 30px rgba(96, 79, 214, 0.12);
+  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.12);
+  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.22);
+  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.22);
+  --flux-shadow-modal-depth: 0 0 0 1px rgba(26, 23, 48, 0.06) inset, 0 32px 96px -24px rgba(26, 23, 48, 0.12),
+    0 0 120px -40px rgba(108, 92, 231, 0.2);
+  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.65), 0 16px 48px -20px rgba(96, 79, 214, 0.12);
+  --flux-shadow-inset-hairline: 0 0 0 1px rgba(26, 23, 48, 0.06) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.75);
+  --flux-gradient-panel-sheen: linear-gradient(
+    148deg,
+    rgba(26, 23, 48, 0.04) 0%,
+    rgba(26, 23, 48, 0.02) 45%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  --flux-gradient-landing-cta: linear-gradient(
+    135deg,
+    rgba(108, 92, 231, 0.22),
+    rgba(0, 142, 151, 0.14),
+    rgba(224, 86, 160, 0.16)
+  );
+  --flux-chrome-alpha-03: rgba(26, 23, 48, 0.03);
+  --flux-chrome-alpha-04: rgba(26, 23, 48, 0.04);
+  --flux-chrome-alpha-05: rgba(26, 23, 48, 0.05);
+  --flux-chrome-alpha-06: rgba(26, 23, 48, 0.06);
+  --flux-chrome-alpha-07: rgba(26, 23, 48, 0.07);
+  --flux-chrome-alpha-08: rgba(26, 23, 48, 0.08);
+  --flux-chrome-alpha-09: rgba(26, 23, 48, 0.09);
+  --flux-chrome-alpha-10: rgba(26, 23, 48, 0.1);
+  --flux-chrome-alpha-12: rgba(26, 23, 48, 0.12);
+  --flux-chrome-alpha-14: rgba(26, 23, 48, 0.14);
+  --flux-chrome-alpha-16: rgba(26, 23, 48, 0.16);
+  --flux-chrome-alpha-18: rgba(26, 23, 48, 0.18);
+  --flux-chrome-alpha-20: rgba(26, 23, 48, 0.2);
+  --flux-chrome-alpha-30: rgba(26, 23, 48, 0.3);
+  --flux-chrome-alpha-80: rgba(255, 255, 255, 0.85);
+  --flux-chrome-alpha-90: rgba(255, 255, 255, 0.95);
+  --flux-black-alpha-08: rgba(26, 23, 48, 0.05);
+  --flux-black-alpha-10: rgba(26, 23, 48, 0.06);
+  --flux-black-alpha-12: rgba(26, 23, 48, 0.07);
+  --flux-black-alpha-15: rgba(26, 23, 48, 0.08);
+  --flux-black-alpha-20: rgba(26, 23, 48, 0.1);
+  --flux-black-alpha-45: rgba(26, 23, 48, 0.14);
+  --flux-black-alpha-50: rgba(26, 23, 48, 0.16);
+  --flux-black-alpha-65: rgba(26, 23, 48, 0.18);
+  --flux-backdrop-scrim: rgba(26, 23, 48, 0.35);
+  --flux-backdrop-scrim-strong: rgba(26, 23, 48, 0.5);
+  --flux-shadow-embed-widget: 0 8px 28px rgba(26, 23, 48, 0.12);
+  --flux-shadow-login-panel: 0 8px 32px rgba(26, 23, 48, 0.14);
+  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px rgba(96, 79, 214, 0.1);
+  --flux-shadow-kanban-card-lift: 0 12px 32px rgba(108, 92, 231, 0.18);
+  --flux-tooltip-surface: rgba(255, 255, 255, 0.96);
+  --shadow-md: var(--flux-shadow-md);
+  --shadow-drag: var(--flux-shadow-drag);
   --flux-home-hero-bg: linear-gradient(180deg, rgba(245, 244, 255, 0.45) 0%, rgba(245, 244, 255, 0.82) 100%), url("/flux-background-light.svg");
 }
 

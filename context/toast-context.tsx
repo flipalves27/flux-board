@@ -38,28 +38,28 @@ function kindStyles(kind: ToastKind) {
   switch (kind) {
     case "success":
       return {
-        border: "rgba(0,230,118,0.35)",
+        border: "var(--flux-success-alpha-35)",
         text: "var(--flux-success)",
-        bg: "rgba(0,230,118,0.08)",
+        bg: "var(--flux-success-alpha-08)",
       };
     case "error":
       return {
-        border: "rgba(255,107,107,0.38)",
+        border: "var(--flux-danger-alpha-38)",
         text: "var(--flux-danger)",
-        bg: "rgba(255,107,107,0.10)",
+        bg: "var(--flux-danger-alpha-10)",
       };
     case "warning":
       return {
-        border: "rgba(255,217,61,0.38)",
+        border: "var(--flux-warning-alpha-38)",
         text: "var(--flux-warning)",
-        bg: "rgba(255,217,61,0.10)",
+        bg: "var(--flux-warning-alpha-10)",
       };
     case "info":
     default:
       return {
-        border: "rgba(116,185,255,0.38)",
+        border: "var(--flux-info-alpha-38)",
         text: "var(--flux-info)",
-        bg: "rgba(116,185,255,0.10)",
+        bg: "var(--flux-info-alpha-10)",
       };
   }
 }
@@ -140,10 +140,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div
               key={toast.id}
               role="status"
-              className="pointer-events-auto border rounded-[var(--flux-rad)] px-4 py-3 bg-[var(--flux-surface-card)]/95 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+              className="pointer-events-auto border rounded-[var(--flux-rad)] px-4 py-3 bg-[var(--flux-surface-card)]/95 backdrop-blur-sm shadow-[var(--flux-shadow-toast)]"
               style={{
                 borderColor: st.border,
-                background: `linear-gradient(180deg, ${st.bg}, rgba(34,31,58,0.85))`,
+                background: `linear-gradient(180deg, ${st.bg}, var(--flux-surface-card-deep-85))`,
               }}
             >
               <div className="flex items-start justify-between gap-3">
@@ -159,7 +159,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   onClick={() => dismissToast(toast.id)}
-                  className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200"
+                  className="w-8 h-8 rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[var(--flux-chrome-alpha-08)] hover:text-[var(--flux-text)] transition-all duration-200"
                   aria-label={toastsT("closeAria")}
                 >
                   ×

@@ -74,8 +74,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                   aria-label={t("cardModal.aiContext.tooltips.triggerAria")}
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[var(--flux-primary-light)] transition-all duration-200 motion-safe:active:scale-95 ${
                     !aiContextCanGenerate || aiContextBusy
-                      ? "cursor-not-allowed border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] opacity-45"
-                      : "border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(108,92,231,0.45)] hover:bg-[rgba(108,92,231,0.14)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.12),0_8px_24px_-8px_rgba(108,92,231,0.25)]"
+                      ? "cursor-not-allowed border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-03)] opacity-45"
+                      : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] hover:border-[var(--flux-primary-alpha-45)] hover:bg-[var(--flux-primary-alpha-14)] hover:shadow-[0_0_0_3px_var(--flux-primary-alpha-12),0_8px_24px_-8px_var(--flux-primary-alpha-25)]"
                   }`}
                   title={t("cardModal.aiContext.tooltips.triggerTitle")}
                 >
@@ -124,8 +124,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] border font-semibold ${
                   aiContextApplied.usedLlm
-                    ? "bg-[rgba(108,92,231,0.12)] border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
-                    : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
+                    ? "bg-[var(--flux-primary-alpha-12)] border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
+                    : "bg-[var(--flux-chrome-alpha-04)] border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)]"
                 }`}
               >
                 {aiContextApplied.usedLlm ? t("cardModal.badges.aiGenerated") : t("cardModal.badges.aiFallbackStructured")}
@@ -138,7 +138,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
             {t("cardModal.fields.description.label")}
           </label>
-          <div className="rounded-xl border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+          <div className="rounded-xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]">
             <div className="space-y-3">
               {DESCRIPTION_BLOCKS.map((block) => (
                 <div key={block.key}>
@@ -154,7 +154,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                     }}
                     placeholder={block.placeholder}
                     rows={3}
-                    className="min-h-[90px] w-full resize-y rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_rgba(108,92,231,0.12)] focus:ring-0 whitespace-pre-wrap"
+                    className="min-h-[90px] w-full resize-y rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_var(--flux-primary-alpha-12)] focus:ring-0 whitespace-pre-wrap"
                   />
                 </div>
               ))}
@@ -165,8 +165,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] border font-semibold ${
                   aiContextApplied.usedLlm
-                    ? "bg-[rgba(108,92,231,0.12)] border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
-                    : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)] text-[var(--flux-text-muted)]"
+                    ? "bg-[var(--flux-primary-alpha-12)] border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
+                    : "bg-[var(--flux-chrome-alpha-04)] border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)]"
                 }`}
               >
                 {aiContextApplied.usedLlm
@@ -237,7 +237,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.fields.blockedBy.empty")}</p>
           ) : (
             <ul
-              className="max-h-48 overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.1)] divide-y divide-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.12)]"
+              className="max-h-48 overflow-y-auto rounded-xl border border-[var(--flux-chrome-alpha-10)] divide-y divide-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-12)]"
               role="listbox"
               aria-multiselectable
             >
@@ -245,7 +245,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                 const checked = blockedBy.includes(c.id);
                 return (
                   <li key={c.id} role="option" aria-selected={checked}>
-                    <label className="flex items-start gap-3 px-3 py-2.5 cursor-pointer hover:bg-[rgba(108,92,231,0.08)]">
+                    <label className="flex items-start gap-3 px-3 py-2.5 cursor-pointer hover:bg-[var(--flux-primary-alpha-08)]">
                       <input
                         type="checkbox"
                         checked={checked}
@@ -254,7 +254,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                             prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id]
                           )
                         }
-                        className="mt-1 rounded border-[rgba(255,255,255,0.2)]"
+                        className="mt-1 rounded border-[var(--flux-chrome-alpha-20)]"
                       />
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-[var(--flux-text)] truncate">{c.title}</span>
@@ -295,7 +295,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             <button
               type="button"
               onClick={handleCreateLabel}
-              className="px-4 rounded-xl text-sm font-semibold border border-[var(--flux-primary)] bg-[rgba(108,92,231,0.15)] text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.25)] hover:shadow-[0_0_0_3px_rgba(108,92,231,0.15)] transition-all duration-200 font-display whitespace-nowrap"
+              className="px-4 rounded-xl text-sm font-semibold border border-[var(--flux-primary)] bg-[var(--flux-primary-alpha-15)] text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-25)] hover:shadow-[0_0_0_3px_var(--flux-primary-alpha-15)] transition-all duration-200 font-display whitespace-nowrap"
             >
               {t("cardModal.buttons.createLabel")}
             </button>
@@ -309,7 +309,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                   className={`pl-4 pr-8 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 font-display ${
                     tags.has(label)
                       ? "bg-[var(--flux-primary)] text-white border-[var(--flux-primary)] shadow-sm"
-                      : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[rgba(255,255,255,0.12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[rgba(108,92,231,0.1)]"
+                      : "bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] border-[var(--flux-chrome-alpha-12)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-10)]"
                   }`}
                 >
                   {label}
@@ -318,7 +318,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                   <button
                     type="button"
                     onClick={() => handleDeleteLabel(label)}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[rgba(255,107,107,0.15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md flex items-center justify-center text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)] hover:bg-[var(--flux-danger-alpha-15)] transition-all duration-200 opacity-60 group-hover:opacity-100"
                     aria-label={t("cardModal.tooltips.deleteLabelAria", { label })}
                   >
                     ×

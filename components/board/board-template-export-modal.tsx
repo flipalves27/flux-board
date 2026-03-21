@@ -54,12 +54,12 @@ export function BoardTemplateExportModal({ open, onClose, boardId, getHeaders }:
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm" role="dialog" aria-modal>
-      <div className="w-full max-w-lg rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_rgba(0,0,0,0.45)] p-6">
+      <div className="w-full max-w-lg rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_var(--flux-black-alpha-45)] p-6">
         <h2 className="text-lg font-semibold text-[var(--flux-text)] font-display">{t("exportModal.title")}</h2>
         <p className="text-sm text-[var(--flux-text-muted)] mt-1 mb-4">{t("exportModal.hint")}</p>
 
         {error && (
-          <div className="mb-3 text-sm text-[var(--flux-danger)] border border-[rgba(255,107,107,0.35)] rounded-[var(--flux-rad)] px-3 py-2">
+          <div className="mb-3 text-sm text-[var(--flux-danger)] border border-[var(--flux-danger-alpha-35)] rounded-[var(--flux-rad)] px-3 py-2">
             {error}
           </div>
         )}

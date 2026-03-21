@@ -22,14 +22,14 @@ export function CardModalAiOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[420] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[420] bg-[var(--flux-backdrop-scrim)] backdrop-blur-sm flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-context-title"
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="w-full max-w-2xl bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-5 shadow-xl"
+        className="w-full max-w-2xl bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -48,7 +48,7 @@ export function CardModalAiOverlay() {
           </button>
         </div>
 
-        <div className="mb-3 rounded-[10px] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-mid)] p-3">
+        <div className="mb-3 rounded-[10px] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-mid)] p-3">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="text-xs font-semibold text-[var(--flux-primary-light)]">
               {t("cardModal.aiContext.trackingTitle")}
@@ -63,7 +63,7 @@ export function CardModalAiOverlay() {
                     : t("cardModal.aiContext.status.idle")}
             </div>
           </div>
-          <div className="h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+          <div className="h-2 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden">
             <div
               className="h-full bg-[linear-gradient(90deg,var(--flux-primary),var(--flux-secondary))] transition-all duration-700 ease-out"
               style={{
@@ -86,8 +86,8 @@ export function CardModalAiOverlay() {
                   key={step}
                   className={`text-[10px] rounded-[6px] px-2 py-1 border ${
                     active
-                      ? "border-[rgba(108,92,231,0.45)] text-[var(--flux-primary-light)] bg-[rgba(108,92,231,0.12)]"
-                      : "border-[rgba(255,255,255,0.1)] text-[var(--flux-text-muted)]"
+                      ? "border-[var(--flux-primary-alpha-45)] text-[var(--flux-primary-light)] bg-[var(--flux-primary-alpha-12)]"
+                      : "border-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)]"
                   }`}
                 >
                   {step}
@@ -99,7 +99,7 @@ export function CardModalAiOverlay() {
 
         {aiContextBusy ? (
           aiContextLogs.length > 0 ? (
-            <div className="bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+            <div className="bg-[var(--flux-surface-mid)] border border-[var(--flux-primary-alpha-35)] rounded-[10px] p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                   {t("cardModal.aiContext.log.title")}
@@ -119,7 +119,7 @@ export function CardModalAiOverlay() {
                     log.status === "success"
                       ? "text-[var(--flux-primary-light)]"
                       : log.status === "error"
-                        ? "text-[#F97373]"
+                        ? "text-[var(--flux-danger-bright)]"
                         : "text-[var(--flux-text-muted)]";
                   return (
                     <div key={`${log.timestamp}-${index}`} className="text-[11px] flex items-start gap-2">
@@ -157,7 +157,7 @@ export function CardModalAiOverlay() {
             <p className="text-xs text-[var(--flux-text-muted)] mt-4">{t("cardModal.aiContext.log.emptyMessage")}</p>
           )
         ) : (
-          <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[rgba(108,92,231,0.35)] rounded-[10px] p-3">
+          <div className="mt-4 bg-[var(--flux-surface-mid)] border border-[var(--flux-primary-alpha-35)] rounded-[10px] p-3">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="text-[11px] uppercase tracking-wide font-bold text-[var(--flux-primary-light)]">
                 {t("cardModal.aiContext.result.appliedHeader")}
@@ -177,7 +177,7 @@ export function CardModalAiOverlay() {
               <div className="space-y-2">
                 <div className="text-xs text-[var(--flux-text-muted)]">{t("cardModal.aiContext.result.autoFilledText")}</div>
                 {(aiContextBusinessSummary || aiContextObjective) && (
-                  <div className="rounded-[10px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3">
+                  <div className="rounded-[10px] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] p-3">
                     {aiContextBusinessSummary ? (
                       <div className="text-[11px] mb-2">
                         <span className="font-semibold text-[var(--flux-text)]">

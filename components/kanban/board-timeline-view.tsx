@@ -30,7 +30,7 @@ function addDaysYmd(ymd: string, delta: number): string {
 }
 
 function bucketColor(buckets: BucketConfig[], bucketKey: string): string {
-  return buckets.find((b) => b.key === bucketKey)?.color ?? "#6C5CE7";
+  return buckets.find((b) => b.key === bucketKey)?.color ?? "var(--flux-primary)";
 }
 
 export interface BoardTimelineViewProps {
@@ -175,7 +175,7 @@ export function BoardTimelineView({
 
   if (rows.length === 0) {
     return (
-      <div className="w-full py-12 flex flex-col items-center justify-center text-center border border-dashed border-[rgba(108,92,231,0.25)] rounded-[var(--flux-rad)] bg-[rgba(0,0,0,0.12)]">
+      <div className="w-full py-12 flex flex-col items-center justify-center text-center border border-dashed border-[var(--flux-primary-alpha-25)] rounded-[var(--flux-rad)] bg-[var(--flux-black-alpha-12)]">
         <p className="text-sm font-display font-semibold text-[var(--flux-text)]">{t("emptyTitle")}</p>
         <p className="mt-2 text-xs text-[var(--flux-text-muted)] max-w-md">{t("emptyHint")}</p>
       </div>
@@ -184,10 +184,10 @@ export function BoardTimelineView({
 
   return (
     <div className="w-full py-4 pb-6 overflow-x-auto scrollbar-flux min-h-[calc(100vh-200px)]">
-      <div className="inline-flex min-w-full flex-col rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] overflow-hidden">
-        <div className="flex border-b border-[rgba(255,255,255,0.08)]">
+      <div className="inline-flex min-w-full flex-col rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-mid)] overflow-hidden">
+        <div className="flex border-b border-[var(--flux-chrome-alpha-08)]">
           <div
-            className="shrink-0 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--flux-text-muted)] bg-[rgba(0,0,0,0.15)] flex items-end"
+            className="shrink-0 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--flux-text-muted)] bg-[var(--flux-black-alpha-15)] flex items-end"
             style={{ width: LABEL_W }}
           >
             {t("columnTask")}
@@ -204,8 +204,8 @@ export function BoardTimelineView({
                 return (
                   <div
                     key={ymd}
-                    className={`shrink-0 border-l border-[rgba(255,255,255,0.06)] text-center py-1.5 ${
-                      isWeekend ? "bg-[rgba(0,0,0,0.12)]" : ""
+                    className={`shrink-0 border-l border-[var(--flux-chrome-alpha-06)] text-center py-1.5 ${
+                      isWeekend ? "bg-[var(--flux-black-alpha-12)]" : ""
                     }`}
                     style={{ width: DAY_PX }}
                   >
@@ -221,13 +221,13 @@ export function BoardTimelineView({
         </div>
 
         <div className="flex relative">
-          <div className="shrink-0 border-r border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.08)]" style={{ width: LABEL_W }}>
+          <div className="shrink-0 border-r border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]" style={{ width: LABEL_W }}>
             {rows.map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => onOpenCard(r)}
-                className="w-full text-left px-3 border-b border-[rgba(255,255,255,0.05)] hover:bg-[rgba(108,92,231,0.12)] transition-colors"
+                className="w-full text-left px-3 border-b border-[var(--flux-chrome-alpha-05)] hover:bg-[var(--flux-primary-alpha-12)] transition-colors"
                 style={{ height: ROW_H }}
               >
                 <div className="text-xs font-semibold text-[var(--flux-text)] truncate leading-tight">{r.title}</div>
@@ -249,7 +249,7 @@ export function BoardTimelineView({
                     key={p.key}
                     d={p.d}
                     fill="none"
-                    stroke="rgba(0,210,211,0.55)"
+                    stroke="var(--flux-secondary-alpha-55)"
                     strokeWidth={1.5}
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -264,7 +264,7 @@ export function BoardTimelineView({
                 return (
                   <div
                     key={r.id}
-                    className="absolute left-0 right-0 border-b border-[rgba(255,255,255,0.05)]"
+                    className="absolute left-0 right-0 border-b border-[var(--flux-chrome-alpha-05)]"
                     style={{ top: rowIdx * ROW_H, height: ROW_H }}
                   >
                     <div

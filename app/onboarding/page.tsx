@@ -48,10 +48,10 @@ function StepPill({
     <div
       className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
         isCurrent
-          ? "border-[var(--flux-primary)] bg-[rgba(108,92,231,0.18)] text-[var(--flux-primary-light)]"
+          ? "border-[var(--flux-primary)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
           : isDone
-            ? "border-[rgba(0,230,118,0.35)] bg-[rgba(0,230,118,0.10)] text-[var(--flux-success)]"
-            : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)]"
+            ? "border-[var(--flux-success-alpha-35)] bg-[var(--flux-success-alpha-10)] text-[var(--flux-success)]"
+            : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)]"
       }`}
       aria-current={isCurrent ? "step" : undefined}
     >
@@ -79,8 +79,8 @@ function ColumnItem({ column, dragAria }: { column: BucketConfig; dragAria: stri
       style={style}
       className={`flex items-center justify-between gap-3 rounded-[var(--flux-rad)] border px-3 py-2 ${
         isDragging
-          ? "border-[var(--flux-primary)] bg-[rgba(108,92,231,0.14)] shadow-[0_12px_32px_rgba(108,92,231,0.18)]"
-          : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)]"
+          ? "border-[var(--flux-primary)] bg-[var(--flux-primary-alpha-14)] shadow-[var(--flux-shadow-primary-panel)]"
+          : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
       }`}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -97,7 +97,7 @@ function ColumnItem({ column, dragAria }: { column: BucketConfig; dragAria: stri
 
       <button
         type="button"
-        className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-2 py-1 text-xs text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[rgba(255,255,255,0.2)] transition-colors"
+        className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] px-2 py-1 text-xs text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-chrome-alpha-20)] transition-colors"
         aria-label={dragAria}
         {...attributes}
         {...listeners}
@@ -455,13 +455,13 @@ export default function OnboardingPage() {
         </div>
 
         {initError && (
-          <div className="mb-4 bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
+          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
             {initError}
           </div>
         )}
 
         {step === 1 && (
-          <section className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+          <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
@@ -471,7 +471,7 @@ export default function OnboardingPage() {
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
                     placeholder={t("placeholders.boardName")}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
                   autoFocus
                 />
@@ -494,8 +494,8 @@ export default function OnboardingPage() {
                           }}
                           className={`text-left rounded-[var(--flux-rad)] border px-4 py-3 transition-colors ${
                             isSelected
-                              ? "border-[var(--flux-primary)] bg-[rgba(108,92,231,0.14)]"
-                              : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] hover:border-[rgba(108,92,231,0.35)]"
+                              ? "border-[var(--flux-primary)] bg-[var(--flux-primary-alpha-14)]"
+                              : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] hover:border-[var(--flux-primary-alpha-35)]"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
@@ -506,7 +506,7 @@ export default function OnboardingPage() {
                             {t.buckets.slice(0, 3).map((b) => (
                               <span
                                 key={b.key}
-                                className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] px-2 py-0.5 text-[11px] text-[var(--flux-text-muted)]"
+                                className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2 py-0.5 text-[11px] text-[var(--flux-text-muted)]"
                               >
                                 <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: b.color }} />
                                 {b.label}
@@ -524,7 +524,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] p-4">
+                <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-03)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                     {t("preview.title")}
                   </p>
@@ -532,7 +532,7 @@ export default function OnboardingPage() {
                     {template.buckets.map((b) => (
                       <div
                         key={b.key}
-                        className="flex items-center justify-between gap-3 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.10)] bg-[var(--flux-surface-elevated)] px-3 py-2"
+                        className="flex items-center justify-between gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)] px-3 py-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span aria-hidden className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: b.color }} />
@@ -572,7 +572,7 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && boardId && (
-          <section className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+          <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
@@ -610,7 +610,7 @@ export default function OnboardingPage() {
         )}
 
         {step === 3 && boardId && (
-          <section className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+          <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                 {t("step3.title")}
@@ -629,7 +629,7 @@ export default function OnboardingPage() {
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
                   placeholder={t("placeholders.cardTitle")}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
                   autoFocus
                 />
@@ -642,7 +642,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardBucketKey}
                   onChange={(e) => setCardBucketKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   disabled={busy}
                 >
                   {bucketOrder.map((b) => (
@@ -660,7 +660,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardPriority}
                   onChange={(e) => setCardPriority(e.target.value as (typeof PRIORITIES)[number])}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   disabled={busy}
                 >
                   {PRIORITIES.map((p) => (
@@ -678,7 +678,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardProgress}
                   onChange={(e) => setCardProgress(e.target.value as (typeof PROGRESSES)[number])}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   disabled={busy}
                 >
                   {PROGRESSES.map((p) => (
@@ -698,7 +698,7 @@ export default function OnboardingPage() {
                   onChange={(e) => setCardDesc(e.target.value)}
                   placeholder={t("placeholders.cardDescriptionOptional")}
                   rows={4}
-                  className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                   disabled={busy}
                 />
               </div>
@@ -721,7 +721,7 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && !boardId && (
-          <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-6">
+          <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-6">
             <p className="text-[var(--flux-text-muted)]">{t("loading.board")}</p>
           </div>
         )}

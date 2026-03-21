@@ -349,7 +349,7 @@ export default function OkrsPage() {
       <Header title="Flux Goals (OKRs)" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
 
       <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[1fr,420px] gap-6">
-        <section className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-lg)] p-5">
+        <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">OKRs do trimestre</h2>
             <div className="text-xs text-[var(--flux-text-muted)] text-right max-w-[280px]">
@@ -366,7 +366,7 @@ export default function OkrsPage() {
               <select
                 value={selectedBoardId}
                 onChange={(e) => setSelectedBoardId(e.target.value)}
-                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
               >
                 {boards.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -375,7 +375,7 @@ export default function OkrsPage() {
                 ))}
               </select>
             </div>
-            <div className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] p-3">
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-03)] p-3">
               <div className="text-[11px] uppercase tracking-wide font-semibold text-[var(--flux-primary-light)]">
                 Progresso objetivo
               </div>
@@ -394,14 +394,14 @@ export default function OkrsPage() {
               {okrsComputed.map((o) => (
                 <div
                   key={o.objective.id}
-                  className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[rgba(108,92,231,0.06)] p-4"
+                  className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-06)] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <div className="font-display font-bold text-[var(--flux-text)] truncate">{o.objective.title}</div>
                         {editingObjectiveId === o.objective.id && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[rgba(108,92,231,0.45)] bg-[rgba(108,92,231,0.16)] text-[var(--flux-primary-light)] font-semibold">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-16)] text-[var(--flux-primary-light)] font-semibold">
                             editando
                           </span>
                         )}
@@ -414,14 +414,14 @@ export default function OkrsPage() {
                       <div className="mt-1 flex gap-1 justify-end">
                         <button
                           type="button"
-                          className="btn-sm border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                          className="btn-sm border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
                           onClick={() => startEditObjective(o.objective)}
                         >
                           Editar
                         </button>
                         <button
                           type="button"
-                          className="btn-sm border-[rgba(255,107,107,0.4)] text-[var(--flux-danger)]"
+                          className="btn-sm border-[var(--flux-danger-alpha-40)] text-[var(--flux-danger)]"
                           onClick={() =>
                             setConfirmDelete({
                               kind: "objective",
@@ -441,23 +441,23 @@ export default function OkrsPage() {
                       editingObjectiveId === o.objective.id ? "max-h-[220px] opacity-100" : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] p-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] p-3 grid grid-cols-1 md:grid-cols-3 gap-2">
                       <input
                         value={objectiveEditTitle}
                         onChange={(e) => setObjectiveEditTitle(e.target.value)}
-                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                         placeholder="Título"
                       />
                       <input
                         value={objectiveEditOwner}
                         onChange={(e) => setObjectiveEditOwner(e.target.value)}
-                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                         placeholder="Owner"
                       />
                       <input
                         value={objectiveEditQuarter}
                         onChange={(e) => setObjectiveEditQuarter(e.target.value)}
-                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                         placeholder="Quarter"
                       />
                       <div className="md:col-span-3 flex justify-end gap-2">
@@ -471,7 +471,7 @@ export default function OkrsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-2 h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+                  <div className="mt-2 h-2 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden">
                     <div className="h-full bg-[var(--flux-primary)]" style={{ width: `${o.objectiveCurrentPct}%` }} />
                   </div>
 
@@ -487,8 +487,8 @@ export default function OkrsPage() {
                           key={kr.definition.id}
                           className={`rounded-md p-2.5 ${
                             proj?.riskBelowThreshold
-                              ? "border border-[rgba(255,107,107,0.45)] bg-[rgba(255,80,80,0.06)]"
-                              : "border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)]"
+                              ? "border border-[var(--flux-danger-alpha-45)] bg-[var(--flux-danger-soft-06)]"
+                              : "border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)]"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -496,7 +496,7 @@ export default function OkrsPage() {
                               <div className="flex items-center gap-2">
                                 <div className="text-[11px] font-semibold text-[var(--flux-text)] truncate">{kr.definition.title}</div>
                                 {editingKrId === kr.definition.id && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-[rgba(108,92,231,0.45)] bg-[rgba(108,92,231,0.16)] text-[var(--flux-primary-light)] font-semibold">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-16)] text-[var(--flux-primary-light)] font-semibold">
                                     editando
                                   </span>
                                 )}
@@ -530,14 +530,14 @@ export default function OkrsPage() {
                               <div className="mt-1 flex gap-1 justify-end">
                                 <button
                                   type="button"
-                                  className="btn-sm border-[rgba(108,92,231,0.35)] text-[var(--flux-primary-light)]"
+                                  className="btn-sm border-[var(--flux-primary-alpha-35)] text-[var(--flux-primary-light)]"
                                   onClick={() => startEditKr(kr.definition)}
                                 >
                                   Editar
                                 </button>
                                 <button
                                   type="button"
-                                  className="btn-sm border-[rgba(255,107,107,0.4)] text-[var(--flux-danger)]"
+                                  className="btn-sm border-[var(--flux-danger-alpha-40)] text-[var(--flux-danger)]"
                                   onClick={() =>
                                     setConfirmDelete({
                                       kind: "kr",
@@ -557,17 +557,17 @@ export default function OkrsPage() {
                               editingKrId === kr.definition.id ? "max-h-[320px] opacity-100" : "max-h-0 opacity-0"
                             }`}
                           >
-                            <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.18)] bg-[var(--flux-surface-card)] p-2.5 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-surface-card)] p-2.5 grid grid-cols-1 md:grid-cols-2 gap-2">
                               <input
                                 value={krEditTitle}
                                 onChange={(e) => setKrEditTitle(e.target.value)}
-                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                                 placeholder="Título do KR"
                               />
                               <select
                                 value={krEditMetricType}
                                 onChange={(e) => setKrEditMetricType(e.target.value as OkrsMetricType)}
-                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                               >
                                 <option value="card_count">card_count</option>
                                 <option value="card_in_column">card_in_column</option>
@@ -577,14 +577,14 @@ export default function OkrsPage() {
                                 type="number"
                                 value={krEditTarget}
                                 onChange={(e) => setKrEditTarget(Math.max(0, Number(e.target.value) || 0))}
-                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                                className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                                 placeholder="Target"
                               />
                               {krEditMetricType === "card_in_column" ? (
                                 <select
                                   value={krEditLinkedColumnKey}
                                   onChange={(e) => setKrEditLinkedColumnKey(e.target.value)}
-                                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                                 >
                                   {Array.from(bucketKeys).map((k) => (
                                     <option key={k} value={k}>
@@ -597,7 +597,7 @@ export default function OkrsPage() {
                                   type="number"
                                   value={krEditManualCurrent}
                                   onChange={(e) => setKrEditManualCurrent(Math.max(0, Number(e.target.value) || 0))}
-                                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                                  className="px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                                   placeholder="Manual current"
                                 />
                               ) : (
@@ -624,7 +624,7 @@ export default function OkrsPage() {
           )}
         </section>
 
-        <aside className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-lg)] p-5 space-y-5">
+        <aside className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5 space-y-5">
           <section>
             <h3 className="font-display font-bold text-base text-[var(--flux-text)]">Criar Objective</h3>
             <p className="text-sm text-[var(--flux-text-muted)] mt-1">
@@ -637,7 +637,7 @@ export default function OkrsPage() {
                 <input
                   value={objectiveTitle}
                   onChange={(e) => setObjectiveTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   placeholder="Ex: Aumentar pipeline no trimestre"
                   required
                 />
@@ -647,7 +647,7 @@ export default function OkrsPage() {
                 <input
                   value={objectiveOwner}
                   onChange={(e) => setObjectiveOwner(e.target.value)}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   placeholder="Quem é responsável"
                 />
               </div>
@@ -669,7 +669,7 @@ export default function OkrsPage() {
                 <select
                   value={krObjectiveId}
                   onChange={(e) => setKrObjectiveId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   required
                 >
                   {objectivesList.length === 0 ? <option value="">Sem objectives</option> : null}
@@ -686,7 +686,7 @@ export default function OkrsPage() {
                 <input
                   value={krTitle}
                   onChange={(e) => setKrTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   placeholder="Ex: Fechar 30 deals"
                   required
                 />
@@ -697,7 +697,7 @@ export default function OkrsPage() {
                 <select
                   value={krMetricType}
                   onChange={(e) => setKrMetricType(e.target.value as OkrsMetricType)}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 >
                   <option value="card_count">card_count (cards do board)</option>
                   <option value="card_in_column">card_in_column (cards numa coluna)</option>
@@ -713,7 +713,7 @@ export default function OkrsPage() {
                   <select
                     value={krLinkedColumnKey}
                     onChange={(e) => setKrLinkedColumnKey(e.target.value)}
-                    className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                    className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   >
                     {Array.from(bucketKeys).map((k) => (
                       <option key={k} value={k}>
@@ -731,7 +731,7 @@ export default function OkrsPage() {
                     type="number"
                     value={krManualCurrent}
                     onChange={(e) => setKrManualCurrent(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                    className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   />
                 </div>
               )}
@@ -742,7 +742,7 @@ export default function OkrsPage() {
                   type="number"
                   value={krTarget}
                   onChange={(e) => setKrTarget(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                   required
                 />
               </div>

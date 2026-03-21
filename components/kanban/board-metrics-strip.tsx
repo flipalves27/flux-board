@@ -23,25 +23,25 @@ export function BoardMetricsStrip({ t, totalCards, executionInsights }: BoardMet
           </div>
           <div className="text-sm font-display font-bold text-[var(--flux-text)]">{totalCards}</div>
         </div>
-        <div className="board-stat-tile border-[rgba(116,185,255,0.22)] px-2.5 py-2">
+        <div className="board-stat-tile border-[var(--flux-info-alpha-22)] px-2.5 py-2">
           <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">
             {t("board.stats.inProgressLabel")}
           </div>
           <div className="text-sm font-display font-bold text-[var(--flux-info)]">{executionInsights.inProgress}</div>
         </div>
-        <div className="board-stat-tile border-[rgba(255,107,107,0.26)] px-2.5 py-2">
+        <div className="board-stat-tile border-[var(--flux-danger-alpha-26)] px-2.5 py-2">
           <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">
             {t("board.stats.overdueLabel")}
           </div>
           <div className="text-sm font-display font-bold text-[var(--flux-danger)]">{executionInsights.overdue}</div>
         </div>
-        <div className="board-stat-tile border-[rgba(255,217,61,0.28)] px-2.5 py-2">
+        <div className="board-stat-tile border-[var(--flux-warning-alpha-28)] px-2.5 py-2">
           <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">
             {t("board.stats.dueSoonLabel")}
           </div>
           <div className="text-sm font-display font-bold text-[var(--flux-warning)]">{executionInsights.dueSoon}</div>
         </div>
-        <div className="board-stat-tile border-[rgba(0,230,118,0.28)] px-2.5 py-2">
+        <div className="board-stat-tile border-[var(--flux-success-alpha-28)] px-2.5 py-2">
           <div className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">
             {t("board.stats.completedRateLabel")}
           </div>

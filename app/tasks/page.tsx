@@ -154,7 +154,7 @@ export default function TasksPage() {
       <div className="min-h-screen bg-[var(--flux-surface-dark)]">
         <Header title="Minhas tarefas" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
         <main className="max-w-[780px] mx-auto px-6 py-10">
-          <div className="rounded-[var(--flux-rad-xl)] border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.08)] p-6">
+          <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)] p-6">
             <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">Routine é Pro/Business</h2>
             <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
               Para criar e sincronizar rotinas, faça upgrade no Stripe.
@@ -174,7 +174,7 @@ export default function TasksPage() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title="Minhas tarefas" />
       <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[410px,1fr] gap-6">
-        <section className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-lg)] p-5">
+        <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">
           <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">
             {editingId ? "Editar rotina" : "Nova tarefa rotineira"}
           </h2>
@@ -183,7 +183,7 @@ export default function TasksPage() {
           </p>
 
           <form onSubmit={submitTask} className="space-y-3">
-            <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.16)] bg-[linear-gradient(180deg,rgba(108,92,231,0.1),rgba(108,92,231,0.03))] p-3">
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-16)] bg-[linear-gradient(180deg,var(--flux-primary-alpha-10),var(--flux-primary-alpha-03))] p-3">
               <p className="text-xs text-[var(--flux-primary-light)] font-semibold font-display uppercase tracking-wide mb-2">
                 Configuracao rapida
               </p>
@@ -198,7 +198,7 @@ export default function TasksPage() {
                       dayOfMonth: 1,
                     }))
                   }
-                  className="text-left rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
+                  className="text-left rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
                 >
                   <p className="text-sm font-semibold text-[var(--flux-text)]">Rotina diaria</p>
                   <p className="text-xs text-[var(--flux-text-muted)] mt-1">Todo dia no horario escolhido</p>
@@ -212,7 +212,7 @@ export default function TasksPage() {
                       weekdays: [1, 2, 3, 4, 5],
                     }))
                   }
-                  className="text-left rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
+                  className="text-left rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 hover:border-[var(--flux-primary)] transition-colors"
                 >
                   <p className="text-sm font-semibold text-[var(--flux-text)]">Seg a sex</p>
                   <p className="text-xs text-[var(--flux-text-muted)] mt-1">Ideal para rituais de trabalho</p>
@@ -226,7 +226,7 @@ export default function TasksPage() {
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="Ex: Revisar backlog diário"
-                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 required
               />
             </div>
@@ -238,7 +238,7 @@ export default function TasksPage() {
                   value={form.category}
                   onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
                   placeholder="Ex: Operação"
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </div>
               <div>
@@ -246,7 +246,7 @@ export default function TasksPage() {
                 <select
                   value={form.recurrence}
                   onChange={(e) => setForm((prev) => ({ ...prev, recurrence: e.target.value as RoutineType }))}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 >
                   <option value="daily">Diária</option>
                   <option value="weekly">Semanal</option>
@@ -262,7 +262,7 @@ export default function TasksPage() {
                   type="time"
                   value={form.time}
                   onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </div>
               <div>
@@ -270,7 +270,7 @@ export default function TasksPage() {
                 <select
                   value={form.alertBeforeMinutes}
                   onChange={(e) => setForm((prev) => ({ ...prev, alertBeforeMinutes: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 >
                   {ALERT_OPTIONS.map((mins) => (
                     <option key={mins} value={mins}>
@@ -287,7 +287,7 @@ export default function TasksPage() {
                 <select
                   value={form.alertSound}
                   onChange={(e) => setForm((prev) => ({ ...prev, alertSound: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 >
                   {ALERT_SOUND_PRESETS.map((sound) => (
                     <option key={sound.id} value={sound.id}>
@@ -348,8 +348,8 @@ export default function TasksPage() {
                         onClick={() => toggleWeekday(day.value)}
                         className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                           selected
-                            ? "bg-[rgba(108,92,231,0.25)] border-[var(--flux-primary)] text-[var(--flux-primary-light)]"
-                            : "bg-[var(--flux-surface-elevated)] border-[rgba(108,92,231,0.2)] text-[var(--flux-text-muted)]"
+                            ? "bg-[var(--flux-primary-alpha-25)] border-[var(--flux-primary)] text-[var(--flux-primary-light)]"
+                            : "bg-[var(--flux-surface-elevated)] border-[var(--flux-primary-alpha-20)] text-[var(--flux-text-muted)]"
                         }`}
                       >
                         {day.label}
@@ -374,7 +374,7 @@ export default function TasksPage() {
                       dayOfMonth: Math.max(1, Math.min(31, Number(e.target.value) || 1)),
                     }))
                   }
-                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </div>
             )}
@@ -386,7 +386,7 @@ export default function TasksPage() {
                 onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="Checklist ou contexto da rotina..."
                 rows={3}
-                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)] resize-none"
+                className="w-full px-3 py-2 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)] resize-none"
               />
             </div>
 
@@ -403,7 +403,7 @@ export default function TasksPage() {
           </form>
         </section>
 
-        <section className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-lg)] p-5">
+        <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">Agenda de rotinas</h2>
             <span className="text-xs text-[var(--flux-text-muted)]">{sortedTasks.length} tarefa(s)</span>
@@ -418,7 +418,7 @@ export default function TasksPage() {
               {sortedTasks.map((task) => (
                 <article
                   key={task.id}
-                  className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-elevated)] p-4"
+                  className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -432,8 +432,8 @@ export default function TasksPage() {
                       onClick={() => toggleTask(task.id, !task.active)}
                       className={`px-2.5 py-1 rounded-full text-xs border ${
                         task.active
-                          ? "border-[rgba(0,230,118,0.45)] text-[var(--flux-success)] bg-[rgba(0,230,118,0.12)]"
-                          : "border-[rgba(255,255,255,0.16)] text-[var(--flux-text-muted)]"
+                          ? "border-[var(--flux-success-alpha-45)] text-[var(--flux-success)] bg-[var(--flux-success-alpha-12)]"
+                          : "border-[var(--flux-chrome-alpha-16)] text-[var(--flux-text-muted)]"
                       }`}
                     >
                       {task.active ? "Ativa" : "Pausada"}
@@ -459,16 +459,16 @@ export default function TasksPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => completeTask(task.id)} className="btn-sm border-[rgba(0,230,118,0.3)] text-[var(--flux-success)]">
+                      <button type="button" onClick={() => completeTask(task.id)} className="btn-sm border-[var(--flux-success-alpha-30)] text-[var(--flux-success)]">
                         Concluir
                       </button>
-                      <button type="button" onClick={() => loadForEdit(task.id)} className="btn-sm border-[rgba(108,92,231,0.4)] text-[var(--flux-primary-light)]">
+                      <button type="button" onClick={() => loadForEdit(task.id)} className="btn-sm border-[var(--flux-primary-alpha-40)] text-[var(--flux-primary-light)]">
                         Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteTask(task.id)}
-                        className="btn-sm border-[rgba(255,107,107,0.4)] text-[var(--flux-danger)]"
+                        className="btn-sm border-[var(--flux-danger-alpha-40)] text-[var(--flux-danger)]"
                       >
                         Excluir
                       </button>

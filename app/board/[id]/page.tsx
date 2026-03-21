@@ -146,12 +146,12 @@ export interface BoardData {
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
-  { key: "Refinamento Negócio/Técnico", label: "Refinamento", color: "#9B97C2" },
-  { key: "Backlog", label: "Backlog", color: "#6C5CE7" },
-  { key: "Priorizado", label: "Priorizado", color: "#00D2D3" },
-  { key: "Em Execução (Desenvolvimento)", label: "Em Execução", color: "#FDA7DF" },
-  { key: "Incidente", label: "Incidente", color: "#FFD93D" },
-  { key: "Em Produção", label: "Em Produção", color: "#00E676" },
+  { key: "Refinamento Negócio/Técnico", label: "Refinamento", color: "var(--flux-text-muted)" },
+  { key: "Backlog", label: "Backlog", color: "var(--flux-primary)" },
+  { key: "Priorizado", label: "Priorizado", color: "var(--flux-secondary)" },
+  { key: "Em Execução (Desenvolvimento)", label: "Em Execução", color: "var(--flux-accent)" },
+  { key: "Incidente", label: "Incidente", color: "var(--flux-warning)" },
+  { key: "Em Produção", label: "Em Produção", color: "var(--flux-success)" },
 ];
 
 export default function BoardPage() {

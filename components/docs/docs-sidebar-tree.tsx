@@ -11,7 +11,7 @@ type Props = {
 
 export function DocsSidebarTree({ docs, selectedId, onSelect, onCreate }: Props) {
   return (
-    <aside className="w-[300px] shrink-0 border-r border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-mid)] p-3">
+    <aside className="w-[300px] shrink-0 border-r border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-mid)] p-3">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-xs font-semibold uppercase text-[var(--flux-text-muted)]">Flux Docs</div>
         <button className="btn-primary px-2 py-1 text-xs" onClick={() => onCreate(null)}>
@@ -24,22 +24,22 @@ export function DocsSidebarTree({ docs, selectedId, onSelect, onCreate }: Props)
             <button
               className={`w-full rounded px-2 py-1.5 text-left text-sm ${
                 selectedId === doc.id
-                  ? "bg-[rgba(108,92,231,0.20)] text-[var(--flux-primary-light)]"
-                  : "text-[var(--flux-text)] hover:bg-[rgba(255,255,255,0.06)]"
+                  ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
+                  : "text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
               }`}
               onClick={() => onSelect(doc.id)}
             >
               {doc.title}
             </button>
             {doc.children.length > 0 && (
-              <div className="ml-3 mt-1 space-y-1 border-l border-[rgba(255,255,255,0.08)] pl-2">
+              <div className="ml-3 mt-1 space-y-1 border-l border-[var(--flux-chrome-alpha-08)] pl-2">
                 {doc.children.map((child) => (
                   <button
                     key={child.id}
                     className={`w-full rounded px-2 py-1.5 text-left text-xs ${
                       selectedId === child.id
-                        ? "bg-[rgba(108,92,231,0.20)] text-[var(--flux-primary-light)]"
-                        : "text-[var(--flux-text-muted)] hover:bg-[rgba(255,255,255,0.06)]"
+                        ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
                     }`}
                     onClick={() => onSelect(child.id)}
                   >

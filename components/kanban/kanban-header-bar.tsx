@@ -67,7 +67,7 @@ export function KanbanHeaderBar({
             onClick={() => setBoardView("kanban")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
               boardView === "kanban"
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_rgba(108,92,231,0.35)]"
+                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
             }`}
           >
@@ -78,7 +78,7 @@ export function KanbanHeaderBar({
             onClick={() => setBoardView("timeline")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold font-display transition-all duration-200 ${
               boardView === "timeline"
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_rgba(108,92,231,0.35)]"
+                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
             }`}
           >
@@ -105,13 +105,13 @@ export function KanbanHeaderBar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("board.filters.searchPlaceholder")}
-              className="w-full pl-8 pr-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200"
+              className="w-full pl-8 pr-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] outline-none transition-all duration-200"
             />
           </div>
           <select
             value={csvImportMode}
             onChange={(e) => setCsvImportMode(e.target.value as "replace" | "merge")}
-            className="shrink-0 min-w-[96px] px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] font-medium bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[rgba(108,92,231,0.2)] outline-none transition-all duration-200 cursor-pointer"
+            className="shrink-0 min-w-[96px] px-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] font-medium bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] outline-none transition-all duration-200 cursor-pointer"
             aria-label={t("board.toolbar.csvImportModeAria")}
           >
             <option value="replace">{t("board.toolbar.csvImportMode.replace")}</option>

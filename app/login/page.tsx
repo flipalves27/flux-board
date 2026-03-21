@@ -10,11 +10,11 @@ import { loginAction, registerAction } from "@/app/actions/auth";
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 44 44" fill="none" className={className} aria-hidden>
-      <path d="M8 32L16 20L24 26L36 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M30 10H36V16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="20" r="2.5" fill="rgba(253,167,223,0.8)" />
-      <circle cx="24" cy="26" r="2.5" fill="rgba(0,210,211,0.8)" />
-      <path d="M8 36H36" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
+      <path d="M8 32L16 20L24 26L36 10" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M30 10H36V16" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="16" cy="20" r="2.5" fill="var(--flux-accent-alpha-80)" />
+      <circle cx="24" cy="26" r="2.5" fill="var(--flux-secondary-alpha-80)" />
+      <path d="M8 36H36" stroke="var(--flux-chrome-alpha-30)" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -111,7 +111,7 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    "w-full px-3 py-2.5 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none transition-colors";
+    "w-full px-3 py-2.5 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none transition-colors";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
   const btnClass =
@@ -119,13 +119,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--flux-surface-dark)]">
-      <div className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad-xl)] shadow-[0_8px_32px_rgba(0,0,0,0.4)] w-full max-w-[400px] p-8">
+      <div className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-xl)] shadow-[var(--flux-shadow-login-panel)] w-full max-w-[400px] p-8">
         <div className="flex items-center gap-3 mb-6">
           <div
             className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
             style={{
               background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: "0 8px 32px rgba(108,92,231,0.4)",
+              boxShadow: "0 8px 32px var(--flux-primary-alpha-40)",
             }}
           >
             <FluxLogoIcon className="w-5 h-5" />
@@ -166,7 +166,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
+          <div className="bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
             {error}
           </div>
         )}

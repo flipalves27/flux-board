@@ -60,7 +60,7 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
           {value !== null ? value : "—"}
         </span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--flux-chrome-alpha-08)]">
         {value !== null && (
           <div className={`h-full rounded-full transition-all ${fillClass}`} style={{ width: `${value}%` }} />
         )}
@@ -404,7 +404,7 @@ export default function BoardsPage() {
               type="button"
               onClick={downloadExecutiveBrief}
               disabled={exportBusy !== null || boards.length === 0}
-              className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.35)] bg-[rgba(108,92,231,0.12)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-40 disabled:pointer-events-none"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] transition-colors hover:border-[var(--flux-primary)] disabled:opacity-40 disabled:pointer-events-none"
             >
               {exportBusy === "brief" ? t("exports.generatingBrief") : t("exports.executiveBrief")}
             </button>
@@ -412,7 +412,7 @@ export default function BoardsPage() {
               type="button"
               onClick={downloadPortfolioJson}
               disabled={exportBusy !== null || boards.length === 0}
-              className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.1)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] transition-colors hover:border-[var(--flux-secondary)] disabled:opacity-40 disabled:pointer-events-none"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] transition-colors hover:border-[var(--flux-secondary)] disabled:opacity-40 disabled:pointer-events-none"
             >
               {exportBusy === "json" ? t("exports.exportingJson") : t("exports.portfolioJson")}
             </button>
@@ -425,8 +425,8 @@ export default function BoardsPage() {
           <div
             className={`mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
               plan.atLimit
-                ? "border-[var(--flux-warning)] bg-[rgba(245,158,11,0.12)] text-[var(--flux-text)]"
-                : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)]"
+                ? "border-[var(--flux-warning)] bg-[var(--flux-amber-alpha-12)] text-[var(--flux-text)]"
+                : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)]"
             }`}
           >
             {plan.atLimit ? (
@@ -458,15 +458,15 @@ export default function BoardsPage() {
         ) : (
           <>
             <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] p-4">
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boards.length}</p>
               </div>
-              <div className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.28)] bg-[var(--flux-surface-card)] p-4">
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Atualizados hoje</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boardsUpdatedToday.length}</p>
               </div>
-              <div className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] p-4">
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
                   {boards.filter((b) => b.id === rebornId).length}
@@ -474,7 +474,7 @@ export default function BoardsPage() {
               </div>
             </section>
 
-            <section className="mb-6 rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.28)] bg-[var(--flux-surface-card)] p-5">
+            <section className="mb-6 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] p-5">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
@@ -505,7 +505,7 @@ export default function BoardsPage() {
                 )}
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-[var(--flux-rad)] border border-[rgba(255,107,107,0.2)] bg-[var(--flux-surface-elevated)] p-4">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-20)] bg-[var(--flux-surface-elevated)] p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                     Risco
                   </p>
@@ -517,7 +517,7 @@ export default function BoardsPage() {
                     <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgRisco} />
                   </div>
                 </div>
-                <div className="rounded-[var(--flux-rad)] border border-[rgba(0,210,211,0.25)] bg-[var(--flux-surface-elevated)] p-4">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-surface-elevated)] p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                     Throughput
                   </p>
@@ -529,7 +529,7 @@ export default function BoardsPage() {
                     <PortfolioMetricBar label="Média do portfólio" value={portfolioSummary.avgThroughput} />
                   </div>
                 </div>
-                <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-elevated)] p-4">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-elevated)] p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                     Previsibilidade
                   </p>
@@ -550,12 +550,12 @@ export default function BoardsPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("filters.searchPlaceholder")}
-                className="w-full rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
               />
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
-                className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 aria-label={t("filters.sortAriaLabel")}
               >
                 <option value="recent">{t("filters.sort.recent")}</option>
@@ -565,8 +565,8 @@ export default function BoardsPage() {
                 onClick={() => setShowOnlyUpdatedToday((v) => !v)}
                 className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
                   showOnlyUpdatedToday
-                    ? "border-[var(--flux-secondary)] bg-[rgba(0,210,211,0.12)] text-[var(--flux-secondary)]"
-                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    ? "border-[var(--flux-secondary)] bg-[var(--flux-secondary-alpha-12)] text-[var(--flux-secondary)]"
+                    : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
                 }`}
               >
                 {showOnlyUpdatedToday ? "Somente hoje: ON" : "Somente hoje: OFF"}
@@ -575,8 +575,8 @@ export default function BoardsPage() {
                 onClick={() => setShowOnlyFavorites((v) => !v)}
                 className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
                   showOnlyFavorites
-                    ? "border-[rgba(255,215,0,0.5)] bg-[rgba(255,215,0,0.12)] text-[var(--flux-text)]"
-                    : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    ? "border-[var(--flux-gold-alpha-50)] bg-[var(--flux-gold-alpha-12)] text-[var(--flux-text)]"
+                    : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
                 }`}
               >
                 {showOnlyFavorites ? "Só favoritos: ON" : "Só favoritos: OFF"}
@@ -585,7 +585,7 @@ export default function BoardsPage() {
 
             {(quickFavoriteBoards.length > 0 || quickRecentBoards.length > 0) && (
               <section className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div className="rounded-[var(--flux-rad)] border border-[rgba(255,215,0,0.25)] bg-[var(--flux-surface-card)] p-4">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-gold-alpha-25)] bg-[var(--flux-surface-card)] p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                       {t("favorites.title")}
@@ -598,7 +598,7 @@ export default function BoardsPage() {
                       <select
                         value={favoriteSortMode}
                         onChange={(e) => setFavoriteSortMode(e.target.value as "name" | "mostAccessed")}
-                        className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                        className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                         aria-label={t("favorites.sortAriaLabel")}
                       >
                         <option value="name">{t("favorites.sort.nameAZ")}</option>
@@ -617,7 +617,7 @@ export default function BoardsPage() {
                         <button
                           key={board.id}
                           onClick={() => handleOpenBoard(board.id)}
-                          className="rounded-full border border-[rgba(255,215,0,0.25)] bg-[rgba(255,215,0,0.1)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[rgba(255,215,0,0.48)]"
+                          className="rounded-full border border-[var(--flux-gold-alpha-25)] bg-[var(--flux-gold-alpha-10)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[var(--flux-gold-alpha-48)]"
                         >
                           {board.name}
                           {favoriteSortMode === "mostAccessed" && (
@@ -631,7 +631,7 @@ export default function BoardsPage() {
                   )}
                 </div>
 
-                <div className="rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] p-4">
+                <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                       {t("recents.title")}
@@ -639,7 +639,7 @@ export default function BoardsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleClearRecents}
-                        className="rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-text)]"
+                        className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-xs text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-text)]"
                       >
                         {t("recents.clear")}
                       </button>
@@ -656,7 +656,7 @@ export default function BoardsPage() {
                         <button
                           key={`${board.id}-${visitedAt}`}
                           onClick={() => handleOpenBoard(board.id)}
-                          className="rounded-full border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.11)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[var(--flux-primary)]"
+                          className="rounded-full border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-11)] px-3 py-1 text-xs font-semibold text-[var(--flux-text)] hover:border-[var(--flux-primary)]"
                           title={`Ultimo acesso: ${formatDate(visitedAt)}`}
                         >
                           {board.name}
@@ -671,7 +671,7 @@ export default function BoardsPage() {
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
               <button
                 onClick={openNewModal}
-                className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[rgba(108,92,231,0.3)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[rgba(108,92,231,0.08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
+                className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[var(--flux-primary-alpha-30)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
               >
                 {t("actions.newBoard")}
               </button>
@@ -685,14 +685,14 @@ export default function BoardsPage() {
                 return (
                   <div
                     key={b.id}
-                    className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
+                    className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
                     onClick={() => handleOpenBoard(b.id)}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
                         {b.clientLabel ? (
-                          <span className="mt-1 inline-block max-w-full truncate rounded-full border border-[rgba(0,210,211,0.35)] bg-[rgba(0,210,211,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
+                          <span className="mt-1 inline-block max-w-full truncate rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
                             {b.clientLabel}
                           </span>
                         ) : null}
@@ -704,8 +704,8 @@ export default function BoardsPage() {
                         }}
                         className={`rounded-md border px-2 py-1 text-xs transition-colors ${
                           favoriteBoardIds.includes(b.id)
-                            ? "border-[rgba(255,215,0,0.5)] bg-[rgba(255,215,0,0.15)] text-[var(--flux-text)]"
-                            : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                            ? "border-[var(--flux-gold-alpha-50)] bg-[var(--flux-gold-alpha-15)] text-[var(--flux-text)]"
+                            : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
                         }`}
                         aria-label={favoriteBoardIds.includes(b.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                         title={favoriteBoardIds.includes(b.id) ? "Desfavoritar" : "Favoritar"}
@@ -714,7 +714,7 @@ export default function BoardsPage() {
                       </button>
                     </div>
                     {b.portfolio && b.portfolio.cardCount > 0 ? (
-                      <div className="space-y-2 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-elevated)]/80 p-3">
+                      <div className="space-y-2 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]/80 p-3">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                           Score do board
                         </p>
@@ -731,7 +731,7 @@ export default function BoardsPage() {
                       Atualizado: {formatDate(b.lastUpdated)}
                     </span>
                     {wasUpdatedToday && (
-                      <span className="w-fit rounded-full border border-[rgba(0,210,211,0.38)] bg-[rgba(0,210,211,0.12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
+                      <span className="w-fit rounded-full border border-[var(--flux-secondary-alpha-38)] bg-[var(--flux-secondary-alpha-12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
                         Hoje
                       </span>
                     )}
@@ -743,7 +743,7 @@ export default function BoardsPage() {
                               e.stopPropagation();
                               deleteBoard(b.id, b.name);
                             }}
-                            className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
                           >
                             Excluir
                           </button>
@@ -758,7 +758,7 @@ export default function BoardsPage() {
                             e.stopPropagation();
                             openEditModal(b.id, b.name);
                           }}
-                          className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(108,92,231,0.1)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                          className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-10)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
                         >
                           Renomear
                         </button>
@@ -767,7 +767,7 @@ export default function BoardsPage() {
                             e.stopPropagation();
                             deleteBoard(b.id, b.name);
                           }}
-                          className="btn-sm border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[rgba(255,107,107,0.12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                          className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
                         >
                           Excluir
                         </button>
@@ -797,7 +797,7 @@ export default function BoardsPage() {
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[320px] shadow-xl"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[320px] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-display font-bold mb-4 text-[var(--flux-text)]">
@@ -819,7 +819,7 @@ export default function BoardsPage() {
                   }
                 }}
                 placeholder={t("modal.boardNamePlaceholder")}
-                className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 autoFocus
               />
             </div>

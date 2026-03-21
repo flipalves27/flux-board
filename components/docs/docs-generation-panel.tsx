@@ -238,10 +238,10 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
   };
 
   return (
-    <div className="border-b border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-elevated)]">
+    <div className="border-b border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]">
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-[rgba(255,255,255,0.04)]"
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-[var(--flux-chrome-alpha-04)]"
         onClick={() => setOpen((o) => !o)}
       >
         <div>
@@ -264,8 +264,8 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                   onClick={() => setFlow(f.id)}
                   className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
                     flow === f.id
-                      ? "border-[var(--flux-primary)] bg-[rgba(99,102,241,0.12)]"
-                      : "border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)]"
+                      ? "border-[var(--flux-primary)] bg-[var(--flux-indigo-500-alpha-12)]"
+                      : "border-[var(--flux-chrome-alpha-10)] hover:border-[var(--flux-chrome-alpha-20)]"
                   }`}
                 >
                   <div className="font-semibold text-[var(--flux-text)]">{f.title}</div>
@@ -278,7 +278,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
             <select
               value={boardId}
               onChange={(e) => setBoardId(e.target.value)}
-              className="w-full rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
+              className="w-full rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
             >
               {boards.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -293,7 +293,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                 <input
                   value={quarter}
                   onChange={(e) => setQuarter(e.target.value)}
-                  className="w-full rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 font-mono text-sm text-[var(--flux-text)]"
+                  className="w-full rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 font-mono text-sm text-[var(--flux-text)]"
                 />
               </>
             )}
@@ -304,7 +304,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                 <select
                   value={dailyInsightId}
                   onChange={(e) => setDailyInsightId(e.target.value)}
-                  className="w-full rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                  className="w-full rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
                 >
                   <option value="">Usar a mais recente</option>
                   {dailyOptions.map((d) => (
@@ -321,7 +321,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                   onChange={(e) => setTranscript(e.target.value)}
                   rows={4}
                   placeholder="Cole aqui a transcrição se quiser ignorar o histórico da Daily…"
-                  className="w-full resize-y rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                  className="w-full resize-y rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
                 />
               </>
             )}
@@ -334,7 +334,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={5}
                   placeholder="Ex.: Liste riscos do pipeline e sugira mitigação com base nos cards…"
-                  className="w-full resize-y rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                  className="w-full resize-y rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
                 />
               </>
             )}
@@ -344,7 +344,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Deixe em branco para um título sugerido"
-              className="w-full rounded border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
+              className="w-full rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)]"
             />
 
             <button
@@ -356,7 +356,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
               {generating ? "Gerando…" : "Executar pipeline"}
             </button>
 
-            {error && <div className="rounded border border-[var(--flux-danger)] bg-[rgba(239,68,68,0.08)] px-3 py-2 text-xs text-[var(--flux-danger)]">{error}</div>}
+            {error && <div className="rounded border border-[var(--flux-danger)] bg-[var(--flux-red-500-alpha-08)] px-3 py-2 text-xs text-[var(--flux-danger)]">{error}</div>}
             {usedAi === false && !error && (
               <p className="text-xs text-[var(--flux-text-muted)]">
                 A IA não respondeu no formato esperado; usamos o relatório estruturado. Verifique TOGETHER_API_KEY no ambiente.
@@ -364,7 +364,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
             )}
           </div>
 
-          <div className="flex min-h-[280px] flex-col rounded-lg border border-[rgba(255,255,255,0.08)] bg-[var(--flux-surface-card)] p-3">
+          <div className="flex min-h-[280px] flex-col rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-3">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pipeline</div>
             <ol className="mb-4 space-y-2">
               {steps.length === 0 && !generating && (
@@ -391,7 +391,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
               ))}
             </ol>
             <div className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pré-visualização</div>
-            <pre className="mt-2 max-h-[220px] flex-1 overflow-auto whitespace-pre-wrap rounded border border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.2)] p-2 font-mono text-[11px] leading-relaxed text-[var(--flux-text)]">
+            <pre className="mt-2 max-h-[220px] flex-1 overflow-auto whitespace-pre-wrap rounded border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-20)] p-2 font-mono text-[11px] leading-relaxed text-[var(--flux-text)]">
               {preview || (generating ? "Aguardando conteúdo…" : "—")}
             </pre>
           </div>

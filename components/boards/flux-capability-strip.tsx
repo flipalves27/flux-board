@@ -72,7 +72,7 @@ export function FluxCapabilityStrip() {
 
   return (
     <section
-      className="mb-6 rounded-[var(--flux-rad-lg)] border border-[rgba(108,92,231,0.14)] bg-[linear-gradient(135deg,rgba(108,92,231,0.07),rgba(0,210,211,0.04))] p-4 sm:p-5"
+      className="mb-6 rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-14)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-07),var(--flux-secondary-alpha-04))] p-4 sm:p-5"
       aria-labelledby="flux-capability-title"
     >
       <div className="mb-4 max-w-3xl">
@@ -87,17 +87,17 @@ export function FluxCapabilityStrip() {
           const isReports = key === "reports";
           const inner = (
             <div
-              className={`flex h-full gap-3 rounded-[var(--flux-rad)] border border-[rgba(255,255,255,0.06)] bg-[var(--flux-surface-card)]/90 p-3 text-left transition-all duration-200 ease-out ${
+              className={`flex h-full gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-surface-card)]/90 p-3 text-left transition-all duration-200 ease-out ${
                 isReports
-                  ? "hover:border-[rgba(108,92,231,0.45)] hover:shadow-[0_8px_24px_rgba(108,92,231,0.12)]"
-                  : "hover:border-[rgba(108,92,231,0.22)]"
+                  ? "hover:border-[var(--flux-primary-alpha-45)] hover:shadow-[0_8px_24px_var(--flux-primary-alpha-12)]"
+                  : "hover:border-[var(--flux-primary-alpha-22)]"
               }`}
             >
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--flux-rad-sm)] ${
                   isReports
-                    ? "bg-[rgba(108,92,231,0.2)] text-[var(--flux-primary-light)]"
-                    : "bg-[rgba(255,255,255,0.04)] text-[var(--flux-secondary)]"
+                    ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
+                    : "bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-secondary)]"
                 }`}
               >
                 <Icon className="h-5 w-5" />

@@ -62,8 +62,8 @@ function getValidacoesIntegradas(t: (key: string) => string): ValidacaoIntegrada
         </svg>
       ),
       color: "text-teal-700",
-      bg: "bg-[rgba(13,148,136,0.12)]",
-      border: "border-[rgba(13,148,136,0.35)]",
+      bg: "bg-[var(--flux-mapa-teal-12)]",
+      border: "border-[var(--flux-mapa-teal-35)]",
     },
     {
       id: "susep",
@@ -84,8 +84,8 @@ function getValidacoesIntegradas(t: (key: string) => string): ValidacaoIntegrada
         </svg>
       ),
       color: "text-indigo-700",
-      bg: "bg-[rgba(79,70,229,0.1)]",
-      border: "border-[rgba(79,70,229,0.35)]",
+      bg: "bg-[var(--flux-mapa-indigo-10)]",
+      border: "border-[var(--flux-mapa-indigo-35)]",
     },
     {
       id: "serasa",
@@ -114,8 +114,8 @@ function getValidacoesIntegradas(t: (key: string) => string): ValidacaoIntegrada
         </svg>
       ),
       color: "text-rose-800",
-      bg: "bg-[rgba(185,28,28,0.1)]",
-      border: "border-[rgba(185,28,28,0.35)]",
+      bg: "bg-[var(--flux-mapa-red-10)]",
+      border: "border-[var(--flux-mapa-red-35)]",
     },
   ];
 }
@@ -134,10 +134,10 @@ function getOpInfo(
 }
 
 function opBadgeClass(key: string): string {
-  if (key === "serpro") return "bg-[rgba(13,148,136,0.14)] text-[#0D9488] border-[rgba(13,148,136,0.4)]";
-  if (key === "susep") return "bg-[rgba(79,70,229,0.12)] text-[#4F46E5] border-[rgba(79,70,229,0.35)]";
-  if (key === "serasa") return "bg-[rgba(185,28,28,0.12)] text-[#B91C1C] border-[rgba(185,28,28,0.4)]";
-  return "bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] border-[rgba(255,255,255,0.12)]";
+  if (key === "serpro") return "bg-[var(--flux-mapa-teal-14)] text-[var(--flux-mapa-text-teal)] border-[var(--flux-mapa-teal-40)]";
+  if (key === "susep") return "bg-[var(--flux-mapa-indigo-12)] text-[var(--flux-mapa-text-indigo)] border-[var(--flux-mapa-indigo-35)]";
+  if (key === "serasa") return "bg-[var(--flux-mapa-red-12)] text-[var(--flux-mapa-text-red)] border-[var(--flux-mapa-red-40)]";
+  return "bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] border-[var(--flux-chrome-alpha-12)]";
 }
 
 export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
@@ -173,11 +173,11 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
       onClick={onClose}
     >
       <div
-        className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-2xl w-full max-w-[960px] max-h-[90vh] overflow-y-auto shadow-xl relative modal-content-animate"
+        className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-2xl w-full max-w-[960px] max-h-[90vh] overflow-y-auto shadow-xl relative modal-content-animate"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -189,7 +189,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
           type="button"
           onClick={onClose}
           ref={closeBtnRef}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] transition-all duration-200"
+          className="absolute top-4 right-4 w-9 h-9 rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-lg hover:bg-[var(--flux-chrome-alpha-08)] hover:text-[var(--flux-text)] transition-all duration-200"
         >
           ×
         </button>
@@ -256,8 +256,8 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                   onBlur={() => setSelectedCard(null)}
                   className={`rounded-xl border-2 p-4 transition-all duration-200 grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_minmax(180px,1.2fr)_1.4fr] gap-3 items-center ${
                     selectedCard === i
-                      ? "bg-[rgba(108,92,231,0.08)] border-[var(--flux-primary)] shadow-md"
-                      : "bg-[var(--flux-surface-elevated)] border-[rgba(255,255,255,0.12)] hover:bg-[rgba(108,92,231,0.05)] hover:border-[var(--flux-primary)]/50"
+                      ? "bg-[var(--flux-primary-alpha-08)] border-[var(--flux-primary)] shadow-md"
+                      : "bg-[var(--flux-surface-elevated)] border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-primary-alpha-05)] hover:border-[var(--flux-primary)]/50"
                   }`}
                 >
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--flux-success)]/15 text-[var(--flux-success)] flex-shrink-0">
@@ -322,7 +322,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
                       value={d.operacoes}
                       onChange={(e) => update(i, "operacoes", e.target.value)}
                       placeholder={t("mapaModal.fields.validationsPlaceholder")}
-                      className="mt-1.5 w-full bg-[var(--flux-surface-elevated)] border border-[rgba(255,255,255,0.12)] rounded-lg px-2 py-1 text-xs text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/30 outline-none"
+                      className="mt-1.5 w-full bg-[var(--flux-surface-elevated)] border border-[var(--flux-chrome-alpha-12)] rounded-lg px-2 py-1 text-xs text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-1 focus:ring-[var(--flux-primary)]/30 outline-none"
                     />
                   </div>
                 </div>
@@ -330,7 +330,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t border-[rgba(255,255,255,0.08)]">
+          <div className="flex gap-3 justify-end pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
             <button type="button" onClick={onClose} className="btn-secondary">
               {t("mapaModal.buttons.cancel")}
             </button>

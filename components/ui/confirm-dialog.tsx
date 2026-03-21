@@ -50,7 +50,7 @@ export function ConfirmDialog({
     >
       <div
         ref={panelRef}
-        className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
+        className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
@@ -62,7 +62,7 @@ export function ConfirmDialog({
         </h3>
         {description && <p className="text-sm text-[var(--flux-text-muted)] mb-4">{description}</p>}
 
-        <div className="flex gap-3 justify-end pt-2 border-t border-[rgba(255,255,255,0.08)] mt-4">
+        <div className="flex gap-3 justify-end pt-2 border-t border-[var(--flux-chrome-alpha-08)] mt-4">
           <button ref={cancelBtnRef} type="button" onClick={onCancel} className="btn-secondary">
             {resolvedCancelText}
           </button>

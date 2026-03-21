@@ -214,10 +214,10 @@ export function BoardAutomationsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="automations-title"
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-[rgba(108,92,231,0.35)] bg-[var(--flux-surface-card)] shadow-xl"
+        className="w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-card)] shadow-xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[rgba(255,255,255,0.08)]">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--flux-chrome-alpha-08)]">
           <h2 id="automations-title" className="text-lg font-semibold text-[var(--flux-text)] font-display">
             {t("title")}
           </h2>
@@ -229,7 +229,7 @@ export function BoardAutomationsModal({
         <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
           <p className="text-sm text-[var(--flux-text-muted)]">{t("hint")}</p>
 
-          <div className="rounded-xl border border-[rgba(108,92,231,0.28)] bg-[rgba(108,92,231,0.06)] p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-06)] p-4 space-y-3">
             <div className="text-sm font-semibold text-[var(--flux-primary-light)]">{t("nlTitle")}</div>
             <p className="text-xs text-[var(--flux-text-muted)]">{t("nlHint")}</p>
             <textarea
@@ -237,7 +237,7 @@ export function BoardAutomationsModal({
               onChange={(e) => setNlText(e.target.value)}
               rows={3}
               placeholder={t("nlPlaceholder")}
-              className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
+              className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
               disabled={nlLoading || loading}
             />
             <div className="flex flex-wrap items-center gap-2">
@@ -260,7 +260,7 @@ export function BoardAutomationsModal({
               </div>
             ) : null}
             {nlPreview ? (
-              <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[var(--flux-surface-elevated)]/50 p-3 text-sm text-[var(--flux-text)]">
+              <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)]/50 p-3 text-sm text-[var(--flux-text)]">
                 {nlPreview}
               </div>
             ) : null}
@@ -290,7 +290,7 @@ export function BoardAutomationsModal({
               {rules.map((rule, idx) => (
                 <div
                   key={rule.id}
-                  className="rounded-xl border border-[rgba(255,255,255,0.08)] p-4 space-y-3 bg-[var(--flux-surface-elevated)]/40"
+                  className="rounded-xl border border-[var(--flux-chrome-alpha-08)] p-4 space-y-3 bg-[var(--flux-surface-elevated)]/40"
                 >
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2 text-xs text-[var(--flux-text-muted)]">
@@ -303,7 +303,7 @@ export function BoardAutomationsModal({
                     </label>
                     <input
                       type="text"
-                      className="flex-1 min-w-[120px] rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1 text-sm"
+                      className="flex-1 min-w-[120px] rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1 text-sm"
                       placeholder={t("namePlaceholder")}
                       value={rule.name || ""}
                       onChange={(e) => updateRule(idx, { name: e.target.value })}
@@ -321,7 +321,7 @@ export function BoardAutomationsModal({
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-[var(--flux-text-muted)]">{t("trigger")}</label>
                       <select
-                        className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-2 text-sm"
+                        className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-2 text-sm"
                         value={rule.trigger.type}
                         onChange={(e) => setTriggerType(idx, e.target.value as AutomationTrigger["type"])}
                       >
@@ -336,7 +336,7 @@ export function BoardAutomationsModal({
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-[var(--flux-text-muted)]">{t("action")}</label>
                       <select
-                        className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-2 text-sm"
+                        className="w-full rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-2 text-sm"
                         value={rule.action.type}
                         onChange={(e) => setActionType(idx, e.target.value as AutomationAction["type"])}
                       >
@@ -387,7 +387,7 @@ export function BoardAutomationsModal({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[rgba(255,255,255,0.08)]">
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[var(--flux-chrome-alpha-08)]">
           <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
             {t("close")}
           </button>
@@ -415,7 +415,7 @@ function TriggerFields({
         <label className="text-xs text-[var(--flux-text-muted)] flex flex-col gap-1">
           Coluna
           <select
-            className="rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm min-w-[180px]"
+            className="rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm min-w-[180px]"
             value={trigger.columnKey}
             onChange={(e) => onChange({ ...trigger, columnKey: e.target.value })}
           >
@@ -433,7 +433,7 @@ function TriggerFields({
               type="number"
               min={1}
               max={365}
-              className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+              className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
               value={trigger.days}
               onChange={(e) => onChange({ ...trigger, days: Number(e.target.value) || 1 })}
             />
@@ -448,7 +448,7 @@ function TriggerFields({
         Tag
         <input
           type="text"
-          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={trigger.tag}
           onChange={(e) => onChange({ ...trigger, tag: e.target.value })}
         />
@@ -463,7 +463,7 @@ function TriggerFields({
           type="number"
           min={0}
           max={90}
-          className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={trigger.days}
           onChange={(e) => onChange({ ...trigger, days: Number(e.target.value) || 0 })}
         />
@@ -478,7 +478,7 @@ function TriggerFields({
           type="number"
           min={1}
           max={100}
-          className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="w-24 rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={trigger.percent}
           onChange={(e) => onChange({ ...trigger, percent: Number(e.target.value) || 1 })}
         />
@@ -504,7 +504,7 @@ function ActionFields({
       <label className="text-xs text-[var(--flux-text-muted)] flex flex-col gap-1 max-w-xs">
         Prioridade
         <select
-          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={action.priority}
           onChange={(e) => onChange({ ...action, priority: e.target.value })}
         >
@@ -522,7 +522,7 @@ function ActionFields({
       <label className="text-xs text-[var(--flux-text-muted)] flex flex-col gap-1 max-w-xs">
         Status / progresso
         <select
-          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={action.progress}
           onChange={(e) => onChange({ ...action, progress: e.target.value })}
         >
@@ -541,7 +541,7 @@ function ActionFields({
         Tag
         <input
           type="text"
-          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[rgba(255,255,255,0.1)] px-2 py-1.5 text-sm"
+          className="rounded-lg bg-[var(--flux-surface-dark)] border border-[var(--flux-chrome-alpha-10)] px-2 py-1.5 text-sm"
           value={action.tag}
           onChange={(e) => onChange({ ...action, tag: e.target.value })}
         />

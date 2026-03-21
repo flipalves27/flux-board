@@ -117,7 +117,7 @@ export function CardModalLayout() {
         onClick={onClose}
       />
       <div
-        className="relative flex w-full max-w-[760px] flex-col overflow-hidden rounded-3xl border border-[rgba(108,92,231,0.22)] bg-[var(--flux-surface-card)] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_32px_96px_-24px_rgba(0,0,0,0.65),0_0_120px_-40px_rgba(108,92,231,0.35)] max-h-[min(90vh,880px)] card-modal-content"
+        className="relative flex w-full max-w-[760px] flex-col overflow-hidden rounded-3xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] max-h-[min(90vh,880px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -133,7 +133,7 @@ export function CardModalLayout() {
           }}
         />
 
-        <header className="relative shrink-0 overflow-hidden border-b border-[rgba(255,255,255,0.06)] px-8 pb-5 pt-7">
+        <header className="relative shrink-0 overflow-hidden border-b border-[var(--flux-chrome-alpha-06)] px-8 pb-5 pt-7">
           <div
             className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
             style={{
@@ -149,11 +149,11 @@ export function CardModalLayout() {
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
+                <span className="inline-flex items-center rounded-full border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
                   {mode === "edit" ? t("cardModal.modePill.edit") : t("cardModal.modePill.create")}
                 </span>
                 {mode === "edit" && (
-                  <span className="inline-flex items-center rounded-full border border-[rgba(116,185,255,0.35)] bg-[rgba(116,185,255,0.1)] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--flux-info)]">
+                  <span className="inline-flex items-center rounded-full border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-10)] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--flux-info)]">
                     {card.id}
                   </span>
                 )}
@@ -169,7 +169,7 @@ export function CardModalLayout() {
               type="button"
               onClick={onClose}
               ref={closeBtnRef}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] text-[var(--flux-text-muted)] motion-safe:transition-all motion-safe:duration-200 hover:border-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.08)] hover:text-[var(--flux-text)] motion-safe:hover:rotate-90 active:scale-95"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)] motion-safe:transition-all motion-safe:duration-200 hover:border-[var(--flux-chrome-alpha-18)] hover:bg-[var(--flux-chrome-alpha-08)] hover:text-[var(--flux-text)] motion-safe:hover:rotate-90 active:scale-95"
               aria-label={t("cardModal.aria.close")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
@@ -192,8 +192,8 @@ export function CardModalLayout() {
                   onClick={() => setActiveTab(id)}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-semibold font-display transition-all duration-200 ${
                     selected
-                      ? "bg-[rgba(108,92,231,0.22)] text-[var(--flux-primary-light)] border border-[rgba(108,92,231,0.45)] shadow-[0_0_0_1px_rgba(108,92,231,0.12)]"
-                      : "border border-transparent text-[var(--flux-text-muted)] hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--flux-text)]"
+                      ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)] border border-[var(--flux-primary-alpha-45)] shadow-[0_0_0_1px_var(--flux-primary-alpha-12)]"
+                      : "border border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-chrome-alpha-04)] hover:text-[var(--flux-text)]"
                   }`}
                 >
                   {t(`cardModal.tabs.${labelKey}`)}
@@ -230,7 +230,7 @@ export function CardModalLayout() {
             </Suspense>
           )}
 
-          <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-[rgba(255,255,255,0.08)] flex-wrap">
+          <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-[var(--flux-chrome-alpha-08)] flex-wrap">
             {mode === "edit" && onDelete && (
               <button type="button" onClick={() => setConfirmDeleteOpen(true)} className="mr-auto btn-danger">
                 {t("cardModal.buttons.delete")}

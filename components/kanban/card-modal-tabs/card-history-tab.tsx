@@ -20,9 +20,9 @@ export default function CardHistoryTab({ cardId: _cardId }: CardModalTabBaseProp
 
   return (
     <CardModalSection title={t("cardModal.history.title")} description={t("cardModal.history.description")}>
-      <ul className="space-y-3 border-l-2 border-[rgba(108,92,231,0.35)] pl-4">
+      <ul className="space-y-3 border-l-2 border-[var(--flux-primary-alpha-35)] pl-4">
         <li className="relative">
-          <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--flux-primary)] ring-4 ring-[rgba(108,92,231,0.15)]" />
+          <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--flux-primary)] ring-4 ring-[var(--flux-primary-alpha-15)]" />
           <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
             {t("cardModal.history.currentColumn")}
           </div>
@@ -30,7 +30,7 @@ export default function CardHistoryTab({ cardId: _cardId }: CardModalTabBaseProp
         </li>
         {enteredAt ? (
           <li className="relative">
-            <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--flux-secondary)] ring-4 ring-[rgba(0,210,211,0.12)]" />
+            <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--flux-secondary)] ring-4 ring-[var(--flux-secondary-alpha-12)]" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
               {t("cardModal.history.columnEntered")}
             </div>
@@ -49,13 +49,13 @@ export default function CardHistoryTab({ cardId: _cardId }: CardModalTabBaseProp
         )}
         {automationEntries.length > 0 ? (
           <li className="relative pt-1">
-            <span className="absolute -left-[21px] top-2 h-2.5 w-2.5 rounded-full bg-[rgba(255,217,61,0.9)] ring-4 ring-[rgba(255,217,61,0.12)]" />
+            <span className="absolute -left-[21px] top-2 h-2.5 w-2.5 rounded-full bg-[var(--flux-warning-alpha-90)] ring-4 ring-[var(--flux-warning-alpha-12)]" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">
               {t("cardModal.history.automations")}
             </div>
             <ul className="space-y-2">
               {automationEntries.map(({ automationId, at }) => (
-                <li key={automationId} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.12)] px-3 py-2">
+                <li key={automationId} className="rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-12)] px-3 py-2">
                   <div className="font-mono text-[11px] text-[var(--flux-primary-light)]">{automationId}</div>
                   <div className="text-[11px] text-[var(--flux-text-muted)]">
                     {(() => {

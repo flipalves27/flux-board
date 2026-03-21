@@ -142,12 +142,12 @@ export default function BillingPage() {
         ) : (
           <>
             {error && (
-              <div className="mb-4 bg-[rgba(255,107,107,0.12)] border border-[rgba(255,107,107,0.3)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
+              <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
                 {error}
               </div>
             )}
 
-            <section className="rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.2)] bg-[var(--flux-surface-card)] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+            <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="font-display font-bold text-2xl text-[var(--flux-text)]">Planos</h2>
@@ -182,7 +182,7 @@ export default function BillingPage() {
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                 {/* Free */}
-                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "free" ? "border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.08)]" : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)]"}`}>
+                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "free" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Free</p>
                   <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">R$ 0</p>
                   <div className="mt-3 space-y-1 text-xs text-[var(--flux-text-muted)]">
@@ -201,7 +201,7 @@ export default function BillingPage() {
                 </div>
 
                 {/* Pro */}
-                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "pro" ? "border-[rgba(108,92,231,0.55)] bg-[rgba(108,92,231,0.10)]" : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)]"}`}>
+                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "pro" ? "border-[var(--flux-primary-alpha-55)] bg-[var(--flux-primary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pro</p>
                   <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">R$/usuário/mês</p>
                   <div className="mt-3 space-y-1 text-xs text-[var(--flux-text-muted)]">
@@ -229,7 +229,7 @@ export default function BillingPage() {
                         const v = Number(e.target.value);
                         setSeats(Number.isFinite(v) ? Math.max(1, v) : 1);
                       }}
-                      className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                       disabled={busy || plan === "pro"}
                     />
                   </div>
@@ -247,7 +247,7 @@ export default function BillingPage() {
                 </div>
 
                 {/* Business */}
-                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "business" ? "border-[rgba(0,210,211,0.55)] bg-[rgba(0,210,211,0.10)]" : "border-[rgba(255,255,255,0.12)] bg-[var(--flux-surface-elevated)]"}`}>
+                <div className={`rounded-[var(--flux-rad)] border p-5 ${plan === "business" ? "border-[var(--flux-secondary-alpha-55)] bg-[var(--flux-secondary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Business</p>
                   <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">R$/usuário/mês</p>
                   <div className="mt-3 space-y-1 text-xs text-[var(--flux-text-muted)]">
@@ -272,7 +272,7 @@ export default function BillingPage() {
                         const v = Number(e.target.value);
                         setSeats(Number.isFinite(v) ? Math.max(1, v) : 1);
                       }}
-                      className="w-full px-3 py-2 border border-[rgba(255,255,255,0.12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                       disabled={busy || plan === "business"}
                     />
                   </div>

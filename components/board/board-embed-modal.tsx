@@ -55,14 +55,14 @@ export function BoardEmbedModal({ open, onClose, boardId, getHeaders }: Props) {
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm" role="dialog" aria-modal>
-      <div className="w-full max-w-lg rounded-[var(--flux-rad-xl)] border border-[rgba(108,92,231,0.25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_rgba(0,0,0,0.45)] p-6">
+      <div className="w-full max-w-lg rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_var(--flux-black-alpha-45)] p-6">
         <h2 className="text-lg font-semibold text-[var(--flux-text)] font-display">Widget para sites externos</h2>
         <p className="text-sm text-[var(--flux-text-muted)] mt-1 mb-4">
           Leitura em tempo quase real (atualização a cada 30s). Cole o iframe no site, Notion ou intranet.
         </p>
 
         {error && (
-          <div className="mb-3 text-sm text-[var(--flux-danger)] border border-[rgba(255,107,107,0.35)] rounded-[var(--flux-rad)] px-3 py-2">
+          <div className="mb-3 text-sm text-[var(--flux-danger)] border border-[var(--flux-danger-alpha-35)] rounded-[var(--flux-rad)] px-3 py-2">
             {error}
           </div>
         )}
@@ -92,7 +92,7 @@ export function BoardEmbedModal({ open, onClose, boardId, getHeaders }: Props) {
         {iframeSnippet && (
           <div className="space-y-2">
             <p className="text-xs text-[var(--flux-secondary)]">Cole este código no destino:</p>
-            <pre className="text-[10px] font-mono p-3 rounded-[var(--flux-rad)] bg-[rgba(0,0,0,0.35)] overflow-x-auto whitespace-pre-wrap break-all border border-[rgba(255,255,255,0.08)]">
+            <pre className="text-[10px] font-mono p-3 rounded-[var(--flux-rad)] bg-[var(--flux-black-alpha-35)] overflow-x-auto whitespace-pre-wrap break-all border border-[var(--flux-chrome-alpha-08)]">
               {iframeSnippet}
             </pre>
             <button type="button" className="btn-secondary text-sm" onClick={() => void copySnippet()}>

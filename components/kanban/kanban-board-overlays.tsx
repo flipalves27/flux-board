@@ -181,11 +181,11 @@ export function KanbanBoardOverlays({
 
       {addColumnOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[400] flex items-center justify-center"
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[400] flex items-center justify-center"
           onClick={() => setAddColumnOpen(false)}
         >
           <div
-            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
             onClick={(e) => e.stopPropagation()}
             ref={addColumnDialogRef}
             role="dialog"
@@ -227,9 +227,9 @@ export function KanbanBoardOverlays({
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/50 z-[400] flex items-center justify-center">
+        <div className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[400] flex items-center justify-center">
           <div
-            className="bg-[var(--flux-surface-card)] border border-[rgba(108,92,231,0.2)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl"
             ref={confirmDeleteDialogRef}
             role="dialog"
             aria-modal="true"

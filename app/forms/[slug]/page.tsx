@@ -83,7 +83,7 @@ export default function PublicIntakeFormPage() {
 
   return (
     <main className="min-h-screen bg-[var(--flux-surface-dark)] px-4 py-10">
-      <div className="max-w-[760px] mx-auto rounded-[var(--flux-rad)] border border-[rgba(108,92,231,0.24)] bg-[var(--flux-surface-card)] p-6 md:p-8">
+      <div className="max-w-[760px] mx-auto rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-6 md:p-8">
         {loading && <p className="text-[var(--flux-text-muted)]">Carregando formulário...</p>}
         {!loading && error && <p className="text-[var(--flux-danger)]">{error}</p>}
         {!loading && !error && form && (
@@ -91,7 +91,7 @@ export default function PublicIntakeFormPage() {
             <h1 className="font-display text-2xl font-bold text-[var(--flux-text)]">{form.title}</h1>
             {form.description && <p className="mt-2 text-sm text-[var(--flux-text-muted)]">{form.description}</p>}
             {done && (
-              <p className="mt-4 rounded-[var(--flux-rad-sm)] border border-[rgba(0,230,118,0.4)] bg-[rgba(0,230,118,0.12)] px-3 py-2 text-sm text-[var(--flux-text)]">
+              <p className="mt-4 rounded-[var(--flux-rad-sm)] border border-[var(--flux-success-alpha-40)] bg-[var(--flux-success-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]">
                 Demanda enviada com sucesso. Seu card já foi criado no board.
               </p>
             )}
@@ -102,7 +102,7 @@ export default function PublicIntakeFormPage() {
                   required
                   value={requesterName}
                   onChange={(e) => setRequesterName(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -111,7 +111,7 @@ export default function PublicIntakeFormPage() {
                   type="email"
                   value={requesterEmail}
                   onChange={(e) => setRequesterEmail(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -121,7 +121,7 @@ export default function PublicIntakeFormPage() {
                   minLength={3}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -132,7 +132,7 @@ export default function PublicIntakeFormPage() {
                   rows={6}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -141,7 +141,7 @@ export default function PublicIntakeFormPage() {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="Comercial, Tomador"
-                  className="rounded-[var(--flux-rad-sm)] border border-[rgba(255,255,255,0.16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <button type="submit" disabled={submitting} className="btn-primary mt-1 disabled:opacity-60">
