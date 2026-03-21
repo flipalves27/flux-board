@@ -179,6 +179,7 @@
       "board": "Board",
       "showDiag": "Ver diagnóstico (métricas)",
       "hideDiag": "Ocultar diagnóstico",
+      "suggested": "Ação sugerida",
       "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
     }
   },
@@ -200,7 +201,18 @@
     "cancel": "Cancelar"
   },
   "header": {
-    "userFallback": "Usuário"
+    "userFallback": "Usuário",
+    "anomalyBell": {
+      "ariaLabel": "Alertas de anomalia",
+      "title": "Alertas",
+      "openReports": "Flux Reports",
+      "openBoard": "Abrir board",
+      "suggested": "Ação sugerida",
+      "unread": "Não lido",
+      "empty": "Nenhum alerta recente.",
+      "noMongo": "MongoDB não configurado — alertas indisponíveis.",
+      "loadError": "Não foi possível carregar alertas."
+    }
   },
   "landing": {
     "header": {
@@ -557,6 +569,26 @@
   },
   "board": {
     "loading": "Carregando board...",
+    "anomalyAlerts": {
+      "open": "Alertas",
+      "title": "Notificações de anomalia",
+      "hint": "Configure e-mails quando o monitor detectar riscos neste board (severidade mínima, tipos e destinatários). Alertas org-wide usam e-mails de gestores da organização ou variáveis de ambiente.",
+      "emailEnabled": "Enviar e-mail para alertas deste board",
+      "minSeverity": "Severidade mínima para e-mail",
+      "sevWarning": "Aviso e crítico",
+      "sevCritical": "Somente crítico",
+      "kinds": "Tipos de anomalia",
+      "kindsHint": "Vazio = todos os tipos. Desmarque para restringir.",
+      "allKinds": "Todos",
+      "recipients": "Destinatários extras",
+      "recipientsPlaceholder": "email1@empresa.com, email2@empresa.com",
+      "recipientsHint": "Opcional. Se vazio, usamos administradores da organização.",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "saveOk": "Preferências salvas.",
+      "saveError": "Não foi possível salvar."
+    },
     "automations": {
       "open": "Automações",
       "title": "Flux Automations — regras internas",

@@ -11,6 +11,8 @@ import { BoardAutomationsModal } from "@/components/kanban/board-automations-mod
 import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import { BoardEmbedModal } from "@/components/board/board-embed-modal";
+import { BoardAnomalyNotificationsModal } from "@/components/kanban/board-anomaly-notifications-modal";
+import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
@@ -147,6 +149,7 @@ export interface BoardData {
     defaultTags?: string[];
   };
   portal?: PortalClientState;
+  anomalyNotifications?: BoardAnomalyNotifications;
 }
 
 const DEFAULT_BUCKETS: BucketConfig[] = [
@@ -174,6 +177,7 @@ export default function BoardPage() {
   const [portalOpen, setPortalOpen] = useState(false);
   const [templateExportOpen, setTemplateExportOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
+  const [anomalySettingsOpen, setAnomalySettingsOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
@@ -376,6 +380,9 @@ export default function BoardPage() {
               <button type="button" className="btn-secondary" onClick={() => setAutomationsOpen(true)}>
                 {t("automations.open")}
               </button>
+              <button type="button" className="btn-secondary" onClick={() => setAnomalySettingsOpen(true)}>
+                {t("anomalyAlerts.open")}
+              </button>
               {formLink && (
                 <button
                   type="button"
@@ -470,6 +477,19 @@ export default function BoardPage() {
       />
 
       <BoardEmbedModal open={embedOpen} onClose={() => setEmbedOpen(false)} boardId={boardId} getHeaders={getHeaders} />
+
+      <BoardAnomalyNotificationsModal
+        open={anomalySettingsOpen}
+        onClose={() => setAnomalySettingsOpen(false)}
+        boardId={boardId}
+        initial={db.anomalyNotifications}
+        getHeaders={getHeaders}
+        onSaved={(next) => {
+          useBoardStore.getState().updateDbSilent((d) => {
+            d.anomalyNotifications = next;
+          });
+        }}
+      />
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
     </div>

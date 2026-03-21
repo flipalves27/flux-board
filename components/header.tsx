@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "next-intl";
+import { AnomalyNotificationBell } from "@/components/anomaly-notification-bell";
 
 interface HeaderProps {
   title?: string;
@@ -48,6 +49,7 @@ export function Header({ title = "Flux-Board", backHref, backLabel = "← Boards
               {user.name || user.username || t("userFallback")}
             </span>
           )}
+          {user ? <AnomalyNotificationBell /> : null}
           {children}
         </div>
       </div>

@@ -283,6 +283,39 @@ export function detectStagnation(board: BoardData, nowMs: number): AnomalyAlertP
   };
 }
 
+/** Baseline adaptativa (janela de snapshots diários) + fallback para o detector fixo legado. */
+export function detectStagnationCluster(args: {
+  board: BoardData;
+  nowMs: number;
+  historyStagnantCounts: number[];
+}): AnomalyAlertPayload | null {
+  const { board, nowMs, historyStagnantCounts } = args;
+  const current = countStagnantCards(board, 10, nowMs);
+  const hist = historyStagnantCounts.filter((n) => Number.isFinite(n) && n >= 0);
+  if (hist.length >= 4) {
+    const zs = zScore(current, hist);
+    if (zs && zs.z > 2 && current >= 4) {
+      return {
+        kind: "stagnation_cluster",
+        severity: current >= 8 || zs.z > 2.5 ? "warning" : "warning",
+        title: "Possível bloqueio (cards parados)",
+        message: `${current} cards parados há 10+ dias — acima do padrão recente (z ≈ ${zs.z.toFixed(2)}; média ${zs.mean.toFixed(1)}).`,
+        diagnostics: {
+          stagnantCount: current,
+          thresholdDays: 10,
+          zScore: zs.z,
+          baselineMean: zs.mean,
+          baselineStd: zs.std,
+          adaptive: true,
+        },
+        boardId: board.id,
+        boardName: board.name,
+      };
+    }
+  }
+  return detectStagnation(board, nowMs);
+}
+
 export function detectOkrDrift(projections: OkrKrProjection[]): AnomalyAlertPayload[] {
   const out: AnomalyAlertPayload[] = [];
   for (const p of projections) {

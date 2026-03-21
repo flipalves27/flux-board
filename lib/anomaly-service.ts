@@ -7,25 +7,31 @@ import {
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
 import {
+  COL_ANOMALY_ALERTS,
+  COL_ANOMALY_RUNS,
+  COL_ANOMALY_SNAPSHOTS,
+} from "@/lib/anomaly-collections";
+import {
   collectBucketLabelsForBoards,
   computeWipByBucket,
   countDueWithinDays,
+  countStagnantCards,
   detectLeadTimeSpike,
   detectOkrDrift,
   detectOverdueCascade,
-  detectStagnation,
+  detectStagnationCluster,
   detectThroughputDrop,
   detectWipExplosionForBoard,
   type AnomalyAlertPayload,
   type WipByBucket,
 } from "@/lib/anomaly-detection";
+import { ensureAnomalyNotifyDedupeIndexes } from "@/lib/anomaly-notify-dedupe";
+import { postPersistAnomalyNotifications } from "@/lib/anomaly-notify-dispatch";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
 import { getOrganizationById, type Organization } from "@/lib/kv-organizations";
 
-export const COL_ANOMALY_SNAPSHOTS = "anomaly_daily_snapshots";
-export const COL_ANOMALY_RUNS = "anomaly_check_runs";
-export const COL_ANOMALY_ALERTS = "anomaly_alerts";
+export { COL_ANOMALY_ALERTS, COL_ANOMALY_RUNS, COL_ANOMALY_SNAPSHOTS } from "@/lib/anomaly-collections";
 
 const ORG_ROLLUP_ID = "__org__";
 
@@ -36,6 +42,7 @@ async function ensureAnomalyIndexes(db: Db): Promise<void> {
   await db.collection(COL_ANOMALY_SNAPSHOTS).createIndex({ orgId: 1, boardId: 1, day: 1 }, { unique: true });
   await db.collection(COL_ANOMALY_RUNS).createIndex({ orgId: 1, runAt: -1 });
   await db.collection(COL_ANOMALY_ALERTS).createIndex({ orgId: 1, read: 1, createdAt: -1 });
+  await ensureAnomalyNotifyDedupeIndexes(db);
   indexesEnsured = true;
 }
 
@@ -70,6 +77,22 @@ async function loadWipHistoryForBoard(
     .limit(limit)
     .toArray();
   return rows.map((r) => r.wipByBucket ?? {}).reverse();
+}
+
+async function loadStagnantHistoryForBoard(
+  db: Db,
+  orgId: string,
+  boardId: string,
+  beforeDay: string,
+  limit: number
+): Promise<number[]> {
+  const rows = await db
+    .collection<{ stagnantCardCount?: number }>(COL_ANOMALY_SNAPSHOTS)
+    .find({ orgId, boardId, day: { $lt: beforeDay } })
+    .sort({ day: -1 })
+    .limit(limit)
+    .toArray();
+  return rows.map((r) => (typeof r.stagnantCardCount === "number" ? r.stagnantCardCount : 0)).reverse();
 }
 
 async function loadOrgLeadAndDueHistory(
@@ -121,6 +144,7 @@ async function upsertDailySnapshots(args: {
     const wip = computeWipByBucket(b);
     const dueB = countDueWithinDays([b], 3, todayMs);
     const leadB = averageLeadTimeDays([b]);
+    const stagnantB = countStagnantCards(b, 10, todayMs);
     await db.collection(COL_ANOMALY_SNAPSHOTS).updateOne(
       { orgId, boardId: b.id, day },
       {
@@ -131,6 +155,7 @@ async function upsertDailySnapshots(args: {
           wipByBucket: wip,
           avgLeadTimeDays: leadB,
           dueSoon3dCount: dueB,
+          stagnantCardCount: stagnantB,
           updatedAt: new Date().toISOString(),
         },
       },
@@ -150,7 +175,8 @@ async function persistRunAndAlerts(
   db: Db,
   orgId: string,
   runAt: string,
-  alerts: AnomalyAlertPayload[]
+  alerts: AnomalyAlertPayload[],
+  meta: { org: Organization | null; boards: BoardData[]; nowMs: number }
 ): Promise<void> {
   const runId = new ObjectId();
   await db.collection(COL_ANOMALY_RUNS).insertOne({
@@ -177,7 +203,18 @@ async function persistRunAndAlerts(
     read: false,
     createdAt: runAt,
   }));
-  await db.collection(COL_ANOMALY_ALERTS).insertMany(docs);
+  const ins = await db.collection(COL_ANOMALY_ALERTS).insertMany(docs);
+  const ids = alerts.map((_, i) => ins.insertedIds[i]).filter(Boolean) as ObjectId[];
+
+  await postPersistAnomalyNotifications({
+    db,
+    orgId,
+    org: meta.org,
+    boards: meta.boards,
+    alerts,
+    alertObjectIds: ids,
+    nowMs: meta.nowMs,
+  });
 }
 
 export async function runAnomalyCheckForOrg(args: {
@@ -229,7 +266,8 @@ export async function runAnomalyCheckForOrg(args: {
     const w = detectWipExplosionForBoard({ board, bucketLabels, historyForBoard: wipHist });
     if (w) alerts.push(w);
 
-    const s = detectStagnation(board, nowMs);
+    const stHist = await loadStagnantHistoryForBoard(db, orgId, board.id, day, 28);
+    const s = detectStagnationCluster({ board, nowMs, historyStagnantCounts: stHist });
     if (s) alerts.push(s);
   }
 
@@ -240,7 +278,7 @@ export async function runAnomalyCheckForOrg(args: {
   await upsertDailySnapshots({ db, orgId, day, boards, todayMs: nowMs });
 
   const runAt = new Date(nowMs).toISOString();
-  await persistRunAndAlerts(db, orgId, runAt, alerts);
+  await persistRunAndAlerts(db, orgId, runAt, alerts, { org, boards, nowMs });
 
   return { orgId, runAt, alertCount: alerts.length };
 }

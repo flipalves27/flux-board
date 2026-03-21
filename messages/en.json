@@ -179,6 +179,7 @@
       "board": "Board",
       "showDiag": "View diagnostics (metrics)",
       "hideDiag": "Hide diagnostics",
+      "suggested": "Suggested action",
       "cronHint": "The daily job (e.g. Vercel Cron) calls GET /api/cron/anomaly-check with the same secret as your other crons. Weekly emails can include an optional summary of these alerts."
     }
   },
@@ -200,7 +201,18 @@
     "cancel": "Cancel"
   },
   "header": {
-    "userFallback": "User"
+    "userFallback": "User",
+    "anomalyBell": {
+      "ariaLabel": "Anomaly alerts",
+      "title": "Alerts",
+      "openReports": "Flux Reports",
+      "openBoard": "Open board",
+      "suggested": "Suggested action",
+      "unread": "Unread",
+      "empty": "No recent alerts.",
+      "noMongo": "MongoDB not configured — alerts unavailable.",
+      "loadError": "Could not load alerts."
+    }
   },
   "landing": {
     "header": {
@@ -556,6 +568,26 @@
   },
   "board": {
     "loading": "Loading board...",
+    "anomalyAlerts": {
+      "open": "Alerts",
+      "title": "Anomaly notifications",
+      "hint": "Configure email when the monitor flags risks on this board (minimum severity, types, extra recipients). Org-wide alerts use org admin emails or environment variables.",
+      "emailEnabled": "Send email for alerts on this board",
+      "minSeverity": "Minimum severity for email",
+      "sevWarning": "Warning and critical",
+      "sevCritical": "Critical only",
+      "kinds": "Anomaly types",
+      "kindsHint": "Empty = all types. Uncheck to restrict.",
+      "allKinds": "All",
+      "recipients": "Extra recipients",
+      "recipientsPlaceholder": "user1@company.com, user2@company.com",
+      "recipientsHint": "Optional. If empty, we use organization administrators.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saveOk": "Preferences saved.",
+      "saveError": "Could not save."
+    },
     "automations": {
       "open": "Automations",
       "title": "Flux Automations — internal rules",

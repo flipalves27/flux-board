@@ -87,6 +87,14 @@ export async function GET(request: NextRequest) {
         read: Boolean(a.read),
         createdAt: a.createdAt,
         runId: a.runId,
+        suggestedAction:
+          typeof (a as unknown as { suggestedAction?: unknown }).suggestedAction === "string"
+            ? (a as unknown as { suggestedAction: string }).suggestedAction
+            : undefined,
+        emailSentAt:
+          typeof (a as unknown as { emailSentAt?: unknown }).emailSentAt === "string"
+            ? (a as unknown as { emailSentAt: string }).emailSentAt
+            : undefined,
       })),
       unreadCount,
       health: {

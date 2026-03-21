@@ -2,6 +2,7 @@ import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
 import type { BoardPortalSettings } from "./portal-types";
+import type { BoardAnomalyNotifications } from "./anomaly-board-settings";
 import type { Db } from "mongodb";
 
 const BOARDS_PREFIX = "reborn_boards:";
@@ -37,6 +38,8 @@ export interface BoardData {
   automationBoardState?: { lastCompletionPercent?: number };
   /** Portal público somente leitura (token opaco + filtros + branding). */
   portal?: BoardPortalSettings;
+  /** Alertas de anomalia (e-mail + contexto): tipos, severidade mínima, destinatários extras. */
+  anomalyNotifications?: BoardAnomalyNotifications;
   createdAt?: string;
   lastUpdated?: string;
 }
@@ -250,6 +253,10 @@ export async function updateBoardFromExisting(board: BoardData, updates: Partial
     if (!v || v.trim() === "") {
       delete (nextBoard as BoardData).clientLabel;
     }
+  }
+
+  if ("anomalyNotifications" in updates && updates.anomalyNotifications === undefined) {
+    delete (nextBoard as BoardData).anomalyNotifications;
   }
 
   nextBoard.lastUpdated = new Date().toISOString();

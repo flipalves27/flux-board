@@ -183,7 +183,14 @@ Job diário que calcula z-scores (throughput, WIP, lead time) e regras diagnóst
 ### Variáveis de ambiente
 
 - `ANOMALY_CRON_SECRET` (opcional): se definido, exige `x-cron-secret` igual a este valor; senão usa `WEEKLY_DIGEST_SECRET` ou `AUTOMATION_CRON_SECRET` (mesmo padrão dos outros crons)
-- Requer MongoDB; histórico diário fica nas coleções `anomaly_daily_snapshots`, `anomaly_check_runs`, `anomaly_alerts`
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL`: envio imediato de e-mail em alertas **warning** ou **critical** (mesmo remetente do digest/automações)
+- `NEXT_PUBLIC_APP_URL`: links “Abrir board” no e-mail e deep links
+- `TOGETHER_API_KEY` / `TOGETHER_MODEL`: texto da **ação sugerida** (fallback heurístico se ausente)
+- `ANOMALY_NOTIFY_OVERRIDE_EMAILS` (opcional): força destinatários de e-mail (CSV) — útil em staging
+- `ANOMALY_ORG_NOTIFY_EMAILS` (opcional): destinatários para alertas **sem** `boardId` (throughput org, lead time, etc.); se vazio, usa admins da org
+- Requer MongoDB; histórico diário fica nas coleções `anomaly_daily_snapshots`, `anomaly_check_runs`, `anomaly_alerts`, `anomaly_notify_dedupe` (histerese 48h para não reenviar a mesma anomalia)
+
+Por board, em **Alertas** no header do board: tipos, severidade mínima, e-mails extras e desligar e-mail.
 
 O repositório inclui entradas em `vercel.json`: `/api/cron/anomaly-check` em `0 10 * * *` UTC e `/api/cron/automations` em `0 8 * * *` UTC. No plano **Hobby**, o Vercel falha o deploy se algum cron rodar mais de uma vez por dia; para automações mais frequentes é preciso **Pro** ou um agendador externo.
 

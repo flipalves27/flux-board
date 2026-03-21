@@ -371,6 +371,22 @@ export const PortalBoardUpdateSchema = z
   })
   .passthrough();
 
+const AnomalyNotifyKindZ = z.enum([
+  "throughput_drop",
+  "wip_explosion",
+  "lead_time_spike",
+  "stagnation_cluster",
+  "okr_drift",
+  "overdue_cascade",
+]);
+
+export const BoardAnomalyNotificationsSchema = z.object({
+  emailEnabled: z.boolean().optional(),
+  notifyKinds: z.array(AnomalyNotifyKindZ).max(6).optional(),
+  minSeverity: z.enum(["warning", "critical"]).optional(),
+  recipientEmails: z.array(z.string().trim().email("Email inválido.").max(320)).max(15).optional(),
+});
+
 export const BoardUpdateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
@@ -400,6 +416,7 @@ export const BoardUpdateSchema = z
       })
       .optional(),
     portal: PortalBoardUpdateSchema.optional(),
+    anomalyNotifications: z.union([BoardAnomalyNotificationsSchema, z.null()]).optional(),
   })
   .passthrough();
 

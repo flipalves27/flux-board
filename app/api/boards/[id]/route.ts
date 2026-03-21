@@ -132,6 +132,14 @@ export async function PUT(
       updates.portal = nextPortal;
     }
 
+    if (clean.anomalyNotifications !== undefined) {
+      if (clean.anomalyNotifications === null) {
+        updates.anomalyNotifications = undefined;
+      } else {
+        updates.anomalyNotifications = clean.anomalyNotifications;
+      }
+    }
+
     const board = await updateBoard(boardId, payload.orgId, updates);
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
