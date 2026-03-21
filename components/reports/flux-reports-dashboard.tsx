@@ -24,6 +24,8 @@ import { ProactiveAiPanel } from "@/components/reports/proactive-ai-panel";
 import { SprintPredictionPanel } from "@/components/reports/sprint-prediction-panel";
 import { CrossBoardDependenciesPanel } from "@/components/reports/cross-board-dependencies-panel";
 import { CfdAccumulatedPanel } from "@/components/reports/cfd-accumulated-panel";
+import { CycleTimeScatterPanel } from "@/components/reports/cycle-time-scatter-panel";
+import type { CycleTimeScatterPoint } from "@/lib/flux-reports-metrics";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { usePlatformDisplayName } from "@/context/org-branding-context";
@@ -77,6 +79,7 @@ type FluxReportsPayload = {
   meta: { copilotHistory: boolean; boardCount: number };
   sprintPrediction: SprintPredictionPayload;
   sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }>;
+  cycleTimeScatter: CycleTimeScatterPoint[];
   dependencySuggestions?: Array<{
     boardIdA: string;
     cardIdA: string;
@@ -176,6 +179,8 @@ export function FluxReportsDashboard() {
       </Suspense>
 
       <SprintPredictionPanel prediction={data.sprintPrediction} />
+
+      <CycleTimeScatterPanel points={data.cycleTimeScatter} />
 
       <ChartShell
         title={t("charts.sentiment")}

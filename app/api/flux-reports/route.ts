@@ -11,6 +11,7 @@ import {
   buildCfdPoints,
   buildColumnAndPriorityDistribution,
   buildCreatedVsDoneFromCopilot,
+  buildCycleTimeScatterPoints,
   buildLeadTimeHistogram,
   buildPortfolioHeatmap,
   buildRollingWeekRanges,
@@ -111,6 +112,7 @@ export async function GET(request: NextRequest) {
       return row;
     });
 
+    const cycleTimeScatter = buildCycleTimeScatterPoints(boards);
     const leadTime = buildLeadTimeHistogram(boards);
     const teamVelocity = buildTeamVelocity(boards);
     const { byColumn, byPriority } = buildColumnAndPriorityDistribution(boards);
@@ -153,6 +155,7 @@ export async function GET(request: NextRequest) {
       },
       weeklyThroughput,
       createdVsDone,
+      cycleTimeScatter,
       leadTimeHistogram: leadTime,
       teamVelocity,
       distribution: { byColumn, byPriority },

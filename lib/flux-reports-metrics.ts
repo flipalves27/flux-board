@@ -76,6 +76,114 @@ export function parseCardCreatedMs(card: unknown, board: BoardData): number | nu
   return null;
 }
 
+function parseIsoMsMaybe(raw: string | null | undefined): number | null {
+  if (!raw || typeof raw !== "string") return null;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+/**
+ * Início do ciclo no fluxo: `createdAt` do card (entrada típica na primeira coluna), ou `columnEnteredAt` se não houver criação registrada.
+ */
+export function parseCardFlowStartMs(card: unknown, board: BoardData): number | null {
+  const created = parseCardCreatedMs(card, board);
+  if (created !== null) return created;
+  if (!card || typeof card !== "object") return null;
+  const c = card as Record<string, unknown>;
+  return parseIsoMsMaybe(typeof c.columnEnteredAt === "string" ? c.columnEnteredAt : null);
+}
+
+export type CycleTimeScatterPoint = {
+  cardId: string;
+  boardId: string;
+  boardName: string;
+  title: string;
+  priority: string;
+  cycleDays: number;
+  completedMs: number;
+  completedAtIso: string;
+  bucketAtDoneLabel: string;
+  boardFlowLabels: string[];
+};
+
+function bucketKeyLabelMap(board: BoardData): Map<string, string> {
+  const map = new Map<string, string>();
+  const order = Array.isArray(board.config?.bucketOrder) ? board.config!.bucketOrder! : [];
+  for (const b of order) {
+    if (b && typeof b === "object") {
+      const rec = b as Record<string, unknown>;
+      const key = String(rec.key || "");
+      if (!key) continue;
+      map.set(key, String(rec.label || rec.key || key));
+    }
+  }
+  return map;
+}
+
+function flowLabelsFromBoard(board: BoardData): string[] {
+  const order = Array.isArray(board.config?.bucketOrder) ? board.config!.bucketOrder! : [];
+  const map = bucketKeyLabelMap(board);
+  const out: string[] = [];
+  for (const b of order) {
+    if (!b || typeof b !== "object") continue;
+    const key = String((b as Record<string, unknown>).key || "");
+    if (!key) continue;
+    out.push(map.get(key) ?? key);
+  }
+  return out;
+}
+
+/** Um ponto por card concluído com `completedAt` e início de ciclo estimável (criação ou columnEnteredAt). */
+export function buildCycleTimeScatterPoints(boards: BoardData[]): CycleTimeScatterPoint[] {
+  const out: CycleTimeScatterPoint[] = [];
+  for (const board of boards) {
+    const labels = bucketKeyLabelMap(board);
+    const flowLabels = flowLabelsFromBoard(board);
+    const cards = Array.isArray(board.cards) ? board.cards : [];
+    for (const card of cards) {
+      if (!card || typeof card !== "object") continue;
+      const rec = card as Record<string, unknown>;
+      if (String(rec.progress || "") !== "Concluída") continue;
+      const completedMs = parseIsoMsMaybe(typeof rec.completedAt === "string" ? rec.completedAt : null);
+      if (completedMs === null) continue;
+      const startMs = parseCardFlowStartMs(card, board);
+      if (startMs === null) continue;
+      const cycleDays = Math.max(0, Math.floor((completedMs - startMs) / DAY_MS));
+      const bucketKey = String(rec.bucket || "");
+      const id = String(rec.id || "").trim();
+      if (!id) continue;
+      out.push({
+        cardId: id,
+        boardId: board.id,
+        boardName: board.name,
+        title: String(rec.title || ""),
+        priority: String(rec.priority || "—"),
+        cycleDays,
+        completedMs,
+        completedAtIso: new Date(completedMs).toISOString(),
+        bucketAtDoneLabel: labels.get(bucketKey) ?? bucketKey,
+        boardFlowLabels: flowLabels,
+      });
+    }
+  }
+  return out.sort((a, b) => a.completedMs - b.completedMs);
+}
+
+/** Percentis em dias de ciclo (sobre o conjunto filtrado no cliente). */
+export function computeCycleTimePercentiles(days: number[]): { p50: number; p85: number; p95: number } | null {
+  if (!days.length) return null;
+  const sorted = [...days].sort((a, b) => a - b);
+  const pick = (p: number) => {
+    if (sorted.length === 1) return sorted[0];
+    const idx = (p / 100) * (sorted.length - 1);
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  };
+  return { p50: pick(50), p85: pick(85), p95: pick(95) };
+}
+
 /** CFD aproximado: por semana, contagem cumulativa de cards existentes até o fim da semana, por coluna atual (ou concluídos). */
 export function buildCfdPoints(boards: BoardData[], weeks: FluxWeekRange[]): Array<{
   weekLabel: string;
