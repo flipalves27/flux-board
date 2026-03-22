@@ -28,13 +28,13 @@ function buildCsp(nonce: string, frameAncestors = "'none'"): string {
     `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://vercel.live`,
     // unsafe-inline needed for React style={{}} props used throughout the app
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    "font-src 'self' https://fonts.gstatic.com",
+    "font-src 'self' data: https://fonts.gstatic.com https://vercel.live",
     "img-src 'self' data: https:",
     // allow Vercel edge network and analytics endpoints
-    "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live",
+    "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live wss://*.pusher.com https://*.pusher.com",
     `frame-ancestors ${frameAncestors}`,
     // allow Vercel live preview toolbar to load in an iframe inside our pages
-    "frame-src 'none' https://vercel.live",
+    "frame-src https://vercel.live",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

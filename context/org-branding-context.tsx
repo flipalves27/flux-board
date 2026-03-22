@@ -53,6 +53,11 @@ const OrgBrandingContext = createContext<OrgBrandingContextValue | null>(null);
 
 const DEFAULT_DOC_TITLE = `${DEFAULT_PLATFORM_NAME} — Commercial operations with clarity`;
 
+function isVercelPreviewHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase();
+  return normalized.endsWith(".vercel.app") && normalized.includes("-");
+}
+
 function applyBrandingToDocument(
   branding: OrgBranding | null | undefined,
   allowsTheming: boolean,
@@ -166,13 +171,17 @@ export function OrgBrandingProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
-    const host = window.location.hostname;
+    const host = window.location.hostname.toLowerCase();
     const appHost = defaultAppHostnameFromEnv();
-    if (!host || host === "localhost" || host === "127.0.0.1") {
+    if (!host || host === "localhost" || host === "127.0.0.1" || host === "::1") {
       setPublicBranding(null);
       return;
     }
     if (appHost && host === appHost) {
+      setPublicBranding(null);
+      return;
+    }
+    if (isVercelPreviewHost(host)) {
       setPublicBranding(null);
       return;
     }

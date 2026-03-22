@@ -262,21 +262,25 @@ export default function BoardsPage() {
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  function isSameDay(a: Date, b: Date) {
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
+  function toDateKey(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }
 
-  const now = new Date();
+  const [todayKey, setTodayKey] = useState("");
+  useEffect(() => {
+    setTodayKey(toDateKey(new Date()));
+  }, []);
+
   const boardsUpdatedToday = useMemo(
     () => boards.filter((b) => {
+      if (!todayKey) return false;
       const d = parseDateSafe(b.lastUpdated);
-      return d ? isSameDay(d, now) : false;
+      return d ? toDateKey(d) === todayKey : false;
     }),
-    [boards]
+    [boards, todayKey]
   );
 
   const portfolioSummary = useMemo(() => {
@@ -308,8 +312,9 @@ export default function BoardsPage() {
 
     if (showOnlyUpdatedToday) {
       list = list.filter((b) => {
+        if (!todayKey) return false;
         const d = parseDateSafe(b.lastUpdated);
-        return d ? isSameDay(d, now) : false;
+        return d ? toDateKey(d) === todayKey : false;
       });
     }
     if (showOnlyFavorites) {
@@ -328,7 +333,7 @@ export default function BoardsPage() {
       });
     }
     return sorted;
-  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, now, dateLocale]);
+  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, todayKey, dateLocale]);
 
   const quickFavoriteBoards = useMemo(() => {
     const favoriteIds = new Set(favoriteBoardIds);
@@ -667,8 +672,9 @@ export default function BoardsPage() {
                 const isBoardReborn = b.id === rebornId;
                 const isAdmin = user.isAdmin;
                 const wasUpdatedToday = (() => {
+                  if (!todayKey) return false;
                   const d = parseDateSafe(b.lastUpdated);
-                  return d ? isSameDay(d, now) : false;
+                  return d ? toDateKey(d) === todayKey : false;
                 })();
                 return (
                   <div

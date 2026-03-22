@@ -178,10 +178,52 @@ const DEFAULT_BUCKETS: BucketConfig[] = [
   { key: "Em Produção", label: "Em Produção", color: "var(--flux-success)" },
 ];
 
+function sanitizeBucketOrder(raw: unknown): BucketConfig[] {
+  if (!Array.isArray(raw)) return DEFAULT_BUCKETS;
+  const normalized = raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const rec = item as Partial<BucketConfig>;
+      const key = typeof rec.key === "string" ? rec.key.trim() : "";
+      const label = typeof rec.label === "string" ? rec.label.trim() : "";
+      const color = typeof rec.color === "string" ? rec.color.trim() : "";
+      if (!key) return null;
+      return {
+        key,
+        label: label || key,
+        color: color || "var(--flux-text-muted)",
+      };
+    })
+    .filter((b): b is BucketConfig => b !== null);
+  if (normalized.length === 0) return DEFAULT_BUCKETS;
+  const seen = new Set<string>();
+  return normalized.filter((b) => {
+    const id = b.key.toLowerCase();
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function sanitizeCollapsedColumns(raw: unknown, bucketOrder: BucketConfig[]): string[] {
+  if (!Array.isArray(raw)) return [];
+  const allowed = new Set(bucketOrder.map((b) => b.key));
+  return raw
+    .filter((key): key is string => typeof key === "string" && key.trim().length > 0)
+    .map((key) => key.trim())
+    .filter((key) => allowed.has(key));
+}
+
+function sanitizeLabels(raw: unknown): string[] {
+  if (!Array.isArray(raw) || raw.length === 0) return FILTER_LABELS;
+  const labels = raw.filter((label): label is string => typeof label === "string" && label.trim().length > 0);
+  return labels.length > 0 ? labels : FILTER_LABELS;
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const params = useParams();
-  const boardId = params.id as string;
+  const boardId = Array.isArray(params.id) ? params.id[0] ?? "" : (params.id as string);
   const { user, getHeaders, isChecked, setAuth } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
@@ -204,6 +246,7 @@ export default function BoardPage() {
   const saveRequestSeqRef = useRef(0);
   const csvImportMode = useKanbanUiStore((s) => s.csvImportMode);
   const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
+  const [formOrigin, setFormOrigin] = useState("");
 
   const authWaiting = !isChecked || !user;
   const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
@@ -230,6 +273,11 @@ export default function BoardPage() {
     };
   }, [boardId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setFormOrigin(window.location.origin);
+  }, []);
+
   async function loadBoard() {
     try {
       const r = await apiFetch(`/api/boards/${boardId}`, {
@@ -250,6 +298,7 @@ export default function BoardPage() {
       setBoardName(d.name || "Board");
       const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
       setClientLabel(rawClient || null);
+      const bucketOrder = sanitizeBucketOrder(d.config?.bucketOrder);
       const cards = (d.cards || []).map((c: CardData, i: number) => ({
         ...c,
         order: c.order ?? i,
@@ -271,17 +320,15 @@ export default function BoardPage() {
         lastUpdated: d.lastUpdated || "",
         cards,
         config: {
-          bucketOrder: d.config?.bucketOrder || DEFAULT_BUCKETS,
-          collapsedColumns: d.config?.collapsedColumns || [],
-          labels:
-            Array.isArray(d.config?.labels) && d.config.labels.length > 0
-              ? d.config.labels.filter((l: unknown) => typeof l === "string" && l.trim())
-              : FILTER_LABELS,
+          bucketOrder,
+          collapsedColumns: sanitizeCollapsedColumns(d.config?.collapsedColumns, bucketOrder),
+          labels: sanitizeLabels(d.config?.labels),
         },
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
         intakeForm: d.intakeForm,
         portal: d.portal,
+        anomalyNotifications: d.anomalyNotifications,
       });
       if (user?.id) {
         registerBoardVisit(user.id, boardId);
@@ -399,10 +446,7 @@ export default function BoardPage() {
     );
   }
   const formSlug = String(db.intakeForm?.slug || "").trim();
-  const formLink =
-    formSlug && typeof window !== "undefined"
-      ? `${window.location.origin}/${locale}/forms/${encodeURIComponent(formSlug)}`
-      : "";
+  const formLink = formSlug && formOrigin ? `${formOrigin}/${locale}/forms/${encodeURIComponent(formSlug)}` : "";
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
