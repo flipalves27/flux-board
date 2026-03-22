@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
+import type { Filter } from "mongodb";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 
 const COL = "ai_completion_cache";
+
+type CacheDoc = { _id: string; text: string; expiresAt: Date };
 
 let indexesEnsured = false;
 
@@ -23,7 +26,7 @@ export async function getAiTextCache(keyHash: string): Promise<string | null> {
   try {
     await ensureIndexes();
     const db = await getDb();
-    const doc = await db.collection<{ text: string; expiresAt: Date }>(COL).findOne({ _id: keyHash });
+    const doc = await db.collection<CacheDoc>(COL).findOne({ _id: keyHash } as Filter<CacheDoc>);
     if (!doc?.text) return null;
     return doc.text;
   } catch (e) {
@@ -38,8 +41,8 @@ export async function setAiTextCache(keyHash: string, text: string, ttlSeconds: 
     await ensureIndexes();
     const db = await getDb();
     const expiresAt = new Date(Date.now() + Math.max(60, ttlSeconds) * 1000);
-    await db.collection(COL).updateOne(
-      { _id: keyHash },
+    await db.collection<CacheDoc>(COL).updateOne(
+      { _id: keyHash } as Filter<CacheDoc>,
       { $set: { text: text.slice(0, 120_000), expiresAt, updatedAt: new Date().toISOString() } },
       { upsert: true }
     );

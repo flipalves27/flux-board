@@ -16,20 +16,20 @@ describe("verifyCronSecret", () => {
 
   it("allows missing secret in non-production", () => {
     delete process.env.VERCEL_ENV;
-    process.env.NODE_ENV = "development";
+    delete process.env.AUTOMATION_CRON_SECRET;
     const req = new NextRequest("http://localhost/api/cron/x", { headers: {} });
     expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(true);
   });
 
   it("denies missing secret in production", () => {
-    process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "production";
     delete process.env.AUTOMATION_CRON_SECRET;
     const req = new NextRequest("http://localhost/api/cron/x", { headers: {} });
     expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(false);
   });
 
   it("accepts matching header", () => {
-    process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "production";
     process.env.AUTOMATION_CRON_SECRET = "abc";
     const req = new NextRequest("http://localhost/api/cron/x", {
       headers: { "x-cron-secret": "abc" },

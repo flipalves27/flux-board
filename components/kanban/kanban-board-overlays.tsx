@@ -151,7 +151,7 @@ export function KanbanBoardOverlays({
   const submitColumn = () => {
     const parsed = parseWipDraft(columnWipDraft, Boolean(editingColumnKey));
     if (!parsed.ok) {
-      pushToast({ variant: "error", message: t("addColumnModal.wipInvalid") });
+      pushToast({ kind: "error", title: t("addColumnModal.wipInvalid") });
       return;
     }
     saveColumn(parsed.value);

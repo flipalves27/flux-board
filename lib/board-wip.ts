@@ -5,9 +5,12 @@
 export type CardBucketLike = { id: string; bucket: string; order?: number };
 export type BucketWipLike = { key: string; wipLimit?: number | null };
 
+/** Só `bucket` é usado na contagem WIP. */
+export type WipCountCardLike = { bucket: string };
+
 export function validateBoardWip(
   buckets: BucketWipLike[],
-  cards: CardBucketLike[]
+  cards: WipCountCardLike[]
 ): { ok: true } | { ok: false; message: string } {
   const limits = new Map<string, number>();
   for (const b of buckets) {

@@ -9,7 +9,7 @@ import {
   isBoardRebornId,
 } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
-import { validateBoardWip } from "@/lib/board-wip";
+import { validateBoardWip, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
 
@@ -114,7 +114,7 @@ export async function PUT(
       });
       const mergedBuckets =
         clean.config?.bucketOrder ?? (prevBoard.config as { bucketOrder?: { key: string; wipLimit?: number | null }[] })?.bucketOrder ?? [];
-      const wipCheck = validateBoardWip(mergedBuckets, cards as { bucket: string }[]);
+      const wipCheck = validateBoardWip(mergedBuckets, cards as WipCountCardLike[]);
       if (!wipCheck.ok) {
         return NextResponse.json({ error: wipCheck.message }, { status: 400 });
       }
@@ -123,7 +123,7 @@ export async function PUT(
     if (clean.config !== undefined) {
       const prevForWip = await getBoard(boardId, payload.orgId);
       if (prevForWip?.cards?.length && clean.config.bucketOrder?.length) {
-        const wipOnlyConfig = validateBoardWip(clean.config.bucketOrder, prevForWip.cards as { bucket: string }[]);
+        const wipOnlyConfig = validateBoardWip(clean.config.bucketOrder, prevForWip.cards as WipCountCardLike[]);
         if (!wipOnlyConfig.ok) {
           return NextResponse.json({ error: wipOnlyConfig.message }, { status: 400 });
         }

@@ -5,7 +5,7 @@ describe("validateBoardWip", () => {
   it("allows when under limit", () => {
     const r = validateBoardWip(
       [{ key: "Doing", wipLimit: 2 }],
-      [{ id: "1", bucket: "Doing" }, { id: "2", bucket: "Backlog" }]
+      [{ bucket: "Doing" }, { bucket: "Backlog" }]
     );
     expect(r.ok).toBe(true);
   });
@@ -13,10 +13,7 @@ describe("validateBoardWip", () => {
   it("rejects when over limit", () => {
     const r = validateBoardWip(
       [{ key: "Doing", wipLimit: 1 }],
-      [
-        { id: "1", bucket: "Doing" },
-        { id: "2", bucket: "Doing" },
-      ]
+      [{ bucket: "Doing" }, { bucket: "Doing" }]
     );
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toContain("WIP");

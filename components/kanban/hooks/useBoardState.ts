@@ -230,7 +230,7 @@ export function useBoardState({
       const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
       const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
       if (!wip.ok) {
-        pushToast({ variant: "error", message: wip.message });
+        pushToast({ kind: "error", title: wip.message });
         return;
       }
       const oldBucket = db.cards.find((c) => c.id === cardId)?.bucket;
@@ -264,7 +264,7 @@ export function useBoardState({
       const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
       const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
       if (!wip.ok) {
-        pushToast({ variant: "error", message: wip.message });
+        pushToast({ kind: "error", title: wip.message });
         return;
       }
       const idSet = new Set(orderedIds);
@@ -463,7 +463,7 @@ export function useBoardState({
           const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
           const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
           if (!wip.ok) {
-            pushToast({ variant: "error", message: wip.message });
+            pushToast({ kind: "error", title: wip.message });
             return;
           }
         }
