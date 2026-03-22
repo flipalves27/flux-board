@@ -164,9 +164,11 @@ function TagsCell({
   onPatch: BoardTableViewProps["onPatchCard"];
 }) {
   const [v, setV] = useState(() => row.original.tags.join(", "));
+  /** String estável — `tags[]` muda de referência a cada render do pai (immer) e dispara #185. */
+  const tagsFingerprint = row.original.tags.join("\u0001");
   useEffect(() => {
     setV(row.original.tags.join(", "));
-  }, [row.original.id, row.original.tags]);
+  }, [row.original.id, tagsFingerprint]);
   return (
     <input
       type="text"

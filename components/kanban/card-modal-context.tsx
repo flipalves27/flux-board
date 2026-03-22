@@ -222,6 +222,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   );
   const [depSearch, setDepSearch] = useState("");
   const [tags, setTags] = useState<Set<string>>(new Set(card.tags || []));
+  const tagsRef = useRef(tags);
+  tagsRef.current = tags;
   const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
   const [docRefs, setDocRefs] = useState<CardDocRef[]>(Array.isArray(card.docRefs) ? [...card.docRefs] : []);
@@ -696,10 +698,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       onMergeDraftIntoExisting(targetCardId, {
         title: title.trim(),
         description: descriptionForSave.trim(),
-        tags: [...tags],
+        tags: [...tagsRef.current],
       });
     },
-    [onMergeDraftIntoExisting, title, descriptionForSave, tags]
+    [onMergeDraftIntoExisting, title, descriptionForSave]
   );
 
   const generateAiContextForCard = useCallback(async () => {
