@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, getDailyAiCallsCap, getDailyAiCallsWindowMs, makeDailyAiCallsRateLimitKey } from "@/lib/plan-gates";
+import {
+  assertFeatureAllowed,
+  getDailyAiCallsCap,
+  getDailyAiCallsWindowMs,
+  makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
+} from "@/lib/plan-gates";
 import { getSprint } from "@/lib/kv-sprints";
 import { generateRetrospective } from "@/lib/ceremony-retrospective";
 import { rateLimit } from "@/lib/rate-limit";
@@ -20,11 +26,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "ceremonies"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "ceremonies", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
 
-  const dailyCap = getDailyAiCallsCap(org);
+  const dailyCap = getDailyAiCallsCap(org, gateCtx);
   if (dailyCap !== null) {
     const rl = await rateLimit({ key: makeDailyAiCallsRateLimitKey(payload.orgId), limit: dailyCap, windowMs: getDailyAiCallsWindowMs() });
     if (!rl.allowed) return NextResponse.json({ error: "Limite diário de chamadas IA atingido." }, { status: 429 });

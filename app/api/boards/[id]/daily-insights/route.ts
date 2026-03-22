@@ -11,6 +11,7 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
 
@@ -446,8 +447,9 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
   try {
-    assertFeatureAllowed(org, "daily_insights");
+    assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
@@ -514,7 +516,7 @@ export async function POST(
     });
 
     // Quota de "calls/dia" apenas quando vamos de fato disparar IA via Together.ai.
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     const llmCloudEnabled =
       (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
       Boolean(process.env.ANTHROPIC_API_KEY);

@@ -15,7 +15,7 @@ import {
 import { ensureAdminUser } from "@/lib/kv-users";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { getBoardCap } from "@/lib/plan-gates";
+import { getBoardCap, planGateCtxForAuth } from "@/lib/plan-gates";
 import { getPublishedTemplateById } from "@/lib/kv-templates";
 import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
     const currentCount = orgBoardIds.filter((id) => id !== rebornId).length;
-    const cap = getBoardCap(org);
+    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
     const isPro = cap === null;
 
     const plan =
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const rebornId = getBoardRebornId(payload.orgId);
-    const cap = getBoardCap(org);
+    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
     if (cap !== null) {
       const existingIds = await getBoardIds(payload.id, payload.orgId, true);
       const currentCount = existingIds.filter((id) => id !== rebornId).length;

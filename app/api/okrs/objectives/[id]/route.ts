@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { deleteObjective, getObjective, updateObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 
@@ -17,8 +17,9 @@ export async function PATCH(
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
       throw err;
@@ -56,8 +57,9 @@ export async function DELETE(
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtxDel = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtxDel);
     } catch (err) {
       if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
       throw err;

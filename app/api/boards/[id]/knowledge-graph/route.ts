@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
 import { buildKnowledgeGraph } from "@/lib/ai-knowledge-graph";
 
 export const runtime = "nodejs";
@@ -18,7 +18,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "knowledge_graph"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "knowledge_graph", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
 

@@ -32,12 +32,20 @@ export function sanitizeHexColor(input: string | undefined | null): string | und
   return t;
 }
 
-export function orgBrandingAllowsTheming(org: { plan: string } | null | undefined): boolean {
+export function orgBrandingAllowsTheming(
+  org: { plan: string } | null | undefined,
+  opts?: { isOrgAdmin?: boolean }
+): boolean {
+  if (opts?.isOrgAdmin) return true;
   if (!org) return false;
   return org.plan === "pro" || org.plan === "business" || org.plan === "enterprise" || org.plan === "trial";
 }
 
-export function orgBrandingAllowsCustomDomain(org: { plan: string } | null | undefined): boolean {
+export function orgBrandingAllowsCustomDomain(
+  org: { plan: string } | null | undefined,
+  opts?: { isOrgAdmin?: boolean }
+): boolean {
+  if (opts?.isOrgAdmin) return true;
   if (!org) return false;
   return org.plan === "business" || org.plan === "enterprise";
 }

@@ -1,6 +1,7 @@
 import type { Organization } from "@/lib/kv-organizations";
 import { computeKeyResultProgress } from "@/lib/okr-engine";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
+import type { PlanGateContext } from "@/lib/plan-gates";
 import { canUseFeature } from "@/lib/plan-gates";
 import { computeBoardPortfolio, type PortfolioBoardLike } from "@/lib/board-portfolio-metrics";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
@@ -99,8 +100,10 @@ export async function buildCopilotWorldSnapshot(params: {
   org: Organization | null;
   /** Se já buscou chunks no route, reutiliza (evita dupla chamada RAG). */
   ragChunks?: DocChunkRag[] | null;
+  /** Admin da org: tier enterprise nos gates (sem depender do Stripe). */
+  planGateCtx?: PlanGateContext;
 }): Promise<{ snapshot: string; ragChunksUsed: DocChunkRag[] }> {
-  const { orgId, userId, isAdmin, boardId, board, userMessage, org, ragChunks: preChunks } = params;
+  const { orgId, userId, isAdmin, boardId, board, userMessage, org, ragChunks: preChunks, planGateCtx } = params;
 
   const boards = await listBoardsForUser(userId, orgId, isAdmin);
   const boardNames = new Map(boards.map((b) => [b.id, String(b.name || b.id)]));
@@ -140,7 +143,7 @@ export async function buildCopilotWorldSnapshot(params: {
   lines.push("");
 
   // --- OKRs (quarter atual) ---
-  if (canUseFeature(org, "okr_engine")) {
+  if (canUseFeature(org, "okr_engine", planGateCtx)) {
     lines.push("## OKRs (quarter)");
     const quarter = getCurrentQuarterLabel();
     lines.push(`quarter=${quarter}`);
@@ -207,7 +210,7 @@ export async function buildCopilotWorldSnapshot(params: {
   // --- Docs RAG: top 5 trechos relevantes (dedup por doc) ---
   lines.push("## Documentos (trechos relevantes à pergunta)");
   let ragChunksUsed: DocChunkRag[] = [];
-  if (canUseFeature(org, "flux_docs_rag")) {
+  if (canUseFeature(org, "flux_docs_rag", planGateCtx)) {
     const chunks = preChunks?.length ? preChunks : await retrieveRelevantDocChunks(orgId, userMessage, 12);
     const seen = new Set<string>();
     let n = 0;
@@ -241,7 +244,7 @@ export async function buildCopilotWorldSnapshot(params: {
 
   lines.push("");
   lines.push("## Possíveis dependências cross-board (embeddings, score≥0.85)");
-  if (isMongoConfigured() && canUseFeature(org, "portfolio_export")) {
+  if (isMongoConfigured() && canUseFeature(org, "portfolio_export", planGateCtx)) {
     try {
       const sugs = await listDependencySuggestionsForOrg(orgId, { boardId, minScore: 0.85, limit: 20 });
       if (!sugs.length) {

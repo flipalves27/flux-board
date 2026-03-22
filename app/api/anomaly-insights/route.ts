@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import { COL_ANOMALY_ALERTS, COL_ANOMALY_RUNS } from "@/lib/anomaly-service";
 
@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) {
         return NextResponse.json({ error: err.message }, { status: err.status });

@@ -7,7 +7,7 @@ import {
   updateOrganization,
 } from "@/lib/kv-organizations";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
-import { getEffectiveTier } from "@/lib/plan-gates";
+import { getEffectiveTier, planGateCtxForAuth } from "@/lib/plan-gates";
 import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
 import {
   orgBrandingAllowsCustomDomain,
@@ -21,7 +21,6 @@ import type { OrgBranding } from "@/lib/org-branding";
 import {
   allowAdminPlanOverrideFromEnv,
   canAdminOverridePlan,
-  hasStripeSubscription,
   planOverrideBlockedByStripe,
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
@@ -39,9 +38,9 @@ export async function GET(request: NextRequest) {
       name: org.name,
       slug: org.slug,
       plan: org.plan,
-      /** Seletor de plano manual: env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE` e sem assinatura Stripe. */
+      /** Seletor de plano manual: env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE` (admin não depende do Stripe). */
       canAdminOverridePlan: canAdminOverridePlan(org),
-      /** Env ativa mas existe `stripeSubscriptionId` — UI pode explicar o bloqueio. */
+      /** Mantido para compatibilidade com a UI; sempre false (admin pode alterar plano mesmo com Stripe). */
       planOverrideBlockedByStripe: planOverrideBlockedByStripe(org),
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
@@ -94,7 +93,7 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      if (!orgBrandingAllowsTheming(current)) {
+      if (!orgBrandingAllowsTheming(current, { isOrgAdmin: payload.isAdmin })) {
         return NextResponse.json({ error: "Branding disponível nos planos Pro e Business." }, { status: 403 });
       }
       const b = parsed.data;
@@ -151,7 +150,7 @@ export async function PUT(request: NextRequest) {
         }
       }
       if (b.customDomain !== undefined) {
-        if (!orgBrandingAllowsCustomDomain(current)) {
+        if (!orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin })) {
           return NextResponse.json({ error: "Domínio customizado exige plano Business." }, { status: 403 });
         }
         const d = typeof b.customDomain === "string" ? b.customDomain.trim().toLowerCase() : "";
@@ -173,14 +172,14 @@ export async function PUT(request: NextRequest) {
           }
         }
       }
-      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current) && next.customDomain) {
+      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin }) && next.customDomain) {
         next.domainVerificationToken = randomBytes(24).toString("hex");
         next.customDomainVerifiedAt = undefined;
       }
       brandingPatch = next;
       if (
         brandingPatch &&
-        orgBrandingAllowsCustomDomain(current) &&
+        orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin }) &&
         brandingPatch.customDomain &&
         !brandingPatch.domainVerificationToken
       ) {
@@ -194,8 +193,8 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      const tier = getEffectiveTier(current);
-      if (tier !== "business") {
+      const tier = getEffectiveTier(current, planGateCtxForAuth(payload.isAdmin));
+      if (tier !== "business" && tier !== "enterprise") {
         return NextResponse.json(
           { error: "Configurações de IA avançadas disponíveis no plano Business." },
           { status: 403 }
@@ -223,15 +222,6 @@ export async function PUT(request: NextRequest) {
       if (!allowAdminPlanOverrideFromEnv()) {
         return NextResponse.json(
           { error: "Alteração de plano pelo admin não está habilitada (defina FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1 no servidor)." },
-          { status: 403 }
-        );
-      }
-      if (hasStripeSubscription(current)) {
-        return NextResponse.json(
-          {
-            error:
-              "Override de plano não permitido: esta organização tem assinatura Stripe (stripeSubscriptionId). Altere ou cancele pelo portal de billing / Stripe antes de definir o plano manualmente.",
-          },
           { status: 403 }
         );
       }

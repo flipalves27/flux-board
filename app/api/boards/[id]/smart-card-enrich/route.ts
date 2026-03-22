@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enrichSmartCardWithTogether } from "@/lib/automation-ai";
 import { getAuthFromRequest } from "@/lib/auth";
+import type { PlanGateContext } from "@/lib/plan-gates";
 import {
   assertFeatureAllowed,
   canUseFeature,
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
@@ -28,7 +30,8 @@ async function handleDecomposeMode(
   _orgId: string,
   _boardId: string,
   planBlocksAi: boolean,
-  org: Organization | null
+  org: Organization | null,
+  planGateCtx?: PlanGateContext
 ): Promise<NextResponse> {
   const cardId = typeof body.cardId === "string" ? body.cardId : "";
   const title = sanitizeText(String(body.title ?? "")).trim().slice(0, 300);
@@ -48,7 +51,7 @@ Responda em JSON válido:
 Máximo 8 subtasks. Seja conciso e específico.`;
 
   try {
-    const { route } = resolveBatchLlmRoute(org);
+    const { route } = resolveBatchLlmRoute(org, planGateCtx);
     const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
@@ -77,7 +80,8 @@ async function handleCreateFromProseMode(
   _orgId: string,
   _boardId: string,
   planBlocksAi: boolean,
-  org: Organization | null
+  org: Organization | null,
+  planGateCtx?: PlanGateContext
 ): Promise<NextResponse> {
   const prose = sanitizeText(String(body.prose ?? "")).trim().slice(0, 1000);
   if (planBlocksAi || !prose) {
@@ -99,7 +103,7 @@ Responda em JSON válido:
 }`;
 
   try {
-    const { route } = resolveBatchLlmRoute(org);
+    const { route } = resolveBatchLlmRoute(org, planGateCtx);
     const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
@@ -223,9 +227,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const org = await getOrganizationById(payload.orgId);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
   let planBlocksAi = false;
   try {
-    assertFeatureAllowed(org, "card_context");
+    assertFeatureAllowed(org, "card_context", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) planBlocksAi = true;
     else throw err;
@@ -254,12 +259,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // mode=decompose: generate subtasks from card title+desc
     if (mode === "decompose") {
-      return handleDecomposeMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org);
+      return handleDecomposeMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org, gateCtx);
     }
 
     // mode=create-from-prose: generate full card from natural language description
     if (mode === "create-from-prose") {
-      return handleCreateFromProseMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org);
+      return handleCreateFromProseMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org, gateCtx);
     }
 
     const parsed = SmartCardEnrichInputSchema.safeParse(body);
@@ -308,7 +313,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .map((x) => `${x.t.slice(0, 100)}`);
 
     const ragExcerpts: string[] = [];
-    if (canUseFeature(org, "flux_docs")) {
+    if (canUseFeature(org, "flux_docs", gateCtx)) {
       try {
         const docs = await searchDocs(payload.orgId, title, 4);
         for (const d of docs.slice(0, 3)) {
@@ -355,7 +360,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
     if (togetherEnabled) {
-      const cap = getDailyAiCallsCap(org);
+      const cap = getDailyAiCallsCap(org, gateCtx);
       if (cap !== null) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
         const rlDaily = await rateLimit({

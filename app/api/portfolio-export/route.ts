@@ -4,7 +4,7 @@ import { ensureAdminUser } from "@/lib/kv-users";
 import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser } from "@/lib/kv-boards";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 
 /**
  * Export JSON do portfólio para integrações (BI, n8n, data warehouse).
@@ -18,8 +18,9 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) {
         return NextResponse.json({ error: err.message }, { status: err.status });

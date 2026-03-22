@@ -7,6 +7,7 @@ import {
   assertFeatureAllowed,
   getDailyAiCallsCap,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
   PlanGateError,
   getDailyAiCallsWindowMs,
 } from "@/lib/plan-gates";
@@ -31,8 +32,9 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) {
         return NextResponse.json({ error: err.message }, { status: err.status });
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
     const { chartId, chartTitle, dataSummary } = parsed.data;
 
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
     if (cap !== null && togetherEnabled) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);

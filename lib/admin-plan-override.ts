@@ -16,16 +16,16 @@ export function hasStripeSubscription(org: Organization | null | undefined): boo
 }
 
 /**
- * Override manual só com env ativa **e** sem `stripeSubscriptionId`.
- * Quem paga via Stripe deve mudar plano no portal / webhook, não pelo banco.
+ * Override manual do plano na org (PUT /api/organizations/me) quando a env está ativa.
+ * Admin da org não fica vinculado ao Stripe: pode editar o plano mesmo com assinatura ativa.
  */
-export function canAdminOverridePlan(org: Organization | null | undefined): boolean {
-  return allowAdminPlanOverrideFromEnv() && !hasStripeSubscription(org);
+export function canAdminOverridePlan(_org: Organization | null | undefined): boolean {
+  return allowAdminPlanOverrideFromEnv();
 }
 
-/** Para UI: env ligada mas org ainda tem subscription Stripe. */
-export function planOverrideBlockedByStripe(org: Organization | null | undefined): boolean {
-  return allowAdminPlanOverrideFromEnv() && hasStripeSubscription(org);
+/** Para UI: antes bloqueava quando havia Stripe; admin não depende disso. */
+export function planOverrideBlockedByStripe(_org: Organization | null | undefined): boolean {
+  return false;
 }
 
 /**

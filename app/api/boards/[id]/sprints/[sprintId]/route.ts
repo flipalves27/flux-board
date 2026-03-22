@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
 import { getSprint, updateSprint, deleteSprint } from "@/lib/kv-sprints";
 import { SprintUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "sprint_engine"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "sprint_engine", gateCtx); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 
@@ -37,7 +38,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "sprint_engine"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "sprint_engine", gateCtx); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 
@@ -63,7 +65,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "sprint_engine"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "sprint_engine", gateCtx); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 

@@ -5,7 +5,14 @@ import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards"
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, getDailyAiCallsCap, getDailyAiCallsWindowMs, makeDailyAiCallsRateLimitKey, PlanGateError } from "@/lib/plan-gates";
+import {
+  assertFeatureAllowed,
+  getDailyAiCallsCap,
+  getDailyAiCallsWindowMs,
+  makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
+  PlanGateError,
+} from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 
 type CardContextInput = {
@@ -386,9 +393,10 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
   let planBlocksAiContext = false;
   try {
-    assertFeatureAllowed(org, "card_context");
+    assertFeatureAllowed(org, "card_context", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) {
       // Em vez de bloquear com 403, seguimos com fallback heurístico.
@@ -515,7 +523,7 @@ export async function POST(
     if (!inFlight) {
       // Conta quota de calls/dia apenas quando vamos efetivamente disparar uma chamada IA
       // (cache miss / forceRefresh) e quando Together está configurado.
-      const cap = getDailyAiCallsCap(org);
+      const cap = getDailyAiCallsCap(org, gateCtx);
       const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
       if (cap !== null && togetherEnabled) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);

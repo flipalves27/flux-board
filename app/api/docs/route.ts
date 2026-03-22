@@ -3,14 +3,15 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { createDoc, listDocsTree } from "@/lib/kv-docs";
 import { DocCreateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { canUseFeature } from "@/lib/plan-gates";
+import { canUseFeature, planGateCtxForAuth } from "@/lib/plan-gates";
 
 export async function GET(request: NextRequest) {
   const payload = getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs")) {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  if (!canUseFeature(org, "flux_docs", gateCtx)) {
     return NextResponse.json({ error: "Flux Docs indisponível no plano atual." }, { status: 403 });
   }
 
@@ -23,7 +24,8 @@ export async function POST(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs")) {
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  if (!canUseFeature(org, "flux_docs", gateCtxPost)) {
     return NextResponse.json({ error: "Flux Docs indisponível no plano atual." }, { status: 403 });
   }
 

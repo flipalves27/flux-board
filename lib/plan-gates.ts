@@ -8,6 +8,19 @@ const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 /** Plano efetivo para gates (trial ativo conta como Pro; grace pós-downgrade mantém tier pago). */
 export type EffectiveGateTier = "free" | "pro" | "business" | "enterprise";
 
+/**
+ * Usuário **admin da organização** (`isAdmin`): desvinculado de Stripe/plano — tier efetivo
+ * **enterprise** para liberar todas as funcionalidades e limites (boards/usuários/IA).
+ */
+export type PlanGateContext = {
+  isOrgAdmin?: boolean;
+};
+
+/** Monta contexto a partir do JWT (rotas autenticadas). */
+export function planGateCtxForAuth(isAdmin: boolean | undefined): PlanGateContext | undefined {
+  return isAdmin ? { isOrgAdmin: true } : undefined;
+}
+
 export type Tier = Organization["plan"];
 
 const PAID: EffectiveGateTier[] = ["pro", "business", "enterprise"];
@@ -93,7 +106,8 @@ export class PlanGateError extends Error {
   }
 }
 
-export function getEffectiveTier(org: Organization | null | undefined): EffectiveGateTier {
+export function getEffectiveTier(org: Organization | null | undefined, ctx?: PlanGateContext): EffectiveGateTier {
+  if (ctx?.isOrgAdmin) return "enterprise";
   if (isProTenant()) return "pro";
   const plan = org?.plan ?? "free";
 
@@ -144,25 +158,25 @@ export function describeDowngradeImpact(params: {
 }
 
 /** Free: 90 dias; Pro/Business: ilimitado (null). */
-export function getBoardActivityRetentionDays(org: Organization | null | undefined): number | null {
-  const tier = getEffectiveTier(org);
+export function getBoardActivityRetentionDays(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {
+  const tier = getEffectiveTier(org, ctx);
   if (tier === "free") return BOARD_ACTIVITY_FREE_RETENTION_DAYS;
   return null;
 }
 
-export function getBoardCap(org: Organization | null | undefined): number | null {
-  const tier = getEffectiveTier(org);
+export function getBoardCap(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {
+  const tier = getEffectiveTier(org, ctx);
   if (tier === "free") return org?.maxBoards ?? 3;
   return null; // Pro/Business: ilimitado
 }
 
-export function getUserCap(org: Organization | null | undefined): number | null {
-  const tier = getEffectiveTier(org);
+export function getUserCap(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {
+  const tier = getEffectiveTier(org, ctx);
   if (tier === "free") return org?.maxUsers ?? 1;
   return null; // Pro/Business: sem teto via `maxUsers` (gates bypass).
 }
 
-export function canUseFeature(org: Organization | null | undefined, feature: FeatureKey): boolean {
+export function canUseFeature(org: Organization | null | undefined, feature: FeatureKey, ctx?: PlanGateContext): boolean {
   if (feature === "flux_docs") {
     const raw = (process.env.FLUX_DOCS_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_ENABLED || "true").toLowerCase();
     if (raw === "false" || raw === "0" || raw === "off") return false;
@@ -171,25 +185,29 @@ export function canUseFeature(org: Organization | null | undefined, feature: Fea
     const raw = (process.env.FLUX_DOCS_RAG_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_RAG_ENABLED || "true").toLowerCase();
     if (raw === "false" || raw === "0" || raw === "off") return false;
   }
-  const tier = getEffectiveTier(org);
+  const tier = getEffectiveTier(org, ctx);
   return FEATURE_ALLOWED_TIERS[feature].includes(tier);
 }
 
-export function assertFeatureAllowed(org: Organization | null | undefined, feature: FeatureKey): void {
-  if (canUseFeature(org, feature)) return;
+export function assertFeatureAllowed(
+  org: Organization | null | undefined,
+  feature: FeatureKey,
+  ctx?: PlanGateContext
+): void {
+  if (canUseFeature(org, feature, ctx)) return;
   throw new PlanGateError("Recurso disponível apenas para planos pagos (Pro, Business ou Enterprise).");
 }
 
-export function assertCanCreateBoard(org: Organization | null | undefined, currentCount: number): void {
-  const cap = getBoardCap(org);
+export function assertCanCreateBoard(org: Organization | null | undefined, currentCount: number, ctx?: PlanGateContext): void {
+  const cap = getBoardCap(org, ctx);
   if (cap === null) return;
   if (currentCount >= cap) {
     throw new PlanGateError(`Limite do plano: no máximo ${cap} board(s).`, 403);
   }
 }
 
-export function assertCanCreateUser(org: Organization | null | undefined, currentCount: number): void {
-  const cap = getUserCap(org);
+export function assertCanCreateUser(org: Organization | null | undefined, currentCount: number, ctx?: PlanGateContext): void {
+  const cap = getUserCap(org, ctx);
   if (cap === null) return;
   if (currentCount >= cap) {
     throw new PlanGateError(`Limite do plano: no máximo ${cap} usuário(s).`, 403);
@@ -207,8 +225,8 @@ function parsePositiveInt(raw: string | undefined): number | null {
  * Limite de "calls/dia" para endpoints que chamam IA (Together.ai).
  * Free: 3 (por padrão) | Pro/Business: ilimitado (null).
  */
-export function getDailyAiCallsCap(org: Organization | null | undefined): number | null {
-  const tier = getEffectiveTier(org);
+export function getDailyAiCallsCap(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {
+  const tier = getEffectiveTier(org, ctx);
   if (tier !== "free") return null;
   return (
     parsePositiveInt(process.env.FLUX_FREE_CALLS_PER_DAY) ??

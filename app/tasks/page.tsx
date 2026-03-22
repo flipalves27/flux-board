@@ -8,7 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routine-tasks-context";
 import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, getAlertSoundSettings, playAlertSound, setAlertSoundSettings } from "@/lib/alert-sounds";
 import { apiGet, ApiError } from "@/lib/api-client";
-import { getEffectiveTier, type Tier } from "@/lib/plan-gates";
+import { getEffectiveTier, planGateCtxForAuth, type Tier } from "@/lib/plan-gates";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -69,7 +69,7 @@ export default function TasksPage() {
       try {
         const data = await apiGet<{ organization: any }>("/api/organizations/me", getHeaders());
         const org = data?.organization;
-        const next = getEffectiveTier(org);
+        const next = getEffectiveTier(org, planGateCtxForAuth(user?.isAdmin));
         setTier(next);
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {

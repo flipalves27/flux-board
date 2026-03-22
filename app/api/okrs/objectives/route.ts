@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { listObjectives, createObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 
@@ -11,8 +11,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
       throw err;
@@ -37,8 +38,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtxPost);
     } catch (err) {
       if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
       throw err;

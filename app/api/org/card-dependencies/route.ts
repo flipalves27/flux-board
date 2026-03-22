@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import {
   createCrossDependencyLink,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
 
     const { searchParams } = new URL(request.url);
     const boardId = searchParams.get("boardId") || undefined;
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
 
     const body = (await request.json()) as {
       sourceBoardId?: string;
@@ -152,7 +152,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
 
     const { searchParams } = new URL(request.url);
     const linkId = searchParams.get("linkId") || "";

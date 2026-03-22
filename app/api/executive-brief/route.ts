@@ -4,7 +4,7 @@ import { ensureAdminUser } from "@/lib/kv-users";
 import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, buildExecutiveBriefMarkdown } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 
 export async function GET(request: NextRequest) {
   const payload = getAuthFromRequest(request);
@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "executive_brief");
+      assertFeatureAllowed(org, "executive_brief", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) {
         return NextResponse.json({ error: err.message }, { status: err.status });

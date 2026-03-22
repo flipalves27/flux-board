@@ -11,6 +11,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -965,12 +966,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
 
-  const tier = getEffectiveTier(org);
+  const tier = getEffectiveTier(org, gateCtx);
   const chat = await getBoardCopilotChat({ orgId: payload.orgId, boardId, userId: payload.id });
   const freeRemaining = tier === "free" ? Math.max(0, FREE_DEMO_MESSAGES_LIMIT - chat.freeDemoUsed) : null;
 
@@ -1006,13 +1009,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
 
-  const tier = getEffectiveTier(org);
-  const copilotFeatureAllowed = canUseFeature(org, "board_copilot");
+  const tier = getEffectiveTier(org, gateCtx);
+  const copilotFeatureAllowed = canUseFeature(org, "board_copilot", gateCtx);
 
   // Pro/Business: bloqueio por feature gate.
   if (tier !== "free") {
@@ -1052,7 +1057,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
     Boolean(process.env.ANTHROPIC_API_KEY);
   if (tier === "free" && llmCloudEnabled) {
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
       const rlDaily = await rateLimit({
@@ -1100,6 +1105,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           userMessage,
           org,
           ragChunks,
+          planGateCtx: gateCtx,
         });
 
         const modelOutput = await callCopilotLlmModel({

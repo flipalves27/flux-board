@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
 import { listComments, createComment, deleteComment, addReaction } from "@/lib/kv-comments";
 import { CommentCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "card_comments"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "card_comments", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos pagos." }, { status: 403 });
   }
 
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "card_comments"); } catch {
+  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "card_comments", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos pagos." }, { status: 403 });
   }
 

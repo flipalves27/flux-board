@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuthFromRequest } from "./auth";
 import { getOrganizationById } from "./kv-organizations";
-import { getEffectiveTier } from "./plan-gates";
+import { getEffectiveTier, planGateCtxForAuth } from "./plan-gates";
 import { logRateLimitAbuse } from "./rate-limit-abuse";
 import { rateLimitHeadersFromResult, slidingRateLimitConsume } from "./sliding-rate-limit";
 
@@ -100,7 +100,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     category = "ai";
     if (payload) {
       orgForMessage = await getOrganizationById(payload.orgId);
-      const tier = getEffectiveTier(orgForMessage);
+      const tier = getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin));
       limit = tier === "free" ? RL_AI_FREE_PER_MIN : RL_AI_PRO_PER_MIN;
       key = `mw:sliding:ai:user:${payload.id}:org:${payload.orgId}`;
     } else {
@@ -137,7 +137,11 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
       "Retry-After": String(retry),
     };
     const tierLabel =
-      category === "ai" && payload ? (getEffectiveTier(orgForMessage) === "free" ? "Free" : "Pro/Business") : "";
+      category === "ai" && payload
+        ? getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin)) === "free"
+          ? "Free"
+          : "Pro/Business"
+        : "";
     const message =
       category === "ai"
         ? `Limite de requisições de IA atingido (${limit}/min${tierLabel ? `, plano ${tierLabel}` : ""}). Tente novamente em ${retry}s.`

@@ -5,7 +5,7 @@ import { ensureAdminUser, getUserById } from "@/lib/kv-users";
 import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, canUseFeature, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
   buildRollingWeekRanges,
@@ -66,8 +66,9 @@ export async function GET(request: NextRequest) {
     }
 
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
       if (err instanceof PlanGateError) {
         return NextResponse.json({ error: err.message }, { status: err.status });
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     const quarter = currentQuarterLabel();
     let okrRings: Array<{ id: string; title: string; progressPct: number; quarter: string }> = [];
     let okrAvgPct: number | null = null;
-    const okrEnabled = canUseFeature(org, "okr_engine");
+    const okrEnabled = canUseFeature(org, "okr_engine", gateCtx);
 
     if (okrEnabled) {
       const grouped = await listObjectivesWithKeyResults(payload.orgId, quarter);

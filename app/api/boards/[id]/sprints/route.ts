@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, getEffectiveTier } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
 import { listSprints, createSprint } from "@/lib/kv-sprints";
 import { SprintCreateSchema, sanitizeText } from "@/lib/schemas";
 import { zodErrorToMessage } from "@/lib/schemas";
@@ -18,7 +18,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "sprint_engine"); } catch {
+  const gateCtxGet = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "sprint_engine", gateCtxGet); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 
@@ -35,7 +36,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  try { assertFeatureAllowed(org, "sprint_engine"); } catch {
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  try { assertFeatureAllowed(org, "sprint_engine", gateCtxPost); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 
