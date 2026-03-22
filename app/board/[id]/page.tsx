@@ -8,6 +8,7 @@ import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { BoardActivityPanel } from "@/components/kanban/board-activity-panel";
+import { BoardDesktopToolsRail } from "@/components/kanban/board-desktop-tools-rail";
 import dynamic from "next/dynamic";
 const SprintPanel = dynamic(() => import("@/components/kanban/sprint-panel"), { ssr: false });
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
@@ -762,11 +763,13 @@ export default function BoardPage() {
         }}
       />
 
-      <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
+      <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
       <SprintPanel boardId={boardId} getHeaders={getHeaders} />
 
-      <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} />
+      <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
+
+      <BoardDesktopToolsRail />
 
       <BoardProductTour
         ref={tourRef}

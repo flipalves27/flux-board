@@ -18,12 +18,14 @@ type BoardExecutionInsightsPanelProps = {
   executionInsights: BoardExecutionInsightsPayload;
   t: (key: string, values?: Record<string, string | number>) => string;
   onOpenCard: (card: CardData) => void;
+  hideDesktopFab?: boolean;
 };
 
 export function BoardExecutionInsightsPanel({
   executionInsights,
   t,
   onOpenCard,
+  hideDesktopFab = false,
 }: BoardExecutionInsightsPanelProps) {
   const tFab = useTranslations("kanban.executionInsights");
   const copilotOpen = useCopilotStore((s) => s.open);
@@ -31,8 +33,6 @@ export function BoardExecutionInsightsPanel({
   const open = useBoardExecutionInsightsStore((s) => s.open);
   const setOpen = useBoardExecutionInsightsStore((s) => s.setOpen);
   const toggleOpen = useBoardExecutionInsightsStore((s) => s.toggleOpen);
-
-  const fabRight = copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4";
 
   const onOpenToggle = () => {
     if (!open) {
@@ -44,22 +44,26 @@ export function BoardExecutionInsightsPanel({
 
   return (
     <>
-      <button
-        type="button"
-        className={`max-md:hidden fixed z-[var(--flux-z-fab-insights)] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[224px]`}
-        onClick={onOpenToggle}
-        aria-expanded={open}
-        aria-label={open ? tFab("fabClose") : tFab("fabOpen")}
-      >
-        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+      {!hideDesktopFab ? (
+        <button
+          type="button"
+          className={`max-md:hidden fixed z-[var(--flux-z-fab-insights)] transition-all duration-200 active:scale-[0.98] ${
+            copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4"
+          } top-[224px]`}
+          onClick={onOpenToggle}
+          aria-expanded={open}
+          aria-label={open ? tFab("fabClose") : tFab("fabOpen")}
+        >
+          <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{open ? tFab("fabClose") : tFab("fabOpen")}</span>
           </span>
-          <span className="text-[11px] font-semibold whitespace-nowrap">{open ? tFab("fabClose") : tFab("fabOpen")}</span>
-        </span>
-      </button>
+        </button>
+      ) : null}
 
       {open && (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-high)] pointer-events-none">

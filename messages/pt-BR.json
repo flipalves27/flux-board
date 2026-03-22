@@ -1997,6 +1997,13 @@
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
       },
+      "desktopToolsRail": {
+        "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
+        "handlePin": "Fixar faixa de ferramentas aberta",
+        "handleUnpin": "Soltar faixa de ferramentas",
+        "copilotOpen": "Copiloto IA",
+        "copilotClose": "Fechar IA"
+      },
       "nlq": {
         "label": "Consulta inteligente",
         "showPanel": "Mostrar consulta inteligente",

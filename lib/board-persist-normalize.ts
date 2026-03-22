@@ -193,7 +193,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
   } as BoardData;
 
   if (result.portal === null) {
-    delete (result as Record<string, unknown>).portal;
+    delete (result as unknown as Record<string, unknown>).portal;
   } else if (result.portal !== undefined && typeof result.portal === "object") {
     result.portal = sanitizePortalForPut(result.portal);
   }
@@ -230,7 +230,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
   }
 
   if (result.version === null) {
-    delete (result as Record<string, unknown>).version;
+    delete (result as unknown as Record<string, unknown>).version;
   }
 
   return result;

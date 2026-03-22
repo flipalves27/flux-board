@@ -25,6 +25,8 @@ type BoardCopilotPanelProps = {
   boardId: string;
   boardName: string;
   getHeaders: () => Record<string, string>;
+  /** When true, the floating trigger is rendered by `BoardDesktopToolsRail` instead. */
+  hideDesktopFab?: boolean;
 };
 
 type NlqApiBody =
@@ -123,7 +125,7 @@ function parseEventStreamFrame(frame: string): { event: string; data: unknown } 
   }
 }
 
-export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopilotPanelProps) {
+export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopFab = false }: BoardCopilotPanelProps) {
   const { pushToast } = useToast();
   const { user } = useAuth();
   const tNlq = useTranslations("kanban.board.nlq");
@@ -609,36 +611,38 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
 
   return (
     <>
-      <button
-        type="button"
-        data-tour="board-copilot"
-        className={`max-md:hidden fixed z-[var(--flux-z-fab-copilot)] transition-all duration-200 active:scale-[0.98] ${
-          open ? "right-[calc(min(440px,92vw)+16px)] top-[112px]" : "right-4 top-[112px]"
-        }`}
-        onClick={() => {
-          if (!open) {
-            useBoardActivityStore.getState().setOpen(false);
-            useBoardExecutionInsightsStore.getState().setOpen(false);
-          }
-          toggleOpen();
-        }}
-        aria-expanded={open}
-      >
-        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
-              <circle cx="12" cy="12" r="2.2" />
-            </svg>
-          </span>
-          <span className="text-[11px] font-semibold whitespace-nowrap">{open ? "Fechar IA" : "Copiloto IA"}</span>
-          {tier === "free" && freeDemoRemaining !== null ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
-              {freeDemoRemaining}
+      {!hideDesktopFab ? (
+        <button
+          type="button"
+          data-tour="board-copilot"
+          className={`max-md:hidden fixed z-[var(--flux-z-fab-copilot)] transition-all duration-200 active:scale-[0.98] ${
+            open ? "right-[calc(min(440px,92vw)+16px)] top-[112px]" : "right-4 top-[112px]"
+          }`}
+          onClick={() => {
+            if (!open) {
+              useBoardActivityStore.getState().setOpen(false);
+              useBoardExecutionInsightsStore.getState().setOpen(false);
+            }
+            toggleOpen();
+          }}
+          aria-expanded={open}
+        >
+          <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
+                <circle cx="12" cy="12" r="2.2" />
+              </svg>
             </span>
-          ) : null}
-        </span>
-      </button>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{open ? "Fechar IA" : "Copiloto IA"}</span>
+            {tier === "free" && freeDemoRemaining !== null ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
+                {freeDemoRemaining}
+              </span>
+            ) : null}
+          </span>
+        </button>
+      ) : null}
 
       {open && (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-backdrop)] pointer-events-none">

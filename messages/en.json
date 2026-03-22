@@ -1996,6 +1996,13 @@
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
       },
+      "desktopToolsRail": {
+        "handleTitle": "Hover to show board tools, or click to pin the strip open",
+        "handlePin": "Pin tools strip open",
+        "handleUnpin": "Unpin tools strip",
+        "copilotOpen": "AI Copilot",
+        "copilotClose": "Close AI"
+      },
       "nlq": {
         "label": "Smart board query",
         "showPanel": "Show smart query",

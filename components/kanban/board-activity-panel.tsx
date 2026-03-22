@@ -27,6 +27,7 @@ type ActivityApiResponse = {
 type BoardActivityPanelProps = {
   boardId: string;
   getHeaders: () => Record<string, string>;
+  hideDesktopFab?: boolean;
 };
 
 function initials(name: string): string {
@@ -52,7 +53,7 @@ function formatWhen(iso: string, locale: string): string {
   }
 }
 
-export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelProps) {
+export function BoardActivityPanel({ boardId, getHeaders, hideDesktopFab = false }: BoardActivityPanelProps) {
   const t = useTranslations("kanban.activity");
   const locale = useLocale();
   const copilotOpen = useCopilotStore((s) => s.open);
@@ -144,27 +145,29 @@ export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelPr
     toggleOpen();
   };
 
-  const fabRight = copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4";
-
   return (
     <>
-      <button
-        type="button"
-        className={`max-md:hidden fixed z-[var(--flux-z-fab-activity)] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[168px]`}
-        onClick={onOpenToggle}
-        aria-expanded={open}
-        aria-label={open ? t("fabClose") : t("fabOpen")}
-      >
-        <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M12 8v4l3 2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="12" r="9" />
-            </svg>
+      {!hideDesktopFab ? (
+        <button
+          type="button"
+          className={`max-md:hidden fixed z-[var(--flux-z-fab-activity)] transition-all duration-200 active:scale-[0.98] ${
+            copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4"
+          } top-[168px]`}
+          onClick={onOpenToggle}
+          aria-expanded={open}
+          aria-label={open ? t("fabClose") : t("fabOpen")}
+        >
+          <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M12 8v4l3 2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{open ? t("fabClose") : t("fabOpen")}</span>
           </span>
-          <span className="text-[11px] font-semibold whitespace-nowrap">{open ? t("fabClose") : t("fabOpen")}</span>
-        </span>
-      </button>
+        </button>
+      ) : null}
 
       {open && (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-high)] pointer-events-none">

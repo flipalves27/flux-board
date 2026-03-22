@@ -9,6 +9,7 @@ import { useLocale } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useBoardStore, registerCsvImportInput } from "@/stores/board-store";
 import { useCopilotStore } from "@/stores/copilot-store";
+import { registerBoardDesktopDailyOpener } from "@/lib/board-desktop-daily-bridge";
 import { registerRecentCard } from "@/lib/recent-cards";
 import { useToast } from "@/context/toast-context";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
@@ -43,30 +44,6 @@ function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(
   const { clearSelection } = useBoardCardSelection();
   clearRef.current = clearSelection;
   return null;
-}
-
-function DailyIaFab({ onOpen }: { onOpen: () => void }) {
-  const tFab = useTranslations("kanban.board.filters");
-  const copilotOpen = useCopilotStore((s) => s.open);
-  const fabRight = copilotOpen ? "right-[calc(min(440px,92vw)+16px)]" : "right-4";
-  return (
-    <button
-      type="button"
-      data-tour="board-daily"
-      className={`max-md:hidden fixed z-[var(--flux-z-fab-daily)] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[280px]`}
-      onClick={onOpen}
-      aria-label={tFab("dailyButton")}
-    >
-      <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-mid)] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-            <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
-          </svg>
-        </span>
-        <span className="text-[11px] font-semibold whitespace-nowrap">{tFab("dailyButton")}</span>
-      </span>
-    </button>
-  );
 }
 
 type KanbanBatchToolbarProps = {
@@ -353,6 +330,12 @@ function KanbanBoardLoaded({
   );
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
+
+  useEffect(() => {
+    registerBoardDesktopDailyOpener(openDailyModal);
+    return () => registerBoardDesktopDailyOpener(null);
+  }, [openDailyModal]);
+
   const cardsRef = useRef(board.cards);
   const bucketsRef = useRef(board.buckets);
   const tRef = useRef(t);
@@ -748,13 +731,13 @@ function KanbanBoardLoaded({
         <BoardExecutionInsightsPanel
           executionInsights={board.executionInsights}
           t={t}
+          hideDesktopFab
           onOpenCard={(card) => {
             board.setModalCard(card);
             board.setModalMode("edit");
           }}
         />
 
-        <DailyIaFab onOpen={openDailyModal} />
         <BoardMobileToolHub onOpenDaily={openDailyModal} />
 
         <BoardSummaryDock
