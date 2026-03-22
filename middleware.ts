@@ -14,12 +14,26 @@ const NON_CSP_HEADERS = {
 const HSTS_PROD =
   "max-age=63072000; includeSubDomains; preload";
 
-const CSP =
-  "default-src 'self'; " +
-  "img-src 'self' data: https:; " +
-  "script-src 'self' 'unsafe-inline'; " +
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-  "font-src 'self' https://fonts.gstatic.com;";
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function buildCsp(nonce: string, frameAncestors = "'none'"): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: https:",
+    "connect-src 'self'",
+    `frame-ancestors ${frameAncestors}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
 
 function isDocumentRequest(req: NextRequest) {
   const secFetchDest = req.headers.get("sec-fetch-dest");
@@ -110,24 +124,30 @@ export async function middleware(req: NextRequest) {
     return applyApiGlobalRateLimit(req);
   }
 
+  const nonce = generateNonce();
   const res = intlMiddleware(req);
   const embed = isEmbedDocumentPath(pathname);
+
+  res.headers.set("x-nonce", nonce);
 
   if (embed) {
     res.headers.delete("X-Frame-Options");
     if (isDocumentRequest(req)) {
-      res.headers.set(
-        "Content-Security-Policy",
-        "default-src 'self'; img-src 'self' data: https:; frame-ancestors *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
-      );
+      const csp = buildCsp(nonce, "*");
+      if (process.env.NODE_ENV === "production") {
+        res.headers.set("Content-Security-Policy", csp);
+      } else {
+        res.headers.set("Content-Security-Policy-Report-Only", csp);
+      }
     }
   } else {
     applyNonCspSecurityHeaders(res);
     if (isDocumentRequest(req)) {
+      const csp = buildCsp(nonce);
       if (process.env.NODE_ENV === "production") {
-        res.headers.set("Content-Security-Policy", CSP);
+        res.headers.set("Content-Security-Policy", csp);
       } else {
-        res.headers.set("Content-Security-Policy-Report-Only", CSP);
+        res.headers.set("Content-Security-Policy-Report-Only", csp);
       }
     }
   }

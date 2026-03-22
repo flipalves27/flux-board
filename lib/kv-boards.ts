@@ -347,7 +347,10 @@ export async function userCanAccessBoard(userId: string, orgId: string, isAdmin:
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
   if (board.ownerId === userId || isAdmin) return true;
-  return false;
+  // Board-level RBAC: check membership
+  const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
+  const role = await getBoardEffectiveRole(orgId, boardId, userId, false, false);
+  return roleCanRead(role);
 }
 
 export function getDefaultBoardData(): {

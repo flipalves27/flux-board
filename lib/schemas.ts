@@ -193,6 +193,43 @@ export const CardAutomationStateSchema = z
   })
   .passthrough();
 
+// -----------------------
+// Subtasks (v5 roadmap)
+// -----------------------
+
+export const SubtaskSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(300),
+  status: z.enum(["pending", "in_progress", "done", "blocked"]),
+  assigneeId: z.string().trim().max(200).nullable().default(null),
+  dueDate: z.string().trim().max(30).nullable().default(null),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  order: z.number().int().nonnegative().max(1000),
+  estimateHours: z.number().min(0).max(9999).nullable().default(null),
+  completedAt: z.string().trim().max(80).nullable().default(null),
+  createdAt: z.string().trim().max(80),
+  parentSubtaskId: z.string().trim().max(100).nullable().default(null),
+});
+
+export type SubtaskData = z.infer<typeof SubtaskSchema>;
+
+export const SubtaskProgressSchema = z.object({
+  total: z.number().int().min(0),
+  done: z.number().int().min(0),
+  blocked: z.number().int().min(0),
+  pct: z.number().min(0).max(100),
+});
+
+export type SubtaskProgress = z.infer<typeof SubtaskProgressSchema>;
+
+export function computeSubtaskProgress(subtasks: SubtaskData[]): SubtaskProgress {
+  const total = subtasks.length;
+  const done = subtasks.filter((s) => s.status === "done").length;
+  const blocked = subtasks.filter((s) => s.status === "blocked").length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { total, done, blocked, pct };
+}
+
 export const CardDataSchema = z
   .object({
     id: z.string().trim().min(1, "ID do card e obrigatorio.").max(200),
@@ -214,6 +251,8 @@ export const CardDataSchema = z
     /** Dias da coluna atual (antes de concluir) até completedAt. */
     completedCycleDays: z.number().int().min(0).max(3650).optional(),
     automationState: CardAutomationStateSchema.optional(),
+    subtasks: z.array(SubtaskSchema).max(50).optional().default([]),
+    subtaskProgress: SubtaskProgressSchema.optional(),
   })
   .passthrough();
 
@@ -691,4 +730,117 @@ export const WebhookSubscriptionUpdateSchema = z
     message: "Informe ao menos um campo para atualizar.",
   })
   .passthrough();
+
+// -----------------------
+// Sprint Engine (v5 roadmap)
+// -----------------------
+
+export const SprintDataSchema = z.object({
+  id: z.string().trim().min(1).max(200),
+  orgId: z.string().trim().min(1).max(200),
+  boardId: z.string().trim().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
+  goal: z.string().trim().max(1000).default(""),
+  status: z.enum(["planning", "active", "review", "closed"]).default("planning"),
+  startDate: z.string().trim().max(30).nullable().default(null),
+  endDate: z.string().trim().max(30).nullable().default(null),
+  velocity: z.number().min(0).nullable().default(null),
+  cardIds: z.array(z.string().trim().max(200)).default([]),
+  doneCardIds: z.array(z.string().trim().max(200)).default([]),
+  ceremonyIds: z.array(z.string().trim().max(200)).default([]),
+  createdAt: z.string().trim().max(80),
+  updatedAt: z.string().trim().max(80),
+});
+
+export type SprintData = z.infer<typeof SprintDataSchema>;
+
+export const SprintCreateSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  goal: z.string().trim().max(1000).optional(),
+  startDate: z.string().trim().max(30).nullable().optional(),
+  endDate: z.string().trim().max(30).nullable().optional(),
+  cardIds: z.array(z.string().trim().max(200)).optional(),
+});
+
+export const SprintUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(200).optional(),
+  goal: z.string().trim().max(1000).optional(),
+  startDate: z.string().trim().max(30).nullable().optional(),
+  endDate: z.string().trim().max(30).nullable().optional(),
+  status: z.enum(["planning", "active", "review", "closed"]).optional(),
+  cardIds: z.array(z.string().trim().max(200)).optional(),
+  doneCardIds: z.array(z.string().trim().max(200)).optional(),
+  velocity: z.number().min(0).nullable().optional(),
+});
+
+// -----------------------
+// Card Comments (v5 roadmap)
+// -----------------------
+
+export const CommentReactionSchema = z.object({
+  emoji: z.string().trim().max(10),
+  userId: z.string().trim().max(200),
+});
+
+export const CommentSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  cardId: z.string().trim().min(1).max(200),
+  boardId: z.string().trim().min(1).max(200),
+  orgId: z.string().trim().min(1).max(200),
+  authorId: z.string().trim().min(1).max(200),
+  body: z.string().trim().min(1).max(2000),
+  parentCommentId: z.string().trim().max(100).nullable().default(null),
+  reactions: z.array(CommentReactionSchema).max(200).default([]),
+  mentions: z.array(z.string().trim().max(200)).default([]),
+  isAiGenerated: z.boolean().default(false),
+  createdAt: z.string().trim().max(80),
+  editedAt: z.string().trim().max(80).nullable().default(null),
+});
+
+export type CommentData = z.infer<typeof CommentSchema>;
+
+export const CommentCreateSchema = z.object({
+  body: z.string().trim().min(1).max(2000),
+  parentCommentId: z.string().trim().max(100).nullable().optional(),
+  mentions: z.array(z.string().trim().max(200)).optional(),
+});
+
+// -----------------------
+// Time Tracking (v5 roadmap)
+// -----------------------
+
+export const TimeEntrySchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  cardId: z.string().trim().min(1).max(200),
+  boardId: z.string().trim().min(1).max(200),
+  orgId: z.string().trim().min(1).max(200),
+  subtaskId: z.string().trim().max(100).nullable().default(null),
+  userId: z.string().trim().min(1).max(200),
+  startedAt: z.string().trim().max(80),
+  endedAt: z.string().trim().max(80).nullable().default(null),
+  durationMinutes: z.number().min(0).max(99999).default(0),
+  note: z.string().trim().max(500).default(""),
+});
+
+export type TimeEntryData = z.infer<typeof TimeEntrySchema>;
+
+// -----------------------
+// Program Increment (v5 roadmap - SAFe PI)
+// -----------------------
+
+export const ProgramIncrementSchema = z.object({
+  id: z.string().trim().min(1).max(200),
+  orgId: z.string().trim().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
+  goal: z.string().trim().max(1000).default(""),
+  status: z.enum(["planning", "executing", "review", "closed"]).default("planning"),
+  startDate: z.string().trim().max(30).nullable().default(null),
+  endDate: z.string().trim().max(30).nullable().default(null),
+  sprintIds: z.array(z.string().trim().max(200)).default([]),
+  boardIds: z.array(z.string().trim().max(200)).default([]),
+  createdAt: z.string().trim().max(80),
+  updatedAt: z.string().trim().max(80),
+});
+
+export type ProgramIncrementData = z.infer<typeof ProgramIncrementSchema>;
 

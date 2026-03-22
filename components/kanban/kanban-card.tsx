@@ -13,6 +13,70 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { BucketConfig } from "@/app/board/[id]/page";
 import { useTranslations } from "next-intl";
+import { computeCardRiskScore, inferStagnationDaysFromCard } from "@/lib/card-risk-score";
+
+type SubtaskItem = { id: string; status: "pending" | "in_progress" | "done" | "blocked" };
+
+function RiskScoreBadge({ score }: { score: number }) {
+  const color =
+    score <= 40
+      ? "var(--flux-success)"
+      : score <= 70
+        ? "var(--flux-warning)"
+        : "var(--flux-danger)";
+  const label = score <= 40 ? "Baixo" : score <= 70 ? "Médio" : "Alto";
+  const tooltipContent = `Risco: ${score}/100 — ${label}`;
+  return (
+    <CustomTooltip content={tooltipContent} position="top">
+      <span
+        className="absolute top-0 right-0 w-2 h-2 rounded-full cursor-default"
+        style={{
+          background: color,
+          boxShadow: `0 0 4px 1px color-mix(in srgb, ${color} 50%, transparent)`,
+        }}
+        aria-label={tooltipContent}
+      />
+    </CustomTooltip>
+  );
+}
+
+function SubtaskProgressMini({ subtasks }: { subtasks: SubtaskItem[] }) {
+  if (!subtasks.length) return null;
+  const done = subtasks.filter((s) => s.status === "done").length;
+  const blocked = subtasks.filter((s) => s.status === "blocked").length;
+  const inProgress = subtasks.filter((s) => s.status === "in_progress").length;
+  const total = subtasks.length;
+  const pct = Math.round((done / total) * 100);
+  const tooltipContent = `Subtasks: ${done} de ${total} concluídas${blocked > 0 ? `, ${blocked} bloqueada${blocked > 1 ? "s" : ""}` : ""} (${pct}%)`;
+
+  return (
+    <CustomTooltip content={tooltipContent} position="top">
+      <div className="flex items-center gap-1 mb-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-[3px]">
+          {subtasks.map((s) => (
+            <span
+              key={s.id}
+              className="inline-block w-[5px] h-[5px] rounded-full"
+              style={{
+                background:
+                  s.status === "done"
+                    ? "var(--flux-success)"
+                    : s.status === "blocked"
+                      ? "var(--flux-danger)"
+                      : s.status === "in_progress"
+                        ? "var(--flux-primary)"
+                        : "color-mix(in srgb, var(--flux-text-muted) 30%, transparent)",
+              }}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-[var(--flux-text-muted)] tabular-nums font-medium">
+          {done}/{total}
+        </span>
+      </div>
+    </CustomTooltip>
+  );
+}
 
 interface KanbanCardProps {
   cardId: string;
@@ -259,6 +323,14 @@ function KanbanCardInner({
   const prioLabel = t(`cardModal.options.priority.${card.priority}`);
   const progLabel = t(`cardModal.options.progress.${card.progress}`);
 
+  const nowMs = Date.now();
+  const stagnDays = inferStagnationDaysFromCard(card as Record<string, unknown>, nowMs);
+  const riskScore = computeCardRiskScore(card as Record<string, unknown>, {
+    columnStagnationDays: stagnDays,
+    daysUntilDue: dr,
+    blockedHint: Array.isArray(card.blockedBy) && (card.blockedBy as string[]).length > 0,
+  });
+
   const ariaLabel = t("card.ariaLabel", {
     cardTitle: card.title,
     columnLabel: card.bucket,
@@ -322,6 +394,9 @@ function KanbanCardInner({
           {selectionCount}
         </span>
       ) : null}
+      {riskScore > 40 && card.progress !== "Concluída" && (
+        <RiskScoreBadge score={riskScore} />
+      )}
       <div
         ref={cardRef}
         className="relative flex flex-col min-w-0"
@@ -506,6 +581,9 @@ function KanbanCardInner({
           <div className="mb-2 text-[11px] text-[var(--flux-primary-light)]">
             {card.docRefs.length} doc(s) vinculado(s)
           </div>
+        )}
+        {Array.isArray((card as Record<string, unknown>).subtasks) && ((card as Record<string, unknown>).subtasks as unknown[]).length > 0 && (
+          <SubtaskProgressMini subtasks={(card as Record<string, unknown>).subtasks as SubtaskItem[]} />
         )}
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <div className="flex items-center gap-1">

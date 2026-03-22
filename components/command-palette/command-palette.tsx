@@ -242,6 +242,7 @@ export function CommandPalette() {
       { path: "/discovery", title: t("nav.discovery"), kw: "discovery" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },
       { path: "/tasks", title: t("nav.tasks"), kw: "tasks" },
+      { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
     ];
     if (user.isAdmin) {
       nav.push(

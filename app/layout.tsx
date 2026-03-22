@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/context/theme-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
 import { AppShell } from "@/components/app-shell";
+import { headers } from "next/headers";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -36,10 +37,12 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const hdrs = await headers();
+  const nonce = hdrs.get("x-nonce") ?? undefined;
   return (
     <html lang={locale} suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
       </head>
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>

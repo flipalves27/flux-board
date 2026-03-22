@@ -35,7 +35,18 @@ export type FeatureKey =
   | "custom_domain"
   | "white_label_full"
   | "api_webhook_unlimited"
-  | "copilot_tools_custom";
+  | "copilot_tools_custom"
+  // v5 roadmap features
+  | "sprint_engine"
+  | "ceremonies"
+  | "subtasks"
+  | "time_tracking"
+  | "card_comments"
+  | "ai_card_writer"
+  | "dependency_graph_visual"
+  | "portfolio_sprint"
+  | "flux_workflows_visual"
+  | "board_health_score";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: PAID,
@@ -59,6 +70,17 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   white_label_full: BIZ_UP,
   api_webhook_unlimited: BIZ_UP,
   copilot_tools_custom: ENT_ONLY,
+  // v5 roadmap features
+  sprint_engine: PAID,
+  ceremonies: BIZ_UP,
+  subtasks: PAID,
+  time_tracking: PAID,
+  card_comments: PAID,
+  ai_card_writer: PAID,
+  dependency_graph_visual: BIZ_UP,
+  portfolio_sprint: BIZ_UP,
+  flux_workflows_visual: BIZ_UP,
+  board_health_score: BIZ_UP,
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

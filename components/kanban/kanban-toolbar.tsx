@@ -18,6 +18,7 @@ type KanbanToolbarProps = {
   boardLabels: string[];
   activeLabels: Set<string>;
   onToggleLabel: (label: string) => void;
+  onOpenAiCardWriter?: () => void;
 };
 
 export function KanbanToolbar({
@@ -36,6 +37,7 @@ export function KanbanToolbar({
   boardLabels,
   activeLabels,
   onToggleLabel,
+  onOpenAiCardWriter,
 }: KanbanToolbarProps) {
   if (!priorityBarVisible) return null;
 
@@ -107,6 +109,16 @@ export function KanbanToolbar({
               <button type="button" onClick={onOpenMapa} className="board-toolbar-btn-sm shrink-0 whitespace-nowrap">
                 {t("board.filters.mapButton")}
               </button>
+              {onOpenAiCardWriter && (
+                <button
+                  type="button"
+                  onClick={onOpenAiCardWriter}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-08)] px-2 py-1 text-[11px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-15)] transition-all whitespace-nowrap"
+                  title="Criar card com IA a partir de linguagem natural"
+                >
+                  ✨ Criar com IA
+                </button>
+              )}
             </div>
           </div>
         </div>

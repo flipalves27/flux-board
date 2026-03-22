@@ -16,12 +16,14 @@ const CardLinksPanel = lazy(() => import("@/components/kanban/card-modal-tabs/ca
 const CardDocRefsPanel = lazy(() => import("@/components/kanban/card-modal-tabs/card-doc-refs-panel"));
 const CardHistoryTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-history-tab"));
 const CardDependenciesTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-dependencies-tab"));
+const CardSubtasksTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-subtasks-tab"));
+const CardCommentsTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-comments-tab"));
 
 const TAB_STORAGE_PREFIX = "flux-card-modal-tab:";
 
-export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history" | "deps";
+export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history" | "deps" | "subtasks" | "comments";
 
-const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history", "deps"]);
+const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history", "deps", "subtasks", "comments"]);
 
 function readStoredTab(cardId: string): CardModalTabId {
   if (typeof window === "undefined") return "edit";
@@ -46,6 +48,16 @@ const TAB_ICONS: Record<CardModalTabId, React.ReactNode> = {
   edit: (
     <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+    </svg>
+  ),
+  subtasks: (
+    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  ),
+  comments: (
+    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
   ai: (
@@ -200,9 +212,11 @@ export function CardModalLayout() {
 
   const tabItems: {
     id: CardModalTabId;
-    labelKey: "edit" | "ai" | "links" | "docs" | "history" | "deps";
+    labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps";
   }[] = [
     { id: "edit", labelKey: "edit" },
+    { id: "subtasks", labelKey: "subtasks" },
+    { id: "comments", labelKey: "comments" },
     { id: "ai", labelKey: "ai" },
     { id: "links", labelKey: "links" },
     { id: "docs", labelKey: "docs" },
@@ -332,6 +346,16 @@ export function CardModalLayout() {
         >
           <div key={activeTab} className="px-8 py-6 card-modal-tab-panel-in">
             {activeTab === "edit" && <CardEditForm cardId={card.id} />}
+            {activeTab === "subtasks" && (
+              <Suspense fallback={<TabSkeleton />}>
+                <CardSubtasksTab cardId={card.id} />
+              </Suspense>
+            )}
+            {activeTab === "comments" && (
+              <Suspense fallback={<TabSkeleton />}>
+                <CardCommentsTab cardId={card.id} />
+              </Suspense>
+            )}
             {activeTab === "ai" && (
               <Suspense fallback={<TabSkeleton />}>
                 <CardAiContextTab cardId={card.id} />

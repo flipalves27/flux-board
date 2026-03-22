@@ -1259,6 +1259,8 @@
       "tabsNavAria": "Card sections",
       "tabs": {
         "edit": "Details",
+        "subtasks": "Subtasks",
+        "comments": "Comments",
         "ai": "AI",
         "links": "Links",
         "docs": "Docs",
