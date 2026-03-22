@@ -250,12 +250,26 @@ function KanbanBoardLoaded({
   );
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
+  const cardsRef = useRef(board.cards);
+  const bucketsRef = useRef(board.buckets);
+  const tRef = useRef(t);
+  const handledQueryRef = useRef<string | null>(null);
+  cardsRef.current = board.cards;
+  bucketsRef.current = board.buckets;
+  tRef.current = t;
 
   useEffect(() => {
     const cardId = searchParams.get("card");
     const newCard = searchParams.get("newCard");
     const copilot = searchParams.get("copilot");
-    if (!cardId && newCard !== "1" && copilot !== "1") return;
+    if (!cardId && newCard !== "1" && copilot !== "1") {
+      handledQueryRef.current = null;
+      return;
+    }
+
+    const queryKey = `${boardId}|${searchParams.toString()}`;
+    if (handledQueryRef.current === queryKey) return;
+    handledQueryRef.current = queryKey;
 
     if (cardId) {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
@@ -267,16 +281,18 @@ function KanbanBoardLoaded({
       return;
     }
     if (newCard === "1") {
-      const firstBucket = board.buckets[0]?.key;
+      const buckets = bucketsRef.current;
+      const cards = cardsRef.current;
+      const firstBucket = buckets[0]?.key;
       if (firstBucket) {
-        const order = board.cards.filter((x) => x.bucket === firstBucket).length;
+        const order = cards.filter((x) => x.bucket === firstBucket).length;
         board.setModalCard({
           id: "",
           bucket: firstBucket,
           priority: "Média",
           progress: "Não iniciado",
           title: "",
-          desc: t("board.newCard.defaultDescription"),
+          desc: tRef.current("board.newCard.defaultDescription"),
           tags: [],
           direction: null,
           dueDate: null,
@@ -297,11 +313,8 @@ function KanbanBoardLoaded({
     boardId,
     router,
     localeRoot,
-    board.buckets,
-    board.cards,
     board.setModalCard,
     board.setModalMode,
-    t,
   ]);
 
   useEffect(() => {

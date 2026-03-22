@@ -60,10 +60,11 @@ export function useBoardFilters({
     if (forceExpandTourFilters) setPriorityBarVisible(true);
   }, [forceExpandTourFilters]);
 
+  const activeLabelsSize = activeLabels.size;
   useEffect(() => {
-    const stillFocused = activePrio === "Urgente" && activeLabels.size === 0 && searchQuery === "andamento";
+    const stillFocused = activePrio === "Urgente" && activeLabelsSize === 0 && searchQuery === "andamento";
     if (!stillFocused && focusMode) setFocusMode(false);
-  }, [activePrio, activeLabels, searchQuery, focusMode]);
+  }, [activePrio, activeLabelsSize, searchQuery, focusMode]);
 
   const clearFilters = useCallback(() => {
     setActivePrio("all");
