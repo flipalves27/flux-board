@@ -29,8 +29,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const dailyCap = getDailyAiCallsCap(org);
   if (dailyCap !== null) {
-    const rlKey = makeDailyAiCallsRateLimitKey(payload.orgId);
-    const rl = await rateLimit(rlKey, dailyCap, getDailyAiCallsWindowMs());
+    const rl = await rateLimit({ key: makeDailyAiCallsRateLimitKey(payload.orgId), limit: dailyCap, windowMs: getDailyAiCallsWindowMs() });
     if (!rl.allowed) return NextResponse.json({ error: "Limite diário de chamadas IA atingido." }, { status: 429 });
   }
 
