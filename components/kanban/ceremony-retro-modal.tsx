@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import type { RetroItem, RetroOutput } from "@/lib/ceremony-retrospective";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
-import { useRef } from "react";
 
 type CeremonyRetroModalProps = {
   boardId: string;
@@ -78,14 +77,77 @@ function RetroItemCard({
   );
 }
 
+type RetroColumnProps = {
+  cat: "went_well" | "improve" | "action";
+  items: RetroItem[];
+  onVote: (id: string) => void;
+  onDelete: (id: string) => void;
+  onAdd: (category: RetroItem["category"], text: string) => void;
+};
+
+function RetroColumn({ cat, items, onVote, onDelete, onAdd }: RetroColumnProps) {
+  const cfg = CATEGORY_CONFIG[cat];
+  const sortedItems = [...items].sort((a, b) => b.votes - a.votes);
+  const [addText, setAddText] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-display font-semibold text-sm" style={{ color: cfg.color }}>{cfg.label}</h3>
+      <div className="space-y-2">
+        {sortedItems.map((item) => (
+          <RetroItemCard key={item.id} item={item} onVote={onVote} onDelete={onDelete} />
+        ))}
+      </div>
+      {adding ? (
+        <div className="flex flex-col gap-1.5">
+          <textarea
+            value={addText}
+            onChange={(e) => setAddText(e.target.value)}
+            placeholder="Descreva o item…"
+            className="w-full rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-transparent px-3 py-2 text-sm text-[var(--flux-text)] placeholder:text-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)] resize-none"
+            rows={2}
+            maxLength={500}
+            autoFocus
+          />
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => { if (addText.trim()) { onAdd(cat, addText); setAddText(""); setAdding(false); } }}
+              className="flex-1 rounded-md py-1 text-xs font-semibold text-white transition-colors"
+              style={{ background: cfg.color }}
+            >
+              Adicionar
+            </button>
+            <button type="button" onClick={() => { setAdding(false); setAddText(""); }} className="flex-1 rounded-md border border-[var(--flux-chrome-alpha-12)] py-1 text-xs text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-04)]">Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="w-full rounded-lg border border-dashed border-[var(--flux-chrome-alpha-10)] py-2 text-xs text-[var(--flux-text-muted)] hover:border-current transition-all"
+          style={{ ["--hover-color" as string]: cfg.color }}
+        >
+          + Adicionar item
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: CeremonyRetroModalProps) {
-  const { retroModalOpen, closeRetro } = useCeremonyStore();
+  const retroModalOpen = useCeremonyStore((s) => s.retroModalOpen);
+  const closeRetro = useCeremonyStore((s) => s.closeRetro);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [retro, setRetro] = useState<RetroOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
 
   useModalA11y({ open: retroModalOpen, onClose: closeRetro, containerRef: dialogRef, initialFocusRef: closeBtnRef });
 
@@ -96,7 +158,7 @@ export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: Ce
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprintId)}/retrospective`, {
         method: "POST",
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       });
       if (res.ok) {
         const data = await res.json() as { retro: RetroOutput };
@@ -105,12 +167,12 @@ export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: Ce
         const data = await res.json() as { error?: string };
         setError(data.error ?? "Erro ao gerar retrospectiva.");
       }
-    } catch (e) {
+    } catch {
       setError("Erro de conexão.");
     } finally {
       setLoading(false);
     }
-  }, [boardId, sprintId, retroModalOpen, getHeaders]);
+  }, [boardId, sprintId, retroModalOpen]);
 
   useEffect(() => {
     if (retroModalOpen && !retro) void loadRetro();
@@ -201,57 +263,9 @@ export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: Ce
             </div>
           ) : retro ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {(["went_well", "improve", "action"] as const).map((cat) => {
-                const cfg = CATEGORY_CONFIG[cat];
-                const items = cat === "went_well" ? retro.wentWell : cat === "improve" ? retro.improve : retro.actions;
-                const sortedItems = [...items].sort((a, b) => b.votes - a.votes);
-                const [addText, setAddText] = useState("");
-                const [adding, setAdding] = useState(false);
-
-                return (
-                  <div key={cat} className="space-y-3">
-                    <h3 className="font-display font-semibold text-sm" style={{ color: cfg.color }}>{cfg.label}</h3>
-                    <div className="space-y-2">
-                      {sortedItems.map((item) => (
-                        <RetroItemCard key={item.id} item={item} onVote={handleVote} onDelete={handleDelete} />
-                      ))}
-                    </div>
-                    {adding ? (
-                      <div className="flex flex-col gap-1.5">
-                        <textarea
-                          value={addText}
-                          onChange={(e) => setAddText(e.target.value)}
-                          placeholder="Descreva o item…"
-                          className="w-full rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-transparent px-3 py-2 text-sm text-[var(--flux-text)] placeholder:text-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)] resize-none"
-                          rows={2}
-                          maxLength={500}
-                          autoFocus
-                        />
-                        <div className="flex gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => { if (addText.trim()) { handleAddItem(cat, addText); setAddText(""); setAdding(false); } }}
-                            className="flex-1 rounded-md py-1 text-xs font-semibold text-white transition-colors"
-                            style={{ background: cfg.color }}
-                          >
-                            Adicionar
-                          </button>
-                          <button type="button" onClick={() => { setAdding(false); setAddText(""); }} className="flex-1 rounded-md border border-[var(--flux-chrome-alpha-12)] py-1 text-xs text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-04)]">Cancelar</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setAdding(true)}
-                        className="w-full rounded-lg border border-dashed border-[var(--flux-chrome-alpha-10)] py-2 text-xs text-[var(--flux-text-muted)] hover:border-current transition-all"
-                        style={{ ["--hover-color" as string]: cfg.color }}
-                      >
-                        + Adicionar item
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+              <RetroColumn cat="went_well" items={retro.wentWell} onVote={handleVote} onDelete={handleDelete} onAdd={handleAddItem} />
+              <RetroColumn cat="improve" items={retro.improve} onVote={handleVote} onDelete={handleDelete} onAdd={handleAddItem} />
+              <RetroColumn cat="action" items={retro.actions} onVote={handleVote} onDelete={handleDelete} onAdd={handleAddItem} />
             </div>
           ) : null}
         </div>

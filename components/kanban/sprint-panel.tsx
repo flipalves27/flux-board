@@ -12,6 +12,9 @@ type SprintPanelProps = {
   getHeaders: () => Record<string, string>;
 };
 
+/** Referência estável — evita nova `[]` a cada render quando o board ainda não tem sprints. */
+const EMPTY_SPRINTS: SprintData[] = [];
+
 type BurndownPoint = { date: string; ideal: number; actual: number };
 
 function daysLeft(sprint: SprintData): number | null {
@@ -47,13 +50,15 @@ function SprintStatusBadge({ status }: { status: SprintData["status"] }) {
 
 export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const panelOpen = useSprintStore((s) => s.panelOpenBoard === boardId);
-  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? []);
+  /** `?? EMPTY` em vez de `?? []` — evita nova referência a cada render quando undefined (loop #185). */
+  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
   const activeSprint = useSprintStore((s) => s.activeSprint[boardId] ?? null);
   const loading = useSprintStore((s) => s.loadingBoard[boardId] ?? false);
   /** Seletores estáveis — evita `useSprintStore()` sem filtro (re-render a cada mudança) e loops #185. */
   const setPanelOpen = useSprintStore((s) => s.setPanelOpen);
   const upsertSprint = useSprintStore((s) => s.upsertSprint);
-  const { openRetro, openReview } = useCeremonyStore();
+  const openRetro = useCeremonyStore((s) => s.openRetro);
+  const openReview = useCeremonyStore((s) => s.openReview);
 
   const getHeadersRef = useRef(getHeaders);
   getHeadersRef.current = getHeaders;
