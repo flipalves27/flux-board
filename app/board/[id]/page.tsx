@@ -8,6 +8,8 @@ import { Header } from "@/components/header";
 import { KanbanBoard } from "@/components/kanban";
 import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
 import { BoardActivityPanel } from "@/components/kanban/board-activity-panel";
+import dynamic from "next/dynamic";
+const SprintPanel = dynamic(() => import("@/components/kanban/sprint-panel"), { ssr: false });
 import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
 import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
@@ -21,6 +23,7 @@ import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsv
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
+import { useSprintStore } from "@/stores/sprint-store";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
@@ -443,6 +446,18 @@ export default function BoardPage() {
               <button
                 type="button"
                 className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                onClick={() => useSprintStore.getState().setPanelOpen(boardId)}
+                aria-label="Abrir painel Sprint"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Sprint
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
                 onClick={() => setPortalOpen(true)}
               >
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -653,6 +668,8 @@ export default function BoardPage() {
       />
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
+
+      <SprintPanel boardId={boardId} getHeaders={getHeaders} />
 
       <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} />
 
