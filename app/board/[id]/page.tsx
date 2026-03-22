@@ -462,7 +462,7 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <DataFadeIn active key={boardId}>
+      <DataFadeIn active animate={false} key={boardId}>
         <div>
           <Header
             title={boardName}

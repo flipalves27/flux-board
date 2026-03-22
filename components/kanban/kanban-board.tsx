@@ -28,6 +28,7 @@ import { BoardSummaryDock } from "./board-summary-dock";
 import { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
+import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
 function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
   const { clearSelection } = useBoardCardSelection();
@@ -581,7 +582,7 @@ export function KanbanBoard(props: KanbanBoardProps) {
   const db = useBoardStore((s) => s.db);
   if (!db) return null;
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<SkeletonKanbanBoard />}>
       <KanbanBoardLoaded {...props} />
     </Suspense>
   );

@@ -124,7 +124,8 @@ export function useBoardRealtime({
       const data = (await res.json()) as BoardData & { cards?: unknown[]; lastUpdated?: string };
       const local = useBoardStore.getState().db;
       if (!local || !data.lastUpdated || data.lastUpdated === local.lastUpdated) return;
-      const cards = (data.cards || []) as CardData[];
+      if (!Array.isArray(data.cards)) return;
+      const cards = data.cards as CardData[];
       useBoardStore.getState().updateDbSilent((d) => {
         d.lastUpdated = data.lastUpdated || d.lastUpdated;
         d.cards = cards.map((c, i) => ({
