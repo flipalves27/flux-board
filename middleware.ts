@@ -26,7 +26,7 @@ function buildCsp(nonce: string, frameAncestors = "'none'"): string {
     // nonce for Next.js-injected scripts; unsafe-inline as fallback for older browsers
     // strict-dynamic removed: it overrides unsafe-inline and would block the theme-bootstrap
     // inline script unless *every* inline script receives the nonce (not reliable in App Router)
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://vercel.live`,
     // unsafe-inline needed for React style={{}} props used throughout the app
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com",
