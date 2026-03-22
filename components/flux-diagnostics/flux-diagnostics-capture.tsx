@@ -27,6 +27,7 @@ export function FluxDiagnosticsCapture() {
         message: e.message || "window error",
         stack: err instanceof Error ? err.stack : undefined,
         extra: [e.filename, e.lineno, e.colno].filter(Boolean).join(":") || undefined,
+        severity: "error",
       });
     };
 
@@ -36,6 +37,7 @@ export function FluxDiagnosticsCapture() {
         kind: "unhandledrejection",
         message: r instanceof Error ? r.message : String(r),
         stack: r instanceof Error ? r.stack : undefined,
+        severity: "error",
       });
     };
 

@@ -30,6 +30,7 @@ export class FluxErrorBoundary extends Component<Props, { error: Error | null }>
       stack: error.stack,
       componentStack: errorInfo.componentStack ?? undefined,
       extra: `name=${error.name}`,
+      severity: "error",
     });
   }
 

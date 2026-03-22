@@ -14,6 +14,7 @@
     "billing": "Billing",
     "invites": "Invites",
     "rateLimitAbuse": "Rate limit",
+    "tracer": "Tracer",
     "section": {
       "flow": "Flow",
       "intelligence": "Intelligence",
@@ -31,7 +32,8 @@
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
       "invites": "Pending invites for new members.",
-      "rateLimitAbuse": "API rate-limit blocks (abuse)."
+      "rateLimitAbuse": "API rate-limit blocks (abuse).",
+      "tracer": "Client-side error buffer (Flux diagnostics) for admins."
     },
     "menu": {
       "expand": "Expand menu",
@@ -91,7 +93,56 @@
       "orgSettings": "Organization settings",
       "billing": "Billing",
       "invites": "Invites",
-      "rateLimit": "Rate limit (abuse)"
+      "rateLimit": "Rate limit (abuse)",
+      "tracer": "Tracer (diagnostics)"
+    }
+  },
+  "diagnostics": {
+    "title": "Flux diagnostics",
+    "openAria": "Open Flux diagnostics",
+    "openButton": "Diagnostics ({count})",
+    "copy": "Copy",
+    "clear": "Clear",
+    "close": "Close",
+    "sessionTrace": "Session trace",
+    "persist": "Persist:",
+    "empty": "No events yet.",
+    "version": "Version"
+  },
+  "adminTracer": {
+    "title": "Tracer — diagnostics",
+    "subtitle": "Read-only view of the same client buffer as the floating panel (?fluxDebug=1). Export JSON to share with engineering.",
+    "howTo": "How to capture",
+    "hintFluxDebug": "Enable the buffer with",
+    "hintOr": "or",
+    "hintFloating": "Floating panel + DevTools:",
+    "fluxDebugStatus": "Buffer flag",
+    "fluxDebugOn": "on (?fluxDebug or localStorage)",
+    "fluxDebugOff": "off (events still accumulate from global handlers when the app runs)",
+    "filterKind": "Kind:",
+    "search": "Search:",
+    "searchPlaceholder": "message, route, stack…",
+    "copyJson": "Copy JSON",
+    "clear": "Clear buffer",
+    "sessionTrace": "Session trace",
+    "count": "Shown",
+    "empty": "No entries match the filter.",
+    "copyEntry": "Copy entry JSON",
+    "selectPrompt": "Select an entry on the left.",
+    "detail": {
+      "at": "Time (UTC)",
+      "message": "Message",
+      "route": "Route",
+      "href": "URL",
+      "locale": "Locale",
+      "appVersion": "App version",
+      "traceId": "Trace id",
+      "severity": "Severity",
+      "hints": "Hints",
+      "docs": "Documentation",
+      "stack": "Stack",
+      "componentStack": "Component stack",
+      "extra": "Extra"
     }
   },
   "hotkeys": {

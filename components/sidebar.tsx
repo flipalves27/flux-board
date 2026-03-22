@@ -133,6 +133,14 @@ function IconShield({ className }: { className?: string }) {
   );
 }
 
+function IconTracer({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
+}
+
 function IconInvites({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -345,6 +353,8 @@ export function Sidebar() {
     if (href === "/billing") return normalizedPath === "/billing";
     if (href === "/org-settings") return normalizedPath === "/org-settings";
     if (href === "/org-invites") return normalizedPath === "/org-invites";
+    if (href === "/rate-limit-abuse") return normalizedPath === "/rate-limit-abuse";
+    if (href === "/admin/tracer") return normalizedPath.startsWith("/admin/tracer");
     return normalizedPath === href;
   };
 
@@ -602,6 +612,20 @@ export function Sidebar() {
                   hint={t("hints.rateLimitAbuse")}
                   icon={<IconShield className="h-4 w-4 shrink-0" />}
                   label={t("rateLimitAbuse")}
+                />
+              )}
+              {compactMode ? (
+                <CustomTooltip content={t("hints.tracer")} position="right">
+                  <Link href={`/${locale}/admin/tracer`} className={linkClass("/admin/tracer")}>
+                    <IconTracer className="h-4 w-4 shrink-0" />
+                  </Link>
+                </CustomTooltip>
+              ) : (
+                <NavLink
+                  path="/admin/tracer"
+                  hint={t("hints.tracer")}
+                  icon={<IconTracer className="h-4 w-4 shrink-0" />}
+                  label={t("tracer")}
                 />
               )}
               {compactMode ? (

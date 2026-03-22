@@ -256,7 +256,8 @@ export function CommandPalette() {
         { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
         { path: "/org-invites", title: t("nav.invites"), kw: "invites" },
-        { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" }
+        { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" },
+        { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" }
       );
     }
 

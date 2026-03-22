@@ -11,7 +11,14 @@ vi.mock("next/navigation", () => {
   };
 });
 
-function Boom() {
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, values?: { count?: number }) => {
+    if (key === "openButton" && values?.count !== undefined) return `Diagnostics (${values.count})`;
+    return key;
+  },
+}));
+
+function Boom(): never {
   throw new Error("boom-test");
 }
 

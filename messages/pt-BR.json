@@ -14,6 +14,7 @@
     "billing": "Billing",
     "invites": "Convites",
     "rateLimitAbuse": "Rate limit",
+    "tracer": "Tracer",
     "section": {
       "flow": "Fluxo",
       "intelligence": "Inteligência",
@@ -31,7 +32,8 @@
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
       "invites": "Convites pendentes para novos membros.",
-      "rateLimitAbuse": "Bloqueios por limite de API (abuso)."
+      "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
+      "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -91,7 +93,56 @@
       "orgSettings": "Config. da organização",
       "billing": "Cobrança",
       "invites": "Convites",
-      "rateLimit": "Rate limit (abuso)"
+      "rateLimit": "Rate limit (abuso)",
+      "tracer": "Tracer (diagnóstico)"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnóstico Flux",
+    "openAria": "Abrir diagnóstico Flux",
+    "openButton": "Diagnóstico ({count})",
+    "copy": "Copiar",
+    "clear": "Limpar",
+    "close": "Fechar",
+    "sessionTrace": "Trace da sessão",
+    "persist": "Persistir:",
+    "empty": "Nenhum evento ainda.",
+    "version": "Versão"
+  },
+  "adminTracer": {
+    "title": "Tracer — diagnóstico",
+    "subtitle": "Visualização somente leitura do mesmo buffer do painel flutuante (?fluxDebug=1). Exporte JSON para compartilhar com engenharia.",
+    "howTo": "Como capturar",
+    "hintFluxDebug": "Ative o buffer com",
+    "hintOr": "ou",
+    "hintFloating": "Painel flutuante + DevTools:",
+    "fluxDebugStatus": "Flag do buffer",
+    "fluxDebugOn": "ligado (?fluxDebug ou localStorage)",
+    "fluxDebugOff": "desligado (eventos ainda podem ser registrados pelos handlers globais)",
+    "filterKind": "Tipo:",
+    "search": "Busca:",
+    "searchPlaceholder": "mensagem, rota, stack…",
+    "copyJson": "Copiar JSON",
+    "clear": "Limpar buffer",
+    "sessionTrace": "Trace da sessão",
+    "count": "Exibindo",
+    "empty": "Nenhuma entrada com o filtro atual.",
+    "copyEntry": "Copiar JSON da entrada",
+    "selectPrompt": "Selecione uma entrada à esquerda.",
+    "detail": {
+      "at": "Horário (UTC)",
+      "message": "Mensagem",
+      "route": "Rota",
+      "href": "URL",
+      "locale": "Locale",
+      "appVersion": "Versão do app",
+      "traceId": "Trace id",
+      "severity": "Severidade",
+      "hints": "Dicas",
+      "docs": "Documentação",
+      "stack": "Stack",
+      "componentStack": "Component stack",
+      "extra": "Extra"
     }
   },
   "hotkeys": {
