@@ -27,3 +27,15 @@ export function canAdminOverridePlan(org: Organization | null | undefined): bool
 export function planOverrideBlockedByStripe(org: Organization | null | undefined): boolean {
   return allowAdminPlanOverrideFromEnv() && hasStripeSubscription(org);
 }
+
+/**
+ * Novo Checkout Stripe (nova assinatura) só é adequado sem assinatura ativa.
+ * Com `stripeSubscriptionId` em estado ativo, o admin deve usar o Customer Portal
+ * para trocar plano (Pro ↔ Business), seats ou intervalo — evita assinatura duplicada.
+ */
+export function shouldAllowStripeCheckoutForOrg(org: Organization | null | undefined): boolean {
+  if (!hasStripeSubscription(org)) return true;
+  const st = String(org?.stripeStatus ?? "").toLowerCase();
+  if (st === "canceled" || st === "cancelled" || st === "incomplete_expired") return true;
+  return false;
+}

@@ -23,6 +23,7 @@ import {
   canAdminOverridePlan,
   hasStripeSubscription,
   planOverrideBlockedByStripe,
+  shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
 
 export async function GET(request: NextRequest) {
@@ -56,6 +57,8 @@ export async function GET(request: NextRequest) {
       stripePriceId: org.stripePriceId ?? null,
       stripeStatus: org.stripeStatus ?? null,
       stripeCurrentPeriodEnd: org.stripeCurrentPeriodEnd ?? null,
+      /** Novo checkout só quando não há assinatura ativa; senão usar Portal Stripe. */
+      allowStripeCheckout: shouldAllowStripeCheckoutForOrg(org),
       aiSettings: org.aiSettings ?? null,
     },
   });

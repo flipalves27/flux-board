@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
+import { shouldAllowStripeCheckoutForOrg } from "@/lib/admin-plan-override";
 import { createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
 
 type BillingPlan = "pro" | "business";
@@ -15,6 +16,16 @@ export async function POST(request: NextRequest) {
 
   const org = await getOrganizationById(payload.orgId);
   if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
+
+  if (!shouldAllowStripeCheckoutForOrg(org)) {
+    return NextResponse.json(
+      {
+        error:
+          "Esta organização já possui assinatura ativa no Stripe. Use o Portal do cliente (Billing → Gerenciar assinatura) para trocar de plano, seats ou período.",
+      },
+      { status: 409 }
+    );
+  }
 
   const body = await request.json().catch(() => ({}));
   const planRaw = body?.plan as unknown;

@@ -60,6 +60,8 @@ export default function BillingPage() {
   const [cancelReason, setCancelReason] = useState("too_expensive");
   const [cancelDetail, setCancelDetail] = useState("");
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  /** false quando já existe assinatura Stripe ativa — trocar plano via Portal, não novo checkout. */
+  const [allowStripeCheckout, setAllowStripeCheckout] = useState(true);
 
   const isAdmin = Boolean(user?.isAdmin);
   const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
@@ -105,6 +107,12 @@ export default function BillingPage() {
         setPeriodEnd(org?.stripeCurrentPeriodEnd != null ? String(org.stripeCurrentPeriodEnd) : null);
         setTrialEndsAt(org?.trialEndsAt != null ? String(org.trialEndsAt) : null);
         setDowngradeGraceEndsAt(org?.downgradeGraceEndsAt != null ? String(org.downgradeGraceEndsAt) : null);
+
+        setAllowStripeCheckout(
+          typeof (org as { allowStripeCheckout?: unknown }).allowStripeCheckout === "boolean"
+            ? (org as { allowStripeCheckout: boolean }).allowStripeCheckout
+            : true
+        );
 
         const usersData = await apiGet<{ users: unknown[] }>("/api/users", getHeaders());
         const count = Array.isArray(usersData?.users) ? usersData.users.length : 1;
@@ -159,7 +167,13 @@ export default function BillingPage() {
       window.location.href = res.url;
     } catch (e) {
       if (e instanceof ApiError) {
-        pushToast({ kind: "error", title: "Falha no checkout", description: (e.data as { error?: string })?.error ?? e.message });
+        const msg = (e.data as { error?: string })?.error ?? e.message;
+        pushToast({
+          kind: "error",
+          title: e.status === 409 ? "Use o Portal Stripe" : "Falha no checkout",
+          description: msg,
+        });
+        if (e.status === 409) setAllowStripeCheckout(false);
       } else {
         pushToast({ kind: "error", title: "Falha no checkout", description: e instanceof Error ? e.message : "Erro interno" });
       }
@@ -275,6 +289,18 @@ export default function BillingPage() {
                       boards={maxBoards ?? "—"}; usuários={maxUsers ?? "—"}
                     </span>
                   </p>
+                  {isProOrBusiness && !allowStripeCheckout ? (
+                    <div className="mt-4 rounded-[var(--flux-rad)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
+                      <p className="font-semibold text-[var(--flux-text)]">Como admin, altere o plano pelo Stripe</p>
+                      <p className="mt-1 text-[var(--flux-text-muted)]">
+                        Com cobrança ativa, use o <strong>Portal do cliente</strong> para trocar entre Pro e Business, mudar a
+                        quantidade de seats, alternar mensal/anual ou atualizar o cartão — evitando uma segunda assinatura.
+                      </p>
+                      <button type="button" disabled={busy} className="btn-primary mt-3" onClick={() => void openPortal()}>
+                        {busy ? "Abrindo..." : "Abrir Portal Stripe (mudar plano)"}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
                   {isProOrBusiness ? (
@@ -330,7 +356,18 @@ export default function BillingPage() {
             </section>
 
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
-              <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-4">Assinar</h3>
+              <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-2">Assinar ou fazer upgrade</h3>
+              {!allowStripeCheckout ? (
+                <p className="mb-4 text-sm text-[var(--flux-text-muted)]">
+                  Checkout abaixo fica disponível quando não há assinatura Stripe ativa (ex.: primeiro upgrade ou após
+                  cancelamento). Com assinatura ativa, use o botão <strong>Portal Stripe</strong> acima para mudar de
+                  plano.
+                </p>
+              ) : (
+                <p className="mb-4 text-sm text-[var(--flux-text-muted)]">
+                  Primeira assinatura ou reativação: escolha o plano e conclua no Stripe.
+                </p>
+              )}
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--flux-text-muted)]">Cobrança</span>
                 <div className="inline-flex rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
@@ -400,7 +437,7 @@ export default function BillingPage() {
                         setSeats(Number.isFinite(v) ? Math.max(1, v) : 1);
                       }}
                       className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                      disabled={busy || plan === "pro"}
+                      disabled={busy || plan === "pro" || !allowStripeCheckout}
                     />
                   </div>
                   <div className="mt-5">
@@ -409,8 +446,13 @@ export default function BillingPage() {
                         Pro ativo
                       </button>
                     ) : (
-                      <button disabled={busy || seats < 1} className="btn-primary w-full" onClick={() => startCheckout("pro")}>
-                        {busy ? "Indo para Stripe..." : "Upgrade Pro"}
+                      <button
+                        disabled={busy || seats < 1 || !allowStripeCheckout}
+                        className="btn-primary w-full"
+                        onClick={() => startCheckout("pro")}
+                        title={!allowStripeCheckout ? "Use o Portal Stripe para mudar de plano" : undefined}
+                      >
+                        {busy ? "Indo para Stripe..." : !allowStripeCheckout ? "Use o Portal (assinatura ativa)" : "Upgrade Pro"}
                       </button>
                     )}
                   </div>
@@ -444,7 +486,7 @@ export default function BillingPage() {
                         setSeats(Number.isFinite(v) ? Math.max(1, v) : 1);
                       }}
                       className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                      disabled={busy || plan === "business"}
+                      disabled={busy || plan === "business" || !allowStripeCheckout}
                     />
                   </div>
                   <div className="mt-5">
@@ -453,8 +495,13 @@ export default function BillingPage() {
                         Business ativo
                       </button>
                     ) : (
-                      <button disabled={busy || seats < 1} className="btn-primary w-full" onClick={() => startCheckout("business")}>
-                        {busy ? "Indo para Stripe..." : "Upgrade Business"}
+                      <button
+                        disabled={busy || seats < 1 || !allowStripeCheckout}
+                        className="btn-primary w-full"
+                        onClick={() => startCheckout("business")}
+                        title={!allowStripeCheckout ? "Use o Portal Stripe para mudar de plano" : undefined}
+                      >
+                        {busy ? "Indo para Stripe..." : !allowStripeCheckout ? "Use o Portal (assinatura ativa)" : "Upgrade Business"}
                       </button>
                     )}
                   </div>
