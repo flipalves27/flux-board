@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n";
-import { getClientIpFromHeaders } from "@/lib/client-ip";
 
 const NON_CSP_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -65,70 +64,20 @@ function applyNonCspSecurityHeaders(res: NextResponse) {
   return res;
 }
 
-async function applyApiGlobalRateLimit(req: NextRequest): Promise<NextResponse> {
-  if (req.nextUrl.pathname === "/api/internal/rate-limit-check") {
-    return applyNonCspSecurityHeaders(NextResponse.next());
-  }
-
-  const rawSecret = process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET;
-  const secret = rawSecret?.trim();
-  if (!secret) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[rate-limit] Defina RATE_LIMIT_INTERNAL_SECRET no .env.local para habilitar o limite global na API.");
-    }
-    return applyNonCspSecurityHeaders(NextResponse.next());
-  }
-
-  let ir: Response;
-  try {
-    ir = await fetch(new URL("/api/internal/rate-limit-check", req.nextUrl.origin), {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-flux-rate-internal": secret,
-      },
-      body: JSON.stringify({
-        pathname: req.nextUrl.pathname,
-        method: req.method,
-        clientIp: getClientIpFromHeaders(req.headers),
-        authHeader: req.headers.get("authorization"),
-        cookieHeader: req.headers.get("cookie"),
-        cronSecret: req.headers.get("x-cron-secret"),
-      }),
-      cache: "no-store",
-    });
-  } catch (e) {
-    console.error("[rate-limit] fetch interno falhou — fail-open:", e);
-    return applyNonCspSecurityHeaders(NextResponse.next());
-  }
-
-  if (ir.status === 429) {
-    const res = new NextResponse(ir.body, { status: 429 });
-    ir.headers.forEach((v, k) => res.headers.set(k, v));
-    return applyNonCspSecurityHeaders(res);
-  }
-
-  if (ir.status !== 200) {
-    // Serviço de rate limit retornou status inesperado — fail-open para não bloquear API.
-    console.error("[rate-limit] resposta inesperada do check interno:", ir.status, "— passando requisição adiante.");
-    return applyNonCspSecurityHeaders(NextResponse.next());
-  }
-
-  const res = NextResponse.next();
-  ir.headers.forEach((v, k) => {
-    const lk = k.toLowerCase();
-    if (lk.startsWith("x-ratelimit") || lk === "retry-after") {
-      res.headers.set(k, v);
-    }
-  });
-  return applyNonCspSecurityHeaders(res);
+/** Apply security headers to all API responses and pass through to the function. */
+function handleApiRequest(_req: NextRequest): NextResponse {
+  // Per-endpoint rate limiting is handled inside each API route (lib/rate-limit.ts).
+  // Performing an internal HTTP fetch here (to a rate-limit-check endpoint) causes every
+  // API call to incur an extra round-trip through Vercel Edge, consistently returning 401
+  // and risking Edge Middleware timeout — which shows as "—" (aborted) in Vercel logs.
+  return applyNonCspSecurityHeaders(NextResponse.next());
 }
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   if (pathname.startsWith("/api/")) {
-    return applyApiGlobalRateLimit(req);
+    return handleApiRequest(req);
   }
 
   const nonce = generateNonce();
