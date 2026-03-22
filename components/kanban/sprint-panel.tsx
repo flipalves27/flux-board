@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -50,8 +50,13 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? []);
   const activeSprint = useSprintStore((s) => s.activeSprint[boardId] ?? null);
   const loading = useSprintStore((s) => s.loadingBoard[boardId] ?? false);
-  const { setPanelOpen, setSprints, setActiveSprint, upsertSprint, removeSprint, setLoadingBoard } = useSprintStore();
+  /** Seletores estáveis — evita `useSprintStore()` sem filtro (re-render a cada mudança) e loops #185. */
+  const setPanelOpen = useSprintStore((s) => s.setPanelOpen);
+  const upsertSprint = useSprintStore((s) => s.upsertSprint);
   const { openRetro, openReview } = useCeremonyStore();
+
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
 
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
   const [burndown, setBurndown] = useState<BurndownPoint[] | null>(null);
@@ -64,24 +69,26 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const selectedSprint = sprints.find((s) => s.id === selectedSprintId) ?? activeSprint ?? sprints[0] ?? null;
 
   const loadSprints = useCallback(async () => {
-    setLoadingBoard(boardId, true);
+    const { setLoadingBoard: setLoading, setSprints: setList, setActiveSprint: setActive } = useSprintStore.getState();
+    setLoading(boardId, true);
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints`, {
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       });
       if (res.ok) {
         const data = await res.json() as { sprints: SprintData[] };
-        setSprints(boardId, data.sprints);
+        setList(boardId, data.sprints);
         const active = data.sprints.find((s) => s.status === "active") ?? null;
-        setActiveSprint(boardId, active);
+        setActive(boardId, active);
       }
     } finally {
-      setLoadingBoard(boardId, false);
+      setLoading(boardId, false);
     }
-  }, [boardId, getHeaders, setSprints, setActiveSprint, setLoadingBoard]);
+  }, [boardId]);
 
   useEffect(() => {
-    if (panelOpen) void loadSprints();
+    if (!panelOpen) return;
+    void loadSprints();
   }, [panelOpen, loadSprints]);
 
   useEffect(() => {
@@ -89,7 +96,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     if (selectedSprint.status === "active" || selectedSprint.status === "review") {
       setBurndownLoading(true);
       void apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${selectedSprint.id}/burndown`, {
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       }).then(async (res) => {
         if (res.ok) {
           const data = await res.json() as { burndown?: { days: BurndownPoint[] } };
@@ -99,7 +106,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     } else {
       setBurndown(null);
     }
-  }, [boardId, getHeaders, selectedSprint?.id, selectedSprint?.status]);
+  }, [boardId, selectedSprint?.id, selectedSprint?.status]);
 
   const handleCreateSprint = async () => {
     const name = newSprintName.trim();
@@ -109,7 +116,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints`, {
         method: "POST",
         body: JSON.stringify({ name }),
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       });
       if (res.ok) {
         const data = await res.json() as { sprint: SprintData };
@@ -125,7 +132,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const handleStartSprint = async (sprintId: string) => {
     const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${sprintId}/start`, {
       method: "POST",
-      headers: getApiHeaders(getHeaders()),
+      headers: getApiHeaders(getHeadersRef.current()),
     });
     if (res.ok) {
       const data = await res.json() as { sprint: SprintData };
@@ -136,7 +143,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const handleCompleteSprint = async (sprintId: string) => {
     const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${sprintId}/complete`, {
       method: "POST",
-      headers: getApiHeaders(getHeaders()),
+      headers: getApiHeaders(getHeadersRef.current()),
     });
     if (res.ok) {
       const data = await res.json() as { sprint: SprintData };
@@ -150,7 +157,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${sprintId}/planning-ai`, {
         method: "POST",
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       });
       if (res.ok) {
         const data = await res.json() as { suggestion?: { summary: string; recommendedCardIds: string[]; reasoning: string } };
