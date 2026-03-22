@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -127,15 +127,20 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
 
   const hasNlq = Boolean(metric || nlqCardIds !== undefined);
 
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+  const onExpandFiltersRef = useRef(onExpandFilters);
+  onExpandFiltersRef.current = onExpandFilters;
+
   const loadRecent = useCallback(async () => {
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/nlq`, { headers: getHeaders() });
+      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/nlq`, { headers: getHeadersRef.current() });
       const data = (await res.json().catch(() => ({}))) as { recent?: string[] };
       if (res.ok && Array.isArray(data.recent)) setRecent(data.recent);
     } catch {
       // ignore
     }
-  }, [boardId, getHeaders]);
+  }, [boardId]);
 
   useEffect(() => {
     void loadRecent();
@@ -150,7 +155,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
       try {
         const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/nlq`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getHeaders() },
+          headers: { "Content-Type": "application/json", ...getHeadersRef.current() },
           body: JSON.stringify({ query: q }),
         });
         const data = (await res.json().catch(() => ({}))) as NlqPostBody;
@@ -178,7 +183,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
         if (data.resultType === "cards") {
           setBoardNlqMetric(boardId, null);
           setBoardNlqCards(boardId, data.cardIds);
-          onExpandFilters();
+          onExpandFiltersRef.current();
           pushToast({
             kind: "success",
             title: t("toastTitle"),
@@ -207,7 +212,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
         setLoading(false);
       }
     },
-    [boardId, getHeaders, loadRecent, onExpandFilters, pushToast, setBoardNlqCards, setBoardNlqMetric, setNlqLlmMeta, t]
+    [boardId, loadRecent, pushToast, setBoardNlqCards, setBoardNlqMetric, setNlqLlmMeta, t]
   );
 
   return (

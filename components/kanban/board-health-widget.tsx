@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import type { BoardHealthScore } from "@/lib/board-health-score";
 
@@ -23,12 +23,15 @@ export function BoardHealthWidget({ boardId, getHeaders }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/health-score`, {
-        headers: getApiHeaders(getHeaders()),
+        headers: getApiHeaders(getHeadersRef.current()),
       });
       if (res.ok) {
         const data = await res.json() as { health: BoardHealthScore };
@@ -41,7 +44,7 @@ export function BoardHealthWidget({ boardId, getHeaders }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [boardId, getHeaders]);
+  }, [boardId]);
 
   useEffect(() => { void load(); }, [load]);
 

@@ -254,19 +254,27 @@ export default function BoardPage() {
   const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
   const tourExpandFilters = tourStep === 5;
 
+  /** next/navigation `useRouter()` pode mudar identidade entre renders — evita re-disparar loadBoard (#185). */
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
   useEffect(() => {
+    const localePrefix = `/${locale}`;
     if (!isChecked || !user) {
-      router.replace(`${localeRoot}/login`);
+      routerRef.current.replace(`${localePrefix}/login`);
       return;
     }
     if (!boardId) {
-      router.replace(`${localeRoot}/boards`);
+      routerRef.current.replace(`${localePrefix}/boards`);
       return;
     }
     useKanbanUiStore.getState().resetForBoardSwitch();
     useCopilotStore.getState().resetSessionUi();
     loadBoard();
-  }, [isChecked, user, boardId, router, localeRoot]);
+    // Somente id do usuário — o objeto `user` pode ganhar nova referência sem mudança real.
+    // Não depender de `router`/`localeRoot` (instáveis no App Router).
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadBoard fecha sobre o render atual; evita loop #185
+  }, [isChecked, user?.id, boardId, locale]);
 
   useEffect(() => {
     const id = boardId;
@@ -287,12 +295,12 @@ export default function BoardPage() {
         headers: getHeaders(),
       });
       if (r.status === 401) {
-        router.replace(`${localeRoot}/login`);
+        routerRef.current.replace(`${localeRoot}/login`);
         return;
       }
       if (r.status === 403) {
         pushToast({ kind: "error", title: t("toasts.noPermission") });
-        router.replace(`${localeRoot}/boards`);
+        routerRef.current.replace(`${localeRoot}/boards`);
         return;
       }
       if (!r.ok) throw new Error("Erro ao carregar");
@@ -337,7 +345,7 @@ export default function BoardPage() {
       }
     } catch {
       pushToast({ kind: "error", title: tBoardRef.current("toasts.loadError") });
-      router.replace(`${localeRoot}/boards`);
+      routerRef.current.replace(`${localeRoot}/boards`);
     } finally {
       setLoading(false);
     }

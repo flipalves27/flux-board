@@ -83,19 +83,27 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 80, left: 24 });
     const titleHeadingId = useId();
 
+    const userRef = useRef(user);
+    userRef.current = user;
+    const getHeadersRef = useRef(getHeaders);
+    getHeadersRef.current = getHeaders;
+    const routerRef = useRef(router);
+    routerRef.current = router;
+
     const persistCompleted = useCallback(async () => {
-      if (!user) return;
+      const u = userRef.current;
+      if (!u) return;
       try {
         await apiFetch("/api/users/me/product-tour", {
           method: "PATCH",
           body: JSON.stringify({ completed: true }),
-          headers: getApiHeaders(getHeaders()),
+          headers: getApiHeaders(getHeadersRef.current()),
         });
-        setAuth({ ...user, boardProductTourCompleted: true });
+        setAuth({ ...u, boardProductTourCompleted: true });
       } catch {
         // preference syncs on next login
       }
-    }, [user, setAuth, getHeaders]);
+    }, [setAuth]);
 
     const endTour = useCallback(() => {
       onTourStepChange(null);
@@ -128,7 +136,8 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       if (typeof window === "undefined") return;
       const sp = new URLSearchParams(window.location.search);
       if (sp.get("tour") !== "1") return;
-      if (!user) return;
+      const currentUser = userRef.current;
+      if (!currentUser) return;
       if (tourBootstrapDoneRef.current) return;
       tourBootstrapDoneRef.current = true;
 
@@ -136,14 +145,14 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       const qs = sp.toString();
       const hrefWithoutTour = qs ? `${pathname}?${qs}` : pathname;
 
-      if (user.boardProductTourCompleted) {
-        router.replace(hrefWithoutTour, { scroll: false });
+      if (currentUser.boardProductTourCompleted) {
+        routerRef.current.replace(hrefWithoutTour, { scroll: false });
         return;
       }
       useCopilotStore.getState().setOpen(false);
       onTourStepChange(0);
-      router.replace(hrefWithoutTour, { scroll: false });
-    }, [user, pathname, router, onTourStepChange]);
+      routerRef.current.replace(hrefWithoutTour, { scroll: false });
+    }, [user?.id, pathname, onTourStepChange]);
 
     useEffect(() => {
       if (!active) return;

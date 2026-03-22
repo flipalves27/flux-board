@@ -143,6 +143,8 @@ function KanbanBoardLoaded({
   const searchParamsKey = searchParams.toString();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { user } = useAuth();
   const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
@@ -212,7 +214,7 @@ function KanbanBoardLoaded({
     const m: Record<string, (e: KeyboardEvent) => void> = {};
     m[p["board.newCard"]] = (e) => {
       e.preventDefault();
-      router.push(`${localeRoot}/board/${boardId}?newCard=1`);
+      routerRef.current.push(`${localeRoot}/board/${boardId}?newCard=1`);
     };
     m[p["board.toggleFilters"]] = (e) => {
       e.preventDefault();
@@ -227,7 +229,7 @@ function KanbanBoardLoaded({
       });
     };
     return m;
-  }, [boardId, hotkeyPatterns, localeRoot, router, searchInputRef, setPriorityBarVisible]);
+  }, [boardId, hotkeyPatterns, localeRoot, searchInputRef, setPriorityBarVisible]);
 
   useHotkeys(boardHotkeyBindings);
 
@@ -279,7 +281,7 @@ function KanbanBoardLoaded({
         board.setModalCard(c);
         board.setModalMode("edit");
       }
-      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
     }
     if (newCard === "1") {
@@ -303,21 +305,14 @@ function KanbanBoardLoaded({
         });
         board.setModalMode("new");
       }
-      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
     }
     if (copilot === "1") {
       useCopilotStore.getState().setOpen(true);
-      router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
-  }, [
-    searchParamsKey,
-    boardId,
-    router,
-    localeRoot,
-    board.setModalCard,
-    board.setModalMode,
-  ]);
+  }, [searchParamsKey, boardId, localeRoot, board.setModalCard, board.setModalMode]);
 
   useEffect(() => {
     const card = board.modalCard;
