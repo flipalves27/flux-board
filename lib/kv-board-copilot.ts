@@ -28,6 +28,22 @@ const COL_COPILOT_CHATS = "board_copilot_chats";
 const MAX_MESSAGES_PER_CHAT = 80;
 const MAX_MESSAGE_CONTENT_CHARS = 20_000;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function copilotRetentionMs(): number {
+  const raw = Number(process.env.COPILOT_MESSAGE_RETENTION_DAYS ?? "90");
+  const days = Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 3650) : 90;
+  return days * DAY_MS;
+}
+
+function pruneCopilotMessagesByAge(messages: CopilotMessage[]): CopilotMessage[] {
+  const cutoff = Date.now() - copilotRetentionMs();
+  return messages.filter((m) => {
+    const t = Date.parse(m.createdAt);
+    return Number.isFinite(t) && t >= cutoff;
+  });
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -65,7 +81,17 @@ export async function getBoardCopilotChat(params: {
     const col = db.collection<CopilotChatDoc>(COL_COPILOT_CHATS);
 
     const doc = await col.findOne({ orgId, boardId, userId });
-    if (doc) return doc;
+    if (doc) {
+      const pruned = pruneCopilotMessagesByAge(doc.messages ?? []);
+      if (pruned.length !== (doc.messages ?? []).length) {
+        await col.updateOne(
+          { orgId, boardId, userId },
+          { $set: { messages: pruned, updatedAt: nowIso() } }
+        );
+        return { ...doc, messages: pruned, updatedAt: nowIso() };
+      }
+      return doc;
+    }
 
     const createdAt = nowIso();
     return {
@@ -81,7 +107,15 @@ export async function getBoardCopilotChat(params: {
 
   const store = await getStore();
   const existing = await store.get<CopilotChatDoc>(kvKey(orgId, boardId, userId));
-  if (existing) return existing;
+  if (existing) {
+    const pruned = pruneCopilotMessagesByAge(existing.messages ?? []);
+    if (pruned.length !== (existing.messages ?? []).length) {
+      const next = { ...existing, messages: pruned, updatedAt: nowIso() };
+      await store.set(kvKey(orgId, boardId, userId), next);
+      return next;
+    }
+    return existing;
+  }
 
   const createdAt = nowIso();
   return {
@@ -113,6 +147,7 @@ export async function appendBoardCopilotMessages(params: {
   if (!messagesToAppend.length) return getBoardCopilotChat({ orgId, boardId, userId });
 
   const createdAt = nowIso();
+
   const newMessages: CopilotMessage[] = messagesToAppend.map((m) => ({
     id: mkId(m.role),
     role: m.role,
@@ -159,6 +194,11 @@ export async function appendBoardCopilotMessages(params: {
     // Rebusca para retornar o doc final (simples/robusto).
     const doc = await col.findOne({ orgId, boardId, userId });
     if (!doc) throw new Error("Falha ao persistir histórico do Copiloto.");
+    const pruned = pruneCopilotMessagesByAge(doc.messages ?? []);
+    if (pruned.length !== (doc.messages ?? []).length) {
+      await col.updateOne({ orgId, boardId, userId }, { $set: { messages: pruned, updatedAt: nowIso() } });
+      return { ...doc, messages: pruned, updatedAt: nowIso() };
+    }
     return doc;
   }
 
@@ -176,7 +216,8 @@ export async function appendBoardCopilotMessages(params: {
   };
 
   const freeDemoUsed = baseDoc.freeDemoUsed + (incrementFreeDemoUsed ? 1 : 0);
-  const messages = [...(baseDoc.messages ?? []), ...newMessages].slice(-MAX_MESSAGES_PER_CHAT);
+  const prior = pruneCopilotMessagesByAge(baseDoc.messages ?? []);
+  const messages = [...prior, ...newMessages].slice(-MAX_MESSAGES_PER_CHAT);
   const next: CopilotChatDoc = {
     ...baseDoc,
     updatedAt: createdAt,

@@ -164,6 +164,8 @@ export const BucketConfigSchema = z
     key: z.string().trim().min(1, "Chave do bucket e obrigatoria.").max(200),
     label: z.string().trim().min(1, "Label do bucket e obrigatoria.").max(200),
     color: z.string().trim().min(1).max(50),
+    /** Limite WIP (work in progress) — máximo de cards na coluna. */
+    wipLimit: z.number().int().min(1).max(999).optional().nullable(),
   })
   .passthrough();
 

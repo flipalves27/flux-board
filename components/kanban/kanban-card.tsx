@@ -99,6 +99,7 @@ interface KanbanCardProps {
     patch: Partial<{ priority: string; bucket: string }>
   ) => void;
   onDuplicateCard?: (cardId: string) => void;
+  onPinToTop?: (cardId: string) => void;
   /** Desativa a barra (ex.: preview no DragOverlay). */
   quickActionsDisabled?: boolean;
   /** Preview no DragOverlay — não registra segundo draggable. */
@@ -142,6 +143,7 @@ function KanbanCardInner({
   priorities = [],
   onPatchCard,
   onDuplicateCard,
+  onPinToTop,
   quickActionsDisabled = false,
   dragOverlayPreview = false,
   activeDragIds = null,
@@ -392,7 +394,9 @@ function KanbanCardInner({
     buckets.length > 0 &&
     !quickActionsDisabled;
 
-  const toolbarOn = hasQuick && !isDragging && (showToolbar || touchPinned);
+  const showPin = Boolean(onPinToTop) && !quickActionsDisabled;
+
+  const toolbarOn = (hasQuick || showPin) && !isDragging && (showToolbar || touchPinned);
 
   const dragVisual = isDragging || isGhostSource;
   const sprintEmphasis = inActiveSprint && !selected;
@@ -445,83 +449,106 @@ function KanbanCardInner({
           onClick={stopDrag}
           aria-hidden={!toolbarOn}
         >
-          {hasQuick && toolbarOn ? (
+          {(hasQuick || showPin) && toolbarOn ? (
             <>
-              <DropdownMenu modal={false} onOpenChange={onPrioMenuOpenChange}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="h-6 min-w-0 max-w-[104px] shrink px-1.5 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[10px] font-semibold text-[var(--flux-text)] flex items-center gap-0.5 hover:border-[var(--flux-primary)]"
-                    title={t("card.quickActions.priorityTooltip")}
-                    aria-label={t("card.quickActions.priorityTooltip")}
-                  >
-                    <span className="truncate">{prioLabel}</span>
-                    <span className="text-[var(--flux-text-muted)] opacity-80">▾</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[140px]">
-                  {priorities.map((p) => (
-                    <DropdownMenuItem
-                      key={p}
-                      disabled={p === card.priority}
-                      onSelect={() => {
-                        onPatchCard?.(cardId, { priority: p });
+              {hasQuick ? (
+                <>
+                  <DropdownMenu modal={false} onOpenChange={onPrioMenuOpenChange}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-6 min-w-0 max-w-[104px] shrink px-1.5 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[10px] font-semibold text-[var(--flux-text)] flex items-center gap-0.5 hover:border-[var(--flux-primary)]"
+                        title={t("card.quickActions.priorityTooltip")}
+                        aria-label={t("card.quickActions.priorityTooltip")}
+                      >
+                        <span className="truncate">{prioLabel}</span>
+                        <span className="text-[var(--flux-text-muted)] opacity-80">▾</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[140px]">
+                      {priorities.map((p) => (
+                        <DropdownMenuItem
+                          key={p}
+                          disabled={p === card.priority}
+                          onSelect={() => {
+                            onPatchCard?.(cardId, { priority: p });
+                            setTouchPinned(false);
+                          }}
+                        >
+                          {t(`cardModal.options.priority.${p}`)}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu modal={false} onOpenChange={onColMenuOpenChange}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-6 min-w-0 max-w-[120px] shrink px-1.5 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[10px] font-semibold text-[var(--flux-text)] flex items-center gap-0.5 hover:border-[var(--flux-primary)]"
+                        title={t("card.quickActions.moveTooltip")}
+                        aria-label={t("card.quickActions.moveTooltip")}
+                      >
+                        <span className="truncate">
+                          {buckets.find((b) => b.key === card.bucket)?.label ?? card.bucket}
+                        </span>
+                        <span className="text-[var(--flux-text-muted)] opacity-80">▾</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[160px] max-h-[min(280px,50vh)] overflow-y-auto scrollbar-kanban">
+                      {buckets.map((b) => (
+                        <DropdownMenuItem
+                          key={b.key}
+                          disabled={b.key === card.bucket}
+                          onSelect={() => {
+                            onPatchCard?.(cardId, { bucket: b.key });
+                            setTouchPinned(false);
+                          }}
+                        >
+                          {b.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <CustomTooltip content={t("card.quickActions.duplicateTooltip")} position="top">
+                    <button
+                      type="button"
+                      className="h-6 w-6 shrink-0 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                      aria-label={t("card.quickActions.duplicateTooltip")}
+                      onClick={() => {
+                        onDuplicateCard?.(cardId);
                         setTouchPinned(false);
                       }}
                     >
-                      {t(`cardModal.options.priority.${p}`)}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden>
+                        <rect x="8" y="8" width="12" height="12" rx="2" />
+                        <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+                      </svg>
+                    </button>
+                  </CustomTooltip>
+                </>
+              ) : null}
 
-              <DropdownMenu modal={false} onOpenChange={onColMenuOpenChange}>
-                <DropdownMenuTrigger asChild>
+              {showPin ? (
+                <CustomTooltip content={t("card.quickActions.pinToTopTooltip")} position="top">
                   <button
                     type="button"
-                    className="h-6 min-w-0 max-w-[120px] shrink px-1.5 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[10px] font-semibold text-[var(--flux-text)] flex items-center gap-0.5 hover:border-[var(--flux-primary)]"
-                    title={t("card.quickActions.moveTooltip")}
-                    aria-label={t("card.quickActions.moveTooltip")}
+                    className="h-6 w-6 shrink-0 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                    aria-label={t("card.quickActions.pinToTopTooltip")}
+                    onClick={() => {
+                      onPinToTop?.(cardId);
+                      setTouchPinned(false);
+                    }}
                   >
-                    <span className="truncate">
-                      {buckets.find((b) => b.key === card.bucket)?.label ?? card.bucket}
-                    </span>
-                    <span className="text-[var(--flux-text-muted)] opacity-80">▾</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden>
+                      <path d="M12 5v14M5 12l7-7 7 7" />
+                    </svg>
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[160px] max-h-[min(280px,50vh)] overflow-y-auto scrollbar-kanban">
-                  {buckets.map((b) => (
-                    <DropdownMenuItem
-                      key={b.key}
-                      disabled={b.key === card.bucket}
-                      onSelect={() => {
-                        onPatchCard?.(cardId, { bucket: b.key });
-                        setTouchPinned(false);
-                      }}
-                    >
-                      {b.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </CustomTooltip>
+              ) : null}
 
-              <CustomTooltip content={t("card.quickActions.duplicateTooltip")} position="top">
-                <button
-                  type="button"
-                  className="h-6 w-6 shrink-0 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-                  aria-label={t("card.quickActions.duplicateTooltip")}
-                  onClick={() => {
-                    onDuplicateCard?.(cardId);
-                    setTouchPinned(false);
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden>
-                    <rect x="8" y="8" width="12" height="12" rx="2" />
-                    <path d="M4 16V6a2 2 0 0 1 2-2h10" />
-                  </svg>
-                </button>
-              </CustomTooltip>
-
+              {hasQuick ? (
               <CustomTooltip content={t("card.quickActions.deleteTooltip")} position="top">
                 <button
                   type="button"
@@ -537,6 +564,7 @@ function KanbanCardInner({
                   </svg>
                 </button>
               </CustomTooltip>
+              ) : null}
             </>
           ) : null}
         </div>

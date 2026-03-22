@@ -24,6 +24,7 @@ import {
 } from "@/lib/smart-card-enrich";
 import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
 import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { parseDecomposeSubtasksFromAssistant } from "@/lib/decompose-subtasks-from-llm";
 
 async function handleDecomposeMode(
   body: Record<string, unknown>,
@@ -59,16 +60,7 @@ Máximo 8 subtasks. Seja conciso e específico.`;
       { maxTokens: 600, temperature: 0.4 }
     );
     if (!result.ok) return NextResponse.json({ ok: true, subtasks: [] });
-    const jsonMatch = result.assistantText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return NextResponse.json({ ok: true, subtasks: [] });
-    const parsed = JSON.parse(jsonMatch[0]) as { subtasks?: Array<{ title: string; priority?: string; estimateHours?: number | null }> };
-    const subtasks = (parsed.subtasks ?? []).slice(0, 8).map((s, i) => ({
-      title: sanitizeText(String(s.title ?? "")).trim().slice(0, 300),
-      priority: ["low", "medium", "high"].includes(String(s.priority ?? "")) ? s.priority : "medium",
-      estimateHours: typeof s.estimateHours === "number" ? s.estimateHours : null,
-      status: "pending" as const,
-      order: i,
-    })).filter((s) => s.title.length > 0);
+    const subtasks = parseDecomposeSubtasksFromAssistant(result.assistantText);
     return NextResponse.json({ ok: true, subtasks });
   } catch {
     return NextResponse.json({ ok: true, subtasks: [] });

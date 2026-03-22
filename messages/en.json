@@ -1461,6 +1461,7 @@
         "priorityTooltip": "Change priority",
         "moveTooltip": "Move to column",
         "duplicateTooltip": "Duplicate card",
+        "pinToTopTooltip": "Move to top of column (backlog order)",
         "deleteTooltip": "Delete card"
       }
     },
@@ -1526,6 +1527,9 @@
         "rename": "Rename column"
       },
       "placeholder": "Ex: Backlog, In progress...",
+      "wipLabel": "WIP limit (optional)",
+      "wipPlaceholder": "e.g. 5 — leave empty for no limit",
+      "wipInvalid": "WIP must be a whole number between 1 and 999.",
       "cancel": "Cancel",
       "save": "Save",
       "create": "Create"

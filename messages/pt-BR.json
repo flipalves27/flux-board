@@ -1446,6 +1446,9 @@
         "rename": "Renomear coluna"
       },
       "placeholder": "Ex: Backlog, Em progresso...",
+      "wipLabel": "Limite WIP (opcional)",
+      "wipPlaceholder": "ex.: 5 — vazio = sem limite",
+      "wipInvalid": "WIP deve ser um número inteiro entre 1 e 999.",
       "cancel": "Cancelar",
       "save": "Salvar",
       "create": "Criar"
@@ -1809,6 +1812,7 @@
         "priorityTooltip": "Alterar prioridade",
         "moveTooltip": "Mover para coluna",
         "duplicateTooltip": "Duplicar card",
+        "pinToTopTooltip": "Ir para o topo da coluna (ordem do backlog)",
         "deleteTooltip": "Excluir card"
       }
     },

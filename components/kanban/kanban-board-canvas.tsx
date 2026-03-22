@@ -58,6 +58,7 @@ type KanbanBoardCanvasProps = {
     patch: Partial<Pick<CardData, "priority" | "bucket">>
   ) => void;
   onDuplicateCard: (cardId: string) => void;
+  onPinCardToTop?: (cardId: string) => void;
   /** Coluna com maior visibilidade no scroll (presença em tempo real). */
   onVisibleColumnKeyChange?: (columnKey: string | null) => void;
 };
@@ -101,6 +102,7 @@ export function KanbanBoardCanvas({
   onOpenAddColumn,
   onPatchCard,
   onDuplicateCard,
+  onPinCardToTop,
   onVisibleColumnKeyChange,
 }: KanbanBoardCanvasProps) {
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */

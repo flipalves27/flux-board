@@ -615,6 +615,7 @@ function KanbanBoardLoaded({
           }}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
+          onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
         />
 

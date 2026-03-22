@@ -143,6 +143,8 @@ export interface BucketConfig {
   key: string;
   label: string;
   color: string;
+  /** Limite WIP (opcional). */
+  wipLimit?: number;
 }
 
 export interface BoardData {
@@ -189,10 +191,16 @@ function sanitizeBucketOrder(raw: unknown): BucketConfig[] {
       const label = typeof rec.label === "string" ? rec.label.trim() : "";
       const color = typeof rec.color === "string" ? rec.color.trim() : "";
       if (!key) return null;
+      let wipLimit: number | undefined;
+      if (typeof rec.wipLimit === "number" && Number.isFinite(rec.wipLimit)) {
+        const w = Math.floor(rec.wipLimit);
+        if (w >= 1 && w <= 999) wipLimit = w;
+      }
       return {
         key,
         label: label || key,
         color: color || "var(--flux-text-muted)",
+        ...(wipLimit !== undefined ? { wipLimit } : {}),
       };
     })
     .filter((b): b is BucketConfig => b !== null);

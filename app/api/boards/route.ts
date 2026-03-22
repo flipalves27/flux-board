@@ -20,17 +20,14 @@ import { getPublishedTemplateById } from "@/lib/kv-templates";
 import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
+import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
+function corsHeaders(request: NextRequest) {
+  return boardsApiCorsHeaders(request);
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
 }
 
 export async function GET(request: NextRequest) {
@@ -69,7 +66,7 @@ export async function GET(request: NextRequest) {
         currentCount,
         atLimit: cap !== null && currentCount >= cap,
       };
-    return NextResponse.json({ boards, plan });
+    return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
     console.error("Boards API error:", err);
     return NextResponse.json(
@@ -150,7 +147,7 @@ export async function POST(request: NextRequest) {
           lastUpdated: board.lastUpdated,
         },
       },
-      { status: 201 }
+      { status: 201, headers: corsHeaders(request) }
     );
   } catch (err) {
     console.error("Boards API error:", err);

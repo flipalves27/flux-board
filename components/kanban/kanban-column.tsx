@@ -29,6 +29,7 @@ interface KanbanColumnProps {
     patch: Partial<Pick<CardData, "priority" | "bucket">>
   ) => void;
   onDuplicateCard: (cardId: string) => void;
+  onPinCardToTop?: (cardId: string) => void;
   /** Primeira coluna do board (marcadores do tour guiado). */
   isFirstColumn?: boolean;
   /** Arrasto multi — opacidade nos cards de origem. */
@@ -67,6 +68,7 @@ export function KanbanColumn({
   priorities,
   onPatchCard,
   onDuplicateCard,
+  onPinCardToTop,
   isFirstColumn,
   activeDragIds = null,
 }: KanbanColumnProps) {
@@ -114,7 +116,7 @@ export function KanbanColumn({
               aria-hidden
             />
             <span className="font-display font-bold text-sm text-[var(--flux-text)] tabular-nums">
-              {cards.length}
+              {typeof bucket.wipLimit === "number" ? `${cards.length}/${bucket.wipLimit}` : cards.length}
             </span>
           </div>
         </CustomTooltip>
@@ -134,10 +136,10 @@ export function KanbanColumn({
           {bucket.label}
         </div>
         <div
-          className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0"
+          className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0 tabular-nums"
           style={{ background: bucket.color || "var(--flux-text-muted)" }}
         >
-          {cards.length}
+          {typeof bucket.wipLimit === "number" ? `${cards.length}/${bucket.wipLimit}` : cards.length}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <CustomTooltip content={t("column.tooltips.newCard")} position="top">
@@ -231,6 +233,7 @@ export function KanbanColumn({
                 priorities={priorities}
                 onPatchCard={onPatchCard}
                 onDuplicateCard={onDuplicateCard}
+                onPinToTop={onPinCardToTop}
                 activeDragIds={activeDragIds}
               />
             </div>

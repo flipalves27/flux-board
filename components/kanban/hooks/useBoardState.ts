@@ -7,6 +7,12 @@ import type { OkrKrProjection } from "@/lib/okr-projection";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { useBoardStore, registerCsvExportHandler } from "@/stores/board-store";
+import {
+  validateBoardWip,
+  simulateMoveCardsBatch,
+  simulateMoveSingleCard,
+  simulatePatchBucketMove,
+} from "@/lib/board-wip";
 import { useFilterStore } from "@/stores/filter-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useDailySession } from "./useDailySession";
@@ -219,6 +225,14 @@ export function useBoardState({
 
   const moveCard = useCallback(
     (cardId: string, newBucket: string, newIndex: number) => {
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
+      const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+      if (!wip.ok) {
+        pushToast({ variant: "error", message: wip.message });
+        return;
+      }
       const oldBucket = db.cards.find((c) => c.id === cardId)?.bucket;
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
@@ -238,13 +252,21 @@ export function useBoardState({
       const buckets = [newBucket, ...(oldBucket && oldBucket !== newBucket ? [oldBucket] : [])];
       onAfterCardBucketsChange?.([...new Set(buckets)]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
   );
 
   /** Move vários cards na ordem dada para `newBucket` em `insertIndex` (0 = topo). */
   const moveCardsBatch = useCallback(
     (orderedIds: string[], newBucket: string, insertIndex: number) => {
       if (orderedIds.length === 0) return;
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
+      const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+      if (!wip.ok) {
+        pushToast({ variant: "error", message: wip.message });
+        return;
+      }
       const idSet = new Set(orderedIds);
       const fromBuckets = [
         ...new Set(
@@ -273,7 +295,7 @@ export function useBoardState({
       });
       onAfterCardBucketsChange?.([...new Set([...fromBuckets, newBucket])]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
   );
 
   const reorderColumns = useCallback(
@@ -290,25 +312,39 @@ export function useBoardState({
     [onAfterColumnReorder, updateDb]
   );
 
-  const saveColumn = useCallback(() => {
-    const label = newColumnName.trim() || "Nova Coluna";
-    if (editingColumnKey) {
-      updateDb((d) => {
-        d.config.bucketOrder = d.config.bucketOrder.map((b) =>
-          b.key === editingColumnKey ? { ...b, label } : b
-        );
-      });
-    } else {
-      const key = `col_${Date.now()}`;
-      const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
-      updateDb((d) => {
-        d.config.bucketOrder.push({ key, label, color });
-      });
-    }
-    setNewColumnName("");
-    setAddColumnOpen(false);
-    setEditingColumnKey(null);
-  }, [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]);
+  const saveColumn = useCallback(
+    (wipLimit?: number | null) => {
+      const label = newColumnName.trim() || "Nova Coluna";
+      if (editingColumnKey) {
+        updateDb((d) => {
+          d.config.bucketOrder = d.config.bucketOrder.map((b) => {
+            if (b.key !== editingColumnKey) return b;
+            const next = { ...b, label };
+            if (wipLimit === null) {
+              delete (next as { wipLimit?: number }).wipLimit;
+              return next;
+            }
+            if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) {
+              (next as { wipLimit?: number }).wipLimit = wipLimit;
+            }
+            return next;
+          });
+        });
+      } else {
+        const key = `col_${Date.now()}`;
+        const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
+        updateDb((d) => {
+          const row: { key: string; label: string; color: string; wipLimit?: number } = { key, label, color };
+          if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) row.wipLimit = wipLimit;
+          d.config.bucketOrder.push(row);
+        });
+      }
+      setNewColumnName("");
+      setAddColumnOpen(false);
+      setEditingColumnKey(null);
+    },
+    [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]
+  );
 
   const deleteColumn = useCallback(
     (key: string) => {
@@ -419,6 +455,19 @@ export function useBoardState({
       cardId: string,
       patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
     ) => {
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      if (patch.bucket !== undefined) {
+        const card = snap.cards.find((c) => c.id === cardId);
+        if (card && patch.bucket !== card.bucket) {
+          const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
+          const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+          if (!wip.ok) {
+            pushToast({ variant: "error", message: wip.message });
+            return;
+          }
+        }
+      }
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
         if (idx === -1) return;
@@ -449,6 +498,28 @@ export function useBoardState({
         if (patch.priority !== undefined) card.priority = patch.priority;
         if (patch.dueDate !== undefined) card.dueDate = patch.dueDate;
         if (patch.tags !== undefined) card.tags = patch.tags;
+      });
+    },
+    [updateDb, pushToast]
+  );
+
+  const pinCardToTop = useCallback(
+    (cardId: string) => {
+      updateDb((d) => {
+        const idx = d.cards.findIndex((c) => c.id === cardId);
+        if (idx === -1) return;
+        const card = d.cards[idx];
+        const bucket = card.bucket;
+        const without = d.cards.filter((c) => c.id !== cardId);
+        const bucketCards = without
+          .filter((c) => c.bucket === bucket)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        bucketCards.unshift({ ...card, bucket });
+        bucketCards.forEach((c, i) => {
+          c.order = i;
+        });
+        const otherBuckets = without.filter((c) => c.bucket !== bucket);
+        d.cards = [...otherBuckets, ...bucketCards];
       });
     },
     [updateDb]
@@ -834,6 +905,7 @@ export function useBoardState({
     handleTimelineOpenCard,
     duplicateCard,
     patchCardFromTable,
+    pinCardToTop,
     directionCounts,
     totalWithDir,
     executionInsights,
