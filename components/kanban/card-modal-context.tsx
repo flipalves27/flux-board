@@ -296,6 +296,42 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
               ? 0
               : 0;
 
+  /**
+   * Evita loop infinito (React #185): `card` pode mudar de referência a cada render
+   * (Zustand/immer/pai) com o mesmo conteúdo — `[card]` no effect disparava dezenas de setState.
+   */
+  const cardSyncKey = useMemo(() => {
+    const tags = [...(card.tags || [])].sort().join("\u0001");
+    const blocked = [...(card.blockedBy || [])].sort().join("\u0001");
+    return [
+      card.id,
+      card.title,
+      card.desc,
+      card.bucket,
+      card.priority,
+      card.progress,
+      card.dueDate ?? "",
+      card.direction ?? "",
+      tags,
+      blocked,
+      JSON.stringify(card.links || []),
+      JSON.stringify(card.docRefs || []),
+    ].join("\u0002");
+  }, [
+    card.id,
+    card.title,
+    card.desc,
+    card.bucket,
+    card.priority,
+    card.progress,
+    card.dueDate,
+    card.direction,
+    card.tags,
+    card.blockedBy,
+    card.links,
+    card.docRefs,
+  ]);
+
   useEffect(() => {
     setId(card.id);
     setTitle(card.title);
@@ -328,7 +364,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     }
     smartEnrichAbortRef.current?.abort();
     smartEnrichAbortRef.current = null;
-  }, [card]);
+  }, [cardSyncKey]); // eslint-disable-line react-hooks/exhaustive-deps -- cardSyncKey deduplica `card` por conteúdo (evita #185)
 
   const smartEnrichEligible =
     mode === "new" && !descriptionForSave.trim() && title.trim().length >= 2;

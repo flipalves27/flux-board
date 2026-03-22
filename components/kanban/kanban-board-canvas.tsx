@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ComponentProps, type RefObject } from "react";
+import { useEffect, useRef, type ComponentProps, type RefObject } from "react";
 import { DndContext, DragOverlay, type CollisionDetection, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
@@ -103,7 +103,12 @@ export function KanbanBoardCanvas({
   onDuplicateCard,
   onVisibleColumnKeyChange,
 }: KanbanBoardCanvasProps) {
+  /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
+  const bucketKeysSig = buckets.map((b) => b.key).join("|");
+  const lastReportedVisibleKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
+    lastReportedVisibleKeyRef.current = null;
     if (boardView !== "kanban" || !onVisibleColumnKeyChange) return;
     const root = boardScrollRef.current;
     if (!root) return;
@@ -122,7 +127,13 @@ export function KanbanBoardCanvas({
             if (!key) continue;
             if (!best || e.intersectionRatio > best.ratio) best = { key, ratio: e.intersectionRatio };
           }
-          if (best && best.ratio > 0.04) onVisibleColumnKeyChange(best.key);
+          if (best && best.ratio > 0.04) {
+            const next = best.key;
+            if (lastReportedVisibleKeyRef.current !== next) {
+              lastReportedVisibleKeyRef.current = next;
+              onVisibleColumnKeyChange(next);
+            }
+          }
         },
         { root, rootMargin: "0px", threshold: [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1] }
       );
@@ -134,7 +145,7 @@ export function KanbanBoardCanvas({
       cancelAnimationFrame(raf);
       io?.disconnect();
     };
-  }, [boardScrollRef, boardView, buckets, onVisibleColumnKeyChange]);
+  }, [boardScrollRef, boardView, bucketKeysSig, onVisibleColumnKeyChange]);
 
   return (
     <div

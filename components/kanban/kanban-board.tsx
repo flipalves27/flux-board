@@ -150,7 +150,7 @@ function KanbanBoardLoaded({
 
   const [visibleColumnKey, setVisibleColumnKey] = useState<string | null>(null);
   const onVisibleColumnKeyChange = useCallback((key: string | null) => {
-    setVisibleColumnKey(key);
+    setVisibleColumnKey((prev) => (prev === key ? prev : key));
   }, []);
 
   const collab = useBoardRealtime({
