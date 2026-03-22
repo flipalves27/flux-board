@@ -23,15 +23,19 @@ function generateNonce(): string {
 function buildCsp(nonce: string, frameAncestors = "'none'"): string {
   return [
     "default-src 'self'",
-    // unsafe-inline ignored by nonce-aware browsers; needed as fallback for older ones
-    // Next.js will apply nonce to its own scripts when x-nonce is forwarded as request header
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`,
-    // unsafe-inline needed for React style={{}} prop used extensively across the app
+    // nonce for Next.js-injected scripts; unsafe-inline as fallback for older browsers
+    // strict-dynamic removed: it overrides unsafe-inline and would block the theme-bootstrap
+    // inline script unless *every* inline script receives the nonce (not reliable in App Router)
+    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    // unsafe-inline needed for React style={{}} props used throughout the app
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
-    "connect-src 'self'",
+    // allow Vercel edge network and analytics endpoints
+    "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live",
     `frame-ancestors ${frameAncestors}`,
+    // allow Vercel live preview toolbar to load in an iframe inside our pages
+    "frame-src 'none' https://vercel.live",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

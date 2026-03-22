@@ -42,7 +42,8 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
+        {/* suppressHydrationWarning: browsers strip the nonce attr from the DOM after CSP, causing React 19 hydration mismatch */}
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
       </head>
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
