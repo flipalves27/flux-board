@@ -19,6 +19,7 @@ import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
+import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
 import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
@@ -355,8 +356,9 @@ export default function BoardPage() {
 
   const persist = useCallback(
     (data?: BoardData) => {
-      const toSave = data ?? useBoardStore.getState().db;
-      if (!toSave) return;
+      const raw = data ?? useBoardStore.getState().db;
+      if (!raw) return;
+      const toSave = normalizeBoardForPersist(raw);
       const payload = {
         ...toSave,
         lastUpdated: new Date().toISOString(),

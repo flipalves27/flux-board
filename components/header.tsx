@@ -15,7 +15,6 @@ interface HeaderProps {
   boardTourHeader?: boolean;
   backHref?: string;
   backLabel?: string;
-  hideDiscovery?: boolean;
   children?: React.ReactNode;
 }
 
@@ -25,7 +24,6 @@ export function Header({
   boardTourHeader,
   backHref,
   backLabel = "← Boards",
-  hideDiscovery,
   children,
 }: HeaderProps) {
   const { user } = useAuth();

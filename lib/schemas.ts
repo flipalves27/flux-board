@@ -112,7 +112,7 @@ export function zodErrorToMessage(err: z.ZodError<unknown>): string {
   return `Payload invalido. ${issues || "Verifique os campos enviados."}`;
 }
 
-function isSafeLinkUrl(url: string): boolean {
+export function isSafeLinkUrl(url: string): boolean {
   const s = String(url || "").trim();
   if (!s) return false;
 

@@ -56,14 +56,6 @@ function IconExecutiveDashboard({ className }: { className?: string }) {
   );
 }
 
-function IconDiscovery({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  );
-}
-
 function IconTemplates({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -346,7 +338,6 @@ export function Sidebar() {
     if (href === "/reports") return normalizedPath === "/reports";
     if (href === "/dashboard") return normalizedPath === "/dashboard";
     if (href === "/okrs") return normalizedPath === "/okrs";
-    if (href === "/discovery") return normalizedPath.startsWith("/discovery");
     if (href === "/templates") return normalizedPath.startsWith("/templates");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/users") return normalizedPath === "/users";
@@ -510,12 +501,6 @@ export function Sidebar() {
             hint={t("hints.boards")}
             icon={<IconBoards className="h-4 w-4 shrink-0" />}
             label={t("boards")}
-          />
-          <NavLink
-            path="/discovery"
-            hint={t("hints.discovery")}
-            icon={<IconDiscovery className="h-4 w-4 shrink-0" />}
-            label={t("discovery")}
           />
           <NavLink
             path="/templates"

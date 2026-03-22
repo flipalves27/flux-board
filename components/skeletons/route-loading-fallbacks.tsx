@@ -11,7 +11,7 @@ import {
 export function BoardsRouteLoadingFallback() {
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery />
+      <Header />
       <main className="mx-auto max-w-[1200px] px-6 py-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="h-7 w-40 rounded-[var(--flux-rad-sm)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
@@ -44,7 +44,7 @@ export function BoardRouteLoadingFallback() {
 export function ReportsRouteLoadingFallback() {
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery />
+      <Header />
       <main className="mx-auto max-w-[1200px] px-6 py-8">
         <div className="mb-6 space-y-2">
           <div className="h-3 w-28 rounded bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />

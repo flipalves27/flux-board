@@ -32,10 +32,10 @@ const IDEIAS = [
     implementado: ["FLUX_MAX_BOARDS_PER_USER + FLUX_PRO_TENANT", "Banner na lista quando no limite"],
   },
   {
-    titulo: "Discovery + IA operacional",
+    titulo: "IA operacional no board",
     pitch:
-      "Daily insights e fluxos de discovery já no produto sustentam ofertas de “copiloto de backlog” e POCs pagas com escopo fechado.",
-    implementado: ["Rotas /discovery e insights diários no board (já existentes)"],
+      "Daily insights e copiloto no quadro sustentam ofertas de “copiloto de backlog” e POCs pagas com escopo fechado.",
+    implementado: ["Insights diários no board", "Copilot contextual por board"],
   },
 ];
 
@@ -52,7 +52,7 @@ export default function NegociosPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery title="Oportunidades comerciais" backHref="/boards" backLabel="← Boards" />
+      <Header title="Oportunidades comerciais" backHref="/boards" backLabel="← Boards" />
       <main className="max-w-[900px] mx-auto px-6 py-8 space-y-8">
         <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">Produto</p>
@@ -75,10 +75,10 @@ export default function NegociosPage() {
               Ver portfólio e exportar brief
             </Link>
             <Link
-              href="/discovery"
+              href="/reports"
               className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-08)] px-3 py-2 text-xs font-semibold text-[var(--flux-secondary)] hover:border-[var(--flux-secondary)]"
             >
-              Discovery
+              Relatórios
             </Link>
           </div>
         </section>

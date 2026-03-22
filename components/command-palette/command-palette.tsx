@@ -245,7 +245,6 @@ export function CommandPalette() {
         ? [{ path: "/dashboard", title: t("nav.dashboard"), kw: "executive dashboard c-level portfolio health" }]
         : []),
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
-      { path: "/discovery", title: t("nav.discovery"), kw: "discovery" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },
       { path: "/tasks", title: t("nav.tasks"), kw: "tasks" },
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
