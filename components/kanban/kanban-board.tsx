@@ -139,6 +139,8 @@ function KanbanBoardLoaded({
   const t = useTranslations("kanban");
   const router = useRouter();
   const searchParams = useSearchParams();
+  /** String estável — `searchParams` pode mudar de identidade a cada render no App Router. */
+  const searchParamsKey = searchParams.toString();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const { user } = useAuth();
@@ -267,7 +269,7 @@ function KanbanBoardLoaded({
       return;
     }
 
-    const queryKey = `${boardId}|${searchParams.toString()}`;
+    const queryKey = `${boardId}|${searchParamsKey}`;
     if (handledQueryRef.current === queryKey) return;
     handledQueryRef.current = queryKey;
 
@@ -309,7 +311,7 @@ function KanbanBoardLoaded({
       router.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
   }, [
-    searchParams,
+    searchParamsKey,
     boardId,
     router,
     localeRoot,

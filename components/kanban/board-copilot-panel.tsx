@@ -188,6 +188,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
     return true;
   }, [generating, tier, freeDemoRemaining]);
 
+  // setters do zustand são estáveis; omitir do array evita re-fetch desnecessário ao abrir o board.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -215,7 +216,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
     return () => {
       cancelled = true;
     };
-  }, [open, boardId, getHeaders, pushToast, setFreeDemoRemaining, setLoadingHistory, setMessages, setTier]);
+  }, [open, boardId, getHeaders, pushToast]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

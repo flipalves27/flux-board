@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
   forwardRef,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
@@ -44,7 +46,7 @@ type BoardProductTourProps = {
 function positionPopoverNear(
   target: HTMLElement,
   pop: HTMLElement,
-  setPos: (p: { top: number; left: number }) => void
+  setPos: Dispatch<SetStateAction<{ top: number; left: number }>>
 ) {
   const rect = target.getBoundingClientRect();
   const pw = Math.min(360, window.innerWidth - 32);
@@ -55,7 +57,10 @@ function positionPopoverNear(
     top = Math.max(16, rect.top - ph - 10);
   }
   left = Math.max(16, Math.min(left, window.innerWidth - pw - 16));
-  setPos({ top, left });
+  setPos((prev) => {
+    if (Math.abs(prev.top - top) < 1 && Math.abs(prev.left - left) < 1) return prev;
+    return { top, left };
+  });
 }
 
 export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductTourProps>(
@@ -110,18 +115,32 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
 
     useImperativeHandle(ref, () => ({ skip, redo }), [skip, redo]);
 
+    /** Evita loop de updates se `?tour=1` não for removido da URL pelo primeiro replace. */
+    const tourBootstrapDoneRef = useRef(false);
+
+    useEffect(() => {
+      tourBootstrapDoneRef.current = false;
+    }, [pathname]);
+
     useEffect(() => {
       if (typeof window === "undefined") return;
-      const wantTour = new URLSearchParams(window.location.search).get("tour") === "1";
-      if (!wantTour) return;
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("tour") !== "1") return;
       if (!user) return;
+      if (tourBootstrapDoneRef.current) return;
+      tourBootstrapDoneRef.current = true;
+
+      sp.delete("tour");
+      const qs = sp.toString();
+      const hrefWithoutTour = qs ? `${pathname}?${qs}` : pathname;
+
       if (user.boardProductTourCompleted) {
-        router.replace(pathname, { scroll: false });
+        router.replace(hrefWithoutTour, { scroll: false });
         return;
       }
       useCopilotStore.getState().setOpen(false);
       onTourStepChange(0);
-      router.replace(pathname, { scroll: false });
+      router.replace(hrefWithoutTour, { scroll: false });
     }, [user, pathname, router, onTourStepChange]);
 
     useEffect(() => {

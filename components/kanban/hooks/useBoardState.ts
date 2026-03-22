@@ -553,6 +553,9 @@ export function useBoardState({
     a.click();
   }, [cards]);
 
+  const handleExportCsvRef = useRef(handleExportCSV);
+  handleExportCsvRef.current = handleExportCSV;
+
   const handleImportCSV = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -777,9 +780,9 @@ export function useBoardState({
   }, []);
 
   useEffect(() => {
-    registerCsvExportHandler(handleExportCSV);
+    registerCsvExportHandler(() => handleExportCsvRef.current());
     return () => registerCsvExportHandler(null);
-  }, [handleExportCSV]);
+  }, []);
 
   return {
     boardScrollRef,

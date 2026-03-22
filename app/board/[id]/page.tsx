@@ -244,6 +244,8 @@ export default function BoardPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
+  const tBoardRef = useRef(t);
+  tBoardRef.current = t;
   const csvImportMode = useKanbanUiStore((s) => s.csvImportMode);
   const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
   const [formOrigin, setFormOrigin] = useState("");
@@ -334,7 +336,7 @@ export default function BoardPage() {
         registerBoardVisit(user.id, boardId);
       }
     } catch {
-      pushToast({ kind: "error", title: t("toasts.loadError") });
+      pushToast({ kind: "error", title: tBoardRef.current("toasts.loadError") });
       router.replace(`${localeRoot}/boards`);
     } finally {
       setLoading(false);
@@ -412,7 +414,7 @@ export default function BoardPage() {
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
           setSaveStatus("error");
-          pushToast({ kind: "error", title: t("toasts.saveError") });
+          pushToast({ kind: "error", title: tBoardRef.current("toasts.saveError") });
           setTimeout(() => {
             if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
           }, 3000);
@@ -421,7 +423,7 @@ export default function BoardPage() {
         }
       }, 300);
     },
-    [boardId, getHeaders, t]
+    [boardId, getHeaders]
   );
 
   useEffect(() => {
