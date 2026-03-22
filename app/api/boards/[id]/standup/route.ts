@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     orgId: payload.orgId,
     boardId,
     userId: payload.id,
-    userName: payload.name || payload.username || "Usuário",
+    userName: payload.username || "Usuário",
     date: String(date || new Date().toISOString().slice(0, 10)).slice(0, 10),
     didYesterday: String(didYesterday ?? "").trim().slice(0, 800),
     willToday: String(willToday ?? "").trim().slice(0, 800),
