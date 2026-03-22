@@ -60,4 +60,36 @@ describe("normalizeBoardForPersist", () => {
     const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
     expect(parsed.success).toBe(true);
   });
+
+  it("strips portal null, bad dailyInsights and null intake fields so PUT passes schema", () => {
+    const db = {
+      version: "1",
+      lastUpdated: "t",
+      portal: null,
+      dailyInsights: [{ id: "" }, { id: "ok", insight: {} }],
+      intakeForm: { enabled: true, slug: null, title: "Flux Forms" },
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Backlog",
+          priority: "Média",
+          progress: "Não iniciado",
+          desc: "",
+          tags: [],
+          order: 0,
+        },
+      ],
+      config: {
+        bucketOrder: [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+      },
+    } as unknown as BoardData;
+    const n = normalizeBoardForPersist(db);
+    expect(n.portal).toBeUndefined();
+    expect(n.dailyInsights?.length).toBe(1);
+    expect(n.dailyInsights?.[0]?.id).toBe("ok");
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
 });

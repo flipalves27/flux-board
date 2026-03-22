@@ -307,7 +307,7 @@ export const AutomationRulesUpsertSchema = z.object({
   rules: z.array(AutomationRuleSchema).max(40),
 });
 
-const MapaProducaoItemSchema = z
+export const MapaProducaoItemSchema = z
   .object({
     papel: z.string().trim().max(200),
     equipe: z.string().trim().max(200),

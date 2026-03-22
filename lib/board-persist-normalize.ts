@@ -2,10 +2,30 @@ import type { BoardData, BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { SubtaskData } from "@/lib/schemas";
 import {
   CardAutomationStateSchema,
+  DailyInsightEntrySchema,
   isSafeLinkUrl,
+  MapaProducaoItemSchema,
   SubtaskProgressSchema,
   SubtaskSchema,
 } from "@/lib/schemas";
+
+/** Zod `.optional()` não aceita `null`; remove chaves nulas para o PUT não retornar 400. */
+function omitEntryNulls<T extends Record<string, unknown>>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== null && v !== undefined) out[k] = v;
+  }
+  return out as T;
+}
+
+function sanitizePortalForPut(portal: NonNullable<BoardData["portal"]>): BoardData["portal"] {
+  const p = omitEntryNulls({ ...(portal as unknown as Record<string, unknown>) }) as Record<string, unknown>;
+  const b = p.branding;
+  if (b && typeof b === "object") {
+    p.branding = omitEntryNulls(b as Record<string, unknown>);
+  }
+  return p as BoardData["portal"];
+}
 
 type CardPersistSource = CardData & {
   subtasks?: unknown[];
@@ -152,8 +172,11 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       intakeForm = { ...intakeForm, slug: undefined };
     }
   }
+  if (intakeForm && typeof intakeForm === "object") {
+    intakeForm = omitEntryNulls({ ...(intakeForm as unknown as Record<string, unknown>) }) as BoardData["intakeForm"];
+  }
 
-  return {
+  const result = {
     ...db,
     cards,
     config: {
@@ -167,5 +190,48 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
         : db.config?.labels,
     },
     ...(intakeForm !== undefined ? { intakeForm } : {}),
-  };
+  } as BoardData;
+
+  if (result.portal === null) {
+    delete (result as Record<string, unknown>).portal;
+  } else if (result.portal !== undefined && typeof result.portal === "object") {
+    result.portal = sanitizePortalForPut(result.portal);
+  }
+
+  if (Array.isArray(result.dailyInsights)) {
+    result.dailyInsights = result.dailyInsights.filter((e) => DailyInsightEntrySchema.safeParse(e).success);
+  }
+
+  if (
+    result.anomalyNotifications &&
+    typeof result.anomalyNotifications === "object" &&
+    !Array.isArray(result.anomalyNotifications)
+  ) {
+    result.anomalyNotifications = omitEntryNulls(
+      result.anomalyNotifications as unknown as Record<string, unknown>
+    ) as BoardData["anomalyNotifications"];
+  }
+
+  if (Array.isArray(result.mapaProducao)) {
+    result.mapaProducao = result.mapaProducao
+      .map((row) => {
+        if (!row || typeof row !== "object") return null;
+        const o = row as Record<string, unknown>;
+        const coerced = {
+          ...o,
+          papel: String(o.papel ?? "").trim().slice(0, 200),
+          equipe: String(o.equipe ?? "").trim().slice(0, 200),
+          linha: String(o.linha ?? "").trim().slice(0, 200),
+          operacoes: String(o.operacoes ?? "").trim().slice(0, 4000),
+        };
+        return MapaProducaoItemSchema.safeParse(coerced).success ? coerced : null;
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null);
+  }
+
+  if (result.version === null) {
+    delete (result as Record<string, unknown>).version;
+  }
+
+  return result;
 }

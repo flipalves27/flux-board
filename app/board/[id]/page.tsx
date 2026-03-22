@@ -302,7 +302,7 @@ export default function BoardPage() {
 
   const loadBoard = useCallback(async () => {
     try {
-      const r = await apiFetch(`/api/boards/${boardId}`, {
+      const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
         cache: "no-store",
         headers: getHeadersRef.current(),
       });
@@ -410,7 +410,7 @@ export default function BoardPage() {
         try {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-              const res = await apiFetch(`/api/boards/${boardId}`, {
+              const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
                 method: "PUT",
                 body: JSON.stringify(payload),
                 headers: getApiHeaders(getHeaders()),
