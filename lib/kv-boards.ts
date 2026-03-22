@@ -364,9 +364,7 @@ export function getDefaultBoardData(): {
   const path = require("path");
   const dataDir = path.join(process.cwd(), "data");
   const jsonPath = path.join(dataDir, "db.json");
-  const jsPath = path.join(dataDir, "db.js");
-  const seedPath = fs.existsSync(jsonPath) ? jsonPath : jsPath;
-  const raw = fs.readFileSync(seedPath, "utf-8");
+  const raw = fs.readFileSync(jsonPath, "utf-8");
   const seed = JSON.parse(raw);
   return {
     version: "2.0",

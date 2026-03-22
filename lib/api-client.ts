@@ -8,6 +8,9 @@
  * Configuração: Vercel Dashboard → Settings → Deployment Protection →
  * Protection Bypass for Automation → gerar secret → adicionar variável
  * NEXT_PUBLIC_VERCEL_BYPASS_SECRET com o mesmo valor.
+ *
+ * Segurança: o valor é exposto no bundle do cliente — use só para bypass de preview/proteção
+ * Vercel; trate como segredo rotacionável se vazar.
  */
 
 const BYPASS_SECRET =

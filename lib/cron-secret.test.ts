@@ -36,4 +36,30 @@ describe("verifyCronSecret", () => {
     });
     expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(true);
   });
+
+  it("denies empty header when a secret is configured", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.AUTOMATION_CRON_SECRET = "abc";
+    const req = new NextRequest("http://localhost/api/cron/x", { headers: {} });
+    expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(false);
+  });
+
+  it("denies wrong secret (same length as expected)", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.AUTOMATION_CRON_SECRET = "abc";
+    const req = new NextRequest("http://localhost/api/cron/x", {
+      headers: { "x-cron-secret": "xyz" },
+    });
+    expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(false);
+  });
+
+  it("uses first defined env key among candidates", () => {
+    process.env.VERCEL_ENV = "production";
+    delete process.env.FIRST_CRON;
+    process.env.SECOND_CRON = "tok";
+    const req = new NextRequest("http://localhost/api/cron/x", {
+      headers: { "x-cron-secret": "tok" },
+    });
+    expect(verifyCronSecret(req, ["FIRST_CRON", "SECOND_CRON"])).toBe(true);
+  });
 });

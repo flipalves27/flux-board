@@ -239,7 +239,9 @@ export default function CardCommentsTab({ cardId }: { cardId: string }) {
       <div className="rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)] p-3 space-y-2">
         {replyingToComment && (
           <div className="flex items-center justify-between rounded-lg bg-[var(--flux-chrome-alpha-04)] px-2 py-1">
-            <span className="text-[11px] text-[var(--flux-text-muted)]">Respondendo: "{replyingToComment.body.slice(0, 60)}…"</span>
+            <span className="text-[11px] text-[var(--flux-text-muted)]">
+              Respondendo: &ldquo;{replyingToComment.body.slice(0, 60)}&hellip;&rdquo;
+            </span>
             <button type="button" onClick={() => setReplyTo(null)} className="text-[11px] text-[var(--flux-danger)] ml-2">✕</button>
           </div>
         )}

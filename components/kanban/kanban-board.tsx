@@ -93,8 +93,8 @@ function KanbanBatchToolbarBound({
   patchCardFromTable,
   setConfirmDelete,
 }: KanbanBatchToolbarProps) {
-  if (boardView !== "kanban") return null;
   const { selectedIds, clearSelection, getOrderedSelectionIds } = useBoardCardSelection();
+  if (boardView !== "kanban") return null;
   const n = selectedIds.size;
   if (n === 0) return null;
   const ordered = getOrderedSelectionIds();
