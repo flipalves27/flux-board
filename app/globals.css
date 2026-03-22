@@ -969,6 +969,25 @@
     animation: cardModalFooterEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  .card-modal-tab-strip {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+  }
+  .card-modal-tab-strip::-webkit-scrollbar {
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .card-modal-tab-strip {
+      scroll-snap-type: none;
+    }
+  }
+
+  .card-modal-panel-sections section {
+    animation: cardModalSectionIn 0.32s var(--flux-ease-standard) both;
+  }
+
   .modal-overlay-animate {
     animation: modalOverlayFade 0.28s ease forwards;
   }
@@ -1033,16 +1052,31 @@
   }
 }
 
+@keyframes cardModalSectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-modal-backdrop,
   .card-modal-content,
   .card-modal-accent,
   .card-modal-tab-panel-in,
-  .card-modal-footer-enter {
+  .card-modal-footer-enter,
+  .card-modal-panel-sections section {
     animation: none !important;
   }
   .card-modal-content {
     filter: none !important;
+  }
+  .card-modal-tab-strip {
+    scroll-behavior: auto;
   }
 }
 

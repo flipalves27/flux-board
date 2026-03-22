@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslations as useCollabTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -44,48 +44,132 @@ function writeStoredTab(cardId: string, tab: CardModalTabId) {
   }
 }
 
-const TAB_ICONS: Record<CardModalTabId, React.ReactNode> = {
+const TAB_ICONS: Record<CardModalTabId, ReactNode> = {
   edit: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
     </svg>
   ),
   subtasks: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   ),
   comments: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
   ai: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
     </svg>
   ),
   links: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
     </svg>
   ),
   docs: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
   history: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   ),
   deps: (
-    <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
     </svg>
   ),
 };
+
+type TabDef = { id: CardModalTabId; labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps" };
+
+function CardModalTabs({
+  primaryItems,
+  secondaryItems,
+  activeTab,
+  onSelect,
+  t,
+  ariaLabel,
+}: {
+  primaryItems: TabDef[];
+  secondaryItems: TabDef[];
+  activeTab: CardModalTabId;
+  onSelect: (id: CardModalTabId) => void;
+  t: (key: string) => string;
+  ariaLabel: string;
+}) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const activeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const el = activeBtnRef.current;
+    const strip = stripRef.current;
+    if (!el || !strip) return;
+    const prefersReduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduce) return;
+    el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeTab]);
+
+  const renderTab = (def: TabDef) => {
+    const selected = activeTab === def.id;
+    return (
+      <button
+        key={def.id}
+        ref={selected ? activeBtnRef : undefined}
+        type="button"
+        role="tab"
+        aria-selected={selected}
+        id={`card-modal-tab-${def.id}`}
+        tabIndex={selected ? 0 : -1}
+        onClick={() => onSelect(def.id)}
+        className={`group card-modal-tab-btn inline-flex shrink-0 snap-center items-center gap-2 rounded-xl border px-2.5 py-2 text-left font-display text-xs font-semibold motion-safe:transition-[background-color,border-color,box-shadow,transform,color] motion-safe:duration-200 motion-safe:ease-[var(--flux-ease-standard)] motion-safe:active:scale-[0.98] sm:px-3 sm:text-[13px] ${
+          selected
+            ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-text)] shadow-[0_0_0_1px_var(--flux-primary-alpha-12),0_4px_14px_-4px_var(--flux-primary-alpha-25)]"
+            : "border-transparent bg-[var(--flux-chrome-alpha-03)] text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-chrome-alpha-06)] hover:text-[var(--flux-text)]"
+        }`}
+      >
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg motion-safe:transition-[background-color,color,box-shadow] motion-safe:duration-200 motion-safe:ease-[var(--flux-ease-standard)] ${
+            selected
+              ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)] shadow-[inset_0_1px_0_var(--flux-primary-alpha-15)]"
+              : "bg-[var(--flux-chrome-alpha-06)] text-[var(--flux-text-muted)] group-hover:bg-[var(--flux-chrome-alpha-10)] group-hover:text-[var(--flux-text)]"
+          }`}
+          aria-hidden
+        >
+          {TAB_ICONS[def.id]}
+        </span>
+        <span className="whitespace-nowrap pr-0.5">{t(`cardModal.tabs.${def.labelKey}`)}</span>
+      </button>
+    );
+  };
+
+  return (
+    <nav className="mt-5 min-w-0" role="tablist" aria-label={ariaLabel}>
+      <div
+        ref={stripRef}
+        className="card-modal-tab-strip -mx-1 flex flex-nowrap items-stretch gap-2 overflow-x-auto px-1 py-0.5 sm:flex-wrap sm:overflow-x-visible sm:px-0 sm:py-0"
+      >
+        {primaryItems.map(renderTab)}
+        <div
+          className="hidden h-9 w-px shrink-0 self-center bg-[var(--flux-chrome-alpha-12)] sm:block"
+          role="separator"
+          aria-orientation="vertical"
+          aria-hidden
+        />
+        <div className="flex shrink-0 items-center px-0.5 sm:hidden" aria-hidden>
+          <div className="h-7 w-px rounded-full bg-[var(--flux-chrome-alpha-12)]" />
+        </div>
+        {secondaryItems.map(renderTab)}
+      </div>
+    </nav>
+  );
+}
 
 const TabSkeleton = () => (
   <div className="space-y-5 py-1" aria-hidden>
@@ -211,8 +295,6 @@ export function CardModalLayout() {
     return () => cancelAnimationFrame(raf);
   }, [card.id]);
 
-  type TabDef = { id: CardModalTabId; labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps" };
-
   const primaryTabItems: TabDef[] = [
     { id: "edit", labelKey: "edit" },
     { id: "subtasks", labelKey: "subtasks" },
@@ -226,60 +308,15 @@ export function CardModalLayout() {
     { id: "deps", labelKey: "deps" },
   ];
 
-  const [moreTabsOpen, setMoreTabsOpen] = useState(false);
-  const moreTabsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!moreTabsOpen) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (moreTabsRef.current && !moreTabsRef.current.contains(e.target as Node)) setMoreTabsOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [moreTabsOpen]);
-
-  useEffect(() => {
-    setMoreTabsOpen(false);
-  }, [activeTab]);
-
-  const secondaryActive = secondaryTabItems.some((x) => x.id === activeTab);
-
-  const renderTabButton = ({ id, labelKey }: TabDef, opts?: { fullWidth?: boolean }) => {
-    const selected = activeTab === id;
-    const fw = opts?.fullWidth ? "w-full justify-start" : "";
-    return (
-      <button
-        key={id}
-        type="button"
-        role="tab"
-        aria-selected={selected}
-        id={`card-modal-tab-${id}`}
-        tabIndex={selected ? 0 : -1}
-        onClick={() => {
-          setActiveTab(id);
-          setMoreTabsOpen(false);
-        }}
-        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold font-display transition-all duration-200 motion-safe:active:scale-95 ${fw} ${
-          selected
-            ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)] border border-[var(--flux-primary-alpha-45)] shadow-[0_0_0_1px_var(--flux-primary-alpha-12),0_2px_8px_-2px_var(--flux-primary-alpha-20)]"
-            : "border border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-chrome-alpha-04)] hover:text-[var(--flux-text)]"
-        }`}
-      >
-        {TAB_ICONS[id]}
-        {t(`cardModal.tabs.${labelKey}`)}
-      </button>
-    );
-  };
-
   return (
     <div className="fixed inset-0 z-[var(--flux-z-modal-base)] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-xl motion-safe:transition-[background-color] motion-safe:duration-300"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
         aria-hidden
         onClick={onClose}
       />
       <div
-        className="relative flex w-full max-w-[760px] flex-col overflow-hidden rounded-3xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] max-h-[min(90vh,880px)] card-modal-content"
+        className="relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-chrome-alpha-06)] max-h-[min(92vh,900px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -308,7 +345,7 @@ export function CardModalLayout() {
         ) : null}
 
         {/* Header */}
-        <header className="relative shrink-0 overflow-hidden border-b border-[var(--flux-chrome-alpha-06)] px-8 pb-5 pt-7">
+        <header className="relative shrink-0 overflow-hidden border-b border-[var(--flux-chrome-alpha-06)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
           {/* Ambient glow blobs */}
           <div
             className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
@@ -339,7 +376,7 @@ export function CardModalLayout() {
               <h2 id="card-modal-title" className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
                 {mode === "edit" ? t("cardModal.header.title.edit") : t("cardModal.header.title.new")}
               </h2>
-              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-[var(--flux-text-muted)]">
+              <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-[var(--flux-text-muted)]">
                 {mode === "edit" ? t("cardModal.header.description.edit") : t("cardModal.header.description.new")}
               </p>
             </div>
@@ -358,37 +395,14 @@ export function CardModalLayout() {
             </button>
           </div>
 
-          {/* Tab navigation — primary row + secondary (desktop) / overflow menu (mobile) */}
-          <nav className="mt-5 space-y-2" role="tablist" aria-label={t("cardModal.tabsNavAria")}>
-            <div className="flex flex-wrap gap-1.5">{primaryTabItems.map((def) => renderTabButton(def))}</div>
-            <div className="hidden sm:flex flex-wrap gap-1.5">{secondaryTabItems.map((def) => renderTabButton(def))}</div>
-            <div ref={moreTabsRef} className="relative sm:hidden">
-              <button
-                type="button"
-                aria-expanded={moreTabsOpen}
-                aria-haspopup="true"
-                onClick={() => setMoreTabsOpen((o) => !o)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold font-display transition-colors ${
-                  secondaryActive && !moreTabsOpen
-                    ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                    : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-18)] hover:text-[var(--flux-text)]"
-                }`}
-              >
-                <span className="text-[var(--flux-text-muted)]" aria-hidden>
-                  ···
-                </span>
-                {t("cardModal.moreTabs")}
-              </button>
-              {moreTabsOpen ? (
-                <div
-                  className="absolute left-0 z-30 mt-2 flex min-w-[220px] flex-col gap-1 rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-2 shadow-[var(--flux-shadow-modal-depth)]"
-                  role="presentation"
-                >
-                  {secondaryTabItems.map((def) => renderTabButton(def, { fullWidth: true }))}
-                </div>
-              ) : null}
-            </div>
-          </nav>
+          <CardModalTabs
+            primaryItems={primaryTabItems}
+            secondaryItems={secondaryTabItems}
+            activeTab={activeTab}
+            onSelect={setActiveTab}
+            t={t}
+            ariaLabel={t("cardModal.tabsNavAria")}
+          />
         </header>
 
         {/* Scrollable tab content — key triggers fade-in on tab switch */}
@@ -397,7 +411,7 @@ export function CardModalLayout() {
           role="tabpanel"
           aria-labelledby={`card-modal-tab-${activeTab}`}
         >
-          <div key={activeTab} className="px-8 py-6 card-modal-tab-panel-in">
+          <div key={activeTab} className="card-modal-panel-sections px-6 py-6 sm:px-8 card-modal-tab-panel-in">
             {activeTab === "edit" && <CardEditForm cardId={card.id} />}
             {activeTab === "subtasks" && (
               <Suspense fallback={<TabSkeleton />}>
@@ -438,7 +452,7 @@ export function CardModalLayout() {
         </div>
 
         {/* Sticky footer — always visible outside the scroll area */}
-        <footer className="shrink-0 border-t border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)]/98 px-8 py-4 card-modal-footer-enter">
+        <footer className="shrink-0 border-t border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)]/98 px-6 py-4 sm:px-8 card-modal-footer-enter">
           <div className="flex flex-wrap items-center gap-3">
             {mode === "edit" && onDelete && (
               <button

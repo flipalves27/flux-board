@@ -403,7 +403,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                         }}
                         placeholder={block.placeholder}
                         rows={3}
-                        className="min-h-[90px] w-full resize-y rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_var(--flux-primary-alpha-12)] focus:ring-0 whitespace-pre-wrap"
+                        className={`${inputBase} min-h-[90px] resize-y border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 leading-relaxed whitespace-pre-wrap`}
                       />
                     </SmartEnrichFieldShell>
                   ) : (
@@ -416,7 +416,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                       }}
                       placeholder={block.placeholder}
                       rows={3}
-                      className="min-h-[90px] w-full resize-y rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_var(--flux-primary-alpha-12)] focus:ring-0 whitespace-pre-wrap"
+                      className={`${inputBase} min-h-[90px] resize-y border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 leading-relaxed whitespace-pre-wrap`}
                     />
                   )}
                 </div>
