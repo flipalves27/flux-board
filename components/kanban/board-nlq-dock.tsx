@@ -388,7 +388,8 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
               ) : null}
               {metric.chart.length > 0 ? (
                 <div className="h-[120px] w-full mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
+                  {/* debounce evita loop de resize (React #185) com ResizeObserver + flex */}
+                  <ResponsiveContainer width="100%" height="100%" debounce={200}>
                     <BarChart data={metric.chart} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--flux-text-muted)" }} stroke="var(--flux-chrome-alpha-20)" />
                       <YAxis

@@ -292,8 +292,8 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                   ) : burndown && burndown.length > 0 ? (
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">Burndown</p>
-                      <div className="h-36">
-                        <ResponsiveContainer width="100%" height="100%">
+                      <div className="h-36 min-h-[144px]">
+                        <ResponsiveContainer width="100%" height="100%" debounce={200}>
                           <LineChart data={burndown} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                             <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />

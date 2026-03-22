@@ -168,7 +168,7 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
         highlightRef.current?.classList.remove("flux-tour-highlight");
         let el = document.querySelector(sel) as HTMLElement | null;
         const finish = (node: HTMLElement) => {
-          node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          node.scrollIntoView({ block: "nearest", behavior: "auto" });
           node.classList.add("flux-tour-highlight");
           highlightRef.current = node;
           requestAnimationFrame(() => {

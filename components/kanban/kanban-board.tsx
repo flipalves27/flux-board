@@ -258,9 +258,13 @@ function KanbanBoardLoaded({
   const bucketsRef = useRef(board.buckets);
   const tRef = useRef(t);
   const handledQueryRef = useRef<string | null>(null);
+  const setModalCardRef = useRef(board.setModalCard);
+  const setModalModeRef = useRef(board.setModalMode);
   cardsRef.current = board.cards;
   bucketsRef.current = board.buckets;
   tRef.current = t;
+  setModalCardRef.current = board.setModalCard;
+  setModalModeRef.current = board.setModalMode;
 
   useEffect(() => {
     const cardId = searchParams.get("card");
@@ -278,8 +282,8 @@ function KanbanBoardLoaded({
     if (cardId) {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
       if (c) {
-        board.setModalCard(c);
-        board.setModalMode("edit");
+        setModalCardRef.current(c);
+        setModalModeRef.current("edit");
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
@@ -290,7 +294,7 @@ function KanbanBoardLoaded({
       const firstBucket = buckets[0]?.key;
       if (firstBucket) {
         const order = cards.filter((x) => x.bucket === firstBucket).length;
-        board.setModalCard({
+        setModalCardRef.current({
           id: "",
           bucket: firstBucket,
           priority: "Média",
@@ -303,7 +307,7 @@ function KanbanBoardLoaded({
           blockedBy: [],
           order,
         });
-        board.setModalMode("new");
+        setModalModeRef.current("new");
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
@@ -312,7 +316,7 @@ function KanbanBoardLoaded({
       useCopilotStore.getState().setOpen(true);
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
-  }, [searchParamsKey, boardId, localeRoot, board.setModalCard, board.setModalMode]);
+  }, [searchParamsKey, boardId, localeRoot]);
 
   useEffect(() => {
     const card = board.modalCard;

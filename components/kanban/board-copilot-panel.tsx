@@ -219,8 +219,9 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
   }, [open, boardId, getHeaders, pushToast]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, generating]);
+    if (!open) return;
+    endRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [open, messages, generating]);
 
   useEffect(() => {
     return () => {
@@ -324,7 +325,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
           pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
         } finally {
           setGenerating(false);
-          endRef.current?.scrollIntoView({ behavior: "smooth" });
+          endRef.current?.scrollIntoView({ behavior: "auto" });
         }
         return;
       }
@@ -487,7 +488,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders }: BoardCopil
         setGenerating(false);
         setDraft("");
         abortRef.current = null;
-        endRef.current?.scrollIntoView({ behavior: "smooth" });
+        endRef.current?.scrollIntoView({ behavior: "auto" });
       }
     },
     [

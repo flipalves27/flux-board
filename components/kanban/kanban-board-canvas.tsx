@@ -106,6 +106,8 @@ export function KanbanBoardCanvas({
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
   const bucketKeysSig = buckets.map((b) => b.key).join("|");
   const lastReportedVisibleKeyRef = useRef<string | null>(null);
+  const visibleColDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingVisibleKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     lastReportedVisibleKeyRef.current = null;
@@ -129,10 +131,17 @@ export function KanbanBoardCanvas({
           }
           if (best && best.ratio > 0.04) {
             const next = best.key;
-            if (lastReportedVisibleKeyRef.current !== next) {
-              lastReportedVisibleKeyRef.current = next;
-              onVisibleColumnKeyChange(next);
-            }
+            pendingVisibleKeyRef.current = next;
+            if (visibleColDebounceRef.current) clearTimeout(visibleColDebounceRef.current);
+            visibleColDebounceRef.current = setTimeout(() => {
+              visibleColDebounceRef.current = null;
+              const k = pendingVisibleKeyRef.current;
+              if (k == null) return;
+              if (lastReportedVisibleKeyRef.current !== k) {
+                lastReportedVisibleKeyRef.current = k;
+                onVisibleColumnKeyChange(k);
+              }
+            }, 80);
           }
         },
         { root, rootMargin: "0px", threshold: [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1] }
@@ -143,6 +152,10 @@ export function KanbanBoardCanvas({
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
+      if (visibleColDebounceRef.current) {
+        clearTimeout(visibleColDebounceRef.current);
+        visibleColDebounceRef.current = null;
+      }
       io?.disconnect();
     };
   }, [boardScrollRef, boardView, bucketKeysSig, onVisibleColumnKeyChange]);
