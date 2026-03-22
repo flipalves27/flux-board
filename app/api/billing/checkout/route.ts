@@ -9,7 +9,7 @@ type BillingPlan = "pro" | "business";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
   }

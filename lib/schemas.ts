@@ -687,6 +687,8 @@ export const UserCreateSchema = z
     name: z.string().trim().min(1, "Nome e obrigatorio.").max(200),
     email: z.string().trim().email("E-mail invalido.").max(320),
     password: z.string().min(4, "Senha e obrigatoria.").max(200),
+    /** Administrador da organização (área admin, billing, usuários, etc.). */
+    isAdmin: z.boolean().optional(),
   })
   .passthrough();
 

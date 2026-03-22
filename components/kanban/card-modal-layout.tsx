@@ -154,7 +154,8 @@ export function CardModalLayout() {
     };
   }, [mode, card.id, boardId, clientId, connectionId, getHeaders]);
 
-  const [activeTab, setActiveTabState] = useState<CardModalTabId>(() => readStoredTab(card.id));
+  /** Sempre "edit" no 1.º paint (SSR = cliente); aba persistida só após mount (#418). */
+  const [activeTab, setActiveTabState] = useState<CardModalTabId>("edit");
 
   useEffect(() => {
     setActiveTabState(readStoredTab(card.id));

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-users";
+import { getUserById, updateUser, ensureAdminUser, deleteUser, listUsers } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 
@@ -8,7 +8,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
   }
@@ -54,7 +54,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
   }
@@ -80,6 +80,22 @@ export async function PUT(
     }
 
     const clean = parsed.data;
+    const existingUser = await getUserById(id, payload.orgId);
+    if (!existingUser) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    if (clean.isAdmin === false && existingUser.isAdmin) {
+      const members = await listUsers(payload.orgId);
+      const adminCount = members.filter((m) => m.isAdmin).length;
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "A organização precisa de pelo menos um administrador." },
+          { status: 400 }
+        );
+      }
+    }
+
     const updates: Record<string, unknown> = {};
     if (clean.name !== undefined) {
       const name = sanitizeText(clean.name).trim();
@@ -128,7 +144,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
   }
@@ -150,6 +166,16 @@ export async function DELETE(
     const user = await getUserById(id, payload.orgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+    if (user.isAdmin) {
+      const members = await listUsers(payload.orgId);
+      const adminCount = members.filter((m) => m.isAdmin).length;
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "Não é possível excluir o único administrador da organização." },
+          { status: 400 }
+        );
+      }
     }
     await deleteUser(id, payload.orgId);
     return NextResponse.json({ ok: true });

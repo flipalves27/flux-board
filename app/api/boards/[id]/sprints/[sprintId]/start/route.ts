@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ id: string; sprintId: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, sprintId } = await params;

@@ -7,7 +7,7 @@ import { canUseFeature, planGateCtxForAuth } from "@/lib/plan-gates";
 import { logDocsMetric } from "@/lib/docs-metrics";
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
   if (!canUseFeature(org, "flux_docs_rag", planGateCtxForAuth(payload.isAdmin)))

@@ -26,7 +26,7 @@ import {
 } from "@/lib/admin-plan-override";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 

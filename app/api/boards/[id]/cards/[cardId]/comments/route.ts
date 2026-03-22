@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ id: string; cardId: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, cardId } = await params;
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, cardId } = await params;
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, cardId } = await params;
@@ -78,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, cardId } = await params;

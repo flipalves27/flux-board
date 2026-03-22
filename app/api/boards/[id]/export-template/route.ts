@@ -8,7 +8,7 @@ import { buildTemplateSnapshotFromBoard } from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   if (!payload.isAdmin) return NextResponse.json({ error: "Apenas administradores podem publicar templates." }, { status: 403 });
 

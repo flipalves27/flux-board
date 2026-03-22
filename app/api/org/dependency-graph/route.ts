@@ -13,7 +13,7 @@ const MAX_NODES = 200;
  * scope=board: apenas links que tocam boardId. scope=org: todos os links da org (respeitando acesso aos boards).
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

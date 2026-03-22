@@ -26,7 +26,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * Query: ?period=14|30|90
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

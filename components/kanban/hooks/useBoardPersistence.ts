@@ -11,6 +11,12 @@ export function useBoardPersistence(boardId: string) {
   const filtersStorageKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
   const viewStorageKey = `flux.board.viewMode.session.v1::${boardId}`;
 
+  /** Hidrata stores persistidos só no cliente (skipHydration), alinhando SSR ao primeiro paint. */
+  useEffect(() => {
+    void useKanbanUiStore.persist.rehydrate();
+    void useFilterStore.persist.rehydrate();
+  }, []);
+
   useEffect(() => {
     migrateBoardViewFromLegacyLocalStorage(boardId);
   }, [boardId]);

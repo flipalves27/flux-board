@@ -18,7 +18,7 @@ type RouteContext = { params: Promise<{ id: string; userId: string }> };
 const UpdateRoleSchema = z.object({ role: z.enum(["viewer", "editor", "admin"]) });
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, userId: targetUserId } = await params;
@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: boardId, userId: targetUserId } = await params;

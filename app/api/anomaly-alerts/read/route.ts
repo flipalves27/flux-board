@@ -9,7 +9,7 @@ import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
 
 /** Marca alertas como lidos (IDs do Mongo). Body: { ids?: string[], markAll?: boolean } */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

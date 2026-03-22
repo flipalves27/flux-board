@@ -13,7 +13,7 @@ export const runtime = "nodejs";
  * Reindexa embeddings RAG de todos os Flux Docs da org (útil após mudar modelo ou índice vetorial).
  */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);

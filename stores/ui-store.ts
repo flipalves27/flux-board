@@ -119,6 +119,8 @@ export const useKanbanUiStore = create<KanbanUiState>()(
         name: VIEW_SESSION_KEY,
         storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : noopStorage)),
         partialize: (s) => ({ boardViewByBoard: s.boardViewByBoard }),
+        /** Evita mismatch SSR/client ao ler localStorage antes da hidratação do React. */
+        skipHydration: true,
       }
     ),
     { name: "FluxKanbanUi", enabled: devEnabled }

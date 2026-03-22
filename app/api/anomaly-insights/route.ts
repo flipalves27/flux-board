@@ -11,7 +11,7 @@ import { COL_ANOMALY_ALERTS, COL_ANOMALY_RUNS } from "@/lib/anomaly-service";
  * Painel “Proactive AI”: histórico de execuções e alertas persistidos.
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

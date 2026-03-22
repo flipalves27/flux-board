@@ -43,6 +43,7 @@ export const useFilterStore = create<FilterStoreState>()(
         name: SESSION_KEY,
         storage: createJSONStorage(() => (typeof window !== "undefined" ? sessionStorage : noopStorage)),
         partialize: (s) => ({ filtersByBoard: s.filtersByBoard }),
+        skipHydration: true,
       }
     ),
     { name: "FluxFilters", enabled: devEnabled }

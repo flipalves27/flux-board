@@ -5,7 +5,7 @@ import { aggregateRateLimitAbuse } from "@/lib/rate-limit-abuse";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const payload = getAuthFromRequest(req);
+  const payload = await getAuthFromRequest(req);
   if (!payload?.isAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
   }

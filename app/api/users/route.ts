@@ -7,7 +7,7 @@ import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxForAuth } from "@/lib/plan-gates";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
   }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload || !payload.isAdmin) {
     return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
   }
@@ -61,12 +61,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const wantAdmin = !!parsed.data.isAdmin;
     const user = await createUser({
       username: emailNorm,
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
       orgId: payload.orgId,
+      ...(wantAdmin ? { isAdmin: true } : {}),
     });
 
     return NextResponse.json(
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           name: user.name,
           email: user.email,
-          isAdmin: false,
+          isAdmin: !!user.isAdmin,
         },
       },
       { status: 201 }

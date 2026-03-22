@@ -17,7 +17,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(_request);
+  const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
@@ -33,7 +33,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
@@ -75,7 +75,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(_request);
+  const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 

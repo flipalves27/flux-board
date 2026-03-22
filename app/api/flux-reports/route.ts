@@ -35,7 +35,7 @@ function weekStartLabelFromMs(ms: number): string {
  * Agregação org-wide para Flux Reports (dashboard ao vivo).
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

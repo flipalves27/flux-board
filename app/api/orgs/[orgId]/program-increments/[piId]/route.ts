@@ -24,7 +24,7 @@ const UpdatePISchema = z.object({
 });
 
 async function checkAccess(request: NextRequest, orgId: string) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return { error: "Não autenticado", status: 401 as const, payload: null };
   if (orgId !== payload.orgId && !payload.isAdmin) {
     return { error: "Sem permissão", status: 403 as const, payload: null };

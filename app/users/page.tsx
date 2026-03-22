@@ -18,7 +18,7 @@ interface UserRow {
 
 export default function UsersPage() {
   const router = useRouter();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, refreshSession } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -27,6 +27,7 @@ export default function UsersPage() {
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPwd, setFormPwd] = useState("");
+  const [formIsAdmin, setFormIsAdmin] = useState(false);
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const { pushToast } = useToast();
@@ -64,6 +65,7 @@ export default function UsersPage() {
     setFormName("");
     setFormEmail("");
     setFormPwd("");
+    setFormIsAdmin(false);
     setFormError("");
     setModalOpen(true);
   }
@@ -74,6 +76,7 @@ export default function UsersPage() {
     setFormName(u.name);
     setFormEmail(u.email);
     setFormPwd("");
+    setFormIsAdmin(u.isAdmin);
     setFormError("");
     setModalOpen(true);
   }
@@ -93,6 +96,7 @@ export default function UsersPage() {
         name: formName.trim(),
         email: formEmail.trim(),
         password: formPwd,
+        ...(formIsAdmin ? { isAdmin: true } : {}),
       }, getHeaders());
       setModalOpen(false);
       loadUsers();
@@ -108,12 +112,18 @@ export default function UsersPage() {
       setFormError("Nome é obrigatório.");
       return;
     }
-    const body: { name: string; password?: string } = { name: formName.trim() };
+    const body: { name: string; password?: string; isAdmin: boolean } = {
+      name: formName.trim(),
+      isAdmin: formIsAdmin,
+    };
     if (formPwd.length >= 4) body.password = formPwd;
     try {
       await apiPut(`/api/users/${editingId}`, body, getHeaders());
       setModalOpen(false);
-      loadUsers();
+      await loadUsers();
+      if (user && editingId === user.id) {
+        await refreshSession();
+      }
     } catch (e) {
       setFormError(e instanceof ApiError ? (e.data as { error?: string })?.error ?? e.message : "Erro ao salvar.");
     }
@@ -260,6 +270,20 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formIsAdmin}
+                  onChange={(e) => setFormIsAdmin(e.target.checked)}
+                  className="rounded border-[var(--flux-chrome-alpha-12)]"
+                />
+                <span className="text-sm text-[var(--flux-text)]">
+                  Administrador da organização
+                </span>
+              </label>
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                Admins podem gerenciar membros, billing, convites e configurações. A organização precisa ter pelo menos um admin.
+              </p>
             </div>
             <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
               <button

@@ -6,7 +6,7 @@ import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getObjectivesAndKeyResultsByBoard } from "@/lib/kv-okrs";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

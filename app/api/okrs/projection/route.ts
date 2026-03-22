@@ -6,7 +6,7 @@ import { buildRollingWeekRanges } from "@/lib/flux-reports-metrics";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

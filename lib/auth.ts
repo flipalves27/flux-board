@@ -66,32 +66,28 @@ export function verifyToken(
   }
 }
 
-export function getAuthFromRequest(
+/**
+ * Autenticação para rotas API: valida JWT e **recarrega papel (admin/executivo) do banco**,
+ * para que mudanças feitas em Usuários passem a valer sem novo login.
+ */
+export async function getAuthFromRequest(
   req: NextRequest
-): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
+): Promise<{ id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null> {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
-  if (auth?.startsWith("Bearer ")) {
-    const payload = verifyToken(auth.slice(7));
-    if (payload) return enrichAuthPayload(payload);
-  }
-  const cookieToken = req.cookies.get(ACCESS_COOKIE)?.value;
-  if (cookieToken) {
-    const payload = verifyToken(cookieToken);
-    if (payload) return enrichAuthPayload(payload);
-  }
-  return null;
-}
-
-function enrichAuthPayload(payload: {
-  id: string;
-  username: string;
-  isAdmin: boolean;
-  isExecutive?: boolean;
-  orgId: string;
-}) {
+  let token: string | null = null;
+  if (auth?.startsWith("Bearer ")) token = auth.slice(7);
+  if (!token) token = req.cookies.get(ACCESS_COOKIE)?.value ?? null;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  if (!payload) return null;
+  const { getUserById } = await import("./kv-users");
+  const user = await getUserById(payload.id, payload.orgId);
+  if (!user) return null;
   return {
-    ...payload,
-    isAdmin: !!payload.isAdmin,
-    isExecutive: !!payload.isExecutive,
+    id: user.id,
+    username: user.username,
+    isAdmin: user.id === "admin" || !!user.isAdmin,
+    isExecutive: !!user.isExecutive,
+    orgId: user.orgId,
   };
 }

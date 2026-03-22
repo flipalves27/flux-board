@@ -6,7 +6,7 @@ import { getOrganizationById } from "@/lib/kv-organizations";
 import { canUseFeature, planGateCtxForAuth } from "@/lib/plan-gates";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
   if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin)))
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
   if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin)))
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
   if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin)))

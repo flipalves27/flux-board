@@ -10,7 +10,7 @@ import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/p
  * Export JSON do portfólio para integrações (BI, n8n, data warehouse).
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

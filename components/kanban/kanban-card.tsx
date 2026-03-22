@@ -106,11 +106,20 @@ interface KanbanCardProps {
   activeDragIds?: string[] | null;
 }
 
+/** Compara apenas datas de calendário em UTC — evita divergência SSR (Node UTC) vs browser (fuso local). */
 function daysRemaining(dueDate: string | null): number | null {
   if (!dueDate) return null;
-  const due = new Date(dueDate + "T00:00:00").getTime();
-  const today = new Date().setHours(0, 0, 0, 0);
-  return Math.ceil((due - today) / 86400000);
+  const trimmed = dueDate.trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+  const dueUtc = Date.UTC(y, mo - 1, d);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((dueUtc - todayUtc) / 86400000);
 }
 
 const LONG_PRESS_MS = 450;
@@ -161,6 +170,11 @@ function KanbanCardInner({
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [touchPinned, setTouchPinned] = useState(false);
+  /** Relógio/risco só após mount — evita hidratação #418 (SSR ≠ cliente). */
+  const [datesReady, setDatesReady] = useState(false);
+  useEffect(() => {
+    setDatesReady(true);
+  }, []);
 
   const clearHoverTimer = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -319,18 +333,20 @@ function KanbanCardInner({
 
   if (!card) return null;
 
-  const dr = daysRemaining(card.dueDate);
+  const dr = datesReady ? daysRemaining(card.dueDate) : null;
   const prioLabel = t(`cardModal.options.priority.${card.priority}`);
   const progLabel = t(`cardModal.options.progress.${card.progress}`);
 
-  const nowMs = Date.now();
+  const nowMs = datesReady ? Date.now() : 0;
   const cardRaw = card as unknown as Record<string, unknown>;
-  const stagnDays = inferStagnationDaysFromCard(cardRaw, nowMs);
-  const riskScore = computeCardRiskScore(cardRaw, {
-    columnStagnationDays: stagnDays,
-    daysUntilDue: dr,
-    blockedHint: Array.isArray(card.blockedBy) && (card.blockedBy as string[]).length > 0,
-  });
+  const stagnDays = datesReady ? inferStagnationDaysFromCard(cardRaw, nowMs) : 0;
+  const riskScore = datesReady
+    ? computeCardRiskScore(cardRaw, {
+        columnStagnationDays: stagnDays,
+        daysUntilDue: dr,
+        blockedHint: Array.isArray(card.blockedBy) && (card.blockedBy as string[]).length > 0,
+      })
+    : 0;
 
   const ariaLabel = t("card.ariaLabel", {
     cardTitle: card.title,

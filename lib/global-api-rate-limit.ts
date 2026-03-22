@@ -88,7 +88,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     return { ok: true, category: "skipped", headers: {} };
   }
 
-  const payload = getAuthFromRequest(buildAuthRequest(input.authHeader, input.cookieHeader));
+  const payload = await getAuthFromRequest(buildAuthRequest(input.authHeader, input.cookieHeader));
   const ip = input.clientIp || "unknown";
 
   let category: RateLimitCategory;

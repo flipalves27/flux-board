@@ -24,7 +24,7 @@ const BodySchema = z.object({
  * Narrativa executiva (IA) para um gráfico do Flux Reports.
  */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

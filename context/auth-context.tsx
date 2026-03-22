@@ -30,6 +30,8 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   setAuth: (user: AuthUser, remember?: boolean) => void;
   getHeaders: () => Record<string, string>;
+  /** Revalida cookies (ex.: após mudar papel admin no servidor). */
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -77,6 +79,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return getApiHeaders(undefined);
   }, []);
 
+  const refreshSession = useCallback(async () => {
+    try {
+      const result = await validateSessionAction();
+      if (result.ok) {
+        setState({
+          user: result.user,
+          isLoading: false,
+          isChecked: true,
+        });
+      } else {
+        setState({ user: null, isLoading: false, isChecked: true });
+      }
+    } catch {
+      setState({ user: null, isLoading: false, isChecked: true });
+    }
+  }, []);
+
   useEffect(() => {
     clearLegacyStorage();
 
@@ -105,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         setAuth,
         getHeaders,
+        refreshSession,
       }}
     >
       {children}
