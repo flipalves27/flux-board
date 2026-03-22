@@ -229,7 +229,6 @@ export default function BoardPage() {
   const locale = useLocale();
   const t = useTranslations("board");
   const tTour = useTranslations("board.productTour");
-  const localeRoot = `/${locale}`;
   const [boardName, setBoardName] = useState("Board");
   const [clientLabel, setClientLabel] = useState<string | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -257,50 +256,26 @@ export default function BoardPage() {
   /** next/navigation `useRouter()` pode mudar identidade entre renders — evita re-disparar loadBoard (#185). */
   const routerRef = useRef(router);
   routerRef.current = router;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+  const pushToastRef = useRef(pushToast);
+  pushToastRef.current = pushToast;
+  const userRef = useRef(user);
+  userRef.current = user;
 
-  useEffect(() => {
-    const localePrefix = `/${locale}`;
-    if (!isChecked || !user) {
-      routerRef.current.replace(`${localePrefix}/login`);
-      return;
-    }
-    if (!boardId) {
-      routerRef.current.replace(`${localePrefix}/boards`);
-      return;
-    }
-    useKanbanUiStore.getState().resetForBoardSwitch();
-    useCopilotStore.getState().resetSessionUi();
-    loadBoard();
-    // Somente id do usuário — o objeto `user` pode ganhar nova referência sem mudança real.
-    // Não depender de `router`/`localeRoot` (instáveis no App Router).
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadBoard fecha sobre o render atual; evita loop #185
-  }, [isChecked, user?.id, boardId, locale]);
-
-  useEffect(() => {
-    const id = boardId;
-    return () => {
-      useBoardNlqUiStore.getState().clearBoardNlq(id);
-    };
-  }, [boardId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setFormOrigin(window.location.origin);
-  }, []);
-
-  async function loadBoard() {
+  const loadBoard = useCallback(async () => {
     try {
       const r = await apiFetch(`/api/boards/${boardId}`, {
         cache: "no-store",
-        headers: getHeaders(),
+        headers: getHeadersRef.current(),
       });
       if (r.status === 401) {
-        routerRef.current.replace(`${localeRoot}/login`);
+        routerRef.current.replace(`/${locale}/login`);
         return;
       }
       if (r.status === 403) {
-        pushToast({ kind: "error", title: t("toasts.noPermission") });
-        routerRef.current.replace(`${localeRoot}/boards`);
+        pushToastRef.current({ kind: "error", title: tBoardRef.current("toasts.noPermission") });
+        routerRef.current.replace(`/${locale}/boards`);
         return;
       }
       if (!r.ok) throw new Error("Erro ao carregar");
@@ -340,16 +315,43 @@ export default function BoardPage() {
         portal: d.portal,
         anomalyNotifications: d.anomalyNotifications,
       });
-      if (user?.id) {
-        registerBoardVisit(user.id, boardId);
+      const uid = userRef.current?.id;
+      if (uid) {
+        registerBoardVisit(uid, boardId);
       }
     } catch {
-      pushToast({ kind: "error", title: tBoardRef.current("toasts.loadError") });
-      routerRef.current.replace(`${localeRoot}/boards`);
+      pushToastRef.current({ kind: "error", title: tBoardRef.current("toasts.loadError") });
+      routerRef.current.replace(`/${locale}/boards`);
     } finally {
       setLoading(false);
     }
-  }
+  }, [boardId, locale]);
+
+  useEffect(() => {
+    if (!isChecked || !user) {
+      routerRef.current.replace(`/${locale}/login`);
+      return;
+    }
+    if (!boardId) {
+      routerRef.current.replace(`/${locale}/boards`);
+      return;
+    }
+    useKanbanUiStore.getState().resetForBoardSwitch();
+    useCopilotStore.getState().resetSessionUi();
+    loadBoard();
+  }, [isChecked, user?.id, boardId, locale, loadBoard]);
+
+  useEffect(() => {
+    const id = boardId;
+    return () => {
+      useBoardNlqUiStore.getState().clearBoardNlq(id);
+    };
+  }, [boardId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setFormOrigin(window.location.origin);
+  }, []);
 
   const persist = useCallback(
     (data?: BoardData) => {

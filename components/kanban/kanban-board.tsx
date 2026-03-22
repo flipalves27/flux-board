@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -580,5 +580,9 @@ function KanbanBoardLoaded({
 export function KanbanBoard(props: KanbanBoardProps) {
   const db = useBoardStore((s) => s.db);
   if (!db) return null;
-  return <KanbanBoardLoaded {...props} />;
+  return (
+    <Suspense fallback={null}>
+      <KanbanBoardLoaded {...props} />
+    </Suspense>
+  );
 }

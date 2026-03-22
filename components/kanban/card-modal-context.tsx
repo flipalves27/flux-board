@@ -328,10 +328,14 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     card.progress,
     card.dueDate,
     card.direction,
-    card.tags,
-    card.blockedBy,
-    card.links,
-    card.docRefs,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serialização estável previne loop Immer (#185)
+    JSON.stringify(card.tags),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.blockedBy),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.links),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.docRefs),
   ]);
 
   useEffect(() => {

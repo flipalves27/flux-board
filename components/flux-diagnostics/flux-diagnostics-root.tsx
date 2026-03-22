@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { FluxDiagnosticsCapture } from "./flux-diagnostics-capture";
 import { FluxDiagnosticsPanel } from "./flux-diagnostics-panel";
 import { FluxCrashScreen } from "./flux-crash-screen";
@@ -12,10 +12,14 @@ import { FluxErrorBoundary } from "./flux-error-boundary";
 export function FluxDiagnosticsRoot({ children }: { children: ReactNode }) {
   return (
     <>
-      <FluxDiagnosticsCapture />
+      <Suspense fallback={null}>
+        <FluxDiagnosticsCapture />
+      </Suspense>
       <FluxErrorBoundary fallback={<FluxCrashScreen />}>
         {children}
-        <FluxDiagnosticsPanel />
+        <Suspense fallback={null}>
+          <FluxDiagnosticsPanel />
+        </Suspense>
       </FluxErrorBoundary>
     </>
   );
