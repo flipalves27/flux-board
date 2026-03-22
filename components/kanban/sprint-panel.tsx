@@ -156,6 +156,17 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     }
   };
 
+  const handleCloseSprint = async (sprintId: string) => {
+    const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${sprintId}/close`, {
+      method: "POST",
+      headers: getApiHeaders(getHeadersRef.current()),
+    });
+    if (res.ok) {
+      const data = await res.json() as { sprint: SprintData };
+      upsertSprint(boardId, data.sprint);
+    }
+  };
+
   const handleAiPlan = async (sprintId: string) => {
     setAiPlanLoading(true);
     setAiPlan(null);
@@ -350,11 +361,20 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                         </button>
                       </>
                     )}
+                    {selectedSprint.status === "review" && (
+                      <button
+                        type="button"
+                        onClick={() => void handleCloseSprint(selectedSprint.id)}
+                        className="w-full rounded-lg bg-[var(--flux-text-muted)] px-3 py-2 text-xs font-semibold text-[var(--flux-surface-card)] hover:opacity-90 transition-opacity"
+                      >
+                        Encerrar sprint
+                      </button>
+                    )}
                     {(selectedSprint.status === "active" || selectedSprint.status === "review") && (
                       <>
                         <button
                           type="button"
-                          onClick={() => openRetro(selectedSprint.id)}
+                          onClick={() => openRetro(boardId, selectedSprint.id)}
                           className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-all ${
                             selectedSprint.status === "review"
                               ? "border-[var(--flux-secondary-alpha-45)] bg-[var(--flux-secondary-alpha-08)] text-[var(--flux-secondary)] hover:bg-[var(--flux-secondary-alpha-15)] animate-pulse"
@@ -365,7 +385,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => openReview(selectedSprint.id)}
+                          onClick={() => openReview(boardId, selectedSprint.id)}
                           className="flex-1 rounded-lg border border-[var(--flux-chrome-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-info-alpha-35)] hover:text-[var(--flux-info)] transition-all"
                         >
                           📊 Review

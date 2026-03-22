@@ -1,5 +1,6 @@
 import type { SprintData } from "@/lib/schemas";
 import type { BoardData } from "@/lib/kv-boards";
+import { sprintDeliveredVsCommitment } from "@/lib/sprint-delivery-metrics";
 import type { Organization } from "@/lib/kv-organizations";
 import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
 import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
@@ -29,9 +30,7 @@ export async function generateSprintReview(params: {
   const { sprint, board, org } = params;
   const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
   const doneCards = sprint.doneCardIds.map((id) => cards.find((c) => c.id === id)).filter(Boolean) as Array<Record<string, unknown>>;
-  const commitment = sprint.cardIds.length;
-  const delivered = sprint.velocity ?? doneCards.length;
-  const pct = commitment > 0 ? Math.round((delivered / commitment) * 100) : 0;
+  const { commitment, delivered, pct } = sprintDeliveredVsCommitment(sprint, doneCards.length);
 
   const demoList = doneCards.slice(0, 12).map((c) => ({
     cardId: String(c.id ?? ""),

@@ -76,6 +76,14 @@ function IconTasks({ className }: { className?: string }) {
   );
 }
 
+function IconSprint({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
+}
+
 function IconUsers({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -247,6 +255,7 @@ export function Sidebar() {
   });
 
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
+  const [activeSprintCount, setActiveSprintCount] = useState<number | null>(null);
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
@@ -305,6 +314,36 @@ export function Sidebar() {
     };
   }, [isChecked, user?.isAdmin, user?.orgId, getHeaders]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!isChecked || !user?.orgId) {
+        setActiveSprintCount(null);
+        return;
+      }
+      try {
+        const data = await apiGet<{ activeSprintCount: number }>(
+          "/api/sprints?summary=1",
+          getHeaders()
+        );
+        if (!cancelled) {
+          setActiveSprintCount(typeof data?.activeSprintCount === "number" ? data.activeSprintCount : 0);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          setActiveSprintCount(null);
+          return;
+        }
+        setActiveSprintCount(null);
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isChecked, user?.orgId, getHeaders]);
+
   const showExpandedNav =
     layout === "mobile" || (layout === "tablet" && tabletHover) || (layout === "desktop" && !collapsed);
   const compactMode = !showExpandedNav;
@@ -340,6 +379,7 @@ export function Sidebar() {
     if (href === "/okrs") return normalizedPath === "/okrs";
     if (href === "/templates") return normalizedPath.startsWith("/templates");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
+    if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/billing") return normalizedPath === "/billing";
     if (href === "/org-settings") return normalizedPath === "/org-settings";
@@ -513,6 +553,17 @@ export function Sidebar() {
             hint={t("hints.tasks")}
             icon={<IconTasks className="h-4 w-4 shrink-0" />}
             label={t("tasks")}
+          />
+          <NavLink
+            path="/sprints"
+            hint={t("hints.sprints")}
+            icon={<IconSprint className="h-4 w-4 shrink-0" />}
+            label={t("sprints")}
+            sublabel={
+              activeSprintCount !== null && activeSprintCount > 0
+                ? t("sprintsActiveSublabel", { count: activeSprintCount })
+                : undefined
+            }
           />
 
           <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>

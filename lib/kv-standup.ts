@@ -30,6 +30,10 @@ function mkId(): string {
   return `std_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 }
 
+export function clipStandupDate(date: string): string {
+  return String(date).slice(0, 10);
+}
+
 let idxEnsured = false;
 async function ensureIndexes(db: Db): Promise<void> {
   if (idxEnsured) return;
@@ -54,7 +58,7 @@ export async function upsertStandupEntry(params: {
     boardId: params.boardId,
     userId: params.userId,
     userName: sanitizeText(params.userName).slice(0, 200),
-    date: String(params.date).slice(0, 10),
+    date: clipStandupDate(params.date),
     didYesterday: sanitizeText(params.didYesterday).slice(0, 800),
     willToday: sanitizeText(params.willToday).slice(0, 800),
     blockers: sanitizeText(params.blockers).slice(0, 500),

@@ -15,6 +15,8 @@
     "invites": "Invites",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
+    "sprints": "Sprints",
+    "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
     "section": {
       "flow": "Flow",
       "intelligence": "Intelligence",
@@ -33,7 +35,8 @@
       "billing": "Stripe plan and workspace limits.",
       "invites": "Pending invites for new members.",
       "rateLimitAbuse": "API rate-limit blocks (abuse).",
-      "tracer": "Client-side error buffer (Flux diagnostics) for admins."
+      "tracer": "Client-side error buffer (Flux diagnostics) for admins.",
+      "sprints": "Sprints across boards, lifecycle, and ceremonies."
     },
     "menu": {
       "expand": "Expand menu",
@@ -55,6 +58,73 @@
       "cycleTooltip": "Appearance: {current}. Click to cycle system, light, and dark."
     },
     "logout": "Sign out"
+  },
+  "sprints": {
+    "title": "Sprints",
+    "subtitle": "Sprints from every board you can access.",
+    "loading": "Loading…",
+    "loadError": "Could not load sprints.",
+    "authError": "Session expired.",
+    "upgradeRequired": "Sprints are available on paid plans.",
+    "activeSprint": "Active sprint",
+    "openBoard": "Open board",
+    "allSprints": "All sprints",
+    "empty": "No sprints yet.",
+    "col": {
+      "name": "Sprint",
+      "board": "Board",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "planning": "Planning",
+      "active": "Active",
+      "review": "Review",
+      "closed": "Closed"
+    },
+    "ceremony": {
+      "planning": "Planning",
+      "standup": "Standup",
+      "review": "Review",
+      "retro": "Retro"
+    },
+    "hubFocus": "Focus",
+    "hubModeScrum": "Scrum",
+    "hubModeKanban": "Kanban",
+    "hubCadenceHintScrum": "Sprint lifecycle, ceremonies, and the list below.",
+    "hubCadenceHintKanban": "Run Kanban cadence ceremonies for a board (Business+).",
+    "cadencePickBoard": "Board for cadence"
+  },
+  "ceremonies": {
+    "planningTitle": "Sprint planning",
+    "planningSubtitle": "Capacity check, AI suggestions, and Monte Carlo hint.",
+    "standupTitle": "Async daily standup",
+    "standupSubtitle": "What you did, what’s next, blockers — shared with the board.",
+    "close": "Close",
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "members": "Members",
+    "weekdays": "Weekdays in sprint",
+    "capacity": "Rough capacity (pts)",
+    "committed": "Committed cards",
+    "overCommitted": "More cards than rough capacity — consider dropping scope.",
+    "aiSuggest": "AI suggestion",
+    "aiLoading": "Analyzing…",
+    "aiError": "Could not load AI suggestion.",
+    "monteCarloHint": "Monte Carlo (weekly throughput resample)",
+    "p85": "p85 throughput (items)",
+    "didYesterday": "Yesterday / done",
+    "willToday": "Today / will do",
+    "blockers": "Blockers",
+    "saveStandup": "Save",
+    "saving": "Saving…",
+    "teamToday": "Team today",
+    "emptyStandup": "No entries yet for this date.",
+    "cadenceTitle": "Kanban cadence",
+    "cadenceType": "Ceremony type",
+    "cadenceRun": "Run",
+    "cadenceRunning": "Running…",
+    "cadenceError": "Could not run cadence."
   },
   "commandPalette": {
     "ariaLabel": "Command palette",
@@ -89,6 +159,7 @@
       "discovery": "Discovery",
       "templates": "Templates",
       "tasks": "My tasks",
+      "sprints": "Sprints",
       "users": "Users",
       "orgSettings": "Organization settings",
       "billing": "Billing",
@@ -1308,6 +1379,7 @@
       },
       "tabLoading": "Loading…",
       "tabsNavAria": "Card sections",
+      "moreTabs": "More",
       "tabs": {
         "edit": "Details",
         "subtasks": "Subtasks",
@@ -1840,7 +1912,10 @@
         "labelsButton": "Labels",
         "mapButton": "Production Map",
         "dailyButton": "Daily AI",
-        "searchPlaceholder": "Search... (/)"
+        "searchPlaceholder": "Search... (/)",
+        "sprintOnly": "Sprint cards only",
+        "sprintAll": "Show all cards",
+        "sprintFilterHint": "Narrows the board to cards in the active sprint."
       },
       "nlq": {
         "label": "Smart board query",

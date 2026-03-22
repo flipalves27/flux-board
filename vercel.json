@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/anomaly-check",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/sprint-burndown",
+      "schedule": "15 7 * * *"
     }
   ]
 }

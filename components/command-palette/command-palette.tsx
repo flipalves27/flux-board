@@ -247,6 +247,7 @@ export function CommandPalette() {
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },
       { path: "/tasks", title: t("nav.tasks"), kw: "tasks" },
+      { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
     ];
     if (user.isAdmin) {

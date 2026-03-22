@@ -9,6 +9,10 @@ import { getStore } from "./storage";
 
 export type BoardRole = "viewer" | "editor" | "admin";
 
+export function isBoardRole(s: string): s is BoardRole {
+  return s === "viewer" || s === "editor" || s === "admin";
+}
+
 export type BoardMember = {
   boardId: string;
   orgId: string;

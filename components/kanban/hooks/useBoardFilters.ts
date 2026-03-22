@@ -7,8 +7,10 @@ export function cardMatchesFilters(
   activePrio: string,
   activeLabels: Set<string>,
   searchQuery: string,
-  nlqAllowedIds: Set<string> | null = null
+  nlqAllowedIds: Set<string> | null = null,
+  sprintCardIds: Set<string> | null = null
 ): boolean {
+  if (sprintCardIds && !sprintCardIds.has(c.id)) return false;
   if (nlqAllowedIds && !nlqAllowedIds.has(c.id)) return false;
   if (activePrio !== "all" && c.priority !== activePrio) return false;
   if (activeLabels.size > 0 && !c.tags.some((t) => activeLabels.has(t))) return false;
@@ -37,6 +39,8 @@ type UseBoardFiltersArgs = {
   nlqAllowedIds?: Set<string> | null;
   /** Tour guiado: mantém a barra de filtros expandida (passo Daily Insights). */
   forceExpandTourFilters?: boolean;
+  /** Quando definido, só cards cujo id está no sprint ativo passam (toggle no board). */
+  sprintCardIdSet?: Set<string> | null;
 };
 
 export function useBoardFilters({
@@ -50,6 +54,7 @@ export function useBoardFilters({
   setSearchQuery,
   nlqAllowedIds = null,
   forceExpandTourFilters = false,
+  sprintCardIdSet = null,
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -80,8 +85,8 @@ export function useBoardFilters({
   }, [setActiveLabels, setActivePrio, setSearchQuery]);
 
   const filterCard = useCallback(
-    (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds),
-    [activePrio, activeLabels, searchQuery, nlqAllowedIds]
+    (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet),
+    [activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet]
   );
 
   const cardsByBucketSorted = useMemo(() => {

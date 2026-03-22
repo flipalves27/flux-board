@@ -63,6 +63,9 @@ const mockSprint: SprintData = {
   endDate: null,
   velocity: null,
   ceremonyIds: [],
+  burndownSnapshots: [],
+  addedMidSprint: [],
+  removedCardIds: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -162,9 +165,9 @@ describe("SprintPanel — correções React #185", () => {
 
     // Disparar múltiplas mudanças no ceremony store
     act(() => {
-      useCeremonyStore.getState().openRetro("sp_1");
+      useCeremonyStore.getState().openRetro(BOARD_ID, "sp_1");
       useCeremonyStore.getState().closeRetro();
-      useCeremonyStore.getState().openReview("sp_1");
+      useCeremonyStore.getState().openReview(BOARD_ID, "sp_1");
       useCeremonyStore.getState().closeReview();
     });
 

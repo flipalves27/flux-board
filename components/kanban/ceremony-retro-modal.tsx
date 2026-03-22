@@ -7,8 +7,6 @@ import type { RetroItem, RetroOutput } from "@/lib/ceremony-retrospective";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 
 type CeremonyRetroModalProps = {
-  boardId: string;
-  sprintId: string | null;
   getHeaders: () => Record<string, string>;
 };
 
@@ -136,8 +134,10 @@ function RetroColumn({ cat, items, onVote, onDelete, onAdd }: RetroColumnProps) 
   );
 }
 
-export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: CeremonyRetroModalProps) {
+export default function CeremonyRetroModal({ getHeaders }: CeremonyRetroModalProps) {
   const retroModalOpen = useCeremonyStore((s) => s.retroModalOpen);
+  const retroBoardId = useCeremonyStore((s) => s.retroBoardId);
+  const retroSprintId = useCeremonyStore((s) => s.retroSprintId);
   const closeRetro = useCeremonyStore((s) => s.closeRetro);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -152,14 +152,17 @@ export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: Ce
   useModalA11y({ open: retroModalOpen, onClose: closeRetro, containerRef: dialogRef, initialFocusRef: closeBtnRef });
 
   const loadRetro = useCallback(async () => {
-    if (!sprintId || !retroModalOpen) return;
+    if (!retroSprintId || !retroBoardId || !retroModalOpen) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprintId)}/retrospective`, {
-        method: "POST",
-        headers: getApiHeaders(getHeadersRef.current()),
-      });
+      const res = await apiFetch(
+        `/api/boards/${encodeURIComponent(retroBoardId)}/sprints/${encodeURIComponent(retroSprintId)}/retrospective`,
+        {
+          method: "POST",
+          headers: getApiHeaders(getHeadersRef.current()),
+        }
+      );
       if (res.ok) {
         const data = await res.json() as { retro: RetroOutput };
         setRetro(data.retro);
@@ -172,7 +175,7 @@ export default function CeremonyRetroModal({ boardId, sprintId, getHeaders }: Ce
     } finally {
       setLoading(false);
     }
-  }, [boardId, sprintId, retroModalOpen]);
+  }, [retroBoardId, retroSprintId, retroModalOpen]);
 
   useEffect(() => {
     if (retroModalOpen && !retro) void loadRetro();

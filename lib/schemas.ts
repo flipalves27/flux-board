@@ -737,6 +737,16 @@ export const WebhookSubscriptionUpdateSchema = z
 // Sprint Engine (v5 roadmap)
 // -----------------------
 
+export const BurndownSnapshotSchema = z.object({
+  date: z.string().trim().max(10),
+  remainingCards: z.number().int().min(0),
+  completedToday: z.number().int().min(0),
+  addedToday: z.number().int().min(0),
+  idealRemaining: z.number().min(0),
+});
+
+export type BurndownSnapshot = z.infer<typeof BurndownSnapshotSchema>;
+
 export const SprintDataSchema = z.object({
   id: z.string().trim().min(1).max(200),
   orgId: z.string().trim().min(1).max(200),
@@ -750,6 +760,9 @@ export const SprintDataSchema = z.object({
   cardIds: z.array(z.string().trim().max(200)).default([]),
   doneCardIds: z.array(z.string().trim().max(200)).default([]),
   ceremonyIds: z.array(z.string().trim().max(200)).default([]),
+  burndownSnapshots: z.array(BurndownSnapshotSchema).max(90).default([]),
+  addedMidSprint: z.array(z.string().trim().max(200)).default([]),
+  removedCardIds: z.array(z.string().trim().max(200)).default([]),
   createdAt: z.string().trim().max(80),
   updatedAt: z.string().trim().max(80),
 });
@@ -773,6 +786,9 @@ export const SprintUpdateSchema = z.object({
   cardIds: z.array(z.string().trim().max(200)).optional(),
   doneCardIds: z.array(z.string().trim().max(200)).optional(),
   velocity: z.number().min(0).nullable().optional(),
+  burndownSnapshots: z.array(BurndownSnapshotSchema).max(90).optional(),
+  addedMidSprint: z.array(z.string().trim().max(200)).optional(),
+  removedCardIds: z.array(z.string().trim().max(200)).optional(),
 });
 
 // -----------------------

@@ -15,6 +15,8 @@
     "invites": "Convites",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
+    "sprints": "Sprints",
+    "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
     "section": {
       "flow": "Fluxo",
       "intelligence": "Inteligência",
@@ -33,7 +35,8 @@
       "billing": "Plano Stripe e limites do espaço.",
       "invites": "Convites pendentes para novos membros.",
       "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
-      "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins."
+      "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
+      "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -55,6 +58,73 @@
       "cycleTooltip": "Aparência: {current}. Clique para alternar sistema, claro e escuro."
     },
     "logout": "Sair"
+  },
+  "sprints": {
+    "title": "Sprints",
+    "subtitle": "Sprints de todos os boards aos quais você tem acesso.",
+    "loading": "Carregando…",
+    "loadError": "Não foi possível carregar os sprints.",
+    "authError": "Sessão expirada.",
+    "upgradeRequired": "Sprints disponíveis em planos pagos.",
+    "activeSprint": "Sprint ativo",
+    "openBoard": "Abrir board",
+    "allSprints": "Todos os sprints",
+    "empty": "Nenhum sprint ainda.",
+    "col": {
+      "name": "Sprint",
+      "board": "Board",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "status": {
+      "planning": "Planejamento",
+      "active": "Ativo",
+      "review": "Revisão",
+      "closed": "Encerrado"
+    },
+    "ceremony": {
+      "planning": "Planejamento",
+      "standup": "Daily",
+      "review": "Review",
+      "retro": "Retrospectiva"
+    },
+    "hubFocus": "Foco",
+    "hubModeScrum": "Scrum",
+    "hubModeKanban": "Kanban",
+    "hubCadenceHintScrum": "Ciclo de sprint, cerimônias e a lista abaixo.",
+    "hubCadenceHintKanban": "Execute cerimônias de cadência Kanban em um board (Business+).",
+    "cadencePickBoard": "Board para cadência"
+  },
+  "ceremonies": {
+    "planningTitle": "Planejamento do sprint",
+    "planningSubtitle": "Capacidade, sugestão IA e dica Monte Carlo.",
+    "standupTitle": "Daily assíncrono",
+    "standupSubtitle": "O que fez, o que fará, impedimentos — visível no board.",
+    "close": "Fechar",
+    "loading": "Carregando…",
+    "error": "Algo deu errado.",
+    "members": "Membros",
+    "weekdays": "Dias úteis no sprint",
+    "capacity": "Capacidade aproximada (pts)",
+    "committed": "Cards no sprint",
+    "overCommitted": "Mais cards que a capacidade aproximada — considere reduzir escopo.",
+    "aiSuggest": "Sugestão IA",
+    "aiLoading": "Analisando…",
+    "aiError": "Não foi possível carregar a sugestão IA.",
+    "monteCarloHint": "Monte Carlo (reamostragem de throughput semanal)",
+    "p85": "Throughput p85 (itens)",
+    "didYesterday": "Ontem / feito",
+    "willToday": "Hoje / farei",
+    "blockers": "Impedimentos",
+    "saveStandup": "Salvar",
+    "saving": "Salvando…",
+    "teamToday": "Time hoje",
+    "emptyStandup": "Nenhuma entrada nesta data.",
+    "cadenceTitle": "Cadência Kanban",
+    "cadenceType": "Tipo de cerimônia",
+    "cadenceRun": "Executar",
+    "cadenceRunning": "Executando…",
+    "cadenceError": "Não foi possível executar a cadência."
   },
   "commandPalette": {
     "ariaLabel": "Paleta de comandos",
@@ -89,6 +159,7 @@
       "discovery": "Discovery",
       "templates": "Templates",
       "tasks": "Minhas tarefas",
+      "sprints": "Sprints",
       "users": "Usuários",
       "orgSettings": "Config. da organização",
       "billing": "Cobrança",
@@ -1309,6 +1380,7 @@
       },
       "tabLoading": "Carregando…",
       "tabsNavAria": "Seções do card",
+      "moreTabs": "Mais",
       "tabs": {
         "edit": "Detalhes",
         "subtasks": "Subtasks",
@@ -1841,7 +1913,10 @@
         "labelsButton": "Rótulos",
         "mapButton": "Mapa de Produção",
         "dailyButton": "Daily IA",
-        "searchPlaceholder": "Buscar... (/) "
+        "searchPlaceholder": "Buscar... (/) ",
+        "sprintOnly": "Só cards do sprint",
+        "sprintAll": "Mostrar todos os cards",
+        "sprintFilterHint": "Restringe o board aos cards do sprint ativo."
       },
       "nlq": {
         "label": "Consulta inteligente",

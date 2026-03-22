@@ -89,6 +89,10 @@ export async function createTimeEntry(params: {
   return entry;
 }
 
+export function computeElapsedMinutes(startedAtIso: string, endedAtIso: string): number {
+  return Math.max(0, Math.round((new Date(endedAtIso).getTime() - new Date(startedAtIso).getTime()) / 60000));
+}
+
 export async function stopTimeEntry(orgId: string, entryId: string, cardId: string): Promise<TimeEntryData | null> {
   const now = new Date().toISOString();
 
@@ -97,7 +101,7 @@ export async function stopTimeEntry(orgId: string, entryId: string, cardId: stri
     await ensureIndexes(db);
     const entry = await db.collection<TimeEntryData>(COL_TIME_ENTRIES).findOne({ orgId, id: entryId } as any);
     if (!entry) return null;
-    const durationMinutes = Math.max(0, Math.round((new Date(now).getTime() - new Date(entry.startedAt).getTime()) / 60000));
+    const durationMinutes = computeElapsedMinutes(entry.startedAt, now);
     const updated = { ...entry, endedAt: now, durationMinutes };
     await db.collection(COL_TIME_ENTRIES).replaceOne({ orgId, id: entryId } as any, updated);
     return updated;
@@ -106,7 +110,7 @@ export async function stopTimeEntry(orgId: string, entryId: string, cardId: stri
   const store = await getStore();
   const entry = await store.get<TimeEntryData>(kvKey(orgId, entryId));
   if (!entry) return null;
-  const durationMinutes = Math.max(0, Math.round((new Date(now).getTime() - new Date(entry.startedAt).getTime()) / 60000));
+  const durationMinutes = computeElapsedMinutes(entry.startedAt, now);
   const updated = { ...entry, endedAt: now, durationMinutes };
   await store.set(kvKey(orgId, entryId), updated);
   return updated;

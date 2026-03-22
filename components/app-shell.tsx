@@ -10,12 +10,16 @@ import { MobileAppHeader } from "@/components/mobile-app-header";
 import { TrialBillingBanner } from "@/components/trial-billing-banner";
 import { CommandPalette } from "@/components/command-palette/command-palette";
 import { GlobalHotkeys } from "@/components/hotkeys/global-hotkeys";
+import CeremonyPlanningModal from "@/components/ceremonies/ceremony-planning-modal";
+import StandupModal from "@/components/ceremonies/standup-modal";
+import CeremonyRetroModal from "@/components/kanban/ceremony-retro-modal";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
 import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 
 function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { getHeaders } = useAuth();
   const { layout, mobileOpen, openMobile, closeMobile } = useSidebarLayout();
   const { mainAreaProps } = useMobileDrawerPointer({
     enabled: layout === "mobile",
@@ -41,6 +45,9 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
       </div>
       <CommandPalette />
       <GlobalHotkeys />
+      <CeremonyRetroModal getHeaders={getHeaders} />
+      <CeremonyPlanningModal getHeaders={getHeaders} />
+      <StandupModal getHeaders={getHeaders} />
       <div className="pointer-events-none fixed bottom-4 right-4 z-[450] flex w-[min(360px,92vw)] flex-col gap-2">
         {alerts.map((alert) => (
           <button

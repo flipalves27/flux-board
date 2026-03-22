@@ -16,6 +16,9 @@ import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
+import { apiGet } from "@/lib/api-client";
+import { useSprintStore } from "@/stores/sprint-store";
+import type { SprintData } from "@/lib/schemas";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
@@ -183,6 +186,56 @@ function KanbanBoardLoaded({
     return new Set(nlqIdsArr);
   }, [nlqIdsArr]);
 
+  const setActiveSprintBoard = useSprintStore((s) => s.setActiveSprint);
+  const activeSprintBoard = useSprintStore((s) => s.activeSprint[boardId] ?? null);
+  const sprintScopeKey = `flux-kanban-sprint-scope:${boardId}`;
+  const [sprintScopeOnly, setSprintScopeOnly] = useState(false);
+
+  useEffect(() => {
+    try {
+      setSprintScopeOnly(localStorage.getItem(sprintScopeKey) === "1");
+    } catch {
+      setSprintScopeOnly(false);
+    }
+  }, [sprintScopeKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiGet<{ sprint: SprintData | null }>(
+          `/api/boards/${encodeURIComponent(boardId)}/sprints/active`,
+          getHeaders()
+        );
+        if (!cancelled) setActiveSprintBoard(boardId, data.sprint ?? null);
+      } catch {
+        if (!cancelled) setActiveSprintBoard(boardId, null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, getHeaders, setActiveSprintBoard]);
+
+  const sprintCardIdSet = useMemo(() => {
+    if (!sprintScopeOnly) return null;
+    if (!activeSprintBoard || activeSprintBoard.status !== "active") return null;
+    const ids = activeSprintBoard.cardIds ?? [];
+    return new Set(ids);
+  }, [sprintScopeOnly, activeSprintBoard]);
+
+  const toggleSprintScopeOnly = useCallback(() => {
+    setSprintScopeOnly((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(sprintScopeKey, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, [sprintScopeKey]);
+
   const board = useBoardState({
     boardId,
     getHeaders,
@@ -205,6 +258,7 @@ function KanbanBoardLoaded({
     setSearchQuery,
     nlqAllowedIds,
     forceExpandTourFilters: productTourExpandFilters,
+    sprintCardIdSet,
   });
 
   const hotkeyPatterns = useMemo(() => resolveHotkeyPatterns(), []);
@@ -448,6 +502,25 @@ function KanbanBoardLoaded({
           searchInputRef={filters.searchInputRef}
         />
         <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
+        {activeSprintBoard?.status === "active" ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+            <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] truncate max-w-[min(100%,220px)]">
+              {activeSprintBoard.name}
+            </span>
+            <button
+              type="button"
+              onClick={toggleSprintScopeOnly}
+              className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                sprintScopeOnly
+                  ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                  : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+              }`}
+            >
+              {sprintScopeOnly ? t("board.filters.sprintAll") : t("board.filters.sprintOnly")}
+            </button>
+            <span className="text-[10px] text-[var(--flux-text-muted)] hidden sm:inline">{t("board.filters.sprintFilterHint")}</span>
+          </div>
+        ) : null}
       </div>
 
       {/* Hidden file input for CSV import — triggered from the header via the board-store bridge */}

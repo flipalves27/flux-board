@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { computeDoneCardIdsForSprintCards } from "@/lib/sprint-lifecycle";
 import { getSprint, updateSprint } from "@/lib/kv-sprints";
 
 export const runtime = "nodejs";
@@ -29,10 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const board = await getBoard(boardId, payload.orgId);
   const cards = Array.isArray(board?.cards) ? (board!.cards as Array<Record<string, unknown>>) : [];
-  const doneCardIds = sprint.cardIds.filter((cid) => {
-    const card = cards.find((c) => c.id === cid);
-    return card && String(card.progress ?? "") === "Concluída";
-  });
+  const doneCardIds = computeDoneCardIdsForSprintCards(sprint.cardIds, cards);
   const velocity = doneCardIds.length;
 
   const updated = await updateSprint(payload.orgId, sprintId, {

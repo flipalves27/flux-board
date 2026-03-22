@@ -54,6 +54,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     days.push({ date: dateStr, ideal: Math.round(ideal * 10) / 10, actual: total - doneByDay });
   }
 
+  const snapByDate = new Map(sprint.burndownSnapshots.map((s) => [s.date, s]));
+  for (const day of days) {
+    const snap = snapByDate.get(day.date);
+    if (snap) {
+      day.actual = snap.remainingCards;
+      day.ideal = Math.round(snap.idealRemaining * 10) / 10;
+    }
+  }
+
   return NextResponse.json({
     burndown: { sprintId, total, startDate: sprint.startDate, endDate: sprint.endDate, days },
   });

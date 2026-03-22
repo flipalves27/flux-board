@@ -61,16 +61,10 @@ import { useCeremonyStore } from "@/stores/ceremony-store";
 function renderModal(open = true) {
   if (open) {
     act(() => {
-      useCeremonyStore.getState().openRetro("sprint_test");
+      useCeremonyStore.getState().openRetro("b_test", "sprint_test");
     });
   }
-  return render(
-    <CeremonyRetroModal
-      boardId="b_test"
-      sprintId="sprint_test"
-      getHeaders={() => ({})}
-    />
-  );
+  return render(<CeremonyRetroModal getHeaders={() => ({})} />);
 }
 
 beforeEach(() => {
@@ -92,9 +86,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 describe("CeremonyRetroModal — correções React #185", () => {
   it("não renderiza quando retroModalOpen=false", () => {
-    render(
-      <CeremonyRetroModal boardId="b_test" sprintId="sprint_test" getHeaders={() => ({})} />
-    );
+    render(<CeremonyRetroModal getHeaders={() => ({})} />);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -174,7 +166,7 @@ describe("CeremonyRetroModal — correções React #185", () => {
 
     // Disparar várias mudanças de estado no ceremony store
     act(() => {
-      useCeremonyStore.getState().openReview("sprint_test");
+      useCeremonyStore.getState().openReview("b_test", "sprint_test");
       useCeremonyStore.getState().closeReview();
     });
 

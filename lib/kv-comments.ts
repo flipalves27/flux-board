@@ -20,6 +20,10 @@ function mkId(): string {
   return `cmt_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 }
 
+export function normalizeCommentBody(body: string): string {
+  return sanitizeText(body).trim().slice(0, 2000);
+}
+
 let idxEnsured = false;
 async function ensureIndexes(db: Db): Promise<void> {
   if (idxEnsured) return;
@@ -65,7 +69,7 @@ export async function createComment(params: {
     boardId: params.boardId,
     orgId: params.orgId,
     authorId: params.authorId,
-    body: sanitizeText(params.body).trim().slice(0, 2000),
+    body: normalizeCommentBody(params.body),
     parentCommentId: params.parentCommentId ?? null,
     reactions: [],
     mentions: params.mentions ?? [],

@@ -29,7 +29,7 @@ export type WorkloadBalancerOutput = {
   generatedAt: string;
 };
 
-function computeWorkloadEntries(board: BoardData): WorkloadEntry[] {
+export function computeWorkloadEntries(board: BoardData): WorkloadEntry[] {
   const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
   const memberMap = new Map<string, WorkloadEntry>();
 

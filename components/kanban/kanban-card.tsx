@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useBoardStore } from "@/stores/board-store";
+import { useSprintStore } from "@/stores/sprint-store";
 import { useOptionalBoardCardSelection } from "./board-card-selection-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import {
@@ -145,6 +146,12 @@ function KanbanCardInner({
   dragOverlayPreview = false,
   activeDragIds = null,
 }: KanbanCardProps) {
+  const currentBoardId = useBoardStore((s) => s.boardId ?? "");
+  const inActiveSprint = useSprintStore((s) => {
+    const sp = s.activeSprint[currentBoardId];
+    if (!sp || sp.status !== "active") return false;
+    return (sp.cardIds ?? []).includes(cardId);
+  });
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
   const selection = useOptionalBoardCardSelection();
   const dragIds =
@@ -388,6 +395,7 @@ function KanbanCardInner({
   const toolbarOn = hasQuick && !isDragging && (showToolbar || touchPinned);
 
   const dragVisual = isDragging || isGhostSource;
+  const sprintEmphasis = inActiveSprint && !selected;
 
   return (
     <div
@@ -400,7 +408,9 @@ function KanbanCardInner({
       className={`relative bg-[var(--flux-surface-elevated)] border rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] ${
         selected
           ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
-          : "border-[var(--flux-border-default)] hover:border-[var(--flux-primary)]/50"
+          : sprintEmphasis
+            ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50"
+            : "border-[var(--flux-border-default)] hover:border-[var(--flux-primary)]/50"
       } ${dragVisual ? "opacity-40 scale-[0.98]" : ""}`}
     >
       {selected && selectionCount > 1 ? (

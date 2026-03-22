@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations as useCollabTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -211,19 +211,65 @@ export function CardModalLayout() {
     return () => cancelAnimationFrame(raf);
   }, [card.id]);
 
-  const tabItems: {
-    id: CardModalTabId;
-    labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps";
-  }[] = [
+  type TabDef = { id: CardModalTabId; labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps" };
+
+  const primaryTabItems: TabDef[] = [
     { id: "edit", labelKey: "edit" },
     { id: "subtasks", labelKey: "subtasks" },
     { id: "comments", labelKey: "comments" },
+  ];
+  const secondaryTabItems: TabDef[] = [
     { id: "ai", labelKey: "ai" },
     { id: "links", labelKey: "links" },
     { id: "docs", labelKey: "docs" },
     { id: "history", labelKey: "history" },
     { id: "deps", labelKey: "deps" },
   ];
+
+  const [moreTabsOpen, setMoreTabsOpen] = useState(false);
+  const moreTabsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreTabsOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (moreTabsRef.current && !moreTabsRef.current.contains(e.target as Node)) setMoreTabsOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [moreTabsOpen]);
+
+  useEffect(() => {
+    setMoreTabsOpen(false);
+  }, [activeTab]);
+
+  const secondaryActive = secondaryTabItems.some((x) => x.id === activeTab);
+
+  const renderTabButton = ({ id, labelKey }: TabDef, opts?: { fullWidth?: boolean }) => {
+    const selected = activeTab === id;
+    const fw = opts?.fullWidth ? "w-full justify-start" : "";
+    return (
+      <button
+        key={id}
+        type="button"
+        role="tab"
+        aria-selected={selected}
+        id={`card-modal-tab-${id}`}
+        tabIndex={selected ? 0 : -1}
+        onClick={() => {
+          setActiveTab(id);
+          setMoreTabsOpen(false);
+        }}
+        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold font-display transition-all duration-200 motion-safe:active:scale-95 ${fw} ${
+          selected
+            ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)] border border-[var(--flux-primary-alpha-45)] shadow-[0_0_0_1px_var(--flux-primary-alpha-12),0_2px_8px_-2px_var(--flux-primary-alpha-20)]"
+            : "border border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-chrome-alpha-04)] hover:text-[var(--flux-text)]"
+        }`}
+      >
+        {TAB_ICONS[id]}
+        {t(`cardModal.tabs.${labelKey}`)}
+      </button>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
@@ -312,30 +358,36 @@ export function CardModalLayout() {
             </button>
           </div>
 
-          {/* Tab navigation */}
-          <nav className="mt-5 flex flex-wrap gap-1.5" role="tablist" aria-label={t("cardModal.tabsNavAria")}>
-            {tabItems.map(({ id, labelKey }) => {
-              const selected = activeTab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  id={`card-modal-tab-${id}`}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => setActiveTab(id)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold font-display transition-all duration-200 motion-safe:active:scale-95 ${
-                    selected
-                      ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)] border border-[var(--flux-primary-alpha-45)] shadow-[0_0_0_1px_var(--flux-primary-alpha-12),0_2px_8px_-2px_var(--flux-primary-alpha-20)]"
-                      : "border border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-12)] hover:bg-[var(--flux-chrome-alpha-04)] hover:text-[var(--flux-text)]"
-                  }`}
+          {/* Tab navigation — primary row + secondary (desktop) / overflow menu (mobile) */}
+          <nav className="mt-5 space-y-2" role="tablist" aria-label={t("cardModal.tabsNavAria")}>
+            <div className="flex flex-wrap gap-1.5">{primaryTabItems.map((def) => renderTabButton(def))}</div>
+            <div className="hidden sm:flex flex-wrap gap-1.5">{secondaryTabItems.map((def) => renderTabButton(def))}</div>
+            <div ref={moreTabsRef} className="relative sm:hidden">
+              <button
+                type="button"
+                aria-expanded={moreTabsOpen}
+                aria-haspopup="true"
+                onClick={() => setMoreTabsOpen((o) => !o)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold font-display transition-colors ${
+                  secondaryActive && !moreTabsOpen
+                    ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                    : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-chrome-alpha-18)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                <span className="text-[var(--flux-text-muted)]" aria-hidden>
+                  ···
+                </span>
+                {t("cardModal.moreTabs")}
+              </button>
+              {moreTabsOpen ? (
+                <div
+                  className="absolute left-0 z-30 mt-2 flex min-w-[220px] flex-col gap-1 rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-2 shadow-[var(--flux-shadow-modal-depth)]"
+                  role="presentation"
                 >
-                  {TAB_ICONS[id]}
-                  {t(`cardModal.tabs.${labelKey}`)}
-                </button>
-              );
-            })}
+                  {secondaryTabItems.map((def) => renderTabButton(def, { fullWidth: true }))}
+                </div>
+              ) : null}
+            </div>
           </nav>
         </header>
 

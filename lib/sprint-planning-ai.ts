@@ -5,6 +5,11 @@ import type { Organization } from "@/lib/kv-organizations";
 import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
 import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
 
+export function countBoardCardsNotDone(board: BoardData): number {
+  const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
+  return cards.filter((c) => String(c.progress ?? "") !== "Concluída").length;
+}
+
 export type SprintPlanningAiSuggestion = {
   summary: string;
   recommendedCardIds: string[];
@@ -22,8 +27,7 @@ export async function buildSprintPlanningAiSuggestion(params: {
   const { sprint, board, prediction, org } = params;
 
   const recommended = prediction.recommended.slice(0, 10);
-  const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
-  const notDone = cards.filter((c) => String(c.progress ?? "") !== "Concluída");
+  const notDoneLen = countBoardCardsNotDone(board);
 
   const p85 = Math.ceil(prediction.percentiles?.p85 ?? 0);
   const horizonLabel = `${prediction.horizonDays} dias`;
@@ -38,7 +42,7 @@ export async function buildSprintPlanningAiSuggestion(params: {
 Meta: ${sprint.goal || "(sem meta definida)"}
 Período: ${sprint.startDate ?? "?"} → ${sprint.endDate ?? "?"}
 Previsão Monte Carlo (P85) para ${horizonLabel}: ${p85} cards concluídos
-Total de cards não concluídos no board: ${notDone.length}
+Total de cards não concluídos no board: ${notDoneLen}
 
 Cards mais recomendados (por prioridade × urgência × 1/tempo-ciclo):
 ${cardsList || "Nenhum card disponível"}

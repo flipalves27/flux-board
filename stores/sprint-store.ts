@@ -43,10 +43,13 @@ export const useSprintStore = create<SprintState>()(
           const existing = state.sprintsByBoard[boardId] ?? [];
           const idx = existing.findIndex((s) => s.id === sprint.id);
           const updated = idx >= 0 ? existing.map((s) => (s.id === sprint.id ? sprint : s)) : [sprint, ...existing];
-          const newActive = sprint.status === "active" ? sprint : state.activeSprint[boardId] ?? null;
+          const prevActive = state.activeSprint[boardId] ?? null;
+          let nextActive = prevActive;
+          if (sprint.status === "active") nextActive = sprint;
+          else if (prevActive?.id === sprint.id) nextActive = null;
           return {
             sprintsByBoard: { ...state.sprintsByBoard, [boardId]: updated },
-            activeSprint: { ...state.activeSprint, [boardId]: newActive },
+            activeSprint: { ...state.activeSprint, [boardId]: nextActive },
           };
         }),
 

@@ -1,10 +1,21 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
 import { getStore } from "./storage";
+import { mergeBurndownSnapshotRow } from "./sprint-burndown-snapshot";
 import { sanitizeText } from "./schemas";
-import type { SprintData } from "./schemas";
+import type { BurndownSnapshot, SprintData } from "./schemas";
 
 export type { SprintData };
+
+/** Legacy Mongo/KV docs may omit v6 sprint fields. */
+export function normalizeSprintData(raw: SprintData): SprintData {
+  return {
+    ...raw,
+    burndownSnapshots: raw.burndownSnapshots ?? [],
+    addedMidSprint: raw.addedMidSprint ?? [],
+    removedCardIds: raw.removedCardIds ?? [],
+  };
+}
 
 const COL_SPRINTS = "sprints";
 
@@ -34,14 +45,14 @@ export async function listSprints(orgId: string, boardId: string): Promise<Sprin
     await ensureSprintIndexes(db);
     const docs = await db.collection<SprintData>(COL_SPRINTS).find({ orgId, boardId } as any).toArray();
     docs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    return docs;
+    return docs.map(normalizeSprintData);
   }
   const store = await getStore();
   const ids = ((await store.get<string[]>(kvIndexSprintsByBoard(orgId, boardId))) as string[]) || [];
   const out: SprintData[] = [];
   for (const id of ids) {
     const raw = await store.get<SprintData>(kvKeySprint(orgId, id));
-    if (raw) out.push(raw);
+    if (raw) out.push(normalizeSprintData(raw));
   }
   out.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   return out;
@@ -52,7 +63,7 @@ export async function getActiveSprint(orgId: string, boardId: string): Promise<S
     const db = await getDb();
     await ensureSprintIndexes(db);
     const doc = await db.collection<SprintData>(COL_SPRINTS).findOne({ orgId, boardId, status: "active" } as any);
-    return doc || null;
+    return doc ? normalizeSprintData(doc) : null;
   }
   const sprints = await listSprints(orgId, boardId);
   return sprints.find((s) => s.status === "active") ?? null;
@@ -63,10 +74,11 @@ export async function getSprint(orgId: string, sprintId: string): Promise<Sprint
     const db = await getDb();
     await ensureSprintIndexes(db);
     const doc = await db.collection<SprintData>(COL_SPRINTS).findOne({ orgId, id: sprintId } as any);
-    return doc || null;
+    return doc ? normalizeSprintData(doc) : null;
   }
   const store = await getStore();
-  return (await store.get<SprintData>(kvKeySprint(orgId, sprintId))) ?? null;
+  const raw = await store.get<SprintData>(kvKeySprint(orgId, sprintId));
+  return raw ? normalizeSprintData(raw) : null;
 }
 
 export async function createSprint(params: {
@@ -93,6 +105,9 @@ export async function createSprint(params: {
     cardIds: params.cardIds ?? [],
     doneCardIds: [],
     ceremonyIds: [],
+    burndownSnapshots: [],
+    addedMidSprint: [],
+    removedCardIds: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -117,7 +132,23 @@ export async function createSprint(params: {
 export async function updateSprint(
   orgId: string,
   sprintId: string,
-  updates: Partial<Pick<SprintData, "name" | "goal" | "startDate" | "endDate" | "status" | "cardIds" | "doneCardIds" | "velocity" | "ceremonyIds">>
+  updates: Partial<
+    Pick<
+      SprintData,
+      | "name"
+      | "goal"
+      | "startDate"
+      | "endDate"
+      | "status"
+      | "cardIds"
+      | "doneCardIds"
+      | "velocity"
+      | "ceremonyIds"
+      | "burndownSnapshots"
+      | "addedMidSprint"
+      | "removedCardIds"
+    >
+  >
 ): Promise<SprintData | null> {
   const existing = await getSprint(orgId, sprintId);
   if (!existing) return null;
@@ -133,6 +164,9 @@ export async function updateSprint(
     ...(updates.doneCardIds !== undefined ? { doneCardIds: updates.doneCardIds } : {}),
     ...(updates.velocity !== undefined ? { velocity: updates.velocity } : {}),
     ...(updates.ceremonyIds !== undefined ? { ceremonyIds: updates.ceremonyIds } : {}),
+    ...(updates.burndownSnapshots !== undefined ? { burndownSnapshots: updates.burndownSnapshots } : {}),
+    ...(updates.addedMidSprint !== undefined ? { addedMidSprint: updates.addedMidSprint } : {}),
+    ...(updates.removedCardIds !== undefined ? { removedCardIds: updates.removedCardIds } : {}),
     updatedAt: new Date().toISOString(),
   };
 
@@ -163,4 +197,24 @@ export async function deleteSprint(orgId: string, boardId: string, sprintId: str
   const ids = ((await store.get<string[]>(kvIndexSprintsByBoard(orgId, boardId))) as string[]) || [];
   await store.set(kvIndexSprintsByBoard(orgId, boardId), ids.filter((id) => id !== sprintId));
   return true;
+}
+
+export async function appendBurndownSnapshot(
+  orgId: string,
+  sprintId: string,
+  row: BurndownSnapshot
+): Promise<SprintData | null> {
+  const existing = await getSprint(orgId, sprintId);
+  if (!existing) return null;
+  const burndownSnapshots = mergeBurndownSnapshotRow(existing.burndownSnapshots, row);
+  return updateSprint(orgId, sprintId, { burndownSnapshots });
+}
+
+/** List active sprints (Mongo only). Used by cron jobs. */
+export async function listActiveSprintsAllOrgs(): Promise<SprintData[]> {
+  if (!isMongoConfigured()) return [];
+  const db = await getDb();
+  await ensureSprintIndexes(db);
+  const docs = await db.collection<SprintData>(COL_SPRINTS).find({ status: "active" } as any).toArray();
+  return docs.map(normalizeSprintData);
 }

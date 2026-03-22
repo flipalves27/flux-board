@@ -43,4 +43,17 @@ describe("cardMatchesFilters", () => {
     expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["keep"]))).toBe(true);
     expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["other"]))).toBe(false);
   });
+
+  it("restricts to sprint card id set when provided", () => {
+    const c = baseCard({ id: "s1" });
+    expect(cardMatchesFilters(c, "all", new Set(), "", null, null)).toBe(true);
+    expect(cardMatchesFilters(c, "all", new Set(), "", null, new Set(["s1"]))).toBe(true);
+    expect(cardMatchesFilters(c, "all", new Set(), "", null, new Set(["other"]))).toBe(false);
+  });
+
+  it("applies sprint filter before nlq filter", () => {
+    const c = baseCard({ id: "x" });
+    expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["x"]), new Set(["y"]))).toBe(false);
+    expect(cardMatchesFilters(c, "all", new Set(), "", new Set(["x"]), new Set(["x"]))).toBe(true);
+  });
 });
