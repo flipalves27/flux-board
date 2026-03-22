@@ -11,8 +11,6 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-const VALID_TYPES = new Set<string>(["service_delivery_review", "replenishment", "flow_review", "retro_de_fluxo"]);
-
 const RequestSchema = z.object({
   type: z.enum(["service_delivery_review", "replenishment", "flow_review", "retro_de_fluxo"]),
 });

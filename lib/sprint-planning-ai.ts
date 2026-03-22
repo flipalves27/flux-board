@@ -53,7 +53,7 @@ Responda em JSON válido com esta estrutura:
 }`;
 
   try {
-    const { route, anthropicModel } = resolveBatchLlmRoute(org);
+    const { route } = resolveBatchLlmRoute(org);
     const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
     const result = await provider.chat(
       [

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const NUM_WEEKS = 12;
   const nowMs = Date.now();
   const weeks = buildRollingWeekRanges(NUM_WEEKS, nowMs);
-  const copilotChat = await getBoardCopilotChat(payload.orgId, boardId);
+  const copilotChat = await getBoardCopilotChat({ orgId: payload.orgId, boardId, userId: payload.id });
   const weeklyThroughput = buildWeeklyThroughputFromCopilot(copilotChat ? [copilotChat] : [], [boardId], weeks);
 
   const prediction = buildSprintPredictionPayload({
