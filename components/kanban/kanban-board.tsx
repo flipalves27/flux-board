@@ -16,7 +16,7 @@ import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
-import { apiGet } from "@/lib/api-client";
+import { apiGet, ApiError } from "@/lib/api-client";
 import { useSprintStore } from "@/stores/sprint-store";
 import type { SprintData } from "@/lib/schemas";
 import { useBoardState } from "./hooks/useBoardState";
@@ -188,6 +188,7 @@ function KanbanBoardLoaded({
   }, [nlqIdsArr]);
 
   const setActiveSprintBoard = useSprintStore((s) => s.setActiveSprint);
+  const setSprintsBoard = useSprintStore((s) => s.setSprints);
   const activeSprintBoard = useSprintStore((s) => s.activeSprint[boardId] ?? null);
   const sprintScopeKey = `flux-kanban-sprint-scope:${boardId}`;
   const [sprintScopeOnly, setSprintScopeOnly] = useState(false);
@@ -204,19 +205,25 @@ function KanbanBoardLoaded({
     let cancelled = false;
     (async () => {
       try {
-        const data = await apiGet<{ sprint: SprintData | null }>(
-          `/api/boards/${encodeURIComponent(boardId)}/sprints/active`,
+        const data = await apiGet<{ sprints: SprintData[] }>(
+          `/api/boards/${encodeURIComponent(boardId)}/sprints`,
           getHeaders()
         );
-        if (!cancelled) setActiveSprintBoard(boardId, data.sprint ?? null);
-      } catch {
-        if (!cancelled) setActiveSprintBoard(boardId, null);
+        if (cancelled) return;
+        const list = Array.isArray(data.sprints) ? data.sprints : [];
+        setSprintsBoard(boardId, list);
+        setActiveSprintBoard(boardId, list.find((s) => s.status === "active") ?? null);
+      } catch (e) {
+        if (cancelled) return;
+        setSprintsBoard(boardId, []);
+        setActiveSprintBoard(boardId, null);
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return;
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [boardId, getHeaders, setActiveSprintBoard]);
+  }, [boardId, getHeaders, setActiveSprintBoard, setSprintsBoard]);
 
   const sprintCardIdSet = useMemo(() => {
     if (!sprintScopeOnly) return null;
@@ -224,6 +231,14 @@ function KanbanBoardLoaded({
     const ids = activeSprintBoard.cardIds ?? [];
     return new Set(ids);
   }, [sprintScopeOnly, activeSprintBoard]);
+
+  const sprintProgress = useMemo(() => {
+    if (!activeSprintBoard || activeSprintBoard.status !== "active") return null;
+    const total = activeSprintBoard.cardIds?.length ?? 0;
+    if (total === 0) return { done: 0, total: 0, pct: 0 };
+    const done = activeSprintBoard.doneCardIds?.length ?? 0;
+    return { done, total, pct: Math.round((done / total) * 100) };
+  }, [activeSprintBoard]);
 
   const toggleSprintScopeOnly = useCallback(() => {
     setSprintScopeOnly((prev) => {
@@ -505,6 +520,36 @@ function KanbanBoardLoaded({
         <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
         {activeSprintBoard?.status === "active" ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+            {sprintProgress && sprintProgress.total > 0 ? (
+              <div
+                className="relative h-9 w-9 shrink-0"
+                title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
+              >
+                <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15.5"
+                    fill="none"
+                    stroke="var(--flux-chrome-alpha-12)"
+                    strokeWidth="3"
+                  />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15.5"
+                    fill="none"
+                    stroke={sprintProgress.pct === 100 ? "var(--flux-success)" : "var(--flux-primary)"}
+                    strokeWidth="3"
+                    strokeDasharray={`${(sprintProgress.pct / 100) * 97.4} 97.4`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums text-[var(--flux-text-muted)]">
+                  {sprintProgress.pct}%
+                </span>
+              </div>
+            ) : null}
             <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] truncate max-w-[min(100%,220px)]">
               {activeSprintBoard.name}
             </span>
@@ -618,6 +663,7 @@ function KanbanBoardLoaded({
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
+          sprintBoardQuickActions={{ boardId, getHeaders }}
         />
 
         <BoardExecutionInsightsPanel

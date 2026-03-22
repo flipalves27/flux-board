@@ -34,6 +34,7 @@ interface KanbanColumnProps {
   isFirstColumn?: boolean;
   /** Arrasto multi — opacidade nos cards de origem. */
   activeDragIds?: string[] | null;
+  sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
 }
 
 function DroppableSlot({ id }: { id: string }) {
@@ -71,8 +72,13 @@ export function KanbanColumn({
   onPinCardToTop,
   isFirstColumn,
   activeDragIds = null,
+  sprintBoardQuickActions,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
+  const wipOver =
+    typeof bucket.wipLimit === "number" &&
+    bucket.wipLimit > 0 &&
+    cards.length > bucket.wipLimit;
   const {
     attributes,
     listeners,
@@ -101,7 +107,14 @@ export function KanbanColumn({
       } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""}`}
     >
       {collapsed ? (
-        <CustomTooltip content={t("column.collapsedTooltip", { label: bucket.label, count: cards.length })} position="right">
+        <CustomTooltip
+          content={
+            wipOver
+              ? `${t("column.collapsedTooltip", { label: bucket.label, count: cards.length })} — ${t("column.tooltips.wipExceeded")}`
+              : t("column.collapsedTooltip", { label: bucket.label, count: cards.length })
+          }
+          position="right"
+        >
           <div
             ref={setBucketRef}
             {...attributes}
@@ -135,12 +148,23 @@ export function KanbanColumn({
         <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate">
           {bucket.label}
         </div>
-        <div
-          className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0 tabular-nums"
-          style={{ background: bucket.color || "var(--flux-text-muted)" }}
-        >
-          {typeof bucket.wipLimit === "number" ? `${cards.length}/${bucket.wipLimit}` : cards.length}
-        </div>
+        {wipOver ? (
+          <CustomTooltip content={t("column.tooltips.wipExceeded")} position="top">
+            <div
+              className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0 tabular-nums ring-2 ring-[var(--flux-warning)]"
+              style={{ background: bucket.color || "var(--flux-text-muted)" }}
+            >
+              {typeof bucket.wipLimit === "number" ? `${cards.length}/${bucket.wipLimit}` : cards.length}
+            </div>
+          </CustomTooltip>
+        ) : (
+          <div
+            className="font-display font-bold text-xs text-white px-2.5 py-0.5 rounded-full min-w-[22px] text-center shrink-0 tabular-nums"
+            style={{ background: bucket.color || "var(--flux-text-muted)" }}
+          >
+            {typeof bucket.wipLimit === "number" ? `${cards.length}/${bucket.wipLimit}` : cards.length}
+          </div>
+        )}
         <div className="flex items-center gap-1.5 shrink-0">
           <CustomTooltip content={t("column.tooltips.newCard")} position="top">
             <button
@@ -235,6 +259,7 @@ export function KanbanColumn({
                 onDuplicateCard={onDuplicateCard}
                 onPinToTop={onPinCardToTop}
                 activeDragIds={activeDragIds}
+                sprintBoardQuickActions={sprintBoardQuickActions}
               />
             </div>
           ))}

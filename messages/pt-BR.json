@@ -93,7 +93,27 @@
     "hubModeKanban": "Kanban",
     "hubCadenceHintScrum": "Ciclo de sprint, cerimônias e a lista abaixo.",
     "hubCadenceHintKanban": "Execute cerimônias de cadência Kanban em um board (Business+).",
-    "cadencePickBoard": "Board para cadência"
+    "cadencePickBoard": "Board para cadência",
+    "panel": {
+      "planningCeremony": "Cerimônia de planejamento",
+      "applyAiMerge": "Mesclar sugestão IA",
+      "applyAiReplace": "Substituir pelo IA",
+      "closePanelAria": "Fechar painel Sprint"
+    },
+    "backlog": {
+      "title": "Itens do sprint",
+      "hint": "Comprometa cards não concluídos. Em sprint ativo, mudanças refletem escopo e métricas.",
+      "readOnlyHint": "Sprint em revisão ou encerrado — escopo não pode ser editado aqui.",
+      "boardMismatch": "Abra este board para carregar os cards e gerenciar o backlog.",
+      "committed": "No sprint",
+      "emptyCommitted": "Nenhum card no sprint ainda.",
+      "doneInSprint": "concluído",
+      "remove": "Remover",
+      "addSearch": "Incluir cards",
+      "addPlaceholder": "Buscar por título ou ID…",
+      "add": "Incluir",
+      "noMatches": "Nenhum card encontrado."
+    }
   },
   "ceremonies": {
     "planningTitle": "Planejamento do sprint",
@@ -124,7 +144,20 @@
     "cadenceType": "Tipo de cerimônia",
     "cadenceRun": "Executar",
     "cadenceRunning": "Executando…",
-    "cadenceError": "Não foi possível executar a cadência."
+    "cadenceError": "Não foi possível executar a cadência.",
+    "cadenceSummary": "Resumo",
+    "cadenceInsights": "Insights",
+    "cadenceActions": "Próximas ações",
+    "cadenceMetrics": "Métricas de fluxo",
+    "cadenceMetricCycle": "Ciclo médio (dias)",
+    "cadenceMetricThroughput": "Throughput (14 dias)",
+    "cadenceMetricBlocked": "Cards com sinal de bloqueio",
+    "cadenceMetricOldest": "Card ativo mais antigo",
+    "cadenceWipByColumn": "WIP por coluna (progresso)",
+    "cadenceReportsLink": "Ver relatórios do board",
+    "scrumPlaybookTitle": "Boas práticas Scrum (referência)",
+    "scrumPlaybookBody": "Definition of Ready: critérios claros antes de entrar no sprint. Definition of Done: incremento testável e entregue. Time-box: planejamento, daily, review e retrospectiva mantêm o ritmo. Use o backlog abaixo para compromisso explícito do que entra no sprint.",
+    "planningBacklogIntro": "Backlog comprometido — ajuste o escopo antes de iniciar o sprint."
   },
   "commandPalette": {
     "ariaLabel": "Paleta de comandos",
@@ -1814,6 +1847,15 @@
         "duplicateTooltip": "Duplicar card",
         "pinToTopTooltip": "Ir para o topo da coluna (ordem do backlog)",
         "deleteTooltip": "Excluir card"
+      },
+      "sprintMenu": {
+        "tooltip": "Sprint",
+        "title": "Sprint",
+        "addToPlanning": "Incluir em: {name}",
+        "addToActive": "Incluir no sprint ativo ({name})",
+        "alreadyIn": "Já está neste sprint",
+        "removeFrom": "Remover de: {name}",
+        "empty": "Nenhum sprint em planejamento ou ativo. Abra o painel Sprint."
       }
     },
     "column": {
@@ -1827,7 +1869,8 @@
         "renameColumn": "Renomear coluna",
         "expandColumn": "Expandir coluna",
         "collapseColumn": "Recolher coluna",
-        "deleteColumn": "Excluir coluna"
+        "deleteColumn": "Excluir coluna",
+        "wipExceeded": "Acima do limite WIP desta coluna — reduza WIP ou retire cards (Kanban)."
       }
     },
     "directions": {
@@ -1920,7 +1963,8 @@
         "searchPlaceholder": "Buscar... (/) ",
         "sprintOnly": "Só cards do sprint",
         "sprintAll": "Mostrar todos os cards",
-        "sprintFilterHint": "Restringe o board aos cards do sprint ativo."
+        "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
+        "sprintProgress": "{done} de {total} no sprint"
       },
       "nlq": {
         "label": "Consulta inteligente",

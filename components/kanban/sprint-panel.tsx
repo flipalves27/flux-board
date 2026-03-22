@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import type { SprintData } from "@/lib/schemas";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { SprintBacklogPicker } from "@/components/kanban/sprint-backlog-picker";
 
 type SprintPanelProps = {
   boardId: string;
@@ -49,6 +51,7 @@ function SprintStatusBadge({ status }: { status: SprintData["status"] }) {
 }
 
 export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
+  const tp = useTranslations("sprints.panel");
   const panelOpen = useSprintStore((s) => s.panelOpenBoard === boardId);
   /** `?? EMPTY` em vez de `?? []` — evita nova referência a cada render quando undefined (loop #185). */
   const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
@@ -59,9 +62,12 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const upsertSprint = useSprintStore((s) => s.upsertSprint);
   const openRetro = useCeremonyStore((s) => s.openRetro);
   const openReview = useCeremonyStore((s) => s.openReview);
+  const openPlanning = useCeremonyStore((s) => s.openPlanning);
 
   const getHeadersRef = useRef(getHeaders);
   getHeadersRef.current = getHeaders;
+  /** Sprint para o qual a sugestão IA atual foi gerada (evita aplicar ao sprint errado após trocar seleção). */
+  const [aiPlanTargetSprintId, setAiPlanTargetSprintId] = useState<string | null>(null);
 
   const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
   const [burndown, setBurndown] = useState<BurndownPoint[] | null>(null);
@@ -112,6 +118,41 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
       setBurndown(null);
     }
   }, [boardId, selectedSprint?.id, selectedSprint?.status]);
+
+  useEffect(() => {
+    setAiPlan(null);
+    setAiPlanTargetSprintId(null);
+  }, [selectedSprint?.id]);
+
+  const patchSprintCardIds = useCallback(
+    async (sprintId: string, cardIds: string[]) => {
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprintId)}`, {
+        method: "PATCH",
+        headers: { ...getApiHeaders(getHeadersRef.current()), "Content-Type": "application/json" },
+        body: JSON.stringify({ cardIds }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { sprint: SprintData };
+        upsertSprint(boardId, data.sprint);
+      }
+    },
+    [boardId, upsertSprint]
+  );
+
+  const handleApplyAiSuggestion = useCallback(
+    async (mode: "merge" | "replace") => {
+      const sid = aiPlanTargetSprintId;
+      if (!sid || !aiPlan?.recommendedCardIds?.length) return;
+      const list = useSprintStore.getState().sprintsByBoard[boardId] ?? EMPTY_SPRINTS;
+      const sp = list.find((s) => s.id === sid);
+      if (!sp || sp.status !== "planning") return;
+      const rec = aiPlan.recommendedCardIds.map((id) => id.trim()).filter(Boolean);
+      const next =
+        mode === "replace" ? rec : Array.from(new Set([...sp.cardIds, ...rec]));
+      await patchSprintCardIds(sid, next);
+    },
+    [aiPlan, aiPlanTargetSprintId, boardId, patchSprintCardIds]
+  );
 
   const handleCreateSprint = async () => {
     const name = newSprintName.trim();
@@ -170,6 +211,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const handleAiPlan = async (sprintId: string) => {
     setAiPlanLoading(true);
     setAiPlan(null);
+    setAiPlanTargetSprintId(null);
     try {
       const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${sprintId}/planning-ai`, {
         method: "POST",
@@ -177,7 +219,10 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
       });
       if (res.ok) {
         const data = await res.json() as { suggestion?: { summary: string; recommendedCardIds: string[]; reasoning: string } };
-        if (data.suggestion) setAiPlan(data.suggestion);
+        if (data.suggestion) {
+          setAiPlan(data.suggestion);
+          setAiPlanTargetSprintId(sprintId);
+        }
       }
     } finally {
       setAiPlanLoading(false);
@@ -207,23 +252,32 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
           ${panelOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}`}
       >
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between gap-3 border-b border-[var(--flux-chrome-alpha-06)] px-5 py-4">
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-[var(--flux-primary)]" aria-hidden>
+        <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-06)] px-5 py-4">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0 text-[var(--flux-primary)]" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span className="font-display font-bold text-base text-[var(--flux-text)]">Sprint</span>
+            <span className="font-display font-bold text-base text-[var(--flux-text)] shrink-0">Sprint</span>
             {activeSprint && (
-              <span className="ml-1 rounded-full bg-[var(--flux-success-alpha-12)] border border-[var(--flux-success-alpha-35)] px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-success)]">
+              <span className="ml-1 rounded-full bg-[var(--flux-success-alpha-12)] border border-[var(--flux-success-alpha-35)] px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-success)] truncate max-w-[120px] sm:max-w-[160px]">
                 {activeSprint.name}
               </span>
             )}
+            {selectedSprint && (selectedSprint.status === "planning" || selectedSprint.status === "active") ? (
+              <button
+                type="button"
+                onClick={() => openPlanning(boardId, selectedSprint.id)}
+                className="ml-auto shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)]"
+              >
+                {tp("planningCeremony")}
+              </button>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={() => setPanelOpen(null)}
-            className="h-8 w-8 rounded-full border border-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[var(--flux-chrome-alpha-06)]"
-            aria-label="Fechar painel Sprint"
+            className="h-8 w-8 shrink-0 rounded-full border border-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[var(--flux-chrome-alpha-06)]"
+            aria-label={tp("closePanelAria")}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden>
               <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" />
@@ -296,6 +350,15 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                       </div>
                     </div>
                   )}
+
+                  <div className="rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-3">
+                    <SprintBacklogPicker
+                      boardId={boardId}
+                      sprint={selectedSprint}
+                      getHeaders={() => getHeadersRef.current()}
+                      onSprintUpdated={(s) => upsertSprint(boardId, s)}
+                    />
+                  </div>
 
                   {/* Days remaining */}
                   {days !== null && (
@@ -405,6 +468,26 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                           Cards sugeridos: <span className="font-mono text-[var(--flux-primary-light)]">{aiPlan.recommendedCardIds.join(", ")}</span>
                         </p>
                       )}
+                      {selectedSprint.status === "planning" &&
+                      aiPlanTargetSprintId === selectedSprint.id &&
+                      aiPlan.recommendedCardIds.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => void handleApplyAiSuggestion("merge")}
+                            className="flex-1 rounded-lg border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary)] px-2 py-1.5 text-[10px] font-semibold text-white hover:opacity-95"
+                          >
+                            {tp("applyAiMerge")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleApplyAiSuggestion("replace")}
+                            className="flex-1 rounded-lg border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-12)] px-2 py-1.5 text-[10px] font-semibold text-[var(--flux-warning)] hover:bg-[var(--flux-warning-alpha-18)]"
+                          >
+                            {tp("applyAiReplace")}
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>

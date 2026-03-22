@@ -93,7 +93,27 @@
     "hubModeKanban": "Kanban",
     "hubCadenceHintScrum": "Sprint lifecycle, ceremonies, and the list below.",
     "hubCadenceHintKanban": "Run Kanban cadence ceremonies for a board (Business+).",
-    "cadencePickBoard": "Board for cadence"
+    "cadencePickBoard": "Board for cadence",
+    "panel": {
+      "planningCeremony": "Planning ceremony",
+      "applyAiMerge": "Merge AI suggestion",
+      "applyAiReplace": "Replace with AI",
+      "closePanelAria": "Close sprint panel"
+    },
+    "backlog": {
+      "title": "Sprint items",
+      "hint": "Commit unfinished cards. In an active sprint, changes affect scope and metrics.",
+      "readOnlyHint": "Sprint in review or closed — scope cannot be edited here.",
+      "boardMismatch": "Open this board to load cards and manage the backlog.",
+      "committed": "In sprint",
+      "emptyCommitted": "No cards in the sprint yet.",
+      "doneInSprint": "done",
+      "remove": "Remove",
+      "addSearch": "Add cards",
+      "addPlaceholder": "Search by title or ID…",
+      "add": "Add",
+      "noMatches": "No matching cards."
+    }
   },
   "ceremonies": {
     "planningTitle": "Sprint planning",
@@ -124,7 +144,20 @@
     "cadenceType": "Ceremony type",
     "cadenceRun": "Run",
     "cadenceRunning": "Running…",
-    "cadenceError": "Could not run cadence."
+    "cadenceError": "Could not run cadence.",
+    "cadenceSummary": "Summary",
+    "cadenceInsights": "Insights",
+    "cadenceActions": "Next actions",
+    "cadenceMetrics": "Flow metrics",
+    "cadenceMetricCycle": "Avg. cycle time (days)",
+    "cadenceMetricThroughput": "Throughput (14 days)",
+    "cadenceMetricBlocked": "Cards flagged as blocked",
+    "cadenceMetricOldest": "Oldest active card",
+    "cadenceWipByColumn": "WIP by progress column",
+    "cadenceReportsLink": "Open board reports",
+    "scrumPlaybookTitle": "Scrum reference",
+    "scrumPlaybookBody": "Definition of Ready: clear criteria before entering the sprint. Definition of Done: tested, shippable increment. Time-box planning, daily, review, and retro to keep rhythm. Use the backlog below for explicit sprint commitment.",
+    "planningBacklogIntro": "Committed backlog — adjust scope before starting the sprint."
   },
   "commandPalette": {
     "ariaLabel": "Command palette",
@@ -1463,6 +1496,15 @@
         "duplicateTooltip": "Duplicate card",
         "pinToTopTooltip": "Move to top of column (backlog order)",
         "deleteTooltip": "Delete card"
+      },
+      "sprintMenu": {
+        "tooltip": "Sprint",
+        "title": "Sprint",
+        "addToPlanning": "Add to: {name}",
+        "addToActive": "Add to active sprint ({name})",
+        "alreadyIn": "Already in this sprint",
+        "removeFrom": "Remove from: {name}",
+        "empty": "No planning or active sprint. Open the Sprint panel."
       }
     },
     "column": {
@@ -1476,7 +1518,8 @@
         "renameColumn": "Rename column",
         "expandColumn": "Expand column",
         "collapseColumn": "Collapse column",
-        "deleteColumn": "Delete column"
+        "deleteColumn": "Delete column",
+        "wipExceeded": "Over this column’s WIP limit — reduce WIP or move work out (Kanban)."
       }
     },
     "directions": {
@@ -1919,7 +1962,8 @@
         "searchPlaceholder": "Search... (/)",
         "sprintOnly": "Sprint cards only",
         "sprintAll": "Show all cards",
-        "sprintFilterHint": "Narrows the board to cards in the active sprint."
+        "sprintFilterHint": "Narrows the board to cards in the active sprint.",
+        "sprintProgress": "{done} of {total} in sprint"
       },
       "nlq": {
         "label": "Smart board query",

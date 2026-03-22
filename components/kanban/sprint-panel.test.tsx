@@ -29,6 +29,42 @@ vi.mock("@/lib/api-client", () => ({
 
 vi.mock("@/components/ui/use-modal-a11y", () => ({ useModalA11y: vi.fn() }));
 
+vi.mock("next-intl", () => ({
+  useTranslations: (namespace?: string) => (key: string) => {
+    const panel: Record<string, string> = {
+      planningCeremony: "Cerimônia de planejamento",
+      applyAiMerge: "Mesclar sugestão IA",
+      applyAiReplace: "Substituir pelo IA",
+      closePanelAria: "Fechar painel Sprint",
+    };
+    const backlog: Record<string, string> = {
+      title: "Itens do sprint",
+      hint: "hint",
+      readOnlyHint: "readOnly",
+      boardMismatch: "boardMismatch",
+      committed: "No sprint",
+      emptyCommitted: "emptyCommitted",
+      doneInSprint: "done",
+      remove: "Remover",
+      addSearch: "addSearch",
+      addPlaceholder: "addPlaceholder",
+      add: "Incluir",
+      noMatches: "noMatches",
+    };
+    if (namespace === "sprints.panel") return panel[key] ?? key;
+    if (namespace === "sprints.backlog") return backlog[key] ?? key;
+    return key;
+  },
+}));
+
+vi.mock("@/stores/board-store", () => ({
+  useBoardStore: (sel: (s: { boardId: string; db: { cards: unknown[]; config: { bucketOrder: unknown[] } } }) => unknown) =>
+    sel({
+      boardId: "b_sprint_test",
+      db: { cards: [], config: { bucketOrder: [] } },
+    }),
+}));
+
 vi.mock("recharts", () => ({
   LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,
@@ -88,6 +124,7 @@ beforeEach(() => {
   act(() => {
     useCeremonyStore.getState().closeRetro();
     useCeremonyStore.getState().closeReview();
+    useCeremonyStore.getState().closePlanning();
   });
 });
 

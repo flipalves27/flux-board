@@ -8,6 +8,8 @@ import { monteCarloThroughputPercentiles } from "@/lib/sprint-prediction-metrics
 import { computeRoughCapacityPoints, countWeekdaysInclusive } from "@/lib/sprint-planning-capacity";
 import type { SprintData } from "@/lib/schemas";
 import { useCeremonyStore } from "@/stores/ceremony-store";
+import { useSprintStore } from "@/stores/sprint-store";
+import { SprintBacklogPicker } from "@/components/kanban/sprint-backlog-picker";
 
 type AiSuggestion = {
   summary: string;
@@ -17,6 +19,7 @@ type AiSuggestion = {
 
 export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () => Record<string, string> }) {
   const t = useTranslations("ceremonies");
+  const tp = useTranslations("sprints.panel");
   const open = useCeremonyStore((s) => s.planningModalOpen);
   const boardId = useCeremonyStore((s) => s.planningBoardId);
   const sprintId = useCeremonyStore((s) => s.planningSprintId);
@@ -36,6 +39,7 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
   const [aiLoading, setAiLoading] = useState(false);
   const [ai, setAi] = useState<AiSuggestion | null>(null);
   const [aiErr, setAiErr] = useState<string | null>(null);
+  const upsertSprint = useSprintStore((s) => s.upsertSprint);
 
   const load = useCallback(async () => {
     if (!open || !boardId || !sprintId) return;
@@ -77,9 +81,44 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
     void load();
   }, [load]);
 
+  const onBacklogUpdated = useCallback(
+    (s: SprintData) => {
+      setSprint(s);
+      if (boardId) upsertSprint(boardId, s);
+    },
+    [boardId, upsertSprint]
+  );
+
+  const patchSprintCardIds = useCallback(
+    async (sid: string, cardIds: string[]) => {
+      if (!boardId) return;
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sid)}`, {
+        method: "PATCH",
+        headers: { ...getApiHeaders(getHeadersRef.current()), "Content-Type": "application/json" },
+        body: JSON.stringify({ cardIds }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { sprint: SprintData };
+        onBacklogUpdated(data.sprint);
+      }
+    },
+    [boardId, onBacklogUpdated]
+  );
+
+  const applyAiSuggestion = useCallback(
+    async (mode: "merge" | "replace") => {
+      if (!sprintId || !sprint || !ai?.recommendedCardIds?.length || sprint.status !== "planning") return;
+      const rec = ai.recommendedCardIds.map((id) => id.trim()).filter(Boolean);
+      const next = mode === "replace" ? rec : Array.from(new Set([...sprint.cardIds, ...rec]));
+      await patchSprintCardIds(sprintId, next);
+    },
+    [ai, patchSprintCardIds, sprint, sprintId]
+  );
+
   const runAi = async () => {
     if (!boardId || !sprintId) return;
     setAiLoading(true);
+    setAi(null);
     setAiErr(null);
     try {
       const res = await apiFetch(
@@ -123,7 +162,7 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)]"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg sm:max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--flux-chrome-alpha-08)] px-5 py-4">
@@ -145,6 +184,23 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
           {err ? <p className="text-[var(--flux-danger)]">{err}</p> : null}
           {!loading && sprint ? (
             <>
+              <details className="rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-xs group">
+                <summary className="cursor-pointer font-semibold text-[var(--flux-text)] list-none flex items-center justify-between gap-2">
+                  <span>{t("scrumPlaybookTitle")}</span>
+                  <span className="text-[var(--flux-text-muted)] group-open:rotate-90 transition-transform">›</span>
+                </summary>
+                <p className="mt-2 text-[var(--flux-text-muted)] leading-relaxed border-t border-[var(--flux-chrome-alpha-06)] pt-2">{t("scrumPlaybookBody")}</p>
+              </details>
+              <p className="text-xs text-[var(--flux-text-muted)]">{t("planningBacklogIntro")}</p>
+              <div className="rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-3">
+                <SprintBacklogPicker
+                  boardId={boardId!}
+                  sprint={sprint}
+                  getHeaders={() => getHeadersRef.current()}
+                  onSprintUpdated={onBacklogUpdated}
+                  compact
+                />
+              </div>
               <dl className="grid grid-cols-2 gap-2 text-xs">
                 <dt className="text-[var(--flux-text-muted)]">{t("members")}</dt>
                 <dd className="font-semibold text-[var(--flux-text)]">{memberCount}</dd>
@@ -179,6 +235,29 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
                 <div className="space-y-2 rounded-lg border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-primary-alpha-04)] p-3 text-xs">
                   <p className="font-semibold text-[var(--flux-primary-light)]">{ai.summary}</p>
                   <p className="text-[var(--flux-text-muted)]">{ai.reasoning}</p>
+                  {ai.recommendedCardIds.length > 0 ? (
+                    <p className="text-[11px] text-[var(--flux-text-muted)] font-mono break-all">
+                      {ai.recommendedCardIds.join(", ")}
+                    </p>
+                  ) : null}
+                  {sprint.status === "planning" && ai.recommendedCardIds.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => void applyAiSuggestion("merge")}
+                        className="flex-1 rounded-lg border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary)] px-2 py-1.5 text-[10px] font-semibold text-white hover:opacity-95"
+                      >
+                        {tp("applyAiMerge")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyAiSuggestion("replace")}
+                        className="flex-1 rounded-lg border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-12)] px-2 py-1.5 text-[10px] font-semibold text-[var(--flux-warning)] hover:bg-[var(--flux-warning-alpha-18)]"
+                      >
+                        {tp("applyAiReplace")}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </>

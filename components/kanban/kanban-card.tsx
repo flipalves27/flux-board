@@ -1,9 +1,11 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useBoardStore } from "@/stores/board-store";
 import { useSprintStore } from "@/stores/sprint-store";
+import { apiFetch, getApiHeaders } from "@/lib/api-client";
+import type { SprintData } from "@/lib/schemas";
 import { useOptionalBoardCardSelection } from "./board-card-selection-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import {
@@ -11,6 +13,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { BucketConfig } from "@/app/board/[id]/page";
 import { useTranslations } from "next-intl";
@@ -106,6 +109,8 @@ interface KanbanCardProps {
   dragOverlayPreview?: boolean;
   /** IDs do arrasto em curso (opacidade nos cards de origem). */
   activeDragIds?: string[] | null;
+  /** Menu rápido: incluir/remover do sprint (board com sprint_engine). */
+  sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
 }
 
 /** Compara apenas datas de calendário em UTC — evita divergência SSR (Node UTC) vs browser (fuso local). */
@@ -125,6 +130,8 @@ function daysRemaining(dueDate: string | null): number | null {
 }
 
 const LONG_PRESS_MS = 450;
+
+const EMPTY_SPRINTS_LIST: SprintData[] = [];
 const HOVER_SHOW_MS = 200;
 const MOVE_CANCEL_PX = 10;
 
@@ -147,6 +154,7 @@ function KanbanCardInner({
   quickActionsDisabled = false,
   dragOverlayPreview = false,
   activeDragIds = null,
+  sprintBoardQuickActions,
 }: KanbanCardProps) {
   const currentBoardId = useBoardStore((s) => s.boardId ?? "");
   const inActiveSprint = useSprintStore((s) => {
@@ -154,6 +162,42 @@ function KanbanCardInner({
     if (!sp || sp.status !== "active") return false;
     return (sp.cardIds ?? []).includes(cardId);
   });
+
+  const sprintsForBoard = useSprintStore((s) =>
+    sprintBoardQuickActions ? (s.sprintsByBoard[sprintBoardQuickActions.boardId] ?? EMPTY_SPRINTS_LIST) : EMPTY_SPRINTS_LIST
+  );
+
+  const sprintMenuMeta = useMemo(() => {
+    if (!sprintBoardQuickActions) return null;
+    const planning = sprintsForBoard.filter((sp) => sp.status === "planning");
+    const active = sprintsForBoard.find((sp) => sp.status === "active") ?? null;
+    const containing = sprintsForBoard.filter(
+      (sp) =>
+        (sp.status === "planning" || sp.status === "active") && (sp.cardIds ?? []).includes(cardId)
+    );
+    const canAddSomewhere =
+      planning.some((sp) => !(sp.cardIds ?? []).includes(cardId)) ||
+      (active && !(active.cardIds ?? []).includes(cardId));
+    const visible = containing.length > 0 || canAddSomewhere;
+    return { planning, active, containing, visible };
+  }, [sprintBoardQuickActions, sprintsForBoard, cardId]);
+
+  const patchSprintCardIds = useCallback(
+    async (sprintId: string, cardIds: string[]) => {
+      if (!sprintBoardQuickActions) return;
+      const { boardId, getHeaders } = sprintBoardQuickActions;
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprintId)}`, {
+        method: "PATCH",
+        headers: { ...getApiHeaders(getHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ cardIds }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { sprint: SprintData };
+        useSprintStore.getState().upsertSprint(boardId, data.sprint);
+      }
+    },
+    [sprintBoardQuickActions]
+  );
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
   const selection = useOptionalBoardCardSelection();
   const dragIds =
@@ -176,6 +220,7 @@ function KanbanCardInner({
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const prioMenuOpenRef = useRef(false);
   const colMenuOpenRef = useRef(false);
+  const sprintMenuOpenRef = useRef(false);
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [touchPinned, setTouchPinned] = useState(false);
@@ -214,10 +259,18 @@ function KanbanCardInner({
     });
   }, []);
 
+  const onSprintMenuOpenChange = useCallback(
+    (open: boolean) => {
+      sprintMenuOpenRef.current = open;
+      if (!open && !prioMenuOpenRef.current && !colMenuOpenRef.current) tryHideToolbarAfterMenu();
+    },
+    [tryHideToolbarAfterMenu]
+  );
+
   const onPrioMenuOpenChange = useCallback(
     (open: boolean) => {
       prioMenuOpenRef.current = open;
-      if (!open && !colMenuOpenRef.current) tryHideToolbarAfterMenu();
+      if (!open && !colMenuOpenRef.current && !sprintMenuOpenRef.current) tryHideToolbarAfterMenu();
     },
     [tryHideToolbarAfterMenu]
   );
@@ -225,7 +278,7 @@ function KanbanCardInner({
   const onColMenuOpenChange = useCallback(
     (open: boolean) => {
       colMenuOpenRef.current = open;
-      if (!open && !prioMenuOpenRef.current) tryHideToolbarAfterMenu();
+      if (!open && !prioMenuOpenRef.current && !sprintMenuOpenRef.current) tryHideToolbarAfterMenu();
     },
     [tryHideToolbarAfterMenu]
   );
@@ -262,7 +315,7 @@ function KanbanCardInner({
     clearHoverTimer();
     clearLeaveTimer();
     leaveTimerRef.current = setTimeout(() => {
-      if (!prioMenuOpenRef.current && !colMenuOpenRef.current) {
+      if (!prioMenuOpenRef.current && !colMenuOpenRef.current && !sprintMenuOpenRef.current) {
         setShowToolbar(false);
       }
     }, 150);
@@ -396,7 +449,9 @@ function KanbanCardInner({
 
   const showPin = Boolean(onPinToTop) && !quickActionsDisabled;
 
-  const toolbarOn = (hasQuick || showPin) && !isDragging && (showToolbar || touchPinned);
+  const showSprintQuick = Boolean(sprintMenuMeta?.visible) && !quickActionsDisabled;
+
+  const toolbarOn = (hasQuick || showPin || showSprintQuick) && !isDragging && (showToolbar || touchPinned);
 
   const dragVisual = isDragging || isGhostSource;
   const sprintEmphasis = inActiveSprint && !selected;
@@ -449,8 +504,71 @@ function KanbanCardInner({
           onClick={stopDrag}
           aria-hidden={!toolbarOn}
         >
-          {(hasQuick || showPin) && toolbarOn ? (
+          {(hasQuick || showPin || showSprintQuick) && toolbarOn ? (
             <>
+              {showSprintQuick && sprintMenuMeta && sprintBoardQuickActions ? (
+                <DropdownMenu modal={false} onOpenChange={onSprintMenuOpenChange}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="h-6 w-6 shrink-0 rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-primary-light)] flex items-center justify-center hover:border-[var(--flux-primary)]"
+                      title={t("card.sprintMenu.tooltip")}
+                      aria-label={t("card.sprintMenu.tooltip")}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[200px] max-h-[min(320px,50vh)] overflow-y-auto scrollbar-kanban">
+                    <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                      {t("card.sprintMenu.title")}
+                    </div>
+                    {sprintMenuMeta.planning.map((sp) => {
+                      const inSp = (sp.cardIds ?? []).includes(cardId);
+                      return (
+                        <DropdownMenuItem
+                          key={sp.id}
+                          disabled={inSp}
+                          onSelect={() => {
+                            if (inSp) return;
+                            void patchSprintCardIds(sp.id, [...(sp.cardIds ?? []), cardId]);
+                            setTouchPinned(false);
+                          }}
+                        >
+                          {inSp ? t("card.sprintMenu.alreadyIn") : t("card.sprintMenu.addToPlanning", { name: sp.name })}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    {sprintMenuMeta.active && !(sprintMenuMeta.active.cardIds ?? []).includes(cardId) ? (
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          const sp = sprintMenuMeta.active!;
+                          void patchSprintCardIds(sp.id, [...(sp.cardIds ?? []), cardId]);
+                          setTouchPinned(false);
+                        }}
+                      >
+                        {t("card.sprintMenu.addToActive", { name: sprintMenuMeta.active.name })}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {sprintMenuMeta.containing.length > 0 ? <DropdownMenuSeparator /> : null}
+                    {sprintMenuMeta.containing.map((sp) => (
+                      <DropdownMenuItem
+                        key={`rm-${sp.id}`}
+                        onSelect={() => {
+                          void patchSprintCardIds(
+                            sp.id,
+                            (sp.cardIds ?? []).filter((id) => id !== cardId)
+                          );
+                          setTouchPinned(false);
+                        }}
+                      >
+                        {t("card.sprintMenu.removeFrom", { name: sp.name })}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
               {hasQuick ? (
                 <>
                   <DropdownMenu modal={false} onOpenChange={onPrioMenuOpenChange}>

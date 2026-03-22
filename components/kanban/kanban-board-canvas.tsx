@@ -61,6 +61,8 @@ type KanbanBoardCanvasProps = {
   onPinCardToTop?: (cardId: string) => void;
   /** Coluna com maior visibilidade no scroll (presença em tempo real). */
   onVisibleColumnKeyChange?: (columnKey: string | null) => void;
+  /** Incluir/remover card de sprint a partir do menu do card (usa sprint-store + API). */
+  sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
 };
 
 export function KanbanBoardCanvas({
@@ -104,6 +106,7 @@ export function KanbanBoardCanvas({
   onDuplicateCard,
   onPinCardToTop,
   onVisibleColumnKeyChange,
+  sprintBoardQuickActions,
 }: KanbanBoardCanvasProps) {
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
   const bucketKeysSig = buckets.map((b) => b.key).join("|");
@@ -284,6 +287,7 @@ export function KanbanBoardCanvas({
                 onDuplicateCard={onDuplicateCard}
                 isFirstColumn={colIdx === 0}
                 activeDragIds={activeDragIds}
+                sprintBoardQuickActions={sprintBoardQuickActions}
               />
             ))}
           </SortableContext>
