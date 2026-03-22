@@ -23,8 +23,11 @@ function generateNonce(): string {
 function buildCsp(nonce: string, frameAncestors = "'none'"): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    // unsafe-inline ignored by nonce-aware browsers; needed as fallback for older ones
+    // Next.js will apply nonce to its own scripts when x-nonce is forwarded as request header
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`,
+    // unsafe-inline needed for React style={{}} prop used extensively across the app
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
     "connect-src 'self'",
@@ -128,7 +131,11 @@ export async function middleware(req: NextRequest) {
   const res = intlMiddleware(req);
   const embed = isEmbedDocumentPath(pathname);
 
+  // Set on response so browser receives it; x-middleware-request-* prefix
+  // tells Next.js to forward it as a request header to Server Components,
+  // which also causes Next.js to apply the nonce to its own injected <script> tags.
   res.headers.set("x-nonce", nonce);
+  res.headers.set("x-middleware-request-x-nonce", nonce);
 
   if (embed) {
     res.headers.delete("X-Frame-Options");
