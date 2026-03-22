@@ -8,7 +8,7 @@ import {
 } from "@/lib/kv-organizations";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
 import { getEffectiveTier } from "@/lib/plan-gates";
-import type { OrgAiSettings } from "@/lib/kv-organizations";
+import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
 import {
   orgBrandingAllowsCustomDomain,
   orgBrandingAllowsTheming,
@@ -18,6 +18,12 @@ import {
   BRANDING_ASSET_MAX_BYTES,
 } from "@/lib/org-branding";
 import type { OrgBranding } from "@/lib/org-branding";
+import {
+  allowAdminPlanOverrideFromEnv,
+  canAdminOverridePlan,
+  hasStripeSubscription,
+  planOverrideBlockedByStripe,
+} from "@/lib/admin-plan-override";
 
 export async function GET(request: NextRequest) {
   const payload = getAuthFromRequest(request);
@@ -32,6 +38,10 @@ export async function GET(request: NextRequest) {
       name: org.name,
       slug: org.slug,
       plan: org.plan,
+      /** Seletor de plano manual: env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE` e sem assinatura Stripe. */
+      canAdminOverridePlan: canAdminOverridePlan(org),
+      /** Env ativa mas existe `stripeSubscriptionId` — UI pode explicar o bloqueio. */
+      planOverrideBlockedByStripe: planOverrideBlockedByStripe(org),
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
       trialEndsAt: org.trialEndsAt ?? null,
@@ -62,10 +72,11 @@ export async function PUT(request: NextRequest) {
   const hasBranding = body && typeof body === "object" && "branding" in body;
   const dismissBillingNotice = body?.dismissBillingNotice === true;
   const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
+  const hasPlan = body && typeof body === "object" && "plan" in body && body.plan !== undefined;
 
-  if (!name && !slug && !hasBranding && !dismissBillingNotice && !hasAiSettings) {
+  if (!name && !slug && !hasBranding && !dismissBillingNotice && !hasAiSettings && !hasPlan) {
     return NextResponse.json(
-      { error: "Informe `name`, `slug`, `branding`, `aiSettings` ou `dismissBillingNotice`." },
+      { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `plan` ou `dismissBillingNotice`." },
       { status: 400 }
     );
   }
@@ -204,12 +215,38 @@ export async function PUT(request: NextRequest) {
       aiSettingsPatch = next;
     }
 
+    let planPatch: Organization["plan"] | undefined;
+    if (hasPlan) {
+      if (!allowAdminPlanOverrideFromEnv()) {
+        return NextResponse.json(
+          { error: "Alteração de plano pelo admin não está habilitada (defina FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1 no servidor)." },
+          { status: 403 }
+        );
+      }
+      if (hasStripeSubscription(current)) {
+        return NextResponse.json(
+          {
+            error:
+              "Override de plano não permitido: esta organização tem assinatura Stripe (stripeSubscriptionId). Altere ou cancele pelo portal de billing / Stripe antes de definir o plano manualmente.",
+          },
+          { status: 403 }
+        );
+      }
+      const raw = typeof (body as { plan?: unknown }).plan === "string" ? (body as { plan: string }).plan.trim() : "";
+      const allowed: Organization["plan"][] = ["free", "trial", "pro", "business", "enterprise"];
+      if (!allowed.includes(raw as Organization["plan"])) {
+        return NextResponse.json({ error: "Plano inválido. Use: free, trial, pro, business ou enterprise." }, { status: 400 });
+      }
+      planPatch = raw as Organization["plan"];
+    }
+
     const org = await updateOrganization(payload.orgId, {
       ...(name !== undefined ? { name } : {}),
       ...(slug !== undefined ? { slug } : {}),
       ...(brandingPatch !== undefined ? { branding: brandingPatch } : {}),
       ...(dismissBillingNotice ? { billingNotice: null } : {}),
       ...(aiSettingsPatch !== undefined ? { aiSettings: aiSettingsPatch } : {}),
+      ...(planPatch !== undefined ? { plan: planPatch } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
     return NextResponse.json({ organization: org });

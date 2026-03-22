@@ -71,11 +71,17 @@ export default function OrgSettingsPage() {
     }>
   >([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
+  /** Env + sem assinatura Stripe — mostra seletor de plano manual. */
+  const [canAdminOverridePlan, setCanAdminOverridePlan] = useState(false);
+  /** Env ativa mas org tem `stripeSubscriptionId` — override bloqueado (billing). */
+  const [planOverrideBlockedByStripe, setPlanOverrideBlockedByStripe] = useState(false);
 
   const suggestedSlug = useMemo(() => slugifyLocal(orgName), [orgName]);
 
   function applyOrgPayload(org: Record<string, unknown> | null | undefined) {
     if (!org) return;
+    if (typeof org.canAdminOverridePlan === "boolean") setCanAdminOverridePlan(org.canAdminOverridePlan);
+    if (typeof org.planOverrideBlockedByStripe === "boolean") setPlanOverrideBlockedByStripe(org.planOverrideBlockedByStripe);
     setOrgName(String(org.name ?? ""));
     setOrgSlug(String(org.slug ?? ""));
     setOrgPlan(
@@ -218,11 +224,12 @@ export default function OrgSettingsPage() {
             }
           : undefined;
 
+      const planBody = canAdminOverridePlan ? { plan: orgPlan } : {};
       const res = await apiPut<{ organization: Record<string, unknown> }>(
         "/api/organizations/me",
         branding
-          ? { name, slug, branding, ...(aiSettings ? { aiSettings } : {}) }
-          : { name, slug, ...(aiSettings ? { aiSettings } : {}) },
+          ? { name, slug, ...planBody, branding, ...(aiSettings ? { aiSettings } : {}) }
+          : { name, slug, ...planBody, ...(aiSettings ? { aiSettings } : {}) },
         getHeaders()
       );
       applyOrgPayload(res?.organization);
@@ -327,6 +334,45 @@ export default function OrgSettingsPage() {
                   </p>
                 </div>
               </div>
+
+              {planOverrideBlockedByStripe && (
+                <div className="mt-6 rounded-[var(--flux-rad)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-08)] p-4 space-y-2">
+                  <h3 className="font-display font-bold text-sm text-[var(--flux-text)]">Plano manual (admin) — indisponível</h3>
+                  <p className="text-xs text-[var(--flux-text-muted)]">
+                    Esta organização tem <strong className="text-[var(--flux-text)]">assinatura Stripe</strong> (
+                    <code className="font-mono">stripeSubscriptionId</code>). O plano efetivo vem do billing; para usar override
+                    manual no banco, cancele a assinatura no Stripe ou remova o vínculo da org, depois recarregue esta página.
+                  </p>
+                </div>
+              )}
+
+              {canAdminOverridePlan && (
+                <div className="mt-6 rounded-[var(--flux-rad)] border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] p-4 space-y-2">
+                  <h3 className="font-display font-bold text-sm text-[var(--flux-text)]">Plano comercial (admin)</h3>
+                  <p className="text-xs text-[var(--flux-text-muted)]">
+                    Override manual no banco só é permitido quando <strong className="text-[var(--flux-text)]">não há</strong>{" "}
+                    assinatura Stripe nesta org. Exige <code className="font-mono">FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1</code> no
+                    servidor. Recursos como Sprint, Copilot e OKRs exigem plano{" "}
+                    <strong className="text-[var(--flux-text)]">Pro</strong>, <strong className="text-[var(--flux-text)]">Business</strong>{" "}
+                    ou <strong className="text-[var(--flux-text)]">Enterprise</strong>.
+                  </p>
+                  <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Plano da organização</label>
+                  <select
+                    value={orgPlan}
+                    onChange={(e) =>
+                      setOrgPlan(e.target.value as "free" | "trial" | "pro" | "business" | "enterprise")
+                    }
+                    className="w-full max-w-md px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
+                    disabled={busy}
+                  >
+                    <option value="free">Free</option>
+                    <option value="trial">Trial (tratado como Pro enquanto vigente)</option>
+                    <option value="pro">Pro</option>
+                    <option value="business">Business</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+              )}
 
               {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "enterprise" || orgPlan === "trial") && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-6">
