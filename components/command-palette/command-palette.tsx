@@ -116,6 +116,11 @@ export function CommandPalette() {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const { user, getHeaders, isChecked } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const t = useTranslations("commandPalette");
 
   const [open, setOpen] = useState(false);
@@ -125,9 +130,10 @@ export function CommandPalette() {
   const flatOrderRef = useRef<PaletteItem[]>([]);
 
   const loadBoards = useCallback(async () => {
-    if (!user) return;
+    const u = userRef.current;
+    if (!u) return;
     try {
-      const data = await apiGet<{ boards: BoardRow[] }>("/api/boards", getHeaders());
+      const data = await apiGet<{ boards: BoardRow[] }>("/api/boards", getHeadersRef.current());
       setBoards(Array.isArray(data.boards) ? data.boards : []);
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -136,12 +142,12 @@ export function CommandPalette() {
       }
       setBoards([]);
     }
-  }, [user, getHeaders]);
+  }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) return;
+    if (!isChecked || !user?.id) return;
     setHistoryState(getCommandHistory(user.id));
-  }, [isChecked, user, open]);
+  }, [isChecked, user?.id, open]);
 
   useEffect(() => {
     if (!open) return;

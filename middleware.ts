@@ -64,6 +64,11 @@ function applyNonCspSecurityHeaders(res: NextResponse) {
   return res;
 }
 
+/** Arquivos em `public/` — não passar pelo next-intl (evita 404 tipo `/pt-BR/flux-background.svg`). */
+function isLikelyPublicStaticAsset(pathname: string): boolean {
+  return /\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|txt|html)$/i.test(pathname);
+}
+
 /** Apply security headers to all API responses and pass through to the function. */
 function handleApiRequest(_req: NextRequest): NextResponse {
   // Per-endpoint rate limiting is handled inside each API route (lib/rate-limit.ts).
@@ -78,6 +83,10 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     return handleApiRequest(req);
+  }
+
+  if (isLikelyPublicStaticAsset(pathname)) {
+    return applyNonCspSecurityHeaders(NextResponse.next());
   }
 
   const nonce = generateNonce();

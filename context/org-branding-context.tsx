@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import type { OrgBranding } from "@/lib/org-branding";
@@ -135,18 +135,28 @@ function applyBrandingToDocument(
 
 export function OrgBrandingProvider({ children }: { children: React.ReactNode }) {
   const { user, getHeaders, isChecked } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const [org, setOrg] = useState<OrgPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [publicBranding, setPublicBranding] = useState<PublicBrandingPayload | null>(null);
 
+  /**
+   * `user` e `getHeaders` mudam de identidade no contexto; não podem estar nas deps de `useCallback`
+   * sem recriar `refresh` a cada render → `useEffect([refresh])` dispara em loop (React #185).
+   */
   const refresh = useCallback(async () => {
-    if (!user) {
+    const u = userRef.current;
+    if (!u) {
       setOrg(null);
       return;
     }
     setLoading(true);
     try {
-      const data = await apiGet<{ organization: OrgPayload }>("/api/organizations/me", getHeaders());
+      const data = await apiGet<{ organization: OrgPayload }>("/api/organizations/me", getHeadersRef.current());
       setOrg(data?.organization ?? null);
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -157,16 +167,16 @@ export function OrgBrandingProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user, getHeaders]);
+  }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) {
+    if (!isChecked || !user?.id) {
       setOrg(null);
       applyBrandingToDocument(null, false, DEFAULT_PLATFORM_NAME);
       return;
     }
     void refresh();
-  }, [isChecked, user, refresh]);
+  }, [isChecked, user?.id, refresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

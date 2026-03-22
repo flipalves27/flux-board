@@ -70,6 +70,11 @@ function runWithViewTransition(update: () => void): void {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user, isChecked, getHeaders } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const [preference, setPreference] = useState<ThemePreference>(() => readThemePreferenceFromStorage() ?? "system");
   const [systemDark, setSystemDark] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -85,8 +90,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const lastUserSync = useRef<string | null>(null);
   useEffect(() => {
-    if (!isChecked || !user) {
-      if (!user) lastUserSync.current = null;
+    if (!isChecked || !user?.id) {
+      lastUserSync.current = null;
       return;
     }
     const tp = user.themePreference;
@@ -96,7 +101,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     lastUserSync.current = sig;
     flushSync(() => setPreference(tp));
     writeThemePreferenceToStorage(tp);
-  }, [isChecked, user]);
+  }, [isChecked, user?.id, user?.themePreference]);
 
   const resolvedTheme = resolveTheme(preference, systemDark);
 
@@ -111,15 +116,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         flushSync(() => setPreference(value));
       });
       writeThemePreferenceToStorage(value);
-      if (!opts?.skipRemote && user) {
+      if (!opts?.skipRemote && userRef.current) {
         void apiFetch("/api/users/me/theme", {
           method: "PATCH",
           body: JSON.stringify({ themePreference: value }),
-          headers: getHeaders(),
+          headers: getHeadersRef.current(),
         }).catch(() => {});
       }
     },
-    [user, getHeaders]
+    []
   );
 
   const cycleThemePreference = useCallback(() => {
