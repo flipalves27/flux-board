@@ -1729,13 +1729,13 @@
       "retentionPro": "Pro/Business: histórico completo.",
       "noMongo": "O histórico de atividade requer MongoDB (MONGODB_URI).",
       "actions": {
-        "card.created": "Card criado",
-        "card.moved": "Card movido",
-        "card.updated": "Card atualizado",
-        "card.deleted": "Card excluído",
-        "column.added": "Coluna adicionada",
-        "column.removed": "Coluna removida",
-        "board.settings_changed": "Configurações do board"
+        "card_created": "Card criado",
+        "card_moved": "Card movido",
+        "card_updated": "Card atualizado",
+        "card_deleted": "Card excluído",
+        "column_added": "Coluna adicionada",
+        "column_removed": "Coluna removida",
+        "board_settings_changed": "Configurações do board"
       }
     },
     "executionInsights": {

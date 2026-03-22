@@ -216,7 +216,7 @@ export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelPr
                     <option value="">{t("filterActionAll")}</option>
                     {BOARD_ACTIVITY_ACTIONS.map((a) => (
                       <option key={a} value={a}>
-                        {t(`actions.${a}` as "actions.card.created")}
+                        {t(`actions.${a.replace(/\./g, "_")}` as "actions.card_created")}
                       </option>
                     ))}
                   </select>
@@ -268,7 +268,7 @@ export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelPr
                     <div className="min-w-0 flex-1 border-l-2 border-[var(--flux-chrome-alpha-10)] pl-3">
                       <div className="text-xs text-[var(--flux-text)]">
                         <span className="font-semibold">{e.userName}</span>{" "}
-                        <span className="text-[var(--flux-text-muted)]">{t(`actions.${e.action}` as "actions.card.created")}</span>
+                        <span className="text-[var(--flux-text-muted)]">{t(`actions.${e.action.replace(/\./g, "_")}` as "actions.card_created")}</span>
                       </div>
                       <div className="text-[11px] text-[var(--flux-text)] mt-0.5 break-words">{e.target}</div>
                       <div className="text-[10px] text-[var(--flux-text-muted)] mt-1">{formatWhen(e.timestamp, locale)}</div>

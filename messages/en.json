@@ -1381,13 +1381,13 @@
       "retentionPro": "Pro/Business: full history.",
       "noMongo": "Activity history requires MongoDB (MONGODB_URI).",
       "actions": {
-        "card.created": "Card created",
-        "card.moved": "Card moved",
-        "card.updated": "Card updated",
-        "card.deleted": "Card deleted",
-        "column.added": "Column added",
-        "column.removed": "Column removed",
-        "board.settings_changed": "Board settings"
+        "card_created": "Card created",
+        "card_moved": "Card moved",
+        "card_updated": "Card updated",
+        "card_deleted": "Card deleted",
+        "column_added": "Column added",
+        "column_removed": "Column removed",
+        "board_settings_changed": "Board settings"
       }
     },
     "executionInsights": {
