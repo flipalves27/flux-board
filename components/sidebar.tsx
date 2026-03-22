@@ -456,7 +456,7 @@ export function Sidebar() {
       {layout === "mobile" && mobileOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-[40] bg-[var(--flux-surface-dark)]/55 backdrop-blur-md md:hidden"
+          className="fixed inset-0 z-[var(--flux-z-sidebar-backdrop)] bg-[var(--flux-surface-dark)]/55 backdrop-blur-md md:hidden"
           aria-label={t("menu.closeNavigation")}
           onClick={closeMobile}
         />
@@ -471,7 +471,7 @@ export function Sidebar() {
         onMouseEnter={() => layout === "tablet" && setTabletHover(true)}
         onMouseLeave={() => layout === "tablet" && setTabletHover(false)}
         className={`flex shrink-0 flex-col overflow-hidden border-r border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width,transform] duration-300 ease-out
-          max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[50] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
+          max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[var(--flux-z-sidebar-drawer)] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
           max-md:-translate-x-full max-md:pointer-events-none max-md:data-[open]:translate-x-0 max-md:data-[open]:pointer-events-auto
           md:relative md:z-auto md:h-full md:min-h-0 md:translate-x-0 md:pointer-events-auto md:shadow-none`}
         style={

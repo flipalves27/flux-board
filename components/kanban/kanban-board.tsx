@@ -29,6 +29,7 @@ import { BoardCardSelectionProvider, useBoardCardSelection } from "./board-card-
 import { KanbanBatchSelectionBar } from "./kanban-batch-selection-bar";
 import { BoardSummaryDock } from "./board-summary-dock";
 import { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
+import { BoardMobileToolHub } from "./board-mobile-tool-hub";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
@@ -47,7 +48,7 @@ function DailyIaFab({ onOpen }: { onOpen: () => void }) {
     <button
       type="button"
       data-tour="board-daily"
-      className={`fixed z-[467] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[280px]`}
+      className={`max-md:hidden fixed z-[var(--flux-z-fab-daily)] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[280px]`}
       onClick={onOpen}
       aria-label={tFab("dailyButton")}
     >
@@ -490,7 +491,7 @@ function KanbanBoardLoaded({
 
   return (
     <>
-      <div className="sticky top-[42px] z-[150] flex flex-col">
+      <div className="sticky top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col">
         <BoardNlqDock
           boardId={boardId}
           getHeaders={getHeaders}
@@ -629,6 +630,7 @@ function KanbanBoardLoaded({
         />
 
         <DailyIaFab onOpen={openDailyModal} />
+        <BoardMobileToolHub onOpenDaily={openDailyModal} />
 
         <BoardSummaryDock
         t={t}

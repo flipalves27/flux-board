@@ -272,7 +272,7 @@ export function CardModalLayout() {
   };
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
+    <div className="fixed inset-0 z-[var(--flux-z-modal-base)] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-xl motion-safe:transition-[background-color] motion-safe:duration-300"
         aria-hidden

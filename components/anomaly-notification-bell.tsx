@@ -115,7 +115,7 @@ export function AnomalyNotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-[250] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[var(--flux-z-anomaly-bell-popover)] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]">
           <div className="flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-10)] px-3 py-2">
             <span className="text-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("title")}</span>
             <Link

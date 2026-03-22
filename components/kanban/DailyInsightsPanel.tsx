@@ -130,7 +130,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[410] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-daily-insights)] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div

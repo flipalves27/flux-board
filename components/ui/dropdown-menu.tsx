@@ -4,7 +4,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import type { ComponentPropsWithoutRef } from "react";
 
 const contentClass =
-  "z-[400] min-w-[8rem] overflow-hidden rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-1 text-[var(--flux-text)] shadow-[0_8px_24px_var(--flux-black-alpha-16)]";
+  "z-[var(--flux-z-dropdown)] min-w-[8rem] overflow-hidden rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-1 text-[var(--flux-text)] shadow-[0_8px_24px_var(--flux-black-alpha-16)]";
 
 const itemClass =
   "relative flex cursor-pointer select-none items-center rounded-md px-2 py-1.5 text-[11px] font-medium outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-[var(--flux-surface-hover)] data-[highlighted]:text-[var(--flux-text)]";

@@ -219,7 +219,7 @@ export function DependencyGraphView({ nodes, edges, boardColor, fullscreen = fal
 
   if (fullscreen) {
     return (
-      <div className="fixed inset-0 z-[350] flex flex-col bg-[var(--flux-surface-card)]">
+      <div className="fixed inset-0 z-[var(--flux-z-dep-graph)] flex flex-col bg-[var(--flux-surface-card)]">
         <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-[var(--flux-chrome-alpha-06)]">
           <h2 className="font-display font-bold text-base text-[var(--flux-text)]">Grafo de Dependências</h2>
           {onToggleFullscreen && (

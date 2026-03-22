@@ -90,7 +90,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-base)] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
       role="dialog"
       aria-modal="true"
       aria-labelledby="desc-modal-title"

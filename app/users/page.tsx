@@ -219,7 +219,7 @@ export default function UsersPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center"
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-base)] flex items-center justify-center"
           onClick={() => setModalOpen(false)}
         >
           <div

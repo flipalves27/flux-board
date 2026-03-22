@@ -95,7 +95,7 @@ export function BoardMembersPanel({ boardId, getHeaders, open, onClose }: Props)
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[320] flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[var(--flux-z-modal-members)] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden />
       <div className="relative z-10 w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-[var(--flux-surface-card)] border border-[var(--flux-chrome-alpha-08)] shadow-[var(--flux-shadow-modal-depth)] flex flex-col max-h-[85dvh]">
         <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--flux-chrome-alpha-06)]">

@@ -574,7 +574,7 @@ export default function BillingPage() {
       </main>
 
       {cancelOpen ? (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[var(--flux-z-modal-critical)] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
           <div className="max-w-md w-full rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
             <h4 className="font-display font-bold text-lg text-[var(--flux-text)]">Antes de cancelar</h4>
             <p className="mt-2 text-sm text-[var(--flux-text-muted)]">

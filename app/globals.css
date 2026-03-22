@@ -168,6 +168,46 @@
   --flux-backdrop-scrim: rgba(0, 0, 0, 0.4);
   --flux-backdrop-scrim-strong: rgba(0, 0, 0, 0.5);
 
+  /*
+   * Stacking scale — use Tailwind z-[var(--flux-z-…)] so overlays stay predictable.
+   * See docs/ux-execution-baseline.md for QA checklist.
+   */
+  --flux-z-mobile-header: 35;
+  --flux-z-sidebar-backdrop: 40;
+  --flux-z-sidebar-drawer: 50;
+  --flux-z-board-summary-dock: 80;
+  --flux-z-board-canvas: 120;
+  --flux-z-board-sticky-chrome: 150;
+  /* Below routine toasts (450) so alerts stay visible over the hub */
+  --flux-z-mobile-tool-hub: 430;
+  --flux-z-fab-daily: 467;
+  --flux-z-fab-insights: 468;
+  --flux-z-product-tour: 455;
+  --flux-z-fab-activity: 469;
+  --flux-z-fab-copilot: 470;
+  --flux-z-sprint-scrim-mobile: 199;
+  --flux-z-header-sticky: 200;
+  --flux-z-sprint-panel: 200;
+  --flux-z-board-automations: 200;
+  --flux-z-anomaly-bell-popover: 250;
+  --flux-z-anomaly-modal: 260;
+  --flux-z-modal-base: 300;
+  --flux-z-modal-members: 320;
+  --flux-z-dep-graph: 350;
+  --flux-z-modal-feature: 400;
+  --flux-z-dropdown: 400;
+  --flux-z-daily-insights: 410;
+  --flux-z-card-ai-overlay: 420;
+  --flux-z-app-routine-toasts: 450;
+  --flux-z-fab-panel-backdrop: 480;
+  --flux-z-fab-panel-high: 485;
+  --flux-z-modal-critical: 500;
+  --flux-z-command-backdrop: 520;
+  --flux-z-command-content: 521;
+  --flux-z-shortcuts-modal: 530;
+  --flux-z-tooltip: 9999;
+  --flux-z-diagnostics: 9999;
+
   --flux-danger-alpha-06: rgba(255, 107, 107, 0.06);
   --flux-danger-alpha-10: rgba(255, 107, 107, 0.1);
   --flux-danger-alpha-12: rgba(255, 107, 107, 0.12);

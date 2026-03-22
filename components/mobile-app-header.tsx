@@ -21,7 +21,7 @@ export function MobileAppHeader() {
   if (layout !== "mobile") return null;
 
   return (
-    <header className="sticky top-0 z-[35] flex h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/90 px-3 backdrop-blur-md md:hidden">
+    <header className="sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/90 px-3 backdrop-blur-md md:hidden">
       <button
         type="button"
         onClick={openMobile}

@@ -150,7 +150,8 @@ describe("CeremonyRetroModal — correções React #185", () => {
     renderModal();
 
     await waitFor(() => screen.getByRole("dialog"));
-    const backdrop = document.querySelector(".fixed.inset-0.z-\\[400\\] > .absolute");
+    const dialog = screen.getByRole("dialog");
+    const backdrop = dialog.parentElement?.querySelector(".absolute.inset-0[aria-hidden='true']");
     expect(backdrop).toBeTruthy();
     act(() => { fireEvent.click(backdrop!); });
 

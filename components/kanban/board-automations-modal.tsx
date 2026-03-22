@@ -218,7 +218,7 @@ export function BoardAutomationsModal({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/55 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[var(--flux-z-board-automations)] flex items-center justify-center p-4 bg-black/55 backdrop-blur-[2px]"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();

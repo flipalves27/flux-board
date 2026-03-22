@@ -464,8 +464,8 @@ export function CommandPalette() {
       onOpenChange={onOpenChange}
       shouldFilter={false}
       label={t("ariaLabel")}
-      overlayClassName="fixed inset-0 z-[520] bg-black/55 backdrop-blur-[2px]"
-      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[521] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]"
+      overlayClassName="fixed inset-0 z-[var(--flux-z-command-backdrop)] bg-black/55 backdrop-blur-[2px]"
+      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]"
     >
       <div className="border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
         <div className="flex items-center gap-2">

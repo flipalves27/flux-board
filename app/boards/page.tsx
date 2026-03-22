@@ -789,7 +789,7 @@ export default function BoardsPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center"
+          className="fixed inset-0 bg-black/60 z-[var(--flux-z-modal-base)] flex items-center justify-center"
           onClick={() => setModalOpen(false)}
         >
           <div

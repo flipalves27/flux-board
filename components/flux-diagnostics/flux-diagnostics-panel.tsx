@@ -48,7 +48,7 @@ export function FluxDiagnosticsPanel() {
   if (!enabled) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-[9999] flex flex-col items-start gap-2 font-sans text-left">
+    <div className="fixed bottom-4 left-4 z-[var(--flux-z-diagnostics)] flex flex-col items-start gap-2 font-sans text-left">
       {!open ? (
         <button
           type="button"

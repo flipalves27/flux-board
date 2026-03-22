@@ -175,7 +175,7 @@ export function MapaModal({ mapaProducao, onClose, onSave }: MapaModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-base)] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
       onClick={onClose}
     >
       <div

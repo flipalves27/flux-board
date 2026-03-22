@@ -1952,6 +1952,15 @@
         "import": "Import",
         "export": "Export"
       },
+      "mobileTools": {
+        "openMenu": "Board tools",
+        "closeMenu": "Close tools",
+        "menuLabel": "Board tools",
+        "copilot": "Copilot",
+        "insights": "Execution insights",
+        "activity": "Activity log",
+        "daily": "Daily AI"
+      },
       "stats": {
         "totalLabel": "Total",
         "inProgressLabel": "In progress",

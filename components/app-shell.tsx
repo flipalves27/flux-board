@@ -48,7 +48,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
       <CeremonyRetroModal getHeaders={getHeaders} />
       <CeremonyPlanningModal getHeaders={getHeaders} />
       <StandupModal getHeaders={getHeaders} />
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[450] flex w-[min(360px,92vw)] flex-col gap-2">
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[var(--flux-z-app-routine-toasts)] flex w-[min(360px,92vw)] flex-col gap-2">
         {alerts.map((alert) => (
           <button
             key={alert.id}

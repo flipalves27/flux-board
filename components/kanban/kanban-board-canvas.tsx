@@ -169,7 +169,7 @@ export function KanbanBoardCanvas({
       onPointerMove={boardView === "kanban" ? onPanPointerMove : undefined}
       onPointerUp={boardView === "kanban" ? onPanPointerUp : undefined}
       onPointerCancel={boardView === "kanban" ? onPanPointerCancel : undefined}
-      className={`board-canvas w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[120] ${
+      className={`board-canvas w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[var(--flux-z-board-canvas)] ${
         boardView === "kanban"
           ? `flex gap-4 overflow-x-auto items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
           : "flex flex-col overflow-x-hidden"

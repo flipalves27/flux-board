@@ -194,14 +194,14 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
       {/* Backdrop on mobile */}
       {panelOpen && (
         <div
-          className="fixed inset-0 z-[199] bg-black/40 sm:hidden"
+          className="fixed inset-0 z-[var(--flux-z-sprint-scrim-mobile)] bg-[var(--flux-backdrop-scrim)] sm:hidden"
           onClick={() => setPanelOpen(null)}
           aria-hidden
         />
       )}
       {/* Panel — bottom-sheet on mobile, side-drawer on sm+ */}
       <div
-        className={`fixed z-[200] flex flex-col bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] transition-transform duration-300 ease-[var(--flux-ease-standard)]
+        className={`fixed z-[var(--flux-z-sprint-panel)] flex flex-col bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] transition-transform duration-300 ease-[var(--flux-ease-standard)]
           bottom-0 left-0 right-0 h-[90dvh] rounded-t-2xl border-t border-[var(--flux-chrome-alpha-08)]
           sm:top-0 sm:bottom-auto sm:right-0 sm:left-auto sm:h-full sm:w-[420px] sm:rounded-t-none sm:border-t-0 sm:border-l
           ${panelOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}`}

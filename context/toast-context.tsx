@@ -124,7 +124,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="fixed right-4 bottom-4 z-[520] flex w-[min(420px,92vw)] flex-col gap-2 pointer-events-none"
+        className="fixed right-4 bottom-4 z-[var(--flux-z-command-backdrop)] flex w-[min(420px,92vw)] flex-col gap-2 pointer-events-none"
       >
         {toasts.map((toast) => {
           const st = kindStyles(toast.kind);

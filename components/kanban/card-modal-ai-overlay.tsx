@@ -23,7 +23,7 @@ export function CardModalAiOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[420] bg-[var(--flux-backdrop-scrim)] backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[var(--flux-z-card-ai-overlay)] bg-[var(--flux-backdrop-scrim)] backdrop-blur-sm flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-context-title"

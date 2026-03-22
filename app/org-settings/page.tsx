@@ -291,7 +291,7 @@ export default function OrgSettingsPage() {
       <Header title={tNav("organization")} backHref={`${localeRoot}/boards`} backLabel="← Boards">
         <div className="text-xs text-[var(--flux-text-muted)]">{t("steps.pill1")}</div>
       </Header>
-      <main className="max-w-[780px] mx-auto px-6 py-10">
+      <main className="max-w-[780px] mx-auto px-4 py-6 sm:px-6 sm:py-10">
         <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
           <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">Configuração da Organização</h2>
           <p className="text-sm text-[var(--flux-text-muted)] mb-6">

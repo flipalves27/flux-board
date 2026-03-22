@@ -1953,6 +1953,15 @@
         "import": "Importar",
         "export": "Exportar"
       },
+      "mobileTools": {
+        "openMenu": "Ferramentas do board",
+        "closeMenu": "Fechar ferramentas",
+        "menuLabel": "Ferramentas do board",
+        "copilot": "Copiloto",
+        "insights": "Insights de execução",
+        "activity": "Atividade",
+        "daily": "IA do dia"
+      },
       "stats": {
         "totalLabel": "Total",
         "inProgressLabel": "Em andamento",

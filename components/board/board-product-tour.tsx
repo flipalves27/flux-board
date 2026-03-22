@@ -254,7 +254,7 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     return createPortal(
       <>
         <div
-          className="fixed inset-0 z-[468] bg-transparent"
+          className="fixed inset-0 z-[var(--flux-z-product-tour)] bg-transparent"
           aria-hidden
           onPointerDown={onBackdropPointerDown}
         />

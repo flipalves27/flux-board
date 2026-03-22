@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   closestCorners,
   KeyboardSensor,
@@ -9,6 +9,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
+import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
 import { adjustSlotInsertIndexForBatch, parseSlotId } from "../kanban-dnd-utils";
 
 export { parseSlotId } from "../kanban-dnd-utils";
@@ -30,9 +31,18 @@ export function useBoardDnd({
 }: UseBoardDndArgs) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeDragIds, setActiveDragIds] = useState<string[] | null>(null);
+  const coarsePointer = useCoarsePointer();
+
+  const pointerActivation = useMemo(
+    () =>
+      coarsePointer
+        ? { delay: 220, tolerance: 6 }
+        : { distance: 8 },
+    [coarsePointer]
+  );
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: pointerActivation }),
     useSensor(KeyboardSensor)
   );
 

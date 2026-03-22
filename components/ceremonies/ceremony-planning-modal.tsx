@@ -116,7 +116,7 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
   const mc = monteCarloThroughputPercentiles(weeklyHint, 400);
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[var(--flux-z-modal-feature)] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" aria-hidden onClick={close} />
       <div
         ref={dialogRef}
