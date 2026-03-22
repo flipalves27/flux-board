@@ -1,6 +1,11 @@
 import type { BoardData, BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { SubtaskData } from "@/lib/schemas";
-import { isSafeLinkUrl, SubtaskSchema } from "@/lib/schemas";
+import {
+  CardAutomationStateSchema,
+  isSafeLinkUrl,
+  SubtaskProgressSchema,
+  SubtaskSchema,
+} from "@/lib/schemas";
 
 type CardPersistSource = CardData & {
   subtasks?: unknown[];
@@ -44,6 +49,12 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     const rest: Record<string, unknown> = { ...(c as unknown as Record<string, unknown>) };
     delete rest.subtasks;
     delete rest.subtaskProgress;
+    /** Zod `.optional()` rejeita `null`; o KV/API podem enviar null em campos omitidos. */
+    delete rest.columnEnteredAt;
+    delete rest.completedAt;
+    delete rest.completedCycleDays;
+    delete rest.automationState;
+    delete rest.dorReady;
     const title = String(c.title ?? "").trim().slice(0, 300);
     const orderRaw = Number(c.order);
     const order = Number.isFinite(orderRaw)
@@ -107,13 +118,17 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       ...(c.completedCycleDays != null && Number.isFinite(Number(c.completedCycleDays))
         ? { completedCycleDays: Math.max(0, Math.min(3650, Math.floor(Number(c.completedCycleDays)))) }
         : {}),
-      ...(c.automationState ? { automationState: c.automationState } : {}),
     };
+    if (c.automationState && typeof c.automationState === "object") {
+      const ap = CardAutomationStateSchema.safeParse(c.automationState);
+      if (ap.success) base.automationState = ap.data;
+    }
     if (subtasksParsed && subtasksParsed.length > 0) {
       base.subtasks = subtasksParsed;
     }
-    if (c.subtaskProgress) {
-      base.subtaskProgress = c.subtaskProgress;
+    if (c.subtaskProgress && typeof c.subtaskProgress === "object") {
+      const sp = SubtaskProgressSchema.safeParse(c.subtaskProgress);
+      if (sp.success) base.subtaskProgress = sp.data;
     }
     const dor = (c as { dorReady?: unknown }).dorReady;
     if (dor && typeof dor === "object") {
