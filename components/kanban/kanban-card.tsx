@@ -324,8 +324,9 @@ function KanbanCardInner({
   const progLabel = t(`cardModal.options.progress.${card.progress}`);
 
   const nowMs = Date.now();
-  const stagnDays = inferStagnationDaysFromCard(card as Record<string, unknown>, nowMs);
-  const riskScore = computeCardRiskScore(card as Record<string, unknown>, {
+  const cardRaw = card as unknown as Record<string, unknown>;
+  const stagnDays = inferStagnationDaysFromCard(cardRaw, nowMs);
+  const riskScore = computeCardRiskScore(cardRaw, {
     columnStagnationDays: stagnDays,
     daysUntilDue: dr,
     blockedHint: Array.isArray(card.blockedBy) && (card.blockedBy as string[]).length > 0,
@@ -582,8 +583,8 @@ function KanbanCardInner({
             {card.docRefs.length} doc(s) vinculado(s)
           </div>
         )}
-        {Array.isArray((card as Record<string, unknown>).subtasks) && ((card as Record<string, unknown>).subtasks as unknown[]).length > 0 && (
-          <SubtaskProgressMini subtasks={(card as Record<string, unknown>).subtasks as SubtaskItem[]} />
+        {Array.isArray((card as unknown as Record<string, unknown>).subtasks) && ((card as unknown as Record<string, unknown>).subtasks as unknown[]).length > 0 && (
+          <SubtaskProgressMini subtasks={(card as unknown as Record<string, unknown>).subtasks as SubtaskItem[]} />
         )}
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <div className="flex items-center gap-1">

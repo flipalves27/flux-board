@@ -216,7 +216,7 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
         if (res.ok) {
           updateDb((db) => {
             const idx = db.cards.findIndex((c) => c.id === cardId);
-            if (idx >= 0) (db.cards[idx] as Record<string, unknown>).subtasks = updated;
+            if (idx >= 0) Object.assign(db.cards[idx], { subtasks: updated });
           });
         }
       } finally {
