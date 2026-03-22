@@ -32,6 +32,9 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 
 export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: UseModalA11yArgs) {
   const lastFocusedElRef = useRef<HTMLElement | null>(null);
+  /** Evita loop #185: `onClose` costuma ser inline no pai — não pode estar nas deps de handlers/effect. */
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   const handlers = useMemo(() => {
     return {
@@ -40,7 +43,7 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
 
         if (e.key === "Escape") {
           e.preventDefault();
-          onClose();
+          onCloseRef.current();
           return;
         }
 
@@ -71,7 +74,7 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
         }
       },
     };
-  }, [containerRef, initialFocusRef, onClose, open]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,6 +97,6 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
       document.removeEventListener("keydown", handlers.onKeyDownCapture, true);
       lastFocusedElRef.current?.focus?.();
     };
-  }, [containerRef, handlers, initialFocusRef, open]);
+  }, [handlers, initialFocusRef, open]);
 }
 

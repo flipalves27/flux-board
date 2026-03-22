@@ -70,7 +70,9 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     const pathname = usePathname();
     const sidebarLayout = useSidebarLayoutOptional();
     const layout = sidebarLayout?.layout ?? "desktop";
-    const openMobile = sidebarLayout?.openMobile ?? (() => {});
+    /** Referência estável — `() => {}` novo a cada render quebrava deps do useLayoutEffect (React #185). */
+    const noopOpenMobile = useCallback(() => {}, []);
+    const openMobile = sidebarLayout?.openMobile ?? noopOpenMobile;
 
     const active = tourStep !== null;
     const stepIndex = tourStep ?? 0;
