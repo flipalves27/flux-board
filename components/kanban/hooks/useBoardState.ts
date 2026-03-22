@@ -313,19 +313,25 @@ export function useBoardState({
   );
 
   const saveColumn = useCallback(
-    (wipLimit?: number | null) => {
+    (opts?: { wipLimit?: number | null; policy?: string | null }) => {
+      const wipLimit = opts?.wipLimit;
+      const policyRaw = opts?.policy;
+      const policyTrim = typeof policyRaw === "string" ? policyRaw.trim().slice(0, 500) : "";
       const label = newColumnName.trim() || "Nova Coluna";
       if (editingColumnKey) {
         updateDb((d) => {
           d.config.bucketOrder = d.config.bucketOrder.map((b) => {
             if (b.key !== editingColumnKey) return b;
-            const next = { ...b, label };
+            const next = { ...b, label } as typeof b & { policy?: string };
             if (wipLimit === null) {
               delete (next as { wipLimit?: number }).wipLimit;
-              return next;
-            }
-            if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) {
+            } else if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) {
               (next as { wipLimit?: number }).wipLimit = wipLimit;
+            }
+            if (!policyTrim) {
+              delete next.policy;
+            } else {
+              next.policy = policyTrim;
             }
             return next;
           });
@@ -334,8 +340,13 @@ export function useBoardState({
         const key = `col_${Date.now()}`;
         const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
         updateDb((d) => {
-          const row: { key: string; label: string; color: string; wipLimit?: number } = { key, label, color };
+          const row: { key: string; label: string; color: string; wipLimit?: number; policy?: string } = {
+            key,
+            label,
+            color,
+          };
           if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) row.wipLimit = wipLimit;
+          if (policyTrim) row.policy = policyTrim;
           d.config.bucketOrder.push(row);
         });
       }

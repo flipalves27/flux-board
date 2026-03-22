@@ -18,12 +18,17 @@ import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useSprintStore } from "@/stores/sprint-store";
+import { useCeremonyStore } from "@/stores/ceremony-store";
 import type { SprintData } from "@/lib/schemas";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
-import { BoardMetricsStrip } from "./board-metrics-strip";
+import { BoardIntelligenceRow } from "./board-intelligence-row";
+import { BoardFlowHealthPanel } from "./board-flow-health-panel";
+import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
+import { buildFlowInsightChips } from "@/lib/board-flow-insights";
+import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
 import { KanbanBoardCanvas } from "./kanban-board-canvas";
 import { BoardCardSelectionProvider, useBoardCardSelection } from "./board-card-selection-context";
 import { KanbanBatchSelectionBar } from "./kanban-batch-selection-bar";
@@ -179,7 +184,13 @@ function KanbanBoardLoaded({
     setActiveLabels,
     searchQuery,
     setSearchQuery,
+    insightFocusCardIds,
+    setInsightFocusCardIds,
+    clearInsightFocus,
   } = persistence;
+
+  const [flowHealthOpen, setFlowHealthOpen] = useState(false);
+  const [sprintCoachOpen, setSprintCoachOpen] = useState(false);
 
   const nlqIdsArr = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
   const nlqAllowedIds = useMemo(() => {
@@ -275,7 +286,24 @@ function KanbanBoardLoaded({
     nlqAllowedIds,
     forceExpandTourFilters: productTourExpandFilters,
     sprintCardIdSet,
+    insightFocusCardIds: insightFocusCardIds.size > 0 ? insightFocusCardIds : null,
+    clearInsightFocus,
   });
+
+  const portfolioSnapshot = useMemo(
+    () =>
+      computeBoardPortfolio({
+        cards: board.cards,
+        config: { bucketOrder: board.buckets },
+        lastUpdated: db.lastUpdated,
+      }),
+    [board.cards, board.buckets, db.lastUpdated]
+  );
+
+  const flowChips = useMemo(
+    () => buildFlowInsightChips({ cards: board.cards, buckets: board.buckets, lastUpdated: db.lastUpdated }),
+    [board.cards, board.buckets, db.lastUpdated]
+  );
 
   const hotkeyPatterns = useMemo(() => resolveHotkeyPatterns(), []);
   const { setPriorityBarVisible, searchInputRef } = filters;
@@ -338,10 +366,25 @@ function KanbanBoardLoaded({
   setModalModeRef.current = board.setModalMode;
 
   useEffect(() => {
-    const cardId = searchParams.get("card");
-    const newCard = searchParams.get("newCard");
-    const copilot = searchParams.get("copilot");
-    if (!cardId && newCard !== "1" && copilot !== "1") {
+    const q = new URLSearchParams(searchParamsKey);
+    const cardId = q.get("card");
+    const newCard = q.get("newCard");
+    const copilot = q.get("copilot");
+    const flowHealth = q.get("flowHealth");
+    const sprintPanel = q.get("sprintPanel");
+    const sprintCoach = q.get("sprintCoach");
+    const standup = q.get("standup");
+
+    const hasDeepLink =
+      Boolean(cardId) ||
+      newCard === "1" ||
+      copilot === "1" ||
+      flowHealth === "1" ||
+      sprintPanel === "1" ||
+      sprintCoach === "1" ||
+      standup === "1";
+
+    if (!hasDeepLink) {
       handledQueryRef.current = null;
       return;
     }
@@ -385,6 +428,29 @@ function KanbanBoardLoaded({
     }
     if (copilot === "1") {
       useCopilotStore.getState().setOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (flowHealth === "1") {
+      setFlowHealthOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (sprintPanel === "1") {
+      useSprintStore.getState().setPanelOpen(boardId);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (sprintCoach === "1") {
+      setSprintCoachOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (standup === "1") {
+      const sp = useSprintStore.getState().activeSprint[boardId];
+      if (sp?.id) {
+        useCeremonyStore.getState().openStandup(boardId, sp.id);
+      }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
   }, [searchParamsKey, boardId, localeRoot]);
@@ -517,7 +583,20 @@ function KanbanBoardLoaded({
           setSearchQuery={setSearchQuery}
           searchInputRef={filters.searchInputRef}
         />
-        <BoardMetricsStrip t={t} totalCards={board.cards.length} executionInsights={board.executionInsights} />
+        <BoardIntelligenceRow
+          tKanban={t}
+          totalCards={board.cards.length}
+          executionInsights={board.executionInsights}
+          portfolio={portfolioSnapshot}
+          chips={flowChips}
+          insightFocusActive={insightFocusCardIds.size > 0}
+          onInsightChip={(ids) => setInsightFocusCardIds(ids)}
+          onClearInsightFocus={clearInsightFocus}
+          onOpenFlowHealth={() => setFlowHealthOpen(true)}
+          onOpenCopilot={() => useCopilotStore.getState().setOpen(true)}
+          onOpenSprintCoach={() => setSprintCoachOpen(true)}
+          sprintCoachVisible={activeSprintBoard?.status === "active"}
+        />
         {activeSprintBoard?.status === "active" ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
             {sprintProgress && sprintProgress.total > 0 ? (
@@ -696,6 +775,31 @@ function KanbanBoardLoaded({
 
         <KanbanBoardOverlays {...overlayProps} />
       </BoardCardSelectionProvider>
+
+      <BoardFlowHealthPanel
+        open={flowHealthOpen}
+        onClose={() => setFlowHealthOpen(false)}
+        boardId={boardId}
+        cards={board.cards}
+        buckets={board.buckets}
+        lastUpdated={db.lastUpdated}
+        getHeaders={getHeaders}
+        onOpenCard={(id) => {
+          const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
+          if (c) {
+            board.setModalCard(c);
+            board.setModalMode("edit");
+          }
+        }}
+      />
+
+      <BoardSprintCoachPanel
+        open={sprintCoachOpen}
+        onClose={() => setSprintCoachOpen(false)}
+        boardId={boardId}
+        sprint={activeSprintBoard?.status === "active" ? activeSprintBoard : null}
+        getHeaders={getHeaders}
+      />
     </>
   );
 }

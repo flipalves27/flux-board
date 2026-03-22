@@ -118,6 +118,14 @@ export interface DailyInsightEntry {
   };
 }
 
+/** Checklist Definition of Ready (refinamento) — opcional por card. */
+export type CardDorReady = {
+  titleOk?: boolean;
+  acceptanceOk?: boolean;
+  depsOk?: boolean;
+  sizedOk?: boolean;
+};
+
 export interface CardData {
   id: string;
   bucket: string;
@@ -137,6 +145,7 @@ export interface CardData {
   completedAt?: string;
   completedCycleDays?: number;
   automationState?: { lastFired?: Record<string, string> };
+  dorReady?: CardDorReady;
 }
 
 export interface BucketConfig {
@@ -145,6 +154,8 @@ export interface BucketConfig {
   color: string;
   /** Limite WIP (opcional). */
   wipLimit?: number;
+  /** Como o time usa esta coluna (política explícita). */
+  policy?: string;
 }
 
 export interface BoardData {
@@ -196,11 +207,13 @@ function sanitizeBucketOrder(raw: unknown): BucketConfig[] {
         const w = Math.floor(rec.wipLimit);
         if (w >= 1 && w <= 999) wipLimit = w;
       }
+      const policyRaw = typeof rec.policy === "string" ? rec.policy.trim().slice(0, 500) : "";
       return {
         key,
         label: label || key,
         color: color || "var(--flux-text-muted)",
         ...(wipLimit !== undefined ? { wipLimit } : {}),
+        ...(policyRaw ? { policy: policyRaw } : {}),
       };
     })
     .filter((b): b is BucketConfig => b !== null);
@@ -227,6 +240,21 @@ function sanitizeLabels(raw: unknown): string[] {
   if (!Array.isArray(raw) || raw.length === 0) return FILTER_LABELS;
   const labels = raw.filter((label): label is string => typeof label === "string" && label.trim().length > 0);
   return labels.length > 0 ? labels : FILTER_LABELS;
+}
+
+function sanitizeDorReady(raw: unknown): CardDorReady | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const pick = (k: string) => o[k] === true;
+  const any =
+    pick("titleOk") || pick("acceptanceOk") || pick("depsOk") || pick("sizedOk");
+  if (!any) return undefined;
+  return {
+    ...(pick("titleOk") ? { titleOk: true } : {}),
+    ...(pick("acceptanceOk") ? { acceptanceOk: true } : {}),
+    ...(pick("depsOk") ? { depsOk: true } : {}),
+    ...(pick("sizedOk") ? { sizedOk: true } : {}),
+  };
 }
 
 export default function BoardPage() {
@@ -308,6 +336,7 @@ export default function BoardPage() {
               .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
               .map((d) => ({ docId: String(d.docId), title: d.title ? String(d.title) : undefined, excerpt: d.excerpt ? String(d.excerpt) : undefined }))
           : [],
+        dorReady: sanitizeDorReady((c as CardData).dorReady),
       }));
       useBoardStore.getState().hydrate(boardId, {
         version: d.version || "2.0",

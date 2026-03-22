@@ -182,7 +182,11 @@
     "actions": {
       "newBoard": "Criar board",
       "createCardIn": "Criar card em {board}",
-      "copilot": "Abrir Copiloto"
+      "copilot": "Abrir Copiloto",
+      "flowHealth": "Saúde do fluxo — {board}",
+      "sprintPanel": "Abrir painel Sprint — {board}",
+      "sprintCoach": "Coach de sprint (IA) — {board}",
+      "standup": "Iniciar standup — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1284,6 +1288,14 @@
           "title": "Dependências",
           "description": "Cards que precisam estar prontos antes deste (bloqueado por)."
         },
+        "dor": {
+          "title": "Refinamento (Definition of Ready)",
+          "description": "Marque o que está pronto antes de puxar o item para o sprint."
+        },
+        "unblock": {
+          "title": "Assistente de desbloqueio (IA)",
+          "description": "Próximos passos sugeridos para resolver dependências (usa limites de IA da org)."
+        },
         "labels": {
           "title": "Rótulos",
           "description": "Marque tags existentes ou crie novas para este board."
@@ -1336,10 +1348,20 @@
           "noMatch": "Nenhum card corresponde à busca.",
           "hint": "Marque os cards predecessores. As linhas aparecem na Timeline."
         },
+        "dor": {
+          "titleOk": "Título claro",
+          "acceptanceOk": "Critérios de aceite alinhados",
+          "depsOk": "Dependências mapeadas",
+          "sizedOk": "Dimensionado / estimável"
+        },
         "newLabel": {
           "srLabel": "Novo rótulo",
           "placeholder": "Novo rótulo"
         }
+      },
+      "unblock": {
+        "cta": "Sugerir plano de desbloqueio",
+        "loading": "Gerando…"
       },
       "buttons": {
         "createLabel": "+ Criar",
@@ -1481,6 +1503,8 @@
       "placeholder": "Ex: Backlog, Em progresso...",
       "wipLabel": "Limite WIP (opcional)",
       "wipPlaceholder": "ex.: 5 — vazio = sem limite",
+      "policyLabel": "Política da coluna (como usamos esta coluna)",
+      "policyPlaceholder": "Nota curta para o time (opcional)",
       "wipInvalid": "WIP deve ser um número inteiro entre 1 e 999.",
       "cancel": "Cancelar",
       "save": "Salvar",
@@ -1840,6 +1864,12 @@
       "direction": {
         "heading": "Direcionamento"
       },
+      "serviceClass": {
+        "expedite": "Expedite",
+        "datebound": "Prazo curto",
+        "blocked": "Bloqueado",
+        "prioritize": "Priorizar"
+      },
       "quickActions": {
         "copyTitleSuffix": "(cópia)",
         "priorityTooltip": "Alterar prioridade",
@@ -1870,7 +1900,8 @@
         "expandColumn": "Expandir coluna",
         "collapseColumn": "Recolher coluna",
         "deleteColumn": "Excluir coluna",
-        "wipExceeded": "Acima do limite WIP desta coluna — reduza WIP ou retire cards (Kanban)."
+        "wipExceeded": "Acima do limite WIP desta coluna — reduza WIP ou retire cards (Kanban).",
+        "policy": "Política da coluna"
       }
     },
     "directions": {
@@ -2012,6 +2043,51 @@
         "overdueLabel": "Atrasados",
         "dueSoonLabel": "Vence em 3d",
         "completedRateLabel": "Taxa concluída"
+      },
+      "intelligence": {
+        "riskShort": "Risco {n}",
+        "flowShort": "Fluxo {n}",
+        "chips": {
+          "wip": "WIP estourado em {columns} coluna(s) · {cards} cards",
+          "blocked": "{count} card(s) bloqueado(s)",
+          "stagnant": "{count} card(s) parado(s) há {days}d+ na coluna",
+          "overdue": "{count} card(s) atrasado(s)",
+          "risk": "Risco de portfólio {score}",
+          "flow": "Índice de fluxo {score}"
+        },
+        "clearFocus": "Limpar filtro de insights",
+        "openFlowHealth": "Saúde do fluxo",
+        "sprintCoach": "Coach de sprint",
+        "openCopilot": "Copilot"
+      },
+      "flowHealth": {
+        "title": "Saúde do fluxo",
+        "close": "Fechar",
+        "portfolio": "Sinais de portfólio",
+        "risk": "Índice de risco: {n}",
+        "throughput": "Índice de fluxo: {n}",
+        "predictability": "Previsibilidade: {n}",
+        "wipOk": "Todas as colunas respeitam o WIP configurado.",
+        "wipBreached": "Pelo menos uma coluna excede o limite WIP.",
+        "stagnantHeading": "Parado na coluna (5+ dias)",
+        "blockedHeading": "Cards bloqueados",
+        "overdueHeading": "Atrasados",
+        "overdueCount": "{count} card(s) aberto(s) com prazo vencido.",
+        "none": "Nada por aqui agora.",
+        "loading": "Carregando nota do CFD…",
+        "cfdHint": "O CFD da org fica em Flux Reports (plano / portfólio).",
+        "cfdGated": "Histórico CFD exige acesso a portfólio ou snapshots do cron.",
+        "openReports": "Abrir Flux Reports"
+      },
+      "sprintCoach": {
+        "title": "Coach de sprint (IA)",
+        "refresh": "Atualizar",
+        "loading": "Carregando insight…",
+        "empty": "Nenhuma sugestão retornada.",
+        "error": "Não foi possível carregar o coach.",
+        "capacity": "Capacidade",
+        "okrs": "Notas de OKR",
+        "recommendedIds": "IDs de cards sugeridos"
       },
       "summary": {
         "totalLabel": "Total",

@@ -735,6 +735,34 @@ function KanbanCardInner({
         <div className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight mb-1.5">
           {card.title}
         </div>
+        {card.progress !== "Concluída" &&
+        (card.priority === "Urgente" ||
+          (dr !== null && dr >= 0 && dr <= 3) ||
+          (Array.isArray(card.blockedBy) && card.blockedBy.length > 0) ||
+          (typeof card.direction === "string" && card.direction.toLowerCase() === "priorizar")) ? (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {card.priority === "Urgente" ? (
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-12)] text-[var(--flux-danger)]">
+                {t("card.serviceClass.expedite")}
+              </span>
+            ) : null}
+            {dr !== null && dr >= 0 && dr <= 3 ? (
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-10)] text-[var(--flux-warning)]">
+                {t("card.serviceClass.datebound")}
+              </span>
+            ) : null}
+            {Array.isArray(card.blockedBy) && card.blockedBy.length > 0 ? (
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-chrome-alpha-18)] bg-[var(--flux-black-alpha-12)] text-[var(--flux-text-muted)]">
+                {t("card.serviceClass.blocked")}
+              </span>
+            ) : null}
+            {typeof card.direction === "string" && card.direction.toLowerCase() === "priorizar" ? (
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] text-[var(--flux-secondary)]">
+                {t("card.serviceClass.prioritize")}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         <div className="text-xs text-[var(--flux-text-muted)] leading-snug mb-2.5 line-clamp-2">
           {card.desc}
         </div>

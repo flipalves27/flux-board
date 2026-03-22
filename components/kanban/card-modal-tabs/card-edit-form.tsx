@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useCardModal } from "@/components/kanban/card-modal-context";
-import { apiPost } from "@/lib/api-client";
+import { apiPost, ApiError } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
@@ -71,11 +71,41 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     generateAiContextForCard,
     descriptionForSave,
     boardId,
+    selfId,
     getHeaders,
+    dorReady,
+    setDorReady,
     openExistingCard,
     mergeDraftIntoExistingCard,
     t,
   } = useCardModal();
+
+  const [unblockBusy, setUnblockBusy] = useState(false);
+  const [unblockText, setUnblockText] = useState<string | null>(null);
+
+  const runUnblockAssist = useCallback(async () => {
+    const cid = String(selfId || "").trim();
+    if (!cid || cid.startsWith("NEW-")) return;
+    setUnblockBusy(true);
+    setUnblockText(null);
+    try {
+      const res = await apiPost<{
+        steps?: string[];
+        notifyHint?: string;
+      }>(
+        `/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cid)}/unblock-assist`,
+        {},
+        getHeaders()
+      );
+      const lines = [...(res.steps || []), "", res.notifyHint || ""].filter(Boolean);
+      setUnblockText(lines.join("\n"));
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "—";
+      setUnblockText(msg);
+    } finally {
+      setUnblockBusy(false);
+    }
+  }, [boardId, getHeaders, selfId]);
 
   const [dupMatches, setDupMatches] = useState<DupMatch[]>([]);
   const [dupLoading, setDupLoading] = useState(false);
@@ -591,6 +621,60 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           ) : null}
         </div>
       </CardModalSection>
+
+      <CardModalSection
+        title={t("cardModal.sections.dor.title")}
+        description={t("cardModal.sections.dor.description")}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {(
+            [
+              ["titleOk", t("cardModal.fields.dor.titleOk")] as const,
+              ["acceptanceOk", t("cardModal.fields.dor.acceptanceOk")] as const,
+              ["depsOk", t("cardModal.fields.dor.depsOk")] as const,
+              ["sizedOk", t("cardModal.fields.dor.sizedOk")] as const,
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(dorReady[key])}
+                onChange={() =>
+                  setDorReady((prev) => {
+                    const next = { ...prev };
+                    if (next[key]) {
+                      delete next[key];
+                    } else {
+                      next[key] = true;
+                    }
+                    return next;
+                  })
+                }
+                className="rounded border-[var(--flux-chrome-alpha-20)]"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </CardModalSection>
+
+      {blockedBy.length > 0 && selfId && !String(selfId).startsWith("NEW-") ? (
+        <CardModalSection title={t("cardModal.sections.unblock.title")} description={t("cardModal.sections.unblock.description")}>
+          <button
+            type="button"
+            disabled={unblockBusy}
+            onClick={() => void runUnblockAssist()}
+            className="btn-secondary text-sm py-2 px-3 disabled:opacity-50"
+          >
+            {unblockBusy ? t("cardModal.unblock.loading") : t("cardModal.unblock.cta")}
+          </button>
+          {unblockText ? (
+            <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] p-3 text-[12px] text-[var(--flux-text)]">
+              {unblockText}
+            </pre>
+          ) : null}
+        </CardModalSection>
+      ) : null}
 
       <CardModalSection
         title={t("cardModal.sections.labels.title")}

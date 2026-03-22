@@ -13,7 +13,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import type { CardData, BucketConfig, CardLink, CardDocRef } from "@/app/board/[id]/page";
+import type { CardData, BucketConfig, CardLink, CardDocRef, CardDorReady } from "@/app/board/[id]/page";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import {
@@ -134,6 +134,8 @@ export type CardModalContextValue = {
 
   direction: string | null;
   setDirection: (v: string | null) => void;
+  dorReady: CardDorReady;
+  setDorReady: Dispatch<SetStateAction<CardDorReady>>;
   smartEnrichBusy: boolean;
   smartEnrichPending: Set<SmartEnrichFieldKey> | null;
   smartEnrichMeta: {
@@ -217,6 +219,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   const [direction, setDirection] = useState<string | null>(() =>
     typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
   );
+  const [dorReady, setDorReady] = useState<CardDorReady>(() => ({ ...(card.dorReady ?? {}) }));
   const [blockedBy, setBlockedBy] = useState<string[]>(() =>
     Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
   );
@@ -318,6 +321,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       blocked,
       JSON.stringify(card.links || []),
       JSON.stringify(card.docRefs || []),
+      JSON.stringify(card.dorReady || {}),
     ].join("\u0002");
   }, [
     card.id,
@@ -336,6 +340,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     JSON.stringify(card.links),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(card.docRefs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.dorReady),
   ]);
 
   useEffect(() => {
@@ -352,6 +358,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     setDirection(
       typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
     );
+    setDorReady({ ...(card.dorReady ?? {}) });
     setBlockedBy(Array.isArray(card.blockedBy) ? [...card.blockedBy] : []);
     setDepSearch("");
     setTags(new Set(card.tags || []));
@@ -623,6 +630,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
     const validIds = new Set(selectablePeers.map((c) => c.id));
     const nextBlocked = blockedBy.filter((bid) => validIds.has(bid));
+    const dorPatch: CardDorReady = {};
+    if (dorReady.titleOk) dorPatch.titleOk = true;
+    if (dorReady.acceptanceOk) dorPatch.acceptanceOk = true;
+    if (dorReady.depsOk) dorPatch.depsOk = true;
+    if (dorReady.sizedOk) dorPatch.sizedOk = true;
     onSave({
       ...card,
       id: finalId,
@@ -634,6 +646,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dueDate: dueDate || null,
       direction,
       blockedBy: nextBlocked,
+      ...(Object.keys(dorPatch).length > 0 ? { dorReady: dorPatch } : { dorReady: undefined }),
       tags: [...tags],
       links: links.filter((l) => {
         const u = l.url.trim();
@@ -663,6 +676,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     progress,
     dueDate,
     direction,
+    dorReady,
     tags,
     links,
     docRefs,
@@ -884,6 +898,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setDueDate,
       direction,
       setDirection,
+      dorReady,
+      setDorReady,
       blockedBy,
       setBlockedBy,
       depSearch,
@@ -962,6 +978,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       progress,
       dueDate,
       direction,
+      dorReady,
       blockedBy,
       depSearch,
       tags,

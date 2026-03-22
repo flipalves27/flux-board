@@ -66,6 +66,7 @@ function inferCategoryFromAction(action: PaletteAction): Exclude<PaletteCategory
     case "newCard":
     case "newBoard":
     case "copilot":
+    case "boardDeep":
       return "actions";
     default:
       return "navigation";
@@ -93,6 +94,9 @@ function runAction(action: PaletteAction, localeRoot: string, router: ReturnType
       break;
     case "copilot":
       router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?copilot=1`);
+      break;
+    case "boardDeep":
+      router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?${action.query}`);
       break;
     default:
       break;
@@ -196,6 +200,42 @@ export function CommandPalette() {
         subtitle: t("subtitles.newCard"),
         keywords: `criar card novo ${b.name} create card`,
         action: { type: "newCard", boardId: b.id },
+        icon: "actions",
+      });
+      items.push({
+        id: `flow:${b.id}`,
+        category: "actions",
+        title: t("actions.flowHealth", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `fluxo saúde flow health wip kanban ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "flowHealth=1" },
+        icon: "actions",
+      });
+      items.push({
+        id: `sprintpanel:${b.id}`,
+        category: "actions",
+        title: t("actions.sprintPanel", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `sprint painel scrum ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "sprintPanel=1" },
+        icon: "actions",
+      });
+      items.push({
+        id: `sprintcoach:${b.id}`,
+        category: "actions",
+        title: t("actions.sprintCoach", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `coach sprint ia planning ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "sprintCoach=1" },
+        icon: "actions",
+      });
+      items.push({
+        id: `standup:${b.id}`,
+        category: "actions",
+        title: t("actions.standup", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `standup daily cerimônia ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "standup=1" },
         icon: "actions",
       });
     }
@@ -310,6 +350,7 @@ export function CommandPalette() {
         else if (a.type === "newCard") seen.add(`newcard:${a.boardId}`);
         else if (a.type === "newBoard") seen.add("action:newBoard");
         else if (a.type === "copilot") seen.add(`action:copilot:${a.boardId}`);
+        else if (a.type === "boardDeep") seen.add(`deep:${a.boardId}:${a.query}`);
         else if (a.type === "navigate") seen.add(`nav:${a.path}`);
       }
 

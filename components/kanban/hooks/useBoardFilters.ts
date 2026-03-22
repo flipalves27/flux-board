@@ -8,8 +8,10 @@ export function cardMatchesFilters(
   activeLabels: Set<string>,
   searchQuery: string,
   nlqAllowedIds: Set<string> | null = null,
-  sprintCardIds: Set<string> | null = null
+  sprintCardIds: Set<string> | null = null,
+  insightFocusCardIds: Set<string> | null = null
 ): boolean {
+  if (insightFocusCardIds && insightFocusCardIds.size > 0 && !insightFocusCardIds.has(c.id)) return false;
   if (sprintCardIds && !sprintCardIds.has(c.id)) return false;
   if (nlqAllowedIds && !nlqAllowedIds.has(c.id)) return false;
   if (activePrio !== "all" && c.priority !== activePrio) return false;
@@ -41,6 +43,10 @@ type UseBoardFiltersArgs = {
   forceExpandTourFilters?: boolean;
   /** Quando definido, só cards cujo id está no sprint ativo passam (toggle no board). */
   sprintCardIdSet?: Set<string> | null;
+  /** Subconjunto imposto pelos chips de fluxo (board intelligence). */
+  insightFocusCardIds?: Set<string> | null;
+  /** Limpa `insightFocusCardIds` no filter-store (boardId vem do caller). */
+  clearInsightFocus?: () => void;
 };
 
 export function useBoardFilters({
@@ -55,6 +61,8 @@ export function useBoardFilters({
   nlqAllowedIds = null,
   forceExpandTourFilters = false,
   sprintCardIdSet = null,
+  insightFocusCardIds = null,
+  clearInsightFocus,
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -72,21 +80,24 @@ export function useBoardFilters({
   }, [activePrio, activeLabelsSize, searchQuery, focusMode]);
 
   const clearFilters = useCallback(() => {
+    clearInsightFocus?.();
     setActivePrio("all");
     setActiveLabels(new Set());
     setSearchQuery("");
     setFocusMode(false);
-  }, [setActiveLabels, setActivePrio, setSearchQuery]);
+  }, [clearInsightFocus, setActiveLabels, setActivePrio, setSearchQuery]);
 
   const applyFocusMode = useCallback(() => {
+    clearInsightFocus?.();
     setActivePrio("Urgente");
     setActiveLabels(new Set());
     setSearchQuery("andamento");
-  }, [setActiveLabels, setActivePrio, setSearchQuery]);
+  }, [clearInsightFocus, setActiveLabels, setActivePrio, setSearchQuery]);
 
   const filterCard = useCallback(
-    (c: CardData) => cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet),
-    [activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet]
+    (c: CardData) =>
+      cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet, insightFocusCardIds),
+    [activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet, insightFocusCardIds]
   );
 
   const cardsByBucketSorted = useMemo(() => {

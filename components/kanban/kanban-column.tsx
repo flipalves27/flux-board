@@ -75,6 +75,10 @@ export function KanbanColumn({
   sprintBoardQuickActions,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
+  const policyText =
+    typeof (bucket as { policy?: string }).policy === "string"
+      ? (bucket as { policy: string }).policy.trim()
+      : "";
   const wipOver =
     typeof bucket.wipLimit === "number" &&
     bucket.wipLimit > 0 &&
@@ -148,6 +152,16 @@ export function KanbanColumn({
         <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate">
           {bucket.label}
         </div>
+        {policyText ? (
+          <CustomTooltip content={policyText} position="top">
+            <span
+              className="shrink-0 w-6 h-6 rounded-full border border-[var(--flux-chrome-alpha-14)] text-[11px] font-bold text-[var(--flux-text-muted)] flex items-center justify-center hover:border-[var(--flux-primary)]"
+              aria-label={t("column.tooltips.policy")}
+            >
+              i
+            </span>
+          </CustomTooltip>
+        ) : null}
         {wipOver ? (
           <CustomTooltip content={t("column.tooltips.wipExceeded")} position="top">
             <div

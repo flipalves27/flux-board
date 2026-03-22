@@ -33,7 +33,8 @@ function sanitize(raw: unknown): HistoryPaletteEntry[] {
       a.type !== "card" &&
       a.type !== "newCard" &&
       a.type !== "newBoard" &&
-      a.type !== "copilot"
+      a.type !== "copilot" &&
+      a.type !== "boardDeep"
     )
       continue;
     out.push({

@@ -6,7 +6,8 @@ export type PaletteAction =
   | { type: "card"; boardId: string; cardId: string }
   | { type: "newCard"; boardId: string }
   | { type: "newBoard" }
-  | { type: "copilot"; boardId: string };
+  | { type: "copilot"; boardId: string }
+  | { type: "boardDeep"; boardId: string; query: string };
 
 export type PaletteItem = {
   id: string;

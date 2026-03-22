@@ -182,7 +182,11 @@
     "actions": {
       "newBoard": "Create board",
       "createCardIn": "Create card in {board}",
-      "copilot": "Open Copilot"
+      "copilot": "Open Copilot",
+      "flowHealth": "Flow health — {board}",
+      "sprintPanel": "Open Sprint panel — {board}",
+      "sprintCoach": "Sprint coach (AI) — {board}",
+      "standup": "Start standup — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1283,6 +1287,14 @@
           "title": "Dependencies",
           "description": "Cards that must be done before this one (blocked by)."
         },
+        "dor": {
+          "title": "Refinement (Definition of Ready)",
+          "description": "Check what is ready before pulling this item into a sprint."
+        },
+        "unblock": {
+          "title": "AI unblock assist",
+          "description": "Suggested next steps to resolve dependencies (uses your org AI limits)."
+        },
         "labels": {
           "title": "Labels",
           "description": "Select existing tags or create new ones for this board."
@@ -1335,10 +1347,20 @@
           "noMatch": "No cards match your search.",
           "hint": "Select predecessor cards. Links appear on the Timeline."
         },
+        "dor": {
+          "titleOk": "Clear title",
+          "acceptanceOk": "Acceptance criteria agreed",
+          "depsOk": "Dependencies mapped",
+          "sizedOk": "Sized / estimable"
+        },
         "newLabel": {
           "srLabel": "New label",
           "placeholder": "New label"
         }
+      },
+      "unblock": {
+        "cta": "Suggest unblock plan",
+        "loading": "Generating…"
       },
       "buttons": {
         "createLabel": "+ Create",
@@ -1489,6 +1511,12 @@
       "direction": {
         "heading": "Direction"
       },
+      "serviceClass": {
+        "expedite": "Expedite",
+        "datebound": "Due soon",
+        "blocked": "Blocked",
+        "prioritize": "Prioritize"
+      },
       "quickActions": {
         "copyTitleSuffix": "(copy)",
         "priorityTooltip": "Change priority",
@@ -1519,7 +1547,8 @@
         "expandColumn": "Expand column",
         "collapseColumn": "Collapse column",
         "deleteColumn": "Delete column",
-        "wipExceeded": "Over this column’s WIP limit — reduce WIP or move work out (Kanban)."
+        "wipExceeded": "Over this column’s WIP limit — reduce WIP or move work out (Kanban).",
+        "policy": "Column policy"
       }
     },
     "directions": {
@@ -1572,6 +1601,8 @@
       "placeholder": "Ex: Backlog, In progress...",
       "wipLabel": "WIP limit (optional)",
       "wipPlaceholder": "e.g. 5 — leave empty for no limit",
+      "policyLabel": "Column policy (how we use this column)",
+      "policyPlaceholder": "Short note for the team (optional)",
       "wipInvalid": "WIP must be a whole number between 1 and 999.",
       "cancel": "Cancel",
       "save": "Save",
@@ -2011,6 +2042,51 @@
         "overdueLabel": "Overdue",
         "dueSoonLabel": "Due in 3d",
         "completedRateLabel": "Completed rate"
+      },
+      "intelligence": {
+        "riskShort": "Risk {n}",
+        "flowShort": "Flow {n}",
+        "chips": {
+          "wip": "WIP exceeded in {columns} column(s) · {cards} cards",
+          "blocked": "{count} blocked card(s)",
+          "stagnant": "{count} card(s) idle {days}d+ in column",
+          "overdue": "{count} overdue card(s)",
+          "risk": "Portfolio risk {score}",
+          "flow": "Flow score {score}"
+        },
+        "clearFocus": "Clear insight filter",
+        "openFlowHealth": "Flow health",
+        "sprintCoach": "Sprint coach",
+        "openCopilot": "Copilot"
+      },
+      "flowHealth": {
+        "title": "Flow health",
+        "close": "Close",
+        "portfolio": "Portfolio signals",
+        "risk": "Risk index: {n}",
+        "throughput": "Flow index: {n}",
+        "predictability": "Predictability: {n}",
+        "wipOk": "All columns respect configured WIP limits.",
+        "wipBreached": "At least one column exceeds its WIP limit.",
+        "stagnantHeading": "Idle in column (5+ days)",
+        "blockedHeading": "Blocked cards",
+        "overdueHeading": "Overdue",
+        "overdueCount": "{count} open card(s) past due date.",
+        "none": "None right now.",
+        "loading": "Loading CFD note…",
+        "cfdHint": "Org-wide CFD lives in Flux Reports (paid / portfolio).",
+        "cfdGated": "CFD history needs portfolio access or cron snapshots.",
+        "openReports": "Open Flux Reports"
+      },
+      "sprintCoach": {
+        "title": "Sprint coach (AI)",
+        "refresh": "Refresh",
+        "loading": "Loading coaching insight…",
+        "empty": "No suggestion returned.",
+        "error": "Could not load sprint coach.",
+        "capacity": "Capacity",
+        "okrs": "OKR notes",
+        "recommendedIds": "Suggested card IDs"
       },
       "summary": {
         "totalLabel": "Total",

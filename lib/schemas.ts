@@ -166,6 +166,8 @@ export const BucketConfigSchema = z
     color: z.string().trim().min(1).max(50),
     /** Limite WIP (work in progress) — máximo de cards na coluna. */
     wipLimit: z.number().int().min(1).max(999).optional().nullable(),
+    /** Política explícita de uso da coluna. */
+    policy: z.string().trim().max(500).optional().nullable(),
   })
   .passthrough();
 
@@ -255,6 +257,14 @@ export const CardDataSchema = z
     automationState: CardAutomationStateSchema.optional(),
     subtasks: z.array(SubtaskSchema).max(50).optional().default([]),
     subtaskProgress: SubtaskProgressSchema.optional(),
+    dorReady: z
+      .object({
+        titleOk: z.boolean().optional(),
+        acceptanceOk: z.boolean().optional(),
+        depsOk: z.boolean().optional(),
+        sizedOk: z.boolean().optional(),
+      })
+      .optional(),
   })
   .passthrough();
 

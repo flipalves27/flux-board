@@ -50,7 +50,7 @@ export type KanbanBoardOverlaysProps = {
   setNewColumnName: (v: string) => void;
   editingColumnKey: string | null;
   setEditingColumnKey: (v: string | null) => void;
-  saveColumn: (wipLimit?: number | null) => void;
+  saveColumn: (opts?: { wipLimit?: number | null; policy?: string | null }) => void;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
   addColumnInputRef: RefObject<HTMLInputElement | null>;
   confirmDelete: ConfirmDeleteState;
@@ -137,14 +137,18 @@ export function KanbanBoardOverlays({
 }: KanbanBoardOverlaysProps) {
   const { pushToast } = useToast();
   const [columnWipDraft, setColumnWipDraft] = useState("");
+  const [columnPolicyDraft, setColumnPolicyDraft] = useState("");
 
   useEffect(() => {
     if (!addColumnOpen) return;
     if (editingColumnKey) {
       const b = buckets.find((x) => x.key === editingColumnKey);
       setColumnWipDraft(typeof b?.wipLimit === "number" ? String(b.wipLimit) : "");
+      const pol = (b as { policy?: string } | undefined)?.policy;
+      setColumnPolicyDraft(typeof pol === "string" ? pol : "");
     } else {
       setColumnWipDraft("");
+      setColumnPolicyDraft("");
     }
   }, [addColumnOpen, editingColumnKey, buckets]);
 
@@ -154,8 +158,9 @@ export function KanbanBoardOverlays({
       pushToast({ kind: "error", title: t("addColumnModal.wipInvalid") });
       return;
     }
-    saveColumn(parsed.value);
+    saveColumn({ wipLimit: parsed.value, policy: columnPolicyDraft.trim() ? columnPolicyDraft : null });
     setColumnWipDraft("");
+    setColumnPolicyDraft("");
   };
   const updateDb = useBoardStore((s) => s.updateDb);
 
@@ -236,6 +241,7 @@ export function KanbanBoardOverlays({
           onClick={() => {
             setAddColumnOpen(false);
             setColumnWipDraft("");
+            setColumnPolicyDraft("");
           }}
         >
           <div
@@ -268,8 +274,18 @@ export function KanbanBoardOverlays({
               onChange={(e) => setColumnWipDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submitColumn()}
               placeholder={t("addColumnModal.wipPlaceholder")}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               aria-label={t("addColumnModal.wipLabel")}
+            />
+            <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.policyLabel")}</label>
+            <textarea
+              value={columnPolicyDraft}
+              onChange={(e) => setColumnPolicyDraft(e.target.value)}
+              placeholder={t("addColumnModal.policyPlaceholder")}
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px]"
+              aria-label={t("addColumnModal.policyLabel")}
             />
             <div className="flex gap-3 justify-end pt-2">
               <button
@@ -279,6 +295,7 @@ export function KanbanBoardOverlays({
                   setNewColumnName("");
                   setEditingColumnKey(null);
                   setColumnWipDraft("");
+                  setColumnPolicyDraft("");
                 }}
                 className="btn-secondary"
               >

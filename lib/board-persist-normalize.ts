@@ -13,10 +13,18 @@ function normalizeBucket(b: BucketConfig): BucketConfig {
   const key = String(b.key ?? "").trim().slice(0, 200);
   const label = String(b.label ?? "").trim().slice(0, 200);
   const color = String(b.color ?? "").trim().slice(0, 50);
+  let wipLimit: number | undefined;
+  if (typeof b.wipLimit === "number" && Number.isFinite(b.wipLimit)) {
+    const w = Math.floor(b.wipLimit);
+    if (w >= 1 && w <= 999) wipLimit = w;
+  }
+  const policy = String((b as { policy?: string }).policy ?? "").trim().slice(0, 500);
   return {
     key: key.length > 0 ? key : "col",
     label: label.length > 0 ? label : "Coluna",
     color: color.length > 0 ? color : "var(--flux-text-muted)",
+    ...(wipLimit !== undefined ? { wipLimit } : {}),
+    ...(policy ? { policy } : {}),
   };
 }
 
@@ -106,6 +114,16 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     }
     if (c.subtaskProgress) {
       base.subtaskProgress = c.subtaskProgress;
+    }
+    const dor = (c as { dorReady?: unknown }).dorReady;
+    if (dor && typeof dor === "object") {
+      const dr = dor as Record<string, unknown>;
+      const d: Record<string, boolean> = {};
+      if (dr.titleOk === true) d.titleOk = true;
+      if (dr.acceptanceOk === true) d.acceptanceOk = true;
+      if (dr.depsOk === true) d.depsOk = true;
+      if (dr.sizedOk === true) d.sizedOk = true;
+      if (Object.keys(d).length) base.dorReady = d as CardData["dorReady"];
     }
     return base as unknown as CardData;
   });
