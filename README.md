@@ -61,7 +61,19 @@ npm run build
 npm start
 ```
 
+**Antes de subir para produção**, rode o checklist completo (lint + testes + build):
+
+```bash
+npm run validate:deploy
+```
+
 Para deploy na Vercel: `vercel` ou push para o repositório conectado.
+
+### Diagnóstico em produção (erros / React #185)
+
+- Documentação: [`docs/flux-diagnostics.md`](docs/flux-diagnostics.md)
+- Ativar painel: adicione `?fluxDebug=1` à URL ou `localStorage.setItem("fluxDiag","1")`.
+- No console do navegador: `window.__FLUX_DIAG__.dump()` para exportar o buffer de eventos.
 
 ## Configuração: MongoDB (Vercel)
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { DM_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 import { themeBootstrapInlineScript } from "@/lib/theme-storage";
@@ -10,6 +11,7 @@ import { ThemeProvider } from "@/context/theme-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
 import { AppShell } from "@/components/app-shell";
+import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnostics-root";
 import { headers } from "next/headers";
 
 const dmSans = DM_Sans({
@@ -47,17 +49,21 @@ export default async function RootLayout({
       </head>
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <AuthProvider>
-            <OrgBrandingProvider>
-              <ToastProvider>
-                <ThemeProvider>
-                  <RoutineTasksProvider>
-                    <AppShell>{children}</AppShell>
-                  </RoutineTasksProvider>
-                </ThemeProvider>
-              </ToastProvider>
-            </OrgBrandingProvider>
-          </AuthProvider>
+          <Suspense fallback={null}>
+            <FluxDiagnosticsRoot>
+              <AuthProvider>
+                <OrgBrandingProvider>
+                  <ToastProvider>
+                    <ThemeProvider>
+                      <RoutineTasksProvider>
+                        <AppShell>{children}</AppShell>
+                      </RoutineTasksProvider>
+                    </ThemeProvider>
+                  </ToastProvider>
+                </OrgBrandingProvider>
+              </AuthProvider>
+            </FluxDiagnosticsRoot>
+          </Suspense>
         </NextIntlClientProvider>
       </body>
     </html>
