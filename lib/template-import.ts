@@ -9,11 +9,13 @@ export async function createBoardFromTemplateSnapshot(
   name: string,
   snap: BoardTemplateSnapshot
 ): Promise<BoardData> {
+  const snapConfig = (snap.config ?? {}) as Partial<NonNullable<BoardData["config"]>>;
   const board = await createBoard(orgId, userId, name, {
     version: "2.0",
     cards: [],
     config: {
-      ...(snap.config as BoardData["config"]),
+      ...snapConfig,
+      bucketOrder: Array.isArray(snapConfig.bucketOrder) ? snapConfig.bucketOrder : [],
       labels: [],
     },
     mapaProducao: snap.mapaProducao,
