@@ -115,13 +115,16 @@ export function useBoardRealtime({
 
   const pollBoard = useCallback(async () => {
     if (!allowMergeRef.current) return;
+    const expectedBoardId = boardId;
     try {
-      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(expectedBoardId)}`, {
         cache: "no-store",
         headers: getHeaders(),
       });
       if (!res.ok) return;
+      if (useBoardStore.getState().boardId !== expectedBoardId) return;
       const data = (await res.json()) as BoardData & { cards?: unknown[]; lastUpdated?: string };
+      if (useBoardStore.getState().boardId !== expectedBoardId) return;
       const local = useBoardStore.getState().db;
       if (!local || !data.lastUpdated || data.lastUpdated === local.lastUpdated) return;
       if (!Array.isArray(data.cards)) return;

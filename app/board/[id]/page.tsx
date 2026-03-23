@@ -366,12 +366,18 @@ export default function BoardPage() {
   const userRef = useRef(user);
   userRef.current = user;
 
+  /** Incrementado a cada `loadBoard`; evita `hydrate` com resposta atrasada após troca de rota (#corrida). */
+  const loadSeqRef = useRef(0);
+
   const loadBoard = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
+    setLoading(true);
     try {
       const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
         cache: "no-store",
         headers: getHeadersRef.current(),
       });
+      if (seq !== loadSeqRef.current) return;
       if (r.status === 401) {
         routerRef.current.replace(`/${locale}/login`);
         return;
@@ -383,6 +389,7 @@ export default function BoardPage() {
       }
       if (!r.ok) throw new Error("Erro ao carregar");
       const d = await r.json();
+      if (seq !== loadSeqRef.current) return;
       setBoardName(d.name || "Board");
       const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
       setClientLabel(rawClient || null);
@@ -436,10 +443,11 @@ export default function BoardPage() {
         registerBoardVisit(uid, boardId);
       }
     } catch {
+      if (seq !== loadSeqRef.current) return;
       pushToastRef.current({ kind: "error", title: tBoardRef.current("toasts.loadError") });
       routerRef.current.replace(`/${locale}/boards`);
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, [boardId, locale]);
 
