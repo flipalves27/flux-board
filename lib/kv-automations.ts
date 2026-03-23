@@ -4,7 +4,7 @@ import type { AutomationRule } from "./automation-types";
 import type { Db } from "mongodb";
 
 const COL = "board_automations";
-const KV_PREFIX = "reborn_board_automations:";
+const KV_PREFIX = "flux_board_automations:";
 
 type AutomationsDoc = {
   _id: string;

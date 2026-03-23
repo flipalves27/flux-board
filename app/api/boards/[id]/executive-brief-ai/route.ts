@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -22,10 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    boardId = getBoardRebornId(payload.orgId);
-  }
+  const boardId = requestedBoardId;
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {

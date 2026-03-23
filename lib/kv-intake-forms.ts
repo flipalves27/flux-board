@@ -1,7 +1,7 @@
 import { getStore } from "@/lib/storage";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 
-const INTAKE_FORM_PREFIX = "reborn_intake_form:";
+const INTAKE_FORM_PREFIX = "flux_intake_form:";
 const COL_INTAKE_FORMS = "intake_forms";
 
 export type IntakeFormIndexRecord = {

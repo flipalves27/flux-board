@@ -364,7 +364,7 @@ export function useDailySession({
             priority: s.prioridade,
             progress: s.progresso,
             desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
-            tags: s.tags?.length ? s.tags : ["Reborn"],
+            tags: s.tags?.length ? s.tags : ["Geral"],
             direction,
             dueDate: s.dataConclusao || null,
             createdAt: nowIso,

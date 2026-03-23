@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import {
-  getBoard,
-  getBoardRebornId,
-  updateBoard,
-  deleteBoard,
-  userCanAccessBoard,
-  isBoardRebornId,
-} from "@/lib/kv-boards";
+import { getBoard, updateBoard, deleteBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { validateBoardWip, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
@@ -26,14 +19,7 @@ export async function GET(
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
@@ -72,14 +58,7 @@ export async function PUT(
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
@@ -97,7 +76,7 @@ export async function PUT(
     const clean = sanitizeDeep(parsed.data);
 
     const updates: Record<string, unknown> = {};
-    if (clean.name !== undefined && !isBoardRebornId(boardId, payload.orgId)) {
+    if (clean.name !== undefined) {
       updates.name = String(clean.name || "").trim().slice(0, 100);
     }
     if (clean.cards !== undefined) {
@@ -193,21 +172,7 @@ export async function DELETE(
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
-
-  if (isBoardRebornId(boardId, payload.orgId) && !payload.isAdmin) {
-    return NextResponse.json(
-      { error: "O Board-Reborn não pode ser excluído" },
-      { status: 400 }
-    );
-  }
+  const boardId = requestedBoardId;
 
   try {
     const ok = await deleteBoard(boardId, payload.orgId, payload.id, payload.isAdmin);

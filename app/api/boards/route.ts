@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import {
-  getBoardIds,
-  getBoardsByIds,
-  createBoard,
-  ensureBoardReborn,
-  getDefaultBoardData,
-  getBoardRebornId,
-} from "@/lib/kv-boards";
+import { getBoardIds, getBoardsByIds, createBoard } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
@@ -39,7 +32,6 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
 
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
     const boardRows = await getBoardsByIds(boardIds, payload.orgId);
@@ -52,10 +44,9 @@ export async function GET(request: NextRequest) {
       portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
     }));
 
-    const rebornId = getBoardRebornId(payload.orgId);
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
-    const currentCount = orgBoardIds.filter((id) => id !== rebornId).length;
+    const currentCount = orgBoardIds.length;
     const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
     const isPro = cap === null;
 
@@ -85,7 +76,6 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
 
     const body = await request.json();
     const parsed = BoardCreateSchema.safeParse(body);
@@ -100,11 +90,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Use apenas templateId ou templateSnapshot, não ambos." }, { status: 400 });
     }
 
-    const rebornId = getBoardRebornId(payload.orgId);
     const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
     if (cap !== null) {
       const existingIds = await getBoardIds(payload.id, payload.orgId, true);
-      const currentCount = existingIds.filter((id) => id !== rebornId).length;
+      const currentCount = existingIds.length;
       if (currentCount >= cap) {
         return NextResponse.json(
           { error: `Limite do plano: no máximo ${cap} board(s) por organização.` },

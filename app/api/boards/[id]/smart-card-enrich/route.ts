@@ -11,7 +11,7 @@ import {
   planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { searchDocs } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import type { Organization } from "@/lib/kv-organizations";
@@ -209,14 +209,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxForAuth(payload.isAdmin);

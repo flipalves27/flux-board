@@ -49,7 +49,7 @@ const FILTER_LABELS = [
   "Negócio",
   "Portal do Corretor",
   "RCG",
-  "Reborn",
+  "Geral",
   "Ressegurador",
   "Segurado",
   "Subscrição",

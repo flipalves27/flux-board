@@ -36,7 +36,7 @@ const TAG_RULES: Array<{ tag: string; keywords: string[] }> = [
   { tag: "Comercial", keywords: ["comercial", "cliente", "proposta", "venda"] },
   { tag: "Corretor", keywords: ["corretor", "broker"] },
   { tag: "Subscrição", keywords: ["subscricao", "subscrição", "tomador", "garantia"] },
-  { tag: "Reborn", keywords: ["reborn", "plataforma"] },
+  { tag: "Plataforma", keywords: ["plataforma", "cadastro", "sistema"] },
 ];
 
 const PRIORITIES = new Set(["Urgente", "Importante", "Média"]);

@@ -1,8 +1,5 @@
 {
   "framework": "nextjs",
-  "rewrites": [
-    { "source": "/resumo-reborn", "destination": "/resumo-reborn.html" }
-  ],
   "crons": [
     {
       "path": "/api/cron/automations",

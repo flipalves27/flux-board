@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { userCanAccessBoard } from "@/lib/kv-boards";
 import { boardRealtimeHub } from "@/lib/board-realtime-hub";
 
 export const runtime = "nodejs";
@@ -8,20 +8,9 @@ export const dynamic = "force-dynamic";
 
 const encoder = new TextEncoder();
 
-async function resolveBoardId(
-  requestedBoardId: string,
-  orgId: string
-): Promise<string | null> {
+function resolveBoardId(requestedBoardId: string): string | null {
   if (!requestedBoardId || requestedBoardId === "boards") return null;
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
-  return boardId;
+  return requestedBoardId;
 }
 
 function parseSseQuery(req: NextRequest): { clientId: string | null; columnKey: string | null } {
@@ -51,7 +40,7 @@ export async function GET(
   }
 
   const { id: requestedBoardId } = await params;
-  const boardId = await resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = resolveBoardId(requestedBoardId);
   if (!boardId) {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
@@ -137,7 +126,7 @@ export async function POST(
   }
 
   const { id: requestedBoardId } = await params;
-  const boardId = await resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = resolveBoardId(requestedBoardId);
   if (!boardId) {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, getUserById } from "@/lib/kv-users";
-import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
@@ -75,8 +75,6 @@ export async function GET(request: NextRequest) {
       }
       throw err;
     }
-
-    await ensureBoardReborn(payload.orgId, "admin", getDefaultBoardData);
 
     const boards = await listBoardsForUser(
       payload.id,

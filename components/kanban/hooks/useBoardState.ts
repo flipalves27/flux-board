@@ -631,7 +631,7 @@ export function useBoardState({
     });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
-    a.download = "backlog_reborn_export.csv";
+    a.download = "flux-board-export.csv";
     a.click();
   }, [cards]);
 

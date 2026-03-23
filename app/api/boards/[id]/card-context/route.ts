@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { callTogetherApi } from "@/lib/llm-utils";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardContextInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -383,14 +383,7 @@ export async function POST(
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxForAuth(payload.isAdmin);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser } from "@/lib/kv-boards";
+import { listBoardsForUser } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
@@ -48,8 +48,6 @@ export async function GET(request: NextRequest) {
       }
       throw err;
     }
-    await ensureBoardReborn(payload.orgId, "admin", getDefaultBoardData);
-
     const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
     const boardIds = boards.map((b) => b.id).filter(Boolean);
 

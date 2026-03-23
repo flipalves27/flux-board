@@ -29,8 +29,8 @@ function normalizeEmail(email: string): string {
   return String(email || "").trim().toLowerCase();
 }
 
-const INVITE_PREFIX = "reborn_org_invite:";
-const INVITE_INDEX_PREFIX = "reborn_org_invite_index:";
+const INVITE_PREFIX = "flux_org_invite:";
+const INVITE_INDEX_PREFIX = "flux_org_invite_index:";
 
 function inviteIndexKey(orgId: string): string {
   return `${INVITE_INDEX_PREFIX}${orgId}`;

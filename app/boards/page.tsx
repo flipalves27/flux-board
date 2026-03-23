@@ -104,8 +104,6 @@ export default function BoardsPage() {
   const authWaiting = !isChecked || !user;
   const showListSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
 
-  const rebornId = user?.orgId ? `b_reborn_${user.orgId}` : "b_reborn";
-
   useEffect(() => {
     if (!isChecked || !user) {
       router.replace(`${localeRoot}/login`);
@@ -569,7 +567,7 @@ export default function BoardsPage() {
               <h2 id="boards-snapshot-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
                 {t("sections.snapshot")}
               </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Total de boards</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boards.length}</p>
@@ -577,12 +575,6 @@ export default function BoardsPage() {
               <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
                 <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Atualizados hoje</p>
                 <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{boardsUpdatedToday.length}</p>
-              </div>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Boards padrão</p>
-                <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-                  {boards.filter((b) => b.id === rebornId).length}
-                </p>
               </div>
               </div>
             </section>
@@ -669,8 +661,6 @@ export default function BoardsPage() {
                 {t("actions.newBoard")}
               </button>
               {visibleBoards.map((b) => {
-                const isBoardReborn = b.id === rebornId;
-                const isAdmin = user.isAdmin;
                 const wasUpdatedToday = (() => {
                   if (!todayKey) return false;
                   const d = parseDateSafe(b.lastUpdated);
@@ -729,24 +719,7 @@ export default function BoardsPage() {
                         Hoje
                       </span>
                     )}
-                    {isBoardReborn ? (
-                      isAdmin ? (
-                        <div className="mt-auto pt-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteBoard(b.id, b.name);
-                            }}
-                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-[var(--flux-text-muted)] italic">Board padrão</span>
-                      )
-                    ) : (
-                      <div className="mt-auto pt-3 flex gap-3">
+                    <div className="mt-auto pt-3 flex gap-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -766,7 +739,6 @@ export default function BoardsPage() {
                           Excluir
                         </button>
                       </div>
-                    )}
                   </div>
                 );
               })}

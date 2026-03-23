@@ -5,7 +5,7 @@ import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateSessionAction } from "@/app/actions/auth";
 import type { ThemePreference } from "@/lib/theme-storage";
 
-const LEGACY_AUTH_KEY = "reborn_auth";
+const LEGACY_AUTH_KEY = "flux_board_auth";
 
 export interface AuthUser {
   id: string;

@@ -5,10 +5,10 @@ import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrg
 import type { ThemePreference } from "./theme-storage";
 import type { Db } from "mongodb";
 
-const USERS_KEY = "reborn_users";
-const USER_PREFIX = "reborn_user:";
-const USER_BY_EMAIL = "reborn_user_email:";
-const USER_BY_USERNAME = "reborn_user_username:";
+const USERS_KEY = "flux_users";
+const USER_PREFIX = "flux_user:";
+const USER_BY_EMAIL = "flux_user_email:";
+const USER_BY_USERNAME = "flux_user_username:";
 
 const COL_USERS = "users";
 
@@ -16,7 +16,7 @@ const ADMIN_USER = {
   id: "admin",
   username: "Admin",
   name: "Admin",
-  email: "admin@reborn.local",
+  email: "admin@example.local",
   passwordHash: null as string | null,
   isAdmin: true,
   orgId: DEFAULT_ORG_ID,
@@ -127,7 +127,7 @@ async function persistAdminUserKv(admin: User): Promise<void> {
   const kv = await getStore();
   await kv.set(USER_PREFIX + "admin", JSON.stringify(admin));
   await kv.set(USER_BY_USERNAME + "Admin".toLowerCase(), "admin");
-  await kv.set(USER_BY_EMAIL + "admin@reborn.local".toLowerCase(), "admin");
+  await kv.set(USER_BY_EMAIL + "admin@example.local".toLowerCase(), "admin");
   const users = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
   if (!users.includes("admin")) {
     users.unshift("admin");

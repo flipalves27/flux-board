@@ -27,8 +27,9 @@ flux-board/
 │   └── kv-users.ts          # CRUD usuários (MongoDB)
 ├── data/
 │   └── db.json              # Seed inicial
-├── public/
-│   └── resumo-reborn.html   # Apresentação executiva (estática)
+├── public/                  # Assets estáticos (favicon, etc.)
+├── scripts/
+│   └── migrate-reborn-board-ids.mjs  # Migração legado b_reborn_* → b_default_* (MongoDB)
 ├── package.json
 ├── next.config.ts
 ├── tailwind.config.ts
@@ -91,6 +92,8 @@ Usuários, boards e metadados ficam no **MongoDB**.
 
 **Migração:** dados antigos no Redis/KV não são migrados automaticamente; é preciso exportar/importar manualmente se necessário.
 
+**Boards legados `b_reborn_<orgId>`:** antes de publicar versões sem esse ID, rode `npm run migrate:reborn-boards` com `MONGODB_URI` definido (renomeia para `b_default_<orgId>` e atualiza referências). Ordem: migração → deploy.
+
 ## Deployment Protection na Vercel
 
 A aplicação suporta **Protection Bypass for Automation**, permitindo que login e API funcionem mesmo com Deployment Protection ativa (Standard, Vercel Authentication, etc.), sem precisar definir Protection para "None".
@@ -123,7 +126,6 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `/forms/[slug]` | Formulário público para intake de demandas |
 | `/negocios` | Hub de oportunidades comerciais (produto) |
 | `/users` | Administração de usuários (admin) |
-| `/resumo-reborn.html` | Apresentação executiva |
 
 ### API comercial / go-to-market
 

@@ -11,6 +11,7 @@
     "lint:flux-colors": "eslint --quiet -c eslint.flux-colors.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "test": "vitest run",
     "security:audit": "node scripts/security-audit.mjs",
+    "migrate:reborn-boards": "node scripts/migrate-reborn-board-ids.mjs",
     "validate:deploy": "npm run lint && npm run test && npm run build",
     "test:watch": "vitest",
     "test:coverage:llm-utils": "vitest run lib/llm-utils.test.ts --coverage",

@@ -9,21 +9,13 @@ import { diffBoardActivity } from "./board-activity-diff";
 import { scheduleBoardActivityWrites } from "./board-activity-log";
 import { scheduleWebhookBoardPersist } from "./webhook-emit";
 
-const BOARDS_PREFIX = "reborn_boards:";
-const BOARD_PREFIX = "reborn_board:";
-const BOARD_COUNTER = "reborn_board_counter";
+const BOARDS_PREFIX = "flux_boards:";
+const BOARD_PREFIX = "flux_board:";
+const BOARD_COUNTER = "flux_board_counter";
 
 const COL_BOARDS = "boards";
 const COL_USER_BOARDS = "user_boards";
 const COL_COUNTERS = "counters";
-
-export function getBoardRebornId(orgId: string): string {
-  return `b_reborn_${orgId}`;
-}
-
-export function isBoardRebornId(boardId: string, orgId: string): boolean {
-  return boardId === getBoardRebornId(orgId);
-}
 
 export interface BoardData {
   id: string;
@@ -83,11 +75,6 @@ async function ensureTenancyMigrationOnce(): Promise<void> {
   tenancyMigrationEnsured = true;
 }
 
-// Evita reads repetidos de inicializacao (em memoria por instância).
-const ENSURE_BOARD_REBORN_TTL_MS = Number(process.env.ENSURE_BOARD_REBORN_TTL_MS ?? 30_000);
-const boardRebornCache = new Map<string, { value: BoardData; expiresAt: number }>();
-const ensureBoardRebornInFlight = new Map<string, Promise<BoardData>>();
-
 async function ensureBoardIndexes(db: Db): Promise<void> {
   if (boardIndexesEnsured) return;
   await ensureTenancyMigrationOnce();
@@ -113,19 +100,12 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
           (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
         }
       }
-      const rebornId = getBoardRebornId(orgId);
-      const boardReborn = await db.collection<BoardDoc>(COL_BOARDS).findOne({ _id: rebornId, orgId });
-      if (boardReborn) ids.add(rebornId);
     } else {
       const row = await db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS).findOne({
         _id: userId,
         orgId,
       });
       (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
-      const rebornId = getBoardRebornId(orgId);
-      ids.delete(rebornId);
-      const rebornDoc = await db.collection<BoardDoc>(COL_BOARDS).findOne({ _id: rebornId, orgId });
-      if (rebornDoc?.ownerId === userId) ids.add(rebornId);
     }
     return [...ids];
   }
@@ -141,16 +121,9 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
     for (const userIds of boardsPerUser) {
       userIds.forEach((id) => ids.add(id));
     }
-    const rebornId = getBoardRebornId(orgId);
-    const boardReborn = await getBoard(rebornId, orgId);
-    if (boardReborn) ids.add(rebornId);
   } else {
     const userIds = ((await kv.get<string[]>(userBoardsKey(userId))) as string[]) || [];
     userIds.forEach((id) => ids.add(id));
-    const rebornId = getBoardRebornId(orgId);
-    ids.delete(rebornId);
-    const rebornBoard = await getBoard(rebornId, orgId);
-    if (rebornBoard?.ownerId === userId) ids.add(rebornId);
   }
   return [...ids];
 }
@@ -322,7 +295,6 @@ function scheduleBoardActivityAfterPersist(
 }
 
 export async function deleteBoard(boardId: string, orgId: string, userId: string, isAdmin: boolean): Promise<boolean> {
-  if (isBoardRebornId(boardId, orgId) && !isAdmin) return false;
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
   if (board.ownerId !== userId && !isAdmin) return false;
@@ -354,10 +326,6 @@ export async function deleteBoard(boardId: string, orgId: string, userId: string
 export async function userCanAccessBoard(userId: string, orgId: string, isAdmin: boolean, boardId: string): Promise<boolean> {
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
-  // Board-Reborn: não usar modo "open" (sem membros); só admin da org ou dono do board.
-  if (isBoardRebornId(boardId, orgId)) {
-    return isAdmin || board.ownerId === userId;
-  }
   if (board.ownerId === userId || isAdmin) return true;
   // Board-level RBAC: check membership
   const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
@@ -385,68 +353,4 @@ export function getDefaultBoardData(): {
     mapaProducao: seed.mapaProducao || [],
     dailyInsights: [],
   };
-}
-
-export async function ensureBoardReborn(
-  orgId: string,
-  ownerId: string,
-  getSeedData: () => ReturnType<typeof getDefaultBoardData>
-): Promise<BoardData> {
-  const cacheKey = orgId;
-  const cached = boardRebornCache.get(cacheKey);
-  if (cached && Date.now() < cached.expiresAt) return cached.value;
-
-  const inFlight = ensureBoardRebornInFlight.get(cacheKey);
-  if (inFlight) return inFlight;
-
-  const p = (async () => {
-    const boardId = getBoardRebornId(orgId);
-    const existing = await getBoard(boardId, orgId);
-    if (existing) return existing;
-
-    const seedData = getSeedData();
-    const board: BoardData = {
-      id: boardId,
-      ownerId,
-      orgId,
-      name: "Board-Reborn",
-      version: seedData.version || "2.0",
-      cards: seedData.cards || [],
-      config: seedData.config as BoardData["config"],
-      mapaProducao: seedData.mapaProducao || [],
-      dailyInsights: seedData.dailyInsights || [],
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-    };
-
-    if (isMongoConfigured()) {
-      const db = await getDb();
-      await ensureBoardIndexes(db);
-      await db.collection<BoardDoc>(COL_BOARDS).insertOne(boardDataToDoc(board));
-      await db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS).updateOne(
-        { _id: ownerId, orgId },
-        { $addToSet: { boardIds: boardId } },
-        { upsert: true }
-      );
-      return board;
-    }
-
-    const kv = await getStore();
-    await kv.set(BOARD_PREFIX + boardId, JSON.stringify(board));
-    const ids = ((await kv.get<string[]>(userBoardsKey(ownerId))) as string[]) || [];
-    if (!ids.includes(boardId)) {
-      ids.push(boardId);
-      await kv.set(userBoardsKey(ownerId), ids);
-    }
-    return board;
-  })();
-
-  ensureBoardRebornInFlight.set(cacheKey, p);
-  try {
-    const result = await p;
-    boardRebornCache.set(cacheKey, { value: result, expiresAt: Date.now() + ENSURE_BOARD_REBORN_TTL_MS });
-    return result;
-  } finally {
-    ensureBoardRebornInFlight.delete(cacheKey);
-  }
 }
