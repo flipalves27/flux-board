@@ -601,7 +601,6 @@ function KanbanBoardLoaded({
           onInsightChip={(ids) => setInsightFocusCardIds(ids)}
           onClearInsightFocus={clearInsightFocus}
           onOpenFlowHealth={() => setFlowHealthOpen(true)}
-          onOpenCopilot={() => useCopilotStore.getState().setOpen(true)}
           onOpenSprintCoach={() => setSprintCoachOpen(true)}
           sprintCoachVisible={activeSprintBoard?.status === "active"}
         />

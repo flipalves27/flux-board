@@ -9,7 +9,7 @@ export type FluxDiagSeverity = "error" | "warn" | "info";
 export type FluxDiagEntry = {
   id: string;
   at: string;
-  kind: "react-boundary" | "window" | "unhandledrejection" | "console";
+  kind: "react-boundary" | "window" | "unhandledrejection" | "console" | "navigation";
   message: string;
   stack?: string;
   componentStack?: string;
@@ -87,7 +87,7 @@ export const useFluxDiagnosticsStore = create<FluxDiagnosticsState>((set, get) =
       appVersion: partial.appVersion ?? readAppVersion(),
       traceId: partial.traceId ?? sessionTraceId,
       userAgent: partial.userAgent ?? ctx.userAgent ?? undefined,
-      severity: partial.severity ?? (partial.kind === "console" ? "warn" : "error"),
+      severity: partial.severity ?? (partial.kind === "console" ? "warn" : partial.kind === "navigation" ? "info" : "error"),
     };
 
     let hints = partial.hints;

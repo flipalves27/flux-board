@@ -14,10 +14,69 @@ export function FluxDiagnosticsCapture() {
   const searchParams = useSearchParams();
   const queryKey = searchParams.toString();
   const origConsoleErrorRef = useRef<typeof console.error | null>(null);
+  const lastUserInteractionAtRef = useRef<number>(Date.now());
+  const prevRouteRef = useRef<string | null>(null);
+  const prevBoardIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     exposeFluxDiagnosticsOnWindow();
   }, []);
+
+  useEffect(() => {
+    const touch = () => {
+      lastUserInteractionAtRef.current = Date.now();
+    };
+    window.addEventListener("pointerdown", touch, { passive: true });
+    window.addEventListener("keydown", touch);
+    window.addEventListener("touchstart", touch, { passive: true });
+    window.addEventListener("wheel", touch, { passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", touch);
+      window.removeEventListener("keydown", touch);
+      window.removeEventListener("touchstart", touch);
+      window.removeEventListener("wheel", touch);
+    };
+  }, []);
+
+  useEffect(() => {
+    const route = queryKey ? `${pathname}?${queryKey}` : pathname;
+    const boardMatch = pathname.match(/\/board\/([^/?#]+)/);
+    const boardId = boardMatch?.[1] ?? null;
+    const prevRoute = prevRouteRef.current;
+    const prevBoardId = prevBoardIdRef.current;
+    const now = Date.now();
+    const idleMs = Math.max(0, now - lastUserInteractionAtRef.current);
+    const switchedBoard = Boolean(prevBoardId && boardId && prevBoardId !== boardId);
+
+    if (prevRoute && prevRoute !== route) {
+      useFluxDiagnosticsStore.getState().push({
+        kind: "navigation",
+        message: switchedBoard && idleMs >= 120_000
+          ? "Board switch after inactivity"
+          : "Route changed",
+        severity: switchedBoard && idleMs >= 120_000 ? "warn" : "info",
+        route,
+        extra: JSON.stringify({
+          from: prevRoute,
+          to: route,
+          fromBoardId: prevBoardId,
+          toBoardId: boardId,
+          switchedBoard,
+          idleMs,
+        }),
+        hints:
+          switchedBoard && idleMs >= 120_000
+            ? [
+                "Board trocado apos periodo sem interacao do usuario.",
+                "Investigue deep-links, redirects e eventos externos que possam alterar a rota.",
+              ]
+            : undefined,
+      });
+    }
+
+    prevRouteRef.current = route;
+    prevBoardIdRef.current = boardId;
+  }, [pathname, queryKey]);
 
   useEffect(() => {
     const onError = (e: ErrorEvent) => {

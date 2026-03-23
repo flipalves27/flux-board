@@ -8,7 +8,7 @@ import { Header } from "@/components/header";
 import { useFluxDiagnosticsStore, type FluxDiagEntry } from "@/stores/flux-diagnostics-store";
 import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabled } from "@/lib/flux-diagnostics-shared";
 
-const KINDS: Array<FluxDiagEntry["kind"] | "all"> = ["all", "react-boundary", "window", "unhandledrejection", "console"];
+const KINDS: Array<FluxDiagEntry["kind"] | "all"> = ["all", "react-boundary", "window", "unhandledrejection", "console", "navigation"];
 
 export default function AdminTracerPage() {
   const t = useTranslations("adminTracer");
