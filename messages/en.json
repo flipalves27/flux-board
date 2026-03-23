@@ -294,6 +294,20 @@
   "templates": {
     "title": "Templates & showcase",
     "matrixBadge": "Matrix",
+    "createSectionTitle": "Create a new template",
+    "createModeAi": "With AI",
+    "createModeMatrix": "Priority matrix",
+    "matrixSectionTitle": "Priority matrix",
+    "matrixSectionHint": "Four Eisenhower columns with copies of the cards you pick. Publishing to the showcase requires an administrator account.",
+    "matrixPanel": {
+      "hint": "Pick a source board, then open the wizard to select cards, quadrants, and template metadata.",
+      "selectBoard": "Source board",
+      "openPublish": "Configure and publish template",
+      "loadingBoards": "Loading boards…",
+      "noBoards": "No boards available. Create a board before publishing.",
+      "nonAdmin": "Only administrators can publish templates to the showcase.",
+      "nonAdminHint": "You can still import matrix templates from the list below (Matrix badge) or ask an org admin to publish one."
+    },
     "subtitle": "Import columns, labels, and automations without cards. Premium uses a 70/30 creator/platform split.",
     "loading": "Loading catalog…",
     "loadError": "Could not load templates.",

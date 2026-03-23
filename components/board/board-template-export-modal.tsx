@@ -25,9 +25,17 @@ type Props = {
   onClose: () => void;
   boardId: string;
   getHeaders: () => Record<string, string>;
+  /** Pré-seleciona o tipo ao abrir (padrão: kanban). */
+  defaultTemplateKind?: "kanban" | "priority_matrix";
 };
 
-export function BoardTemplateExportModal({ open, onClose, boardId, getHeaders }: Props) {
+export function BoardTemplateExportModal({
+  open,
+  onClose,
+  boardId,
+  getHeaders,
+  defaultTemplateKind = "kanban",
+}: Props) {
   const t = useTranslations("templates");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -49,13 +57,13 @@ export function BoardTemplateExportModal({ open, onClose, boardId, getHeaders }:
   useEffect(() => {
     if (!open) return;
     setSourceBoardId(boardId);
-    setTemplateKind("kanban");
+    setTemplateKind(defaultTemplateKind);
     setMatrixSelections({});
     setCardSearch("");
     setError(null);
     setPhase("idle");
     setPublishedSlug(null);
-  }, [open, boardId]);
+  }, [open, boardId, defaultTemplateKind]);
 
   useEffect(() => {
     if (templateKind === "kanban") setError(null);

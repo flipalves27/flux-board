@@ -294,6 +294,20 @@
   "templates": {
     "title": "Templates & showcase",
     "matrixBadge": "Matriz",
+    "createSectionTitle": "Criar novo modelo",
+    "createModeAi": "Com IA",
+    "createModeMatrix": "Matriz de priorização",
+    "matrixSectionTitle": "Matriz de priorização",
+    "matrixSectionHint": "Quatro colunas (Eisenhower), com cópias dos cards que você escolher. Publicar no showcase exige perfil de administrador.",
+    "matrixPanel": {
+      "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
+      "selectBoard": "Board de origem",
+      "openPublish": "Configurar e publicar template",
+      "loadingBoards": "Carregando boards…",
+      "noBoards": "Nenhum board disponível. Crie um board antes de publicar.",
+      "nonAdmin": "Somente administradores podem publicar templates no showcase.",
+      "nonAdminHint": "Você ainda pode importar templates de matriz já publicados na lista abaixo (selo Matriz) ou pedir a um administrador da organização para publicar."
+    },
     "subtitle": "Importe colunas, rótulos e automações sem cards. Premium com repasse 70/30 ao criador.",
     "loading": "Carregando catálogo…",
     "loadError": "Não foi possível carregar os templates.",

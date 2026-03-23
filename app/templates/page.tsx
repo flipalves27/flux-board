@@ -9,6 +9,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import type { TemplateCategory } from "@/lib/template-types";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
+import { PriorityMatrixTemplatePanel } from "@/components/templates/priority-matrix-template-panel";
 
 type Row = {
   id: string;
@@ -28,6 +29,7 @@ export default function TemplatesShowcasePage() {
   const t = useTranslations("templates");
   const { user, getHeaders, isChecked } = useAuth();
   const { pushToast } = useToast();
+  const [createMode, setCreateMode] = useState<"ai" | "matrix">("ai");
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
@@ -95,9 +97,53 @@ export default function TemplatesShowcasePage() {
         <p className="text-sm text-[var(--flux-text-muted)]">{t("subtitle")}</p>
 
         <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
-          <h2 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("aiTitle")}</h2>
-          <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("aiHint")}</p>
-          <AiTemplateConversation getHeaders={getHeaders} localeRoot={localeRoot} />
+          <h2 className="font-display font-semibold text-[var(--flux-text)] mb-3">{t("createSectionTitle")}</h2>
+          <div
+            className="flex flex-wrap gap-2 mb-5 p-1 rounded-[var(--flux-rad-lg)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-chrome-alpha-10)]"
+            role="tablist"
+            aria-label={t("createSectionTitle")}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={createMode === "ai"}
+              className={`px-4 py-2 rounded-[var(--flux-rad)] text-sm font-medium transition-colors ${
+                createMode === "ai"
+                  ? "bg-[var(--flux-primary)] text-[var(--flux-ink-on-bright)] shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+              onClick={() => setCreateMode("ai")}
+            >
+              {t("createModeAi")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={createMode === "matrix"}
+              className={`px-4 py-2 rounded-[var(--flux-rad)] text-sm font-medium transition-colors ${
+                createMode === "matrix"
+                  ? "bg-[var(--flux-primary)] text-[var(--flux-ink-on-bright)] shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+              onClick={() => setCreateMode("matrix")}
+            >
+              {t("createModeMatrix")}
+            </button>
+          </div>
+
+          {createMode === "ai" ? (
+            <>
+              <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("aiTitle")}</h3>
+              <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("aiHint")}</p>
+              <AiTemplateConversation getHeaders={getHeaders} localeRoot={localeRoot} />
+            </>
+          ) : (
+            <>
+              <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("matrixSectionTitle")}</h3>
+              <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("matrixSectionHint")}</p>
+              <PriorityMatrixTemplatePanel getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
+            </>
+          )}
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
