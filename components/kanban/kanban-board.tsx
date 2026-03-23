@@ -38,6 +38,10 @@ import { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
 import { BoardMobileToolHub } from "./board-mobile-tool-hub";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
+import { resolveDoneBucketKeys } from "@/lib/board-scrum";
+import { BoardProductGoalStrip } from "./board-product-goal-strip";
+import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
+import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
 function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
@@ -168,6 +172,8 @@ function KanbanBoardLoaded({
 
   const [flowHealthOpen, setFlowHealthOpen] = useState(false);
   const [sprintCoachOpen, setSprintCoachOpen] = useState(false);
+  const [scrumSettingsOpen, setScrumSettingsOpen] = useState(false);
+  const [incrementReviewOpen, setIncrementReviewOpen] = useState(false);
 
   const nlqIdsArr = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
   const nlqAllowedIds = useMemo(() => {
@@ -357,6 +363,8 @@ function KanbanBoardLoaded({
     const sprintPanel = q.get("sprintPanel");
     const sprintCoach = q.get("sprintCoach");
     const standup = q.get("standup");
+    const scrumSettings = q.get("scrumSettings");
+    const incrementReview = q.get("incrementReview");
 
     const hasDeepLink =
       Boolean(cardId) ||
@@ -365,7 +373,9 @@ function KanbanBoardLoaded({
       flowHealth === "1" ||
       sprintPanel === "1" ||
       sprintCoach === "1" ||
-      standup === "1";
+      standup === "1" ||
+      scrumSettings === "1" ||
+      incrementReview === "1";
 
     if (!hasDeepLink) {
       handledQueryRef.current = null;
@@ -434,6 +444,16 @@ function KanbanBoardLoaded({
       if (sp?.id) {
         useCeremonyStore.getState().openStandup(boardId, sp.id);
       }
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (scrumSettings === "1") {
+      setScrumSettingsOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (incrementReview === "1") {
+      setIncrementReviewOpen(true);
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
   }, [searchParamsKey, boardId, localeRoot]);
@@ -539,6 +559,11 @@ function KanbanBoardLoaded({
     progresses,
     directions,
     mapaProducao: db.mapaProducao,
+    definitionOfDone: db.config.definitionOfDone,
+    doneBucketKeys: resolveDoneBucketKeys(
+      db.config.bucketOrder,
+      db.config.definitionOfDone?.doneBucketKeys ?? null
+    ),
     board,
     dailyOpen,
     addColumnDialogRef,
@@ -579,6 +604,12 @@ function KanbanBoardLoaded({
           onOpenCopilot={() => useCopilotStore.getState().setOpen(true)}
           onOpenSprintCoach={() => setSprintCoachOpen(true)}
           sprintCoachVisible={activeSprintBoard?.status === "active"}
+        />
+        <BoardProductGoalStrip
+          boardId={boardId}
+          getHeaders={getHeaders}
+          onOpenScrumSettings={() => setScrumSettingsOpen(true)}
+          onOpenIncrementReview={() => setIncrementReviewOpen(true)}
         />
         {activeSprintBoard?.status === "active" ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
@@ -782,6 +813,14 @@ function KanbanBoardLoaded({
         boardId={boardId}
         sprint={activeSprintBoard?.status === "active" ? activeSprintBoard : null}
         getHeaders={getHeaders}
+      />
+
+      <BoardScrumSettingsModal open={scrumSettingsOpen} onClose={() => setScrumSettingsOpen(false)} />
+      <BoardIncrementReviewModal
+        open={incrementReviewOpen}
+        onClose={() => setIncrementReviewOpen(false)}
+        boardId={boardId}
+        activeSprint={activeSprintBoard?.status === "active" ? activeSprintBoard : null}
       />
     </>
   );

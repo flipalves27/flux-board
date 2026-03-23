@@ -127,6 +127,17 @@ export type CardDorReady = {
   sizedOk?: boolean;
 };
 
+/** Itens de Definition of Done no nível do board (Scrum adaptado ao Kanban). */
+export type BoardDefinitionOfDoneItem = { id: string; label: string };
+
+export type BoardDefinitionOfDone = {
+  enabled: boolean;
+  enforce: boolean;
+  /** Chaves de coluna consideradas “feito”. Vazio = heurística por nome da coluna. */
+  doneBucketKeys?: string[];
+  items: BoardDefinitionOfDoneItem[];
+};
+
 export interface CardData {
   id: string;
   bucket: string;
@@ -147,6 +158,8 @@ export interface CardData {
   completedCycleDays?: number;
   automationState?: { lastFired?: Record<string, string> };
   dorReady?: CardDorReady;
+  /** Checkboxes DoD por id do item do board. */
+  dodChecks?: Record<string, boolean>;
 }
 
 export interface BucketConfig {
@@ -167,6 +180,11 @@ export interface BoardData {
     bucketOrder: BucketConfig[];
     collapsedColumns: string[];
     labels?: string[];
+    /** Meta de produto (Product Goal) visível no quadro. */
+    productGoal?: string;
+    /** Coluna tratada como product backlog para ordenação explícita. */
+    backlogBucketKey?: string;
+    definitionOfDone?: BoardDefinitionOfDone;
   };
   mapaProducao?: { papel: string; equipe: string; linha: string; operacoes: string }[];
   dailyInsights?: DailyInsightEntry[];
@@ -258,6 +276,66 @@ function sanitizeDorReady(raw: unknown): CardDorReady | undefined {
   };
 }
 
+function sanitizeProductGoal(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim().slice(0, 800);
+  return t.length > 0 ? t : undefined;
+}
+
+function sanitizeBacklogBucketKey(raw: unknown, bucketOrder: BucketConfig[]): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const k = raw.trim().slice(0, 200);
+  if (!k || !bucketOrder.some((b) => b.key === k)) return undefined;
+  return k;
+}
+
+function sanitizeDefinitionOfDone(raw: unknown, bucketOrder: BucketConfig[]): BoardDefinitionOfDone | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const enabled = o.enabled === true;
+  const enforce = o.enforce === true;
+  let doneBucketKeys: string[] | undefined;
+  if (Array.isArray(o.doneBucketKeys)) {
+    const allowed = new Set(bucketOrder.map((b) => b.key));
+    const keys = o.doneBucketKeys
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim().slice(0, 200))
+      .filter((x) => allowed.has(x));
+    if (keys.length > 0) doneBucketKeys = [...new Set(keys)];
+  }
+  const itemsRaw = Array.isArray(o.items) ? o.items : [];
+  const items: BoardDefinitionOfDoneItem[] = [];
+  const seen = new Set<string>();
+  for (const it of itemsRaw) {
+    if (!it || typeof it !== "object") continue;
+    const rec = it as Record<string, unknown>;
+    const id = typeof rec.id === "string" ? rec.id.trim().slice(0, 80) : "";
+    const label = typeof rec.label === "string" ? rec.label.trim().slice(0, 300) : "";
+    if (!id || !label || seen.has(id)) continue;
+    seen.add(id);
+    items.push({ id, label });
+    if (items.length >= 20) break;
+  }
+  if (!enabled && !items.length && !doneBucketKeys?.length) return undefined;
+  return {
+    enabled,
+    enforce,
+    ...(doneBucketKeys?.length ? { doneBucketKeys } : {}),
+    items,
+  };
+}
+
+function sanitizeDodChecks(raw: unknown, validIds: Set<string>): Record<string, boolean> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: Record<string, boolean> = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (!validIds.has(k) || v !== true) continue;
+    out[k] = true;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const params = useParams();
@@ -322,6 +400,8 @@ export default function BoardPage() {
       const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
       setClientLabel(rawClient || null);
       const bucketOrder = sanitizeBucketOrder(d.config?.bucketOrder);
+      const definitionOfDone = sanitizeDefinitionOfDone(d.config?.definitionOfDone, bucketOrder);
+      const dodIdSet = new Set((definitionOfDone?.items ?? []).map((x) => x.id));
       const cards = (d.cards || []).map((c: CardData, i: number) => ({
         ...c,
         order: c.order ?? i,
@@ -338,7 +418,10 @@ export default function BoardPage() {
               .map((d) => ({ docId: String(d.docId), title: d.title ? String(d.title) : undefined, excerpt: d.excerpt ? String(d.excerpt) : undefined }))
           : [],
         dorReady: sanitizeDorReady((c as CardData).dorReady),
+        dodChecks: dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : undefined,
       }));
+      const productGoal = sanitizeProductGoal(d.config?.productGoal);
+      const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
       useBoardStore.getState().hydrate(boardId, {
         version: d.version || "2.0",
         lastUpdated: d.lastUpdated || "",
@@ -347,6 +430,9 @@ export default function BoardPage() {
           bucketOrder,
           collapsedColumns: sanitizeCollapsedColumns(d.config?.collapsedColumns, bucketOrder),
           labels: sanitizeLabels(d.config?.labels),
+          ...(productGoal ? { productGoal } : {}),
+          ...(backlogBucketKey ? { backlogBucketKey } : {}),
+          ...(definitionOfDone ? { definitionOfDone } : {}),
         },
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
@@ -423,6 +509,8 @@ export default function BoardPage() {
               };
               if (!res.ok) throw new Error(data.error || "save");
               if (Array.isArray(data.cards)) {
+                const snap = useBoardStore.getState().db;
+                const dodIdSet = new Set((snap?.config?.definitionOfDone?.items ?? []).map((x) => x.id));
                 const cards = data.cards!.map((c: CardData, i: number) => ({
                   ...c,
                   order: c.order ?? i,
@@ -444,6 +532,9 @@ export default function BoardPage() {
                           excerpt: d.excerpt ? String(d.excerpt) : undefined,
                         }))
                     : [],
+                  dorReady: sanitizeDorReady(c.dorReady),
+                  dodChecks:
+                    dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : (c as CardData).dodChecks,
                 }));
                 useBoardStore.getState().updateDbSilent((d) => {
                   d.cards = cards;
@@ -514,6 +605,27 @@ export default function BoardPage() {
               <BoardPresenceAvatars />
 
               {/* Separator */}
+              <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
+
+              {saveStatus !== "idle" ? (
+                <span
+                  className={`text-[11px] font-semibold tabular-nums shrink-0 ${
+                    saveStatus === "error"
+                      ? "text-[var(--flux-danger)]"
+                      : saveStatus === "saved"
+                        ? "text-[var(--flux-success)]"
+                        : "text-[var(--flux-text-muted)]"
+                  }`}
+                  aria-live="polite"
+                >
+                  {saveStatus === "saving"
+                    ? t("persistence.saving")
+                    : saveStatus === "saved"
+                      ? t("persistence.saved")
+                      : t("persistence.error")}
+                </span>
+              ) : null}
+
               <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
 
               {/* Feature actions */}

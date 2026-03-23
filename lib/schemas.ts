@@ -191,6 +191,18 @@ export const CardDocRefSchema = z
   })
   .passthrough();
 
+export const BoardDefinitionOfDoneItemSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(300),
+});
+
+export const BoardDefinitionOfDoneSchema = z.object({
+  enabled: z.boolean(),
+  enforce: z.boolean(),
+  doneBucketKeys: z.array(z.string().trim().max(200)).max(20).optional(),
+  items: z.array(BoardDefinitionOfDoneItemSchema).max(20),
+});
+
 export const CardAutomationStateSchema = z
   .object({
     lastFired: z.record(z.string(), z.string()).optional(),
@@ -265,6 +277,7 @@ export const CardDataSchema = z
         sizedOk: z.boolean().optional(),
       })
       .optional(),
+    dodChecks: z.record(z.string().trim().max(80), z.boolean()).optional(),
   })
   .passthrough();
 
@@ -480,6 +493,9 @@ export const BoardUpdateSchema = z
         bucketOrder: z.array(BucketConfigSchema).min(1),
         collapsedColumns: z.array(z.string().trim().max(200)).optional(),
         labels: z.array(z.string().trim().max(200)).optional(),
+        productGoal: z.string().trim().max(800).optional().nullable(),
+        backlogBucketKey: z.string().trim().max(200).optional().nullable(),
+        definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
       })
       .optional(),
     mapaProducao: z.array(MapaProducaoItemSchema).optional(),

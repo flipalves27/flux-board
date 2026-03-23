@@ -13,6 +13,7 @@ import {
   simulateMoveSingleCard,
   simulatePatchBucketMove,
 } from "@/lib/board-wip";
+import { assertDodAllowsCompleting, resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { useFilterStore } from "@/stores/filter-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useDailySession } from "./useDailySession";
@@ -227,6 +228,25 @@ export function useBoardState({
     (cardId: string, newBucket: string, newIndex: number) => {
       const snap = useBoardStore.getState().db;
       if (!snap) return;
+      const card = snap.cards.find((c) => c.id === cardId);
+      if (card) {
+        const doneKeys = resolveDoneBucketKeys(
+          snap.config.bucketOrder,
+          snap.config.definitionOfDone?.doneBucketKeys ?? null
+        );
+        const dod = assertDodAllowsCompleting({
+          card,
+          nextBucket: newBucket,
+          nextProgress: card.progress,
+          doneBucketKeys: doneKeys,
+          completedProgressLabel: "Concluída",
+          def: snap.config.definitionOfDone,
+        });
+        if (!dod.ok) {
+          pushToast({ kind: "error", title: dod.message });
+          return;
+        }
+      }
       const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
       const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
       if (!wip.ok) {
@@ -261,6 +281,27 @@ export function useBoardState({
       if (orderedIds.length === 0) return;
       const snap = useBoardStore.getState().db;
       if (!snap) return;
+      const doneKeys = resolveDoneBucketKeys(
+        snap.config.bucketOrder,
+        snap.config.definitionOfDone?.doneBucketKeys ?? null
+      );
+      const def = snap.config.definitionOfDone;
+      for (const id of orderedIds) {
+        const card = snap.cards.find((c) => c.id === id);
+        if (!card) continue;
+        const dod = assertDodAllowsCompleting({
+          card,
+          nextBucket: newBucket,
+          nextProgress: card.progress,
+          doneBucketKeys: doneKeys,
+          completedProgressLabel: "Concluída",
+          def,
+        });
+        if (!dod.ok) {
+          pushToast({ kind: "error", title: dod.message });
+          return;
+        }
+      }
       const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
       const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
       if (!wip.ok) {
@@ -471,6 +512,22 @@ export function useBoardState({
       if (patch.bucket !== undefined) {
         const card = snap.cards.find((c) => c.id === cardId);
         if (card && patch.bucket !== card.bucket) {
+          const doneKeys = resolveDoneBucketKeys(
+            snap.config.bucketOrder,
+            snap.config.definitionOfDone?.doneBucketKeys ?? null
+          );
+          const dod = assertDodAllowsCompleting({
+            card,
+            nextBucket: patch.bucket,
+            nextProgress: card.progress,
+            doneBucketKeys: doneKeys,
+            completedProgressLabel: "Concluída",
+            def: snap.config.definitionOfDone,
+          });
+          if (!dod.ok) {
+            pushToast({ kind: "error", title: dod.message });
+            return;
+          }
           const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
           const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
           if (!wip.ok) {

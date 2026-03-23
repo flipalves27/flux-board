@@ -186,7 +186,9 @@
       "flowHealth": "Flow health — {board}",
       "sprintPanel": "Open Sprint panel — {board}",
       "sprintCoach": "Sprint coach (AI) — {board}",
-      "standup": "Start standup — {board}"
+      "standup": "Start standup — {board}",
+      "scrumSettings": "Scrum & DoD settings — {board}",
+      "incrementReview": "Increment / review — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1041,6 +1043,11 @@
   },
   "board": {
     "clientLabelInHeader": "Client: {label}",
+    "persistence": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed"
+    },
     "loading": "Loading board...",
     "anomalyAlerts": {
       "open": "Alerts",
@@ -1290,6 +1297,20 @@
         "dor": {
           "title": "Refinement (Definition of Ready)",
           "description": "Check what is ready before pulling this item into a sprint."
+        },
+        "dod": {
+          "title": "Definition of Done",
+          "description": "Board-level checklist — required to complete when enforcement is on."
+        },
+        "refineAi": {
+          "title": "Backlog refinement (AI)",
+          "description": "Suggested acceptance criteria, risks, and dependencies — review before adopting.",
+          "cta": "Generate suggestions",
+          "loading": "Analyzing card…",
+          "apply": "Append to description",
+          "appliedToast": "Appended to Observations block.",
+          "error": "Could not generate refinement.",
+          "empty": "Add a title and description first."
         },
         "unblock": {
           "title": "AI unblock assist",
@@ -1995,6 +2016,49 @@
         "sprintAll": "Show all cards",
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
+      },
+      "productGoalStrip": {
+        "label": "Product goal",
+        "emptyGoal": "No product goal yet — set it in Scrum & DoD settings.",
+        "backlogBadge": "Backlog column: {column}",
+        "incrementReview": "Increment / review",
+        "editScrum": "Scrum & DoD",
+        "accountBrief": "Account brief (AI)",
+        "briefLoading": "Generating brief…",
+        "briefError": "Could not generate the brief.",
+        "briefRefresh": "Refresh",
+        "briefClose": "Close"
+      },
+      "scrumSettings": {
+        "title": "Scrum on Kanban — product goal & Definition of Done",
+        "closeAria": "Close",
+        "productGoal": "Product goal",
+        "productGoalPlaceholder": "What outcome does this board pursue for the client or product?",
+        "backlogColumn": "Product backlog column",
+        "backlogAuto": "Auto (Backlog name or first column)",
+        "backlogHint": "Cards in this column are ordered top-to-bottom as backlog priority (drag to rank).",
+        "dodEnabled": "Enable Definition of Done checklist on cards",
+        "dodEnforce": "Block moving to a “done” column or marking complete until all items are checked",
+        "dodItems": "DoD items (one per line)",
+        "dodPlaceholder": "Tests passed\nDocumentation updated\nStakeholder sign-off",
+        "doneColumns": "Columns that count as done",
+        "doneColumnsHint": "Leave all unchecked to auto-detect from column names (e.g. Concluído, Done, Produção).",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "incrementReview": {
+        "title": "Increment — what was delivered",
+        "closeAria": "Close",
+        "tabRolling": "Last 14 days",
+        "tabSprint": "Active sprint",
+        "copyMarkdown": "Copy as Markdown",
+        "copied": "Copied to clipboard.",
+        "copyFailed": "Could not copy.",
+        "empty": "No completed cards in this view.",
+        "exportTitleRolling": "## Delivered (last 14 days)",
+        "exportTitleSprint": "## Sprint delivered — {name}",
+        "portalHint": "Share read-only view:",
+        "close": "Close"
       },
       "desktopToolsRail": {
         "handleTitle": "Hover to show board tools, or click to pin the strip open",

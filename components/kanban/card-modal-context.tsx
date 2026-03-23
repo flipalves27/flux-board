@@ -13,7 +13,15 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import type { CardData, BucketConfig, CardLink, CardDocRef, CardDorReady } from "@/app/board/[id]/page";
+import type {
+  CardData,
+  BucketConfig,
+  CardLink,
+  CardDocRef,
+  CardDorReady,
+  BoardDefinitionOfDone,
+} from "@/app/board/[id]/page";
+import { assertDodAllowsCompleting } from "@/lib/board-scrum";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import {
@@ -59,6 +67,10 @@ export interface CardModalProps {
   onOpenExistingCard?: (cardId: string) => void;
   /** Anexa o rascunho atual ao card indicado e fecha o modal. */
   onMergeDraftIntoExisting?: (targetCardId: string, payload: { title: string; description: string; tags: string[] }) => void;
+  definitionOfDone?: BoardDefinitionOfDone;
+  /** Colunas consideradas “feito” para validação DoD (resolvido no pai). */
+  doneBucketKeys: string[];
+  completedProgressLabel?: string;
 }
 
 export type CardModalContextValue = {
@@ -136,6 +148,11 @@ export type CardModalContextValue = {
   setDirection: (v: string | null) => void;
   dorReady: CardDorReady;
   setDorReady: Dispatch<SetStateAction<CardDorReady>>;
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
+  completedProgressLabel: string;
+  dodChecks: Record<string, boolean>;
+  setDodChecks: Dispatch<SetStateAction<Record<string, boolean>>>;
   smartEnrichBusy: boolean;
   smartEnrichPending: Set<SmartEnrichFieldKey> | null;
   smartEnrichMeta: {
@@ -197,6 +214,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     onDelete,
     onOpenExistingCard,
     onMergeDraftIntoExisting,
+    definitionOfDone,
+    doneBucketKeys,
+    completedProgressLabel = "Concluída",
   } = props;
   const directions = directionsProp ?? [];
 
@@ -220,6 +240,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
   );
   const [dorReady, setDorReady] = useState<CardDorReady>(() => ({ ...(card.dorReady ?? {}) }));
+  const [dodChecks, setDodChecks] = useState<Record<string, boolean>>({});
   const [blockedBy, setBlockedBy] = useState<string[]>(() =>
     Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
   );
@@ -322,6 +343,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       JSON.stringify(card.links || []),
       JSON.stringify(card.docRefs || []),
       JSON.stringify(card.dorReady || {}),
+      JSON.stringify(card.dodChecks || {}),
+      JSON.stringify(definitionOfDone?.items || []),
     ].join("\u0002");
   }, [
     card.id,
@@ -342,6 +365,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     JSON.stringify(card.docRefs),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(card.dorReady),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.dodChecks),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(definitionOfDone?.items),
   ]);
 
   useEffect(() => {
@@ -359,6 +386,13 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
     );
     setDorReady({ ...(card.dorReady ?? {}) });
+    {
+      const nextDod: Record<string, boolean> = {};
+      for (const it of definitionOfDone?.items ?? []) {
+        if ((card.dodChecks ?? {})[it.id] === true) nextDod[it.id] = true;
+      }
+      setDodChecks(nextDod);
+    }
     setBlockedBy(Array.isArray(card.blockedBy) ? [...card.blockedBy] : []);
     setDepSearch("");
     setTags(new Set(card.tags || []));
@@ -635,6 +669,32 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     if (dorReady.acceptanceOk) dorPatch.acceptanceOk = true;
     if (dorReady.depsOk) dorPatch.depsOk = true;
     if (dorReady.sizedOk) dorPatch.sizedOk = true;
+    const dodChecksOut: Record<string, boolean> = {};
+    if (definitionOfDone?.enabled && definitionOfDone.items.length) {
+      for (const it of definitionOfDone.items) {
+        if (dodChecks[it.id] === true) dodChecksOut[it.id] = true;
+      }
+    }
+    const draftForGate: CardData = {
+      ...card,
+      id: finalId,
+      bucket,
+      priority,
+      progress,
+      dodChecks: Object.keys(dodChecksOut).length > 0 ? dodChecksOut : undefined,
+    };
+    const gate = assertDodAllowsCompleting({
+      card: draftForGate,
+      nextBucket: bucket,
+      nextProgress: progress,
+      doneBucketKeys,
+      completedProgressLabel,
+      def: definitionOfDone,
+    });
+    if (!gate.ok) {
+      pushToast({ kind: "error", title: gate.message });
+      return;
+    }
     onSave({
       ...card,
       id: finalId,
@@ -646,6 +706,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dueDate: dueDate || null,
       direction,
       blockedBy: nextBlocked,
+      ...(Object.keys(dodChecksOut).length > 0 ? { dodChecks: dodChecksOut } : { dodChecks: undefined }),
       ...(Object.keys(dorPatch).length > 0 ? { dorReady: dorPatch } : { dorReady: undefined }),
       tags: [...tags],
       links: links.filter((l) => {
@@ -677,6 +738,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     dueDate,
     direction,
     dorReady,
+    dodChecks,
+    definitionOfDone,
+    doneBucketKeys,
+    completedProgressLabel,
     tags,
     links,
     docRefs,
@@ -900,6 +965,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setDirection,
       dorReady,
       setDorReady,
+      definitionOfDone,
+      doneBucketKeys,
+      completedProgressLabel,
+      dodChecks,
+      setDodChecks,
       blockedBy,
       setBlockedBy,
       depSearch,
@@ -979,6 +1049,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dueDate,
       direction,
       dorReady,
+      definitionOfDone,
+      doneBucketKeys,
+      completedProgressLabel,
+      dodChecks,
       blockedBy,
       depSearch,
       tags,

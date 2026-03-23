@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
-import type { BoardData, CardData } from "@/app/board/[id]/page";
+import type { BoardData, BoardDefinitionOfDone, CardData } from "@/app/board/[id]/page";
 import { useBoardStore } from "@/stores/board-store";
 import { CardModal } from "./card-modal";
 import { DescModal } from "./desc-modal";
@@ -73,6 +73,8 @@ export type KanbanBoardOverlaysProps = {
   ) => void;
   /** Após excluir vários cards (confirmação). */
   onCardsBatchDeleted?: () => void;
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
 };
 
 function parseWipDraft(
@@ -134,6 +136,8 @@ export function KanbanBoardOverlays({
   onOpenExistingCard,
   onMergeDraftIntoExisting,
   onCardsBatchDeleted,
+  definitionOfDone,
+  doneBucketKeys,
 }: KanbanBoardOverlaysProps) {
   const { pushToast } = useToast();
   const [columnWipDraft, setColumnWipDraft] = useState("");
@@ -181,6 +185,8 @@ export function KanbanBoardOverlays({
           onCreateLabel={createLabel}
           onDeleteLabel={deleteLabel}
           peerCards={cards.filter((c) => c.id && c.id !== modalCard.id)}
+          definitionOfDone={definitionOfDone}
+          doneBucketKeys={doneBucketKeys}
           onClose={() => setModalCard(null)}
           onSave={(updated) => {
             updateDb((d) => {

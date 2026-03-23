@@ -5,6 +5,8 @@ import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schema
 import { validateBoardWip, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
+import { validateDodOnBoardPut } from "@/lib/board-scrum";
+import type { BucketConfig } from "@/app/board/[id]/page";
 
 export async function GET(
   request: NextRequest,
@@ -83,6 +85,24 @@ export async function PUT(
       const prevBoard = await getBoard(boardId, payload.orgId);
       if (!prevBoard) {
         return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
+      }
+      const prevCfg = (prevBoard.config || {}) as Record<string, unknown>;
+      const patchCfg = (clean.config || {}) as Record<string, unknown>;
+      const mergedBucketOrder = (patchCfg.bucketOrder as unknown[] | undefined) ?? (prevCfg.bucketOrder as unknown[] | undefined) ?? [];
+      const mergedDef =
+        patchCfg.definitionOfDone === null
+          ? undefined
+          : patchCfg.definitionOfDone !== undefined
+            ? patchCfg.definitionOfDone
+            : prevCfg.definitionOfDone;
+      const dodGate = validateDodOnBoardPut({
+        prevCards: (prevBoard.cards || []) as unknown[],
+        nextCards: clean.cards as unknown[],
+        bucketOrder: mergedBucketOrder as BucketConfig[],
+        definitionOfDone: mergedDef as import("@/app/board/[id]/page").BoardDefinitionOfDone | undefined,
+      });
+      if (!dodGate.ok) {
+        return NextResponse.json({ error: dodGate.message }, { status: 400 });
       }
       const { cards } = await runSyncAutomationsOnBoardPut({
         prevBoard,

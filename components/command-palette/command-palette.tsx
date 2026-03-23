@@ -238,6 +238,24 @@ export function CommandPalette() {
         action: { type: "boardDeep", boardId: b.id, query: "standup=1" },
         icon: "actions",
       });
+      items.push({
+        id: `scrum:${b.id}`,
+        category: "actions",
+        title: t("actions.scrumSettings", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `scrum dod product goal backlog ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+        icon: "actions",
+      });
+      items.push({
+        id: `increment:${b.id}`,
+        category: "actions",
+        title: t("actions.incrementReview", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `increment review entregue sprint ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "incrementReview=1" },
+        icon: "actions",
+      });
     }
 
     for (const rc of recentCards) {

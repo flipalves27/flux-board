@@ -1,4 +1,4 @@
-import type { BoardData, BucketConfig, CardData } from "@/app/board/[id]/page";
+import type { BoardData, BoardDefinitionOfDone, BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { SubtaskData } from "@/lib/schemas";
 import {
   CardAutomationStateSchema,
@@ -63,6 +63,9 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     : [];
   const bucketKeys = new Set(bucketOrderRaw.map((b) => b.key));
   const fallbackBucket = bucketOrderRaw[0]?.key ?? "Backlog";
+  const dodValidIds = new Set(
+    (db.config?.definitionOfDone?.items ?? []).map((it) => String(it.id || "").trim()).filter(Boolean)
+  );
 
   const cards: CardData[] = (db.cards ?? []).map((raw) => {
     const c = raw as CardPersistSource;
@@ -75,6 +78,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     delete rest.completedCycleDays;
     delete rest.automationState;
     delete rest.dorReady;
+    delete rest.dodChecks;
     const title = String(c.title ?? "").trim().slice(0, 300);
     const orderRaw = Number(c.order);
     const order = Number.isFinite(orderRaw)
@@ -160,6 +164,16 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       if (dr.sizedOk === true) d.sizedOk = true;
       if (Object.keys(d).length) base.dorReady = d as CardData["dorReady"];
     }
+    const rawDod = (c as { dodChecks?: unknown }).dodChecks;
+    if (dodValidIds.size > 0 && rawDod && typeof rawDod === "object") {
+      const chk: Record<string, boolean> = {};
+      for (const [k, v] of Object.entries(rawDod as Record<string, unknown>)) {
+        const id = String(k).trim().slice(0, 80);
+        if (!dodValidIds.has(id) || v !== true) continue;
+        chk[id] = true;
+      }
+      if (Object.keys(chk).length > 0) base.dodChecks = chk;
+    }
     return base as unknown as CardData;
   });
 
@@ -176,6 +190,55 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     intakeForm = omitEntryNulls({ ...(intakeForm as unknown as Record<string, unknown>) }) as BoardData["intakeForm"];
   }
 
+  const productGoalRaw = db.config?.productGoal;
+  const productGoal =
+    typeof productGoalRaw === "string" && productGoalRaw.trim()
+      ? productGoalRaw.trim().slice(0, 800)
+      : undefined;
+  const backlogKeyRaw = db.config?.backlogBucketKey;
+  const backlogBucketKey =
+    typeof backlogKeyRaw === "string" &&
+    backlogKeyRaw.trim() &&
+    bucketOrder.some((b) => b.key === backlogKeyRaw.trim())
+      ? backlogKeyRaw.trim().slice(0, 200)
+      : undefined;
+  let definitionOfDone: BoardDefinitionOfDone | undefined;
+  const defRaw = db.config?.definitionOfDone;
+  if (defRaw && typeof defRaw === "object") {
+    const enabled = defRaw.enabled === true;
+    const enforce = defRaw.enforce === true;
+    const items = Array.isArray(defRaw.items)
+      ? defRaw.items
+          .filter((it): it is { id: string; label: string } => Boolean(it && typeof it === "object"))
+          .map((it) => ({
+            id: String((it as { id?: string }).id ?? "")
+              .trim()
+              .slice(0, 80),
+            label: String((it as { label?: string }).label ?? "")
+              .trim()
+              .slice(0, 300),
+          }))
+          .filter((it) => it.id && it.label)
+          .slice(0, 20)
+      : [];
+    const dkRaw = defRaw.doneBucketKeys;
+    const doneBucketKeys =
+      Array.isArray(dkRaw) && dkRaw.length > 0
+        ? [...new Set(dkRaw.map((k) => String(k).trim().slice(0, 200)).filter((k) => bucketKeys.has(k)))].slice(
+            0,
+            20
+          )
+        : undefined;
+    if (enabled || items.length > 0 || (doneBucketKeys?.length ?? 0) > 0) {
+      definitionOfDone = {
+        enabled,
+        enforce,
+        ...(doneBucketKeys?.length ? { doneBucketKeys } : {}),
+        items,
+      };
+    }
+  }
+
   const result = {
     ...db,
     cards,
@@ -188,6 +251,9 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       labels: db.config?.labels?.length
         ? db.config.labels.map((l) => String(l).trim().slice(0, 200)).filter(Boolean)
         : db.config?.labels,
+      ...(productGoal ? { productGoal } : {}),
+      ...(backlogBucketKey ? { backlogBucketKey } : {}),
+      ...(definitionOfDone ? { definitionOfDone } : {}),
     },
     ...(intakeForm !== undefined ? { intakeForm } : {}),
   } as BoardData;

@@ -186,7 +186,9 @@
       "flowHealth": "Saúde do fluxo — {board}",
       "sprintPanel": "Abrir painel Sprint — {board}",
       "sprintCoach": "Coach de sprint (IA) — {board}",
-      "standup": "Iniciar standup — {board}"
+      "standup": "Iniciar standup — {board}",
+      "scrumSettings": "Scrum e DoD — {board}",
+      "incrementReview": "Incremento / review — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1042,6 +1044,11 @@
   },
   "board": {
     "clientLabelInHeader": "Cliente: {label}",
+    "persistence": {
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "error": "Falha ao salvar"
+    },
     "loading": "Carregando board...",
     "anomalyAlerts": {
       "open": "Alertas",
@@ -1291,6 +1298,20 @@
         "dor": {
           "title": "Refinamento (Definition of Ready)",
           "description": "Marque o que está pronto antes de puxar o item para o sprint."
+        },
+        "dod": {
+          "title": "Definition of Done",
+          "description": "Checklist do board — obrigatória para concluir quando a regra estiver ativa."
+        },
+        "refineAi": {
+          "title": "Refinamento de backlog (IA)",
+          "description": "Sugestões de critérios de aceite, riscos e dependências — revise antes de adotar.",
+          "cta": "Gerar sugestões",
+          "loading": "Analisando card…",
+          "apply": "Anexar à descrição",
+          "appliedToast": "Conteúdo anexado ao bloco Observações.",
+          "error": "Não foi possível gerar o refinamento.",
+          "empty": "Informe título e descrição primeiro."
         },
         "unblock": {
           "title": "Assistente de desbloqueio (IA)",
@@ -1996,6 +2017,49 @@
         "sprintAll": "Mostrar todos os cards",
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
+      },
+      "productGoalStrip": {
+        "label": "Meta do produto",
+        "emptyGoal": "Nenhuma meta ainda — defina em Scrum e DoD.",
+        "backlogBadge": "Backlog: {column}",
+        "incrementReview": "Incremento / review",
+        "editScrum": "Scrum e DoD",
+        "accountBrief": "Brief da conta (IA)",
+        "briefLoading": "Gerando brief…",
+        "briefError": "Não foi possível gerar o brief.",
+        "briefRefresh": "Atualizar",
+        "briefClose": "Fechar"
+      },
+      "scrumSettings": {
+        "title": "Scrum no Kanban — meta do produto e Definition of Done",
+        "closeAria": "Fechar",
+        "productGoal": "Meta do produto (Product Goal)",
+        "productGoalPlaceholder": "Qual resultado este board busca para o cliente ou produto?",
+        "backlogColumn": "Coluna de product backlog",
+        "backlogAuto": "Automático (nome Backlog ou primeira coluna)",
+        "backlogHint": "Nesta coluna, a ordem dos cards (de cima para baixo) é a prioridade do backlog — arraste para ranquear.",
+        "dodEnabled": "Ativar checklist Definition of Done nos cards",
+        "dodEnforce": "Impedir mover para coluna “feito” ou marcar concluído sem marcar todos os itens",
+        "dodItems": "Itens do DoD (um por linha)",
+        "dodPlaceholder": "Testes passando\nDocumentação atualizada\nAceite do stakeholder",
+        "doneColumns": "Colunas que contam como concluído",
+        "doneColumnsHint": "Deixe todas desmarcadas para detectar pelo nome (ex.: Concluído, Done, Produção).",
+        "cancel": "Cancelar",
+        "save": "Salvar"
+      },
+      "incrementReview": {
+        "title": "Incremento — o que foi entregue",
+        "closeAria": "Fechar",
+        "tabRolling": "Últimos 14 dias",
+        "tabSprint": "Sprint ativo",
+        "copyMarkdown": "Copiar em Markdown",
+        "copied": "Copiado para a área de transferência.",
+        "copyFailed": "Não foi possível copiar.",
+        "empty": "Nenhum card concluído nesta visão.",
+        "exportTitleRolling": "## Entregues (últimos 14 dias)",
+        "exportTitleSprint": "## Entregues no sprint — {name}",
+        "portalHint": "Visão somente leitura:",
+        "close": "Fechar"
       },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",

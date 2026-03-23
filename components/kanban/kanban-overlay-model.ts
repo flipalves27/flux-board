@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { BoardData } from "@/app/board/[id]/page";
+import type { BoardData, BoardDefinitionOfDone } from "@/app/board/[id]/page";
 import type { DailyInsightsPanelProps } from "./DailyInsightsPanel";
 import type { KanbanBoardOverlaysProps } from "./kanban-board-overlays";
 
@@ -84,6 +84,8 @@ export function buildKanbanOverlayModel(args: {
   progresses: KanbanBoardOverlaysProps["progresses"];
   directions: KanbanBoardOverlaysProps["directions"];
   mapaProducao: BoardData["mapaProducao"];
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
   board: BoardState;
   dailyOpen: boolean;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
@@ -93,8 +95,20 @@ export function buildKanbanOverlayModel(args: {
   dailyDialogRef: RefObject<HTMLDivElement | null>;
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
 }): KanbanBoardOverlaysProps {
-  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, directions, mapaProducao, t } =
-    args;
+  const {
+    board,
+    dailyOpen,
+    boardName,
+    boardId,
+    getHeaders,
+    priorities,
+    progresses,
+    directions,
+    mapaProducao,
+    definitionOfDone,
+    doneBucketKeys,
+    t,
+  } = args;
   const d = board.dailySession;
 
   const dailyPanelProps: DailyInsightsPanelProps = {
@@ -185,5 +199,7 @@ export function buildKanbanOverlayModel(args: {
     confirmCsvImport: board.confirmCsvImport,
     dailyOpen,
     dailyPanelProps,
+    definitionOfDone,
+    doneBucketKeys,
   };
 }

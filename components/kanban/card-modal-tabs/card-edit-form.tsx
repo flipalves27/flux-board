@@ -75,9 +75,13 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     getHeaders,
     dorReady,
     setDorReady,
+    definitionOfDone,
+    dodChecks,
+    setDodChecks,
     openExistingCard,
     mergeDraftIntoExistingCard,
     t,
+    pushToast,
   } = useCardModal();
 
   const [unblockBusy, setUnblockBusy] = useState(false);
@@ -106,6 +110,60 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
       setUnblockBusy(false);
     }
   }, [boardId, getHeaders, selfId]);
+
+  const [refineBusy, setRefineBusy] = useState(false);
+  const [refinePreview, setRefinePreview] = useState<string | null>(null);
+
+  const runRefineAi = useCallback(async () => {
+    const tit = title.trim();
+    const desc = descriptionForSave.trim();
+    if (tit.length < 2) {
+      pushToast({ kind: "error", title: t("cardModal.sections.refineAi.empty") });
+      return;
+    }
+    setRefineBusy(true);
+    setRefinePreview(null);
+    try {
+      const res = await apiPost<{
+        ok?: boolean;
+        parsed?: {
+          acceptanceCriteria: string[];
+          risks: string[];
+          dependencies: string[];
+          notes?: string;
+        };
+        raw?: string;
+        error?: string;
+      }>(
+        `/api/boards/${encodeURIComponent(boardId)}/refine-ai`,
+        { title: tit, description: desc },
+        getHeaders()
+      );
+      if (res.error) throw new Error(res.error);
+      if (res.parsed) {
+        const lines = [
+          "### Refinamento (IA)",
+          "",
+          "**Critérios de aceite**",
+          ...res.parsed.acceptanceCriteria.map((x) => `- ${x}`),
+          "",
+          "**Riscos**",
+          ...res.parsed.risks.map((x) => `- ${x}`),
+          "",
+          "**Dependências**",
+          ...res.parsed.dependencies.map((x) => `- ${x}`),
+          res.parsed.notes ? `\n_${res.parsed.notes}_` : "",
+        ].join("\n");
+        setRefinePreview(lines);
+      } else if (res.raw) {
+        setRefinePreview(res.raw);
+      }
+    } catch {
+      pushToast({ kind: "error", title: t("cardModal.sections.refineAi.error") });
+    } finally {
+      setRefineBusy(false);
+    }
+  }, [boardId, descriptionForSave, getHeaders, title, pushToast, t]);
 
   const [dupMatches, setDupMatches] = useState<DupMatch[]>([]);
   const [dupLoading, setDupLoading] = useState(false);
@@ -656,6 +714,68 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             </label>
           ))}
         </div>
+      </CardModalSection>
+
+      {definitionOfDone?.enabled && definitionOfDone.items.length > 0 ? (
+        <CardModalSection
+          title={t("cardModal.sections.dod.title")}
+          description={t("cardModal.sections.dod.description")}
+        >
+          <div className="space-y-2">
+            {definitionOfDone.items.map((it) => (
+              <label key={it.id} className="flex items-start gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(dodChecks[it.id])}
+                  onChange={() =>
+                    setDodChecks((prev) => {
+                      const next = { ...prev };
+                      if (next[it.id]) delete next[it.id];
+                      else next[it.id] = true;
+                      return next;
+                    })
+                  }
+                  className="mt-1 rounded border-[var(--flux-chrome-alpha-20)]"
+                />
+                <span>{it.label}</span>
+              </label>
+            ))}
+          </div>
+        </CardModalSection>
+      ) : null}
+
+      <CardModalSection
+        title={t("cardModal.sections.refineAi.title")}
+        description={t("cardModal.sections.refineAi.description")}
+      >
+        <button
+          type="button"
+          disabled={refineBusy}
+          onClick={() => void runRefineAi()}
+          className="btn-secondary text-sm py-2 px-3 disabled:opacity-50"
+        >
+          {refineBusy ? t("cardModal.sections.refineAi.loading") : t("cardModal.sections.refineAi.cta")}
+        </button>
+        {refinePreview ? (
+          <div className="mt-3 space-y-2">
+            <pre className="whitespace-pre-wrap rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] p-3 text-[12px] text-[var(--flux-text)] max-h-48 overflow-y-auto scrollbar-kanban">
+              {refinePreview}
+            </pre>
+            <button
+              type="button"
+              className="btn-primary text-sm py-2 px-3"
+              onClick={() => {
+                setDescBlocks((prev) => ({
+                  ...prev,
+                  notes: [String(prev.notes ?? "").trim(), refinePreview].filter(Boolean).join("\n\n").trim(),
+                }));
+                pushToast({ kind: "success", title: t("cardModal.sections.refineAi.appliedToast") });
+              }}
+            >
+              {t("cardModal.sections.refineAi.apply")}
+            </button>
+          </div>
+        ) : null}
       </CardModalSection>
 
       {blockedBy.length > 0 && selfId && !String(selfId).startsWith("NEW-") ? (
