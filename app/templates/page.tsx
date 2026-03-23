@@ -18,6 +18,7 @@ type Row = {
   category: TemplateCategory;
   pricingTier: "free" | "premium";
   creatorOrgName?: string;
+  templateKind?: "kanban" | "priority_matrix";
 };
 
 export default function TemplatesShowcasePage() {
@@ -130,8 +131,13 @@ export default function TemplatesShowcasePage() {
                 className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]/80 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
               >
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-display font-semibold text-[var(--flux-text)]">{r.title}</h3>
+                    {r.templateKind === "priority_matrix" && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-primary-alpha-15)] text-[var(--flux-primary)] border border-[var(--flux-primary-alpha-25)]">
+                        {t("matrixBadge")}
+                      </span>
+                    )}
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                         r.pricingTier === "premium"

@@ -4,7 +4,7 @@ import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { createPublishedTemplate } from "@/lib/kv-templates";
-import { buildTemplateSnapshotFromBoard } from "@/lib/template-snapshot";
+import { buildPriorityMatrixSnapshotFromBoard, buildTemplateSnapshotFromBoard } from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -27,8 +27,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
 
-  const rules = await getBoardAutomationRules(boardId, payload.orgId);
-  const snapshot = buildTemplateSnapshotFromBoard(board, rules);
+  const kind = parsed.data.templateKind ?? "kanban";
+  let snapshot;
+  if (kind === "priority_matrix") {
+    const selections = parsed.data.priorityMatrixSelections ?? [];
+    try {
+      snapshot = buildPriorityMatrixSnapshotFromBoard(board, selections);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot da matriz.";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  } else {
+    const rules = await getBoardAutomationRules(boardId, payload.orgId);
+    snapshot = buildTemplateSnapshotFromBoard(board, rules);
+  }
   const org = await getOrganizationById(payload.orgId);
 
   const tpl = await createPublishedTemplate({

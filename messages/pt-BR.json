@@ -293,6 +293,7 @@
   },
   "templates": {
     "title": "Templates & showcase",
+    "matrixBadge": "Matriz",
     "subtitle": "Importe colunas, rótulos e automações sem cards. Premium com repasse 70/30 ao criador.",
     "loading": "Carregando catálogo…",
     "loadError": "Não foi possível carregar os templates.",
@@ -344,6 +345,23 @@
     "exportModal": {
       "title": "Publicar como template",
       "hint": "Exporta colunas, automações e rótulos (sem cards). Visível no showcase.",
+      "hintMatrix": "Matriz Eisenhower em quatro colunas; inclua cópias dos cards escolhidos (sem vínculo com o board de origem após importar).",
+      "templateKind": "Tipo de template",
+      "templateKindKanban": "Kanban (estrutura)",
+      "templateKindMatrix": "Matriz de priorização",
+      "sourceBoard": "Board de origem",
+      "loadingCards": "Carregando cards…",
+      "noCards": "Nenhum card neste board.",
+      "cardSearch": "Buscar por título ou ID…",
+      "cardsHeading": "Incluir cards e quadrante",
+      "boardLoadError": "Não foi possível carregar o board.",
+      "publishError": "Erro ao publicar.",
+      "quadrants": {
+        "do_first": "Urgente e importante",
+        "schedule": "Importante, não urgente",
+        "delegate": "Urgente, não importante",
+        "eliminate": "Nem urgente nem importante"
+      },
       "fieldTitle": "Título",
       "titlePlaceholder": "Meu pipeline de vendas",
       "fieldDesc": "Descrição",

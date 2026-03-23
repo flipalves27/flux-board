@@ -140,6 +140,8 @@ export function isSafeLinkUrl(url: string): boolean {
 
 export const BoardMethodologySchema = z.enum(["scrum", "kanban"]);
 
+export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
+
 export const BoardTemplateSnapshotSchema = z.object({
   config: z.object({
     bucketOrder: z.array(z.unknown()),
@@ -150,6 +152,8 @@ export const BoardTemplateSnapshotSchema = z.object({
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
+  templateKind: z.enum(["kanban", "priority_matrix"]).optional(),
+  templateCards: z.array(z.unknown()).optional(),
 });
 
 export const BoardCreateSchema = z
@@ -419,21 +423,41 @@ export const PortalBrandingSchema = z
   .passthrough();
 
 /** Atualização parcial de branding da organização (Enterprise). */
-export const TemplateExportBodySchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(2000).optional().default(""),
-  category: z.enum([
-    "sales",
-    "operations",
-    "projects",
-    "hr",
-    "marketing",
-    "customer_success",
-    "support",
-    "insurance_warranty",
-  ]),
-  pricingTier: z.enum(["free", "premium"]),
-});
+export const TemplateExportBodySchema = z
+  .object({
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().max(2000).optional().default(""),
+    category: z.enum([
+      "sales",
+      "operations",
+      "projects",
+      "hr",
+      "marketing",
+      "customer_success",
+      "support",
+      "insurance_warranty",
+    ]),
+    pricingTier: z.enum(["free", "premium"]),
+    templateKind: z.enum(["kanban", "priority_matrix"]).optional().default("kanban"),
+    priorityMatrixSelections: z
+      .array(
+        z.object({
+          cardId: z.string().trim().min(1).max(200),
+          quadrantKey: PriorityMatrixQuadrantKeySchema,
+        })
+      )
+      .max(100)
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "priorityMatrixSelections só é permitido com templateKind priority_matrix.",
+        path: ["priorityMatrixSelections"],
+      });
+    }
+  });
 
 const brandingImageUrl = z.union([
   z.string().trim().url().max(4096),

@@ -22,6 +22,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       creatorRevenueSharePercent: tpl.creatorRevenueSharePercent,
       creatorOrgName: tpl.creatorOrgName,
       createdAt: tpl.createdAt,
+      templateKind: tpl.snapshot.templateKind ?? "kanban",
       snapshot: tpl.snapshot,
     },
   });

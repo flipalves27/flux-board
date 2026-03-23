@@ -293,6 +293,7 @@
   },
   "templates": {
     "title": "Templates & showcase",
+    "matrixBadge": "Matrix",
     "subtitle": "Import columns, labels, and automations without cards. Premium uses a 70/30 creator/platform split.",
     "loading": "Loading catalog…",
     "loadError": "Could not load templates.",
@@ -344,6 +345,23 @@
     "exportModal": {
       "title": "Publish as template",
       "hint": "Exports columns, automations, and labels (no cards). Visible in the showcase.",
+      "hintMatrix": "Eisenhower matrix as four columns; include copies of selected cards (no link to the source board after import).",
+      "templateKind": "Template type",
+      "templateKindKanban": "Kanban (structure)",
+      "templateKindMatrix": "Priority matrix",
+      "sourceBoard": "Source board",
+      "loadingCards": "Loading cards…",
+      "noCards": "No cards on this board.",
+      "cardSearch": "Search by title or ID…",
+      "cardsHeading": "Include cards and quadrant",
+      "boardLoadError": "Could not load the board.",
+      "publishError": "Could not publish.",
+      "quadrants": {
+        "do_first": "Urgent & important",
+        "schedule": "Important, not urgent",
+        "delegate": "Urgent, not important",
+        "eliminate": "Neither urgent nor important"
+      },
       "fieldTitle": "Title",
       "titlePlaceholder": "My sales pipeline",
       "fieldDesc": "Description",

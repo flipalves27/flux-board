@@ -15,7 +15,12 @@ export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
 export type TemplatePricingTier = "free" | "premium";
 
-/** Snapshot sem cards — apenas estrutura, automações e rótulos derivados. */
+/** Padrão: estrutura Kanban sem cards; `priority_matrix` inclui cópias de cards nos quadrantes. */
+export type TemplateKind = "kanban" | "priority_matrix";
+
+export const PRIORITY_MATRIX_QUADRANT_KEYS = ["do_first", "schedule", "delegate", "eliminate"] as const;
+export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[number];
+
 export type BoardTemplateSnapshot = {
   config: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
   mapaProducao: unknown[];
@@ -24,6 +29,10 @@ export type BoardTemplateSnapshot = {
   automations: AutomationRule[];
   /** Opcional: metodologia do quadro exportado. */
   boardMethodology?: "scrum" | "kanban";
+  /** Ausente ou `kanban`: snapshot clássico; `priority_matrix`: quatro colunas + `templateCards`. */
+  templateKind?: TemplateKind;
+  /** Cópias serializáveis para import (novos ids na criação do board). */
+  templateCards?: unknown[];
 };
 
 export type PublishedTemplate = {

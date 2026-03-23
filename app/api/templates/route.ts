@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       creatorRevenueSharePercent: t.creatorRevenueSharePercent,
       creatorOrgName: t.creatorOrgName,
       createdAt: t.createdAt,
+      templateKind: t.snapshot.templateKind ?? "kanban",
     })),
   });
 }
