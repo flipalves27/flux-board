@@ -41,21 +41,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
-const FILTER_LABELS = [
-  "Comercial",
-  "Corretor",
-  "Financial Lines (D&O)",
-  "Incidente",
-  "Negócio",
-  "Portal do Corretor",
-  "RCG",
-  "Geral",
-  "Ressegurador",
-  "Segurado",
-  "Subscrição",
-  "Tomador",
-];
-
 const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
 const DIRECTIONS = ["Manter", "Priorizar", "Adiar", "Cancelar", "Reavaliar"];
@@ -256,9 +241,9 @@ function sanitizeCollapsedColumns(raw: unknown, bucketOrder: BucketConfig[]): st
 }
 
 function sanitizeLabels(raw: unknown): string[] {
-  if (!Array.isArray(raw) || raw.length === 0) return FILTER_LABELS;
+  if (!Array.isArray(raw) || raw.length === 0) return [];
   const labels = raw.filter((label): label is string => typeof label === "string" && label.trim().length > 0);
-  return labels.length > 0 ? labels : FILTER_LABELS;
+  return labels.length > 0 ? labels : [];
 }
 
 function sanitizeDorReady(raw: unknown): CardDorReady | undefined {
@@ -825,7 +810,6 @@ export default function BoardPage() {
             boardName={boardName}
             boardId={boardId}
             getHeaders={getHeaders}
-            filterLabels={FILTER_LABELS}
             priorities={PRIORITIES}
             progresses={PROGRESSES}
             directions={DIRECTIONS}

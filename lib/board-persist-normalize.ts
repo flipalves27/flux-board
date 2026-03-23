@@ -58,6 +58,10 @@ function normalizeBucket(b: BucketConfig): BucketConfig {
  * Evita 400 ao mover colunas quando algum card legado tem título vazio, order inválido ou links quebrados.
  */
 export function normalizeBoardForPersist(db: BoardData): BoardData {
+  const normalizedLabels = Array.isArray(db.config?.labels)
+    ? [...new Set(db.config.labels.map((l) => String(l).trim().slice(0, 200)).filter(Boolean))]
+    : [];
+  const normalizedLabelSet = new Set(normalizedLabels);
   const bucketOrderRaw = db.config?.bucketOrder?.length
     ? db.config.bucketOrder.map(normalizeBucket)
     : [];
@@ -128,7 +132,12 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       progress,
       title: title.length > 0 ? title : TITLE_FALLBACK,
       desc: String(c.desc ?? "").slice(0, 6000),
-      tags: Array.isArray(c.tags) ? c.tags.map((t) => String(t).trim().slice(0, 60)).slice(0, 30) : [],
+      tags: Array.isArray(c.tags)
+        ? c.tags
+            .map((t) => String(t).trim().slice(0, 60))
+            .filter((t) => normalizedLabelSet.has(t))
+            .slice(0, 30)
+        : [],
       links,
       docRefs,
       direction: c.direction != null ? String(c.direction).trim().slice(0, 100) || null : null,
@@ -248,9 +257,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       collapsedColumns: (db.config?.collapsedColumns ?? [])
         .map((k) => String(k).trim().slice(0, 200))
         .filter((k) => bucketOrder.some((b) => b.key === k)),
-      labels: db.config?.labels?.length
-        ? db.config.labels.map((l) => String(l).trim().slice(0, 200)).filter(Boolean)
-        : db.config?.labels,
+      labels: normalizedLabels,
       ...(productGoal ? { productGoal } : {}),
       ...(backlogBucketKey ? { backlogBucketKey } : {}),
       ...(definitionOfDone ? { definitionOfDone } : {}),

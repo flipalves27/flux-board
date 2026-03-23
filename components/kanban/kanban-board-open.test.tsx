@@ -123,7 +123,6 @@ function BoardHarness() {
           boardName="Board teste"
           boardId={BOARD_ID}
           getHeaders={() => ({})}
-          filterLabels={["Comercial"]}
           priorities={["Urgente", "Importante", "Média"]}
           progresses={["Não iniciado", "Em andamento", "Concluída"]}
           directions={["Manter", "Priorizar"]}

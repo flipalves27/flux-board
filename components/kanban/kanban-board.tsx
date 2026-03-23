@@ -106,7 +106,6 @@ export interface KanbanBoardProps {
   boardName: string;
   boardId: string;
   getHeaders: () => Record<string, string>;
-  filterLabels: string[];
   priorities: string[];
   progresses: string[];
   directions: string[];
@@ -120,7 +119,6 @@ function KanbanBoardLoaded({
   boardName,
   boardId,
   getHeaders,
-  filterLabels,
   priorities,
   progresses,
   directions,
@@ -249,7 +247,6 @@ function KanbanBoardLoaded({
   const board = useBoardState({
     boardId,
     getHeaders,
-    filterLabels,
     priorities,
     progresses,
     directions,

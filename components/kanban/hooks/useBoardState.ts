@@ -23,7 +23,6 @@ import { daysUntilDueDate } from "../utils/days-until-due";
 type UseBoardStateArgs = {
   boardId: string;
   getHeaders: () => Record<string, string>;
-  filterLabels: string[];
   priorities: string[];
   progresses: string[];
   directions: string[];
@@ -35,7 +34,6 @@ type UseBoardStateArgs = {
 export function useBoardState({
   boardId,
   getHeaders,
-  filterLabels,
   priorities,
   progresses,
   directions,
@@ -220,7 +218,7 @@ export function useBoardState({
   });
 
   const buckets = db.config.bucketOrder;
-  const boardLabels = db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
+  const boardLabels = db.config.labels ?? [];
   const collapsed = new Set(db.config.collapsedColumns || []);
   const cards = db.cards;
 
@@ -430,18 +428,18 @@ export function useBoardState({
       const normalized = label.trim();
       if (!normalized) return;
       updateDb((d) => {
-        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        const current = d.config.labels ?? [];
         if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return;
         d.config.labels = [...current, normalized];
       });
     },
-    [filterLabels, updateDb]
+    [updateDb]
   );
 
   const deleteLabel = useCallback(
     (label: string) => {
       updateDb((d) => {
-        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        const current = d.config.labels ?? [];
         if (!current.includes(label)) return;
         d.cards.forEach((c) => {
           c.tags = c.tags.filter((t) => t !== label);
@@ -453,7 +451,7 @@ export function useBoardState({
         activeLabels: prevLabels.filter((l) => l !== label),
       });
     },
-    [boardId, filterLabels, updateDb]
+    [boardId, updateDb]
   );
 
   const handleTimelineDueDate = useCallback(

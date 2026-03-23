@@ -12,7 +12,10 @@ export async function createBoardFromTemplateSnapshot(
   const board = await createBoard(orgId, userId, name, {
     version: "2.0",
     cards: [],
-    config: snap.config as BoardData["config"],
+    config: {
+      ...(snap.config as BoardData["config"]),
+      labels: [],
+    },
     mapaProducao: snap.mapaProducao,
     dailyInsights: [],
   });

@@ -26,7 +26,7 @@ export interface BoardData {
   clientLabel?: string;
   version?: string;
   cards?: unknown[];
-  config?: { bucketOrder: unknown[]; collapsedColumns?: string[] };
+  config?: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
   intakeForm?: unknown;
   mapaProducao?: unknown[];
   dailyInsights?: unknown[];
@@ -41,6 +41,39 @@ export interface BoardData {
 }
 
 type BoardDoc = Omit<BoardData, "id"> & { _id: string };
+
+function sanitizeBoardLabelsRelation(board: BoardData): BoardData {
+  const configRaw = board.config as BoardData["config"] | undefined;
+  const config: NonNullable<BoardData["config"]> = {
+    bucketOrder: Array.isArray(configRaw?.bucketOrder) ? configRaw.bucketOrder : [],
+    ...(Array.isArray(configRaw?.collapsedColumns) ? { collapsedColumns: configRaw.collapsedColumns } : {}),
+    ...(Array.isArray(configRaw?.labels) ? { labels: configRaw.labels } : {}),
+  };
+  const labelsRaw = Array.isArray(config.labels) ? config.labels : [];
+  const labels = [...new Set(labelsRaw.map((l: unknown) => String(l).trim()).filter(Boolean))];
+  const labelSet = new Set(labels);
+  const cards = Array.isArray(board.cards)
+    ? board.cards.map((card) => {
+        if (!card || typeof card !== "object") return card;
+        const cardObj = card as { tags?: unknown };
+        if (!Array.isArray(cardObj.tags)) return card;
+        return {
+          ...(card as Record<string, unknown>),
+          tags: cardObj.tags
+            .map((tag) => String(tag).trim())
+            .filter((tag) => labelSet.has(tag)),
+        };
+      })
+    : board.cards;
+  return {
+    ...board,
+    cards,
+    config: {
+      ...config,
+      labels,
+    },
+  };
+}
 
 function userBoardsKey(userId: string) {
   return BOARDS_PREFIX + userId;
@@ -182,12 +215,13 @@ export async function createBoard(
   name: string,
   data: Partial<BoardData>
 ): Promise<BoardData> {
+  const dataConfig = data.config as BoardData["config"] | undefined;
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureBoardIndexes(db);
     const counter = await nextBoardCounterMongo(db);
     const boardId = "b_" + counter;
-    const board: BoardData = {
+    const board = sanitizeBoardLabelsRelation({
       id: boardId,
       ownerId: userId,
       orgId,
@@ -195,7 +229,12 @@ export async function createBoard(
       ...data,
       createdAt: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
-    };
+      config: {
+        ...(dataConfig ?? { bucketOrder: [] }),
+        bucketOrder: Array.isArray(dataConfig?.bucketOrder) ? dataConfig.bucketOrder : [],
+        labels: [],
+      },
+    });
     await db.collection<BoardDoc>(COL_BOARDS).insertOne(boardDataToDoc(board));
     await db
       .collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS)
@@ -207,7 +246,7 @@ export async function createBoard(
   const counter = (((await kv.get<number>(BOARD_COUNTER)) as number) || 0) + 1;
   await kv.set(BOARD_COUNTER, counter);
   const boardId = "b_" + counter;
-  const board: BoardData = {
+  const board = sanitizeBoardLabelsRelation({
     id: boardId,
     ownerId: userId,
     orgId,
@@ -215,7 +254,12 @@ export async function createBoard(
     ...data,
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
-  };
+    config: {
+      ...(dataConfig ?? { bucketOrder: [] }),
+      bucketOrder: Array.isArray(dataConfig?.bucketOrder) ? dataConfig.bucketOrder : [],
+      labels: [],
+    },
+  });
   await kv.set(BOARD_PREFIX + boardId, JSON.stringify(board));
   const ids = ((await kv.get<string[]>(userBoardsKey(userId))) as string[]) || [];
   ids.push(boardId);
@@ -239,7 +283,7 @@ export async function updateBoardFromExisting(
   updates: Partial<BoardData>,
   activity?: BoardActivityContext
 ): Promise<BoardData> {
-  const nextBoard: BoardData = { ...board, ...updates };
+  const nextBoard: BoardData = sanitizeBoardLabelsRelation({ ...board, ...updates });
 
   // Se o clientLabel vier vazio, remove o campo para não “fixar” string vazia no layout.
   if ("clientLabel" in updates) {
