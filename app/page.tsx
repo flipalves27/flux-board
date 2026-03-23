@@ -173,6 +173,14 @@ function FaqItem({ question, answer, open, onToggle }: { question: string; answe
   );
 }
 
+function PlanChip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-elevated)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--flux-primary-light)]">
+      {label}
+    </span>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -357,6 +365,70 @@ export default function HomePage() {
         { label: t("pricing.features.dedicatedSupport"), included: true },
       ],
       inherit: t("pricing.allBusiness"),
+    },
+  ];
+
+  const chargeLabelByTier = {
+    free: t("pricing.plans.free.name"),
+    pro: `${t("pricing.plans.pro.name")} · ${formatBrl(proPrice)} ${priceSuffix}`,
+    business: `${t("pricing.plans.business.name")} · ${formatBrl(bizPrice)} ${priceSuffix}`,
+    enterprise: `${t("pricing.plans.enterprise.name")} · ${t("pricing.customPrice")}`,
+  } as const;
+
+  const roadmapItems = [
+    {
+      id: "sprint_engine",
+      title: locale === "pt-BR" ? "Sprint Engine e painel unificado" : "Sprint Engine and unified panel",
+      detail:
+        locale === "pt-BR"
+          ? "Planejamento, execução e fechamento de sprint com hub dedicado, previsões e fluxo de backlog."
+          : "Plan, run, and close sprints with a dedicated hub, forecasts, and backlog flow.",
+      tier: "pro" as const,
+    },
+    {
+      id: "ceremonies",
+      title: locale === "pt-BR" ? "Cerimônias Scrum/Kanban com IA" : "AI-assisted Scrum/Kanban ceremonies",
+      detail:
+        locale === "pt-BR"
+          ? "Planning, standup, review e retrospectiva com sugestões orientadas por contexto do board."
+          : "Planning, standup, review, and retro with board-context suggestions.",
+      tier: "business" as const,
+    },
+    {
+      id: "dependency_graph_visual",
+      title: locale === "pt-BR" ? "Mapa visual de dependências" : "Visual dependency map",
+      detail:
+        locale === "pt-BR"
+          ? "Dependências cross-board com análise de vínculo para reduzir bloqueios e atrasos."
+          : "Cross-board dependency mapping to reduce blockers and delays.",
+      tier: "business" as const,
+    },
+    {
+      id: "flux_docs_rag",
+      title: locale === "pt-BR" ? "Flux Docs + RAG no contexto do card" : "Flux Docs + card context RAG",
+      detail:
+        locale === "pt-BR"
+          ? "Base de conhecimento com busca semântica para enriquecer decisões no fluxo."
+          : "Knowledge base with semantic retrieval to enrich day-to-day decisions.",
+      tier: "pro" as const,
+    },
+    {
+      id: "anomaly_email",
+      title: locale === "pt-BR" ? "Anomalias proativas e alertas" : "Proactive anomalies and alerts",
+      detail:
+        locale === "pt-BR"
+          ? "Detecção de desvio em throughput, WIP e lead time com notificações e ação sugerida."
+          : "Deviation detection on throughput, WIP, and lead time with notifications and suggested actions.",
+      tier: "business" as const,
+    },
+    {
+      id: "custom_domain",
+      title: locale === "pt-BR" ? "SSO e domínio corporativo" : "SSO and custom corporate domain",
+      detail:
+        locale === "pt-BR"
+          ? "Governança enterprise com autenticação corporativa e ambiente de marca dedicado."
+          : "Enterprise governance with corporate authentication and dedicated branded environment.",
+      tier: "enterprise" as const,
     },
   ];
 
@@ -556,6 +628,35 @@ export default function HomePage() {
                   <h3 className="font-display text-base font-semibold">{cap.name}</h3>
                 </div>
                 <p className="flex-1 text-sm leading-relaxed text-[var(--flux-text-muted)]">{cap.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── Roadmap / Charge Mapping ─────────────────────────────────────── */}
+        <section className="home-landing-reveal mt-20 md:mt-24">
+          <div className="mb-8 max-w-3xl">
+            <h2 className="font-display text-2xl font-bold md:text-3xl">
+              {locale === "pt-BR" ? "Novas funcionalidades e cobrança por item" : "New capabilities and item-based billing"}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">
+              {locale === "pt-BR"
+                ? "Rastreamos os recursos recentes já aplicados no produto e indicamos o plano necessário para usar cada item."
+                : "Tracked recent capabilities already shipped in the product with the required plan for each item."}
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {roadmapItems.map((item) => (
+              <article
+                key={item.id}
+                className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-5"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="font-display text-base font-semibold">{item.title}</h3>
+                  <PlanChip label={item.tier} />
+                </div>
+                <p className="text-sm leading-relaxed text-[var(--flux-text-muted)]">{item.detail}</p>
+                <p className="mt-3 text-xs font-semibold text-[var(--flux-secondary)]">{chargeLabelByTier[item.tier]}</p>
               </article>
             ))}
           </div>
