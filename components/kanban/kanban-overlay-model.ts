@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import type { BoardData, BoardDefinitionOfDone } from "@/app/board/[id]/page";
+import type { BoardMethodology } from "@/lib/board-methodology";
 import type { DailyInsightsPanelProps } from "./DailyInsightsPanel";
 import type { KanbanBoardOverlaysProps } from "./kanban-board-overlays";
 
@@ -86,6 +87,7 @@ export function buildKanbanOverlayModel(args: {
   mapaProducao: BoardData["mapaProducao"];
   definitionOfDone?: BoardDefinitionOfDone;
   doneBucketKeys: string[];
+  boardMethodology: BoardMethodology;
   board: BoardState;
   dailyOpen: boolean;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
@@ -107,6 +109,7 @@ export function buildKanbanOverlayModel(args: {
     mapaProducao,
     definitionOfDone,
     doneBucketKeys,
+    boardMethodology,
     t,
   } = args;
   const d = board.dailySession;
@@ -201,5 +204,6 @@ export function buildKanbanOverlayModel(args: {
     dailyPanelProps,
     definitionOfDone,
     doneBucketKeys,
+    boardMethodology,
   };
 }

@@ -21,6 +21,7 @@ import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
+import type { CardServiceClass } from "@/lib/schemas";
 import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useCopilotStore } from "@/stores/copilot-store";
@@ -145,6 +146,10 @@ export interface CardData {
   dorReady?: CardDorReady;
   /** Checkboxes DoD por id do item do board. */
   dodChecks?: Record<string, boolean>;
+  /** Estimativa Fibonacci (Scrum). */
+  storyPoints?: number | null;
+  /** Classe de serviço explícita (Kanban). */
+  serviceClass?: CardServiceClass | null;
 }
 
 export interface BucketConfig {

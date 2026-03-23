@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useCardModal } from "@/components/kanban/card-modal-context";
-import { apiPost, ApiError } from "@/lib/api-client";
+import { apiPost, apiFetch, getApiHeaders, ApiError } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
 import { AiModelHint } from "@/components/ai-model-hint";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
+import {
+  STORY_POINTS_FIBONACCI,
+  CARD_SERVICE_CLASS_VALUES,
+  type CardServiceClass,
+  type SprintData,
+} from "@/lib/schemas";
+import { useSprintStore } from "@/stores/sprint-store";
 
 type DupMatch = {
   cardId: string;
@@ -80,9 +87,61 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     setDodChecks,
     openExistingCard,
     mergeDraftIntoExistingCard,
+    boardMethodology,
+    storyPoints,
+    setStoryPoints,
+    serviceClass,
+    setServiceClass,
     t,
     pushToast,
   } = useCardModal();
+
+  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? []);
+  const upsertSprint = useSprintStore((s) => s.upsertSprint);
+  const [sprintPatching, setSprintPatching] = useState<string | null>(null);
+
+  const cardIdReadyForSprint = useMemo(() => {
+    const cid = String(selfId || "").trim();
+    return Boolean(cid && !cid.startsWith("NEW-"));
+  }, [selfId]);
+
+  const toggleSprintMembership = useCallback(
+    async (sprint: SprintData, include: boolean) => {
+      const cid = String(selfId || "").trim();
+      if (!cid || cid.startsWith("NEW-")) return;
+      if (sprint.status !== "planning" && sprint.status !== "active") return;
+      const nextIds = include
+        ? [...new Set([...(sprint.cardIds ?? []), cid])]
+        : (sprint.cardIds ?? []).filter((id) => id !== cid);
+      setSprintPatching(sprint.id);
+      try {
+        const res = await apiFetch(
+          `/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprint.id)}`,
+          {
+            method: "PATCH",
+            headers: { ...getApiHeaders(getHeaders()), "Content-Type": "application/json" },
+            body: JSON.stringify({ cardIds: nextIds }),
+          }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { sprint: SprintData };
+          upsertSprint(boardId, data.sprint);
+        } else {
+          pushToast({ kind: "error", title: t("cardModal.methodology.sprintPatchError") });
+        }
+      } catch {
+        pushToast({ kind: "error", title: t("cardModal.methodology.sprintPatchError") });
+      } finally {
+        setSprintPatching(null);
+      }
+    },
+    [selfId, boardId, getHeaders, upsertSprint, pushToast, t]
+  );
+
+  const currentBucketWip = useMemo(() => {
+    const b = buckets.find((x) => x.key === bucket);
+    return typeof b?.wipLimit === "number" ? b.wipLimit : null;
+  }, [buckets, bucket]);
 
   const [unblockBusy, setUnblockBusy] = useState(false);
   const [unblockText, setUnblockText] = useState<string | null>(null);
@@ -237,6 +296,39 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     dupIgnoreFingerprint !== contentFingerprint &&
     (dupLoading || dupMatches.length > 0);
 
+  const dorCheckboxGrid = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {(
+        [
+          ["titleOk", t("cardModal.fields.dor.titleOk")] as const,
+          ["acceptanceOk", t("cardModal.fields.dor.acceptanceOk")] as const,
+          ["depsOk", t("cardModal.fields.dor.depsOk")] as const,
+          ["sizedOk", t("cardModal.fields.dor.sizedOk")] as const,
+        ] as const
+      ).map(([key, label]) => (
+        <label key={key} className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(dorReady[key])}
+            onChange={() =>
+              setDorReady((prev) => {
+                const next = { ...prev };
+                if (next[key]) {
+                  delete next[key];
+                } else {
+                  next[key] = true;
+                }
+                return next;
+              })
+            }
+            className="rounded border-[var(--flux-chrome-alpha-20)]"
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  );
+
   return (
     <div className="space-y-5">
       <CardModalSection
@@ -306,6 +398,115 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           </div>
         </div>
       </CardModalSection>
+
+      {boardMethodology === "scrum" ? (
+        <CardModalSection
+          title={t("cardModal.methodology.scrum.title")}
+          description={t("cardModal.methodology.scrum.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.storyPoints")}
+              </label>
+              <select
+                value={storyPoints ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setStoryPoints(v === "" ? null : Number.parseInt(v, 10));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.storyPointsUnset")}</option>
+                {STORY_POINTS_FIBONACCI.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.sprintsTitle")}
+              </p>
+              {!cardIdReadyForSprint ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.sprintNeedSave")}</p>
+              ) : sprints.length === 0 ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.noSprints")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sprints.map((sp) => {
+                    const inSprint = (sp.cardIds ?? []).includes(String(selfId).trim());
+                    const editable = sp.status === "planning" || sp.status === "active";
+                    return (
+                      <li
+                        key={sp.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2"
+                      >
+                        <span className="min-w-0 text-sm">
+                          <span className="font-medium text-[var(--flux-text)]">{sp.name}</span>
+                          <span className="ml-2 text-[11px] text-[var(--flux-text-muted)]">({sp.status})</span>
+                        </span>
+                        {editable ? (
+                          <label className="flex items-center gap-2 text-sm shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={inSprint}
+                              disabled={sprintPatching === sp.id}
+                              onChange={() => void toggleSprintMembership(sp, !inSprint)}
+                              className="rounded border-[var(--flux-chrome-alpha-20)]"
+                            />
+                            <span>{t("cardModal.methodology.inSprint")}</span>
+                          </label>
+                        ) : (
+                          <span className="text-[11px] text-[var(--flux-text-muted)] shrink-0">
+                            {inSprint ? t("cardModal.methodology.inSprintReadonly") : "—"}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </CardModalSection>
+      ) : null}
+
+      {boardMethodology === "kanban" ? (
+        <CardModalSection
+          title={t("cardModal.methodology.kanban.title")}
+          description={t("cardModal.methodology.kanban.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.serviceClass")}
+              </label>
+              <select
+                value={serviceClass ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setServiceClass(v === "" ? null : (v as CardServiceClass));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.serviceClassUnset")}</option>
+                {CARD_SERVICE_CLASS_VALUES.map((sc) => (
+                  <option key={sc} value={sc}>
+                    {t(`cardModal.methodology.serviceClassValues.${sc}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {currentBucketWip != null ? (
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                {t("cardModal.methodology.wipHint", { limit: currentBucketWip })}
+              </p>
+            ) : null}
+          </div>
+        </CardModalSection>
+      ) : null}
 
       <CardModalSection
         title={t("cardModal.sections.content.title")}
@@ -680,41 +881,19 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
-      <CardModalSection
-        title={t("cardModal.sections.dor.title")}
-        description={t("cardModal.sections.dor.description")}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {(
-            [
-              ["titleOk", t("cardModal.fields.dor.titleOk")] as const,
-              ["acceptanceOk", t("cardModal.fields.dor.acceptanceOk")] as const,
-              ["depsOk", t("cardModal.fields.dor.depsOk")] as const,
-              ["sizedOk", t("cardModal.fields.dor.sizedOk")] as const,
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={Boolean(dorReady[key])}
-                onChange={() =>
-                  setDorReady((prev) => {
-                    const next = { ...prev };
-                    if (next[key]) {
-                      delete next[key];
-                    } else {
-                      next[key] = true;
-                    }
-                    return next;
-                  })
-                }
-                className="rounded border-[var(--flux-chrome-alpha-20)]"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </CardModalSection>
+      {boardMethodology === "kanban" ? (
+        <details className="rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--flux-text)] [&::-webkit-details-marker]:hidden">
+            {t("cardModal.sections.dor.summaryKanban")}
+          </summary>
+          <p className="text-[11px] text-[var(--flux-text-muted)] mt-2 mb-3">{t("cardModal.sections.dor.description")}</p>
+          {dorCheckboxGrid}
+        </details>
+      ) : (
+        <CardModalSection title={t("cardModal.sections.dor.title")} description={t("cardModal.sections.dor.description")}>
+          {dorCheckboxGrid}
+        </CardModalSection>
+      )}
 
       {definitionOfDone?.enabled && definitionOfDone.items.length > 0 ? (
         <CardModalSection

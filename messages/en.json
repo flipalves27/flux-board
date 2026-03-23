@@ -1247,6 +1247,33 @@
         "createAnyway": "Create anyway",
         "mergeToast": "Content merged into the existing card."
       },
+      "methodology": {
+        "scrum": {
+          "title": "Scrum — estimate and sprint",
+          "description": "Fibonacci story points for velocity; include this card in planning or active sprints."
+        },
+        "kanban": {
+          "title": "Kanban — service class",
+          "description": "Choose how this item is treated in the flow (classes of service). Column WIP is shown as context."
+        },
+        "storyPoints": "Story points",
+        "storyPointsUnset": "Not estimated",
+        "sprintsTitle": "Sprints",
+        "sprintNeedSave": "Save the card with a real ID before linking it to a sprint.",
+        "noSprints": "No sprints yet — create one in the Sprint panel.",
+        "inSprint": "In sprint",
+        "inSprintReadonly": "In sprint (read-only)",
+        "sprintPatchError": "Could not update sprint membership.",
+        "serviceClass": "Service class",
+        "serviceClassUnset": "Not set (use heuristics on the card)",
+        "serviceClassValues": {
+          "expedite": "Expedite",
+          "fixed_date": "Fixed date",
+          "standard": "Standard",
+          "intangible": "Intangible"
+        },
+        "wipHint": "WIP limit for this column: {limit}."
+      },
       "toasts": {
         "missingTitle": "Please provide a title.",
         "missingTitleAndDescription": "Please provide a title and a description to generate context."
@@ -1305,7 +1332,8 @@
         },
         "dor": {
           "title": "Refinement (Definition of Ready)",
-          "description": "Check what is ready before pulling this item into a sprint."
+          "description": "Check what is ready before pulling this item into a sprint.",
+          "summaryKanban": "Definition of Ready (optional)"
         },
         "dod": {
           "title": "Definition of Done",
@@ -1545,7 +1573,8 @@
         "expedite": "Expedite",
         "datebound": "Due soon",
         "blocked": "Blocked",
-        "prioritize": "Prioritize"
+        "prioritize": "Prioritize",
+        "intangible": "Intangible"
       },
       "quickActions": {
         "copyTitleSuffix": "(copy)",

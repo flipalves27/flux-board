@@ -251,6 +251,20 @@ export function computeSubtaskProgress(subtasks: SubtaskData[]): SubtaskProgress
   return { total, done, blocked, pct };
 }
 
+/** Story points (Fibonacci) — Scrum / estimativa de PBI. */
+export const STORY_POINTS_FIBONACCI = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89] as const;
+export type StoryPointsFibonacci = (typeof STORY_POINTS_FIBONACCI)[number];
+
+export const CardStoryPointsSchema = z
+  .number()
+  .int()
+  .refine((n) => (STORY_POINTS_FIBONACCI as readonly number[]).includes(n), { message: "Story points inválidos" });
+
+/** Classes de serviço Kanban (visibilidade explícita no card). */
+export const CARD_SERVICE_CLASS_VALUES = ["expedite", "fixed_date", "standard", "intangible"] as const;
+export type CardServiceClass = (typeof CARD_SERVICE_CLASS_VALUES)[number];
+export const CardServiceClassSchema = z.enum(CARD_SERVICE_CLASS_VALUES);
+
 export const CardDataSchema = z
   .object({
     id: z.string().trim().min(1, "ID do card e obrigatorio.").max(200),
@@ -283,6 +297,8 @@ export const CardDataSchema = z
       })
       .optional(),
     dodChecks: z.record(z.string().trim().max(80), z.boolean()).optional(),
+    storyPoints: CardStoryPointsSchema.nullable().optional(),
+    serviceClass: CardServiceClassSchema.nullable().optional(),
   })
   .passthrough();
 

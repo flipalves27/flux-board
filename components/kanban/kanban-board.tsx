@@ -586,6 +586,7 @@ function KanbanBoardLoaded({
       db.config.bucketOrder,
       db.config.definitionOfDone?.doneBucketKeys ?? null
     ),
+    boardMethodology: methodology,
     board,
     dailyOpen,
     addColumnDialogRef,

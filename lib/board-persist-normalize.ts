@@ -2,9 +2,11 @@ import type { BoardData, BoardDefinitionOfDone, BucketConfig, CardData } from "@
 import type { SubtaskData } from "@/lib/schemas";
 import {
   CardAutomationStateSchema,
+  CARD_SERVICE_CLASS_VALUES,
   DailyInsightEntrySchema,
   isSafeLinkUrl,
   MapaProducaoItemSchema,
+  STORY_POINTS_FIBONACCI,
   SubtaskProgressSchema,
   SubtaskSchema,
 } from "@/lib/schemas";
@@ -83,6 +85,8 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     delete rest.automationState;
     delete rest.dorReady;
     delete rest.dodChecks;
+    delete rest.storyPoints;
+    delete rest.serviceClass;
     const title = String(c.title ?? "").trim().slice(0, 300);
     const orderRaw = Number(c.order);
     const order = Number.isFinite(orderRaw)
@@ -183,6 +187,17 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       }
       if (Object.keys(chk).length > 0) base.dodChecks = chk;
     }
+
+    const spRaw = (c as { storyPoints?: unknown }).storyPoints;
+    if (typeof spRaw === "number" && Number.isInteger(spRaw) && (STORY_POINTS_FIBONACCI as readonly number[]).includes(spRaw)) {
+      base.storyPoints = spRaw;
+    }
+
+    const scRaw = (c as { serviceClass?: unknown }).serviceClass;
+    if (typeof scRaw === "string" && (CARD_SERVICE_CLASS_VALUES as readonly string[]).includes(scRaw)) {
+      base.serviceClass = scRaw as CardData["serviceClass"];
+    }
+
     return base as unknown as CardData;
   });
 

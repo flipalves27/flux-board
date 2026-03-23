@@ -1248,6 +1248,33 @@
         "createAnyway": "Criar mesmo assim",
         "mergeToast": "Conteúdo mesclado no card existente."
       },
+      "methodology": {
+        "scrum": {
+          "title": "Scrum — estimativa e sprint",
+          "description": "Story points em Fibonacci para velocity; vincule o card a sprints em planejamento ou ativos."
+        },
+        "kanban": {
+          "title": "Kanban — classe de serviço",
+          "description": "Define como o item é tratado no fluxo (classes de serviço). O limite WIP da coluna aparece como referência."
+        },
+        "storyPoints": "Story points",
+        "storyPointsUnset": "Sem estimativa",
+        "sprintsTitle": "Sprints",
+        "sprintNeedSave": "Salve o card com um ID válido antes de vincular a um sprint.",
+        "noSprints": "Nenhum sprint ainda — crie um no painel Sprint.",
+        "inSprint": "No sprint",
+        "inSprintReadonly": "No sprint (somente leitura)",
+        "sprintPatchError": "Não foi possível atualizar o vínculo com o sprint.",
+        "serviceClass": "Classe de serviço",
+        "serviceClassUnset": "Não definida (usa heurísticas no card)",
+        "serviceClassValues": {
+          "expedite": "Expedite",
+          "fixed_date": "Data fixa",
+          "standard": "Padrão",
+          "intangible": "Intangível"
+        },
+        "wipHint": "Limite WIP desta coluna: {limit}."
+      },
       "toasts": {
         "missingTitle": "Informe o título.",
         "missingTitleAndDescription": "Informe o título e a descrição para gerar contexto."
@@ -1306,7 +1333,8 @@
         },
         "dor": {
           "title": "Refinamento (Definition of Ready)",
-          "description": "Marque o que está pronto antes de puxar o item para o sprint."
+          "description": "Marque o que está pronto antes de puxar o item para o sprint.",
+          "summaryKanban": "Definition of Ready (opcional)"
         },
         "dod": {
           "title": "Definition of Done",
@@ -1898,7 +1926,8 @@
         "expedite": "Expedite",
         "datebound": "Prazo curto",
         "blocked": "Bloqueado",
-        "prioritize": "Priorizar"
+        "prioritize": "Priorizar",
+        "intangible": "Intangível"
       },
       "quickActions": {
         "copyTitleSuffix": "(cópia)",

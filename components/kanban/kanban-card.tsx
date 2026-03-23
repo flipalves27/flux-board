@@ -199,6 +199,7 @@ function KanbanCardInner({
     [sprintBoardQuickActions]
   );
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
+  const boardMethodology = useBoardStore((s) => s.db?.boardMethodology ?? "scrum");
   const selection = useOptionalBoardCardSelection();
   const dragIds =
     dragOverlayPreview || !selection ? [cardId] : selection.getOrderedDragIds(cardId);
@@ -396,6 +397,12 @@ function KanbanCardInner({
   if (!card) return null;
 
   const dr = datesReady ? daysRemaining(card.dueDate) : null;
+  const sc = card.serviceClass ?? null;
+  const showExpedite = sc === "expedite" || (!sc && card.priority === "Urgente");
+  const showDatebound = sc === "fixed_date" || (!sc && dr !== null && dr >= 0 && dr <= 3);
+  const showIntangibleBadge = sc === "intangible";
+  const showPrioritizeHeuristic =
+    !sc && typeof card.direction === "string" && card.direction.toLowerCase() === "priorizar";
   const prioLabel = t(`cardModal.options.priority.${card.priority}`);
   const progLabel = t(`cardModal.options.progress.${card.progress}`);
 
@@ -736,17 +743,18 @@ function KanbanCardInner({
           {card.title}
         </div>
         {card.progress !== "Concluída" &&
-        (card.priority === "Urgente" ||
-          (dr !== null && dr >= 0 && dr <= 3) ||
+        (showExpedite ||
+          showDatebound ||
+          showIntangibleBadge ||
           (Array.isArray(card.blockedBy) && card.blockedBy.length > 0) ||
-          (typeof card.direction === "string" && card.direction.toLowerCase() === "priorizar")) ? (
+          showPrioritizeHeuristic) ? (
           <div className="flex flex-wrap gap-1 mb-1.5">
-            {card.priority === "Urgente" ? (
+            {showExpedite ? (
               <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-12)] text-[var(--flux-danger)]">
                 {t("card.serviceClass.expedite")}
               </span>
             ) : null}
-            {dr !== null && dr >= 0 && dr <= 3 ? (
+            {showDatebound ? (
               <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-10)] text-[var(--flux-warning)]">
                 {t("card.serviceClass.datebound")}
               </span>
@@ -756,7 +764,12 @@ function KanbanCardInner({
                 {t("card.serviceClass.blocked")}
               </span>
             ) : null}
-            {typeof card.direction === "string" && card.direction.toLowerCase() === "priorizar" ? (
+            {showIntangibleBadge ? (
+              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] text-[var(--flux-secondary)]">
+                {t("card.serviceClass.intangible")}
+              </span>
+            ) : null}
+            {showPrioritizeHeuristic ? (
               <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] text-[var(--flux-secondary)]">
                 {t("card.serviceClass.prioritize")}
               </span>
@@ -791,6 +804,9 @@ function KanbanCardInner({
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: progColor }} />
             <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{progLabel}</span>
           </div>
+          {boardMethodology === "scrum" && typeof card.storyPoints === "number" ? (
+            <span className="text-[11px] font-bold tabular-nums text-[var(--flux-primary-light)]">{card.storyPoints} SP</span>
+          ) : null}
           {dr !== null && (
             <span className={`flex items-center gap-1 text-[11px] font-semibold ${dueClass}`}>
               <span>◷</span>

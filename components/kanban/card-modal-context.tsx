@@ -21,6 +21,8 @@ import type {
   CardDorReady,
   BoardDefinitionOfDone,
 } from "@/app/board/[id]/page";
+import type { BoardMethodology } from "@/lib/board-methodology";
+import type { CardServiceClass } from "@/lib/schemas";
 import { assertDodAllowsCompleting } from "@/lib/board-scrum";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
@@ -71,6 +73,8 @@ export interface CardModalProps {
   /** Colunas consideradas “feito” para validação DoD (resolvido no pai). */
   doneBucketKeys: string[];
   completedProgressLabel?: string;
+  /** Scrum vs Kanban — campos condicionais no formulário. */
+  boardMethodology?: BoardMethodology;
 }
 
 export type CardModalContextValue = {
@@ -153,6 +157,11 @@ export type CardModalContextValue = {
   completedProgressLabel: string;
   dodChecks: Record<string, boolean>;
   setDodChecks: Dispatch<SetStateAction<Record<string, boolean>>>;
+  boardMethodology: BoardMethodology;
+  storyPoints: number | null;
+  setStoryPoints: Dispatch<SetStateAction<number | null>>;
+  serviceClass: CardServiceClass | null;
+  setServiceClass: Dispatch<SetStateAction<CardServiceClass | null>>;
   smartEnrichBusy: boolean;
   smartEnrichPending: Set<SmartEnrichFieldKey> | null;
   smartEnrichMeta: {
@@ -217,7 +226,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     definitionOfDone,
     doneBucketKeys,
     completedProgressLabel = "Concluída",
+    boardMethodology: boardMethodologyProp,
   } = props;
+  const boardMethodology: BoardMethodology = boardMethodologyProp ?? "scrum";
   const directions = directionsProp ?? [];
 
   const [aiContextApplied, setAiContextApplied] = useState<{
@@ -241,6 +252,12 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   );
   const [dorReady, setDorReady] = useState<CardDorReady>(() => ({ ...(card.dorReady ?? {}) }));
   const [dodChecks, setDodChecks] = useState<Record<string, boolean>>({});
+  const [storyPoints, setStoryPoints] = useState<number | null>(() =>
+    typeof card.storyPoints === "number" && Number.isInteger(card.storyPoints) ? card.storyPoints : null
+  );
+  const [serviceClass, setServiceClass] = useState<CardServiceClass | null>(() =>
+    card.serviceClass != null ? card.serviceClass : null
+  );
   const [blockedBy, setBlockedBy] = useState<string[]>(() =>
     Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
   );
@@ -345,6 +362,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       JSON.stringify(card.dorReady || {}),
       JSON.stringify(card.dodChecks || {}),
       JSON.stringify(definitionOfDone?.items || []),
+      String(card.storyPoints ?? ""),
+      String(card.serviceClass ?? ""),
     ].join("\u0002");
   }, [
     card.id,
@@ -369,6 +388,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     JSON.stringify(card.dodChecks),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(definitionOfDone?.items),
+    card.storyPoints,
+    card.serviceClass,
   ]);
 
   useEffect(() => {
@@ -386,6 +407,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
     );
     setDorReady({ ...(card.dorReady ?? {}) });
+    setStoryPoints(
+      typeof card.storyPoints === "number" && Number.isInteger(card.storyPoints) ? card.storyPoints : null
+    );
+    setServiceClass(card.serviceClass != null ? card.serviceClass : null);
     {
       const nextDod: Record<string, boolean> = {};
       for (const it of definitionOfDone?.items ?? []) {
@@ -695,7 +720,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       pushToast({ kind: "error", title: gate.message });
       return;
     }
-    onSave({
+    const saved: CardData = {
       ...card,
       id: finalId,
       title: normalizedTitle,
@@ -721,7 +746,16 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       }),
       docRefs,
       order: card.order ?? 0,
-    });
+    };
+    if (boardMethodology === "scrum") {
+      if (storyPoints != null) saved.storyPoints = storyPoints;
+      else delete saved.storyPoints;
+    }
+    if (boardMethodology === "kanban") {
+      if (serviceClass != null) saved.serviceClass = serviceClass;
+      else delete saved.serviceClass;
+    }
+    onSave(saved);
   }, [
     title,
     pushToast,
@@ -746,6 +780,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     links,
     docRefs,
     onSave,
+    boardMethodology,
+    storyPoints,
+    serviceClass,
   ]);
 
   const handleCreateLabel = useCallback(() => {
@@ -970,6 +1007,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       completedProgressLabel,
       dodChecks,
       setDodChecks,
+      boardMethodology,
+      storyPoints,
+      setStoryPoints,
+      serviceClass,
+      setServiceClass,
       blockedBy,
       setBlockedBy,
       depSearch,
@@ -1053,6 +1095,9 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       doneBucketKeys,
       completedProgressLabel,
       dodChecks,
+      boardMethodology,
+      storyPoints,
+      serviceClass,
       blockedBy,
       depSearch,
       tags,
