@@ -22,6 +22,8 @@ export type BoardTemplateSnapshot = {
   /** Tags/labels observadas no board na exportação (sem conteúdo de cards). */
   labelPalette: string[];
   automations: AutomationRule[];
+  /** Opcional: metodologia do quadro exportado. */
+  boardMethodology?: "scrum" | "kanban";
 };
 
 export type PublishedTemplate = {

@@ -12,7 +12,7 @@ import { getRecentCards } from "@/lib/recent-cards";
 import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-history";
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
 
-type BoardRow = { id: string; name: string };
+type BoardRow = { id: string; name: string; boardMethodology?: "scrum" | "kanban" };
 
 function CategoryIcon({ kind }: { kind: NonNullable<PaletteItem["icon"]> }) {
   const common = "h-4 w-4 shrink-0 text-[var(--flux-text-muted)]";
@@ -184,6 +184,7 @@ export function CommandPalette() {
     const recentCards = getRecentCards(user.id);
 
     for (const b of boards) {
+      const isKanban = b.boardMethodology === "kanban";
       items.push({
         id: `board:${b.id}`,
         category: "boards",
@@ -211,51 +212,72 @@ export function CommandPalette() {
         action: { type: "boardDeep", boardId: b.id, query: "flowHealth=1" },
         icon: "actions",
       });
-      items.push({
-        id: `sprintpanel:${b.id}`,
-        category: "actions",
-        title: t("actions.sprintPanel", { board: b.name }),
-        subtitle: t("subtitles.openBoard"),
-        keywords: `sprint painel scrum ${b.name}`,
-        action: { type: "boardDeep", boardId: b.id, query: "sprintPanel=1" },
-        icon: "actions",
-      });
-      items.push({
-        id: `sprintcoach:${b.id}`,
-        category: "actions",
-        title: t("actions.sprintCoach", { board: b.name }),
-        subtitle: t("subtitles.openBoard"),
-        keywords: `coach sprint ia planning ${b.name}`,
-        action: { type: "boardDeep", boardId: b.id, query: "sprintCoach=1" },
-        icon: "actions",
-      });
-      items.push({
-        id: `standup:${b.id}`,
-        category: "actions",
-        title: t("actions.standup", { board: b.name }),
-        subtitle: t("subtitles.openBoard"),
-        keywords: `standup daily cerimônia ${b.name}`,
-        action: { type: "boardDeep", boardId: b.id, query: "standup=1" },
-        icon: "actions",
-      });
-      items.push({
-        id: `scrum:${b.id}`,
-        category: "actions",
-        title: t("actions.scrumSettings", { board: b.name }),
-        subtitle: t("subtitles.openBoard"),
-        keywords: `scrum dod product goal backlog ${b.name}`,
-        action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
-        icon: "actions",
-      });
-      items.push({
-        id: `increment:${b.id}`,
-        category: "actions",
-        title: t("actions.incrementReview", { board: b.name }),
-        subtitle: t("subtitles.openBoard"),
-        keywords: `increment review entregue sprint ${b.name}`,
-        action: { type: "boardDeep", boardId: b.id, query: "incrementReview=1" },
-        icon: "actions",
-      });
+      if (isKanban) {
+        items.push({
+          id: `kanbanCadence:${b.id}`,
+          category: "actions",
+          title: t("actions.kanbanCadence", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `kanban cadência cerimônia fluxo ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "kanbanCadence=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `metodologia agile dod settings ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+      } else {
+        items.push({
+          id: `sprintpanel:${b.id}`,
+          category: "actions",
+          title: t("actions.sprintPanel", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `sprint painel scrum ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "sprintPanel=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `sprintcoach:${b.id}`,
+          category: "actions",
+          title: t("actions.sprintCoach", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `coach sprint ia planning ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "sprintCoach=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `standup:${b.id}`,
+          category: "actions",
+          title: t("actions.standup", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `standup daily cerimônia ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "standup=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `scrum dod product goal backlog ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `increment:${b.id}`,
+          category: "actions",
+          title: t("actions.incrementReview", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `increment review entregue sprint ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "incrementReview=1" },
+          icon: "actions",
+        });
+      }
     }
 
     for (const rc of recentCards) {

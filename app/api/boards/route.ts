@@ -14,6 +14,7 @@ import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
 import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
+import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
 
 function corsHeaders(request: NextRequest) {
   return boardsApiCorsHeaders(request);
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
       ownerId: b.ownerId,
       clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
       lastUpdated: b.lastUpdated,
+      boardMethodology: b.boardMethodology,
       portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
     }));
 
@@ -102,6 +104,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const methodology = parsed.data.boardMethodology;
     let board;
     if (templateId) {
       const tpl = await getPublishedTemplateById(templateId);
@@ -111,21 +114,17 @@ export async function POST(request: NextRequest) {
       const snap = tpl.snapshot;
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...snap,
+        boardMethodology: snap.boardMethodology ?? methodology,
         automations: Array.isArray(snap.automations) ? (snap.automations as AutomationRule[]) : [],
       });
     } else if (rawSnap) {
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...rawSnap,
+        boardMethodology: rawSnap.boardMethodology ?? methodology,
         automations: Array.isArray(rawSnap.automations) ? (rawSnap.automations as AutomationRule[]) : [],
       });
     } else {
-      board = await createBoard(payload.orgId, payload.id, name, {
-        version: "2.0",
-        cards: [],
-        config: { bucketOrder: [], collapsedColumns: [] },
-        mapaProducao: [],
-        dailyInsights: [],
-      });
+      board = await createBoard(payload.orgId, payload.id, name, initialBoardPayloadForMethodology(methodology));
     }
     return NextResponse.json(
       {
@@ -134,6 +133,7 @@ export async function POST(request: NextRequest) {
           name: board.name,
           ownerId: board.ownerId,
           lastUpdated: board.lastUpdated,
+          boardMethodology: board.boardMethodology ?? methodology,
         },
       },
       { status: 201, headers: corsHeaders(request) }

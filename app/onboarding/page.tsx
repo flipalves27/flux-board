@@ -140,6 +140,7 @@ export default function OnboardingPage() {
   const [cardBucketKey, setCardBucketKey] = useState<string>("");
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
+  const [wizardMethodology, setWizardMethodology] = useState<"scrum" | "kanban">("scrum");
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -281,13 +282,16 @@ export default function OnboardingPage() {
 
         const { board } = await apiPost<{ board: { id: string; name: string } }>(
           "/api/boards",
-          { name },
+          { name, boardMethodology: wizardMethodology },
           getHeaders()
         );
 
         await apiPut(
           `/api/boards/${encodeURIComponent(board.id)}`,
-          { config: { bucketOrder: templateBuckets, collapsedColumns: [] } },
+          {
+            boardMethodology: wizardMethodology,
+            config: { bucketOrder: templateBuckets, collapsedColumns: [] },
+          },
           getHeaders()
         );
 
@@ -314,7 +318,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user]
+    [getHeaders, persistState, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -475,6 +479,38 @@ export default function OnboardingPage() {
                   disabled={busy}
                   autoFocus
                 />
+
+                <div className="mt-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">
+                    {t("fields.methodology")}
+                  </p>
+                  <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("scrum")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "scrum"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyScrum")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("kanban")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "kanban"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyKanban")}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="mt-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">

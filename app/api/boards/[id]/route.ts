@@ -7,6 +7,8 @@ import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
 import { validateDodOnBoardPut } from "@/lib/board-scrum";
 import type { BucketConfig } from "@/app/board/[id]/page";
+import { inferLegacyBoardMethodology, type BoardMethodology } from "@/lib/board-methodology";
+import { listSprints, getActiveSprint } from "@/lib/kv-sprints";
 
 export async function GET(
   request: NextRequest,
@@ -33,8 +35,14 @@ export async function GET(
     if (!board) {
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }
+    let boardMethodology: BoardMethodology = board.boardMethodology ?? "scrum";
+    if (!board.boardMethodology) {
+      const sprints = await listSprints(payload.orgId, boardId);
+      boardMethodology = inferLegacyBoardMethodology(sprints.length > 0);
+    }
     const safe = {
       ...board,
+      boardMethodology,
       portal: stripPortalForClient(board.portal),
     };
     return NextResponse.json(safe);
@@ -135,6 +143,31 @@ export async function PUT(
     if (clean.lastUpdated !== undefined) updates.lastUpdated = clean.lastUpdated;
     if (clean.clientLabel !== undefined) {
       updates.clientLabel = String(clean.clientLabel ?? "").trim().slice(0, 120);
+    }
+
+    if (clean.boardMethodology !== undefined) {
+      const prevBoard = await getBoard(boardId, payload.orgId);
+      if (!prevBoard) {
+        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
+      }
+      let prevEffective: BoardMethodology = prevBoard.boardMethodology ?? "scrum";
+      if (!prevBoard.boardMethodology) {
+        const sprints = await listSprints(payload.orgId, boardId);
+        prevEffective = inferLegacyBoardMethodology(sprints.length > 0);
+      }
+      if (clean.boardMethodology === "kanban" && prevEffective === "scrum") {
+        const active = await getActiveSprint(payload.orgId, boardId);
+        if (active) {
+          return NextResponse.json(
+            {
+              error:
+                "Não é possível mudar para Kanban com sprint ativo. Encerre ou feche o sprint antes, ou escolha outro board.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+      updates.boardMethodology = clean.boardMethodology;
     }
 
     if (clean.portal !== undefined) {

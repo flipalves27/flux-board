@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import type { BoardDefinitionOfDoneItem, BucketConfig } from "@/app/board/[id]/page";
@@ -36,11 +37,13 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
   const [dodEnforce, setDodEnforce] = useState(false);
   const [dodLines, setDodLines] = useState("");
   const [doneKeys, setDoneKeys] = useState<string[]>([]);
+  const [methodologyDraft, setMethodologyDraft] = useState<"scrum" | "kanban">("scrum");
 
   const buckets: BucketConfig[] = db?.config?.bucketOrder ?? [];
 
   useEffect(() => {
     if (!open || !db) return;
+    setMethodologyDraft(db.boardMethodology === "kanban" ? "kanban" : "scrum");
     setProductGoal(db.config.productGoal ?? "");
     setBacklogKey(db.config.backlogBucketKey ?? "");
     const def = db.config.definitionOfDone;
@@ -68,13 +71,20 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
   const handleSave = useCallback(() => {
     if (!db) return;
     updateDb((d) => {
-      const g = productGoal.trim().slice(0, 800);
-      if (g) d.config.productGoal = g;
-      else delete d.config.productGoal;
+      d.boardMethodology = methodologyDraft;
 
-      const bk = backlogKey.trim();
-      if (bk && d.config.bucketOrder.some((b) => b.key === bk)) d.config.backlogBucketKey = bk;
-      else delete d.config.backlogBucketKey;
+      const g = productGoal.trim().slice(0, 800);
+      if (methodologyDraft === "scrum") {
+        if (g) d.config.productGoal = g;
+        else delete d.config.productGoal;
+
+        const bk = backlogKey.trim();
+        if (bk && d.config.bucketOrder.some((b) => b.key === bk)) d.config.backlogBucketKey = bk;
+        else delete d.config.backlogBucketKey;
+      } else {
+        delete d.config.productGoal;
+        delete d.config.backlogBucketKey;
+      }
 
       const items = parsedItems.slice(0, 20);
       const dk = doneKeys.filter((k) => d.config.bucketOrder.some((b) => b.key === k));
@@ -90,7 +100,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
       }
     });
     onClose();
-  }, [db, updateDb, productGoal, backlogKey, dodEnabled, dodEnforce, parsedItems, doneKeys, onClose]);
+  }, [db, updateDb, methodologyDraft, productGoal, backlogKey, dodEnabled, dodEnforce, parsedItems, doneKeys, onClose]);
 
   if (!open) return null;
 
@@ -105,7 +115,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
       >
         <div className="flex items-start justify-between gap-3 p-4 border-b border-[var(--flux-border-muted)]">
           <h2 id="scrum-settings-title" className="text-lg font-display font-bold text-[var(--flux-text)]">
-            {t("title")}
+            {t("titleAgile")}
           </h2>
           <button
             type="button"
@@ -119,38 +129,84 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
         </div>
 
         <div className="p-4 space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">
-              {t("productGoal")}
-            </label>
-            <textarea
-              value={productGoal}
-              onChange={(e) => setProductGoal(e.target.value)}
-              rows={3}
-              maxLength={800}
-              className="w-full rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]"
-              placeholder={t("productGoalPlaceholder")}
-            />
+          <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-06)] p-3 space-y-2">
+            <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">{t("methodologyLabel")}</p>
+            <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5">
+              <button
+                type="button"
+                onClick={() => setMethodologyDraft("scrum")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  methodologyDraft === "scrum"
+                    ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("methodologyScrum")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMethodologyDraft("kanban")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  methodologyDraft === "kanban"
+                    ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("methodologyKanban")}
+              </button>
+            </div>
+            <p className="text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("methodologyHint")}</p>
+            <p className="text-[11px] text-[var(--flux-text-muted)] flex flex-wrap gap-x-3 gap-y-1">
+              <Link href="https://scrumguides.org" target="_blank" rel="noreferrer" className="underline hover:text-[var(--flux-primary-light)]">
+                {t("refScrumGuide")}
+              </Link>
+              <Link
+                href="https://www.scrum.org/resources/kanban-guide-scrum-teams"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-[var(--flux-primary-light)]"
+              >
+                {t("refKanbanGuide")}
+              </Link>
+            </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">
-              {t("backlogColumn")}
-            </label>
-            <select
-              value={backlogKey}
-              onChange={(e) => setBacklogKey(e.target.value)}
-              className="w-full rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]"
-            >
-              <option value="">{t("backlogAuto")}</option>
-              {buckets.map((b) => (
-                <option key={b.key} value={b.key}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">{t("backlogHint")}</p>
-          </div>
+          {methodologyDraft === "scrum" ? (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">
+                  {t("productGoal")}
+                </label>
+                <textarea
+                  value={productGoal}
+                  onChange={(e) => setProductGoal(e.target.value)}
+                  rows={3}
+                  maxLength={800}
+                  className="w-full rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                  placeholder={t("productGoalPlaceholder")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">
+                  {t("backlogColumn")}
+                </label>
+                <select
+                  value={backlogKey}
+                  onChange={(e) => setBacklogKey(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-12)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                >
+                  <option value="">{t("backlogAuto")}</option>
+                  {buckets.map((b) => (
+                    <option key={b.key} value={b.key}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">{t("backlogHint")}</p>
+              </div>
+            </>
+          ) : null}
 
           <div className="rounded-xl border border-[var(--flux-border-muted)] p-3 space-y-3">
             <div className="flex flex-wrap items-center gap-3">

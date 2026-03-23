@@ -160,6 +160,8 @@ export interface BucketConfig {
 export interface BoardData {
   version: string;
   lastUpdated: string;
+  /** Scrum ou Kanban — condiciona sprints vs cadências no produto. */
+  boardMethodology?: "scrum" | "kanban";
   cards: CardData[];
   config: {
     bucketOrder: BucketConfig[];
@@ -407,9 +409,13 @@ export default function BoardPage() {
       }));
       const productGoal = sanitizeProductGoal(d.config?.productGoal);
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
+      const methodologyRaw = d.boardMethodology;
+      const boardMethodology =
+        methodologyRaw === "kanban" || methodologyRaw === "scrum" ? methodologyRaw : undefined;
       useBoardStore.getState().hydrate(boardId, {
         version: d.version || "2.0",
         lastUpdated: d.lastUpdated || "",
+        ...(boardMethodology ? { boardMethodology } : {}),
         cards,
         config: {
           bucketOrder,
@@ -867,7 +873,9 @@ export default function BoardPage() {
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
-      <SprintPanel boardId={boardId} getHeaders={getHeaders} />
+      {(db?.boardMethodology ?? "scrum") === "scrum" ? (
+        <SprintPanel boardId={boardId} getHeaders={getHeaders} />
+      ) : null}
 
       <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
 

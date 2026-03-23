@@ -38,6 +38,7 @@ interface Board {
   ownerId: string;
   clientLabel?: string;
   lastUpdated?: string;
+  boardMethodology?: "scrum" | "kanban";
   portfolio?: BoardPortfolioMetrics;
 }
 
@@ -89,6 +90,7 @@ export default function BoardsPage() {
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState("");
+  const [createMethodology, setCreateMethodology] = useState<"scrum" | "kanban">("scrum");
   const [empty, setEmpty] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [query, setQuery] = useState("");
@@ -193,6 +195,7 @@ export default function BoardsPage() {
     setModalMode("new");
     setEditingId(null);
     setBoardName("");
+    setCreateMethodology("scrum");
     setModalOpen(true);
   }
 
@@ -202,6 +205,7 @@ export default function BoardsPage() {
     setModalMode("new");
     setEditingId(null);
     setBoardName("");
+    setCreateMethodology("scrum");
     setModalOpen(true);
     router.replace(`${localeRoot}/boards`, { scroll: false });
   }, [searchParams, isChecked, user, router, localeRoot]);
@@ -217,7 +221,11 @@ export default function BoardsPage() {
     try {
       const name = boardName.trim() || t("defaults.newBoardName");
       const wasFirstBoard = boards.length === 0;
-      const { board } = await apiPost<{ board: Board }>("/api/boards", { name }, getHeaders());
+      const { board } = await apiPost<{ board: Board }>(
+        "/api/boards",
+        { name, boardMethodology: createMethodology },
+        getHeaders()
+      );
       setModalOpen(false);
       router.push(`${localeRoot}/board/${board.id}${wasFirstBoard ? "?tour=1" : ""}`);
     } catch {
@@ -674,7 +682,18 @@ export default function BoardsPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
+                          {b.boardMethodology === "kanban" ? (
+                            <span className="shrink-0 rounded-full border border-[var(--flux-accent-alpha-35)] bg-[var(--flux-accent-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-accent)]">
+                              Kanban
+                            </span>
+                          ) : b.boardMethodology === "scrum" ? (
+                            <span className="shrink-0 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
+                              Scrum
+                            </span>
+                          ) : null}
+                        </div>
                         {b.clientLabel ? (
                           <span className="mt-1 inline-block max-w-full truncate rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
                             {b.clientLabel}
@@ -791,6 +810,38 @@ export default function BoardsPage() {
                 autoFocus
               />
             </div>
+            {modalMode === "new" ? (
+              <div className="mb-4">
+                <p className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 font-display">
+                  {t("modal.methodologyLabel")}
+                </p>
+                <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                  <button
+                    type="button"
+                    onClick={() => setCreateMethodology("scrum")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "scrum"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    {t("modal.methodologyScrum")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateMethodology("kanban")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "kanban"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    {t("modal.methodologyKanban")}
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>
+              </div>
+            ) : null}
             <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={() => setModalOpen(false)}

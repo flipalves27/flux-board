@@ -36,10 +36,16 @@ export async function GET(request: NextRequest) {
   }
 
   const sprints = mergeSprintsWithBoardMeta(
-    boards.map((b) => ({ id: b.id, name: b.name })),
+    boards.map((b) => ({ id: b.id, name: b.name, boardMethodology: b.boardMethodology })),
     sprintsPerBoard
   );
   const activeSprintCount = countActiveSprints(sprints);
 
-  return NextResponse.json({ sprints, activeSprintCount });
+  const boardSummaries = boards.map((b) => ({
+    id: b.id,
+    name: b.name,
+    boardMethodology: b.boardMethodology,
+  }));
+
+  return NextResponse.json({ sprints, activeSprintCount, boards: boardSummaries });
 }

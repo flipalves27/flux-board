@@ -155,6 +155,7 @@
     "cadenceMetricOldest": "Oldest active card",
     "cadenceWipByColumn": "WIP by progress column",
     "cadenceReportsLink": "Open board reports",
+    "closeCadencePanelAria": "Close Kanban cadence panel",
     "scrumPlaybookTitle": "Scrum reference",
     "scrumPlaybookBody": "Definition of Ready: clear criteria before entering the sprint. Definition of Done: tested, shippable increment. Time-box planning, daily, review, and retro to keep rhythm. Use the backlog below for explicit sprint commitment.",
     "planningBacklogIntro": "Committed backlog — adjust scope before starting the sprint."
@@ -188,7 +189,8 @@
       "sprintCoach": "Sprint coach (AI) — {board}",
       "standup": "Start standup — {board}",
       "scrumSettings": "Scrum & DoD settings — {board}",
-      "incrementReview": "Increment / review — {board}"
+      "incrementReview": "Increment / review — {board}",
+      "kanbanCadence": "Kanban cadence — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -902,6 +904,9 @@
     },
     "fields": {
       "boardName": "Board name",
+      "methodology": "Board methodology",
+      "methodologyScrum": "Scrum — sprints and ceremonies",
+      "methodologyKanban": "Kanban — flow and cadences",
       "template": "Template",
       "cardTitle": "Title",
       "column": "Column",
@@ -1000,6 +1005,10 @@
       },
       "boardNameLabel": "Board name",
       "boardNamePlaceholder": "Ex: Main Backlog",
+      "methodologyLabel": "Methodology",
+      "methodologyScrum": "Scrum",
+      "methodologyKanban": "Kanban",
+      "methodologyHint": "Scrum: sprints, product goal, and sprint ceremonies. Kanban: continuous flow, WIP, and service cadences.",
       "cancel": "Cancel",
       "create": "Create",
       "save": "Save"
@@ -2031,6 +2040,13 @@
       },
       "scrumSettings": {
         "title": "Scrum on Kanban — product goal & Definition of Done",
+        "titleAgile": "Agile methodology — Product Goal & Definition of Done",
+        "methodologyLabel": "Board methodology",
+        "methodologyScrum": "Scrum",
+        "methodologyKanban": "Kanban",
+        "methodologyHint": "Scrum uses sprints and events (planning, daily, review, retro). Kanban emphasizes continuous flow, WIP limits, and review cadences. Switching to Kanban is blocked while a sprint is active.",
+        "refScrumGuide": "Scrum Guide",
+        "refKanbanGuide": "Kanban Guide for Scrum Teams",
         "closeAria": "Close",
         "productGoal": "Product goal",
         "productGoalPlaceholder": "What outcome does this board pursue for the client or product?",

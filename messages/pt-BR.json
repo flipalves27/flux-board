@@ -155,6 +155,7 @@
     "cadenceMetricOldest": "Card ativo mais antigo",
     "cadenceWipByColumn": "WIP por coluna (progresso)",
     "cadenceReportsLink": "Ver relatórios do board",
+    "closeCadencePanelAria": "Fechar painel de cadência Kanban",
     "scrumPlaybookTitle": "Boas práticas Scrum (referência)",
     "scrumPlaybookBody": "Definition of Ready: critérios claros antes de entrar no sprint. Definition of Done: incremento testável e entregue. Time-box: planejamento, daily, review e retrospectiva mantêm o ritmo. Use o backlog abaixo para compromisso explícito do que entra no sprint.",
     "planningBacklogIntro": "Backlog comprometido — ajuste o escopo antes de iniciar o sprint."
@@ -188,7 +189,8 @@
       "sprintCoach": "Coach de sprint (IA) — {board}",
       "standup": "Iniciar standup — {board}",
       "scrumSettings": "Scrum e DoD — {board}",
-      "incrementReview": "Incremento / review — {board}"
+      "incrementReview": "Incremento / review — {board}",
+      "kanbanCadence": "Cadência Kanban — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -903,6 +905,9 @@
     },
     "fields": {
       "boardName": "Nome do board",
+      "methodology": "Metodologia do quadro",
+      "methodologyScrum": "Scrum — sprints e cerimônias",
+      "methodologyKanban": "Kanban — fluxo e cadências",
       "template": "Template",
       "cardTitle": "Título",
       "column": "Coluna",
@@ -1001,6 +1006,10 @@
       },
       "boardNameLabel": "Nome do Board",
       "boardNamePlaceholder": "Ex: Backlog Principal",
+      "methodologyLabel": "Metodologia",
+      "methodologyScrum": "Scrum",
+      "methodologyKanban": "Kanban",
+      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. Kanban: fluxo contínuo, WIP e cadências de serviço.",
       "cancel": "Cancelar",
       "create": "Criar",
       "save": "Salvar"
@@ -2032,6 +2041,13 @@
       },
       "scrumSettings": {
         "title": "Scrum no Kanban — meta do produto e Definition of Done",
+        "titleAgile": "Metodologia ágil — Product Goal e Definition of Done",
+        "methodologyLabel": "Metodologia do quadro",
+        "methodologyScrum": "Scrum",
+        "methodologyKanban": "Kanban",
+        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Mudar para Kanban não é permitido com sprint ativo.",
+        "refScrumGuide": "Scrum Guide",
+        "refKanbanGuide": "Kanban Guide for Scrum Teams",
         "closeAria": "Fechar",
         "productGoal": "Meta do produto (Product Goal)",
         "productGoalPlaceholder": "Qual resultado este board busca para o cliente ou produto?",

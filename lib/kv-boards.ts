@@ -8,6 +8,9 @@ import type { BoardActivityContext } from "./board-activity-types";
 import { diffBoardActivity } from "./board-activity-diff";
 import { scheduleBoardActivityWrites } from "./board-activity-log";
 import { scheduleWebhookBoardPersist } from "./webhook-emit";
+import type { BoardMethodology } from "./board-methodology";
+
+export type { BoardMethodology };
 
 const BOARDS_PREFIX = "flux_boards:";
 const BOARD_PREFIX = "flux_board:";
@@ -22,6 +25,8 @@ export interface BoardData {
   ownerId: string;
   orgId: string;
   name: string;
+  /** Scrum (sprints e eventos) ou Kanban (fluxo contínuo e cadências). */
+  boardMethodology?: BoardMethodology;
   /** Rótulo comercial opcional (cliente, conta, linha de negócio) — útil para consultorias e B2B. */
   clientLabel?: string;
   version?: string;

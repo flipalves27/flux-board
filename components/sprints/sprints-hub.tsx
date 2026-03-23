@@ -25,6 +25,9 @@ export function SprintsHub({ getHeaders }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<SprintWithBoardName[]>([]);
+  const [boardSummaries, setBoardSummaries] = useState<Array<{ id: string; name: string; boardMethodology?: "scrum" | "kanban" }>>(
+    []
+  );
   const openRetro = useCeremonyStore((s) => s.openRetro);
   const openReview = useCeremonyStore((s) => s.openReview);
   const openPlanning = useCeremonyStore((s) => s.openPlanning);
@@ -33,28 +36,43 @@ export function SprintsHub({ getHeaders }: Props) {
   const [cadenceBoardId, setCadenceBoardId] = useState<string | null>(null);
 
   const boardsUnique = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const r of rows) m.set(r.boardId, r.boardName);
-    return [...m.entries()].map(([id, name]) => ({ id, name }));
-  }, [rows]);
+    if (boardSummaries.length > 0) return boardSummaries;
+    const m = new Map<string, { id: string; name: string; boardMethodology?: "scrum" | "kanban" }>();
+    for (const r of rows) {
+      if (!m.has(r.boardId)) {
+        m.set(r.boardId, { id: r.boardId, name: r.boardName, boardMethodology: r.boardMethodology });
+      }
+    }
+    return [...m.values()];
+  }, [boardSummaries, rows]);
+
+  /** Prefer boards marcados como Kanban para o painel de cadência; senão, qualquer board acessível. */
+  const cadenceBoardCandidates = useMemo(() => {
+    const kanbanOnly = boardsUnique.filter((b) => b.boardMethodology === "kanban");
+    return kanbanOnly.length > 0 ? kanbanOnly : boardsUnique;
+  }, [boardsUnique]);
 
   useEffect(() => {
-    if (boardsUnique.length === 0) {
+    if (cadenceBoardCandidates.length === 0) {
       setCadenceBoardId(null);
       return;
     }
     setCadenceBoardId((prev) => {
-      if (prev && boardsUnique.some((b) => b.id === prev)) return prev;
-      return boardsUnique[0]!.id;
+      if (prev && cadenceBoardCandidates.some((b) => b.id === prev)) return prev;
+      return cadenceBoardCandidates[0]!.id;
     });
-  }, [boardsUnique]);
+  }, [cadenceBoardCandidates]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<{ sprints: SprintWithBoardName[] }>("/api/sprints", getHeaders());
+      const data = await apiGet<{
+        sprints: SprintWithBoardName[];
+        boards?: Array<{ id: string; name: string; boardMethodology?: "scrum" | "kanban" }>;
+      }>("/api/sprints", getHeaders());
       setRows(Array.isArray(data?.sprints) ? data.sprints : []);
+      setBoardSummaries(Array.isArray(data?.boards) ? data.boards : []);
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
         setError(t("upgradeRequired"));
@@ -125,7 +143,7 @@ export function SprintsHub({ getHeaders }: Props) {
         <p className="text-sm text-[var(--flux-text-muted)]">{t("loading")}</p>
       ) : null}
 
-      {!loading && !error && hubMode === "kanban" && boardsUnique.length > 0 && cadenceBoardId ? (
+      {!loading && !error && hubMode === "kanban" && cadenceBoardCandidates.length > 0 && cadenceBoardId ? (
         <section className="space-y-3">
           <label className="flex flex-col gap-1 text-[11px] text-[var(--flux-text-muted)] max-w-md">
             {t("cadencePickBoard")}
@@ -134,7 +152,7 @@ export function SprintsHub({ getHeaders }: Props) {
               onChange={(e) => setCadenceBoardId(e.target.value)}
               className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-2 py-2 text-sm text-[var(--flux-text)]"
             >
-              {boardsUnique.map((b) => (
+              {cadenceBoardCandidates.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
                 </option>
@@ -143,7 +161,7 @@ export function SprintsHub({ getHeaders }: Props) {
           </label>
           <KanbanCadencePanel
             boardId={cadenceBoardId}
-            boardLabel={boardsUnique.find((b) => b.id === cadenceBoardId)?.name ?? cadenceBoardId}
+            boardLabel={cadenceBoardCandidates.find((b) => b.id === cadenceBoardId)?.name ?? cadenceBoardId}
             getHeaders={getHeaders}
           />
         </section>

@@ -138,6 +138,8 @@ export function isSafeLinkUrl(url: string): boolean {
 // Request body schemas
 // -----------------------
 
+export const BoardMethodologySchema = z.enum(["scrum", "kanban"]);
+
 export const BoardTemplateSnapshotSchema = z.object({
   config: z.object({
     bucketOrder: z.array(z.unknown()),
@@ -147,11 +149,14 @@ export const BoardTemplateSnapshotSchema = z.object({
   mapaProducao: z.array(z.unknown()),
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
+  boardMethodology: BoardMethodologySchema.optional(),
 });
 
 export const BoardCreateSchema = z
   .object({
     name: z.string().trim().min(1, "Nome do board e obrigatorio.").max(100).optional(),
+    /** Scrum (sprints) ou Kanban (fluxo e cadências). Padrão scrum se omitido (API legada). */
+    boardMethodology: BoardMethodologySchema.optional().default("scrum"),
     /** Importa de template publicado no showcase. */
     templateId: z.string().trim().min(1).max(120).optional(),
     /** Instanciação direta (ex.: fluxo de IA) — não persistido no servidor. */
@@ -486,6 +491,7 @@ export const BoardAnomalyNotificationsSchema = z.object({
 export const BoardUpdateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
+    boardMethodology: BoardMethodologySchema.optional(),
     clientLabel: z.string().trim().max(120).optional().nullable(),
     cards: z.array(CardDataSchema).optional(),
     config: z

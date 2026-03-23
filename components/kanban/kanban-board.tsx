@@ -42,6 +42,7 @@ import { resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { BoardProductGoalStrip } from "./board-product-goal-strip";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
+import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
 function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
@@ -172,6 +173,9 @@ function KanbanBoardLoaded({
   const [sprintCoachOpen, setSprintCoachOpen] = useState(false);
   const [scrumSettingsOpen, setScrumSettingsOpen] = useState(false);
   const [incrementReviewOpen, setIncrementReviewOpen] = useState(false);
+  const [kanbanCadenceOpen, setKanbanCadenceOpen] = useState(false);
+
+  const methodology = db.boardMethodology ?? "scrum";
 
   const nlqIdsArr = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
   const nlqAllowedIds = useMemo(() => {
@@ -362,6 +366,7 @@ function KanbanBoardLoaded({
     const standup = q.get("standup");
     const scrumSettings = q.get("scrumSettings");
     const incrementReview = q.get("incrementReview");
+    const kanbanCadence = q.get("kanbanCadence");
 
     const hasDeepLink =
       Boolean(cardId) ||
@@ -372,7 +377,8 @@ function KanbanBoardLoaded({
       sprintCoach === "1" ||
       standup === "1" ||
       scrumSettings === "1" ||
-      incrementReview === "1";
+      incrementReview === "1" ||
+      kanbanCadence === "1";
 
     if (!hasDeepLink) {
       handledQueryRef.current = null;
@@ -382,6 +388,20 @@ function KanbanBoardLoaded({
     const queryKey = `${boardId}|${searchParamsKey}`;
     if (handledQueryRef.current === queryKey) return;
     handledQueryRef.current = queryKey;
+
+    const scrumOnlyDeepLink =
+      sprintPanel === "1" ||
+      sprintCoach === "1" ||
+      standup === "1" ||
+      incrementReview === "1";
+    if (methodology === "kanban" && scrumOnlyDeepLink) {
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (methodology !== "kanban" && kanbanCadence === "1") {
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
 
     if (cardId) {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
@@ -452,8 +472,13 @@ function KanbanBoardLoaded({
     if (incrementReview === "1") {
       setIncrementReviewOpen(true);
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
     }
-  }, [searchParamsKey, boardId, localeRoot]);
+    if (kanbanCadence === "1") {
+      setKanbanCadenceOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+    }
+  }, [searchParamsKey, boardId, localeRoot, methodology]);
 
   useEffect(() => {
     const card = board.modalCard;
@@ -599,15 +624,17 @@ function KanbanBoardLoaded({
           onClearInsightFocus={clearInsightFocus}
           onOpenFlowHealth={() => setFlowHealthOpen(true)}
           onOpenSprintCoach={() => setSprintCoachOpen(true)}
-          sprintCoachVisible={activeSprintBoard?.status === "active"}
+          sprintCoachVisible={methodology === "scrum" && activeSprintBoard?.status === "active"}
         />
-        <BoardProductGoalStrip
-          boardId={boardId}
-          getHeaders={getHeaders}
-          onOpenScrumSettings={() => setScrumSettingsOpen(true)}
-          onOpenIncrementReview={() => setIncrementReviewOpen(true)}
-        />
-        {activeSprintBoard?.status === "active" ? (
+        {methodology === "scrum" ? (
+          <BoardProductGoalStrip
+            boardId={boardId}
+            getHeaders={getHeaders}
+            onOpenScrumSettings={() => setScrumSettingsOpen(true)}
+            onOpenIncrementReview={() => setIncrementReviewOpen(true)}
+          />
+        ) : null}
+        {methodology === "scrum" && activeSprintBoard?.status === "active" ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
             {sprintProgress && sprintProgress.total > 0 ? (
               <div
@@ -752,7 +779,7 @@ function KanbanBoardLoaded({
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
-          sprintBoardQuickActions={{ boardId, getHeaders }}
+          sprintBoardQuickActions={methodology === "scrum" ? { boardId, getHeaders } : undefined}
         />
 
         <BoardExecutionInsightsPanel
@@ -818,6 +845,16 @@ function KanbanBoardLoaded({
         boardId={boardId}
         activeSprint={activeSprintBoard?.status === "active" ? activeSprintBoard : null}
       />
+
+      {methodology === "kanban" ? (
+        <BoardKanbanCadencePanel
+          open={kanbanCadenceOpen}
+          onClose={() => setKanbanCadenceOpen(false)}
+          boardId={boardId}
+          boardLabel={boardName}
+          getHeaders={getHeaders}
+        />
+      ) : null}
     </>
   );
 }
