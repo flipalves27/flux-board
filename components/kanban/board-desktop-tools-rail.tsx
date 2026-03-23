@@ -114,9 +114,7 @@ export function BoardDesktopToolsRail() {
 
   return (
     <div
-      className={`max-md:hidden fixed z-[var(--flux-z-board-tools-rail)] top-[112px] flex flex-row-reverse items-start gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
-      onMouseEnter={onRailEnter}
-      onMouseLeave={onRailLeave}
+      className={`max-md:hidden fixed z-[var(--flux-z-board-tools-rail)] top-1/2 -translate-y-1/2 flex flex-row-reverse items-start gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
@@ -130,6 +128,8 @@ export function BoardDesktopToolsRail() {
         aria-pressed={pinned}
         aria-label={pinned ? tRail("handleUnpin") : tRail("handlePin")}
         title={tRail("handleTitle")}
+        onMouseEnter={onRailEnter}
+        onMouseLeave={onRailLeave}
       >
         <svg
           viewBox="0 0 24 24"
@@ -150,6 +150,8 @@ export function BoardDesktopToolsRail() {
         className={`flex flex-col gap-2 pr-0.5 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] ${
           showTools ? "translate-x-0" : "translate-x-[calc(100%+10px)]"
         } ${showTools ? "pointer-events-auto" : "pointer-events-none"}`}
+        onMouseEnter={onRailEnter}
+        onMouseLeave={onRailLeave}
       >
         <button
           type="button"
