@@ -153,6 +153,7 @@ export const BoardTemplateSnapshotSchema = z.object({
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
   templateKind: z.enum(["kanban", "priority_matrix"]).optional(),
+  priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
 });
 
@@ -423,6 +424,12 @@ export const PortalBrandingSchema = z
   .passthrough();
 
 /** Atualização parcial de branding da organização (Enterprise). */
+export const PriorityMatrixGridSelectionSchema = z.object({
+  cardId: z.string().trim().min(1).max(200),
+  row: z.number().int().min(0).max(3),
+  col: z.number().int().min(0).max(3),
+});
+
 export const TemplateExportBodySchema = z
   .object({
     title: z.string().trim().min(1).max(200),
@@ -439,6 +446,7 @@ export const TemplateExportBodySchema = z
     ]),
     pricingTier: z.enum(["free", "premium"]),
     templateKind: z.enum(["kanban", "priority_matrix"]).optional().default("kanban"),
+    /** Eisenhower: quadrantes. Ignorado quando priorityMatrixModel é grid4. */
     priorityMatrixSelections: z
       .array(
         z.object({
@@ -448,6 +456,9 @@ export const TemplateExportBodySchema = z
       )
       .max(100)
       .optional(),
+    /** Padrão eisenhower para matriz clássica; grid4 para grade 4×4. */
+    priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional().default("eisenhower"),
+    priorityMatrixGridSelections: z.array(PriorityMatrixGridSelectionSchema).max(100).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
@@ -455,6 +466,27 @@ export const TemplateExportBodySchema = z
         code: z.ZodIssueCode.custom,
         message: "priorityMatrixSelections só é permitido com templateKind priority_matrix.",
         path: ["priorityMatrixSelections"],
+      });
+    }
+    if (data.templateKind === "kanban" && data.priorityMatrixGridSelections && data.priorityMatrixGridSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "priorityMatrixGridSelections só é permitido com templateKind priority_matrix.",
+        path: ["priorityMatrixGridSelections"],
+      });
+    }
+    if (data.templateKind === "priority_matrix" && data.priorityMatrixModel === "grid4" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Com matriz 4×4 use priorityMatrixGridSelections, não priorityMatrixSelections.",
+        path: ["priorityMatrixSelections"],
+      });
+    }
+    if (data.templateKind === "priority_matrix" && data.priorityMatrixModel === "eisenhower" && data.priorityMatrixGridSelections && data.priorityMatrixGridSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Com Eisenhower use priorityMatrixSelections, não priorityMatrixGridSelections.",
+        path: ["priorityMatrixGridSelections"],
       });
     }
   });

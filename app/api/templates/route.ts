@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       creatorOrgName: t.creatorOrgName,
       createdAt: t.createdAt,
       templateKind: t.snapshot.templateKind ?? "kanban",
+      priorityMatrixModel: t.snapshot.priorityMatrixModel,
     })),
   });
 }

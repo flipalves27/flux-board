@@ -4,7 +4,11 @@ import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { createPublishedTemplate } from "@/lib/kv-templates";
-import { buildPriorityMatrixSnapshotFromBoard, buildTemplateSnapshotFromBoard } from "@/lib/template-snapshot";
+import {
+  buildPriorityMatrixGrid4SnapshotFromBoard,
+  buildPriorityMatrixSnapshotFromBoard,
+  buildTemplateSnapshotFromBoard,
+} from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,9 +34,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const kind = parsed.data.templateKind ?? "kanban";
   let snapshot;
   if (kind === "priority_matrix") {
-    const selections = parsed.data.priorityMatrixSelections ?? [];
+    const model = parsed.data.priorityMatrixModel ?? "eisenhower";
     try {
-      snapshot = buildPriorityMatrixSnapshotFromBoard(board, selections);
+      if (model === "grid4") {
+        const gridSel = parsed.data.priorityMatrixGridSelections ?? [];
+        snapshot = buildPriorityMatrixGrid4SnapshotFromBoard(board, gridSel);
+      } else {
+        const selections = parsed.data.priorityMatrixSelections ?? [];
+        snapshot = buildPriorityMatrixSnapshotFromBoard(board, selections);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao montar snapshot da matriz.";
       return NextResponse.json({ error: msg }, { status: 400 });

@@ -21,6 +21,9 @@ export type TemplateKind = "kanban" | "priority_matrix";
 export const PRIORITY_MATRIX_QUADRANT_KEYS = ["do_first", "schedule", "delegate", "eliminate"] as const;
 export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[number];
 
+/** Eisenhower 4 quadrantes ou grade 4×4 (16 células). */
+export type PriorityMatrixModel = "eisenhower" | "grid4";
+
 export type BoardTemplateSnapshot = {
   config: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
   mapaProducao: unknown[];
@@ -31,6 +34,8 @@ export type BoardTemplateSnapshot = {
   boardMethodology?: "scrum" | "kanban";
   /** Ausente ou `kanban`: snapshot clássico; `priority_matrix`: quatro colunas + `templateCards`. */
   templateKind?: TemplateKind;
+  /** Com `priority_matrix`: quadrantes Eisenhower ou grade 4×4 (16 colunas). */
+  priorityMatrixModel?: PriorityMatrixModel;
   /** Cópias serializáveis para import (novos ids na criação do board). */
   templateCards?: unknown[];
 };

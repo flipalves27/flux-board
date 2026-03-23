@@ -23,6 +23,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       creatorOrgName: tpl.creatorOrgName,
       createdAt: tpl.createdAt,
       templateKind: tpl.snapshot.templateKind ?? "kanban",
+      priorityMatrixModel: tpl.snapshot.priorityMatrixModel,
       snapshot: tpl.snapshot,
     },
   });

@@ -9,7 +9,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import type { TemplateCategory } from "@/lib/template-types";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
-import { PriorityMatrixTemplatePanel } from "@/components/templates/priority-matrix-template-panel";
+import { PriorityMatrixWorkspace } from "@/components/templates/priority-matrix-workspace";
 
 type Row = {
   id: string;
@@ -20,6 +20,7 @@ type Row = {
   pricingTier: "free" | "premium";
   creatorOrgName?: string;
   templateKind?: "kanban" | "priority_matrix";
+  priorityMatrixModel?: "eisenhower" | "grid4";
 };
 
 export default function TemplatesShowcasePage() {
@@ -93,7 +94,7 @@ export default function TemplatesShowcasePage() {
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel="← Boards" />
-      <main className="max-w-[960px] mx-auto px-6 py-10 space-y-10">
+      <main className="max-w-[1200px] mx-auto px-6 py-10 space-y-10">
         <p className="text-sm text-[var(--flux-text-muted)]">{t("subtitle")}</p>
 
         <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
@@ -141,7 +142,7 @@ export default function TemplatesShowcasePage() {
             <>
               <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("matrixSectionTitle")}</h3>
               <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("matrixSectionHint")}</p>
-              <PriorityMatrixTemplatePanel getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
+              <PriorityMatrixWorkspace getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
             </>
           )}
         </section>
@@ -181,7 +182,7 @@ export default function TemplatesShowcasePage() {
                     <h3 className="font-display font-semibold text-[var(--flux-text)]">{r.title}</h3>
                     {r.templateKind === "priority_matrix" && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-primary-alpha-15)] text-[var(--flux-primary)] border border-[var(--flux-primary-alpha-25)]">
-                        {t("matrixBadge")}
+                        {r.priorityMatrixModel === "grid4" ? t("matrixGridBadge") : t("matrixBadge")}
                       </span>
                     )}
                     <span

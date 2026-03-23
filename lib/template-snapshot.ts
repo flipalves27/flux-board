@@ -1,6 +1,7 @@
 import type { BoardData } from "./kv-boards";
 import type { AutomationRule } from "./automation-types";
 import type { BoardTemplateSnapshot, PriorityMatrixQuadrantKey } from "./template-types";
+import { matrixCellKey, priorityMatrixGrid4BucketOrder } from "./matrix-grid4";
 
 function parseCards(raw: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(raw)) return [];
@@ -33,7 +34,7 @@ export function priorityMatrixBucketOrder(): Array<{ key: string; label: string;
 
 function cardToTemplateSeed(
   card: Record<string, unknown>,
-  quadrantKey: PriorityMatrixQuadrantKey,
+  bucketKey: string,
   order: number
 ): Record<string, unknown> {
   const titleRaw = typeof card.title === "string" ? card.title.trim().slice(0, 300) : "";
@@ -49,7 +50,7 @@ function cardToTemplateSeed(
         .slice(0, 30)
     : [];
   const base: Record<string, unknown> = {
-    bucket: quadrantKey,
+    bucket: bucketKey,
     priority,
     progress,
     title: titleRaw || "Card",
@@ -105,8 +106,58 @@ export function buildPriorityMatrixSnapshotFromBoard(
 
   return {
     templateKind: "priority_matrix",
+    priorityMatrixModel: "eisenhower",
     config: {
       bucketOrder: priorityMatrixBucketOrder(),
+      collapsedColumns: [],
+    },
+    mapaProducao: [],
+    labelPalette,
+    automations: [],
+    boardMethodology: "kanban",
+    templateCards,
+  };
+}
+
+export type PriorityMatrixGridSelection = { cardId: string; row: number; col: number };
+
+/**
+ * Matriz 4×4: 16 colunas (uma por célula) + cópias de cards por posição (row/col).
+ */
+export function buildPriorityMatrixGrid4SnapshotFromBoard(
+  board: BoardData,
+  selections: PriorityMatrixGridSelection[]
+): BoardTemplateSnapshot {
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const c of parseCards(board.cards)) {
+    const id = typeof c.id === "string" ? c.id : "";
+    if (id) byId.set(id, c);
+  }
+
+  const orderByCell = new Map<string, number>();
+
+  const templateCards: unknown[] = [];
+  for (const sel of selections) {
+    const row = sel.row;
+    const col = sel.col;
+    if (row < 0 || row > 3 || col < 0 || col > 3) continue;
+    const card = byId.get(sel.cardId);
+    if (!card) {
+      throw new Error(`Card não encontrado no board: ${sel.cardId}`);
+    }
+    const bucketKey = matrixCellKey(row, col);
+    const ord = orderByCell.get(bucketKey) ?? 0;
+    orderByCell.set(bucketKey, ord + 1);
+    templateCards.push(cardToTemplateSeed(card, bucketKey, ord));
+  }
+
+  const labelPalette = [...new Set([...collectLabelPaletteFromCards(templateCards)])].slice(0, 100);
+
+  return {
+    templateKind: "priority_matrix",
+    priorityMatrixModel: "grid4",
+    config: {
+      bucketOrder: priorityMatrixGrid4BucketOrder(),
       collapsedColumns: [],
     },
     mapaProducao: [],

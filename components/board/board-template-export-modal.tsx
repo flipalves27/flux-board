@@ -27,6 +27,8 @@ type Props = {
   getHeaders: () => Record<string, string>;
   /** Pré-seleciona o tipo ao abrir (padrão: kanban). */
   defaultTemplateKind?: "kanban" | "priority_matrix";
+  /** Se definido, publica matriz 4×4 (payload do workspace); não exige lista Eisenhower no modal. */
+  grid4PublishSelections?: Array<{ cardId: string; row: number; col: number }>;
 };
 
 export function BoardTemplateExportModal({
@@ -35,7 +37,9 @@ export function BoardTemplateExportModal({
   boardId,
   getHeaders,
   defaultTemplateKind = "kanban",
+  grid4PublishSelections,
 }: Props) {
+  const isGrid4PublishMode = grid4PublishSelections !== undefined;
   const t = useTranslations("templates");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -57,13 +61,13 @@ export function BoardTemplateExportModal({
   useEffect(() => {
     if (!open) return;
     setSourceBoardId(boardId);
-    setTemplateKind(defaultTemplateKind);
+    setTemplateKind(isGrid4PublishMode ? "priority_matrix" : defaultTemplateKind);
     setMatrixSelections({});
     setCardSearch("");
     setError(null);
     setPhase("idle");
     setPublishedSlug(null);
-  }, [open, boardId, defaultTemplateKind]);
+  }, [open, boardId, defaultTemplateKind, isGrid4PublishMode]);
 
   useEffect(() => {
     if (templateKind === "kanban") setError(null);
@@ -96,7 +100,7 @@ export function BoardTemplateExportModal({
   }, [open, boardRows, boardId, sourceBoardId]);
 
   useEffect(() => {
-    if (!open || templateKind !== "priority_matrix" || !sourceBoardId) return;
+    if (!open || isGrid4PublishMode || templateKind !== "priority_matrix" || !sourceBoardId) return;
     let cancelled = false;
     setCardsLoading(true);
     setCards([]);
@@ -132,7 +136,7 @@ export function BoardTemplateExportModal({
     return () => {
       cancelled = true;
     };
-  }, [open, templateKind, sourceBoardId, getHeaders, t]);
+  }, [open, isGrid4PublishMode, templateKind, sourceBoardId, getHeaders, t]);
 
   const filteredCards = useMemo(() => {
     const q = cardSearch.trim().toLowerCase();
@@ -152,9 +156,14 @@ export function BoardTemplateExportModal({
         category,
         pricingTier,
       };
-      const targetBoardId = templateKind === "priority_matrix" ? sourceBoardId : boardId;
-      if (templateKind === "priority_matrix") {
+      const targetBoardId = isGrid4PublishMode || templateKind === "priority_matrix" ? sourceBoardId : boardId;
+      if (isGrid4PublishMode) {
         base.templateKind = "priority_matrix";
+        base.priorityMatrixModel = "grid4";
+        base.priorityMatrixGridSelections = grid4PublishSelections ?? [];
+      } else if (templateKind === "priority_matrix") {
+        base.templateKind = "priority_matrix";
+        base.priorityMatrixModel = "eisenhower";
         base.priorityMatrixSelections = Object.entries(matrixSelections)
           .filter((entry): entry is [string, PriorityMatrixQuadrantKey] => Boolean(entry[1]))
           .map(([cardId, quadrantKey]) => ({ cardId, quadrantKey }));
@@ -175,8 +184,11 @@ export function BoardTemplateExportModal({
     }
   }
 
-  const hint =
-    templateKind === "priority_matrix" ? t("exportModal.hintMatrix") : t("exportModal.hint");
+  const hint = isGrid4PublishMode
+    ? t("exportModal.hintGrid4Publish")
+    : templateKind === "priority_matrix"
+      ? t("exportModal.hintMatrix")
+      : t("exportModal.hint");
 
   return (
     <div
@@ -185,10 +197,15 @@ export function BoardTemplateExportModal({
       aria-modal
     >
       <div
-        className={`w-full ${templateKind === "priority_matrix" ? "max-w-2xl" : "max-w-lg"} my-8 rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_var(--flux-black-alpha-45)] p-6`}
+        className={`w-full ${templateKind === "priority_matrix" && !isGrid4PublishMode ? "max-w-2xl" : "max-w-lg"} my-8 rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_var(--flux-black-alpha-45)] p-6`}
       >
         <h2 className="text-lg font-semibold text-[var(--flux-text)] font-display">{t("exportModal.title")}</h2>
         <p className="text-sm text-[var(--flux-text-muted)] mt-1 mb-4">{hint}</p>
+        {isGrid4PublishMode && grid4PublishSelections && (
+          <p className="text-xs text-[var(--flux-secondary)] mb-4 font-medium">
+            {t("exportModal.grid4Summary", { count: grid4PublishSelections.length })}
+          </p>
+        )}
 
         {error && (
           <div className="mb-3 text-sm text-[var(--flux-danger)] border border-[var(--flux-danger-alpha-35)] rounded-[var(--flux-rad)] px-3 py-2">
@@ -210,33 +227,37 @@ export function BoardTemplateExportModal({
           </div>
         ) : (
           <>
-            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
-              {t("exportModal.templateKind")}
-            </label>
-            <div className="flex flex-wrap gap-3 mb-3">
-              <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  name="tplKind"
-                  checked={templateKind === "kanban"}
-                  onChange={() => setTemplateKind("kanban")}
-                  className="rounded-full"
-                />
-                {t("exportModal.templateKindKanban")}
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  name="tplKind"
-                  checked={templateKind === "priority_matrix"}
-                  onChange={() => setTemplateKind("priority_matrix")}
-                  className="rounded-full"
-                />
-                {t("exportModal.templateKindMatrix")}
-              </label>
-            </div>
+            {!isGrid4PublishMode && (
+              <>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
+                  {t("exportModal.templateKind")}
+                </label>
+                <div className="flex flex-wrap gap-3 mb-3">
+                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tplKind"
+                      checked={templateKind === "kanban"}
+                      onChange={() => setTemplateKind("kanban")}
+                      className="rounded-full"
+                    />
+                    {t("exportModal.templateKindKanban")}
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tplKind"
+                      checked={templateKind === "priority_matrix"}
+                      onChange={() => setTemplateKind("priority_matrix")}
+                      className="rounded-full"
+                    />
+                    {t("exportModal.templateKindMatrix")}
+                  </label>
+                </div>
+              </>
+            )}
 
-            {templateKind === "priority_matrix" && (
+            {!isGrid4PublishMode && templateKind === "priority_matrix" && (
               <div className="mb-4 space-y-2">
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)]">
                   {t("exportModal.sourceBoard")}
