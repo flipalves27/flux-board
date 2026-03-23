@@ -122,6 +122,10 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
         orgId,
       });
       (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
+      const rebornId = getBoardRebornId(orgId);
+      ids.delete(rebornId);
+      const rebornDoc = await db.collection<BoardDoc>(COL_BOARDS).findOne({ _id: rebornId, orgId });
+      if (rebornDoc?.ownerId === userId) ids.add(rebornId);
     }
     return [...ids];
   }
@@ -143,6 +147,10 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
   } else {
     const userIds = ((await kv.get<string[]>(userBoardsKey(userId))) as string[]) || [];
     userIds.forEach((id) => ids.add(id));
+    const rebornId = getBoardRebornId(orgId);
+    ids.delete(rebornId);
+    const rebornBoard = await getBoard(rebornId, orgId);
+    if (rebornBoard?.ownerId === userId) ids.add(rebornId);
   }
   return [...ids];
 }
@@ -346,6 +354,10 @@ export async function deleteBoard(boardId: string, orgId: string, userId: string
 export async function userCanAccessBoard(userId: string, orgId: string, isAdmin: boolean, boardId: string): Promise<boolean> {
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
+  // Board-Reborn: não usar modo "open" (sem membros); só admin da org ou dono do board.
+  if (isBoardRebornId(boardId, orgId)) {
+    return isAdmin || board.ownerId === userId;
+  }
   if (board.ownerId === userId || isAdmin) return true;
   // Board-level RBAC: check membership
   const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
