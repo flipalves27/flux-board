@@ -103,6 +103,10 @@ const MIN_ZOOM = 0.12;
 const MAX_ZOOM = 2.5;
 const HISTORY_LIMIT = 80;
 const ZOOM_STEP = 0.15;
+/** Minimum x so nodes don't hide under the lane label bar (52px) + a bit of padding. */
+const NODE_MIN_X = 60;
+/** Minimum y so nodes don't go above all swim lanes. */
+const NODE_MIN_Y = 8;
 
 export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [boardId, setBoardId] = useState("");
@@ -481,8 +485,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     setDragPreview(null);
     setDraggingType("");
     if (!coords) return;
-    const x = Math.max(32, coords.x);
-    const y = Math.max(24, coords.y);
+    const x = Math.max(NODE_MIN_X, snap(coords.x));
+    const y = Math.max(NODE_MIN_Y, snap(coords.y));
     if (type) {
       addNode(type, x, y, variant || undefined);
       return;
@@ -563,8 +567,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           nodes: prev.nodes.map((n) => {
             if (!nd.ids.includes(n.id)) return n;
             const origin = nd.origins[n.id];
-            const x = Math.max(16, snap(origin.x + ld.dx));
-            const y = Math.max(16, snap(origin.y + ld.dy));
+            const x = Math.max(NODE_MIN_X, snap(origin.x + ld.dx));
+            const y = Math.max(NODE_MIN_Y, snap(origin.y + ld.dy));
             return { ...n, x, y, laneId: laneForY(y, prev.lanes) };
           }),
         };
@@ -810,8 +814,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     return model.nodes.map((n) => {
       if (!nodeDrag.ids.includes(n.id)) return n;
       const o = nodeDrag.origins[n.id];
-      const x = Math.max(16, snap(o.x + ld.dx));
-      const y = Math.max(16, snap(o.y + ld.dy));
+      const x = Math.max(NODE_MIN_X, snap(o.x + ld.dx));
+      const y = Math.max(NODE_MIN_Y, snap(o.y + ld.dy));
       return { ...n, x, y, laneId: laneForY(y, model.lanes) };
     });
   }, [model.nodes, model.lanes, nodeDrag, liveDragDelta]);
@@ -1048,8 +1052,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           const clones = clip.nodes.map((n) => {
             const id = `${n.type.replace(/[^a-z_]/g, "")}_${Math.random().toString(36).slice(2, 7)}`;
             idMap.set(n.id, id);
-            const x = Math.max(16, snap(n.x + step));
-            const y = Math.max(16, snap(n.y + step));
+            const x = Math.max(NODE_MIN_X, snap(n.x + step));
+            const y = Math.max(NODE_MIN_Y, snap(n.y + step));
             return { ...n, id, x, y, laneId: laneForY(y, prev.lanes), label: `${n.label} copy` };
           });
           const clonedEdges = clip.edges.map((e) => ({
@@ -1109,8 +1113,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             ...prev,
             nodes: prev.nodes.map((n) => {
               if (!ids.includes(n.id)) return n;
-              const x = Math.max(16, snap(n.x + dx));
-              const y = Math.max(16, snap(n.y + dy));
+              const x = Math.max(NODE_MIN_X, snap(n.x + dx));
+              const y = Math.max(NODE_MIN_Y, snap(n.y + dy));
               return { ...n, x, y, laneId: laneForY(y, prev.lanes) };
             }),
           };
@@ -1185,7 +1189,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }, [nodesForEdges]);
 
   return (
-    <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3`}>
+    <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden`}>
       <header
         className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(0,0,0,0.25)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
         style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
@@ -1352,8 +1356,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           </div>
         </div>
       </header>
-      <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_272px]" : "grid-cols-1 xl:grid-cols-[256px_1fr_272px]"}`}>
-        <aside className={`flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50 ${paletteCollapsed ? "p-2" : "p-3"}`}>
+      <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_272px]" : "grid-cols-1 xl:grid-cols-[240px_1fr_260px]"}`}>
+        <aside className={`flex min-h-0 flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50 ${paletteCollapsed ? "p-2" : "p-3"}`}>
           {/* Palette header */}
           <div className="flex items-center justify-between gap-2">
             {!paletteCollapsed && (
@@ -1537,7 +1541,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           )}
         </aside>
 
-        <div className="flex min-h-[min(560px,calc(100vh-200px))] flex-col gap-2 xl:min-h-[calc(100vh-200px)]">
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200/80 bg-white/90 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/50">
             <button type="button" className="btn-secondary text-xs" onClick={() => setSnapEnabled((v) => !v)}>
               Snap: {snapEnabled ? "ON" : "OFF"}
@@ -1557,7 +1561,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               const coords = toCanvasCoords(e.clientX, e.clientY);
               if (!coords) return;
               setIsCanvasDropActive(true);
-              setDragPreview({ x: Math.max(32, coords.x), y: Math.max(24, coords.y) });
+              setDragPreview({ x: Math.max(NODE_MIN_X, coords.x), y: Math.max(NODE_MIN_Y, coords.y) });
             }}
             onDragLeave={() => {
               setIsCanvasDropActive(false);
@@ -1645,19 +1649,27 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               if (draggingWaypoint) setDraggingWaypoint(null);
             }}
             onPointerLeave={onCanvasPointerUp}
-            className={`relative min-h-[760px] cursor-crosshair rounded-[var(--flux-rad-lg)] border border-slate-200/80 bg-[#F0F2F5] shadow-inner transition dark:border-slate-700 dark:bg-[#111827] ${
+            className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-slate-200/80 bg-[#F0F2F5] shadow-inner transition dark:border-slate-700 dark:bg-[#0F172A] ${
               isCanvasDropActive ? "border-sky-300/70 shadow-[0_0_0_2px_rgba(56,189,248,0.18)]" : ""
             } ${isPanning ? "cursor-grabbing" : ""}`}
           >
+            {/* Grid background — contained inside overflow:hidden, never bleeds outside */}
             <div
-              className="absolute inset-0"
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-[inherit]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, rgba(161,161,170,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(161,161,170,0.18) 1px, transparent 1px), linear-gradient(to right, rgba(56,189,248,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(56,189,248,0.22) 1px, transparent 1px)",
+                backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px`,
+                backgroundPosition: `${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px`,
+              }}
+            />
+            {/* Canvas content — panned and zoomed */}
+            <div
+              className="absolute top-0 left-0"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: "0 0",
-                backgroundImage:
-                  "linear-gradient(to right, rgba(161,161,170,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(161,161,170,0.16) 1px, transparent 1px), linear-gradient(to right, rgba(56,189,248,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(56,189,248,0.2) 1px, transparent 1px)",
-                backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px`,
-                backgroundPosition: "0 0, 0 0, 0 0, 0 0",
               }}
             >
               {model.lanes.map((lane, i) => {
@@ -2334,7 +2346,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <p className="text-[11px] text-[var(--flux-text-muted)]">Canvas interativo com auto-routing ortogonal, desvio de obstáculos e feedback visual de arraste.</p>
         </div>
 
-        <aside className="flex max-h-[min(920px,calc(100vh-140px))] min-h-0 flex-col gap-0 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
+        <aside className="flex min-h-0 flex-col gap-0 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 p-3 dark:border-slate-700">
             <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Propriedades</p>
             <button type="button" className="btn-secondary" onClick={() => setIsPropertiesVisible((v) => !v)}>
