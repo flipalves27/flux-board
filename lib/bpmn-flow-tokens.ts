@@ -16,11 +16,11 @@ export const BPMN_TASK_VARIANT_STYLES: Record<
   BpmnSemanticVariant,
   { accent: string; badgeBg: string; bg: string; borderStyle: "solid" | "dashed" }
 > = {
-  default: { accent: "#00897B", badgeBg: "#00897B", bg: "#FFFFFF", borderStyle: "solid" },
-  reborn: { accent: "#7CB342", badgeBg: "#7CB342", bg: "#F1F8E9", borderStyle: "solid" },
-  automation: { accent: "#00ACC1", badgeBg: "#00ACC1", bg: "#E0F7FA", borderStyle: "solid" },
-  pain: { accent: "#EF5350", badgeBg: "#EF5350", bg: "#FFEBEE", borderStyle: "solid" },
-  system: { accent: "#7E57C2", badgeBg: "#7E57C2", bg: "#EDE7F6", borderStyle: "dashed" },
+  default: { accent: "#00897B", badgeBg: "#00897B", bg: "rgba(255,255,255,0.96)", borderStyle: "solid" },
+  reborn: { accent: "#7CB342", badgeBg: "#7CB342", bg: "rgba(241,248,233,0.98)", borderStyle: "solid" },
+  automation: { accent: "#00ACC1", badgeBg: "#00ACC1", bg: "rgba(224,247,252,0.98)", borderStyle: "solid" },
+  pain: { accent: "#EF5350", badgeBg: "#EF5350", bg: "rgba(255,235,238,0.98)", borderStyle: "solid" },
+  system: { accent: "#5C6BC0", badgeBg: "#5C6BC0", bg: "rgba(232,234,246,0.95)", borderStyle: "dashed" },
 };
 
 export function isTaskLikeType(type: string): boolean {
