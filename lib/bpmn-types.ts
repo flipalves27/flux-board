@@ -18,6 +18,14 @@ export const BPMN_NODE_TYPES = [
 
 export type BpmnNodeType = (typeof BPMN_NODE_TYPES)[number];
 
+/** Visual / process semantics for task-like nodes (Reborn reference). */
+export type BpmnSemanticVariant = "default" | "reborn" | "automation" | "pain" | "system";
+
+/** Sequence flow rendering: primary path, rework loop, or cross–swimlane jump. */
+export type BpmnEdgeKind = "default" | "primary" | "rework" | "cross_lane";
+
+export type BpmnPort = "north" | "east" | "south" | "west";
+
 export type BpmnNode = {
   id: string;
   type: BpmnNodeType;
@@ -25,6 +33,17 @@ export type BpmnNode = {
   x: number;
   y: number;
   laneId?: string;
+  width?: number;
+  height?: number;
+  /** Secondary line under title (actor, system, detail). */
+  subtitle?: string;
+  /** Step index shown in badge (e.g. 1, 2b, A). */
+  stepNumber?: string;
+  semanticVariant?: BpmnSemanticVariant;
+  /** Hover / inspector description. */
+  tooltip?: string;
+  /** Pain-point badge (e.g. 1, 2). */
+  painBadge?: string;
 };
 
 export type BpmnEdge = {
@@ -32,11 +51,19 @@ export type BpmnEdge = {
   sourceId: string;
   targetId: string;
   label?: string;
+  kind?: BpmnEdgeKind;
+  sourcePort?: BpmnPort;
+  targetPort?: BpmnPort;
+  waypoints?: Array<{ x: number; y: number }>;
 };
 
 export type BpmnLane = {
   id: string;
   label: string;
+  y?: number;
+  height?: number;
+  /** Short tag pill (e.g. AS-IS — Subscrição). */
+  tag?: string;
 };
 
 export type BpmnTemplateModel = {

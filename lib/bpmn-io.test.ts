@@ -40,5 +40,36 @@ describe("bpmn io", () => {
     expect(result.ok).toBe(false);
     expect(result.issues.some((i) => i.code === "start_event_count")).toBe(true);
   });
+
+  it("markdown roundtrip preserves extended lane, node, and edge fields", () => {
+    const extended = {
+      ...sample,
+      lanes: [{ id: "sales", label: "Sales", y: 12, height: 128, tag: "Piloto" }],
+      nodes: sample.nodes.map((n, i) =>
+        i === 1
+          ? {
+              ...n,
+              subtitle: "Detalhe",
+              stepNumber: "1",
+              semanticVariant: "reborn" as const,
+              tooltip: "Dica",
+              painBadge: "2",
+            }
+          : n
+      ),
+      edges: sample.edges.map((e, i) => (i === 0 ? { ...e, kind: "primary" as const, label: "ok" } : e)),
+    };
+    const md = bpmnModelToMarkdown(extended);
+    const parsed = markdownToBpmnModel(md);
+    expect(parsed.lanes[0].tag).toBe("Piloto");
+    const task = parsed.nodes.find((n) => n.id === "task_1");
+    expect(task?.subtitle).toBe("Detalhe");
+    expect(task?.stepNumber).toBe("1");
+    expect(task?.semanticVariant).toBe("reborn");
+    expect(task?.tooltip).toBe("Dica");
+    expect(task?.painBadge).toBe("2");
+    expect(parsed.edges[0].kind).toBe("primary");
+    expect(parsed.edges[0].label).toBe("ok");
+  });
 });
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BPMN_NODE_TYPES } from "./bpmn-types";
 import { WEBHOOK_EVENT_TYPES } from "./webhook-types";
 
 /**
@@ -141,11 +142,28 @@ export function isSafeLinkUrl(url: string): boolean {
 export const BoardMethodologySchema = z.enum(["scrum", "kanban"]);
 
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
-const BpmnNodeTypeSchema = z.enum(["start_event", "end_event", "task", "exclusive_gateway", "parallel_gateway"]);
+
+const BpmnNodeTypeSchema = z.enum(BPMN_NODE_TYPES as unknown as [string, ...string[]]);
+const BpmnSemanticVariantSchema = z.enum(["default", "reborn", "automation", "pain", "system"]);
+const BpmnEdgeKindSchema = z.enum(["default", "primary", "rework", "cross_lane"]);
+const BpmnPortSchema = z.enum(["north", "east", "south", "west"]);
+
+const BpmnWaypointSchema = z.object({ x: z.number().finite(), y: z.number().finite() });
+
 const BpmnModelSchema = z.object({
   version: z.literal("bpmn-2.0-lite"),
   name: z.string().trim().min(1).max(200),
-  lanes: z.array(z.object({ id: z.string().trim().min(1).max(80), label: z.string().trim().min(1).max(200) })).max(30),
+  lanes: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(80),
+        label: z.string().trim().min(1).max(200),
+        y: z.number().finite().optional(),
+        height: z.number().finite().optional(),
+        tag: z.string().trim().max(200).optional(),
+      })
+    )
+    .max(30),
   nodes: z
     .array(
       z.object({
@@ -155,6 +173,13 @@ const BpmnModelSchema = z.object({
         x: z.number().finite(),
         y: z.number().finite(),
         laneId: z.string().trim().max(80).optional(),
+        width: z.number().finite().optional(),
+        height: z.number().finite().optional(),
+        subtitle: z.string().trim().max(500).optional(),
+        stepNumber: z.string().trim().max(40).optional(),
+        semanticVariant: BpmnSemanticVariantSchema.optional(),
+        tooltip: z.string().trim().max(2000).optional(),
+        painBadge: z.string().trim().max(40).optional(),
       })
     )
     .max(500),
@@ -165,6 +190,10 @@ const BpmnModelSchema = z.object({
         sourceId: z.string().trim().min(1).max(80),
         targetId: z.string().trim().min(1).max(80),
         label: z.string().trim().max(200).optional(),
+        kind: BpmnEdgeKindSchema.optional(),
+        sourcePort: BpmnPortSchema.optional(),
+        targetPort: BpmnPortSchema.optional(),
+        waypoints: z.array(BpmnWaypointSchema).max(200).optional(),
       })
     )
     .max(800),

@@ -13,6 +13,7 @@ import {
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
 import { markdownToBpmnModel, xmlToBpmnModel } from "@/lib/bpmn-io";
 import { bpmnModelFromBoard } from "@/lib/bpmn-io";
+import type { BpmnTemplateModel } from "@/lib/bpmn-types";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (!model) {
         return NextResponse.json({ error: "Não foi possível obter o modelo BPMN para exportação." }, { status: 400 });
       }
-      snapshot = buildBpmnSnapshotFromModel(model);
+      snapshot = buildBpmnSnapshotFromModel(model as BpmnTemplateModel);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao montar snapshot BPMN.";
       return NextResponse.json({ error: msg }, { status: 400 });

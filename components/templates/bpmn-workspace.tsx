@@ -1,33 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type WheelEvent, type PointerEvent } from "react";
+import { Barlow } from "next/font/google";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
+import { BpmnLegend } from "@/components/templates/bpmn-legend";
+import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
+import type { BpmnEdgeKind, BpmnNodeType, BpmnPort, BpmnSemanticVariant, BpmnTemplateModel } from "@/lib/bpmn-types";
+import { BPMN_FLOW_EDGE_STYLES, BPMN_TASK_VARIANT_STYLES, isTaskLikeType } from "@/lib/bpmn-flow-tokens";
 import { BPMN_VISUAL_STATE_TOKENS, BPMN_VISUAL_TOKENS, getBpmnVisualSpec } from "@/lib/bpmn-visual-system";
 import { renderBpmnIcon } from "@/lib/bpmn-icon-render";
+
+const barlow = Barlow({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 type Props = {
   getHeaders: () => Record<string, string>;
   isAdmin: boolean;
 };
 
-type BpmnModel = {
-  version: "bpmn-2.0-lite";
-  name: string;
-  lanes: Array<{ id: string; label: string; y: number; height: number }>;
-  nodes: Array<{ id: string; type: string; label: string; x: number; y: number; laneId?: string; width?: number; height?: number }>;
-  edges: Array<{
-    id: string;
-    sourceId: string;
-    targetId: string;
-    label?: string;
-    sourcePort?: BpmnPort;
-    targetPort?: BpmnPort;
-    waypoints?: Array<{ x: number; y: number }>;
-  }>;
-};
-
-type BpmnPort = "north" | "east" | "south" | "west";
+type BpmnModel = BpmnTemplateModel;
 type CodeTab = "markdown" | "xml";
 type BpmnStencil = {
   type: string;
@@ -142,6 +133,14 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [boxSelect, setBoxSelect] = useState<BoxSelectState | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [isPropertiesVisible, setIsPropertiesVisible] = useState(true);
+  const [showEdges, setShowEdges] = useState(true);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [presentMode, setPresentMode] = useState(false);
+  const [editingSubtitle, setEditingSubtitle] = useState("");
+  const [editingTooltip, setEditingTooltip] = useState("");
+  const [editingStep, setEditingStep] = useState("");
+  const [editingPain, setEditingPain] = useState("");
+  const [editingLaneTag, setEditingLaneTag] = useState("");
   const panStartRef = useRef<{ x: number; y: number; originX: number; originY: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const modelRef = useRef(model);
@@ -207,8 +206,48 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function laneForY(y: number, lanes: BpmnModel["lanes"]): string | undefined {
-    const lane = lanes.find((l) => y >= l.y && y <= l.y + l.height);
+    const sorted = [...lanes].sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+    const lane = sorted.find((l) => {
+      const top = l.y ?? 0;
+      const h = l.height ?? 128;
+      return y >= top && y <= top + h;
+    });
     return lane?.id;
+  }
+
+  function inferEdgeKind(sourceId: string, targetId: string, nodes: BpmnModel["nodes"]): BpmnEdgeKind | undefined {
+    const a = nodes.find((n) => n.id === sourceId);
+    const b = nodes.find((n) => n.id === targetId);
+    if (!a || !b) return undefined;
+    if (a.laneId && b.laneId && a.laneId !== b.laneId) return "cross_lane";
+    return undefined;
+  }
+
+  function resetView() {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }
+
+  function fitView() {
+    const el = canvasRef.current;
+    if (!el || model.nodes.length === 0) return;
+    const minX = Math.min(...model.nodes.map((n) => n.x));
+    const minY = Math.min(...model.nodes.map((n) => n.y));
+    const maxX = Math.max(...model.nodes.map((n) => n.x + (n.width ?? 110)));
+    const maxY = Math.max(...model.nodes.map((n) => n.y + (n.height ?? 54)));
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    const bw = Math.max(1, maxX - minX + 120);
+    const bh = Math.max(1, maxY - minY + 100);
+    const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(cw / bw, ch / bh) * 0.92));
+    const z = Number(nextZoom.toFixed(2));
+    setZoom(z);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    setPan({
+      x: Math.round(cw * 0.5 - cx * z),
+      y: Math.round(ch * 0.5 - cy * z),
+    });
   }
 
   function stencilMeta(type: string): BpmnStencil | undefined {
@@ -287,45 +326,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     };
   }
 
-  function modelToMarkdown(m: BpmnModel): string {
-    const lanes = m.lanes.map((l) => `- ${l.id}: ${l.label}`).join("\n");
-    const nodes = m.nodes
-      .map((n) => `- ${n.id} | ${n.type} | ${n.label} | (${Math.round(n.x)},${Math.round(n.y)}) | lane:${n.laneId ?? "-"}`)
-      .join("\n");
-    const edges = m.edges.map((e) => `- ${e.id} | ${e.sourceId} -> ${e.targetId} | ${e.label ?? ""}`).join("\n");
-    return `# BPMN Template
-name: ${m.name}
-version: ${m.version}
-
-## Lanes
-${lanes}
-
-## Nodes
-${nodes}
-
-## Edges
-${edges}
-`;
-  }
-
-  function modelToXml(m: BpmnModel): string {
-    const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    const lanes = m.lanes.map((l) => `<lane id="${esc(l.id)}" label="${esc(l.label)}" />`).join("");
-    const nodes = m.nodes
-      .map(
-        (n) =>
-          `<node id="${esc(n.id)}" type="${esc(n.type)}" label="${esc(n.label)}" x="${Math.round(n.x)}" y="${Math.round(n.y)}" laneId="${esc(n.laneId ?? "")}" />`
-      )
-      .join("");
-    const edges = m.edges
-      .map((e) => `<edge id="${esc(e.id)}" sourceId="${esc(e.sourceId)}" targetId="${esc(e.targetId)}" label="${esc(e.label ?? "")}" />`)
-      .join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><bpmnTemplate version="${m.version}" name="${esc(m.name)}"><lanes>${lanes}</lanes><nodes>${nodes}</nodes><edges>${edges}</edges></bpmnTemplate>`;
-  }
-
   const syncCodeFromModel = useCallback((next: BpmnModel) => {
-    setMarkdown(modelToMarkdown(next));
-    setXml(modelToXml(next));
+    setMarkdown(bpmnModelToMarkdown(next));
+    setXml(bpmnModelToXml(next));
   }, []);
 
   useEffect(() => {
@@ -405,7 +408,7 @@ ${edges}
           ...prev.nodes,
           {
             id,
-            type,
+            type: type as BpmnNodeType,
             label: type.replace(/_/g, " "),
             x,
             y,
@@ -496,9 +499,19 @@ ${edges}
     if (!edgeFrom || !edgeTo || edgeFrom === edgeTo) return;
     setModel((prev) => {
       if (prev.edges.some((e) => e.sourceId === edgeFrom && e.targetId === edgeTo)) return prev;
+      const kind = inferEdgeKind(edgeFrom, edgeTo, prev.nodes);
       const next: BpmnModel = {
         ...prev,
-        edges: [...prev.edges, { id: `flow_${Math.random().toString(36).slice(2, 7)}`, sourceId: edgeFrom, targetId: edgeTo, waypoints: [] }],
+        edges: [
+          ...prev.edges,
+          {
+            id: `flow_${Math.random().toString(36).slice(2, 7)}`,
+            sourceId: edgeFrom,
+            targetId: edgeTo,
+            waypoints: [],
+            ...(kind ? { kind } : {}),
+          },
+        ],
       };
       syncCodeFromModel(next);
       return next;
@@ -509,9 +522,19 @@ ${edges}
     if (!sourceId || !targetId || sourceId === targetId) return;
     setModel((prev) => {
       if (prev.edges.some((e) => e.sourceId === sourceId && e.targetId === targetId)) return prev;
+      const kind = inferEdgeKind(sourceId, targetId, prev.nodes);
       const next: BpmnModel = {
         ...prev,
-        edges: [...prev.edges, { id: `flow_${Math.random().toString(36).slice(2, 7)}`, sourceId, targetId, waypoints: [] }],
+        edges: [
+          ...prev.edges,
+          {
+            id: `flow_${Math.random().toString(36).slice(2, 7)}`,
+            sourceId,
+            targetId,
+            waypoints: [],
+            ...(kind ? { kind } : {}),
+          },
+        ],
       };
       syncCodeFromModel(next);
       return next;
@@ -702,6 +725,7 @@ ${edges}
   }, [connectingFromId, connectPreview, model.nodes]);
 
   const selectedNode = useMemo(() => model.nodes.find((n) => n.id === selectedNodeId) ?? null, [model.nodes, selectedNodeId]);
+  const selectedEdge = useMemo(() => model.edges.find((e) => e.id === selectedEdgeId) ?? null, [model.edges, selectedEdgeId]);
 
   function updateSelectedNode(patch: Partial<BpmnModel["nodes"][number]>) {
     if (!selectedNodeId) return;
@@ -709,6 +733,18 @@ ${edges}
       const next: BpmnModel = {
         ...prev,
         nodes: prev.nodes.map((n) => (n.id === selectedNodeId ? { ...n, ...patch } : n)),
+      };
+      syncCodeFromModel(next);
+      return next;
+    });
+  }
+
+  function updateSelectedEdge(patch: Partial<BpmnModel["edges"][number]>) {
+    if (!selectedEdgeId) return;
+    setModel((prev) => {
+      const next: BpmnModel = {
+        ...prev,
+        edges: prev.edges.map((e) => (e.id === selectedEdgeId ? { ...e, ...patch } : e)),
       };
       syncCodeFromModel(next);
       return next;
@@ -726,6 +762,37 @@ ${edges}
       return next;
     });
   }
+
+  function updateLaneTag() {
+    if (!selectedNode?.laneId) return;
+    setModel((prev) => {
+      const next: BpmnModel = {
+        ...prev,
+        lanes: prev.lanes.map((l) => (l.id === selectedNode.laneId ? { ...l, tag: editingLaneTag.trim() || undefined } : l)),
+      };
+      syncCodeFromModel(next);
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    const n = model.nodes.find((x) => x.id === selectedNodeId);
+    if (!n) {
+      setEditingSubtitle("");
+      setEditingTooltip("");
+      setEditingStep("");
+      setEditingPain("");
+      setEditingLaneTag("");
+      return;
+    }
+    setEditingLabel(n.label);
+    setEditingSubtitle(n.subtitle ?? "");
+    setEditingTooltip(n.tooltip ?? "");
+    setEditingStep(n.stepNumber ?? "");
+    setEditingPain(n.painBadge ?? "");
+    const lane = model.lanes.find((l) => l.id === n.laneId);
+    setEditingLaneTag(lane?.tag ?? "");
+  }, [selectedNodeId, model]);
 
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -935,9 +1002,80 @@ ${edges}
   }, [model.nodes]);
 
   return (
-    <div className="space-y-4">
+    <div className={`${barlow.className} space-y-4 rounded-[var(--flux-rad-lg)] bg-[#F0F2F5] p-3 dark:bg-[#0b1020]`}>
       <label className="block text-xs font-semibold text-[var(--flux-text-muted)]">Board ID</label>
       <input value={boardId} onChange={(e) => setBoardId(e.target.value)} className="w-full max-w-lg px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm" placeholder="b_123" />
+      <header
+        className={`flex flex-wrap items-center gap-3 rounded-xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.25)] ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
+        style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
+      >
+        <span className="font-extrabold tracking-[0.12em] text-white">
+          FLUX <span className="text-[#4DB6AC]">BPMN</span>
+        </span>
+        <div className="hidden h-7 w-px bg-white/20 sm:block" />
+        <span className="max-w-[min(380px,45vw)] truncate text-[14px] font-semibold text-white/90">{model.name}</span>
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, Number((z * 1.12).toFixed(2))))}
+          >
+            +
+          </button>
+          <span className="min-w-[44px] text-center text-[13px] font-semibold text-white/80">{(zoom * 100).toFixed(0)}%</span>
+          <button
+            type="button"
+            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, Number((z * 0.88).toFixed(2))))}
+          >
+            −
+          </button>
+          <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+          <button
+            type="button"
+            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={resetView}
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={fitView}
+          >
+            Encaixar
+          </button>
+          <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+          <button
+            type="button"
+            aria-pressed={showEdges}
+            className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
+              showEdges ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+            }`}
+            onClick={() => setShowEdges((v) => !v)}
+          >
+            Conexões
+          </button>
+          <button
+            type="button"
+            className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
+              !legendCollapsed ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+            }`}
+            onClick={() => setLegendCollapsed((v) => !v)}
+          >
+            Legenda
+          </button>
+          <button
+            type="button"
+            className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
+              presentMode ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+            }`}
+            onClick={() => setPresentMode((v) => !v)}
+          >
+            Apresentação
+          </button>
+        </div>
+      </header>
       <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr_300px] gap-4">
         <aside className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/50 p-3 space-y-3">
           <div className="flex items-center justify-between">
@@ -1032,21 +1170,12 @@ ${edges}
         </aside>
 
         <div className="space-y-2">
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 px-3 py-2.5">
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-white/70 px-3 py-2 dark:bg-slate-900/45">
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" className="btn-secondary" onClick={() => setZoom((z) => Math.max(MIN_ZOOM, Number((z - 0.1).toFixed(2))))}>
-                Zoom -
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => setZoom((z) => Math.min(MAX_ZOOM, Number((z + 0.1).toFixed(2))))}>
-                Zoom +
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => setPan({ x: 0, y: 0 })}>
-                Reset pan
-              </button>
               <button type="button" className="btn-secondary" onClick={() => setSnapEnabled((v) => !v)}>
                 Snap: {snapEnabled ? "ON" : "OFF"}
               </button>
-              <span className="text-[11px] text-[var(--flux-text-muted)]">Navegacao: mouse wheel zoom, ALT+drag para pan, clique e arraste vazio para box selection.</span>
+              <span className="text-[11px] text-[var(--flux-text-muted)]">Roda: zoom · Alt+arrastar: pan · Área vazia: seleção em caixa.</span>
             </div>
           </div>
           <div
@@ -1157,9 +1286,9 @@ ${edges}
               if (nodeDrag) setNodeDrag(null);
             }}
             onPointerLeave={onCanvasPointerUp}
-            className={`relative min-h-[760px] rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-dark)]/55 overflow-hidden transition ${
-              isCanvasDropActive ? "border-sky-300/70 shadow-[0_0_0_2px_rgba(56,189,248,0.18)]" : "border-[var(--flux-chrome-alpha-12)]"
-            }`}
+            className={`relative min-h-[760px] cursor-crosshair rounded-[var(--flux-rad-lg)] border border-slate-200/80 bg-[#F0F2F5] shadow-inner transition dark:border-slate-700 dark:bg-[#111827] ${
+              isCanvasDropActive ? "border-sky-300/70 shadow-[0_0_0_2px_rgba(56,189,248,0.18)]" : ""
+            } ${isPanning ? "cursor-grabbing" : ""}`}
           >
             <div
               className="absolute inset-0"
@@ -1172,28 +1301,63 @@ ${edges}
                 backgroundPosition: "0 0, 0 0, 0 0, 0 0",
               }}
             >
-              {model.lanes.map((lane) => (
-                <div
-                  key={lane.id}
-                  className="absolute left-0 right-0 border-b border-[var(--flux-chrome-alpha-08)]"
-                  style={{ top: lane.y, height: lane.height }}
-                >
-                  <span className="absolute left-2 top-1 text-[10px] font-semibold text-[var(--flux-text-muted)]">{lane.label}</span>
-                </div>
-              ))}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <defs>
-                  <marker
-                    id="bpmnArrowHead"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth={BPMN_VISUAL_TOKENS.sequenceArrowSize}
-                    markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
-                    orient="auto-start-reverse"
+              {model.lanes.map((lane, i) => {
+                const top = lane.y ?? 12 + i * 140;
+                const h = lane.height ?? 128;
+                const grad = [
+                  "linear-gradient(180deg,#558B2F,#7CB342)",
+                  "linear-gradient(180deg,#00695C,#00897B)",
+                  "linear-gradient(180deg,#1565C0,#42A5F5)",
+                  "linear-gradient(180deg,#5E35B1,#7E57C2)",
+                  "linear-gradient(180deg,#E65100,#FF9800)",
+                ][i % 5];
+                const tint = [
+                  "rgba(124,179,66,.06)",
+                  "rgba(0,137,123,.04)",
+                  "rgba(66,165,245,.04)",
+                  "rgba(126,87,194,.04)",
+                  "rgba(255,179,0,.04)",
+                ][i % 5];
+                const border = ["rgba(124,179,66,.2)", "rgba(0,137,123,.15)", "rgba(66,165,245,.15)", "rgba(126,87,194,.15)", "rgba(255,179,0,.15)"][i % 5];
+                return (
+                  <div
+                    key={lane.id}
+                    className="pointer-events-none absolute left-1 right-1 overflow-visible rounded-md"
+                    style={{ top, height: h, border: `2px solid ${border}`, background: tint }}
                   >
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(161,161,170,0.95)" />
-                  </marker>
+                    <div
+                      className="absolute bottom-0 left-0 top-0 flex w-[52px] items-center justify-center rounded-l-md text-[10px] font-extrabold uppercase tracking-widest text-white"
+                      style={{ background: grad, writingMode: "vertical-rl", textOrientation: "mixed" }}
+                    >
+                      {lane.label}
+                    </div>
+                    {lane.tag ? (
+                      <span
+                        className="absolute left-[60px] top-2 max-w-[min(420px,70%)] truncate rounded px-2.5 py-0.5 text-[11px] font-bold text-[#1A2744] dark:text-slate-200"
+                        style={{ background: "rgba(255,255,255,0.92)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+                      >
+                        {lane.tag}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+              <svg className="absolute inset-0 h-full w-full" style={{ pointerEvents: showEdges ? "auto" : "none", opacity: showEdges ? 1 : 0 }}>
+                <defs>
+                  {(["default", "primary", "rework", "cross_lane"] as const).map((k) => (
+                    <marker
+                      key={k}
+                      id={`bpmnMk_${k}`}
+                      viewBox="0 0 10 10"
+                      refX="9"
+                      refY="5"
+                      markerWidth={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                      markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill={BPMN_FLOW_EDGE_STYLES[k].marker} />
+                    </marker>
+                  ))}
                   <marker
                     id="bpmnArrowHeadPreview"
                     viewBox="0 0 10 10"
@@ -1206,18 +1370,29 @@ ${edges}
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(56,189,248,0.95)" />
                   </marker>
                 </defs>
-                {edgesWithPoints.map((edge) => (
+                {edgesWithPoints.map((edge) => {
+                  const kind = (edge as { kind?: BpmnEdgeKind }).kind ?? "default";
+                  const style = BPMN_FLOW_EDGE_STYLES[kind];
+                  const strokeSelected = selectedEdgeId === edge.id ? "#38bdf8" : style.stroke;
+                  const w = style.width;
+                  const dash = style.dash;
+                  const pts = edge.points;
+                  const mid = pts[Math.floor(pts.length / 2)] ?? { x: 0, y: 0 };
+                  return (
                   <g key={edge.id}>
                     <path
                       d={orthogonalPathFromPoints(edge.points)}
                       fill="none"
-                      stroke={selectedEdgeId === edge.id ? "rgba(56,189,248,0.95)" : "rgba(161,161,170,0.85)"}
-                      strokeWidth={BPMN_VISUAL_TOKENS.connectorStroke}
-                      markerEnd="url(#bpmnArrowHead)"
-                      className="pointer-events-auto cursor-pointer"
+                      stroke={strokeSelected}
+                      strokeWidth={selectedEdgeId === edge.id ? w + 0.5 : w}
+                      strokeDasharray={dash}
+                      markerEnd={`url(#bpmnMk_${kind})`}
+                      className="cursor-pointer"
                       onPointerDown={() => {
                         setSelectedEdgeId(edge.id);
                         setSelectedWaypoint(null);
+                        setSelectedNodeId("");
+                        setSelectedNodeIds([]);
                       }}
                       onDoubleClick={(ev) => {
                         ev.stopPropagation();
@@ -1238,6 +1413,16 @@ ${edges}
                         });
                       }}
                     />
+                    {edge.label ? (
+                      <text
+                        x={mid.x + 4}
+                        y={mid.y - 4}
+                        className="fill-[#546E7A] dark:fill-slate-400"
+                        style={{ fontSize: 10, fontWeight: 700 }}
+                      >
+                        {edge.label}
+                      </text>
+                    ) : null}
                     {selectedEdgeId === edge.id &&
                       edge.waypoints.map((wp, idx) => (
                         <circle
@@ -1273,7 +1458,8 @@ ${edges}
                         />
                       ))}
                   </g>
-                ))}
+                  );
+                })}
                 {connectPreviewLine ? (
                   <g>
                     <path
@@ -1305,6 +1491,7 @@ ${edges}
                     setSelectedNodeId(node.id);
                     setEditingLabel(node.label);
                     setEditingLane(model.lanes.find((l) => l.id === node.laneId)?.label ?? "");
+                    setSelectedEdgeId("");
                   }}
                   onPointerDown={(e) => {
                     if (connectingFromId) return;
@@ -1340,6 +1527,7 @@ ${edges}
                     const target = nearestPort(targetNode, source.anchor);
                     setModel((prev) => {
                       if (prev.edges.some((ed) => ed.sourceId === connectingFromId && ed.targetId === node.id)) return prev;
+                      const kind = inferEdgeKind(connectingFromId, node.id, prev.nodes);
                       const next: BpmnModel = {
                         ...prev,
                         edges: [
@@ -1351,6 +1539,7 @@ ${edges}
                             sourcePort: source.port,
                             targetPort: target.port,
                             waypoints: [],
+                            ...(kind ? { kind } : {}),
                           } as BpmnModel["edges"][number],
                         ],
                       };
@@ -1364,26 +1553,68 @@ ${edges}
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[var(--flux-primary)]" : ""
                   }`}
                   style={{ left: node.x, top: node.y, width: node.width ?? 110, height: node.height ?? 54 }}
-                  title="Arraste para reposicionar"
+                  title={node.tooltip || "Arraste para reposicionar"}
                 >
-                  <span
-                    className={`absolute inset-0 ${node.type === "end_event" ? "border-2" : "border"} ${shapeClass(node.type)}`}
-                    style={nodeStyle(node.type, selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "selected" : "default")}
-                  />
-                  {getBpmnVisualSpec(node.type).borderStyle === "double" && getBpmnVisualSpec(node.type).shape === "circle" ? (
-                    <span className="pointer-events-none absolute inset-[4px] rounded-full border border-white/45" aria-hidden />
-                  ) : null}
-                  <span
-                    className={`pointer-events-none absolute left-1/2 top-[43%] -translate-x-1/2 -translate-y-1/2 text-white ${
-                      isRotatedShape(node.type) ? "-rotate-45" : ""
-                    }`}
-                    aria-hidden
-                    style={{ width: BPMN_VISUAL_TOKENS.iconSize, height: BPMN_VISUAL_TOKENS.iconSize }}
-                  >
-                    {renderBpmnIcon(getBpmnVisualSpec(node.type).icon)}
-                  </span>
-                  <span className={`relative block font-semibold truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{node.label}</span>
-                  <span className={`relative block text-[10px] opacity-80 truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{displayType(node.type)}</span>
+                  {isTaskLikeType(node.type) ? (
+                    <>
+                      <span
+                        className="pointer-events-none absolute inset-0 rounded-[10px] shadow-[0_3px_12px_rgba(26,39,68,0.1)]"
+                        style={{
+                          borderLeftWidth: 5,
+                          borderLeftStyle: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle,
+                          borderLeftColor: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent,
+                          backgroundColor: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
+                          borderTopRightRadius: 10,
+                          borderBottomRightRadius: 10,
+                          borderTop: "1px solid rgba(0,0,0,0.06)",
+                          borderRight: "1px solid rgba(0,0,0,0.06)",
+                          borderBottom: "1px solid rgba(0,0,0,0.06)",
+                        }}
+                      />
+                      {node.stepNumber ? (
+                        <span
+                          className="pointer-events-none absolute left-1.5 top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold text-white"
+                          style={{ background: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].badgeBg }}
+                        >
+                          {node.stepNumber}
+                        </span>
+                      ) : null}
+                      {node.painBadge ? (
+                        <span className="pointer-events-none absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[11px] font-extrabold text-white shadow-md" style={{ background: "#EF5350" }}>
+                          {node.painBadge}
+                        </span>
+                      ) : null}
+                      <span className="pointer-events-none relative z-[1] block px-2 pt-2 text-center text-[13px] font-bold leading-snug text-[#1A2744] dark:text-slate-100">
+                        {node.label}
+                      </span>
+                      {node.subtitle ? (
+                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] font-medium leading-tight text-[#546E7A] dark:text-slate-400">{node.subtitle}</span>
+                      ) : (
+                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] text-[#546E7A]/85">{displayType(node.type)}</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className={`absolute inset-0 ${node.type === "end_event" ? "border-2" : "border"} ${shapeClass(node.type)}`}
+                        style={nodeStyle(node.type, selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "selected" : "default")}
+                      />
+                      {getBpmnVisualSpec(node.type).borderStyle === "double" && getBpmnVisualSpec(node.type).shape === "circle" ? (
+                        <span className="pointer-events-none absolute inset-[4px] rounded-full border border-white/45" aria-hidden />
+                      ) : null}
+                      <span
+                        className={`pointer-events-none absolute left-1/2 top-[43%] -translate-x-1/2 -translate-y-1/2 text-white ${
+                          isRotatedShape(node.type) ? "-rotate-45" : ""
+                        }`}
+                        aria-hidden
+                        style={{ width: BPMN_VISUAL_TOKENS.iconSize, height: BPMN_VISUAL_TOKENS.iconSize }}
+                      >
+                        {renderBpmnIcon(getBpmnVisualSpec(node.type).icon)}
+                      </span>
+                      <span className={`relative block font-semibold truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{node.label}</span>
+                      <span className={`relative block text-[10px] opacity-80 truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{displayType(node.type)}</span>
+                    </>
+                  )}
                   <span
                     role="button"
                     aria-label="Criar conexão"
@@ -1489,6 +1720,11 @@ ${edges}
                 ) : null}
               </div>
             </div>
+            <BpmnLegend
+              className="absolute bottom-5 left-5 z-[500] max-w-[min(320px,92vw)]"
+              collapsed={legendCollapsed}
+              onToggleCollapsed={() => setLegendCollapsed((v) => !v)}
+            />
           </div>
           <div className="flex gap-2 flex-wrap">
             {selectedEdgeId ? (
@@ -1551,8 +1787,40 @@ ${edges}
           </div>
           {!isPropertiesVisible ? (
             <p className="text-xs text-[var(--flux-text-muted)]">Painel oculto para ampliar a area visual do diagrama.</p>
+          ) : selectedEdge ? (
+            <>
+              <div className="space-y-1">
+                <label className="text-[11px] text-[var(--flux-text-muted)]">ID do fluxo</label>
+                <input value={selectedEdge.id} disabled className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-dark)] border border-[var(--flux-control-border)] text-xs opacity-80" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-[var(--flux-text-muted)]">Rótulo (ex.: Sim / Não)</label>
+                <input
+                  key={selectedEdge.id}
+                  defaultValue={selectedEdge.label ?? ""}
+                  onBlur={(e) => updateSelectedEdge({ label: e.target.value.trim() || undefined })}
+                  className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-[var(--flux-text-muted)]">Tipo de fluxo</label>
+                <select
+                  value={selectedEdge.kind ?? "default"}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    updateSelectedEdge({ kind: v === "default" ? undefined : (v as BpmnEdgeKind) });
+                  }}
+                  className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                >
+                  <option value="default">Padrão</option>
+                  <option value="primary">Principal</option>
+                  <option value="rework">Retrabalho</option>
+                  <option value="cross_lane">Entre raias</option>
+                </select>
+              </div>
+            </>
           ) : !selectedNode ? (
-            <p className="text-xs text-[var(--flux-text-muted)]">Selecione um elemento no canvas para editar propriedades.</p>
+            <p className="text-xs text-[var(--flux-text-muted)]">Selecione um elemento ou fluxo no canvas.</p>
           ) : (
             <>
               <div className="space-y-1">
@@ -1566,6 +1834,70 @@ ${edges}
                   onChange={(e) => setEditingLabel(e.target.value)}
                   onBlur={() => updateSelectedNode({ label: editingLabel.trim() || selectedNode.label })}
                   className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                />
+              </div>
+              {isTaskLikeType(selectedNode.type) ? (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--flux-text-muted)]">Subtítulo</label>
+                    <input
+                      value={editingSubtitle}
+                      onChange={(e) => setEditingSubtitle(e.target.value)}
+                      onBlur={() => updateSelectedNode({ subtitle: editingSubtitle.trim() || undefined })}
+                      className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                      placeholder="Ator, sistema, detalhe"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-[var(--flux-text-muted)]">Nº passo</label>
+                      <input
+                        value={editingStep}
+                        onChange={(e) => setEditingStep(e.target.value)}
+                        onBlur={() => updateSelectedNode({ stepNumber: editingStep.trim() || undefined })}
+                        className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                        placeholder="1, A…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-[var(--flux-text-muted)]">Pain badge</label>
+                      <input
+                        value={editingPain}
+                        onChange={(e) => setEditingPain(e.target.value)}
+                        onBlur={() => updateSelectedNode({ painBadge: editingPain.trim() || undefined })}
+                        className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                        placeholder="1–9"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--flux-text-muted)]">Variante visual</label>
+                    <select
+                      value={selectedNode.semanticVariant ?? "default"}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        updateSelectedNode({ semanticVariant: v === "default" ? undefined : (v as BpmnSemanticVariant) });
+                      }}
+                      className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                    >
+                      <option value="default">Manual / padrão</option>
+                      <option value="reborn">Reborn / entregue</option>
+                      <option value="automation">API / automação</option>
+                      <option value="pain">Pain point</option>
+                      <option value="system">Sistema (tracejado)</option>
+                    </select>
+                  </div>
+                </>
+              ) : null}
+              <div className="space-y-1">
+                <label className="text-[11px] text-[var(--flux-text-muted)]">Dica (tooltip)</label>
+                <textarea
+                  value={editingTooltip}
+                  onChange={(e) => setEditingTooltip(e.target.value)}
+                  onBlur={() => updateSelectedNode({ tooltip: editingTooltip.trim() || undefined })}
+                  rows={3}
+                  className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                  placeholder="Texto ao passar o mouse"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -1589,15 +1921,27 @@ ${edges}
                 </div>
               </div>
               {selectedNode.laneId ? (
-                <div className="space-y-1">
-                  <label className="text-[11px] text-[var(--flux-text-muted)]">Lane</label>
-                  <input
-                    value={editingLane}
-                    onChange={(e) => setEditingLane(e.target.value)}
-                    onBlur={updateLaneLabel}
-                    className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
-                  />
-                </div>
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--flux-text-muted)]">Lane</label>
+                    <input
+                      value={editingLane}
+                      onChange={(e) => setEditingLane(e.target.value)}
+                      onBlur={updateLaneLabel}
+                      className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--flux-text-muted)]">Tag da raia</label>
+                    <input
+                      value={editingLaneTag}
+                      onChange={(e) => setEditingLaneTag(e.target.value)}
+                      onBlur={updateLaneTag}
+                      className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
+                      placeholder="Ex.: AS-IS — Subscrição"
+                    />
+                  </div>
+                </>
               ) : null}
               <button
                 type="button"
