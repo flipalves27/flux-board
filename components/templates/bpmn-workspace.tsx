@@ -1369,14 +1369,14 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             </button>
             {showExportMenu && (
               <div
-                className="absolute right-0 top-full z-50 mt-1 min-w-[130px] rounded-lg border border-white/20 bg-[#1A2744] py-1 shadow-xl"
+                className="absolute right-0 top-full z-50 mt-1 min-w-[130px] rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] py-1 shadow-[var(--flux-shadow-xl)]"
                 onPointerLeave={() => setShowExportMenu(false)}
               >
                 {(["PNG", "SVG", "PDF"] as const).map((fmt) => (
                   <button
                     key={fmt}
                     type="button"
-                    className="w-full px-3 py-1.5 text-left text-[13px] font-semibold text-white hover:bg-white/10"
+                    className="w-full px-3 py-1.5 text-left text-[13px] font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-surface-elevated)]"
                     onClick={() => {
                       setShowExportMenu(false);
                       // Export stubs — wired to board export API
@@ -1599,11 +1599,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
         </aside>
 
         <div className="flex min-h-0 flex-1 flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200/80 bg-white/90 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-3 py-2">
             <button type="button" className="btn-secondary text-xs" onClick={() => setSnapEnabled((v) => !v)}>
               Snap: {snapEnabled ? "ON" : "OFF"}
             </button>
-            <span className="text-[11px] text-[#546E7A] dark:text-slate-400">Roda: zoom · Alt+arrastar: pan · Área vazia: seleção.</span>
+            <span className="text-[11px] text-[var(--flux-text-muted)]">Roda: zoom · Alt+arrastar: pan · Área vazia: seleção.</span>
           </div>
           <div
             ref={canvasRef}
@@ -1706,8 +1706,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               if (draggingWaypoint) setDraggingWaypoint(null);
             }}
             onPointerLeave={onCanvasPointerUp}
-            className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-slate-200/80 bg-[#F0F2F5] shadow-inner transition dark:border-slate-700 dark:bg-[#0F172A] ${
-              isCanvasDropActive ? "border-sky-300/70 shadow-[0_0_0_2px_rgba(56,189,248,0.18)]" : ""
+            className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-dark)] shadow-inner transition ${
+              isCanvasDropActive ? "border-[var(--flux-primary)]/60 shadow-[0_0_0_2px_rgba(108,92,231,0.18)]" : ""
             } ${isPanning ? "cursor-grabbing" : ""}`}
           >
             {/* Grid background — contained inside overflow:hidden, never bleeds outside */}
@@ -1716,7 +1716,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               className="pointer-events-none absolute inset-0 rounded-[inherit]"
               style={{
                 backgroundImage:
-                  "linear-gradient(to right, rgba(161,161,170,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(161,161,170,0.18) 1px, transparent 1px), linear-gradient(to right, rgba(56,189,248,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(56,189,248,0.22) 1px, transparent 1px)",
+                  "linear-gradient(to right, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(108,92,231,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.22) 1px, transparent 1px)",
                 backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px`,
                 backgroundPosition: `${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px`,
               }}
@@ -2021,7 +2021,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       <text
                         x={mid.x + 4}
                         y={mid.y - 4}
-                        className="fill-[#546E7A] dark:fill-slate-400"
+                        className="fill-[var(--flux-text-muted)]"
                         style={{ fontSize: 10, fontWeight: 700 }}
                       >
                         {edge.label}
@@ -2191,7 +2191,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       : "cursor-grab hover:z-[100]"
                   } ${
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id
-                      ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]"
+                      ? "ring-2 ring-[var(--flux-primary)]/90 ring-offset-2 ring-offset-[var(--flux-surface-dark)]"
                       : ""
                   }`}
                   style={{
@@ -2210,10 +2210,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       ? "transform 80ms ease-out, opacity 80ms ease-out"
                       : "transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease",
                     boxShadow: isDraggingThis
-                      ? "0 12px 36px rgba(26,39,68,0.22), 0 4px 12px rgba(26,39,68,0.12)"
+                      ? "0 12px 36px rgba(13,11,26,0.55), 0 4px 12px rgba(13,11,26,0.35)"
                       : selectedNodeSet.has(node.id) || selectedNodeId === node.id
-                        ? "0 4px 16px rgba(0,137,123,0.20)"
-                        : "0 3px 12px rgba(26,39,68,0.10)",
+                        ? "0 4px 16px rgba(108,92,231,0.30)"
+                        : "0 3px 12px rgba(13,11,26,0.28)",
                   }}
                   title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
@@ -2225,9 +2225,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         style={{
                           borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
                           backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
-                          borderTop: "1px solid rgba(0,0,0,0.06)",
-                          borderRight: "1px solid rgba(0,0,0,0.06)",
-                          borderBottom: "1px solid rgba(0,0,0,0.06)",
+                          borderTop: "1px solid rgba(108,92,231,0.12)",
+                          borderRight: "1px solid rgba(108,92,231,0.12)",
+                          borderBottom: "1px solid rgba(108,92,231,0.12)",
                           borderTopRightRadius: 10,
                           borderBottomRightRadius: 10,
                           minWidth: 160,
@@ -2254,32 +2254,32 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       ) : null}
                       {/* Label (.lb) */}
                       <span
-                        className="pointer-events-none relative z-[1] block px-2 pt-2 text-center font-bold leading-snug dark:text-slate-100"
-                        style={{ fontSize: node.fontSize ?? 13, color: node.labelColor ?? "#1A2744" }}
+                        className="pointer-events-none relative z-[1] block px-2 pt-2 text-center font-bold leading-snug"
+                        style={{ fontSize: node.fontSize ?? 13, color: node.labelColor ?? "var(--flux-text)" }}
                       >
                         {node.label}
                       </span>
                       {/* Sublabel (.sb) */}
                       {node.subtitle ? (
-                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] font-medium leading-tight text-[#546E7A] dark:text-slate-400">{node.subtitle}</span>
+                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] font-medium leading-tight text-[var(--flux-text-muted)]">{node.subtitle}</span>
                       ) : (
-                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] text-[#546E7A]/85">{displayType(node.type)}</span>
+                        <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] text-[var(--flux-text-muted)]">{displayType(node.type)}</span>
                       )}
                     </>
                   ) : getBpmnVisualSpec(node.type).shape === "circle" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-0.5">
                       <RebornEventGlyph nodeType={node.type} />
                       <span
-                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight dark:text-slate-100"
-                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight"
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "var(--flux-text)" }}
                       >{node.label}</span>
                     </div>
                   ) : getBpmnVisualSpec(node.type).shape === "diamond" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
                       <RebornGatewayGlyph nodeType={node.type} />
                       <span
-                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight dark:text-slate-100"
-                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight"
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "var(--flux-text)" }}
                       >{node.label}</span>
                     </div>
                   ) : node.type === "annotation" ? (
@@ -2287,33 +2287,33 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col justify-center px-3"
                       style={{
-                        background: node.bgColor ?? "#FFFDE7",
+                        background: node.bgColor ?? "var(--flux-surface-elevated)",
                         borderLeft: `4px solid ${node.borderColor ?? "#FFB300"}`,
                         borderRadius: "0 10px 10px 0",
                       }}
                     >
                       <span
                         className="font-semibold leading-snug"
-                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "var(--flux-text)" }}
                       >{node.label || "Anotação"}</span>
-                      {node.subtitle && <span className="mt-0.5 text-[10px] text-[#546E7A]">{node.subtitle}</span>}
+                      {node.subtitle && <span className="mt-0.5 text-[10px] text-[var(--flux-text-muted)]">{node.subtitle}</span>}
                     </div>
                   ) : node.type === "system_box" ? (
                     /* System Box: bg #E8EAF6, border 2px dashed #5C6BC0 */
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-3"
                       style={{
-                        background: node.bgColor ?? "#E8EAF6",
-                        border: `2px dashed ${node.borderColor ?? "#5C6BC0"}`,
+                        background: node.bgColor ?? "var(--flux-surface-elevated)",
+                        border: `2px dashed ${node.borderColor ?? "var(--flux-primary)"}`,
                         borderRadius: 10,
                       }}
                     >
                       <span className="text-[14px]">⚙</span>
                       <span
                         className="text-center font-bold leading-tight"
-                        style={{ fontSize: node.fontSize ?? 12, color: node.labelColor ?? "#3949AB" }}
+                        style={{ fontSize: node.fontSize ?? 12, color: node.labelColor ?? "var(--flux-primary-light)" }}
                       >{node.label || "Sistema"}</span>
-                      {node.subtitle && <span className="text-center text-[10px]" style={{ color: "#7986CB" }}>{node.subtitle}</span>}
+                      {node.subtitle && <span className="text-center text-[10px] text-[var(--flux-text-muted)]">{node.subtitle}</span>}
                     </div>
                   ) : (
                     <>
@@ -2347,7 +2347,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       setConnectingFromId(node.id);
                       setConnectPreview({ x: startX, y: startY });
                     }}
-                    className="absolute -right-2 top-1/2 z-[2] h-3 w-3 rounded-full border border-[#00897B] bg-[#4DB6AC]"
+                    className="absolute -right-2 top-1/2 z-[2] h-3 w-3 rounded-full border border-[var(--flux-primary)] bg-[var(--flux-primary-light)]"
                   />
                   {(["north", "east", "south", "west"] as const).map((port) => {
                     const w = node.width ?? 110;
@@ -2363,7 +2363,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     return (
                       <span
                         key={`${node.id}_${port}`}
-                        className="absolute h-1.5 w-1.5 rounded-full border border-[#00897B]/90 bg-white"
+                        className="absolute h-1.5 w-1.5 rounded-full border border-[var(--flux-primary)]/70 bg-[var(--flux-surface-card)]"
                         style={style}
                       />
                     );
@@ -2381,17 +2381,17 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       ref={inlineEditRef}
                       role="dialog"
                       aria-label="Editar elemento"
-                      className="absolute z-[50] rounded-lg border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-600 dark:bg-slate-900"
+                      className="absolute z-[50] rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-3 shadow-[var(--flux-shadow-lg)]"
                       style={{
                         left: pos.x,
                         top: pos.y + (n.height ?? 54) + 8,
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <div className="text-[11px] font-semibold text-[#1A2744] dark:text-slate-100">Editar no canvas</div>
-                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-400">Título</label>
+                      <div className="text-[11px] font-semibold text-[var(--flux-text)]">Editar no canvas</div>
+                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Título</label>
                       <input
-                        className="mt-2 w-full min-w-[240px] rounded border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-[#1A2744] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        className="mt-2 w-full min-w-[240px] rounded border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 text-[13px] text-[var(--flux-text)]"
                         value={inlineTitle}
                         onChange={(e) => setInlineTitle(e.target.value)}
                         onKeyDown={(e) => {
@@ -2405,9 +2405,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           }
                         }}
                       />
-                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-400">Descrição</label>
+                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Descrição</label>
                       <input
-                        className="mt-2 w-full min-w-[240px] rounded border border-slate-200 bg-white px-2 py-1.5 text-[12px] text-[#546E7A] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        className="mt-2 w-full min-w-[240px] rounded border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 text-[12px] text-[var(--flux-text-muted)]"
                         value={inlineDesc}
                         onChange={(e) => setInlineDesc(e.target.value)}
                         onKeyDown={(e) => {
@@ -2426,7 +2426,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         <button type="button" className="btn-secondary flex-1 text-xs" onClick={() => setInlineEditNodeId(null)}>
                           Cancelar
                         </button>
-                        <button type="button" className="btn-secondary flex-1 text-xs" style={{ background: "#00897B", color: "#fff" }} onClick={commitInlineEdit}>
+                        <button type="button" className="btn-secondary flex-1 text-xs" style={{ background: "var(--flux-primary)", color: "#fff" }} onClick={commitInlineEdit}>
                           OK
                         </button>
                       </div>
@@ -2436,20 +2436,20 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               ) : null}
               {alignGuides.map((guide, idx) =>
                 guide.axis === "x" ? (
-                  <div key={`gx_${idx}`} className="absolute top-0 bottom-0 w-px bg-sky-300/70" style={{ left: guide.value }} />
+                  <div key={`gx_${idx}`} className="absolute top-0 bottom-0 w-px bg-[var(--flux-primary)]/60" style={{ left: guide.value }} />
                 ) : (
-                  <div key={`gy_${idx}`} className="absolute left-0 right-0 h-px bg-sky-300/70" style={{ top: guide.value }} />
+                  <div key={`gy_${idx}`} className="absolute left-0 right-0 h-px bg-[var(--flux-primary)]/60" style={{ top: guide.value }} />
                 )
               )}
               {boxRect ? (
                 <div
-                  className="absolute border border-sky-300/90 bg-sky-400/15 pointer-events-none"
+                  className="absolute border border-[var(--flux-primary)]/70 bg-[var(--flux-primary)]/10 pointer-events-none"
                   style={{ left: boxRect.left, top: boxRect.top, width: boxRect.width, height: boxRect.height }}
                 />
               ) : null}
               {dragPreview && draggingType ? (
                 <div
-                  className="pointer-events-none absolute flex items-center gap-2 rounded-[10px] border border-dashed border-[#00897B]/50 bg-white/90 px-2 py-1.5 shadow-md dark:bg-slate-900/90"
+                  className="pointer-events-none absolute flex items-center gap-2 rounded-[10px] border border-dashed border-[var(--flux-primary)]/50 bg-[var(--flux-surface-card)]/90 px-2 py-1.5 shadow-[var(--flux-shadow-md)]"
                   style={{
                     left: dragPreview.x,
                     top: dragPreview.y,
@@ -2462,19 +2462,19 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   ) : getBpmnVisualSpec(draggingType).shape === "diamond" ? (
                     <RebornGatewayGlyph nodeType={draggingType as BpmnNodeType} size={30} />
                   ) : isTaskLikeType(draggingType) ? (
-                    <span className="h-8 w-1 shrink-0 rounded-full bg-[#00897B]" aria-hidden />
+                    <span className="h-8 w-1 shrink-0 rounded-full bg-[var(--flux-primary)]" aria-hidden />
                   ) : (
-                    <span className="h-6 w-6 shrink-0 rounded border border-slate-300 bg-slate-100 dark:border-slate-600" aria-hidden />
+                    <span className="h-6 w-6 shrink-0 rounded border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)]" aria-hidden />
                   )}
-                  <span className="text-[11px] font-bold text-[#1A2744] dark:text-slate-100">{displayType(draggingType)}</span>
+                  <span className="text-[11px] font-bold text-[var(--flux-text)]">{displayType(draggingType)}</span>
                 </div>
               ) : null}
             </div>
-            <div className="absolute right-2 top-2 text-[10px] px-2 py-1 rounded bg-black/45 text-white">
+            <div className="absolute right-2 top-2 text-[10px] px-2 py-1 rounded bg-[var(--flux-surface-mid)]/80 text-[var(--flux-text-muted)]">
               zoom {(zoom * 100).toFixed(0)}% · ALT+drag/middle mouse para pan
             </div>
             {isCanvasDropActive ? (
-              <div className="absolute left-3 top-3 rounded bg-sky-500/20 border border-sky-300/50 px-2 py-1 text-[10px] text-sky-100">
+              <div className="absolute left-3 top-3 rounded bg-[var(--flux-primary)]/20 border border-[var(--flux-primary)]/50 px-2 py-1 text-[10px] text-[var(--flux-primary-light)]">
                 Solte para adicionar no board
               </div>
             ) : null}
@@ -2503,14 +2503,14 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   return (
                     <span
                       key={`mini_${n.id}`}
-                      className={`absolute rounded-sm ${selectedNodeSet.has(n.id) ? "bg-sky-300/85" : "bg-white/55"}`}
+                      className={`absolute rounded-sm ${selectedNodeSet.has(n.id) ? "bg-[var(--flux-primary)]/80" : "bg-[var(--flux-text)]/40"}`}
                       style={{ left: `${nx}%`, top: `${ny}%`, width: `${Math.max(nw, 1.5)}%`, height: `${Math.max(nh, 1.5)}%` }}
                     />
                   );
                 })}
                 {canvasRef.current ? (
                   <div
-                    className="absolute border border-sky-300/80 bg-sky-400/10 pointer-events-none"
+                    className="absolute border border-[var(--flux-primary)]/70 bg-[var(--flux-primary)]/8 pointer-events-none"
                     style={{
                       left: `${(((0 - pan.x) / zoom - miniMapBounds.minX) / miniMapBounds.width) * 100}%`,
                       top: `${(((0 - pan.y) / zoom - miniMapBounds.minY) / miniMapBounds.height) * 100}%`,
@@ -2710,8 +2710,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 </>
               ) : null}
               {/* Aparência — fonte e cores */}
-              <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5 space-y-2.5 dark:border-slate-700 dark:bg-slate-950/40">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A]">Aparência <span className="ml-1 font-normal normal-case text-[#90A4AE]">[/] = tam. fonte · clique na cor</span></p>
+              <div className="rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] p-2.5 space-y-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Aparência <span className="ml-1 font-normal normal-case opacity-70">[/] = tam. fonte · clique na cor</span></p>
                 {/* Font size stepper */}
                 <div className="flex items-center gap-2">
                   <label className="text-[11px] text-[var(--flux-text-muted)] w-20 shrink-0">Tam. fonte</label>
@@ -2719,20 +2719,20 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     <button
                       type="button"
                       title="Diminuir fonte ([)"
-                      className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-xs font-bold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)]/50 hover:text-[var(--flux-primary-light)]"
                       onClick={() => updateSelectedNode({ fontSize: Math.max(8, (selectedNode.fontSize ?? 13) - 1) })}
                     >−</button>
-                    <span className="w-8 text-center text-[11px] font-mono font-bold text-[#1A2744] dark:text-slate-100">
+                    <span className="w-8 text-center text-[11px] font-mono font-bold text-[var(--flux-text)]">
                       {selectedNode.fontSize ?? 13}
                     </span>
                     <button
                       type="button"
                       title="Aumentar fonte (])"
-                      className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-xs font-bold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)]/50 hover:text-[var(--flux-primary-light)]"
                       onClick={() => updateSelectedNode({ fontSize: Math.min(32, (selectedNode.fontSize ?? 13) + 1) })}
                     >+</button>
                     {selectedNode.fontSize !== undefined && (
-                      <button type="button" className="ml-1 text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ fontSize: undefined })}>↺</button>
+                      <button type="button" className="ml-1 text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]" title="Resetar" onClick={() => updateSelectedNode({ fontSize: undefined })}>↺</button>
                     )}
                   </div>
                 </div>
@@ -2742,18 +2742,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.labelColor ?? "#1A2744"}
+                      value={selectedNode.labelColor ?? "#F0EEFF"}
                       onChange={(e) => updateSelectedNode({ labelColor: e.target.value })}
-                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor do texto (Ctrl+Shift+T)"
                     />
                     <div className="flex gap-1">
-                      {["#1A2744","#FFFFFF","#00897B","#EF5350","#42A5F5"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ labelColor: c })} />
+                      {["#F0EEFF","#FFFFFF","#A29BFE","#FF6B6B","#74B9FF"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ labelColor: c })} />
                       ))}
                     </div>
                     {selectedNode.labelColor !== undefined && (
-                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ labelColor: undefined })}>↺</button>
+                      <button type="button" className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]" title="Resetar" onClick={() => updateSelectedNode({ labelColor: undefined })}>↺</button>
                     )}
                   </div>
                 </div>
@@ -2763,18 +2763,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.bgColor ?? "#FFFFFF"}
+                      value={selectedNode.bgColor ?? "#221F3A"}
                       onChange={(e) => updateSelectedNode({ bgColor: e.target.value })}
-                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor de fundo"
                     />
                     <div className="flex gap-1">
-                      {["#FFFFFF","#F1F8E9","#E0F7FA","#FFEBEE","#E3F2FD","#FFFDE7"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ bgColor: c })} />
+                      {["#221F3A","#2D2952","#1A1730","#F1F8E9","#E0F7FA","#FFEBEE"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ bgColor: c })} />
                       ))}
                     </div>
                     {selectedNode.bgColor !== undefined && (
-                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ bgColor: undefined })}>↺</button>
+                      <button type="button" className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]" title="Resetar" onClick={() => updateSelectedNode({ bgColor: undefined })}>↺</button>
                     )}
                   </div>
                 </div>
@@ -2784,18 +2784,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.borderColor ?? "#00897B"}
+                      value={selectedNode.borderColor ?? "#6C5CE7"}
                       onChange={(e) => updateSelectedNode({ borderColor: e.target.value })}
-                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor da borda / acento"
                     />
                     <div className="flex gap-1">
-                      {["#00897B","#7CB342","#00ACC1","#EF5350","#42A5F5","#FFB300"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ borderColor: c })} />
+                      {["#6C5CE7","#A29BFE","#00D2D3","#FF6B6B","#74B9FF","#FFD93D"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ borderColor: c })} />
                       ))}
                     </div>
                     {selectedNode.borderColor !== undefined && (
-                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ borderColor: undefined })}>↺</button>
+                      <button type="button" className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]" title="Resetar" onClick={() => updateSelectedNode({ borderColor: undefined })}>↺</button>
                     )}
                   </div>
                 </div>
@@ -2942,12 +2942,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             {/* backdrop to close */}
             <div className="fixed inset-0 z-[1990]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
             <div
-              className="fixed z-[2000] min-w-[200px] overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_8px_28px_rgba(26,39,68,0.18)] dark:border-slate-700 dark:bg-slate-900"
+              className="fixed z-[2000] min-w-[200px] overflow-hidden rounded-xl border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-xl)]"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
-              <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-700">
-                <p className="text-[11px] font-bold text-[#1A2744] dark:text-slate-100 truncate max-w-[180px]">{cmNode.label}</p>
-                <p className="text-[10px] text-[#546E7A]">{cmNode.type}</p>
+              <div className="border-b border-[var(--flux-border-muted)] px-3 py-2">
+                <p className="max-w-[180px] truncate text-[11px] font-bold text-[var(--flux-text)]">{cmNode.label}</p>
+                <p className="text-[10px] text-[var(--flux-text-muted)]">{cmNode.type}</p>
               </div>
               <div className="py-1">
                 {[
@@ -2976,8 +2976,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <button
                     key={item.label}
                     type="button"
-                    className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[12px] font-medium transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                      (item as { danger?: boolean }).danger ? "text-[#EF5350]" : "text-[#1A2744] dark:text-slate-100"
+                    className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[12px] font-medium transition hover:bg-[var(--flux-surface-elevated)] ${
+                      (item as { danger?: boolean }).danger ? "text-[var(--flux-danger)]" : "text-[var(--flux-text)]"
                     }`}
                     onClick={() => { (item as { action: () => void }).action(); setContextMenu(null); }}
                   >
