@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { BpmnWorkspace } from "@/components/templates/bpmn-workspace";
+import { BpmnWorkspace } from "@/components/bpmn/BpmnWorkspace";
 
 export default function BpmnTemplatePage() {
   const router = useRouter();

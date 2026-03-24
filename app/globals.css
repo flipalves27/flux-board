@@ -1171,6 +1171,160 @@
   --bpmn-font-size-node:     13px;
   --bpmn-font-size-sub:      10px;
   --bpmn-radius:             10px;
+
+  /* ── Document spec tokens (from HTML prototype) ── */
+  --navy: #1A2744;
+  --teal: #00897B;
+  --tealL: #4DB6AC;
+  --lime: #7CB342;
+  --limeBg: #F1F8E9;
+  --cyan: #00ACC1;
+  --cyanBg: #E0F7FA;
+  --red: #EF5350;
+  --redBg: #FFEBEE;
+  --blue: #42A5F5;
+  --blueBg: #E3F2FD;
+  --amber: #FFB300;
+  --amberL: #FFE082;
+  --purple: #7E57C2;
+  --purpleBg: #EDE7F6;
+  --sh: 0 3px 12px rgba(26,39,68,0.10);
+  --shH: 0 8px 28px rgba(26,39,68,0.18);
+}
+
+/* ─── React Flow overrides — Flux Board identity ───────────────────────── */
+.bpmn-react-flow .react-flow__background {
+  background-color: var(--flux-surface-dark);
+}
+
+.bpmn-react-flow .react-flow__node {
+  transition: transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease, opacity 80ms ease;
+  cursor: grab;
+}
+
+.bpmn-react-flow .react-flow__node:hover {
+  z-index: 100 !important;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.18));
+}
+
+.bpmn-react-flow .react-flow__node.dragging {
+  z-index: 1000 !important;
+  opacity: 0.92;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.22));
+  cursor: grabbing;
+}
+
+.bpmn-react-flow .react-flow__node.selected {
+  z-index: 100 !important;
+}
+
+.bpmn-react-flow .react-flow__edge path {
+  transition: stroke 150ms ease, stroke-width 100ms ease;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Edge "flow" animation for primary edges */
+@keyframes bpmn-edge-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.bpmn-react-flow .react-flow__edge.selected path {
+  animation: bpmn-edge-flow 0.8s linear infinite;
+  stroke-dasharray: 5 5;
+}
+
+.bpmn-react-flow .react-flow__connection-line {
+  stroke: rgba(56,189,248,0.95);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.bpmn-react-flow .react-flow__minimap {
+  border-radius: var(--flux-rad);
+  box-shadow: var(--flux-shadow-md);
+}
+
+.bpmn-react-flow .react-flow__controls button {
+  background: var(--flux-surface-card);
+  border-color: var(--flux-border-default);
+  color: var(--flux-text);
+}
+
+/* ─── BPMN Task card ───────────────────────────────────────────────────── */
+.bpmn-task-card {
+  transition: box-shadow 150ms ease, transform 150ms cubic-bezier(0.22,1,0.36,1);
+}
+
+.react-flow__node:hover .bpmn-task-card {
+  box-shadow: 0 8px 28px rgba(26,39,68,0.18) !important;
+}
+
+.react-flow__node.selected .bpmn-task-card {
+  box-shadow: 0 4px 16px rgba(108,92,231,0.30) !important;
+}
+
+/* ─── BPMN Handles (connection ports) ──────────────────────────────────── */
+.bpmn-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: var(--flux-surface-card) !important;
+  border: 1.5px solid var(--flux-primary) !important;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 150ms ease;
+}
+
+.react-flow__node:hover .bpmn-handle,
+.react-flow__node.selected .bpmn-handle {
+  opacity: 0.7;
+}
+
+.bpmn-handle:hover {
+  opacity: 1 !important;
+  transform: scale(1.4);
+  background: var(--flux-primary-light) !important;
+}
+
+/* ─── BPMN Toolbar button styles ───────────────────────────────────────── */
+.bpmn-toolbar-btn {
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  cursor: pointer;
+}
+
+.bpmn-toolbar-btn:hover {
+  background: rgba(255,255,255,0.20);
+}
+
+.bpmn-toolbar-btn-active {
+  background: var(--flux-primary) !important;
+  border-color: var(--flux-primary) !important;
+  box-shadow: 0 0 12px rgba(108,92,231,0.4);
+}
+
+/* ─── BPMN Properties inputs ───────────────────────────────────────────── */
+.bpmn-prop-input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: var(--flux-rad);
+  background: var(--flux-surface-elevated);
+  border: 1px solid var(--flux-control-border);
+  font-size: 12px;
+  color: var(--flux-text);
+}
+
+.bpmn-prop-input:focus {
+  border-color: var(--flux-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(108,92,231,0.15);
 }
 
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
