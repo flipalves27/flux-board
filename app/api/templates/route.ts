@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublishedTemplate, listPublishedTemplates } from "@/lib/kv-templates";
 import { getAuthFromRequest } from "@/lib/auth";
-import type { TemplateCategory, TemplateLifecycleStatus } from "@/lib/template-types";
+import type { BoardTemplateSnapshot, TemplateCategory, TemplateLifecycleStatus } from "@/lib/template-types";
 import { TEMPLATE_CATEGORIES } from "@/lib/template-types";
 import { BoardTemplateSnapshotSchema, zodErrorToMessage } from "@/lib/schemas";
 import { z } from "zod";
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     category: parsed.data.category,
     pricingTier: parsed.data.pricingTier,
     creatorOrgId: payload.orgId,
-    snapshot: parsed.data.snapshot,
+    snapshot: parsed.data.snapshot as unknown as BoardTemplateSnapshot,
     status: "draft",
     updatedBy: payload.id,
   });

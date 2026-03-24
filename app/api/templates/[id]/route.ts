@@ -7,6 +7,7 @@ import {
   updatePublishedTemplate,
 } from "@/lib/kv-templates";
 import { getAuthFromRequest } from "@/lib/auth";
+import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import { BoardTemplateSnapshotSchema, zodErrorToMessage } from "@/lib/schemas";
 import { z } from "zod";
 
@@ -104,10 +105,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const body = await request.json().catch(() => ({}));
   const parsed = TemplateUpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
-  const updated = await updatePublishedTemplate(tpl._id, {
-    ...parsed.data,
+  const patch: {
+    title?: string;
+    description?: string;
+    category?: "sales" | "operations" | "projects" | "hr" | "marketing" | "customer_success" | "support" | "insurance_warranty";
+    pricingTier?: "free" | "premium";
+    snapshot?: BoardTemplateSnapshot;
+    updatedAt: string;
+    updatedBy: string;
+  } = {
+    ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+    ...(parsed.data.description !== undefined ? { description: parsed.data.description } : {}),
+    ...(parsed.data.category !== undefined ? { category: parsed.data.category } : {}),
+    ...(parsed.data.pricingTier !== undefined ? { pricingTier: parsed.data.pricingTier } : {}),
+    ...(parsed.data.snapshot !== undefined
+      ? { snapshot: parsed.data.snapshot as unknown as BoardTemplateSnapshot }
+      : {}),
     updatedAt: new Date().toISOString(),
     updatedBy: payload.id,
+  };
+  const updated = await updatePublishedTemplate(tpl._id, {
+    ...patch,
   });
   if (!updated) return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
   return NextResponse.json({ ok: true, template: { id: updated._id, status: updated.status ?? "published" } });

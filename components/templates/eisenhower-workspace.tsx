@@ -219,7 +219,7 @@ export function EisenhowerWorkspace({ getHeaders, isAdmin }: Props) {
       </div>
 
       <div className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-08)]/40 p-3">
-        <p className="text-xs text-[var(--flux-text)] font-semibold mb-1">Inbox -> Matriz</p>
+        <p className="text-xs text-[var(--flux-text)] font-semibold mb-1">Inbox -&gt; Matriz</p>
         <p className="text-[11px] text-[var(--flux-text-muted)] mb-2">
           Capture rapidamente e classifique em seguida para manter a priorização objetiva.
         </p>
