@@ -2090,6 +2090,8 @@
         "viewKanbanAria": "Visualização Kanban em colunas",
         "viewTableAria": "Visualização em tabela",
         "viewTimelineAria": "Visualização em linha do tempo",
+        "viewEisenhowerTooltip": "Matriz Eisenhower (urgente x importante)",
+        "viewEisenhowerAria": "Visualização em matriz Eisenhower",
         "groupByAria": "Agrupar linhas da timeline",
         "groupByLabel": "Eixo Y",
         "groupFlat": "Lista",

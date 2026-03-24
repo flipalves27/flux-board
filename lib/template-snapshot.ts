@@ -110,6 +110,23 @@ export function buildPriorityMatrixSnapshotFromBoard(
   return {
     templateKind: "priority_matrix",
     priorityMatrixModel: "eisenhower",
+    priorityMatrixMeta: {
+      axes: {
+        horizontalLabel: "Urgência",
+        verticalLabel: "Importância",
+      },
+      quadrantLabels: {
+        do_first: "Urgente e importante",
+        schedule: "Importante, não urgente",
+        delegate: "Urgente, não importante",
+        eliminate: "Nem urgente nem importante",
+      },
+      defaultView: "eisenhower",
+      classificationRules: {
+        urgentHint: "Prazo, SLA ou custo de atraso elevado.",
+        importantHint: "Impacto direto em objetivo de negócio/usuário.",
+      },
+    },
     config: {
       bucketOrder: priorityMatrixBucketOrder(),
       collapsedColumns: [],
@@ -177,6 +194,17 @@ export function buildPriorityMatrixGrid4SnapshotFromBoard(
   return {
     templateKind: "priority_matrix",
     priorityMatrixModel: "grid4",
+    priorityMatrixMeta: {
+      axes: {
+        horizontalLabel: "Urgência",
+        verticalLabel: "Importância",
+      },
+      defaultView: "kanban",
+      classificationRules: {
+        urgentHint: "Da esquerda (menor) para direita (maior).",
+        importantHint: "De baixo (menor) para cima (maior).",
+      },
+    },
     config: {
       bucketOrder: priorityMatrixGrid4BucketOrder(),
       collapsedColumns: [],

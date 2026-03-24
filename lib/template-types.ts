@@ -24,6 +24,23 @@ export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[n
 /** Eisenhower 4 quadrantes ou grade 4×4 (16 células). */
 export type PriorityMatrixModel = "eisenhower" | "grid4";
 
+export type MatrixAxesMeta = {
+  horizontalLabel: string;
+  verticalLabel: string;
+};
+
+export type MatrixClassificationRules = {
+  urgentHint?: string;
+  importantHint?: string;
+};
+
+export type PriorityMatrixMeta = {
+  axes?: MatrixAxesMeta;
+  quadrantLabels?: Partial<Record<PriorityMatrixQuadrantKey, string>>;
+  defaultView?: "kanban" | "eisenhower";
+  classificationRules?: MatrixClassificationRules;
+};
+
 export type BoardTemplateSnapshot = {
   config: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
   mapaProducao: unknown[];
@@ -38,7 +55,11 @@ export type BoardTemplateSnapshot = {
   priorityMatrixModel?: PriorityMatrixModel;
   /** Cópias serializáveis para import (novos ids na criação do board). */
   templateCards?: unknown[];
+  /** Metadados visuais/semânticos para renderização da matriz. */
+  priorityMatrixMeta?: PriorityMatrixMeta;
 };
+
+export type TemplateLifecycleStatus = "draft" | "published" | "archived";
 
 export type PublishedTemplate = {
   _id: string;
@@ -53,6 +74,11 @@ export type PublishedTemplate = {
   creatorOrgName?: string;
   snapshot: BoardTemplateSnapshot;
   sourceBoardId?: string;
+  status?: TemplateLifecycleStatus;
+  version?: number;
+  publishedAt?: string;
+  archivedAt?: string;
+  updatedBy?: string;
   createdAt: string;
   updatedAt: string;
 };

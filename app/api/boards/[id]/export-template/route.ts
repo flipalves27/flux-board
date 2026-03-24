@@ -62,6 +62,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     creatorOrgName: org?.name,
     snapshot,
     sourceBoardId: boardId,
+    status: "published",
+    updatedBy: payload.id,
   });
 
   return NextResponse.json({

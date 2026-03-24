@@ -2089,6 +2089,8 @@
         "viewKanbanAria": "Kanban column view",
         "viewTableAria": "Table view",
         "viewTimelineAria": "Timeline view",
+        "viewEisenhowerTooltip": "Eisenhower matrix (urgent x important)",
+        "viewEisenhowerAria": "Eisenhower matrix view",
         "groupByAria": "Group timeline rows",
         "groupByLabel": "Y axis",
         "groupFlat": "Flat",

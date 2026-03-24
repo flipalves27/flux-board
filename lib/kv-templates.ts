@@ -1,6 +1,11 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
-import type { PublishedTemplate, TemplateCategory, TemplatePricingTier } from "./template-types";
+import type {
+  PublishedTemplate,
+  TemplateCategory,
+  TemplateLifecycleStatus,
+  TemplatePricingTier,
+} from "./template-types";
 import { TEMPLATE_CATEGORIES } from "./template-types";
 
 const COL = "published_templates";
@@ -49,6 +54,7 @@ async function ensureIndexes(db: Db): Promise<void> {
   if (indexesEnsured) return;
   await db.collection(COL).createIndex({ slug: 1 }, { unique: true });
   await db.collection(COL).createIndex({ category: 1 });
+  await db.collection(COL).createIndex({ status: 1 });
   await db.collection(COL).createIndex({ createdAt: -1 });
   indexesEnsured = true;
 }
@@ -69,14 +75,18 @@ function makeId(): string {
 export async function listPublishedTemplates(params?: {
   category?: TemplateCategory;
   limit?: number;
+  status?: TemplateLifecycleStatus;
 }): Promise<PublishedTemplate[]> {
   const limit = Math.min(Math.max(params?.limit ?? 60, 1), 200);
   const cat = params?.category;
+  const status = params?.status;
 
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureIndexes(db);
-    const q = cat && TEMPLATE_CATEGORIES.includes(cat) ? { category: cat } : {};
+    const q: Record<string, unknown> = {};
+    if (cat && TEMPLATE_CATEGORIES.includes(cat)) q.category = cat;
+    if (status) q.status = status;
     const docs = await db
       .collection<PublishedTemplate>(COL)
       .find(q)
@@ -88,7 +98,11 @@ export async function listPublishedTemplates(params?: {
 
   await seedMemoryTemplatesIfNeeded();
   const all = [...memoryStore.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  const filtered = cat ? all.filter((t) => t.category === cat) : all;
+  const filtered = all.filter((t) => {
+    if (cat && t.category !== cat) return false;
+    if (status && (t.status ?? "published") !== status) return false;
+    return true;
+  });
   return filtered.slice(0, limit);
 }
 
@@ -138,6 +152,39 @@ export async function insertPublishedTemplate(doc: PublishedTemplate): Promise<P
   return doc;
 }
 
+export async function updatePublishedTemplate(
+  id: string,
+  patch: Partial<
+    Pick<
+      PublishedTemplate,
+      | "title"
+      | "description"
+      | "category"
+      | "pricingTier"
+      | "snapshot"
+      | "status"
+      | "version"
+      | "publishedAt"
+      | "archivedAt"
+      | "updatedBy"
+      | "updatedAt"
+    >
+  >
+): Promise<PublishedTemplate | null> {
+  if (!id) return null;
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureIndexes(db);
+    await db.collection<PublishedTemplate>(COL).updateOne({ _id: id }, { $set: patch });
+    return getPublishedTemplateById(id);
+  }
+  const cur = memoryStore.get(id);
+  if (!cur) return null;
+  const next = { ...cur, ...patch };
+  memoryStore.set(id, next);
+  return next;
+}
+
 export async function ensureUniqueSlug(base: string): Promise<string> {
   let s = slugify(base) || "template";
   if (isMongoConfigured()) {
@@ -168,6 +215,8 @@ export type CreateTemplateInput = {
   creatorOrgName?: string;
   snapshot: PublishedTemplate["snapshot"];
   sourceBoardId?: string;
+  status?: TemplateLifecycleStatus;
+  updatedBy?: string;
 };
 
 export async function createPublishedTemplate(input: CreateTemplateInput): Promise<PublishedTemplate> {
@@ -185,8 +234,26 @@ export async function createPublishedTemplate(input: CreateTemplateInput): Promi
     creatorOrgName: input.creatorOrgName,
     snapshot: input.snapshot,
     sourceBoardId: input.sourceBoardId,
+    status: input.status ?? "published",
+    version: 1,
+    publishedAt: input.status === "draft" ? undefined : now,
+    updatedBy: input.updatedBy,
     createdAt: now,
     updatedAt: now,
   };
   return insertPublishedTemplate(doc);
+}
+
+export async function publishTemplate(id: string, updatedBy?: string): Promise<PublishedTemplate | null> {
+  const now = new Date().toISOString();
+  const existing = await getPublishedTemplateById(id);
+  if (!existing) return null;
+  return updatePublishedTemplate(id, {
+    status: "published",
+    publishedAt: now,
+    archivedAt: undefined,
+    version: Math.max(1, Number(existing.version ?? 1)) + 1,
+    updatedBy,
+    updatedAt: now,
+  });
 }

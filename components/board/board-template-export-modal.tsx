@@ -29,6 +29,8 @@ type Props = {
   defaultTemplateKind?: "kanban" | "priority_matrix";
   /** Se definido, publica matriz 4×4 (payload do workspace); não exige lista Eisenhower no modal. */
   grid4PublishSelections?: Array<{ cardId: string; row: number; col: number }>;
+  /** Se definido, publica Eisenhower com seleções prontas do workspace. */
+  eisenhowerPublishSelections?: Array<{ cardId: string; quadrantKey: PriorityMatrixQuadrantKey }>;
 };
 
 export function BoardTemplateExportModal({
@@ -38,8 +40,10 @@ export function BoardTemplateExportModal({
   getHeaders,
   defaultTemplateKind = "kanban",
   grid4PublishSelections,
+  eisenhowerPublishSelections,
 }: Props) {
   const isGrid4PublishMode = grid4PublishSelections !== undefined;
+  const isEisenhowerPublishMode = eisenhowerPublishSelections !== undefined;
   const t = useTranslations("templates");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -61,13 +65,13 @@ export function BoardTemplateExportModal({
   useEffect(() => {
     if (!open) return;
     setSourceBoardId(boardId);
-    setTemplateKind(isGrid4PublishMode ? "priority_matrix" : defaultTemplateKind);
+    setTemplateKind(isGrid4PublishMode || isEisenhowerPublishMode ? "priority_matrix" : defaultTemplateKind);
     setMatrixSelections({});
     setCardSearch("");
     setError(null);
     setPhase("idle");
     setPublishedSlug(null);
-  }, [open, boardId, defaultTemplateKind, isGrid4PublishMode]);
+  }, [open, boardId, defaultTemplateKind, isGrid4PublishMode, isEisenhowerPublishMode]);
 
   useEffect(() => {
     if (templateKind === "kanban") setError(null);
@@ -100,7 +104,7 @@ export function BoardTemplateExportModal({
   }, [open, boardRows, boardId, sourceBoardId]);
 
   useEffect(() => {
-    if (!open || isGrid4PublishMode || templateKind !== "priority_matrix" || !sourceBoardId) return;
+    if (!open || isGrid4PublishMode || isEisenhowerPublishMode || templateKind !== "priority_matrix" || !sourceBoardId) return;
     let cancelled = false;
     setCardsLoading(true);
     setCards([]);
@@ -136,7 +140,7 @@ export function BoardTemplateExportModal({
     return () => {
       cancelled = true;
     };
-  }, [open, isGrid4PublishMode, templateKind, sourceBoardId, getHeaders, t]);
+  }, [open, isGrid4PublishMode, isEisenhowerPublishMode, templateKind, sourceBoardId, getHeaders, t]);
 
   const filteredCards = useMemo(() => {
     const q = cardSearch.trim().toLowerCase();
@@ -161,6 +165,10 @@ export function BoardTemplateExportModal({
         base.templateKind = "priority_matrix";
         base.priorityMatrixModel = "grid4";
         base.priorityMatrixGridSelections = grid4PublishSelections ?? [];
+      } else if (isEisenhowerPublishMode) {
+        base.templateKind = "priority_matrix";
+        base.priorityMatrixModel = "eisenhower";
+        base.priorityMatrixSelections = eisenhowerPublishSelections ?? [];
       } else if (templateKind === "priority_matrix") {
         base.templateKind = "priority_matrix";
         base.priorityMatrixModel = "eisenhower";
@@ -186,6 +194,8 @@ export function BoardTemplateExportModal({
 
   const hint = isGrid4PublishMode
     ? t("exportModal.hintGrid4Publish")
+    : isEisenhowerPublishMode
+      ? t("exportModal.hintMatrix")
     : templateKind === "priority_matrix"
       ? t("exportModal.hintMatrix")
       : t("exportModal.hint");
@@ -227,7 +237,7 @@ export function BoardTemplateExportModal({
           </div>
         ) : (
           <>
-            {!isGrid4PublishMode && (
+            {!isGrid4PublishMode && !isEisenhowerPublishMode && (
               <>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
                   {t("exportModal.templateKind")}
@@ -257,7 +267,7 @@ export function BoardTemplateExportModal({
               </>
             )}
 
-            {!isGrid4PublishMode && templateKind === "priority_matrix" && (
+            {!isGrid4PublishMode && !isEisenhowerPublishMode && templateKind === "priority_matrix" && (
               <div className="mb-4 space-y-2">
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)]">
                   {t("exportModal.sourceBoard")}

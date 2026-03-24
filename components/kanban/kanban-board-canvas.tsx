@@ -65,6 +65,15 @@ type KanbanBoardCanvasProps = {
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
 };
 
+function bucketToEisenhowerKey(bucket: string): "do_first" | "schedule" | "delegate" | "eliminate" | null {
+  if (bucket === "do_first" || bucket === "schedule" || bucket === "delegate" || bucket === "eliminate") return bucket;
+  const b = bucket.toLowerCase();
+  if (b.includes("urgente") && b.includes("importante")) return "do_first";
+  if (b.includes("importante")) return "schedule";
+  if (b.includes("urgente")) return "delegate";
+  return null;
+}
+
 export function KanbanBoardCanvas({
   t,
   boardScrollRef,
@@ -198,6 +207,46 @@ export function KanbanBoardCanvas({
           onPatchCard={onPatchCardFromTable}
           onOpenCard={onTableOpenCard}
         />
+      ) : null}
+      {boardView === "eisenhower" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(
+            [
+              { key: "do_first", label: "Do first" },
+              { key: "schedule", label: "Schedule" },
+              { key: "delegate", label: "Delegate" },
+              { key: "eliminate", label: "Delete" },
+            ] as const
+          ).map((q) => {
+            const items = cards.filter((c) => {
+              if (!filterCard(c)) return false;
+              const key = bucketToEisenhowerKey(c.bucket);
+              return key === q.key;
+            });
+            return (
+              <section key={q.key} className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-3">
+                <h3 className="text-sm font-semibold text-[var(--flux-text)] mb-2">{q.label}</h3>
+                <div className="space-y-2">
+                  {items.length === 0 ? (
+                    <p className="text-xs text-[var(--flux-text-muted)]">Sem cards.</p>
+                  ) : (
+                    items.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left rounded-md border border-[var(--flux-control-border)] px-2 py-1.5 text-xs hover:border-[var(--flux-primary-alpha-35)]"
+                        onClick={() => onEditCard(c.id)}
+                      >
+                        <div className="font-medium truncate">{c.title}</div>
+                        <div className="text-[10px] text-[var(--flux-text-muted)] truncate">{c.id}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       ) : null}
       {boardView === "kanban" ? (
         <DndContext

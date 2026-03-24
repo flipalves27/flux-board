@@ -2,7 +2,7 @@ export const KANBAN_FILTERS_STORAGE_PREFIX = "flux.kanban.filters:";
 export const BOARD_VIEW_STORAGE_PREFIX = "flux.board.viewMode:";
 
 /** Board canvas mode; persisted per board in ui-store (localStorage). */
-export type BoardViewMode = "kanban" | "table" | "timeline";
+export type BoardViewMode = "kanban" | "table" | "timeline" | "eisenhower";
 
 export const DIR_COLORS: Record<string, string> = {
   manter: "var(--flux-success-solid-dark)",

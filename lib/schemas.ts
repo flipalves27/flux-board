@@ -155,6 +155,7 @@ export const BoardTemplateSnapshotSchema = z.object({
   templateKind: z.enum(["kanban", "priority_matrix"]).optional(),
   priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
+  priorityMatrixMeta: z.unknown().optional(),
 });
 
 export const BoardCreateSchema = z

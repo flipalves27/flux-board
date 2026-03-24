@@ -69,7 +69,7 @@ export const useKanbanUiStore = create<KanbanUiState>()(
           })),
         getBoardView: (boardId) => {
           const v = get().boardViewByBoard[boardId] ?? "kanban";
-          return v === "kanban" || v === "table" || v === "timeline" ? v : "kanban";
+          return v === "kanban" || v === "table" || v === "timeline" || v === "eisenhower" ? v : "kanban";
         },
 
         modalCard: null,
@@ -144,7 +144,7 @@ export function migrateBoardViewFromLegacyLocalStorage(boardId: string) {
   try {
     const key = `${BOARD_VIEW_STORAGE_PREFIX}${boardId}`;
     const raw = window.localStorage.getItem(key);
-    if (!raw || (raw !== "kanban" && raw !== "timeline")) return;
+    if (!raw || (raw !== "kanban" && raw !== "timeline" && raw !== "table" && raw !== "eisenhower")) return;
     const cur = useKanbanUiStore.getState().boardViewByBoard[boardId];
     if (cur) return;
     useKanbanUiStore.getState().setBoardView(boardId, raw);

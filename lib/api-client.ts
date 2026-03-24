@@ -116,6 +116,18 @@ export async function apiPut<T = unknown>(
   });
 }
 
+export async function apiPatch<T = unknown>(
+  url: string,
+  body: unknown,
+  headers?: Record<string, string>
+): Promise<T> {
+  return apiJson<T>(url, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+    headers,
+  });
+}
+
 export async function apiDelete(
   url: string,
   headers?: Record<string, string>

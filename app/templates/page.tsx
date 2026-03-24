@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import type { TemplateCategory } from "@/lib/template-types";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
@@ -20,6 +20,8 @@ type Row = {
   creatorOrgName?: string;
   templateKind?: "kanban" | "priority_matrix";
   priorityMatrixModel?: "eisenhower" | "grid4";
+  status?: "draft" | "published" | "archived";
+  version?: number;
 };
 
 export default function TemplatesShowcasePage() {
@@ -34,8 +36,10 @@ export default function TemplatesShowcasePage() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<TemplateCategory | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "published" | "archived">("all");
   const [importingId, setImportingId] = useState<string | null>(null);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isChecked) return;
@@ -47,8 +51,11 @@ export default function TemplatesShowcasePage() {
     (async () => {
       setLoading(true);
       try {
-        const q = filter === "all" ? "" : `?category=${encodeURIComponent(filter)}`;
-        const data = await apiGet<{ templates: Row[] }>(`/api/templates${q}`);
+        const q = new URLSearchParams();
+        if (filter !== "all") q.set("category", filter);
+        if (statusFilter !== "all") q.set("status", statusFilter);
+        const query = q.toString();
+        const data = await apiGet<{ templates: Row[] }>(`/api/templates${query ? `?${query}` : ""}`);
         if (!cancelled) setRows(data?.templates ?? []);
       } catch (e) {
         if (!cancelled) {
@@ -62,7 +69,7 @@ export default function TemplatesShowcasePage() {
     return () => {
       cancelled = true;
     };
-  }, [isChecked, user, router, localeRoot, filter, pushToast, t]);
+  }, [isChecked, user, router, localeRoot, filter, statusFilter, pushToast, t]);
 
   async function importTemplate(id: string, title: string) {
     if (!user) return;
@@ -105,6 +112,34 @@ export default function TemplatesShowcasePage() {
       });
     } finally {
       setDeletingTemplateId(null);
+    }
+  }
+
+  async function publishDraft(id: string) {
+    setEditingId(id);
+    try {
+      await apiPatch(`/api/templates/${encodeURIComponent(id)}`, {}, getHeaders());
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "published", version: (r.version ?? 1) + 1 } : r)));
+      pushToast({ kind: "success", title: "Template publicado" });
+    } catch (e) {
+      pushToast({ kind: "error", title: e instanceof ApiError ? e.message : "Erro ao publicar template." });
+    } finally {
+      setEditingId(null);
+    }
+  }
+
+  async function quickEditTemplate(r: Row) {
+    const title = window.prompt("Novo título do template", r.title)?.trim();
+    if (!title) return;
+    setEditingId(r.id);
+    try {
+      await apiPut(`/api/templates/${encodeURIComponent(r.id)}`, { title }, getHeaders());
+      setRows((prev) => prev.map((it) => (it.id === r.id ? { ...it, title } : it)));
+      pushToast({ kind: "success", title: "Template atualizado" });
+    } catch (e) {
+      pushToast({ kind: "error", title: e instanceof ApiError ? e.message : "Erro ao atualizar template." });
+    } finally {
+      setEditingId(null);
     }
   }
 
@@ -189,6 +224,16 @@ export default function TemplatesShowcasePage() {
             <option value="support">Suporte</option>
             <option value="insurance_warranty">Seguro / Garantia</option>
           </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as "all" | "draft" | "published" | "archived")}
+            className="px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm"
+          >
+            <option value="all">Todos os status</option>
+            <option value="draft">Rascunho</option>
+            <option value="published">Publicado</option>
+            <option value="archived">Arquivado</option>
+          </select>
         </div>
 
         {loading ? (
@@ -219,6 +264,9 @@ export default function TemplatesShowcasePage() {
                     >
                       {r.pricingTier === "premium" ? t("premium") : t("free")}
                     </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)]">
+                      {r.status ?? "published"} v{r.version ?? 1}
+                    </span>
                   </div>
                   <p className="text-sm text-[var(--flux-text-muted)] mt-1">{r.description}</p>
                   {r.creatorOrgName && (
@@ -234,6 +282,26 @@ export default function TemplatesShowcasePage() {
                   >
                     {importingId === r.id ? t("importing") : t("import")}
                   </button>
+                  {user?.isAdmin ? (
+                    <button
+                      type="button"
+                      className="btn-secondary shrink-0"
+                      disabled={editingId === r.id}
+                      onClick={() => void quickEditTemplate(r)}
+                    >
+                      {editingId === r.id ? "Salvando..." : "Editar"}
+                    </button>
+                  ) : null}
+                  {user?.isAdmin && r.status === "draft" ? (
+                    <button
+                      type="button"
+                      className="btn-secondary shrink-0"
+                      disabled={editingId === r.id}
+                      onClick={() => void publishDraft(r.id)}
+                    >
+                      {editingId === r.id ? "Publicando..." : "Publicar"}
+                    </button>
+                  ) : null}
                   {user?.isAdmin ? (
                     <button
                       type="button"
