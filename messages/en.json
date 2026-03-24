@@ -300,6 +300,13 @@
     "createModeMatrix": "Priority matrix",
     "matrixSectionTitle": "Priority matrix",
     "matrixSectionHint": "A 4×4 grid with two level axes (like common prioritization matrices): drag board cards into cells. Publishing requires an administrator.",
+    "matrixSectionCta": "Open exclusive 4x4 Matrix session",
+    "matrixExclusive": {
+      "title": "4x4 Matrix",
+      "back": "← Templates",
+      "heading": "Exclusive 4x4 Matrix session",
+      "hint": "Dedicated context to prioritize, create tasks, and publish templates with less visual noise."
+    },
     "matrixPanel": {
       "hint": "Pick a source board, then open the wizard to select cards, quadrants, and template metadata.",
       "selectBoard": "Source board",
@@ -311,6 +318,7 @@
     },
     "matrixWorkspace": {
       "intro": "Place cards on a 4×4 grid: vertical and horizontal axes represent level (low to high). The color gradient follows the rising priority diagonal, matching common market matrix patterns.",
+      "bestPracticeHint": "Best practice: map impact on the vertical axis and effort/complexity on the horizontal axis; high-impact and low-effort items usually get top priority.",
       "loadingCards": "Loading board cards…",
       "gridAria": "Four by four priority matrix",
       "level": "Level",
@@ -321,6 +329,14 @@
       "poolTitle": "Available cards (drag onto the grid)",
       "poolEmpty": "All cards are on the grid or this board has no cards.",
       "dragHint": "Drag from the list to a cell, between cells, or back to the list to remove from the grid.",
+      "quickTaskTitle": "Create a quick task for this matrix",
+      "quickTaskPlaceholder": "e.g. Review enterprise commercial proposal",
+      "quickTaskCta": "Create task",
+      "quickTaskHint": "The task is created on the selected board and is immediately available to place in the matrix.",
+      "savingTask": "Saving…",
+      "deleteTask": "Delete",
+      "deleteTaskConfirm": "Delete this task from the board?",
+      "taskGenericError": "Could not save the task to the selected board.",
       "publishCta": "Publish as template",
       "publishHint": "Opens the wizard for title, category, and the current grid layout."
     },
@@ -372,6 +388,13 @@
     },
     "premium": "Premium",
     "free": "Free",
+    "deleteTemplate": {
+      "cta": "Delete template",
+      "deleting": "Deleting…",
+      "confirm": "Do you want to delete this published template?",
+      "success": "Template deleted successfully.",
+      "error": "Could not delete the template."
+    },
     "exportModal": {
       "title": "Publish as template",
       "hint": "Exports columns, automations, and labels (no cards). Visible in the showcase.",

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { apiGet } from "@/lib/api-client";
+import { ApiError, apiGet, apiPut } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import {
   MATRIX_GRID_SIZE,
@@ -13,6 +13,18 @@ import {
 } from "@/lib/matrix-grid4";
 
 type CardRow = { id: string; title: string };
+type BoardCard = {
+  id: string;
+  bucket: string;
+  priority: string;
+  progress: string;
+  title: string;
+  desc: string;
+  order: number;
+  tags?: string[];
+  dueDate?: string | null;
+  blockedBy?: string[];
+};
 
 function flattenCellsToSelections(cells: Record<string, string[]>): Array<{ cardId: string; row: number; col: number }> {
   const out: Array<{ cardId: string; row: number; col: number }> = [];
@@ -37,9 +49,14 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
   const [loadingBoards, setLoadingBoards] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState("");
   const [cards, setCards] = useState<CardRow[]>([]);
+  const [boardCards, setBoardCards] = useState<BoardCard[]>([]);
+  const [defaultBucketKey, setDefaultBucketKey] = useState("");
   const [loadingCards, setLoadingCards] = useState(false);
+  const [updatingCards, setUpdatingCards] = useState(false);
   const [cells, setCells] = useState<Record<string, string[]>>({});
   const [publishOpen, setPublishOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [taskError, setTaskError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,38 +83,79 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
     };
   }, [getHeaders]);
 
+  const loadBoardCards = useCallback(async () => {
+    if (!selectedBoardId) {
+      setCards([]);
+      setBoardCards([]);
+      setDefaultBucketKey("");
+      return;
+    }
+    setLoadingCards(true);
+    setCells({});
+    setTaskError(null);
+    try {
+      const data = await apiGet<{ cards?: unknown; config?: { bucketOrder?: Array<{ key?: string }> } }>(
+        `/api/boards/${encodeURIComponent(selectedBoardId)}`,
+        getHeaders()
+      );
+      const raw = Array.isArray(data?.cards) ? data.cards : [];
+      const parsedRows: CardRow[] = [];
+      const parsedFull: BoardCard[] = [];
+      for (const c of raw) {
+        if (!c || typeof c !== "object") continue;
+        const rec = c as Record<string, unknown>;
+        const id = typeof rec.id === "string" ? rec.id : "";
+        const titleStr = typeof rec.title === "string" ? rec.title.trim() : "";
+        const bucket = typeof rec.bucket === "string" ? rec.bucket : "";
+        const priority = typeof rec.priority === "string" ? rec.priority : "Média";
+        const progress = typeof rec.progress === "string" ? rec.progress : "Não iniciado";
+        const desc = typeof rec.desc === "string" ? rec.desc : "";
+        const order = typeof rec.order === "number" ? rec.order : 0;
+        if (!id || !bucket) continue;
+        parsedRows.push({ id, title: titleStr || id });
+        parsedFull.push({
+          id,
+          bucket,
+          priority,
+          progress,
+          title: titleStr || id,
+          desc,
+          order,
+          tags: Array.isArray(rec.tags) ? (rec.tags as string[]) : [],
+          dueDate: rec.dueDate === null || typeof rec.dueDate === "string" ? rec.dueDate : null,
+          blockedBy: Array.isArray(rec.blockedBy) ? (rec.blockedBy as string[]) : [],
+        });
+      }
+      setCards(parsedRows);
+      setBoardCards(parsedFull);
+      const buckets = Array.isArray(data?.config?.bucketOrder) ? data.config.bucketOrder : [];
+      const firstBucket = buckets.find((b) => typeof b?.key === "string" && b.key)?.key ?? parsedFull[0]?.bucket ?? "";
+      setDefaultBucketKey(firstBucket);
+    } catch {
+      setCards([]);
+      setBoardCards([]);
+      setDefaultBucketKey("");
+    } finally {
+      setLoadingCards(false);
+    }
+  }, [selectedBoardId, getHeaders]);
+
   useEffect(() => {
     if (!selectedBoardId) {
       setCards([]);
+      setBoardCards([]);
+      setDefaultBucketKey("");
       return;
     }
     let cancelled = false;
-    setLoadingCards(true);
-    setCells({});
     (async () => {
-      try {
-        const data = await apiGet<{ cards?: unknown }>(`/api/boards/${encodeURIComponent(selectedBoardId)}`, getHeaders());
-        if (cancelled) return;
-        const raw = Array.isArray(data?.cards) ? data.cards : [];
-        const parsed: CardRow[] = [];
-        for (const c of raw) {
-          if (!c || typeof c !== "object") continue;
-          const rec = c as Record<string, unknown>;
-          const id = typeof rec.id === "string" ? rec.id : "";
-          const titleStr = typeof rec.title === "string" ? rec.title.trim() : "";
-          if (id) parsed.push({ id, title: titleStr || id });
-        }
-        setCards(parsed);
-      } catch {
-        if (!cancelled) setCards([]);
-      } finally {
-        if (!cancelled) setLoadingCards(false);
-      }
+      await loadBoardCards();
+      if (cancelled) return;
     })();
     return () => {
       cancelled = true;
     };
-  }, [selectedBoardId, getHeaders]);
+  }, [loadBoardCards, selectedBoardId]);
 
   const assignedIds = useMemo(() => {
     const s = new Set<string>();
@@ -134,6 +192,63 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
       return next;
     });
   }, []);
+
+  const saveBoardCards = useCallback(
+    async (nextCards: BoardCard[]) => {
+      if (!selectedBoardId) return;
+      setUpdatingCards(true);
+      setTaskError(null);
+      try {
+        await apiPut(
+          `/api/boards/${encodeURIComponent(selectedBoardId)}`,
+          { cards: nextCards, lastUpdated: new Date().toISOString() },
+          getHeaders()
+        );
+        await loadBoardCards();
+      } catch (e) {
+        setTaskError(e instanceof ApiError ? e.message : t("matrixWorkspace.taskGenericError"));
+      } finally {
+        setUpdatingCards(false);
+      }
+    },
+    [selectedBoardId, getHeaders, loadBoardCards, t]
+  );
+
+  const createTask = useCallback(async () => {
+    const title = newTaskTitle.trim();
+    if (!title || !defaultBucketKey) return;
+    const id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? `MATRIX-${crypto.randomUUID().slice(0, 8)}`
+        : `MATRIX-${Date.now()}`;
+    const maxOrder = boardCards
+      .filter((c) => c.bucket === defaultBucketKey)
+      .reduce((acc, c) => Math.max(acc, c.order ?? 0), -1);
+    const nextCard: BoardCard = {
+      id,
+      title,
+      bucket: defaultBucketKey,
+      priority: "Média",
+      progress: "Não iniciado",
+      desc: "",
+      order: maxOrder + 1,
+      tags: [],
+      blockedBy: [],
+      dueDate: null,
+    };
+    await saveBoardCards([...boardCards, nextCard]);
+    setNewTaskTitle("");
+  }, [newTaskTitle, defaultBucketKey, boardCards, saveBoardCards]);
+
+  const deleteTask = useCallback(
+    async (cardId: string) => {
+      const confirmed = window.confirm(t("matrixWorkspace.deleteTaskConfirm"));
+      if (!confirmed) return;
+      removeCardFromCells(cardId);
+      await saveBoardCards(boardCards.filter((c) => c.id !== cardId));
+    },
+    [boardCards, removeCardFromCells, saveBoardCards, t]
+  );
 
   const onDragStartCard = useCallback((e: React.DragEvent, cardId: string) => {
     e.dataTransfer.setData("text/plain", cardId);
@@ -183,8 +298,11 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
   const cols = Array.from({ length: MATRIX_GRID_SIZE }, (_, c) => c);
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed">{t("matrixWorkspace.intro")}</p>
+    <div className="space-y-6 max-w-6xl">
+      <div className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 p-4">
+        <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed">{t("matrixWorkspace.intro")}</p>
+        <p className="text-[11px] text-[var(--flux-text-muted)] mt-2">{t("matrixWorkspace.bestPracticeHint")}</p>
+      </div>
 
       {loadingBoards ? (
         <p className="text-xs text-[var(--flux-text-muted)]">{t("matrixPanel.loadingBoards")}</p>
@@ -255,16 +373,26 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
                                   {placed.map((cid) => {
                                     const c = cards.find((x) => x.id === cid);
                                     return (
-                                      <button
-                                        key={cid}
-                                        type="button"
-                                        draggable
-                                        onDragStart={(e) => onDragStartPlaced(e, cid, key)}
-                                        className="text-left text-[10px] leading-snug rounded-lg bg-black/25 hover:bg-black/35 text-white px-1.5 py-1 border border-white/20 truncate cursor-grab active:cursor-grabbing"
-                                        title={c?.title ?? cid}
-                                      >
-                                        {c?.title ?? cid}
-                                      </button>
+                                      <div key={cid} className="flex items-center gap-1 rounded-lg bg-black/25 border border-white/20 px-1.5 py-1">
+                                        <button
+                                          type="button"
+                                          draggable
+                                          onDragStart={(e) => onDragStartPlaced(e, cid, key)}
+                                          className="text-left text-[10px] leading-snug text-white truncate cursor-grab active:cursor-grabbing hover:text-white/90"
+                                          title={c?.title ?? cid}
+                                        >
+                                          {c?.title ?? cid}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] text-white/70 hover:text-white"
+                                          title={t("matrixWorkspace.deleteTask")}
+                                          onClick={() => void deleteTask(cid)}
+                                          disabled={updatingCards}
+                                        >
+                                          {t("matrixWorkspace.deleteTask")}
+                                        </button>
+                                      </div>
                                     );
                                   })}
                                 </div>
@@ -289,20 +417,54 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
                     <span className="text-[11px] text-[var(--flux-text-muted)]">{t("matrixWorkspace.poolEmpty")}</span>
                   ) : (
                     poolCards.map((c) => (
-                      <button
+                      <div
                         key={c.id}
-                        type="button"
-                        draggable
-                        onDragStart={(e) => onDragStartCard(e, c.id)}
-                        className="text-[11px] rounded-lg px-2 py-1.5 bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-[var(--flux-text)] max-w-[200px] truncate cursor-grab active:cursor-grabbing hover:border-[var(--flux-primary-alpha-40)]"
-                        title={c.title}
+                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] max-w-[280px]"
                       >
-                        {c.title}
-                      </button>
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={(e) => onDragStartCard(e, c.id)}
+                          className="text-[11px] text-[var(--flux-text)] truncate cursor-grab active:cursor-grabbing hover:text-[var(--flux-primary)]"
+                          title={c.title}
+                        >
+                          {c.title}
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]"
+                          title={t("matrixWorkspace.deleteTask")}
+                          onClick={() => void deleteTask(c.id)}
+                          disabled={updatingCards}
+                        >
+                          {t("matrixWorkspace.deleteTask")}
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
                 <p className="text-[10px] text-[var(--flux-text-muted)] mt-2">{t("matrixWorkspace.dragHint")}</p>
+              </div>
+              <div className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 p-3 space-y-2">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">{t("matrixWorkspace.quickTaskTitle")}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder={t("matrixWorkspace.quickTaskPlaceholder")}
+                    className="flex-1 min-w-[220px] px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm"
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={!newTaskTitle.trim() || !defaultBucketKey || updatingCards}
+                    onClick={() => void createTask()}
+                  >
+                    {updatingCards ? t("matrixWorkspace.savingTask") : t("matrixWorkspace.quickTaskCta")}
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--flux-text-muted)]">{t("matrixWorkspace.quickTaskHint")}</p>
+                {taskError ? <p className="text-[11px] text-[var(--flux-danger)]">{taskError}</p> : null}
               </div>
             </>
           )}

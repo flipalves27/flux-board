@@ -300,6 +300,13 @@
     "createModeMatrix": "Matriz de priorização",
     "matrixSectionTitle": "Matriz de priorização",
     "matrixSectionHint": "Grade 4×4 com dois eixos de nível (como em priorização visual de mercado): arraste os cards do board para as células. Publicar no showcase exige administrador.",
+    "matrixSectionCta": "Abrir sessão exclusiva da Matriz 4x4",
+    "matrixExclusive": {
+      "title": "Matriz 4x4",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva da Matriz 4x4",
+      "hint": "Contexto dedicado para priorizar, criar tarefas e publicar templates com menos ruído visual."
+    },
     "matrixPanel": {
       "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
       "selectBoard": "Board de origem",
@@ -311,6 +318,7 @@
     },
     "matrixWorkspace": {
       "intro": "Visualize e posicione cards em uma grade 4×4: eixo vertical e horizontal representam níveis (baixo → alto). O degradê segue a diagonal prioridade crescente, alinhado a referências comuns de matrizes de priorização.",
+      "bestPracticeHint": "Boas práticas: alinhe impacto no eixo vertical e esforço/complexidade no horizontal; itens de alto impacto e baixo esforço tendem a prioridade máxima.",
       "loadingCards": "Carregando cards do board…",
       "gridAria": "Matriz de priorização quatro por quatro",
       "level": "Nível",
@@ -321,6 +329,14 @@
       "poolTitle": "Cards disponíveis (arraste para a grade)",
       "poolEmpty": "Todos os cards estão na grade ou não há cards neste board.",
       "dragHint": "Arraste um card da lista para uma célula, entre células ou de volta à lista para remover da grade.",
+      "quickTaskTitle": "Criar tarefa rápida para esta matriz",
+      "quickTaskPlaceholder": "Ex.: Revisar proposta comercial enterprise",
+      "quickTaskCta": "Criar tarefa",
+      "quickTaskHint": "A tarefa é criada no board selecionado e já fica pronta para arrastar para a matriz.",
+      "savingTask": "Salvando…",
+      "deleteTask": "Excluir",
+      "deleteTaskConfirm": "Excluir esta tarefa do board?",
+      "taskGenericError": "Não foi possível salvar a tarefa no board selecionado.",
       "publishCta": "Publicar como template",
       "publishHint": "Abre o assistente com título, categoria e o layout atual da grade."
     },
@@ -372,6 +388,13 @@
     },
     "premium": "Premium",
     "free": "Grátis",
+    "deleteTemplate": {
+      "cta": "Excluir template",
+      "deleting": "Excluindo…",
+      "confirm": "Deseja excluir este template publicado?",
+      "success": "Template excluído com sucesso.",
+      "error": "Não foi possível excluir o template."
+    },
     "exportModal": {
       "title": "Publicar como template",
       "hint": "Exporta colunas, automações e rótulos (sem cards). Visível no showcase.",

@@ -116,6 +116,17 @@ export async function getPublishedTemplateBySlug(slug: string): Promise<Publishe
   return [...memoryStore.values()].find((t) => t.slug === slug) ?? null;
 }
 
+export async function deletePublishedTemplate(id: string): Promise<boolean> {
+  if (!id) return false;
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureIndexes(db);
+    const res = await db.collection<PublishedTemplate>(COL).deleteOne({ _id: id });
+    return res.deletedCount > 0;
+  }
+  return memoryStore.delete(id);
+}
+
 export async function insertPublishedTemplate(doc: PublishedTemplate): Promise<PublishedTemplate> {
   if (isMongoConfigured()) {
     const db = await getDb();

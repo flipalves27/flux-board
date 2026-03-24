@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import type { TemplateCategory } from "@/lib/template-types";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
-import { PriorityMatrixWorkspace } from "@/components/templates/priority-matrix-workspace";
 
 type Row = {
   id: string;
@@ -36,6 +35,7 @@ export default function TemplatesShowcasePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<TemplateCategory | "all">("all");
   const [importingId, setImportingId] = useState<string | null>(null);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isChecked) return;
@@ -86,6 +86,25 @@ export default function TemplatesShowcasePage() {
       });
     } finally {
       setImportingId(null);
+    }
+  }
+
+  async function removeTemplate(id: string) {
+    if (!user) return;
+    const confirmed = window.confirm(t("deleteTemplate.confirm"));
+    if (!confirmed) return;
+    setDeletingTemplateId(id);
+    try {
+      await apiDelete(`/api/templates/${encodeURIComponent(id)}`, getHeaders());
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      pushToast({ kind: "success", title: t("deleteTemplate.success") });
+    } catch (e) {
+      pushToast({
+        kind: "error",
+        title: e instanceof ApiError ? e.message : t("deleteTemplate.error"),
+      });
+    } finally {
+      setDeletingTemplateId(null);
     }
   }
 
@@ -142,7 +161,13 @@ export default function TemplatesShowcasePage() {
             <>
               <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("matrixSectionTitle")}</h3>
               <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("matrixSectionHint")}</p>
-              <PriorityMatrixWorkspace getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => router.push(`${localeRoot}/templates/matrix-4x4`)}
+              >
+                {t("matrixSectionCta")}
+              </button>
             </>
           )}
         </section>
@@ -200,14 +225,26 @@ export default function TemplatesShowcasePage() {
                     <p className="text-[10px] text-[var(--flux-text-muted)] mt-2">Por {r.creatorOrgName}</p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="btn-primary shrink-0"
-                  disabled={importingId === r.id}
-                  onClick={() => void importTemplate(r.id, r.title)}
-                >
-                  {importingId === r.id ? t("importing") : t("import")}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn-primary shrink-0"
+                    disabled={importingId === r.id}
+                    onClick={() => void importTemplate(r.id, r.title)}
+                  >
+                    {importingId === r.id ? t("importing") : t("import")}
+                  </button>
+                  {user?.isAdmin ? (
+                    <button
+                      type="button"
+                      className="btn-secondary shrink-0"
+                      disabled={deletingTemplateId === r.id}
+                      onClick={() => void removeTemplate(r.id)}
+                    >
+                      {deletingTemplateId === r.id ? t("deleteTemplate.deleting") : t("deleteTemplate.cta")}
+                    </button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
