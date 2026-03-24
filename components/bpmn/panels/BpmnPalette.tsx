@@ -54,7 +54,7 @@ const GROUP_LABELS: Record<string, string> = {
 };
 
 function BpmnPaletteInner() {
-  const { paletteCollapsed, setPaletteCollapsed, addLane, nodes, edges } = useBpmnStore();
+  const { paletteCollapsed, setPaletteCollapsed, addLane, lanes, nodes, edges } = useBpmnStore();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
 
   function toggleGroup(group: string) {
@@ -206,18 +206,57 @@ function BpmnPaletteInner() {
       {/* Swim Lanes */}
       <div className="space-y-2 rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] p-2.5">
         <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Swim Lanes</p>
+
+        {/* Draggable swim lane stencil */}
         <button
           type="button"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData("application/x-bpmn-type", "swim_lane");
+            e.dataTransfer.setData("application/x-bpmn-width", "2400");
+            e.dataTransfer.setData("application/x-bpmn-height", "160");
+            e.dataTransfer.effectAllowed = "move";
+          }}
           className="w-full rounded-[10px] border border-dashed border-[var(--flux-primary)]/50 bg-[var(--flux-surface-card)] px-2.5 py-2 text-left shadow-sm transition hover:border-[var(--flux-primary)] hover:shadow-[var(--flux-shadow-primary-soft)]"
+          title="Arraste para o canvas ou clique para adicionar"
           onClick={addLane}
         >
-          <span className="flex items-center gap-2 text-[11px] font-bold" style={{ color: "var(--flux-primary-light)" }}>
-            <span className="text-lg leading-none">+</span> Nova Swim Lane
-          </span>
-          <span className="mt-0.5 block text-[10px] text-[var(--flux-text-muted)]">
-            Arrastar nós para dentro após criar
+          <span className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md" style={{ background: "linear-gradient(180deg, #00695C, #00897B)" }}>
+              <span className="text-[10px] font-extrabold text-white" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>▤</span>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-bold leading-tight" style={{ color: "var(--flux-primary-light)" }}>
+                Swim Lane
+              </span>
+              <span className="mt-0.5 block text-[10px] text-[var(--flux-text-muted)]">
+                Arraste ou clique para criar
+              </span>
+            </span>
           </span>
         </button>
+
+        {/* Lane list */}
+        {lanes.length > 0 && (
+          <div className="mt-1 space-y-1">
+            <p className="text-[10px] font-semibold text-[var(--flux-text-muted)]">{lanes.length} raia{lanes.length > 1 ? "s" : ""} ativas:</p>
+            {lanes.map((lane) => (
+              <div key={lane.id} className="flex items-center gap-2 rounded-md border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-2 py-1.5">
+                <span
+                  className="h-4 w-4 shrink-0 rounded-sm"
+                  style={{
+                    background: lane.gradient
+                      ? `linear-gradient(180deg, ${lane.gradient[0]}, ${lane.gradient[1]})`
+                      : "linear-gradient(180deg, #00695C, #00897B)",
+                  }}
+                />
+                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[var(--flux-text)]">
+                  {lane.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <p className="text-[11px] text-[#546E7A] dark:text-slate-400">

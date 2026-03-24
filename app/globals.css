@@ -1327,6 +1327,147 @@
   box-shadow: 0 0 0 2px rgba(108,92,231,0.15);
 }
 
+/* ─── BPMN Swim Lane Styles ───────────────────────────────────────────── */
+.bpmn-swim-lane-body {
+  border-radius: 8px;
+  border: 2px solid rgba(0,137,123,0.15);
+  background: rgba(0,137,123,0.03);
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+  overflow: visible;
+}
+
+.bpmn-swim-lane-body[data-selected="true"] {
+  border-color: rgba(108,92,231,0.4);
+  background: rgba(108,92,231,0.04);
+  box-shadow: 0 0 0 2px rgba(108,92,231,0.12), 0 8px 32px rgba(26,39,68,0.12);
+}
+
+.bpmn-swim-lane-body:hover {
+  border-color: rgba(0,137,123,0.3);
+}
+
+.bpmn-swim-lane-bar {
+  cursor: grab;
+  transition: filter 200ms ease;
+}
+
+.bpmn-swim-lane-bar:hover {
+  filter: brightness(1.1);
+}
+
+.bpmn-swim-lane-bar:active {
+  cursor: grabbing;
+}
+
+.bpmn-swim-lane-label-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 2px;
+  text-orientation: mixed;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: white;
+  user-select: none;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.bpmn-swim-lane-label-input {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  letter-spacing: 1px;
+  width: 100%;
+  height: 100%;
+  padding: 4px 0;
+  background: transparent;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-align: center;
+  outline: none;
+  caret-color: rgba(255,255,255,0.9);
+}
+
+.bpmn-swim-lane-label-input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.bpmn-swim-lane-toolbar {
+  position: absolute;
+  top: -36px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: var(--flux-surface-card);
+  border: 1px solid var(--flux-border-default);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 50;
+  animation: bpmn-lane-toolbar-in 150ms cubic-bezier(0.22,1,0.36,1);
+}
+
+@keyframes bpmn-lane-toolbar-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bpmn-lane-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--flux-border-default);
+  background: var(--flux-surface-elevated);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.bpmn-lane-tool-btn:hover {
+  background: var(--flux-primary);
+  border-color: var(--flux-primary);
+  transform: scale(1.08);
+}
+
+.bpmn-lane-tool-btn-danger:hover {
+  background: #EF5350 !important;
+  border-color: #EF5350 !important;
+}
+
+/* Swim lane resize handles */
+.bpmn-lane-resize-line {
+  border-color: rgba(108,92,231,0.35) !important;
+}
+
+.bpmn-lane-resize-handle {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: var(--flux-primary) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 2px 8px rgba(108,92,231,0.35) !important;
+}
+
+/* Swim lane React Flow node overrides */
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"] {
+  z-index: -10 !important;
+  transition: none;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"]:hover {
+  filter: none;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"].dragging {
+  opacity: 0.85;
+  z-index: -5 !important;
+}
+
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),

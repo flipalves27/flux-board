@@ -11,7 +11,7 @@ import type { BpmnNodeType, BpmnSemanticVariant } from "@/lib/bpmn-types";
  */
 export function useDragFromPalette() {
   const rf = useReactFlow();
-  const { addNode, lanes } = useBpmnStore();
+  const { addNode, addLaneAt, lanes } = useBpmnStore();
 
   const onDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -25,14 +25,19 @@ export function useDragFromPalette() {
       const bpmnType = e.dataTransfer.getData("application/x-bpmn-type");
       if (!bpmnType) return;
 
-      const width = Number(e.dataTransfer.getData("application/x-bpmn-width")) || 160;
-      const height = Number(e.dataTransfer.getData("application/x-bpmn-height")) || 60;
-      const variant = e.dataTransfer.getData("application/x-bpmn-variant") as BpmnSemanticVariant | "";
-
       const position = rf.screenToFlowPosition({
         x: e.clientX,
         y: e.clientY,
       });
+
+      if (bpmnType === "swim_lane") {
+        addLaneAt(position.x, position.y);
+        return;
+      }
+
+      const width = Number(e.dataTransfer.getData("application/x-bpmn-width")) || 160;
+      const height = Number(e.dataTransfer.getData("application/x-bpmn-height")) || 60;
+      const variant = e.dataTransfer.getData("application/x-bpmn-variant") as BpmnSemanticVariant | "";
 
       const x = snap(Math.max(60, position.x));
       const y = snap(Math.max(8, position.y));
@@ -53,7 +58,7 @@ export function useDragFromPalette() {
 
       addNode(newNode);
     },
-    [rf, addNode, lanes],
+    [rf, addNode, addLaneAt, lanes],
   );
 
   return { onDragOver, onDrop };

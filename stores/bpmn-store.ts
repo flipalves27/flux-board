@@ -21,7 +21,7 @@ import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
 /* ------------------------------------------------------------------ */
 
 export type BpmnNodeData = {
-  bpmnType: BpmnNodeType;
+  bpmnType: BpmnNodeType | "swim_lane";
   label: string;
   subtitle?: string;
   stepNumber?: string;
@@ -33,6 +33,14 @@ export type BpmnNodeData = {
   labelColor?: string;
   bgColor?: string;
   borderColor?: string;
+  /** Swim-lane specific: gradient start color */
+  gradientFrom?: string;
+  /** Swim-lane specific: gradient end color */
+  gradientTo?: string;
+  /** Swim-lane specific: tag pill text */
+  laneTag?: string;
+  /** Swim-lane specific: lane model id */
+  laneModelId?: string;
 };
 
 export type BpmnEdgeData = {
@@ -118,8 +126,11 @@ type BpmnStoreActions = {
 
   /* Lane actions */
   addLane: () => void;
+  addLaneAt: (x: number, y: number) => void;
   removeLane: (id: string) => void;
   updateLane: (id: string, patch: Partial<BpmnLane>) => void;
+  reorderLanes: () => void;
+  syncLaneNodesFromModel: () => void;
 
   /* Selection */
   setSelectedNodeIds: (ids: string[]) => void;
@@ -183,11 +194,50 @@ function laneForY(y: number, lanes: BpmnLane[]): string | undefined {
   })?.id;
 }
 
+const LANE_GRADIENTS: Array<[string, string]> = [
+  ["#558B2F", "#7CB342"],
+  ["#00695C", "#00897B"],
+  ["#1565C0", "#42A5F5"],
+  ["#5E35B1", "#7E57C2"],
+  ["#E65100", "#FF9800"],
+  ["#AD1457", "#EC407A"],
+  ["#00838F", "#00ACC1"],
+  ["#4E342E", "#795548"],
+];
+
+const DEFAULT_LANE_WIDTH = 2400;
+const DEFAULT_LANE_HEIGHT = 160;
+const LANE_X_OFFSET = 0;
+
+function laneToFlowNode(lane: BpmnLane, index: number): BpmnFlowNode {
+  const grad = lane.gradient ?? LANE_GRADIENTS[index % LANE_GRADIENTS.length];
+  return {
+    id: `lane_node_${lane.id}`,
+    type: "swim_lane",
+    position: { x: LANE_X_OFFSET, y: lane.y ?? 12 + index * (DEFAULT_LANE_HEIGHT + 12) },
+    data: {
+      bpmnType: "swim_lane" as BpmnNodeData["bpmnType"],
+      label: lane.label,
+      laneTag: lane.tag,
+      laneModelId: lane.id,
+      gradientFrom: grad[0],
+      gradientTo: grad[1],
+    },
+    style: {
+      width: DEFAULT_LANE_WIDTH,
+      height: lane.height ?? DEFAULT_LANE_HEIGHT,
+    },
+    draggable: true,
+    selectable: true,
+    zIndex: -10,
+  };
+}
+
 function nodeToModelNode(n: BpmnFlowNode): BpmnTemplateModel["nodes"][number] {
   const d = n.data;
   return {
     id: n.id,
-    type: d.bpmnType,
+    type: d.bpmnType as BpmnNodeType,
     label: d.label,
     x: snap(n.position.x),
     y: snap(n.position.y),
@@ -296,7 +346,9 @@ const DEFAULT_MODEL: BpmnTemplateModel = {
   ],
 };
 
-const initialNodes = DEFAULT_MODEL.nodes.map(modelNodeToFlowNode);
+const initialLaneNodes = DEFAULT_LANES.map((l, i) => laneToFlowNode(l, i));
+const initialBpmnNodes = DEFAULT_MODEL.nodes.map(modelNodeToFlowNode);
+const initialNodes = [...initialLaneNodes, ...initialBpmnNodes];
 const initialEdges = DEFAULT_MODEL.edges.map(modelEdgeToFlowEdge);
 
 /* ------------------------------------------------------------------ */
@@ -452,12 +504,40 @@ export const useBpmnStore = create<BpmnStore>()(
       /* ---- Lane actions ---- */
       addLane: () => {
         set((s) => {
-          const lastY = s.lanes.reduce((m, l) => Math.max(m, (l.y ?? 0) + (l.height ?? 128)), 12);
-          s.lanes.push({
-            id: uid("lane"),
+          const lastY = s.lanes.reduce((m, l) => Math.max(m, (l.y ?? 0) + (l.height ?? DEFAULT_LANE_HEIGHT)), 12);
+          const newId = uid("lane");
+          const gradIdx = s.lanes.length % LANE_GRADIENTS.length;
+          const grad = LANE_GRADIENTS[gradIdx];
+          const newLane: BpmnLane = {
+            id: newId,
             label: `Raia ${s.lanes.length + 1}`,
-            y: lastY + 8,
-            height: 128,
+            y: lastY + 12,
+            height: DEFAULT_LANE_HEIGHT,
+            gradient: grad,
+          };
+          s.lanes.push(newLane);
+          s.nodes.push(laneToFlowNode(newLane, s.lanes.length - 1));
+        });
+        get().pushHistory();
+        get().syncCode();
+      },
+
+      addLaneAt: (x, y) => {
+        set((s) => {
+          const newId = uid("lane");
+          const gradIdx = s.lanes.length % LANE_GRADIENTS.length;
+          const grad = LANE_GRADIENTS[gradIdx];
+          const newLane: BpmnLane = {
+            id: newId,
+            label: `Raia ${s.lanes.length + 1}`,
+            y: snap(y),
+            height: DEFAULT_LANE_HEIGHT,
+            gradient: grad,
+          };
+          s.lanes.push(newLane);
+          s.nodes.push({
+            ...laneToFlowNode(newLane, s.lanes.length - 1),
+            position: { x: snap(x), y: snap(y) },
           });
         });
         get().pushHistory();
@@ -467,6 +547,7 @@ export const useBpmnStore = create<BpmnStore>()(
       removeLane: (id) => {
         set((s) => {
           s.lanes = s.lanes.filter((l) => l.id !== id);
+          s.nodes = s.nodes.filter((n) => n.data.laneModelId !== id);
           for (const n of s.nodes) {
             if (n.data.laneId === id) n.data.laneId = undefined;
           }
@@ -479,8 +560,60 @@ export const useBpmnStore = create<BpmnStore>()(
         set((s) => {
           const lane = s.lanes.find((l) => l.id === id);
           if (lane) Object.assign(lane, patch);
+          const laneNode = s.nodes.find((n) => n.data.laneModelId === id);
+          if (laneNode) {
+            if (patch.label !== undefined) laneNode.data.label = patch.label;
+            if (patch.tag !== undefined) laneNode.data.laneTag = patch.tag;
+            if (patch.gradient) {
+              laneNode.data.gradientFrom = patch.gradient[0];
+              laneNode.data.gradientTo = patch.gradient[1];
+            }
+            if (patch.height !== undefined) {
+              laneNode.style = { ...laneNode.style, height: patch.height };
+            }
+            if (patch.y !== undefined) {
+              laneNode.position = { ...laneNode.position, y: patch.y };
+            }
+          }
         });
         get().syncCode();
+      },
+
+      reorderLanes: () => {
+        set((s) => {
+          const laneNodes = s.nodes
+            .filter((n) => n.data.bpmnType === "swim_lane")
+            .sort((a, b) => a.position.y - b.position.y);
+          for (let i = 0; i < laneNodes.length; i++) {
+            const modelId = laneNodes[i].data.laneModelId;
+            if (!modelId) continue;
+            const lane = s.lanes.find((l) => l.id === modelId);
+            if (lane) {
+              lane.y = laneNodes[i].position.y;
+              const h = (laneNodes[i].style?.height as number | undefined) ?? DEFAULT_LANE_HEIGHT;
+              lane.height = h;
+            }
+          }
+        });
+        get().syncCode();
+      },
+
+      syncLaneNodesFromModel: () => {
+        set((s) => {
+          const existingLaneNodeIds = new Set(
+            s.nodes.filter((n) => n.data.bpmnType === "swim_lane").map((n) => n.data.laneModelId),
+          );
+          for (let i = 0; i < s.lanes.length; i++) {
+            const lane = s.lanes[i];
+            if (!existingLaneNodeIds.has(lane.id)) {
+              s.nodes.push(laneToFlowNode(lane, i));
+            }
+          }
+          const laneIds = new Set(s.lanes.map((l) => l.id));
+          s.nodes = s.nodes.filter(
+            (n) => n.data.bpmnType !== "swim_lane" || (n.data.laneModelId && laneIds.has(n.data.laneModelId)),
+          );
+        });
       },
 
       /* ---- Selection ---- */
@@ -564,11 +697,12 @@ export const useBpmnStore = create<BpmnStore>()(
       /* ---- Model import/export ---- */
       toBpmnModel: (): BpmnTemplateModel => {
         const { nodes, edges, lanes, modelName } = get();
+        const bpmnNodes = nodes.filter((n) => n.data.bpmnType !== "swim_lane");
         return {
           version: "bpmn-2.0-lite",
           name: modelName,
           lanes: structuredClone(lanes),
-          nodes: nodes.map(nodeToModelNode),
+          nodes: bpmnNodes.map(nodeToModelNode),
           edges: edges.map(edgeToModelEdge),
         };
       },
@@ -576,8 +710,9 @@ export const useBpmnStore = create<BpmnStore>()(
       loadFromModel: (model) => {
         const flowNodes = model.nodes.map(modelNodeToFlowNode);
         const flowEdges = model.edges.map(modelEdgeToFlowEdge);
+        const laneNodes = model.lanes.map((l, i) => laneToFlowNode(l, i));
         set({
-          nodes: flowNodes,
+          nodes: [...laneNodes, ...flowNodes],
           edges: flowEdges,
           lanes: structuredClone(model.lanes),
           modelName: model.name,
@@ -594,4 +729,4 @@ export const useBpmnStore = create<BpmnStore>()(
 );
 
 /* Re-export helpers for external use */
-export { modelNodeToFlowNode, modelEdgeToFlowEdge, laneForY, snap, uid };
+export { modelNodeToFlowNode, modelEdgeToFlowEdge, laneForY, snap, uid, LANE_GRADIENTS };
