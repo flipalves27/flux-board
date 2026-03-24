@@ -1153,25 +1153,10 @@
    don't bleed into the rest of the Flux-Board design system.
    ─────────────────────────────────────────────────────────────────────────── */
 .bpmn-workspace {
-  /* ── Force dark surface tokens — BPMN is always dark regardless of system theme ── */
-  --flux-surface-dark:     #0D0B1A;
-  --flux-surface-mid:      #1A1730;
-  --flux-surface-card:     #221F3A;
-  --flux-surface-elevated: #2D2952;
-  --flux-text:             #F0EEFF;
-  --flux-text-muted:       #9B97C2;
-  --flux-primary-light:    #A29BFE;
-  --flux-danger:           #FF6B6B;
-  --flux-warning:          #FFD93D;
-  --flux-border-muted:     rgba(255, 255, 255, 0.06);
-  --flux-border-subtle:    rgba(255, 255, 255, 0.10);
-  --flux-border-default:   rgba(108, 92, 231, 0.22);
-  --flux-control-border:   rgba(255, 255, 255, 0.12);
-  --flux-shadow-sm:  0 1px 3px rgba(13, 11, 26, 0.28);
-  --flux-shadow-md:  0 4px 16px rgba(13, 11, 26, 0.4);
-  --flux-shadow-lg:  0 12px 40px -8px rgba(13, 11, 26, 0.45);
-  --flux-shadow-xl:  0 24px 64px -12px rgba(13, 11, 26, 0.55);
-  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.35);
+  /* ── BPMN toolbar always uses dark values for the command bar ── */
+  --bpmn-toolbar-bg:    linear-gradient(135deg, #1A1730 0%, #2D2952 100%);
+  --bpmn-toolbar-text:  #F0EEFF;
+  --bpmn-toolbar-muted: rgba(240, 238, 255, 0.65);
 
   /* ── Lane gradients (index-ordered) ── */
   --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);

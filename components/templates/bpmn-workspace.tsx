@@ -1227,7 +1227,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden`}>
       <header
         className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(13,11,26,0.55)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
-        style={{ background: "linear-gradient(135deg, var(--flux-surface-mid) 0%, var(--flux-surface-elevated) 100%)" }}
+        style={{ background: "var(--bpmn-toolbar-bg)" }}
       >
         <span className={`${barlowCondensed.className} text-[22px] font-extrabold uppercase tracking-[2px] text-white`}>
           FLUX <span style={{ color: "var(--flux-primary-light)" }}>BPMN</span>
@@ -2478,7 +2478,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 Solte para adicionar no board
               </div>
             ) : null}
-            <div className="absolute right-3 bottom-3 w-[220px] h-[140px] rounded border border-[var(--flux-chrome-alpha-12)] bg-black/45 p-1.5">
+            <div className="absolute right-3 bottom-3 w-[220px] h-[140px] rounded border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)]/80 p-1.5 backdrop-blur-sm shadow-[var(--flux-shadow-md)]">
               <div
                 className="relative w-full h-full rounded bg-[var(--flux-surface-dark)]/75 cursor-pointer overflow-hidden"
                 onClick={(e) => {
