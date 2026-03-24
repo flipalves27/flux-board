@@ -1907,14 +1907,15 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           const originH = h;
                           const startY = e.clientY;
                           const pointerId = e.pointerId;
-                          const onMove = (ev: PointerEvent) => {
-                            const dh = (ev.clientY - startY) / zoom;
+                          const onMove = ((ev: Event) => {
+                            const pe = ev as PointerEvent;
+                            const dh = (pe.clientY - startY) / zoom;
                             const newH = Math.max(80, snap(originH + dh));
                             setModel((prev) => ({
                               ...prev,
                               lanes: prev.lanes.map((l) => l.id === lane.id ? { ...l, height: newH } : l),
                             }));
-                          };
+                          }) as EventListener;
                           const onUp = () => {
                             try { el.releasePointerCapture(pointerId); } catch { /* ignore */ }
                             setModel((prev) => {
@@ -1922,10 +1923,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                               syncCodeFromModel(next);
                               return next;
                             });
-                            window.removeEventListener("pointermove", onMove as EventListener);
+                            window.removeEventListener("pointermove", onMove);
                             window.removeEventListener("pointerup", onUp);
                           };
-                          window.addEventListener("pointermove", onMove as EventListener);
+                          window.addEventListener("pointermove", onMove);
                           window.addEventListener("pointerup", onUp);
                         }}
                       >
