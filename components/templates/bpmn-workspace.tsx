@@ -1282,7 +1282,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             type="button"
             aria-pressed={showEdges}
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              showEdges ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              showEdges ? "border-[#00897B] bg-[#00897B] text-white shadow-[0_0_12px_rgba(0,137,123,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setShowEdges((v) => !v)}
           >
@@ -1291,7 +1291,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              legendExpanded ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              legendExpanded ? "border-[#00897B] bg-[#00897B] text-white shadow-[0_0_12px_rgba(0,137,123,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             aria-pressed={legendExpanded}
             onClick={() => setLegendExpanded((v) => !v)}
@@ -1301,7 +1301,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              presentMode ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              presentMode ? "border-[#00897B] bg-[#00897B] text-white shadow-[0_0_12px_rgba(0,137,123,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setPresentMode((v) => !v)}
           >
@@ -1344,7 +1344,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             disabled={savingBoard || !boardId.trim()}
-            className="rounded-lg border border-[var(--flux-primary)] bg-[var(--flux-primary)] px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_0_12px_rgba(108,92,231,0.35)] transition hover:bg-[var(--flux-primary-light)] disabled:opacity-50"
+            className="rounded-lg border border-[#00897B] bg-[#00897B] px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_0_12px_rgba(0,137,123,0.35)] transition hover:bg-[#4DB6AC] disabled:opacity-50"
             onClick={async () => {
               if (!boardId.trim()) return;
               setSavingBoard(true);
@@ -1706,8 +1706,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               if (draggingWaypoint) setDraggingWaypoint(null);
             }}
             onPointerLeave={onCanvasPointerUp}
-            className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-dark)] shadow-inner transition ${
-              isCanvasDropActive ? "border-[var(--flux-primary)]/60 shadow-[0_0_0_2px_rgba(108,92,231,0.18)]" : ""
+            className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-default)] bg-[var(--bpmn-canvas-bg)] shadow-inner transition ${
+              isCanvasDropActive ? "border-[var(--bpmn-select-color)]/60 shadow-[0_0_0_2px_rgba(0,137,123,0.18)]" : ""
             } ${isPanning ? "cursor-grabbing" : ""}`}
           >
             {/* Grid background — contained inside overflow:hidden, never bleeds outside */}
@@ -1716,7 +1716,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               className="pointer-events-none absolute inset-0 rounded-[inherit]"
               style={{
                 backgroundImage:
-                  "linear-gradient(to right, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(108,92,231,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.22) 1px, transparent 1px)",
+                  "linear-gradient(to right, var(--bpmn-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--bpmn-grid-line) 1px, transparent 1px), linear-gradient(to right, var(--bpmn-grid-line-em) 1px, transparent 1px), linear-gradient(to bottom, var(--bpmn-grid-line-em) 1px, transparent 1px)",
                 backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px`,
                 backgroundPosition: `${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px`,
               }}
@@ -1759,7 +1759,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     style={{
                       top,
                       height: h,
-                      border: `2px solid ${isDraggingThisLane ? "rgba(56,189,248,0.6)" : border}`,
+                      border: `2px solid ${isDraggingThisLane ? "rgba(0,137,123,0.6)" : border}`,
                       background: tint,
                       borderRadius: 6,
                       boxShadow: isDraggingThisLane ? "0 8px 28px rgba(0,0,0,0.18)" : undefined,
@@ -1971,13 +1971,13 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
                     orient="auto-start-reverse"
                   >
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(56,189,248,0.95)" />
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(0,137,123,0.90)" />
                   </marker>
                 </defs>
                 {edgesWithPoints.map((edge) => {
                   const kind = (edge as { kind?: BpmnEdgeKind }).kind ?? "default";
                   const style = BPMN_FLOW_EDGE_STYLES[kind];
-                  const strokeSelected = selectedEdgeId === edge.id ? "#38bdf8" : style.stroke;
+                  const strokeSelected = selectedEdgeId === edge.id ? "#00897B" : style.stroke;
                   const w = style.width;
                   const dash = style.dash;
                   const pts = edge.points;
@@ -2034,7 +2034,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           cx={wp.x}
                           cy={wp.y}
                           r={4.5}
-                          fill="rgba(56,189,248,0.95)"
+                          fill="rgba(0,137,123,0.90)"
                           stroke="rgba(255,255,255,0.9)"
                           strokeWidth={1}
                           className="pointer-events-auto cursor-move"
@@ -2074,7 +2074,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         { x: connectPreviewLine.x2, y: connectPreviewLine.y2 },
                       ])}
                       fill="none"
-                      stroke="rgba(56,189,248,0.95)"
+                      stroke="rgba(0,137,123,0.90)"
                       strokeWidth={BPMN_VISUAL_TOKENS.connectorStroke}
                       strokeDasharray="6 4"
                       markerEnd="url(#bpmnArrowHeadPreview)"
@@ -2191,7 +2191,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       : "cursor-grab hover:z-[100]"
                   } ${
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id
-                      ? "ring-2 ring-[var(--flux-primary)]/90 ring-offset-2 ring-offset-[var(--flux-surface-dark)]"
+                      ? "ring-2 ring-[var(--bpmn-select-color)]/90 ring-offset-2 ring-offset-[var(--bpmn-canvas-bg)]"
                       : ""
                   }`}
                   style={{
@@ -2210,10 +2210,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       ? "transform 80ms ease-out, opacity 80ms ease-out"
                       : "transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease",
                     boxShadow: isDraggingThis
-                      ? "0 12px 36px rgba(13,11,26,0.55), 0 4px 12px rgba(13,11,26,0.35)"
+                      ? "0 12px 36px rgba(26,39,68,0.28), 0 4px 12px rgba(26,39,68,0.18)"
                       : selectedNodeSet.has(node.id) || selectedNodeId === node.id
-                        ? "0 4px 16px rgba(108,92,231,0.30)"
-                        : "0 3px 12px rgba(13,11,26,0.28)",
+                        ? "0 4px 16px rgba(0,137,123,0.30)"
+                        : "0 3px 12px rgba(26,39,68,0.10)",
                   }}
                   title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
@@ -2225,9 +2225,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         style={{
                           borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
                           backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
-                          borderTop: "1px solid rgba(108,92,231,0.12)",
-                          borderRight: "1px solid rgba(108,92,231,0.12)",
-                          borderBottom: "1px solid rgba(108,92,231,0.12)",
+                          borderTop: "1px solid rgba(26,39,68,0.10)",
+                          borderRight: "1px solid rgba(26,39,68,0.10)",
+                          borderBottom: "1px solid rgba(26,39,68,0.10)",
                           borderTopRightRadius: 10,
                           borderBottomRightRadius: 10,
                           minWidth: 160,
@@ -2480,7 +2480,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             ) : null}
             <div className="absolute right-3 bottom-3 w-[220px] h-[140px] rounded border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)]/80 p-1.5 backdrop-blur-sm shadow-[var(--flux-shadow-md)]">
               <div
-                className="relative w-full h-full rounded bg-[var(--flux-surface-dark)]/75 cursor-pointer overflow-hidden"
+                className="relative w-full h-full rounded bg-[var(--bpmn-canvas-bg)]/90 cursor-pointer overflow-hidden"
                 onClick={(e) => {
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                   const rx = (e.clientX - rect.left) / rect.width;

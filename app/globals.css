@@ -1153,10 +1153,27 @@
    don't bleed into the rest of the Flux-Board design system.
    ─────────────────────────────────────────────────────────────────────────── */
 .bpmn-workspace {
-  /* ── BPMN toolbar always uses dark values for the command bar ── */
-  --bpmn-toolbar-bg:    linear-gradient(135deg, #1A1730 0%, #2D2952 100%);
-  --bpmn-toolbar-text:  #F0EEFF;
-  --bpmn-toolbar-muted: rgba(240, 238, 255, 0.65);
+  /* ── BPMN toolbar always uses dark navy values for the command bar ── */
+  --bpmn-toolbar-bg:    linear-gradient(135deg, #1A2744 0%, #263859 100%);
+  --bpmn-toolbar-text:  rgba(255, 255, 255, 0.85);
+  --bpmn-toolbar-muted: rgba(255, 255, 255, 0.50);
+
+  /* ── Canvas surface ── */
+  --bpmn-canvas-bg:        #F0F2F5;
+  --bpmn-node-text:        #1A2744;
+  --bpmn-node-text-muted:  #546E7A;
+
+  /* ── Shadows (navy-based) ── */
+  --bpmn-shadow:           0 3px 12px rgba(26,39,68,0.10);
+  --bpmn-shadow-hover:     0 8px 28px rgba(26,39,68,0.18);
+
+  /* ── Canvas grid lines ── */
+  --bpmn-grid-line:        rgba(26,39,68,0.07);
+  --bpmn-grid-line-em:     rgba(26,39,68,0.12);
+
+  /* ── Interaction colors (teal) ── */
+  --bpmn-port-color:       #00897B;
+  --bpmn-select-color:     #00897B;
 
   /* ── Lane gradients (index-ordered) ── */
   --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);
