@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type DragEvent, type WheelEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type WheelEvent, type PointerEvent } from "react";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 
@@ -14,8 +14,18 @@ type BpmnModel = {
   name: string;
   lanes: Array<{ id: string; label: string; y: number; height: number }>;
   nodes: Array<{ id: string; type: string; label: string; x: number; y: number; laneId?: string; width?: number; height?: number }>;
-  edges: Array<{ id: string; sourceId: string; targetId: string; label?: string; waypoints?: Array<{ x: number; y: number }> }>;
+  edges: Array<{
+    id: string;
+    sourceId: string;
+    targetId: string;
+    label?: string;
+    sourcePort?: BpmnPort;
+    targetPort?: BpmnPort;
+    waypoints?: Array<{ x: number; y: number }>;
+  }>;
 };
+
+type BpmnPort = "north" | "east" | "south" | "west";
 
 const SAMPLE_MD = `# BPMN Template
 name: Sales intake flow
@@ -76,6 +86,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [connectingFromId, setConnectingFromId] = useState<string>("");
   const [connectPreview, setConnectPreview] = useState<{ x: number; y: number } | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string>("");
+  const [selectedWaypoint, setSelectedWaypoint] = useState<{ edgeId: string; index: number } | null>(null);
   const [draggingWaypoint, setDraggingWaypoint] = useState<{ edgeId: string; index: number } | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
   const [editingLane, setEditingLane] = useState("");
@@ -365,8 +376,18 @@ ${edges}
     const a = byId.get(edge.sourceId);
     const b = byId.get(edge.targetId);
     if (!a || !b) return [];
-    const start = { x: a.x + (a.width ?? 110), y: a.y + (a.height ?? 54) / 2 };
-    const end = { x: b.x, y: b.y + (b.height ?? 54) / 2 };
+    const startPort = (edge as { sourcePort?: BpmnPort }).sourcePort ?? "east";
+    const targetPort = (edge as { targetPort?: BpmnPort }).targetPort ?? "west";
+    const anchorForPort = (node: BpmnModel["nodes"][number], port: BpmnPort) => {
+      const w = node.width ?? 110;
+      const h = node.height ?? 54;
+      if (port === "north") return { x: node.x + w / 2, y: node.y };
+      if (port === "south") return { x: node.x + w / 2, y: node.y + h };
+      if (port === "west") return { x: node.x, y: node.y + h / 2 };
+      return { x: node.x + w, y: node.y + h / 2 };
+    };
+    const start = anchorForPort(a, startPort);
+    const end = anchorForPort(b, targetPort);
     const rawWps = Array.isArray(edge.waypoints) ? edge.waypoints : [];
     if (rawWps.length === 0) {
       const midX = snap(start.x + (end.x - start.x) / 2);
@@ -390,6 +411,67 @@ ${edges}
     points.push({ x: last.x, y: end.y });
     points.push(end);
     return applyAutoRouting(points, edge, model.nodes);
+  }
+
+  function nearestPort(
+    node: BpmnModel["nodes"][number],
+    point: { x: number; y: number }
+  ): { port: BpmnPort; anchor: { x: number; y: number } } {
+    const w = node.width ?? 110;
+    const h = node.height ?? 54;
+    const ports: Array<{ port: BpmnPort; anchor: { x: number; y: number } }> = [
+      { port: "north", anchor: { x: node.x + w / 2, y: node.y } },
+      { port: "east", anchor: { x: node.x + w, y: node.y + h / 2 } },
+      { port: "south", anchor: { x: node.x + w / 2, y: node.y + h } },
+      { port: "west", anchor: { x: node.x, y: node.y + h / 2 } },
+    ];
+    let best = ports[0];
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const p of ports) {
+      const dx = p.anchor.x - point.x;
+      const dy = p.anchor.y - point.y;
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) {
+        bestDist = d;
+        best = p;
+      }
+    }
+    return best;
+  }
+
+  function anchorForNodePort(node: BpmnModel["nodes"][number], port: BpmnPort): { x: number; y: number } {
+    const w = node.width ?? 110;
+    const h = node.height ?? 54;
+    if (port === "north") return { x: node.x + w / 2, y: node.y };
+    if (port === "south") return { x: node.x + w / 2, y: node.y + h };
+    if (port === "west") return { x: node.x, y: node.y + h / 2 };
+    return { x: node.x + w, y: node.y + h / 2 };
+  }
+
+  function constrainWaypointToOrthogonal(
+    edge: BpmnModel["edges"][number],
+    waypointIndex: number,
+    candidate: { x: number; y: number }
+  ): { x: number; y: number } {
+    const sourceNode = model.nodes.find((n) => n.id === edge.sourceId);
+    const targetNode = model.nodes.find((n) => n.id === edge.targetId);
+    if (!sourceNode || !targetNode) return candidate;
+    const sourcePort = edge.sourcePort ?? "east";
+    const targetPort = edge.targetPort ?? "west";
+    const start = anchorForNodePort(sourceNode, sourcePort);
+    const end = anchorForNodePort(targetNode, targetPort);
+    const wps = Array.isArray(edge.waypoints) ? edge.waypoints : [];
+    const prev = waypointIndex > 0 ? wps[waypointIndex - 1] : start;
+    const next = waypointIndex < wps.length - 1 ? wps[waypointIndex + 1] : end;
+    const snapCandidate = { x: snap(candidate.x), y: snap(candidate.y) };
+    const alignXDist = Math.min(Math.abs(snapCandidate.x - prev.x), Math.abs(snapCandidate.x - next.x));
+    const alignYDist = Math.min(Math.abs(snapCandidate.y - prev.y), Math.abs(snapCandidate.y - next.y));
+    if (alignXDist <= alignYDist) {
+      const bestX = Math.abs(snapCandidate.x - prev.x) <= Math.abs(snapCandidate.x - next.x) ? prev.x : next.x;
+      return { x: bestX, y: snapCandidate.y };
+    }
+    const bestY = Math.abs(snapCandidate.y - prev.y) <= Math.abs(snapCandidate.y - next.y) ? prev.y : next.y;
+    return { x: snapCandidate.x, y: bestY };
   }
 
   const edgesWithPoints = (() => {
@@ -438,6 +520,58 @@ ${edges}
       return next;
     });
   }
+
+  useEffect(() => {
+    const onKeyDown = (ev: KeyboardEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+
+      if (ev.key === "Escape") {
+        if (connectingFromId || connectPreview) {
+          ev.preventDefault();
+          setConnectingFromId("");
+          setConnectPreview(null);
+          setDraggingWaypoint(null);
+        }
+        return;
+      }
+
+      if (ev.key === "Delete" || ev.key === "Backspace") {
+        if (selectedWaypoint) {
+          ev.preventDefault();
+          setModel((prev) => {
+            const next: BpmnModel = {
+              ...prev,
+              edges: prev.edges.map((ed) => {
+                if (ed.id !== selectedWaypoint.edgeId) return ed;
+                const wps = (Array.isArray(ed.waypoints) ? ed.waypoints : []).filter((_, i) => i !== selectedWaypoint.index);
+                return { ...ed, waypoints: wps };
+              }),
+            };
+            syncCodeFromModel(next);
+            return next;
+          });
+          setSelectedWaypoint(null);
+          return;
+        }
+        if (selectedEdgeId) {
+          ev.preventDefault();
+          setModel((prev) => {
+            const next: BpmnModel = {
+              ...prev,
+              edges: prev.edges.filter((ed) => ed.id !== selectedEdgeId),
+            };
+            syncCodeFromModel(next);
+            return next;
+          });
+          setSelectedEdgeId("");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [connectingFromId, connectPreview, selectedWaypoint, selectedEdgeId, syncCodeFromModel]);
 
   return (
     <div className="space-y-4">
@@ -522,7 +656,7 @@ ${edges}
                     edges: prev.edges.map((ed) => {
                       if (ed.id !== draggingWaypoint.edgeId) return ed;
                       const points = Array.isArray(ed.waypoints) ? [...ed.waypoints] : [];
-                      points[draggingWaypoint.index] = { x: snap(coords.x), y: snap(coords.y) };
+                      points[draggingWaypoint.index] = constrainWaypointToOrthogonal(ed, draggingWaypoint.index, coords);
                       return { ...ed, waypoints: points };
                     }),
                   };
@@ -584,7 +718,28 @@ ${edges}
                       strokeWidth={2}
                       markerEnd="url(#bpmnArrowHead)"
                       className="pointer-events-auto cursor-pointer"
-                      onPointerDown={() => setSelectedEdgeId(edge.id)}
+                      onPointerDown={() => {
+                        setSelectedEdgeId(edge.id);
+                        setSelectedWaypoint(null);
+                      }}
+                      onDoubleClick={(ev) => {
+                        ev.stopPropagation();
+                        const coords = toCanvasCoords(ev.clientX, ev.clientY);
+                        if (!coords) return;
+                        setModel((prev) => {
+                          const next: BpmnModel = {
+                            ...prev,
+                            edges: prev.edges.map((ed) => {
+                              if (ed.id !== edge.id) return ed;
+                              const wps = Array.isArray(ed.waypoints) ? [...ed.waypoints] : [];
+                              wps.push({ x: snap(coords.x), y: snap(coords.y) });
+                              return { ...ed, waypoints: wps };
+                            }),
+                          };
+                          syncCodeFromModel(next);
+                          return next;
+                        });
+                      }}
                     />
                     {selectedEdgeId === edge.id &&
                       edge.waypoints.map((wp, idx) => (
@@ -600,6 +755,23 @@ ${edges}
                           onPointerDown={(ev) => {
                             ev.stopPropagation();
                             setDraggingWaypoint({ edgeId: edge.id, index: idx });
+                            setSelectedWaypoint({ edgeId: edge.id, index: idx });
+                            setSelectedEdgeId(edge.id);
+                          }}
+                          onDoubleClick={(ev) => {
+                            ev.stopPropagation();
+                            setModel((prev) => {
+                              const next: BpmnModel = {
+                                ...prev,
+                                edges: prev.edges.map((ed) => {
+                                  if (ed.id !== edge.id) return ed;
+                                  const wps = (Array.isArray(ed.waypoints) ? ed.waypoints : []).filter((_, i) => i !== idx);
+                                  return { ...ed, waypoints: wps };
+                                }),
+                              };
+                              syncCodeFromModel(next);
+                              return next;
+                            });
                           }}
                         />
                       ))}
@@ -637,7 +809,30 @@ ${edges}
                   onPointerUp={(e) => {
                     if (!connectingFromId) return;
                     e.stopPropagation();
-                    addEdgeDirect(connectingFromId, node.id);
+                    const sourceNode = model.nodes.find((n) => n.id === connectingFromId);
+                    const targetNode = model.nodes.find((n) => n.id === node.id);
+                    if (!sourceNode || !targetNode) return;
+                    const source = nearestPort(sourceNode, { x: targetNode.x, y: targetNode.y });
+                    const target = nearestPort(targetNode, source.anchor);
+                    setModel((prev) => {
+                      if (prev.edges.some((ed) => ed.sourceId === connectingFromId && ed.targetId === node.id)) return prev;
+                      const next: BpmnModel = {
+                        ...prev,
+                        edges: [
+                          ...prev.edges,
+                          {
+                            id: `flow_${Math.random().toString(36).slice(2, 7)}`,
+                            sourceId: connectingFromId,
+                            targetId: node.id,
+                            sourcePort: source.port,
+                            targetPort: target.port,
+                            waypoints: [],
+                          } as BpmnModel["edges"][number],
+                        ],
+                      };
+                      syncCodeFromModel(next);
+                      return next;
+                    });
                     setConnectingFromId("");
                     setConnectPreview(null);
                   }}
@@ -661,6 +856,19 @@ ${edges}
                     }}
                     className="absolute -right-2 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border border-sky-300 bg-sky-400/80"
                   />
+                  {(["north", "east", "south", "west"] as const).map((port) => {
+                    const w = node.width ?? 110;
+                    const h = node.height ?? 54;
+                    const style =
+                      port === "north"
+                        ? { left: w / 2 - 3, top: -5 }
+                        : port === "south"
+                          ? { left: w / 2 - 3, bottom: -5 }
+                          : port === "west"
+                            ? { left: -5, top: h / 2 - 3 }
+                            : { right: -5, top: h / 2 - 3 };
+                    return <span key={`${node.id}_${port}`} className="absolute w-1.5 h-1.5 rounded-full bg-white/85 border border-sky-300/80" style={style} />;
+                  })}
                 </button>
               ))}
             </div>
@@ -719,6 +927,12 @@ ${edges}
                 </button>
               </>
             ) : null}
+          </div>
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 px-3 py-2">
+            <p className="text-[10px] font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Atalhos</p>
+            <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
+              <span className="font-mono">Esc</span> cancela conexão em andamento · <span className="font-mono">Del</span>/<span className="font-mono">Backspace</span> remove waypoint ou edge selecionado.
+            </p>
           </div>
           <p className="text-[11px] text-[var(--flux-text-muted)]">Mini-canvas com auto-routing ortogonal, desvio básico de nós e waypoints arrastáveis no edge selecionado.</p>
         </div>
