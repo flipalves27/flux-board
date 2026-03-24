@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { BpmnIconPreview } from "@/components/templates/bpmn-icon-preview";
 import { BpmnWorkspace } from "@/components/templates/bpmn-workspace";
 
 export default function BpmnTemplatePage() {
@@ -23,15 +22,14 @@ export default function BpmnTemplatePage() {
   if (!isChecked || !user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="flex min-h-screen flex-col bg-[#F0F2F5] dark:bg-[#0b1020]">
       <Header title={t("bpmnExclusive.title")} backHref={`${localeRoot}/templates`} backLabel={t("bpmnExclusive.back")} />
-      <main className="max-w-[1560px] mx-auto px-6 py-10 space-y-6">
-        <BpmnIconPreview />
-        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
-          <h2 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("bpmnExclusive.heading")}</h2>
-          <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("bpmnExclusive.hint")}</p>
-          <BpmnWorkspace getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
+      <main className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col px-4 py-4">
+        <div className="mb-3">
+          <h2 className="font-display text-[15px] font-semibold text-[#1A2744] dark:text-slate-100">{t("bpmnExclusive.heading")}</h2>
+          <p className="mt-1 text-xs text-[#546E7A] dark:text-slate-400">{t("bpmnExclusive.hint")}</p>
         </div>
+        <BpmnWorkspace getHeaders={getHeaders} isAdmin={Boolean(user?.isAdmin)} />
       </main>
     </div>
   );

@@ -5,6 +5,12 @@ import { Barlow } from "next/font/google";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import { BpmnLegend } from "@/components/templates/bpmn-legend";
+import {
+  RebornEventGlyph,
+  RebornGatewayGlyph,
+  RebornStencilEventIcon,
+  RebornStencilGatewayIcon,
+} from "@/components/templates/bpmn-reborn-shapes";
 import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
 import type { BpmnEdgeKind, BpmnNodeType, BpmnPort, BpmnSemanticVariant, BpmnTemplateModel } from "@/lib/bpmn-types";
 import { BPMN_FLOW_EDGE_STYLES, BPMN_TASK_VARIANT_STYLES, isTaskLikeType } from "@/lib/bpmn-flow-tokens";
@@ -1002,18 +1008,28 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }, [model.nodes]);
 
   return (
-    <div className={`${barlow.className} space-y-4 rounded-[var(--flux-rad-lg)] bg-[#F0F2F5] p-3 dark:bg-[#0b1020]`}>
-      <label className="block text-xs font-semibold text-[var(--flux-text-muted)]">Board ID</label>
-      <input value={boardId} onChange={(e) => setBoardId(e.target.value)} className="w-full max-w-lg px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm" placeholder="b_123" />
+    <div className={`${barlow.className} flex min-h-0 flex-1 flex-col gap-3`}>
       <header
-        className={`flex flex-wrap items-center gap-3 rounded-xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.25)] ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
+        className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(0,0,0,0.25)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
         style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
       >
         <span className="font-extrabold tracking-[0.12em] text-white">
           FLUX <span className="text-[#4DB6AC]">BPMN</span>
         </span>
         <div className="hidden h-7 w-px bg-white/20 sm:block" />
-        <span className="max-w-[min(380px,45vw)] truncate text-[14px] font-semibold text-white/90">{model.name}</span>
+        <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold text-white/90 sm:max-w-[min(380px,45vw)] sm:text-[14px]">{model.name}</span>
+        <div className="flex flex-wrap items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
+          <label htmlFor="bpmn-board-id" className="sr-only">
+            Board ID
+          </label>
+          <input
+            id="bpmn-board-id"
+            value={boardId}
+            onChange={(e) => setBoardId(e.target.value)}
+            className="w-[min(140px,28vw)] rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-[12px] text-white placeholder:text-white/40 focus:border-[#4DB6AC]/80 focus:outline-none sm:w-40"
+            placeholder="Board ID"
+          />
+        </div>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <button
             type="button"
@@ -1076,17 +1092,17 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           </button>
         </div>
       </header>
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr_300px] gap-4">
-        <aside className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/50 p-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Paleta BPMN</p>
-            <span className="text-[10px] text-[var(--flux-text-muted)]">Drag and drop</span>
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[256px_1fr_272px] xl:items-stretch xl:gap-4">
+        <aside className="flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-3 shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Componentes</p>
+            <span className="text-[10px] font-semibold text-[#546E7A] dark:text-slate-400">Arraste</span>
           </div>
-          <p className="text-[11px] text-[var(--flux-text-muted)]">Elementos inspirados em modeladores BPMN internacionais para montar fluxos mais completos.</p>
+          <p className="text-[11px] leading-snug text-[#546E7A] dark:text-slate-400">Mesmos elementos visuais do modelo de processo: eventos, tarefas e gateways.</p>
           {(["events", "tasks", "gateways"] as const).map((group) => (
-            <div key={group} className="space-y-2 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-dark)]/35 p-2.5">
-              <p className="text-[10px] uppercase tracking-wide font-semibold text-[var(--flux-text-muted)]">
-                {group === "events" ? "Events" : group === "tasks" ? "Tasks" : "Gateways"}
+            <div key={group} className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">
+                {group === "events" ? "Eventos" : group === "tasks" ? "Tarefas" : "Gateways"}
               </p>
               <div className="grid grid-cols-1 gap-2">
                 {BPMN_STENCILS.filter((s) => s.category === group).map((stencil) => (
@@ -1103,22 +1119,26 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       setIsCanvasDropActive(false);
                       setDragPreview(null);
                     }}
-                    className="text-[11px] px-2 py-2 rounded-[var(--flux-rad)] border text-left transition hover:translate-x-0.5 hover:border-white/25"
-                    style={nodeStyle(stencil.type)}
+                    className="text-left transition hover:opacity-95"
                     title={stencil.hint}
                   >
-                    <span
-                      className={`mb-1 relative inline-flex h-5 w-5 items-center justify-center border border-white/40 ${shapeClass(stencil.type)}`}
-                    >
-                      {getBpmnVisualSpec(stencil.type).borderStyle === "double" && getBpmnVisualSpec(stencil.type).shape === "circle" ? (
-                        <span className="absolute inset-[2px] rounded-full border border-white/40" aria-hidden />
-                      ) : null}
-                      <span className={`${isRotatedShape(stencil.type) ? "-rotate-45" : ""} text-white`} style={{ width: BPMN_VISUAL_TOKENS.iconSize, height: BPMN_VISUAL_TOKENS.iconSize }}>
-                        {renderBpmnIcon(getBpmnVisualSpec(stencil.type).icon) ?? <span className="text-[9px] font-semibold">T</span>}
+                    <div className="flex items-start gap-3 rounded-[10px] border border-slate-200/90 bg-white px-3 py-2.5 shadow-[0_3px_12px_rgba(26,39,68,0.06)] transition hover:border-[#00897B]/35 hover:shadow-md dark:border-slate-600 dark:bg-slate-900/70">
+                      <span className="pointer-events-none mt-0.5 shrink-0">
+                        {group === "events" ? (
+                          <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                        ) : group === "gateways" ? (
+                          <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-slate-200/90 bg-white shadow-sm dark:border-slate-600">
+                            <span className="h-9 w-1 rounded-full bg-[#00897B]" aria-hidden />
+                          </span>
+                        )}
                       </span>
-                    </span>
-                    <span className="block font-semibold">{stencil.label}</span>
-                    <span className="block text-[10px] opacity-80">{stencil.hint}</span>
+                      <span className="min-w-0">
+                        <span className="block text-[12px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{stencil.label}</span>
+                        <span className="mt-0.5 block text-[10px] font-medium leading-snug text-[#546E7A] dark:text-slate-400">{stencil.hint}</span>
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -1169,14 +1189,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <p className="text-[11px] text-[var(--flux-text-muted)]">{model.nodes.length} nós • {model.edges.length} fluxos</p>
         </aside>
 
-        <div className="space-y-2">
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-white/70 px-3 py-2 dark:bg-slate-900/45">
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" className="btn-secondary" onClick={() => setSnapEnabled((v) => !v)}>
-                Snap: {snapEnabled ? "ON" : "OFF"}
-              </button>
-              <span className="text-[11px] text-[var(--flux-text-muted)]">Roda: zoom · Alt+arrastar: pan · Área vazia: seleção em caixa.</span>
-            </div>
+        <div className="flex min-h-[min(560px,calc(100vh-200px))] flex-col gap-2 xl:min-h-[calc(100vh-200px)]">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200/80 bg-white/90 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/50">
+            <button type="button" className="btn-secondary text-xs" onClick={() => setSnapEnabled((v) => !v)}>
+              Snap: {snapEnabled ? "ON" : "OFF"}
+            </button>
+            <span className="text-[11px] text-[#546E7A] dark:text-slate-400">Roda: zoom · Alt+arrastar: pan · Área vazia: seleção.</span>
           </div>
           <div
             ref={canvasRef}
@@ -1550,7 +1568,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     setConnectPreview(null);
                   }}
                   className={`absolute px-2 py-1 text-left text-[11px] shadow-sm transition hover:scale-[1.02] hover:shadow-md ${
-                    selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[var(--flux-primary)]" : ""
+                    selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]" : ""
                   }`}
                   style={{ left: node.x, top: node.y, width: node.width ?? 110, height: node.height ?? 54 }}
                   title={node.tooltip || "Arraste para reposicionar"}
@@ -1593,6 +1611,16 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] text-[#546E7A]/85">{displayType(node.type)}</span>
                       )}
                     </>
+                  ) : getBpmnVisualSpec(node.type).shape === "circle" ? (
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-0.5">
+                      <RebornEventGlyph nodeType={node.type} />
+                      <span className="max-w-[min(168px,100%)] text-center text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{node.label}</span>
+                    </div>
+                  ) : getBpmnVisualSpec(node.type).shape === "diamond" ? (
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
+                      <RebornGatewayGlyph nodeType={node.type} />
+                      <span className="max-w-[min(168px,100%)] text-center text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{node.label}</span>
+                    </div>
                   ) : (
                     <>
                       <span
@@ -1625,7 +1653,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       setConnectingFromId(node.id);
                       setConnectPreview({ x: startX, y: startY });
                     }}
-                    className="absolute -right-2 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border border-sky-300 bg-sky-400/80"
+                    className="absolute -right-2 top-1/2 z-[2] h-3 w-3 rounded-full border border-[#00897B] bg-[#4DB6AC]"
                   />
                   {(["north", "east", "south", "west"] as const).map((port) => {
                     const w = node.width ?? 110;
@@ -1638,7 +1666,13 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           : port === "west"
                             ? { left: -5, top: h / 2 - 3 }
                             : { right: -5, top: h / 2 - 3 };
-                    return <span key={`${node.id}_${port}`} className="absolute w-1.5 h-1.5 rounded-full bg-white/85 border border-sky-300/80" style={style} />;
+                    return (
+                      <span
+                        key={`${node.id}_${port}`}
+                        className="absolute h-1.5 w-1.5 rounded-full border border-[#00897B]/90 bg-white"
+                        style={style}
+                      />
+                    );
                   })}
                 </button>
               ))}
@@ -1657,15 +1691,24 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               ) : null}
               {dragPreview && draggingType ? (
                 <div
-                  className={`pointer-events-none absolute rounded-[var(--flux-rad)] border border-dashed border-sky-300/90 bg-sky-500/15 px-2 py-1 text-[11px] text-sky-100`}
+                  className="pointer-events-none absolute flex items-center gap-2 rounded-[10px] border border-dashed border-[#00897B]/50 bg-white/90 px-2 py-1.5 shadow-md dark:bg-slate-900/90"
                   style={{
                     left: dragPreview.x,
                     top: dragPreview.y,
                     width: stencilMeta(draggingType)?.width ?? 120,
-                    height: stencilMeta(draggingType)?.height ?? 56,
+                    minHeight: stencilMeta(draggingType)?.height ?? 56,
                   }}
                 >
-                  <span className="font-semibold">{displayType(draggingType)}</span>
+                  {getBpmnVisualSpec(draggingType).shape === "circle" ? (
+                    <RebornEventGlyph nodeType={draggingType as BpmnNodeType} size={32} />
+                  ) : getBpmnVisualSpec(draggingType).shape === "diamond" ? (
+                    <RebornGatewayGlyph nodeType={draggingType as BpmnNodeType} size={30} />
+                  ) : isTaskLikeType(draggingType) ? (
+                    <span className="h-8 w-1 shrink-0 rounded-full bg-[#00897B]" aria-hidden />
+                  ) : (
+                    <span className="h-6 w-6 shrink-0 rounded border border-slate-300 bg-slate-100 dark:border-slate-600" aria-hidden />
+                  )}
+                  <span className="text-[11px] font-bold text-[#1A2744] dark:text-slate-100">{displayType(draggingType)}</span>
                 </div>
               ) : null}
             </div>
@@ -1778,9 +1821,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <p className="text-[11px] text-[var(--flux-text-muted)]">Canvas interativo com auto-routing ortogonal, desvio de obstáculos e feedback visual de arraste.</p>
         </div>
 
-        <aside className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 p-3 space-y-3">
+        <aside className="flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-3 shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Propriedades</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Propriedades</p>
             <button type="button" className="btn-secondary" onClick={() => setIsPropertiesVisible((v) => !v)}>
               {isPropertiesVisible ? "Esconder" : "Mostrar"}
             </button>
