@@ -15,7 +15,7 @@ type LegendLabels = {
 const DEFAULT_LABELS: LegendLabels = {
   events: ["Início (evento de início)", "Fim (evento de término)", "Intermediário / timer"],
   tasks: [
-    "Já no produto / Reborn",
+    "Já implementado / entregue",
     "Automação / API",
     "Tarefa manual",
     "Pain point / retrabalho",

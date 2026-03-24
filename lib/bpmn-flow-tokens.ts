@@ -1,6 +1,6 @@
 import type { BpmnEdgeKind, BpmnSemanticVariant } from "./bpmn-types";
 
-/** Stroke + marker colors aligned with the Reborn AS-IS HTML reference. */
+/** Stroke + marker colors for BPMN flow edge kinds. */
 export const BPMN_FLOW_EDGE_STYLES: Record<
   BpmnEdgeKind,
   { stroke: string; dash?: string; marker: string; width: number }

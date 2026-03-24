@@ -1148,10 +1148,9 @@
   outline-offset: 3px;
 }
 
-/* ─── BPMN Reborn Design System ─────────────────────────────────────────────
-   Tokens extracted from the Austral Seguradora "Plano de Implementação BPMN
-   Flow Board" prototype. Scoped to .bpmn-workspace so they don't bleed into
-   the rest of the Flux-Board design system.
+/* ─── BPMN Workspace Design System ──────────────────────────────────────────
+   Design tokens for the BPMN canvas. Scoped to .bpmn-workspace so they
+   don't bleed into the rest of the Flux-Board design system.
    ─────────────────────────────────────────────────────────────────────────── */
 .bpmn-workspace {
   --navy:       #1A2744;

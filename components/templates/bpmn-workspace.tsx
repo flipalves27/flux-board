@@ -51,41 +51,51 @@ type BoxSelectState = {
 };
 
 /**
- * Core palette — only what's relevant to the Reborn BPMN context.
- * BPMN standard subtypes (user_task, service_task, etc.) are hidden by default
- * and appear in the collapsed "Avançado" group.
+ * Core palette — componentes essenciais para diagramação BPMN.
+ * Subtipos BPMN padrão (user_task, service_task, etc.) podem ser adicionados
+ * livremente como nós genéricos pelo usuário.
  */
 const BPMN_STENCILS: BpmnStencil[] = [
   // Events (core 3)
   { type: "start_event",   label: "Início",          hint: "Início do processo",        category: "events",  width: 44, height: 44 },
   { type: "message_event", label: "Mensagem",         hint: "Recebe / envia mensagem",   category: "events",  width: 44, height: 44 },
   { type: "end_event",     label: "Fim",              hint: "Fim do processo",           category: "events",  width: 44, height: 44 },
-  // Tasks – 5 variantes visuais do Reborn Design System
-  { type: "task", label: "Task — Padrão",       hint: "Tarefa manual / padrão",       category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
-  { type: "task", label: "Task — Reborn",       hint: "Já construído no Reborn",      category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
-  { type: "task", label: "Task — Automação",    hint: "Integração API / sistêmica",   category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
-  { type: "task", label: "Task — Pain Point",   hint: "Retrabalho / ponto de dor",    category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
-  { type: "task", label: "Task — Sistema",      hint: "Sistema / serviço interno",    category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
+  // Tasks – 5 variantes visuais
+  { type: "task", label: "Tarefa — Padrão",      hint: "Tarefa manual / padrão",             category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
+  { type: "task", label: "Tarefa — Implementada",hint: "Já implementado / entregue",          category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
+  { type: "task", label: "Tarefa — Automação",  hint: "Integração via API / sistêmica",       category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
+  { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor identificado", category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
+  { type: "task", label: "Tarefa — Sistema",    hint: "Ação de sistema / serviço externo",    category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
   // Gateways
   { type: "exclusive_gateway", label: "XOR — Exclusivo", hint: "Decisão única (Sim/Não)",   category: "gateways", width: 56, height: 56 },
   { type: "parallel_gateway",  label: "AND — Paralelo",  hint: "Execução paralela",         category: "gateways", width: 56, height: 56 },
   { type: "inclusive_gateway", label: "OR — Inclusivo",  hint: "Uma ou mais saídas",        category: "gateways", width: 56, height: 56 },
   // Dados & Acessórios
-  { type: "system_box",  label: "System Box",  hint: "Sistema externo (FastFlow, I4PRO, Guardian…)", category: "dados", width: 150, height: 60 },
+  { type: "system_box",  label: "System Box",  hint: "Sistema / serviço externo integrado",          category: "dados", width: 150, height: 60 },
   { type: "annotation",  label: "Anotação",    hint: "Nota / observação no diagrama",               category: "dados", width: 160, height: 56 },
   { type: "data_object", label: "Documento",   hint: "Artefato / documento de dados",               category: "dados", width: 96,  height: 60 },
 ];
 
 const SAMPLE_MD = `# BPMN Template
-name: Fluxo AS-IS — Cadastro Tomador & Subscrição Garantia
+name: Novo diagrama BPMN
 version: bpmn-2.0-lite
 
 ## Lanes
-- comercial: Comercial — Reborn
-- credito: Avaliação de Crédito
-- comite: Garantia — Comitê
-- contrag: Contragarantia
-- juridico: Jurídico
+- solicitante: Solicitante
+- processamento: Processamento
+
+## Nodes
+- start_1 | start_event | Início | (130,60) | lane:solicitante
+- task_1 | task | Analisar solicitação | (280,60) | lane:solicitante
+- gw_1 | exclusive_gateway | Aprovado? | (520,60) | lane:processamento
+- task_2 | task | Processar | (660,60) | lane:processamento
+- end_1 | end_event | Fim | (820,60) | lane:processamento
+
+## Edges
+- flow_1 | start_1 -> task_1 |
+- flow_2 | task_1 -> gw_1 |
+- flow_3 | gw_1 -> task_2 | Sim
+- flow_4 | task_2 -> end_1 |
 `;
 
 const GRID_SIZE = 20;
@@ -101,122 +111,26 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [xml, setXml] = useState("");
   const [model, setModel] = useState<BpmnModel>({
     version: "bpmn-2.0-lite",
-    name: "Fluxo AS-IS — Cadastro Tomador & Subscrição Garantia",
+    name: "Novo diagrama BPMN",
     lanes: [
-      { id: "comercial", label: "Comercial — Reborn",  y: 60,   height: 380, tag: "✓ JÁ CONSTRUÍDO NO REBORN", gradient: ["#558B2F","#7CB342"] },
-      { id: "credito",   label: "Avaliação de Crédito", y: 480,  height: 530, tag: "AS-IS — Subscrição / Crédito", gradient: ["#00695C","#00897B"] },
-      { id: "comite",    label: "Garantia — Comitê",   y: 1060, height: 410, tag: "AS-IS — Aprovação / Registro", gradient: ["#1565C0","#42A5F5"] },
-      { id: "contrag",   label: "Contragarantia",       y: 1510, height: 310, tag: "AS-IS — Análise CCG / Fiadores", gradient: ["#5E35B1","#7E57C2"] },
-      { id: "juridico",  label: "Jurídico",             y: 1860, height: 240, tag: "AS-IS — Formalização", gradient: ["#E65100","#FF9800"] },
+      { id: "solicitante",   label: "Solicitante",    y: 12,  height: 160, gradient: ["#00695C","#00897B"] },
+      { id: "processamento", label: "Processamento",  y: 192, height: 160, gradient: ["#1565C0","#42A5F5"] },
     ],
     nodes: [
-      // ── Comercial ──────────────────────────────────────────────────────────
-      { id:"c-start",  type:"start_event",       label:"Início",                   x:130,  y:205, laneId:"comercial", width:44,  height:44,  tooltip:"Início: Usuário comercial acessa a plataforma Reborn" },
-      { id:"c1",       type:"task",              label:"Informa CPF / CNPJ",       x:210,  y:180, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"1",  subtitle:"Usuário Comercial → Reborn" },
-      { id:"c2a",      type:"task",              label:"Puxa dados Receita Federal",x:470,  y:120, laneId:"comercial", width:170, height:60,  semanticVariant:"automation", stepNumber:"2",  subtitle:"API — endereço, quadro social, fiscal" },
-      { id:"c2b",      type:"task",              label:"Puxa dados Serasa",        x:470,  y:240, laneId:"comercial", width:160, height:60,  semanticVariant:"automation", stepNumber:"2b", subtitle:"API — score, pendências, protestos" },
-      { id:"c3",       type:"task",              label:"Vincula Filial Austral",   x:720,  y:120, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"3",  subtitle:"Rio de Janeiro / São Paulo" },
-      { id:"c4",       type:"task",              label:"Vincula Executivo & Produtor",x:720,y:240, laneId:"comercial", width:170, height:60,  semanticVariant:"reborn",     stepNumber:"4",  subtitle:"Integração I4PRO — produtores" },
-      { id:"c5",       type:"task",              label:"Anexa Documentos",         x:990,  y:175, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"5",  subtitle:"Contrato Social, Atas, Balanços" },
-      { id:"c6",       type:"task",              label:"Enriquecimento Cadastro",  x:1260, y:135, laneId:"comercial", width:165, height:60,  semanticVariant:"reborn",     stepNumber:"6",  subtitle:"Contatos, Conta, Comunicação" },
-      { id:"c-gw1",    type:"exclusive_gateway", label:"Demanda?",                 x:1540, y:195, laneId:"comercial", width:56,  height:56 },
-      { id:"c7a",      type:"task",              label:"Prioridade + Modalidade + IS",x:1660,y:100,laneId:"comercial", width:175, height:60,  semanticVariant:"reborn",     subtitle:"Sim, com demanda" },
-      { id:"c7b",      type:"task",              label:"Cadastro sem demanda",     x:1660, y:265, laneId:"comercial", width:160, height:60,  subtitle:"Segue fluxo padrão" },
-      { id:"c-i4pro",  type:"system_box",        label:"Integração I4PRO",         x:1960, y:150, laneId:"comercial", width:150, height:60,  subtitle:"Status: Cadastro Preliminar" },
-      { id:"c-email",  type:"task",              label:"Envia Planilha Crédito",   x:2220, y:260, laneId:"comercial", width:165, height:60,  semanticVariant:"pain",       stepNumber:"!", subtitle:"E-mail → Subscrição" },
-      // ── Avaliação de Crédito ───────────────────────────────────────────────
-      { id:"cr-start",   type:"message_event",     label:"E-mail recebido",           x:155,  y:660, laneId:"credito", width:44,  height:44,  tooltip:"Recebimento do e-mail de cadastro/recadastro na caixa monitorada" },
-      { id:"cr-ff1",     type:"system_box",        label:"FastFlow",                  x:290,  y:610, laneId:"credito", width:140, height:56,  subtitle:"Monitora caixa de e-mail" },
-      { id:"cr-capture", type:"task",              label:"Captura dados → SharePoint",x:340,  y:690, laneId:"credito", width:175, height:60,  semanticVariant:"system",     stepNumber:"A", subtitle:"Status inicial: Backlog" },
-      { id:"cr-assume",  type:"task",              label:"Subscritor assume análise", x:620,  y:655, laneId:"credito", width:165, height:60,  stepNumber:"B", subtitle:"Nome → Status: Em Análise" },
-      { id:"cr-pasta",   type:"task",              label:"Consulta pasta tomador",    x:650,  y:780, laneId:"credito", width:160, height:60,  stepNumber:"C", subtitle:"SharePoint Subscrição" },
-      { id:"cr-gw1",     type:"exclusive_gateway", label:"Docs completos?",           x:940,  y:695, laneId:"credito", width:56,  height:56 },
-      { id:"cr-pend",    type:"task",              label:"Solicita docs faltantes",   x:1060, y:600, laneId:"credito", width:160, height:60,  semanticVariant:"pain",       painBadge:"1", subtitle:"Responde e-mail → Comercial" },
-      { id:"cr-serasa",  type:"task",              label:"Analisa Serasa",            x:1060, y:755, laneId:"credito", width:160, height:60,  stepNumber:"D", subtitle:"Score, inadimplência, protestos" },
-      { id:"cr-score",   type:"task",              label:"Preenche Planilha Score",   x:1340, y:660, laneId:"credito", width:170, height:60,  semanticVariant:"pain",       stepNumber:"E", painBadge:"4", subtitle:"Rating interno, limite máx" },
-      { id:"cr-gw2",     type:"exclusive_gateway", label:"Dados OK?",                 x:1630, y:705, laneId:"credito", width:56,  height:56 },
-      { id:"cr-quest",   type:"task",              label:"Questionamento → Comercial",x:1750, y:610, laneId:"credito", width:170, height:60,  subtitle:"Status: Aguardando resposta" },
-      { id:"cr-comite",  type:"task",              label:"E-mail Comitê (Alçada)",    x:1750, y:775, laneId:"credito", width:165, height:60,  stepNumber:"F", subtitle:"Conforme política de alçadas" },
-      { id:"cr-ff2",     type:"system_box",        label:"FastFlow",                  x:1750, y:895, laneId:"credito", width:140, height:56,  subtitle:"Atualiza → Em Comitê" },
-      { id:"cr-ann1",    type:"annotation",        label:"⚠ Retrabalho: dados Serasa re-digitados manualmente na planilha de score", x:1340, y:870, laneId:"credito", width:210, height:56 },
-      { id:"cr-ann2",    type:"annotation",        label:"Se demora alinhamento → Status: Road (discussão interna)", x:1560, y:895, laneId:"credito", width:185, height:52 },
-      // ── Comitê / Aprovação ─────────────────────────────────────────────────
-      { id:"ap-start",  type:"message_event",     label:"E-mail comitê",            x:155,  y:1268, laneId:"comite", width:44,  height:44,  tooltip:"Recepção do e-mail de comitê pela alçada responsável" },
-      { id:"ap-alcada", type:"task",              label:"Avaliação pela Alçada",    x:260,  y:1252, laneId:"comite", width:165, height:60,  stepNumber:"G", subtitle:"Comitê de Crédito" },
-      { id:"ap-gw",     type:"exclusive_gateway", label:"Aprovado?",                x:530,  y:1268, laneId:"comite", width:56,  height:56 },
-      { id:"ap-ok",     type:"task",              label:"Resultado: Aprovado",      x:660,  y:1165, laneId:"comite", width:160, height:60,  semanticVariant:"reborn",  stepNumber:"✓", subtitle:"E-mail resultado → FastFlow" },
-      { id:"ap-neg",    type:"task",              label:"Resultado: Negado",        x:660,  y:1345, laneId:"comite", width:160, height:60,  semanticVariant:"pain",    stepNumber:"✗", subtitle:"+ Justificativa obrigatória" },
-      { id:"ap-i4pro",  type:"task",              label:"Registra Follow-up I4PRO", x:920,  y:1165, laneId:"comite", width:165, height:60,  semanticVariant:"pain",    painBadge:"2", subtitle:"Copia corpo do e-mail" },
-      { id:"ap-guard",  type:"task",              label:"Preenche Guardian",        x:1180, y:1165, laneId:"comite", width:165, height:60,  semanticVariant:"pain",    painBadge:"3", subtitle:"Limites, rating, modalidades" },
-      { id:"ap-notif",  type:"task",              label:"Notifica Comercial",       x:1440, y:1165, laneId:"comite", width:160, height:60,  stepNumber:"H", subtitle:"Resultado final" },
-      { id:"ap-ff",     type:"system_box",        label:"FastFlow → SharePoint",    x:920,  y:1345, laneId:"comite", width:160, height:56,  subtitle:"Status final atualizado" },
-      { id:"ap-ann",    type:"annotation",        label:"⚠ RETRABALHO TRIPLO: mesmos dados em E-mail + I4PRO + Guardian + SharePoint", x:1180, y:1320, laneId:"comite", width:220, height:52 },
-      // ── Contragarantia ─────────────────────────────────────────────────────
-      { id:"cg-anal", type:"task",              label:"Análise Contragarantia",  x:260, y:1615, laneId:"contrag", width:160, height:60, stepNumber:"I", subtitle:"CCG, fiadores, garantias" },
-      { id:"cg-gw",   type:"exclusive_gateway", label:"Suficiente?",            x:530, y:1628, laneId:"contrag", width:56,  height:56 },
-      { id:"cg-adj",  type:"task",              label:"Solicita ajustes",       x:660, y:1545, laneId:"contrag", width:160, height:60, subtitle:"→ Retorno ao Comercial" },
-      { id:"cg-min",  type:"task",              label:"Gera Minuta / Doc CCS",  x:660, y:1695, laneId:"contrag", width:165, height:60, semanticVariant:"reborn", stepNumber:"J", subtitle:"Para formalização" },
-      // ── Jurídico ───────────────────────────────────────────────────────────
-      { id:"jr-form", type:"task",      label:"Formalização Jurídica",  x:260, y:1955, laneId:"juridico", width:160, height:60, stepNumber:"K", subtitle:"I4PRO / CCS" },
-      { id:"jr-arq",  type:"task",      label:"Arquivo Documentação",   x:530, y:1955, laneId:"juridico", width:160, height:60, stepNumber:"L", subtitle:"I4PRO + CRM APRO" },
-      { id:"jr-end",  type:"end_event", label:"Fim",                    x:810, y:1970, laneId:"juridico", width:44,  height:44,  tooltip:"Tomador apto para emissão no I4PRO" },
-      { id:"jr-ann",  type:"annotation",label:"✓ Tomador apto para emissão no I4PRO", x:876, y:1962, laneId:"juridico", width:200, height:44 },
+      { id: "start_1", type: "start_event",       label: "Início",               x: 130, y: 60,  laneId: "solicitante",   width: 44,  height: 44 },
+      { id: "task_1",  type: "task",              label: "Analisar solicitação", x: 260, y: 50,  laneId: "solicitante",   width: 160, height: 60, stepNumber: "1", subtitle: "Responsável" },
+      { id: "gw_1",    type: "exclusive_gateway", label: "Aprovado?",            x: 510, y: 230, laneId: "processamento", width: 56,  height: 56 },
+      { id: "task_2",  type: "task",              label: "Processar",            x: 660, y: 220, laneId: "processamento", width: 140, height: 60, stepNumber: "2", semanticVariant: "reborn" },
+      { id: "task_3",  type: "task",              label: "Notificar resultado",  x: 660, y: 300, laneId: "processamento", width: 150, height: 60, stepNumber: "3" },
+      { id: "end_1",   type: "end_event",         label: "Fim",                  x: 900, y: 250, laneId: "processamento", width: 44,  height: 44 },
     ],
     edges: [
-      // Comercial
-      { id:"f-c0",     sourceId:"c-start",  targetId:"c1",       kind:"primary" },
-      { id:"f-c1a",    sourceId:"c1",       targetId:"c2a",      kind:"primary" },
-      { id:"f-c1b",    sourceId:"c1",       targetId:"c2b",      kind:"primary" },
-      { id:"f-c2a3",   sourceId:"c2a",      targetId:"c3",       kind:"primary" },
-      { id:"f-c2b4",   sourceId:"c2b",      targetId:"c4",       kind:"primary" },
-      { id:"f-c35",    sourceId:"c3",       targetId:"c5",       kind:"primary" },
-      { id:"f-c45",    sourceId:"c4",       targetId:"c5",       kind:"primary" },
-      { id:"f-c56",    sourceId:"c5",       targetId:"c6",       kind:"primary" },
-      { id:"f-c6gw",   sourceId:"c6",       targetId:"c-gw1",    kind:"primary" },
-      { id:"f-gw7a",   sourceId:"c-gw1",    targetId:"c7a",      kind:"primary", label:"Sim" },
-      { id:"f-gw7b",   sourceId:"c-gw1",    targetId:"c7b",      label:"Não" },
-      { id:"f-7ai4",   sourceId:"c7a",      targetId:"c-i4pro",  kind:"primary" },
-      { id:"f-7bi4",   sourceId:"c7b",      targetId:"c-i4pro" },
-      { id:"f-i4-em",  sourceId:"c-i4pro",  targetId:"c-email",  kind:"cross_lane" },
-      // Comercial → Crédito
-      { id:"f-em-cr",  sourceId:"c-email",  targetId:"cr-start", kind:"cross_lane" },
-      // Crédito
-      { id:"f-cr0a",   sourceId:"cr-start", targetId:"cr-ff1",     kind:"system" },
-      { id:"f-cr0b",   sourceId:"cr-start", targetId:"cr-capture", kind:"system" },
-      { id:"f-crca",   sourceId:"cr-capture",targetId:"cr-assume" },
-      { id:"f-cras",   sourceId:"cr-assume",targetId:"cr-pasta" },
-      { id:"f-crpg",   sourceId:"cr-pasta", targetId:"cr-gw1" },
-      { id:"f-crag",   sourceId:"cr-assume",targetId:"cr-gw1" },
-      { id:"f-gw1p",   sourceId:"cr-gw1",   targetId:"cr-pend",   kind:"rework",    label:"Não" },
-      { id:"f-pbk",    sourceId:"cr-pend",   targetId:"c-email",   kind:"rework",    label:"Retorno Comercial" },
-      { id:"f-gw1s",   sourceId:"cr-gw1",   targetId:"cr-serasa", label:"Sim" },
-      { id:"f-crss",   sourceId:"cr-serasa", targetId:"cr-score" },
-      { id:"f-scgw2",  sourceId:"cr-score",  targetId:"cr-gw2" },
-      { id:"f-gw2q",   sourceId:"cr-gw2",   targetId:"cr-quest",  kind:"rework",    label:"Não" },
-      { id:"f-gw2c",   sourceId:"cr-gw2",   targetId:"cr-comite", kind:"cross_lane",label:"Sim" },
-      { id:"f-cff2",   sourceId:"cr-comite", targetId:"cr-ff2",    kind:"system" },
-      // Crédito → Comitê
-      { id:"f-cr-ap",  sourceId:"cr-comite", targetId:"ap-start", kind:"cross_lane" },
-      // Comitê
-      { id:"f-ap0a",   sourceId:"ap-start", targetId:"ap-alcada" },
-      { id:"f-apag",   sourceId:"ap-alcada",targetId:"ap-gw" },
-      { id:"f-apgs",   sourceId:"ap-gw",    targetId:"ap-ok",     kind:"primary",  label:"Sim" },
-      { id:"f-apgn",   sourceId:"ap-gw",    targetId:"ap-neg",    kind:"rework",   label:"Não" },
-      { id:"f-apoi",   sourceId:"ap-ok",    targetId:"ap-i4pro" },
-      { id:"f-apig",   sourceId:"ap-i4pro", targetId:"ap-guard" },
-      { id:"f-apgn2",  sourceId:"ap-guard", targetId:"ap-notif" },
-      { id:"f-apnf",   sourceId:"ap-neg",   targetId:"ap-ff" },
-      // Comitê → Contragarantia
-      { id:"f-ap-cg",  sourceId:"ap-notif", targetId:"cg-anal",  kind:"cross_lane" },
-      // Contragarantia
-      { id:"f-cgag",   sourceId:"cg-anal",  targetId:"cg-gw" },
-      { id:"f-cgga",   sourceId:"cg-gw",    targetId:"cg-adj",   kind:"rework",   label:"Não" },
-      { id:"f-cggm",   sourceId:"cg-gw",    targetId:"cg-min",   kind:"primary",  label:"Sim" },
-      // Contragarantia → Jurídico
-      { id:"f-cg-jr",  sourceId:"cg-min",   targetId:"jr-form",  kind:"cross_lane" },
-      // Jurídico
-      { id:"f-jrfa",   sourceId:"jr-form",  targetId:"jr-arq" },
-      { id:"f-jrae",   sourceId:"jr-arq",   targetId:"jr-end" },
+      { id: "flow_1", sourceId: "start_1", targetId: "task_1",  kind: "primary" },
+      { id: "flow_2", sourceId: "task_1",  targetId: "gw_1",    kind: "primary" },
+      { id: "flow_3", sourceId: "gw_1",    targetId: "task_2",  kind: "primary",  label: "Sim" },
+      { id: "flow_4", sourceId: "gw_1",    targetId: "task_3",  kind: "rework",   label: "Não" },
+      { id: "flow_5", sourceId: "task_2",  targetId: "end_1",   kind: "primary" },
+      { id: "flow_6", sourceId: "task_3",  targetId: "end_1" },
     ],
   });
   const [issues, setIssues] = useState<Array<{ severity: "error" | "warning"; message: string }>>([]);
@@ -225,8 +139,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [edgeFrom, setEdgeFrom] = useState<string>("");
   const [edgeTo, setEdgeTo] = useState<string>("");
-  const [zoom, setZoom] = useState(0.55);
-  const [pan, setPan] = useState({ x: 30, y: 15 });
+  const [zoom, setZoom] = useState(1.0);
+  const [pan, setPan] = useState({ x: 40, y: 20 });
   const [isPanning, setIsPanning] = useState(false);
   const [connectingFromId, setConnectingFromId] = useState<string>("");
   const [connectPreview, setConnectPreview] = useState<{ x: number; y: number } | null>(null);
@@ -355,8 +269,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function resetView() {
-    setZoom(0.55);
-    setPan({ x: 30, y: 15 });
+    setZoom(1.0);
+    setPan({ x: 40, y: 20 });
   }
 
   function fitView() {
@@ -1243,8 +1157,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
       // Reset view with R key
       if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "r") {
         ev.preventDefault();
-        setZoom(0.55);
-        setPan({ x: 30, y: 15 });
+        setZoom(1.0);
+        setPan({ x: 40, y: 20 });
         return;
       }
     };
@@ -1277,7 +1191,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
         style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
       >
         <span className={`${barlowCondensed.className} text-[22px] font-extrabold uppercase tracking-[2px] text-white`}>
-          AUSTRAL <span className="text-[#4DB6AC]">REBORN</span>
+          FLUX <span className="text-[#4DB6AC]">BPMN</span>
         </span>
         <div className="hidden h-7 w-px bg-white/20 sm:block" />
         <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold text-white/90 sm:max-w-[min(380px,45vw)] sm:text-[14px]">{model.name}</span>
@@ -2524,8 +2438,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       }}
                       className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
                     >
-                      <option value="default">Manual / padrão</option>
-                      <option value="reborn">Reborn / entregue</option>
+                      <option value="default">Padrão / manual</option>
+                      <option value="reborn">Implementada / entregue</option>
                       <option value="automation">API / automação</option>
                       <option value="pain">Pain point</option>
                       <option value="system">Sistema (tracejado)</option>
@@ -2674,7 +2588,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       onChange={(e) => setEditingLaneTag(e.target.value)}
                       onBlur={updateLaneTag}
                       className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
-                      placeholder="Ex.: AS-IS — Subscrição"
+                      placeholder="Ex.: AS-IS — Área de negócio"
                     />
                   </div>
                 </>

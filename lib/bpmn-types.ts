@@ -20,7 +20,7 @@ export const BPMN_NODE_TYPES = [
 
 export type BpmnNodeType = (typeof BPMN_NODE_TYPES)[number];
 
-/** Visual / process semantics for task-like nodes (Reborn reference). */
+/** Visual / process semantics for task-like nodes. */
 export type BpmnSemanticVariant = "default" | "reborn" | "automation" | "pain" | "system";
 
 /** Sequence flow rendering: primary path, rework loop, cross–swimlane jump, or system integration. */

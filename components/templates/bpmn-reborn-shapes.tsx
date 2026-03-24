@@ -2,7 +2,7 @@
 
 import type { BpmnNodeType } from "@/lib/bpmn-types";
 
-/** Cores e tamanhos alinhados ao HTML de referência (Fluxo AS-IS / Reborn). */
+/** Cores e tamanhos do design system BPMN — eventos e gateways. */
 const EV = {
   start: { bg: "#C8E6C9", border: "#43A047", fg: "#2E7D32", glyph: "▶" as const },
   end: { bg: "#FFCDD2", border: "#E53935", fg: "#C62828", glyph: "⬛" as const },
