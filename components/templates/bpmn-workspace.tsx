@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type WheelEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type WheelEvent, type PointerEvent, type ReactNode } from "react";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 
@@ -85,9 +85,10 @@ version: bpmn-2.0-lite
 - flow_3 | gw_approve -> end_done | yes
 `;
 
-const GRID_SIZE = 16;
+const GRID_SIZE = 20;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.2;
+const HISTORY_LIMIT = 80;
 
 export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [boardId, setBoardId] = useState("");
@@ -138,8 +139,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [alignGuides, setAlignGuides] = useState<AlignGuide[]>([]);
   const [boxSelect, setBoxSelect] = useState<BoxSelectState | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [isPropertiesVisible, setIsPropertiesVisible] = useState(true);
   const panStartRef = useRef<{ x: number; y: number; originX: number; originY: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const modelRef = useRef(model);
+  const historyRef = useRef<BpmnModel[]>([model]);
+  const historyIndexRef = useRef(0);
+  const suppressHistoryRef = useRef(false);
+  const clipboardRef = useRef<{
+    nodes: BpmnModel["nodes"];
+    edges: BpmnModel["edges"];
+    pasteCount: number;
+  } | null>(null);
 
   const canPublish = useMemo(() => isAdmin && boardId.trim().length > 0 && !!model, [isAdmin, boardId, model]);
 
@@ -153,6 +164,91 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     if (type === "service_task" || type === "script_task") return "border-cyan-400/55 bg-cyan-500/20";
     if (type === "user_task" || type === "call_activity" || type === "sub_process") return "border-indigo-400/55 bg-indigo-500/20";
     return "border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-15)]";
+  }
+
+  function isGatewayType(type: string): boolean {
+    return type.includes("gateway");
+  }
+
+  function isEventType(type: string): boolean {
+    return type.includes("event");
+  }
+
+  function markerSvg(type: string): ReactNode {
+    if (type === "timer_event") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <circle cx="12" cy="13" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <line x1="12" y1="13" x2="12" y2="9.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="12" y1="13" x2="15" y2="14.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="9.2" y1="4.4" x2="14.8" y2="4.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    if (type === "message_event") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <rect x="5" y="7" width="14" height="10" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M5.8 8 L12 12.7 L18.2 8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+    if (type === "start_event") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <polygon points="9,7 17,12 9,17" fill="currentColor" />
+        </svg>
+      );
+    }
+    if (type === "end_event") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3 h-3 opacity-95" aria-hidden>
+          <rect x="7.5" y="7.5" width="9" height="9" fill="currentColor" />
+        </svg>
+      );
+    }
+    if (type === "exclusive_gateway") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <path d="M8 8 L16 16 M16 8 L8 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    if (type === "parallel_gateway") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <path d="M12 7 L12 17 M7 12 L17 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    if (type === "inclusive_gateway") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      );
+    }
+    if (type === "service_task") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M12 5.5v2.1M12 16.4v2.1M5.5 12h2.1M16.4 12h2.1M7.6 7.6l1.5 1.5M14.9 14.9l1.5 1.5M16.4 7.6l-1.5 1.5M9.1 14.9l-1.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    if (type === "user_task") {
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
+          <circle cx="12" cy="9" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M7.5 17.2c1.2-2.3 2.8-3.5 4.5-3.5s3.3 1.2 4.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    return null;
+  }
+
+  function cloneModel(source: BpmnModel): BpmnModel {
+    return JSON.parse(JSON.stringify(source)) as BpmnModel;
   }
 
   function snap(v: number): number {
@@ -280,6 +376,25 @@ ${edges}
     setMarkdown(modelToMarkdown(next));
     setXml(modelToXml(next));
   }, []);
+
+  useEffect(() => {
+    modelRef.current = model;
+    if (suppressHistoryRef.current) {
+      suppressHistoryRef.current = false;
+      return;
+    }
+    const stack = historyRef.current;
+    const current = stack[historyIndexRef.current];
+    const nextSerialized = JSON.stringify(model);
+    if (current && JSON.stringify(current) === nextSerialized) return;
+    const nextStack = stack.slice(0, historyIndexRef.current + 1);
+    nextStack.push(cloneModel(model));
+    if (nextStack.length > HISTORY_LIMIT) {
+      nextStack.shift();
+    }
+    historyRef.current = nextStack;
+    historyIndexRef.current = nextStack.length - 1;
+  }, [model]);
 
   async function convert(format: "markdown" | "xml") {
     setBusy(true);
@@ -723,6 +838,76 @@ ${edges}
           setSelectedEdgeId("");
         }
       }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") {
+        ev.preventDefault();
+        const canRedo = ev.shiftKey;
+        const nextIndex = canRedo ? historyIndexRef.current + 1 : historyIndexRef.current - 1;
+        const stack = historyRef.current;
+        if (nextIndex < 0 || nextIndex >= stack.length) return;
+        historyIndexRef.current = nextIndex;
+        const nextModel = cloneModel(stack[nextIndex]);
+        suppressHistoryRef.current = true;
+        setModel(nextModel);
+        syncCodeFromModel(nextModel);
+        return;
+      }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "y") {
+        ev.preventDefault();
+        const nextIndex = historyIndexRef.current + 1;
+        const stack = historyRef.current;
+        if (nextIndex >= stack.length) return;
+        historyIndexRef.current = nextIndex;
+        const nextModel = cloneModel(stack[nextIndex]);
+        suppressHistoryRef.current = true;
+        setModel(nextModel);
+        syncCodeFromModel(nextModel);
+        return;
+      }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "c") {
+        const ids = selectedNodeIds.length > 0 ? selectedNodeIds : selectedNodeId ? [selectedNodeId] : [];
+        if (!ids.length) return;
+        ev.preventDefault();
+        const currentModel = modelRef.current;
+        const nodes = currentModel.nodes.filter((n) => ids.includes(n.id)).map((n) => ({ ...n }));
+        const edges = currentModel.edges
+          .filter((e) => ids.includes(e.sourceId) && ids.includes(e.targetId))
+          .map((e) => ({ ...e, waypoints: Array.isArray(e.waypoints) ? e.waypoints.map((wp) => ({ ...wp })) : [] }));
+        clipboardRef.current = { nodes, edges, pasteCount: 0 };
+        return;
+      }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "v") {
+        const clip = clipboardRef.current;
+        if (!clip || clip.nodes.length === 0) return;
+        ev.preventDefault();
+        const step = GRID_SIZE * Math.max(1, (clip.pasteCount ?? 0) + 1);
+        setModel((prev) => {
+          const idMap = new Map<string, string>();
+          const clones = clip.nodes.map((n) => {
+            const id = `${n.type.replace(/[^a-z_]/g, "")}_${Math.random().toString(36).slice(2, 7)}`;
+            idMap.set(n.id, id);
+            const x = Math.max(16, snap(n.x + step));
+            const y = Math.max(16, snap(n.y + step));
+            return { ...n, id, x, y, laneId: laneForY(y, prev.lanes), label: `${n.label} copy` };
+          });
+          const clonedEdges = clip.edges.map((e) => ({
+            ...e,
+            id: `flow_${Math.random().toString(36).slice(2, 7)}`,
+            sourceId: idMap.get(e.sourceId) ?? e.sourceId,
+            targetId: idMap.get(e.targetId) ?? e.targetId,
+          }));
+          const next: BpmnModel = {
+            ...prev,
+            nodes: [...prev.nodes, ...clones],
+            edges: [...prev.edges, ...clonedEdges],
+          };
+          syncCodeFromModel(next);
+          setSelectedNodeIds(clones.map((n) => n.id));
+          setSelectedNodeId(clones[0]?.id ?? "");
+          clipboardRef.current = { ...clip, pasteCount: (clip.pasteCount ?? 0) + 1 };
+          return next;
+        });
+        return;
+      }
       if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "d") {
         const ids = selectedNodeIds.length > 0 ? selectedNodeIds : selectedNodeId ? [selectedNodeId] : [];
         if (!ids.length) return;
@@ -747,6 +932,29 @@ ${edges}
           setSelectedNodeId(clones[0]?.id ?? "");
           return next;
         });
+      }
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.startsWith("Arrow")) {
+        const ids = selectedNodeIds.length > 0 ? selectedNodeIds : selectedNodeId ? [selectedNodeId] : [];
+        if (!ids.length) return;
+        ev.preventDefault();
+        const distance = ev.shiftKey ? GRID_SIZE * 2 : GRID_SIZE;
+        const dx = ev.key === "ArrowRight" ? distance : ev.key === "ArrowLeft" ? -distance : 0;
+        const dy = ev.key === "ArrowDown" ? distance : ev.key === "ArrowUp" ? -distance : 0;
+        if (!dx && !dy) return;
+        setModel((prev) => {
+          const next: BpmnModel = {
+            ...prev,
+            nodes: prev.nodes.map((n) => {
+              if (!ids.includes(n.id)) return n;
+              const x = Math.max(16, snap(n.x + dx));
+              const y = Math.max(16, snap(n.y + dy));
+              return { ...n, x, y, laneId: laneForY(y, prev.lanes) };
+            }),
+          };
+          syncCodeFromModel(next);
+          return next;
+        });
+        return;
       }
       if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "s") {
         ev.preventDefault();
@@ -809,6 +1017,16 @@ ${edges}
                     className={`text-[11px] px-2 py-2 rounded-[var(--flux-rad)] border text-left transition hover:translate-x-0.5 hover:border-white/25 ${nodeStyle(stencil.type)}`}
                     title={stencil.hint}
                   >
+                    <span
+                      className={`mb-1 relative inline-flex h-5 w-5 items-center justify-center border border-white/40 ${
+                        isGatewayType(stencil.type) ? "rotate-45 rounded-[2px]" : isEventType(stencil.type) ? "rounded-full" : "rounded-[4px]"
+                      }`}
+                    >
+                      {stencil.type === "intermediate_event" ? (
+                        <span className="absolute inset-[2px] rounded-full border border-white/40" aria-hidden />
+                      ) : null}
+                      <span className={`${isGatewayType(stencil.type) ? "-rotate-45" : ""} text-white`}>{markerSvg(stencil.type) ?? <span className="text-[9px] font-semibold">T</span>}</span>
+                    </span>
                     <span className="block font-semibold">{stencil.label}</span>
                     <span className="block text-[10px] opacity-80">{stencil.hint}</span>
                   </button>
@@ -987,7 +1205,7 @@ ${edges}
               if (nodeDrag) setNodeDrag(null);
             }}
             onPointerLeave={onCanvasPointerUp}
-            className={`relative min-h-[560px] rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-dark)]/55 overflow-hidden transition ${
+            className={`relative min-h-[760px] rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-dark)]/55 overflow-hidden transition ${
               isCanvasDropActive ? "border-sky-300/70 shadow-[0_0_0_2px_rgba(56,189,248,0.18)]" : "border-[var(--flux-chrome-alpha-12)]"
             }`}
           >
@@ -997,8 +1215,9 @@ ${edges}
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: "0 0",
                 backgroundImage:
-                  "linear-gradient(to right, rgba(161,161,170,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(161,161,170,0.15) 1px, transparent 1px)",
-                backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+                  "linear-gradient(to right, rgba(161,161,170,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(161,161,170,0.16) 1px, transparent 1px), linear-gradient(to right, rgba(56,189,248,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(56,189,248,0.2) 1px, transparent 1px)",
+                backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px`,
+                backgroundPosition: "0 0, 0 0, 0 0, 0 0",
               }}
             >
               {model.lanes.map((lane) => (
@@ -1173,14 +1392,37 @@ ${edges}
                     setConnectingFromId("");
                     setConnectPreview(null);
                   }}
-                  className={`absolute rounded-[var(--flux-rad)] border px-2 py-1 text-left text-[11px] shadow-sm transition hover:scale-[1.02] hover:shadow-md ${nodeStyle(node.type)} ${
+                  className={`absolute px-2 py-1 text-left text-[11px] shadow-sm transition hover:scale-[1.02] hover:shadow-md ${
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[var(--flux-primary)]" : ""
                   }`}
                   style={{ left: node.x, top: node.y, width: node.width ?? 110, height: node.height ?? 54 }}
                   title="Arraste para reposicionar"
                 >
-                  <span className="block font-semibold truncate">{node.label}</span>
-                  <span className="block text-[10px] opacity-80 truncate">{displayType(node.type)}</span>
+                  <span
+                    className={`absolute inset-0 ${node.type === "end_event" ? "border-2" : "border"} ${nodeStyle(node.type)} ${
+                      isGatewayType(node.type) ? "rotate-45 rounded-[4px]" : isEventType(node.type) ? "rounded-full" : "rounded-[var(--flux-rad)]"
+                    }`}
+                  />
+                  {node.type === "intermediate_event" ? (
+                    <span className="pointer-events-none absolute inset-[4px] rounded-full border border-white/45" aria-hidden />
+                  ) : null}
+                  <span
+                    className={`pointer-events-none absolute left-1/2 top-[43%] -translate-x-1/2 -translate-y-1/2 text-white ${
+                      isGatewayType(node.type) || isEventType(node.type) || node.type === "service_task" || node.type === "user_task" ? (isGatewayType(node.type) ? "-rotate-45" : "") : "hidden"
+                    }`}
+                    aria-hidden
+                  >
+                    {markerSvg(node.type)}
+                  </span>
+                  {node.type === "sub_process" ? (
+                    <span className="pointer-events-none absolute left-1/2 bottom-[3px] -translate-x-1/2 inline-flex h-3.5 w-3.5 items-center justify-center rounded-[2px] border border-white/75 bg-black/20 text-white">
+                      <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 opacity-95" aria-hidden>
+                        <path d="M12 6.5v11M6.5 12h11" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                  ) : null}
+                  <span className={`relative block font-semibold truncate ${isGatewayType(node.type) ? "-rotate-45" : ""}`}>{node.label}</span>
+                  <span className={`relative block text-[10px] opacity-80 truncate ${isGatewayType(node.type) ? "-rotate-45" : ""}`}>{displayType(node.type)}</span>
                   <span
                     role="button"
                     aria-label="Criar conexão"
@@ -1333,15 +1575,22 @@ ${edges}
           <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 px-3 py-2">
             <p className="text-[10px] font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Atalhos</p>
             <p className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-              <span className="font-mono">Esc</span> cancela conexão em andamento · <span className="font-mono">Shift/Ctrl/Cmd+Click</span> seleção múltipla · <span className="font-mono">drag vazio</span> box selection · <span className="font-mono">S</span> alterna snap magnético · <span className="font-mono">Del</span>/<span className="font-mono">Backspace</span> remove seleção · <span className="font-mono">Ctrl/Cmd + D</span> duplica nó(s).
+              <span className="font-mono">Esc</span> cancela conexão em andamento · <span className="font-mono">Shift/Ctrl/Cmd+Click</span> seleção múltipla · <span className="font-mono">drag vazio</span> box selection · <span className="font-mono">Setas</span> movem seleção · <span className="font-mono">Ctrl/Cmd + C / V</span> copia e cola · <span className="font-mono">Ctrl/Cmd + Z / Y</span> desfaz e refaz · <span className="font-mono">S</span> alterna snap magnético · <span className="font-mono">Del</span>/<span className="font-mono">Backspace</span> remove seleção · <span className="font-mono">Ctrl/Cmd + D</span> duplica nó(s).
             </p>
           </div>
           <p className="text-[11px] text-[var(--flux-text-muted)]">Canvas interativo com auto-routing ortogonal, desvio de obstáculos e feedback visual de arraste.</p>
         </div>
 
         <aside className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 p-3 space-y-3">
-          <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Propriedades</p>
-          {!selectedNode ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Propriedades</p>
+            <button type="button" className="btn-secondary" onClick={() => setIsPropertiesVisible((v) => !v)}>
+              {isPropertiesVisible ? "Esconder" : "Mostrar"}
+            </button>
+          </div>
+          {!isPropertiesVisible ? (
+            <p className="text-xs text-[var(--flux-text-muted)]">Painel oculto para ampliar a area visual do diagrama.</p>
+          ) : !selectedNode ? (
             <p className="text-xs text-[var(--flux-text-muted)]">Selecione um elemento no canvas para editar propriedades.</p>
           ) : (
             <>

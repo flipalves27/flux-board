@@ -24,7 +24,7 @@ export default function BpmnTemplatePage() {
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={t("bpmnExclusive.title")} backHref={`${localeRoot}/templates`} backLabel={t("bpmnExclusive.back")} />
-      <main className="max-w-[1240px] mx-auto px-6 py-10 space-y-6">
+      <main className="max-w-[1560px] mx-auto px-6 py-10 space-y-6">
         <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
           <h2 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("bpmnExclusive.heading")}</h2>
           <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("bpmnExclusive.hint")}</p>
