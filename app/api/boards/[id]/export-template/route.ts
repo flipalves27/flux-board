@@ -5,11 +5,14 @@ import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { createPublishedTemplate } from "@/lib/kv-templates";
 import {
+  buildBpmnSnapshotFromModel,
   buildPriorityMatrixGrid4SnapshotFromBoard,
   buildPriorityMatrixSnapshotFromBoard,
   buildTemplateSnapshotFromBoard,
 } from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
+import { markdownToBpmnModel, xmlToBpmnModel } from "@/lib/bpmn-io";
+import { bpmnModelFromBoard } from "@/lib/bpmn-io";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
@@ -45,6 +48,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao montar snapshot da matriz.";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  } else if (kind === "bpmn") {
+    try {
+      const model = parsed.data.bpmnModel
+        ? parsed.data.bpmnModel
+        : parsed.data.bpmnMarkdown
+          ? markdownToBpmnModel(parsed.data.bpmnMarkdown)
+          : parsed.data.bpmnXml
+            ? xmlToBpmnModel(parsed.data.bpmnXml)
+            : bpmnModelFromBoard(board);
+      if (!model) {
+        return NextResponse.json({ error: "Não foi possível obter o modelo BPMN para exportação." }, { status: 400 });
+      }
+      snapshot = buildBpmnSnapshotFromModel(model);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot BPMN.";
       return NextResponse.json({ error: msg }, { status: 400 });
     }
   } else {

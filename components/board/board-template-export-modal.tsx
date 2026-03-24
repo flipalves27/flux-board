@@ -26,7 +26,7 @@ type Props = {
   boardId: string;
   getHeaders: () => Record<string, string>;
   /** Pré-seleciona o tipo ao abrir (padrão: kanban). */
-  defaultTemplateKind?: "kanban" | "priority_matrix";
+  defaultTemplateKind?: "kanban" | "priority_matrix" | "bpmn";
   /** Se definido, publica matriz 4×4 (payload do workspace); não exige lista Eisenhower no modal. */
   grid4PublishSelections?: Array<{ cardId: string; row: number; col: number }>;
   /** Se definido, publica Eisenhower com seleções prontas do workspace. */
@@ -49,7 +49,7 @@ export function BoardTemplateExportModal({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<TemplateCategory>("operations");
   const [pricingTier, setPricingTier] = useState<"free" | "premium">("free");
-  const [templateKind, setTemplateKind] = useState<"kanban" | "priority_matrix">("kanban");
+  const [templateKind, setTemplateKind] = useState<"kanban" | "priority_matrix" | "bpmn">("kanban");
   const [sourceBoardId, setSourceBoardId] = useState(boardId);
   const [boardRows, setBoardRows] = useState<BoardRow[]>([]);
   const [cards, setCards] = useState<CardRow[]>([]);
@@ -175,6 +175,8 @@ export function BoardTemplateExportModal({
         base.priorityMatrixSelections = Object.entries(matrixSelections)
           .filter((entry): entry is [string, PriorityMatrixQuadrantKey] => Boolean(entry[1]))
           .map(([cardId, quadrantKey]) => ({ cardId, quadrantKey }));
+      } else if (templateKind === "bpmn") {
+        base.templateKind = "bpmn";
       } else {
         base.templateKind = "kanban";
       }
@@ -262,6 +264,16 @@ export function BoardTemplateExportModal({
                       className="rounded-full"
                     />
                     {t("exportModal.templateKindMatrix")}
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tplKind"
+                      checked={templateKind === "bpmn"}
+                      onChange={() => setTemplateKind("bpmn")}
+                      className="rounded-full"
+                    />
+                    {t("exportModal.templateKindBpmn")}
                   </label>
                 </div>
               </>

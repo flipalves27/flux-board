@@ -298,14 +298,25 @@
     "createSectionTitle": "Criar novo modelo",
     "createModeAi": "Com IA",
     "createModeMatrix": "Matriz de priorização",
+    "createModeBpmn": "BPMN",
+    "bpmnBadge": "BPMN",
     "matrixSectionTitle": "Matriz de priorização",
     "matrixSectionHint": "Grade 4×4 com dois eixos de nível (como em priorização visual de mercado): arraste os cards do board para as células. Publicar no showcase exige administrador.",
     "matrixSectionCta": "Abrir sessão exclusiva da Matriz 4x4",
+    "bpmnSectionTitle": "Modelo BPMN",
+    "bpmnSectionHint": "Workspace dedicado para BPMN com importação/exportação em Markdown e BPMN XML.",
+    "bpmnSectionCta": "Abrir workspace BPMN",
     "matrixExclusive": {
       "title": "Matriz 4x4",
       "back": "← Templates",
       "heading": "Sessão exclusiva da Matriz 4x4",
       "hint": "Contexto dedicado para priorizar, criar tarefas e publicar templates com menos ruído visual."
+    },
+    "bpmnExclusive": {
+      "title": "Workspace BPMN",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva BPMN",
+      "hint": "Importe, valide, edite e publique templates BPMN com foco em modelagem de processos."
     },
     "matrixPanel": {
       "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
@@ -405,6 +416,7 @@
       "templateKind": "Tipo de template",
       "templateKindKanban": "Kanban (estrutura)",
       "templateKindMatrix": "Matriz de priorização",
+      "templateKindBpmn": "Modelo de processo BPMN",
       "sourceBoard": "Board de origem",
       "loadingCards": "Carregando cards…",
       "noCards": "Nenhum card neste board.",

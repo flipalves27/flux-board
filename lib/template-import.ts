@@ -3,6 +3,7 @@ import { createBoard } from "./kv-boards";
 import { setBoardAutomationRules } from "./kv-automations";
 import type { BoardTemplateSnapshot } from "./template-types";
 import type { BoardMethodology } from "./board-methodology";
+import { attachBpmnModelToMapa } from "./bpmn-io";
 
 function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
   const raw = Array.isArray(snap.templateCards) ? snap.templateCards : [];
@@ -74,8 +75,11 @@ export async function createBoardFromTemplateSnapshot(
 ): Promise<BoardData> {
   const snapConfig = (snap.config ?? {}) as Partial<NonNullable<BoardData["config"]>>;
   const isMatrix = snap.templateKind === "priority_matrix";
+  const isBpmn = snap.templateKind === "bpmn" && Boolean(snap.bpmnModel);
   const methodology: BoardMethodology = isMatrix
     ? "kanban"
+    : isBpmn
+      ? "kanban"
     : snap.boardMethodology === "kanban"
       ? "kanban"
       : "scrum";
@@ -88,16 +92,34 @@ export async function createBoardFromTemplateSnapshot(
 
   const board = await createBoard(orgId, userId, name, {
     version: "2.0",
-    cards: isMatrix ? instantiated : [],
+    cards: isMatrix
+      ? instantiated
+      : isBpmn
+        ? (snap.bpmnModel?.nodes ?? []).map((n, i) => ({
+            id: `bpmn_${i}_${n.id}`,
+            bucket: "bpmn_canvas",
+            priority: "Média",
+            progress: "Não iniciado",
+            title: n.label,
+            desc: `BPMN ${n.type}`,
+            tags: ["BPMN"],
+            order: i,
+            blockedBy: [],
+          }))
+        : [],
     boardMethodology: methodology,
     config: {
       ...snapConfig,
-      bucketOrder: Array.isArray(snapConfig.bucketOrder) ? snapConfig.bucketOrder : [],
-      labels: isMatrix ? mergedLabels : [],
+      bucketOrder: Array.isArray(snapConfig.bucketOrder)
+        ? snapConfig.bucketOrder
+        : isBpmn
+          ? [{ key: "bpmn_canvas", label: "BPMN Canvas", color: "var(--flux-primary)" }]
+          : [],
+      labels: isMatrix ? mergedLabels : isBpmn ? ["BPMN"] : [],
     },
-    mapaProducao: snap.mapaProducao,
+    mapaProducao: isBpmn ? attachBpmnModelToMapa(snap.bpmnModel!, snap.mapaProducao) : snap.mapaProducao,
     dailyInsights: [],
   });
-  await setBoardAutomationRules(board.id, orgId, isMatrix ? [] : snap.automations);
+  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn ? [] : snap.automations);
   return board;
 }

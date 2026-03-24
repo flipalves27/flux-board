@@ -18,7 +18,7 @@ type Row = {
   category: TemplateCategory;
   pricingTier: "free" | "premium";
   creatorOrgName?: string;
-  templateKind?: "kanban" | "priority_matrix";
+  templateKind?: "kanban" | "priority_matrix" | "bpmn";
   priorityMatrixModel?: "eisenhower" | "grid4";
   status?: "draft" | "published" | "archived";
   version?: number;
@@ -31,7 +31,7 @@ export default function TemplatesShowcasePage() {
   const t = useTranslations("templates");
   const { user, getHeaders, isChecked } = useAuth();
   const { pushToast } = useToast();
-  const [createMode, setCreateMode] = useState<"ai" | "matrix">("ai");
+  const [createMode, setCreateMode] = useState<"ai" | "matrix" | "bpmn">("ai");
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
@@ -184,6 +184,19 @@ export default function TemplatesShowcasePage() {
             >
               {t("createModeMatrix")}
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={createMode === "bpmn"}
+              className={`px-4 py-2 rounded-[var(--flux-rad)] text-sm font-medium transition-colors ${
+                createMode === "bpmn"
+                  ? "bg-[var(--flux-primary)] text-[var(--flux-ink-on-bright)] shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+              onClick={() => setCreateMode("bpmn")}
+            >
+              {t("createModeBpmn")}
+            </button>
           </div>
 
           {createMode === "ai" ? (
@@ -192,7 +205,7 @@ export default function TemplatesShowcasePage() {
               <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("aiHint")}</p>
               <AiTemplateConversation getHeaders={getHeaders} localeRoot={localeRoot} />
             </>
-          ) : (
+          ) : createMode === "matrix" ? (
             <>
               <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("matrixSectionTitle")}</h3>
               <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("matrixSectionHint")}</p>
@@ -202,6 +215,14 @@ export default function TemplatesShowcasePage() {
                 onClick={() => router.push(`${localeRoot}/templates/matrix-4x4`)}
               >
                 {t("matrixSectionCta")}
+              </button>
+            </>
+          ) : (
+            <>
+              <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("bpmnSectionTitle")}</h3>
+              <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("bpmnSectionHint")}</p>
+              <button type="button" className="btn-primary" onClick={() => router.push(`${localeRoot}/templates/bpmn`)}>
+                {t("bpmnSectionCta")}
               </button>
             </>
           )}
@@ -253,6 +274,11 @@ export default function TemplatesShowcasePage() {
                     {r.templateKind === "priority_matrix" && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-primary-alpha-15)] text-[var(--flux-primary)] border border-[var(--flux-primary-alpha-25)]">
                         {r.priorityMatrixModel === "grid4" ? t("matrixGridBadge") : t("matrixBadge")}
+                      </span>
+                    )}
+                    {r.templateKind === "bpmn" && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-secondary-alpha-12)] text-[var(--flux-secondary)] border border-[var(--flux-secondary-alpha-20)]">
+                        {t("bpmnBadge")}
                       </span>
                     )}
                     <span

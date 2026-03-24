@@ -1,4 +1,5 @@
 import type { AutomationRule } from "./automation-types";
+import type { BpmnTemplateModel } from "./bpmn-types";
 
 export const TEMPLATE_CATEGORIES = [
   "sales",
@@ -16,7 +17,7 @@ export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 export type TemplatePricingTier = "free" | "premium";
 
 /** Padrão: estrutura Kanban sem cards; `priority_matrix` inclui cópias de cards nos quadrantes. */
-export type TemplateKind = "kanban" | "priority_matrix";
+export type TemplateKind = "kanban" | "priority_matrix" | "bpmn";
 
 export const PRIORITY_MATRIX_QUADRANT_KEYS = ["do_first", "schedule", "delegate", "eliminate"] as const;
 export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[number];
@@ -57,6 +58,8 @@ export type BoardTemplateSnapshot = {
   templateCards?: unknown[];
   /** Metadados visuais/semânticos para renderização da matriz. */
   priorityMatrixMeta?: PriorityMatrixMeta;
+  /** Modelo BPMN canônico simplificado. */
+  bpmnModel?: BpmnTemplateModel;
 };
 
 export type TemplateLifecycleStatus = "draft" | "published" | "archived";

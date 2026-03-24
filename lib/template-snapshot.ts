@@ -2,6 +2,8 @@ import type { BoardData } from "./kv-boards";
 import type { AutomationRule } from "./automation-types";
 import type { BoardTemplateSnapshot, PriorityMatrixQuadrantKey } from "./template-types";
 import { matrixCellKey, priorityMatrixGrid4BucketOrder } from "./matrix-grid4";
+import type { BpmnTemplateModel } from "./bpmn-types";
+import { validateBpmnModel } from "./bpmn-types";
 
 function parseCards(raw: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(raw)) return [];
@@ -239,5 +241,25 @@ export function buildTemplateSnapshotFromBoard(board: BoardData, rules: Automati
     ...(board.boardMethodology === "scrum" || board.boardMethodology === "kanban"
       ? { boardMethodology: board.boardMethodology }
       : {}),
+  };
+}
+
+export function buildBpmnSnapshotFromModel(model: BpmnTemplateModel): BoardTemplateSnapshot {
+  const validation = validateBpmnModel(model);
+  if (!validation.ok) {
+    throw new Error(validation.issues.find((i) => i.severity === "error")?.message ?? "Modelo BPMN inválido.");
+  }
+  return {
+    templateKind: "bpmn",
+    bpmnModel: model,
+    config: {
+      bucketOrder: [{ key: "bpmn_canvas", label: "BPMN Canvas", color: "var(--flux-primary)" }],
+      collapsedColumns: [],
+      labels: ["BPMN"],
+    },
+    mapaProducao: [],
+    labelPalette: ["BPMN"],
+    automations: [],
+    boardMethodology: "kanban",
   };
 }

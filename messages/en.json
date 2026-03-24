@@ -298,14 +298,25 @@
     "createSectionTitle": "Create a new template",
     "createModeAi": "With AI",
     "createModeMatrix": "Priority matrix",
+    "createModeBpmn": "BPMN",
+    "bpmnBadge": "BPMN",
     "matrixSectionTitle": "Priority matrix",
     "matrixSectionHint": "A 4×4 grid with two level axes (like common prioritization matrices): drag board cards into cells. Publishing requires an administrator.",
     "matrixSectionCta": "Open exclusive 4x4 Matrix session",
+    "bpmnSectionTitle": "BPMN model",
+    "bpmnSectionHint": "Dedicated BPMN workspace with import/export in Markdown and BPMN XML.",
+    "bpmnSectionCta": "Open BPMN workspace",
     "matrixExclusive": {
       "title": "4x4 Matrix",
       "back": "← Templates",
       "heading": "Exclusive 4x4 Matrix session",
       "hint": "Dedicated context to prioritize, create tasks, and publish templates with less visual noise."
+    },
+    "bpmnExclusive": {
+      "title": "BPMN workspace",
+      "back": "← Templates",
+      "heading": "Exclusive BPMN session",
+      "hint": "Import, validate, edit and publish BPMN templates with focus on process modeling."
     },
     "matrixPanel": {
       "hint": "Pick a source board, then open the wizard to select cards, quadrants, and template metadata.",
@@ -405,6 +416,7 @@
       "templateKind": "Template type",
       "templateKindKanban": "Kanban (structure)",
       "templateKindMatrix": "Priority matrix",
+      "templateKindBpmn": "BPMN process model",
       "sourceBoard": "Source board",
       "loadingCards": "Loading cards…",
       "noCards": "No cards on this board.",

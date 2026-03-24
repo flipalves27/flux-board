@@ -141,6 +141,34 @@ export function isSafeLinkUrl(url: string): boolean {
 export const BoardMethodologySchema = z.enum(["scrum", "kanban"]);
 
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
+const BpmnNodeTypeSchema = z.enum(["start_event", "end_event", "task", "exclusive_gateway", "parallel_gateway"]);
+const BpmnModelSchema = z.object({
+  version: z.literal("bpmn-2.0-lite"),
+  name: z.string().trim().min(1).max(200),
+  lanes: z.array(z.object({ id: z.string().trim().min(1).max(80), label: z.string().trim().min(1).max(200) })).max(30),
+  nodes: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(80),
+        type: BpmnNodeTypeSchema,
+        label: z.string().trim().min(1).max(200),
+        x: z.number().finite(),
+        y: z.number().finite(),
+        laneId: z.string().trim().max(80).optional(),
+      })
+    )
+    .max(500),
+  edges: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(80),
+        sourceId: z.string().trim().min(1).max(80),
+        targetId: z.string().trim().min(1).max(80),
+        label: z.string().trim().max(200).optional(),
+      })
+    )
+    .max(800),
+});
 
 export const BoardTemplateSnapshotSchema = z.object({
   config: z.object({
@@ -152,10 +180,11 @@ export const BoardTemplateSnapshotSchema = z.object({
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
-  templateKind: z.enum(["kanban", "priority_matrix"]).optional(),
+  templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional(),
   priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
   priorityMatrixMeta: z.unknown().optional(),
+  bpmnModel: BpmnModelSchema.optional(),
 });
 
 export const BoardCreateSchema = z
@@ -448,7 +477,7 @@ export const TemplateExportBodySchema = z
       "insurance_warranty",
     ]),
     pricingTier: z.enum(["free", "premium"]),
-    templateKind: z.enum(["kanban", "priority_matrix"]).optional().default("kanban"),
+    templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional().default("kanban"),
     /** Eisenhower: quadrantes. Ignorado quando priorityMatrixModel é grid4. */
     priorityMatrixSelections: z
       .array(
@@ -462,6 +491,9 @@ export const TemplateExportBodySchema = z
     /** Padrão eisenhower para matriz clássica; grid4 para grade 4×4. */
     priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional().default("eisenhower"),
     priorityMatrixGridSelections: z.array(PriorityMatrixGridSelectionSchema).max(100).optional(),
+    bpmnModel: BpmnModelSchema.optional(),
+    bpmnMarkdown: z.string().max(300_000).optional(),
+    bpmnXml: z.string().max(300_000).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
@@ -491,6 +523,23 @@ export const TemplateExportBodySchema = z
         message: "Com Eisenhower use priorityMatrixSelections, não priorityMatrixGridSelections.",
         path: ["priorityMatrixGridSelections"],
       });
+    }
+    if (data.templateKind === "bpmn") {
+      const supplied = [data.bpmnModel ? 1 : 0, data.bpmnMarkdown ? 1 : 0, data.bpmnXml ? 1 : 0].reduce((a, b) => a + b, 0);
+      if (supplied === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Para template BPMN, informe bpmnModel, bpmnMarkdown ou bpmnXml.",
+          path: ["bpmnModel"],
+        });
+      }
+      if (data.priorityMatrixSelections?.length || data.priorityMatrixGridSelections?.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Seleções de matriz não se aplicam ao template BPMN.",
+          path: ["templateKind"],
+        });
+      }
     }
   });
 
