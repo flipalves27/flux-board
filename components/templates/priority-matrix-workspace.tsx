@@ -27,6 +27,28 @@ type BoardCard = {
   blockedBy?: string[];
 };
 
+function makeProjectPrefix(name: string): string {
+  const letters = (name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z]/g, "")
+    .toUpperCase();
+  return (letters.slice(0, 3) || "PRJ").padEnd(3, "X");
+}
+
+function makeSequentialCardId(prefixSource: string, cards: BoardCard[]): string {
+  const prefix = makeProjectPrefix(prefixSource);
+  const re = new RegExp(`^${prefix}-?(\\d{4})$`);
+  let max = 0;
+  for (const c of cards) {
+    const m = re.exec(c.id);
+    if (!m) continue;
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return `${prefix}${String(max + 1).padStart(4, "0")}`;
+}
+
 function flattenCellsToSelections(cells: Record<string, string[]>): Array<{ cardId: string; row: number; col: number }> {
   const out: Array<{ cardId: string; row: number; col: number }> = [];
   for (const [key, ids] of Object.entries(cells)) {
@@ -60,6 +82,10 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [taskError, setTaskError] = useState<string | null>(null);
+  const selectedBoardName = useMemo(
+    () => boards.find((b) => b.id === selectedBoardId)?.name ?? "Projeto",
+    [boards, selectedBoardId]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -220,10 +246,7 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
   const createTask = useCallback(async () => {
     const title = newTaskTitle.trim();
     if (!title || !defaultBucketKey) return;
-    const id =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? `MATRIX-${crypto.randomUUID().slice(0, 8)}`
-        : `MATRIX-${Date.now()}`;
+    const id = makeSequentialCardId(selectedBoardName, boardCards);
     const maxOrder = boardCards
       .filter((c) => c.bucket === defaultBucketKey)
       .reduce((acc, c) => Math.max(acc, c.order ?? 0), -1);
@@ -241,7 +264,7 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
     };
     await saveBoardCards([...boardCards, nextCard]);
     setNewTaskTitle("");
-  }, [newTaskTitle, defaultBucketKey, boardCards, saveBoardCards]);
+  }, [newTaskTitle, defaultBucketKey, boardCards, saveBoardCards, selectedBoardName]);
 
   const deleteTask = useCallback(
     async (cardId: string) => {
