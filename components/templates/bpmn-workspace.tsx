@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type WheelEvent, type PointerEvent } from "react";
-import { Barlow } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import { BpmnLegend } from "@/components/templates/bpmn-legend";
@@ -18,6 +18,7 @@ import { BPMN_VISUAL_STATE_TOKENS, BPMN_VISUAL_TOKENS, getBpmnVisualSpec } from 
 import { renderBpmnIcon } from "@/lib/bpmn-icon-render";
 
 const barlow = Barlow({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
+const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], weight: ["700", "800"] });
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -30,9 +31,11 @@ type BpmnStencil = {
   type: string;
   label: string;
   hint: string;
-  category: "events" | "tasks" | "gateways";
+  category: "events" | "tasks" | "gateways" | "dados" | "swim";
   width: number;
   height: number;
+  semanticVariant?: BpmnSemanticVariant;
+  accentColor?: string;
 };
 type NodeDragState = {
   ids: string[];
@@ -48,20 +51,31 @@ type BoxSelectState = {
 };
 
 const BPMN_STENCILS: BpmnStencil[] = [
-  { type: "start_event", label: "Start event", hint: "Inicio do processo", category: "events", width: 88, height: 48 },
-  { type: "intermediate_event", label: "Intermediate event", hint: "Evento intermediario", category: "events", width: 96, height: 52 },
-  { type: "timer_event", label: "Timer event", hint: "Controle por tempo", category: "events", width: 96, height: 52 },
-  { type: "message_event", label: "Message event", hint: "Recebe ou envia mensagem", category: "events", width: 96, height: 52 },
-  { type: "end_event", label: "End event", hint: "Fim do processo", category: "events", width: 88, height: 48 },
-  { type: "task", label: "Task", hint: "Atividade padrao", category: "tasks", width: 124, height: 58 },
-  { type: "user_task", label: "User task", hint: "Atividade humana", category: "tasks", width: 134, height: 60 },
-  { type: "service_task", label: "Service task", hint: "Automacao sistêmica", category: "tasks", width: 140, height: 60 },
-  { type: "script_task", label: "Script task", hint: "Execucao de script", category: "tasks", width: 134, height: 60 },
-  { type: "call_activity", label: "Call activity", hint: "Reuso de subprocesso", category: "tasks", width: 146, height: 60 },
-  { type: "sub_process", label: "Sub process", hint: "Agrupa macro fluxo", category: "tasks", width: 146, height: 60 },
-  { type: "exclusive_gateway", label: "Exclusive gateway", hint: "Decisao unica", category: "gateways", width: 108, height: 58 },
-  { type: "parallel_gateway", label: "Parallel gateway", hint: "Execucao paralela", category: "gateways", width: 108, height: 58 },
-  { type: "inclusive_gateway", label: "Inclusive gateway", hint: "Uma ou mais saidas", category: "gateways", width: 112, height: 58 },
+  { type: "start_event",          label: "Start event",        hint: "Início do processo",       category: "events",  width: 88,  height: 48 },
+  { type: "intermediate_event",   label: "Intermediate event", hint: "Evento intermediário",      category: "events",  width: 96,  height: 52 },
+  { type: "timer_event",          label: "Timer event",        hint: "Controle por tempo",        category: "events",  width: 96,  height: 52 },
+  { type: "message_event",        label: "Message event",      hint: "Recebe ou envia mensagem",  category: "events",  width: 96,  height: 52 },
+  { type: "end_event",            label: "End event",          hint: "Fim do processo",           category: "events",  width: 88,  height: 48 },
+  // Tasks – 5 variantes visuais explícitas (Reborn Design System)
+  { type: "task", label: "Task — Default",    hint: "Atividade padrão (teal)",    category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
+  { type: "task", label: "Task — Reborn",     hint: "Já implementado (lime)",     category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
+  { type: "task", label: "Task — Automated",  hint: "Integração API (cyan)",      category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
+  { type: "task", label: "Task — Pain Point", hint: "Retrabalho / dor (red)",     category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
+  { type: "task", label: "Task — System",     hint: "Sistema interno (blue)",     category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
+  // Subtypes
+  { type: "user_task",     label: "User task",     hint: "Atividade humana",      category: "tasks", width: 134, height: 60 },
+  { type: "service_task",  label: "Service task",  hint: "Automação sistêmica",   category: "tasks", width: 140, height: 60 },
+  { type: "script_task",   label: "Script task",   hint: "Execução de script",    category: "tasks", width: 134, height: 60 },
+  { type: "call_activity", label: "Call activity", hint: "Reuso de subprocesso",  category: "tasks", width: 146, height: 60 },
+  { type: "sub_process",   label: "Sub process",   hint: "Agrupa macro fluxo",    category: "tasks", width: 146, height: 60 },
+  // Gateways
+  { type: "exclusive_gateway", label: "Exclusive (XOR)", hint: "Decisão única",       category: "gateways", width: 108, height: 58 },
+  { type: "parallel_gateway",  label: "Parallel (AND)",  hint: "Execução paralela",   category: "gateways", width: 108, height: 58 },
+  { type: "inclusive_gateway", label: "Inclusive (OR)",  hint: "Uma ou mais saídas",  category: "gateways", width: 112, height: 58 },
+  // Dados & Acessórios
+  { type: "system_box",  label: "System Box",  hint: "Sistema externo (FastFlow, I4PRO...)", category: "dados", width: 150, height: 64 },
+  { type: "annotation",  label: "Annotation",  hint: "Nota / comentário no diagrama",        category: "dados", width: 160, height: 56 },
+  { type: "data_object", label: "Data Object", hint: "Documento / artefato de dados",        category: "dados", width: 96,  height: 60 },
 ];
 
 const SAMPLE_MD = `# BPMN Template
@@ -85,9 +99,10 @@ version: bpmn-2.0-lite
 `;
 
 const GRID_SIZE = 20;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2.2;
+const MIN_ZOOM = 0.12;
+const MAX_ZOOM = 2.5;
 const HISTORY_LIMIT = 80;
+const ZOOM_STEP = 0.15;
 
 export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [boardId, setBoardId] = useState("");
@@ -148,6 +163,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [editingStep, setEditingStep] = useState("");
   const [editingPain, setEditingPain] = useState("");
   const [editingLaneTag, setEditingLaneTag] = useState("");
+  const [paletteCollapsed, setPaletteCollapsed] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [savingBoard, setSavingBoard] = useState(false);
   /** Durante arrasto: delta em canvas; commit no pointerup. */
   const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
   const dragRafRef = useRef<number | null>(null);
@@ -244,8 +262,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function resetView() {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
+    setZoom(0.55);
+    setPan({ x: 30, y: 15 });
   }
 
   function fitView() {
@@ -275,7 +293,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function displayType(type: string): string {
-    return stencilMeta(type)?.label ?? type.replace(/_/g, " ");
+    const label = stencilMeta(type)?.label ?? type.replace(/_/g, " ");
+    // Strip " — Variant" suffix used only in the palette
+    return label.replace(/\s—\s.+$/, "");
   }
 
   function toCanvasCoords(clientX: number, clientY: number): { x: number; y: number } | null {
@@ -417,7 +437,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     }
   }
 
-  function addNode(type: string, x: number, y: number) {
+  function addNode(type: string, x: number, y: number, semanticVariant?: BpmnSemanticVariant) {
     setModel((prev) => {
       const meta = stencilMeta(type);
       const id = `${type.replace(/[^a-z_]/g, "")}_${Math.random().toString(36).slice(2, 7)}`;
@@ -435,6 +455,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             laneId,
             width: meta?.width ?? (type.includes("event") ? 88 : 120),
             height: meta?.height ?? (type.includes("event") ? 48 : 56),
+            ...(semanticVariant ? { semanticVariant } : {}),
           },
         ],
       };
@@ -446,6 +467,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   function onDropCanvas(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     const type = e.dataTransfer.getData("application/x-bpmn-type");
+    const variant = e.dataTransfer.getData("application/x-bpmn-variant") as BpmnSemanticVariant | "";
     const nodeId = e.dataTransfer.getData("application/x-bpmn-node");
     const coords = toCanvasCoords(e.clientX, e.clientY);
     setIsCanvasDropActive(false);
@@ -455,7 +477,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     const x = Math.max(32, coords.x);
     const y = Math.max(24, coords.y);
     if (type) {
-      addNode(type, x, y);
+      addNode(type, x, y, variant || undefined);
       return;
     }
     if (nodeId) {
@@ -1101,13 +1123,13 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }, [nodesForEdges]);
 
   return (
-    <div className={`${barlow.className} flex min-h-0 flex-1 flex-col gap-3`}>
+    <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3`}>
       <header
         className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(0,0,0,0.25)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
         style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
       >
-        <span className="font-extrabold tracking-[0.12em] text-white">
-          FLUX <span className="text-[#4DB6AC]">BPMN</span>
+        <span className={`${barlowCondensed.className} text-[22px] font-extrabold uppercase tracking-[2px] text-white`}>
+          AUSTRAL <span className="text-[#4DB6AC]">REBORN</span>
         </span>
         <div className="hidden h-7 w-px bg-white/20 sm:block" />
         <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold text-white/90 sm:max-w-[min(380px,45vw)] sm:text-[14px]">{model.name}</span>
@@ -1127,7 +1149,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
-            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, Number((z * 1.12).toFixed(2))))}
+            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100))}
           >
             +
           </button>
@@ -1135,7 +1157,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
-            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, Number((z * 0.88).toFixed(2))))}
+            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100))}
           >
             −
           </button>
@@ -1184,103 +1206,273 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           >
             Apresentação
           </button>
-        </div>
-      </header>
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[256px_1fr_272px] xl:items-stretch xl:gap-4">
-        <aside className="flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-3 shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Componentes</p>
-            <span className="text-[10px] font-semibold text-[#546E7A] dark:text-slate-400">Arraste</span>
-          </div>
-          <p className="text-[11px] leading-snug text-[#546E7A] dark:text-slate-400">Mesmos elementos visuais do modelo de processo: eventos, tarefas e gateways.</p>
-          {(["events", "tasks", "gateways"] as const).map((group) => (
-            <div key={group} className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">
-                {group === "events" ? "Eventos" : group === "tasks" ? "Tarefas" : "Gateways"}
-              </p>
-              <div className="grid grid-cols-1 gap-2">
-                {BPMN_STENCILS.filter((s) => s.category === group).map((stencil) => (
+          <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+          <button
+            type="button"
+            title="Desfazer (Ctrl+Z)"
+            className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={() => {
+              const nextIndex = historyIndexRef.current - 1;
+              const stack = historyRef.current;
+              if (nextIndex < 0 || nextIndex >= stack.length) return;
+              historyIndexRef.current = nextIndex;
+              const nextModel = JSON.parse(JSON.stringify(stack[nextIndex])) as BpmnModel;
+              suppressHistoryRef.current = true;
+              setModel(nextModel);
+            }}
+          >
+            ↩
+          </button>
+          <button
+            type="button"
+            title="Refazer (Ctrl+Y)"
+            className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+            onClick={() => {
+              const nextIndex = historyIndexRef.current + 1;
+              const stack = historyRef.current;
+              if (nextIndex >= stack.length) return;
+              historyIndexRef.current = nextIndex;
+              const nextModel = JSON.parse(JSON.stringify(stack[nextIndex])) as BpmnModel;
+              suppressHistoryRef.current = true;
+              setModel(nextModel);
+            }}
+          >
+            ↪
+          </button>
+          <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+          <button
+            type="button"
+            disabled={savingBoard || !boardId.trim()}
+            className="rounded-lg border border-[#00897B] bg-[#00897B] px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-[#00695C] disabled:opacity-50"
+            onClick={async () => {
+              if (!boardId.trim()) return;
+              setSavingBoard(true);
+              try {
+                await apiPost(`/api/boards/${boardId.trim()}/bpmn-export`, { model, format: "markdown" }, getHeaders());
+              } catch {
+                // silently ignore – user can see state via issues list
+              } finally {
+                setSavingBoard(false);
+              }
+            }}
+          >
+            {savingBoard ? "Salvando…" : "Salvar"}
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-white/20"
+              onClick={() => setShowExportMenu((v) => !v)}
+            >
+              Exportar ▾
+            </button>
+            {showExportMenu && (
+              <div
+                className="absolute right-0 top-full z-50 mt-1 min-w-[130px] rounded-lg border border-white/20 bg-[#1A2744] py-1 shadow-xl"
+                onPointerLeave={() => setShowExportMenu(false)}
+              >
+                {(["PNG", "SVG", "PDF"] as const).map((fmt) => (
                   <button
-                    key={stencil.type}
+                    key={fmt}
                     type="button"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("application/x-bpmn-type", stencil.type);
-                      setDraggingType(stencil.type);
+                    className="w-full px-3 py-1.5 text-left text-[13px] font-semibold text-white hover:bg-white/10"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      // Export stubs — wired to board export API
+                      void apiPost(`/api/boards/${boardId.trim() || "local"}/bpmn-export`, { model, format: fmt.toLowerCase() }, getHeaders()).catch(() => null);
                     }}
-                    onDragEnd={() => {
-                      setDraggingType("");
-                      setIsCanvasDropActive(false);
-                      setDragPreview(null);
-                    }}
-                    className="text-left transition hover:opacity-95"
-                    title={stencil.hint}
                   >
-                    <div className="flex items-start gap-3 rounded-[10px] border border-slate-200/90 bg-white px-3 py-2.5 shadow-[0_3px_12px_rgba(26,39,68,0.06)] transition hover:border-[#00897B]/35 hover:shadow-md dark:border-slate-600 dark:bg-slate-900/70">
-                      <span className="pointer-events-none mt-0.5 shrink-0">
-                        {group === "events" ? (
-                          <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
-                        ) : group === "gateways" ? (
-                          <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
-                        ) : (
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-slate-200/90 bg-white shadow-sm dark:border-slate-600">
-                            <span className="h-9 w-1 rounded-full bg-[#00897B]" aria-hidden />
-                          </span>
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[12px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{stencil.label}</span>
-                        <span className="mt-0.5 block text-[10px] font-medium leading-snug text-[#546E7A] dark:text-slate-400">{stencil.hint}</span>
-                      </span>
-                    </div>
+                    {fmt}
                   </button>
                 ))}
               </div>
-            </div>
-          ))}
-          <div className="space-y-2 pt-1 border-t border-[var(--flux-chrome-alpha-08)]">
-            <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Conectar elementos</p>
-            <select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)} className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs">
-              <option value="">Origem</option>
-              {model.nodes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.label}
-                </option>
-              ))}
-            </select>
-            <select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)} className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs">
-              <option value="">Destino</option>
-              {model.nodes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.label}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="btn-secondary w-full" onClick={addEdge}>
-              Criar fluxo
-            </button>
+            )}
           </div>
-          {selectedNodeId ? (
+        </div>
+      </header>
+      <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_272px]" : "grid-cols-1 xl:grid-cols-[256px_1fr_272px]"}`}>
+        <aside className={`flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50 ${paletteCollapsed ? "p-2" : "p-3"}`}>
+          {/* Palette header */}
+          <div className="flex items-center justify-between gap-2">
+            {!paletteCollapsed && (
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Componentes</p>
+            )}
             <button
               type="button"
-              className="btn-secondary w-full"
-              onClick={() =>
-                setModel((prev) => {
-                  const next: BpmnModel = {
-                    ...prev,
-                    nodes: prev.nodes.filter((n) => n.id !== selectedNodeId),
-                    edges: prev.edges.filter((e) => e.sourceId !== selectedNodeId && e.targetId !== selectedNodeId),
-                  };
-                  syncCodeFromModel(next);
-                  setSelectedNodeId("");
-                  return next;
-                })
-              }
+              title={paletteCollapsed ? "Expandir palette" : "Recolher palette"}
+              className="ml-auto rounded border border-slate-200 bg-[#F0F2F5] px-1.5 py-0.5 text-[11px] font-bold text-[#546E7A] hover:bg-[#E0E0E0] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              onClick={() => setPaletteCollapsed((v) => !v)}
             >
-              Remover elemento selecionado
+              {paletteCollapsed ? "▶" : "◀"}
             </button>
-          ) : null}
-          <p className="text-[11px] text-[var(--flux-text-muted)]">{model.nodes.length} nós • {model.edges.length} fluxos</p>
+          </div>
+
+          {paletteCollapsed ? (
+            /* Icon-only collapsed view */
+            <div className="flex flex-col items-center gap-2 pt-1">
+              {BPMN_STENCILS.slice(0, 10).map((stencil, idx) => (
+                <button
+                  key={`col_${stencil.type}_${idx}`}
+                  type="button"
+                  draggable
+                  title={stencil.label}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("application/x-bpmn-type", stencil.type);
+                    if (stencil.semanticVariant) e.dataTransfer.setData("application/x-bpmn-variant", stencil.semanticVariant);
+                    setDraggingType(stencil.type);
+                  }}
+                  onDragEnd={() => { setDraggingType(""); setIsCanvasDropActive(false); setDragPreview(null); }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-[#00897B]/50 dark:border-slate-600 dark:bg-slate-900"
+                >
+                  {stencil.category === "events" ? (
+                    <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                  ) : stencil.category === "gateways" ? (
+                    <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                  ) : (
+                    <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="text-[11px] leading-snug text-[#546E7A] dark:text-slate-400">
+                Arraste componentes para o canvas. Duplo clique no canvas para editar inline.
+              </p>
+
+              {/* Groups: Eventos, Tarefas, Gateways, Dados */}
+              {(["events", "tasks", "gateways", "dados"] as const).map((group) => {
+                const groupItems = BPMN_STENCILS.filter((s) => s.category === group);
+                const groupLabel =
+                  group === "events" ? "Eventos" :
+                  group === "tasks"  ? "Atividades" :
+                  group === "gateways" ? "Gateways" :
+                  "Dados & Acessórios";
+                return (
+                  <div key={group} className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">{groupLabel}</p>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {groupItems.map((stencil, idx) => (
+                        <button
+                          key={`${stencil.type}_${stencil.semanticVariant ?? idx}`}
+                          type="button"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("application/x-bpmn-type", stencil.type);
+                            if (stencil.semanticVariant) e.dataTransfer.setData("application/x-bpmn-variant", stencil.semanticVariant);
+                            setDraggingType(stencil.type);
+                          }}
+                          onDragEnd={() => { setDraggingType(""); setIsCanvasDropActive(false); setDragPreview(null); }}
+                          className="text-left transition hover:opacity-95"
+                          title={stencil.hint}
+                        >
+                          <div className="flex items-center gap-2.5 rounded-[10px] border border-slate-200/90 bg-white px-2.5 py-2 shadow-[0_3px_12px_rgba(26,39,68,0.06)] transition hover:border-[#00897B]/35 hover:shadow-md dark:border-slate-600 dark:bg-slate-900/70">
+                            <span className="pointer-events-none shrink-0">
+                              {stencil.category === "events" ? (
+                                <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                              ) : stencil.category === "gateways" ? (
+                                <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                              ) : stencil.category === "dados" && stencil.type === "annotation" ? (
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
+                                  <span className="text-[14px]">✎</span>
+                                </span>
+                              ) : stencil.category === "dados" && stencil.type === "system_box" ? (
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border-2 border-dashed bg-[#E8EAF6]" style={{ borderColor: "#5C6BC0" }}>
+                                  <span className="text-[12px]">⚙</span>
+                                </span>
+                              ) : stencil.category === "dados" ? (
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-300 bg-slate-50 text-[14px] dark:border-slate-600 dark:bg-slate-800">
+                                  📄
+                                </span>
+                              ) : (
+                                /* Task variants — show accent color stripe */
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-slate-200/90 bg-white shadow-sm dark:border-slate-600">
+                                  <span className="h-6 w-1.5 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} aria-hidden />
+                                </span>
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{stencil.label}</span>
+                              <span className="mt-0.5 block truncate text-[10px] font-medium leading-snug text-[#546E7A] dark:text-slate-400">{stencil.hint}</span>
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Swim Lanes section */}
+              <div className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">Swim Lanes</p>
+                <button
+                  type="button"
+                  className="w-full rounded-[10px] border border-dashed border-[#00897B]/60 bg-white px-2.5 py-2 text-left shadow-sm transition hover:border-[#00897B] hover:shadow-md dark:bg-slate-900/70"
+                  onClick={() => {
+                    setModel((prev) => {
+                      const idx = prev.lanes.length;
+                      const lastY = prev.lanes.reduce((maxY, l) => Math.max(maxY, (l.y ?? 0) + (l.height ?? 128)), 12);
+                      const next: BpmnModel = {
+                        ...prev,
+                        lanes: [
+                          ...prev.lanes,
+                          { id: `lane_${Math.random().toString(36).slice(2, 7)}`, label: `Raia ${idx + 1}`, y: lastY + 8, height: 128 },
+                        ],
+                      };
+                      syncCodeFromModel(next);
+                      return next;
+                    });
+                  }}
+                >
+                  <span className="flex items-center gap-2 text-[11px] font-bold text-[#00897B]">
+                    <span className="text-lg leading-none">+</span> Nova Swim Lane
+                  </span>
+                  <span className="mt-0.5 block text-[10px] text-[#546E7A]">Arrastar nós para dentro após criar</span>
+                </button>
+              </div>
+              {/* Connect elements section (inside expanded palette) */}
+              <div className="space-y-2 pt-1 border-t border-slate-200/80 dark:border-slate-700">
+                <p className="text-xs font-semibold text-[#546E7A] dark:text-slate-400">Conectar elementos</p>
+                <select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-800">
+                  <option value="">Origem</option>
+                  {model.nodes.map((n) => (
+                    <option key={n.id} value={n.id}>{n.label}</option>
+                  ))}
+                </select>
+                <select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-800">
+                  <option value="">Destino</option>
+                  {model.nodes.map((n) => (
+                    <option key={n.id} value={n.id}>{n.label}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn-secondary w-full" onClick={addEdge}>
+                  Criar fluxo
+                </button>
+              </div>
+              {selectedNodeId ? (
+                <button
+                  type="button"
+                  className="btn-secondary w-full"
+                  onClick={() =>
+                    setModel((prev) => {
+                      const next: BpmnModel = {
+                        ...prev,
+                        nodes: prev.nodes.filter((n) => n.id !== selectedNodeId),
+                        edges: prev.edges.filter((e) => e.sourceId !== selectedNodeId && e.targetId !== selectedNodeId),
+                      };
+                      syncCodeFromModel(next);
+                      setSelectedNodeId("");
+                      return next;
+                    })
+                  }
+                >
+                  Remover selecionado
+                </button>
+              ) : null}
+              <p className="text-[11px] text-[#546E7A] dark:text-slate-400">{model.nodes.length} nós • {model.edges.length} fluxos</p>
+            </>
+          )}
         </aside>
 
         <div className="flex min-h-[min(560px,calc(100vh-200px))] flex-col gap-2 xl:min-h-[calc(100vh-200px)]">
@@ -1409,13 +1601,16 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               {model.lanes.map((lane, i) => {
                 const top = lane.y ?? 12 + i * 140;
                 const h = lane.height ?? 128;
-                const grad = [
+                const defaultGradients = [
                   "linear-gradient(180deg,#558B2F,#7CB342)",
                   "linear-gradient(180deg,#00695C,#00897B)",
                   "linear-gradient(180deg,#1565C0,#42A5F5)",
                   "linear-gradient(180deg,#5E35B1,#7E57C2)",
                   "linear-gradient(180deg,#E65100,#FF9800)",
-                ][i % 5];
+                ];
+                const grad = lane.gradient
+                  ? `linear-gradient(180deg,${lane.gradient[0]},${lane.gradient[1]})`
+                  : defaultGradients[i % 5];
                 const tint = [
                   "rgba(124,179,66,.06)",
                   "rgba(0,137,123,.04)",
@@ -1428,18 +1623,20 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div
                     key={lane.id}
                     className="pointer-events-none absolute left-1 right-1 overflow-visible rounded-md"
-                    style={{ top, height: h, border: `2px solid ${border}`, background: tint }}
+                    style={{ top, height: h, border: `2px solid ${border}`, background: tint, borderRadius: 6 }}
                   >
+                    {/* Lane label — vertical, Barlow Condensed 800, uppercase */}
                     <div
-                      className="absolute bottom-0 left-0 top-0 flex w-[52px] items-center justify-center rounded-l-md text-[10px] font-extrabold uppercase tracking-widest text-white"
-                      style={{ background: grad, writingMode: "vertical-rl", textOrientation: "mixed" }}
+                      className={`${barlowCondensed.className} absolute bottom-0 left-0 top-0 flex w-[52px] items-center justify-center rounded-l-md text-[14px] font-extrabold uppercase text-white`}
+                      style={{ background: grad, writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "2px", textOrientation: "mixed" }}
                     >
                       {lane.label}
                     </div>
+                    {/* Tag badge */}
                     {lane.tag ? (
                       <span
-                        className="absolute left-[60px] top-2 max-w-[min(420px,70%)] truncate rounded px-2.5 py-0.5 text-[11px] font-bold text-[#1A2744] dark:text-slate-200"
-                        style={{ background: "rgba(255,255,255,0.92)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+                        className="absolute left-[68px] top-[10px] max-w-[min(360px,65%)] truncate rounded px-2.5 py-0.5 text-[12px] font-bold text-[#1A2744]"
+                        style={{ background: "rgba(255,255,255,0.92)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", letterSpacing: "0.5px" }}
                       >
                         {lane.tag}
                       </span>
@@ -1449,18 +1646,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               })}
               <svg className="absolute inset-0 h-full w-full" style={{ pointerEvents: showEdges ? "auto" : "none", opacity: showEdges ? 1 : 0 }}>
                 <defs>
-                  {(["default", "primary", "rework", "cross_lane"] as const).map((k) => (
+                  {(["default", "primary", "rework", "cross_lane", "system"] as const).map((k) => (
                     <marker
                       key={k}
                       id={`bpmnMk_${k}`}
-                      viewBox="0 0 10 10"
+                      viewBox="0 0 10 7"
                       refX="9"
-                      refY="5"
-                      markerWidth={BPMN_VISUAL_TOKENS.sequenceArrowSize}
-                      markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
-                      orient="auto-start-reverse"
+                      refY="3.5"
+                      markerWidth={10}
+                      markerHeight={7}
+                      orient="auto"
                     >
-                      <path d="M 0 0 L 10 5 L 0 10 z" fill={BPMN_FLOW_EDGE_STYLES[k].marker} />
+                      <polygon points="0 0, 10 3.5, 0 7" fill={BPMN_FLOW_EDGE_STYLES[k].marker} />
                     </marker>
                   ))}
                   <marker
@@ -1677,48 +1874,56 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     setConnectingFromId("");
                     setConnectPreview(null);
                   }}
-                  className={`absolute px-2 py-1 text-left text-[11px] shadow-sm hover:scale-[1.02] hover:shadow-md ${
+                  className={`absolute px-2 py-1 text-left text-[11px] ${
                     isDraggingThis
-                      ? "transition-none will-change-[left,top] scale-[1.01]"
-                      : "transition-[left,top,transform] duration-150 ease-out"
+                      ? "scale-[1.06] opacity-90 transition-none will-change-[left,top] z-[1000]"
+                      : "transition-[left,top,transform,box-shadow] duration-150 ease-out hover:scale-[1.04] hover:z-[100]"
                   } ${
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]" : ""
                   }`}
-                  style={{ left: pe.x, top: pe.y, width: node.width ?? 110, height: node.height ?? 54 }}
+                  style={{ left: pe.x, top: pe.y, width: node.width ?? 110, height: node.height ?? 54, boxShadow: isDraggingThis ? "0 8px 28px rgba(26,39,68,0.18)" : "0 3px 12px rgba(26,39,68,0.10)" }}
                   title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
                   {isTaskLikeType(node.type) ? (
                     <>
+                      {/* Task card background with border-left variant accent */}
                       <span
-                        className="pointer-events-none absolute inset-0 rounded-[10px] shadow-[0_3px_12px_rgba(26,39,68,0.1)]"
+                        className="pointer-events-none absolute inset-0 rounded-[10px]"
                         style={{
-                          borderLeftWidth: 5,
-                          borderLeftStyle: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle,
-                          borderLeftColor: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent,
+                          borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
                           backgroundColor: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
-                          borderTopRightRadius: 10,
-                          borderBottomRightRadius: 10,
                           borderTop: "1px solid rgba(0,0,0,0.06)",
                           borderRight: "1px solid rgba(0,0,0,0.06)",
                           borderBottom: "1px solid rgba(0,0,0,0.06)",
+                          borderTopRightRadius: 10,
+                          borderBottomRightRadius: 10,
+                          minWidth: 160,
+                          maxWidth: 210,
                         }}
                       />
+                      {/* Step number badge (.num) */}
                       {node.stepNumber ? (
                         <span
-                          className="pointer-events-none absolute left-1.5 top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold text-white"
+                          className="pointer-events-none absolute left-2 top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold text-white"
                           style={{ background: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].badgeBg }}
                         >
                           {node.stepNumber}
                         </span>
                       ) : null}
+                      {/* Pain badge (.pb) — top-right red circle */}
                       {node.painBadge ? (
-                        <span className="pointer-events-none absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[11px] font-extrabold text-white shadow-md" style={{ background: "#EF5350" }}>
+                        <span
+                          className="pointer-events-none absolute flex items-center justify-center rounded-full border-2 border-white font-extrabold text-white"
+                          style={{ top: -10, right: -10, width: 26, height: 26, fontSize: 12, background: "#EF5350", boxShadow: "0 2px 8px rgba(239,83,80,.45)" }}
+                        >
                           {node.painBadge}
                         </span>
                       ) : null}
+                      {/* Label (.lb) */}
                       <span className="pointer-events-none relative z-[1] block px-2 pt-2 text-center text-[13px] font-bold leading-snug text-[#1A2744] dark:text-slate-100">
                         {node.label}
                       </span>
+                      {/* Sublabel (.sb) */}
                       {node.subtitle ? (
                         <span className="pointer-events-none relative z-[1] block px-2 pb-2 text-center text-[10px] font-medium leading-tight text-[#546E7A] dark:text-slate-400">{node.subtitle}</span>
                       ) : (
@@ -1734,6 +1939,25 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
                       <RebornGatewayGlyph nodeType={node.type} />
                       <span className="max-w-[min(168px,100%)] text-center text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{node.label}</span>
+                    </div>
+                  ) : node.type === "annotation" ? (
+                    /* Annotation: bg #FFFDE7, border-left 4px solid #FFB300 */
+                    <div
+                      className="pointer-events-none absolute inset-0 flex flex-col justify-center px-3"
+                      style={{ background: "#FFFDE7", borderLeft: "4px solid #FFB300", borderRadius: "0 10px 10px 0" }}
+                    >
+                      <span className="text-[11px] font-semibold leading-snug text-[#1A2744]">{node.label || "Anotação"}</span>
+                      {node.subtitle && <span className="mt-0.5 text-[10px] text-[#546E7A]">{node.subtitle}</span>}
+                    </div>
+                  ) : node.type === "system_box" ? (
+                    /* System Box: bg #E8EAF6, border 2px dashed #5C6BC0 */
+                    <div
+                      className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-3"
+                      style={{ background: "#E8EAF6", border: "2px dashed #5C6BC0", borderRadius: 10 }}
+                    >
+                      <span className="text-[14px]">⚙</span>
+                      <span className="text-center text-[12px] font-bold leading-tight" style={{ color: "#3949AB" }}>{node.label || "Sistema"}</span>
+                      {node.subtitle && <span className="text-center text-[10px]" style={{ color: "#7986CB" }}>{node.subtitle}</span>}
                     </div>
                   ) : (
                     <>
@@ -2029,10 +2253,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   }}
                   className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
                 >
-                  <option value="default">Padrão</option>
-                  <option value="primary">Principal</option>
-                  <option value="rework">Retrabalho</option>
-                  <option value="cross_lane">Entre raias</option>
+                  <option value="default">Padrão (cinza)</option>
+                  <option value="primary">Principal (lime)</option>
+                  <option value="rework">Retrabalho (vermelho)</option>
+                  <option value="cross_lane">Entre raias (teal)</option>
+                  <option value="system">Sistema (azul)</option>
                 </select>
               </div>
             </>

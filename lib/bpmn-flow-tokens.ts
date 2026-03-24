@@ -5,10 +5,11 @@ export const BPMN_FLOW_EDGE_STYLES: Record<
   BpmnEdgeKind,
   { stroke: string; dash?: string; marker: string; width: number }
 > = {
-  default: { stroke: "#78909C", marker: "#78909C", width: 2 },
-  primary: { stroke: "#7CB342", marker: "#7CB342", width: 2.5 },
-  rework: { stroke: "#EF5350", marker: "#EF5350", width: 2, dash: "6 4" },
+  default:    { stroke: "#607D8B", marker: "#607D8B", width: 2 },
+  primary:    { stroke: "#7CB342", marker: "#7CB342", width: 2.5 },
+  rework:     { stroke: "#EF5350", marker: "#EF5350", width: 2, dash: "6 4" },
   cross_lane: { stroke: "#00897B", marker: "#00897B", width: 3, dash: "8 5" },
+  system:     { stroke: "#42A5F5", marker: "#42A5F5", width: 2 },
 };
 
 export const BPMN_TASK_VARIANT_STYLES: Record<

@@ -1148,6 +1148,56 @@
   outline-offset: 3px;
 }
 
+/* ─── BPMN Reborn Design System ─────────────────────────────────────────────
+   Tokens extracted from the Austral Seguradora "Plano de Implementação BPMN
+   Flow Board" prototype. Scoped to .bpmn-workspace so they don't bleed into
+   the rest of the Flux-Board design system.
+   ─────────────────────────────────────────────────────────────────────────── */
+.bpmn-workspace {
+  --navy:       #1A2744;
+  --navy-light: #263859;
+  --teal:       #00897B;
+  --teal-light: #4DB6AC;
+  --lime:       #7CB342;
+  --lime-bg:    #F1F8E9;
+  --cyan:       #00ACC1;
+  --cyan-bg:    #E0F7FA;
+  --red:        #EF5350;
+  --red-bg:     #FFEBEE;
+  --blue:       #42A5F5;
+  --amber:      #FFB300;
+  --purple:     #7E57C2;
+  --bpmn-bg:    #F0F2F5;
+  --bpmn-card:  #FFFFFF;
+  --bpmn-text:  #1A2744;
+  --bpmn-text-m:#546E7A;
+  --bpmn-text-l:#90A4AE;
+
+  /* Shadows */
+  --sh:   0 3px 12px rgba(26, 39, 68, 0.10);
+  --sh-h: 0 8px 28px rgba(26, 39, 68, 0.18);
+
+  /* Radius */
+  --bpmn-radius: 10px;
+
+  /* Lane gradients (index-ordered) */
+  --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);
+  --lane-grad-1: linear-gradient(180deg, #00695C, #00897B);
+  --lane-grad-2: linear-gradient(180deg, #1565C0, #42A5F5);
+  --lane-grad-3: linear-gradient(180deg, #5E35B1, #7E57C2);
+  --lane-grad-4: linear-gradient(180deg, #E65100, #FF9800);
+
+  /* Typography */
+  --bpmn-font-logo:   "Barlow Condensed", "Barlow", sans-serif;
+  --bpmn-font-body:   "Barlow", sans-serif;
+  --bpmn-font-size-logo: 22px;
+  --bpmn-font-size-toolbar: 15px;
+  --bpmn-font-size-btn: 13px;
+  --bpmn-font-size-node: 13px;
+  --bpmn-font-size-sub: 10px;
+  --bpmn-letter-logo: 2px;
+}
+
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),

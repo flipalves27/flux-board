@@ -14,6 +14,8 @@ export const BPMN_NODE_TYPES = [
   "parallel_gateway",
   "inclusive_gateway",
   "data_object",
+  "annotation",
+  "system_box",
 ] as const;
 
 export type BpmnNodeType = (typeof BPMN_NODE_TYPES)[number];
@@ -21,8 +23,8 @@ export type BpmnNodeType = (typeof BPMN_NODE_TYPES)[number];
 /** Visual / process semantics for task-like nodes (Reborn reference). */
 export type BpmnSemanticVariant = "default" | "reborn" | "automation" | "pain" | "system";
 
-/** Sequence flow rendering: primary path, rework loop, or cross–swimlane jump. */
-export type BpmnEdgeKind = "default" | "primary" | "rework" | "cross_lane";
+/** Sequence flow rendering: primary path, rework loop, cross–swimlane jump, or system integration. */
+export type BpmnEdgeKind = "default" | "primary" | "rework" | "cross_lane" | "system";
 
 export type BpmnPort = "north" | "east" | "south" | "west";
 
@@ -64,6 +66,8 @@ export type BpmnLane = {
   height?: number;
   /** Short tag pill (e.g. AS-IS — Subscrição). */
   tag?: string;
+  /** Optional [startColor, endColor] override for the lane's gradient label bar. */
+  gradient?: [string, string];
 };
 
 export type BpmnTemplateModel = {
