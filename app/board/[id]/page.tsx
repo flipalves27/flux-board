@@ -150,6 +150,10 @@ export interface CardData {
   storyPoints?: number | null;
   /** Classe de serviço explícita (Kanban). */
   serviceClass?: CardServiceClass | null;
+  /** Peso calculado para priorização em templates de matriz (0-100). */
+  matrixWeight?: number;
+  /** Faixa de prioridade visual derivada do peso da matriz. */
+  matrixWeightBand?: "low" | "medium" | "high" | "critical";
 }
 
 export interface BucketConfig {

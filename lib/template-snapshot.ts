@@ -35,7 +35,8 @@ export function priorityMatrixBucketOrder(): Array<{ key: string; label: string;
 function cardToTemplateSeed(
   card: Record<string, unknown>,
   bucketKey: string,
-  order: number
+  order: number,
+  extra?: { matrixWeight?: number; matrixWeightBand?: "low" | "medium" | "high" | "critical" }
 ): Record<string, unknown> {
   const titleRaw = typeof card.title === "string" ? card.title.trim().slice(0, 300) : "";
   const desc = typeof card.desc === "string" ? card.desc.slice(0, 6000) : "";
@@ -65,6 +66,8 @@ function cardToTemplateSeed(
   if (Array.isArray(card.docRefs)) base.docRefs = card.docRefs;
   if (typeof card.storyPoints === "number" || card.storyPoints === null) base.storyPoints = card.storyPoints;
   if (card.serviceClass !== undefined) base.serviceClass = card.serviceClass;
+  if (typeof extra?.matrixWeight === "number") base.matrixWeight = extra.matrixWeight;
+  if (extra?.matrixWeightBand) base.matrixWeightBand = extra.matrixWeightBand;
   return base;
 }
 
@@ -121,6 +124,18 @@ export function buildPriorityMatrixSnapshotFromBoard(
 
 export type PriorityMatrixGridSelection = { cardId: string; row: number; col: number };
 
+function matrixBandFromWeight(weight: number): "low" | "medium" | "high" | "critical" {
+  if (weight >= 76) return "critical";
+  if (weight >= 56) return "high";
+  if (weight >= 36) return "medium";
+  return "low";
+}
+
+function matrixWeightFromRowCol(row: number, col: number): number {
+  const normalized = Math.max(0, Math.min(1, ((3 - row) + col) / 6));
+  return Math.round(normalized * 100);
+}
+
 /**
  * Matriz 4×4: 16 colunas (uma por célula) + cópias de cards por posição (row/col).
  */
@@ -148,7 +163,13 @@ export function buildPriorityMatrixGrid4SnapshotFromBoard(
     const bucketKey = matrixCellKey(row, col);
     const ord = orderByCell.get(bucketKey) ?? 0;
     orderByCell.set(bucketKey, ord + 1);
-    templateCards.push(cardToTemplateSeed(card, bucketKey, ord));
+    const weight = matrixWeightFromRowCol(row, col);
+    templateCards.push(
+      cardToTemplateSeed(card, bucketKey, ord, {
+        matrixWeight: weight,
+        matrixWeightBand: matrixBandFromWeight(weight),
+      })
+    );
   }
 
   const labelPalette = [...new Set([...collectLabelPaletteFromCards(templateCards)])].slice(0, 100);

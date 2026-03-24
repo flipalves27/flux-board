@@ -304,6 +304,8 @@ export const CardDataSchema = z
     dodChecks: z.record(z.string().trim().max(80), z.boolean()).optional(),
     storyPoints: CardStoryPointsSchema.nullable().optional(),
     serviceClass: CardServiceClassSchema.nullable().optional(),
+    matrixWeight: z.number().min(0).max(100).optional(),
+    matrixWeightBand: z.enum(["low", "medium", "high", "critical"]).optional(),
   })
   .passthrough();
 

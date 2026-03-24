@@ -174,6 +174,9 @@ function KanbanBoardLoaded({
   const [scrumSettingsOpen, setScrumSettingsOpen] = useState(false);
   const [incrementReviewOpen, setIncrementReviewOpen] = useState(false);
   const [kanbanCadenceOpen, setKanbanCadenceOpen] = useState(false);
+  const [matrixWeightFilter, setMatrixWeightFilter] = useState<
+    "all" | "critical_high" | "high_plus" | "medium_plus" | "critical"
+  >("all");
 
   const methodology = db.boardMethodology ?? "scrum";
 
@@ -270,6 +273,7 @@ function KanbanBoardLoaded({
     nlqAllowedIds,
     forceExpandTourFilters: productTourExpandFilters,
     sprintCardIdSet,
+    matrixWeightFilter,
     insightFocusCardIds: insightFocusCardIds.size > 0 ? insightFocusCardIds : null,
     clearInsightFocus,
   });
@@ -684,6 +688,31 @@ function KanbanBoardLoaded({
             <span className="text-[10px] text-[var(--flux-text-muted)] hidden sm:inline">{t("board.filters.sprintFilterHint")}</span>
           </div>
         ) : null}
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+          <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("board.filters.matrixWeightLabel")}</span>
+          {(
+            [
+              { key: "all", label: t("board.filters.matrixWeightAll") },
+              { key: "critical_high", label: t("board.filters.matrixWeightCriticalHigh") },
+              { key: "high_plus", label: t("board.filters.matrixWeightHighPlus") },
+              { key: "medium_plus", label: t("board.filters.matrixWeightMediumPlus") },
+              { key: "critical", label: t("board.filters.matrixWeightCriticalOnly") },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setMatrixWeightFilter(opt.key)}
+              className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                matrixWeightFilter === opt.key
+                  ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                  : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Hidden file input for CSV import — triggered from the header via the board-store bridge */}

@@ -7,6 +7,26 @@ import type { BoardMethodology } from "./board-methodology";
 function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
   const raw = Array.isArray(snap.templateCards) ? snap.templateCards : [];
   const baseId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const matrixBandFromWeight = (weight: number): "low" | "medium" | "high" | "critical" => {
+    if (weight >= 76) return "critical";
+    if (weight >= 56) return "high";
+    if (weight >= 36) return "medium";
+    return "low";
+  };
+  const matrixWeightFromBucket = (bucket: string): number | null => {
+    const match = /^cell_r([0-3])_c([0-3])$/.exec(bucket);
+    if (!match) {
+      if (bucket === "do_first") return 88;
+      if (bucket === "schedule") return 64;
+      if (bucket === "delegate") return 44;
+      if (bucket === "eliminate") return 20;
+      return null;
+    }
+    const row = Number(match[1]);
+    const col = Number(match[2]);
+    const normalized = Math.max(0, Math.min(1, ((3 - row) + col) / 6));
+    return Math.round(normalized * 100);
+  };
   return raw.map((item, i) => {
     const o = item && typeof item === "object" ? ({ ...item } as Record<string, unknown>) : {};
     delete o.automationState;
@@ -18,6 +38,17 @@ function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
     delete o.subtaskProgress;
     o.id = `tplc_${baseId}_${i}`;
     o.blockedBy = [];
+    const bucket = typeof o.bucket === "string" ? o.bucket : "";
+    const weight =
+      typeof o.matrixWeight === "number" && Number.isFinite(o.matrixWeight)
+        ? Math.max(0, Math.min(100, Math.round(o.matrixWeight)))
+        : matrixWeightFromBucket(bucket);
+    if (weight !== null) {
+      o.matrixWeight = weight;
+      if (typeof o.matrixWeightBand !== "string") {
+        o.matrixWeightBand = matrixBandFromWeight(weight);
+      }
+    }
     return o;
   });
 }

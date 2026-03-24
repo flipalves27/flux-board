@@ -2,11 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import type { CardData } from "@/app/board/[id]/page";
 import type { BucketConfig } from "@/app/board/[id]/page";
 
+function compareByMatrixWeightThenOrder(a: CardData, b: CardData): number {
+  const wa = typeof a.matrixWeight === "number" ? a.matrixWeight : -1;
+  const wb = typeof b.matrixWeight === "number" ? b.matrixWeight : -1;
+  if (wa !== wb) return wb - wa;
+  return (a.order ?? 0) - (b.order ?? 0);
+}
+
 export function cardMatchesFilters(
   c: CardData,
   activePrio: string,
   activeLabels: Set<string>,
   searchQuery: string,
+  matrixWeightFilter: "all" | "critical_high" | "high_plus" | "medium_plus" | "critical" = "all",
   nlqAllowedIds: Set<string> | null = null,
   sprintCardIds: Set<string> | null = null,
   insightFocusCardIds: Set<string> | null = null
@@ -15,6 +23,13 @@ export function cardMatchesFilters(
   if (sprintCardIds && !sprintCardIds.has(c.id)) return false;
   if (nlqAllowedIds && !nlqAllowedIds.has(c.id)) return false;
   if (activePrio !== "all" && c.priority !== activePrio) return false;
+  if (matrixWeightFilter !== "all") {
+    const w = typeof c.matrixWeight === "number" ? c.matrixWeight : -1;
+    if (matrixWeightFilter === "critical_high" && w < 56) return false;
+    if (matrixWeightFilter === "high_plus" && w < 56) return false;
+    if (matrixWeightFilter === "medium_plus" && w < 36) return false;
+    if (matrixWeightFilter === "critical" && w < 76) return false;
+  }
   if (activeLabels.size > 0 && !c.tags.some((t) => activeLabels.has(t))) return false;
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
@@ -43,6 +58,7 @@ type UseBoardFiltersArgs = {
   forceExpandTourFilters?: boolean;
   /** Quando definido, só cards cujo id está no sprint ativo passam (toggle no board). */
   sprintCardIdSet?: Set<string> | null;
+  matrixWeightFilter?: "all" | "critical_high" | "high_plus" | "medium_plus" | "critical";
   /** Subconjunto imposto pelos chips de fluxo (board intelligence). */
   insightFocusCardIds?: Set<string> | null;
   /** Limpa `insightFocusCardIds` no filter-store (boardId vem do caller). */
@@ -61,6 +77,7 @@ export function useBoardFilters({
   nlqAllowedIds = null,
   forceExpandTourFilters = false,
   sprintCardIdSet = null,
+  matrixWeightFilter = "all",
   insightFocusCardIds = null,
   clearInsightFocus,
 }: UseBoardFiltersArgs) {
@@ -96,8 +113,17 @@ export function useBoardFilters({
 
   const filterCard = useCallback(
     (c: CardData) =>
-      cardMatchesFilters(c, activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet, insightFocusCardIds),
-    [activePrio, activeLabels, searchQuery, nlqAllowedIds, sprintCardIdSet, insightFocusCardIds]
+      cardMatchesFilters(
+        c,
+        activePrio,
+        activeLabels,
+        searchQuery,
+        matrixWeightFilter,
+        nlqAllowedIds,
+        sprintCardIdSet,
+        insightFocusCardIds
+      ),
+    [activePrio, activeLabels, searchQuery, matrixWeightFilter, nlqAllowedIds, sprintCardIdSet, insightFocusCardIds]
   );
 
   const cardsByBucketSorted = useMemo(() => {
@@ -111,7 +137,7 @@ export function useBoardFilters({
     }
 
     for (const key of bucketKeys) {
-      map.get(key)!.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      map.get(key)!.sort(compareByMatrixWeightThenOrder);
     }
 
     return map;
@@ -130,7 +156,7 @@ export function useBoardFilters({
     }
 
     for (const key of bucketKeys) {
-      map.get(key)!.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      map.get(key)!.sort(compareByMatrixWeightThenOrder);
     }
 
     return map;

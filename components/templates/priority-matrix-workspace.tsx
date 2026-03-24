@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { ApiError, apiGet, apiPut } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import {
@@ -44,6 +45,8 @@ type Props = {
 };
 
 export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
+  const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("templates");
   const [boards, setBoards] = useState<{ id: string; name: string }[]>([]);
   const [loadingBoards, setLoadingBoards] = useState(true);
@@ -311,17 +314,27 @@ export function PriorityMatrixWorkspace({ getHeaders, isAdmin }: Props) {
       ) : (
         <div className="space-y-2">
           <label className="block text-xs font-semibold text-[var(--flux-text-muted)]">{t("matrixPanel.selectBoard")}</label>
-          <select
-            value={selectedBoardId}
-            onChange={(e) => setSelectedBoardId(e.target.value)}
-            className="w-full max-w-md px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm"
-          >
-            {boards.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={selectedBoardId}
+              onChange={(e) => setSelectedBoardId(e.target.value)}
+              className="w-full max-w-md px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm"
+            >
+              {boards.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={!selectedBoardId}
+              onClick={() => router.push(`/${locale}/board/${encodeURIComponent(selectedBoardId)}`)}
+            >
+              {t("matrixWorkspace.openBoardCta")}
+            </button>
+          </div>
         </div>
       )}
 

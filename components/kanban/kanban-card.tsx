@@ -44,6 +44,22 @@ function RiskScoreBadge({ score }: { score: number }) {
   );
 }
 
+function MatrixWeightBadge({ weight, band }: { weight: number; band?: "low" | "medium" | "high" | "critical" }) {
+  const tone =
+    band === "critical"
+      ? "border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-12)] text-[var(--flux-danger)]"
+      : band === "high"
+        ? "border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-10)] text-[var(--flux-warning)]"
+        : band === "medium"
+          ? "border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] text-[var(--flux-secondary)]"
+          : "border-[var(--flux-chrome-alpha-20)] bg-[var(--flux-chrome-alpha-08)] text-[var(--flux-text-muted)]";
+  return (
+    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${tone}`}>
+      Peso {weight}
+    </span>
+  );
+}
+
 function SubtaskProgressMini({ subtasks }: { subtasks: SubtaskItem[] }) {
   if (!subtasks.length) return null;
   const done = subtasks.filter((s) => s.status === "done").length;
@@ -462,6 +478,7 @@ function KanbanCardInner({
 
   const dragVisual = isDragging || isGhostSource;
   const sprintEmphasis = inActiveSprint && !selected;
+  const matrixWeight = typeof card.matrixWeight === "number" ? Math.max(0, Math.min(100, Math.round(card.matrixWeight))) : null;
 
   return (
     <div
@@ -737,6 +754,9 @@ function KanbanCardInner({
             <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${prioClass}`}>
               {prioLabel}
             </span>
+            {matrixWeight !== null ? (
+              <MatrixWeightBadge weight={matrixWeight} band={card.matrixWeightBand} />
+            ) : null}
           </div>
         </div>
         <div className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight mb-1.5">
