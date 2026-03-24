@@ -177,6 +177,16 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [savingBoard, setSavingBoard] = useState(false);
   /** Context menu: right-click on a node shows quick actions. */
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
+  /** Lane drag — tracks which lane is being moved vertically. */
+  const [laneDrag, setLaneDrag] = useState<{ laneId: string; startClientY: number; originY: number } | null>(null);
+  const laneDragRef = useRef<typeof laneDrag>(null);
+  /** Lane hovered — shows controls (delete/rename). */
+  const [hoveredLaneId, setHoveredLaneId] = useState<string>("");
+  /** Lane inline label editing. */
+  const [editingLaneId, setEditingLaneId] = useState<string | null>(null);
+  const [editingLaneLabelInput, setEditingLaneLabelInput] = useState("");
+  /** Palette groups collapsed state — all collapsed by default. */
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set(["events", "tasks", "gateways", "dados"]));
   /** Durante arrasto: delta em canvas; commit no pointerup. */
   const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
   const dragRafRef = useRef<number | null>(null);
@@ -190,6 +200,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   nodeDragRef.current = nodeDrag;
   const liveDragDeltaRef = useRef(liveDragDelta);
   liveDragDeltaRef.current = liveDragDelta;
+  laneDragRef.current = laneDrag;
   const panStartRef = useRef<{ x: number; y: number; originX: number; originY: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const modelRef = useRef(model);
@@ -551,6 +562,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function onCanvasPointerMove(e: PointerEvent<HTMLDivElement>) {
+    // Lane vertical drag
+    const ld = laneDragRef.current;
+    if (ld) {
+      const deltaClient = e.clientY - ld.startClientY;
+      const deltaCanvas = deltaClient / zoom;
+      const newY = Math.max(0, snap(ld.originY + deltaCanvas));
+      setModel((prev) => ({
+        ...prev,
+        lanes: prev.lanes.map((l) => l.id === ld.laneId ? { ...l, y: newY } : l),
+      }));
+      return;
+    }
     if (!isPanning || !panStartRef.current) return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
@@ -587,6 +610,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     setLiveDragDelta(null);
     setAlignGuides([]);
     setBoxSelect(null);
+    // Commit lane drag — sync nodes to updated lane positions
+    if (laneDragRef.current) {
+      setModel((prev) => {
+        const next: BpmnModel = {
+          ...prev,
+          nodes: prev.nodes.map((n) => ({ ...n, laneId: laneForY(n.y, prev.lanes) })),
+        };
+        syncCodeFromModel(next);
+        return next;
+      });
+      setLaneDrag(null);
+    }
   }
 
   function addEdge() {
@@ -1191,11 +1226,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   return (
     <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden`}>
       <header
-        className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(0,0,0,0.25)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
-        style={{ background: "linear-gradient(135deg,#1A2744 0%,#263859 100%)" }}
+        className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(13,11,26,0.55)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
+        style={{ background: "linear-gradient(135deg, var(--flux-surface-mid) 0%, var(--flux-surface-elevated) 100%)" }}
       >
         <span className={`${barlowCondensed.className} text-[22px] font-extrabold uppercase tracking-[2px] text-white`}>
-          FLUX <span className="text-[#4DB6AC]">BPMN</span>
+          FLUX <span style={{ color: "var(--flux-primary-light)" }}>BPMN</span>
         </span>
         <div className="hidden h-7 w-px bg-white/20 sm:block" />
         <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold text-white/90 sm:max-w-[min(380px,45vw)] sm:text-[14px]">{model.name}</span>
@@ -1207,7 +1242,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             id="bpmn-board-id"
             value={boardId}
             onChange={(e) => setBoardId(e.target.value)}
-            className="w-[min(140px,28vw)] rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-[12px] text-white placeholder:text-white/40 focus:border-[#4DB6AC]/80 focus:outline-none sm:w-40"
+            className="w-[min(140px,28vw)] rounded-lg border border-white/15 bg-white/8 px-2 py-1.5 text-[12px] text-white placeholder:text-white/35 focus:border-[var(--flux-primary)]/70 focus:outline-none sm:w-40"
             placeholder="Board ID"
           />
         </div>
@@ -1247,7 +1282,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             type="button"
             aria-pressed={showEdges}
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              showEdges ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              showEdges ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setShowEdges((v) => !v)}
           >
@@ -1256,7 +1291,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              legendExpanded ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              legendExpanded ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             aria-pressed={legendExpanded}
             onClick={() => setLegendExpanded((v) => !v)}
@@ -1266,7 +1301,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              presentMode ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              presentMode ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setPresentMode((v) => !v)}
           >
@@ -1309,7 +1344,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             disabled={savingBoard || !boardId.trim()}
-            className="rounded-lg border border-[#00897B] bg-[#00897B] px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-[#00695C] disabled:opacity-50"
+            className="rounded-lg border border-[var(--flux-primary)] bg-[var(--flux-primary)] px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_0_12px_rgba(108,92,231,0.35)] transition hover:bg-[var(--flux-primary-light)] disabled:opacity-50"
             onClick={async () => {
               if (!boardId.trim()) return;
               setSavingBoard(true);
@@ -1357,16 +1392,16 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
         </div>
       </header>
       <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_272px]" : "grid-cols-1 xl:grid-cols-[240px_1fr_260px]"}`}>
-        <aside className={`flex min-h-0 flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50 ${paletteCollapsed ? "p-2" : "p-3"}`}>
+        <aside className={`flex min-h-0 flex-col gap-3 overflow-y-auto rounded-xl border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-md)] ${paletteCollapsed ? "p-2" : "p-3"}`}>
           {/* Palette header */}
           <div className="flex items-center justify-between gap-2">
             {!paletteCollapsed && (
-              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Componentes</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-wide text-[var(--flux-text)]">Componentes</p>
             )}
             <button
               type="button"
               title={paletteCollapsed ? "Expandir palette" : "Recolher palette"}
-              className="ml-auto rounded border border-slate-200 bg-[#F0F2F5] px-1.5 py-0.5 text-[11px] font-bold text-[#546E7A] hover:bg-[#E0E0E0] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              className="ml-auto rounded-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--flux-text-muted)] transition hover:border-[var(--flux-primary)]/60 hover:text-[var(--flux-primary-light)]"
               onClick={() => setPaletteCollapsed((v) => !v)}
             >
               {paletteCollapsed ? "▶" : "◀"}
@@ -1402,11 +1437,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             </div>
           ) : (
             <>
-              <p className="text-[11px] leading-snug text-[#546E7A] dark:text-slate-400">
+              <p className="text-[11px] leading-snug text-[var(--flux-text-muted)]">
                 Arraste componentes para o canvas. Duplo clique no canvas para editar inline.
               </p>
 
-              {/* Groups: Eventos, Tarefas, Gateways, Dados */}
+              {/* Groups: Eventos, Atividades, Gateways, Dados — collapsible, all collapsed by default */}
               {(["events", "tasks", "gateways", "dados"] as const).map((group) => {
                 const groupItems = BPMN_STENCILS.filter((s) => s.category === group);
                 const groupLabel =
@@ -1414,67 +1449,84 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   group === "tasks"  ? "Atividades" :
                   group === "gateways" ? "Gateways" :
                   "Dados & Acessórios";
+                const isGroupCollapsed = collapsedGroups.has(group);
+                const toggleGroup = () =>
+                  setCollapsedGroups((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(group)) next.delete(group); else next.add(group);
+                    return next;
+                  });
                 return (
-                  <div key={group} className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">{groupLabel}</p>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {groupItems.map((stencil, idx) => (
-                        <button
-                          key={`${stencil.type}_${stencil.semanticVariant ?? idx}`}
-                          type="button"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("application/x-bpmn-type", stencil.type);
-                            if (stencil.semanticVariant) e.dataTransfer.setData("application/x-bpmn-variant", stencil.semanticVariant);
-                            setDraggingType(stencil.type);
-                          }}
-                          onDragEnd={() => { setDraggingType(""); setIsCanvasDropActive(false); setDragPreview(null); }}
-                          className="text-left transition hover:opacity-95"
-                          title={stencil.hint}
-                        >
-                          <div className="flex items-center gap-2.5 rounded-[10px] border border-slate-200/90 bg-white px-2.5 py-2 shadow-[0_3px_12px_rgba(26,39,68,0.06)] transition hover:border-[#00897B]/35 hover:shadow-md dark:border-slate-600 dark:bg-slate-900/70">
-                            <span className="pointer-events-none shrink-0">
-                              {stencil.category === "events" ? (
-                                <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
-                              ) : stencil.category === "gateways" ? (
-                                <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
-                              ) : stencil.category === "dados" && stencil.type === "annotation" ? (
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
-                                  <span className="text-[14px]">✎</span>
-                                </span>
-                              ) : stencil.category === "dados" && stencil.type === "system_box" ? (
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border-2 border-dashed bg-[#E8EAF6]" style={{ borderColor: "#5C6BC0" }}>
-                                  <span className="text-[12px]">⚙</span>
-                                </span>
-                              ) : stencil.category === "dados" ? (
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-300 bg-slate-50 text-[14px] dark:border-slate-600 dark:bg-slate-800">
-                                  📄
-                                </span>
-                              ) : (
-                                /* Task variants — show accent color stripe */
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-slate-200/90 bg-white shadow-sm dark:border-slate-600">
-                                  <span className="h-6 w-1.5 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} aria-hidden />
-                                </span>
-                              )}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{stencil.label}</span>
-                              <span className="mt-0.5 block truncate text-[10px] font-medium leading-snug text-[#546E7A] dark:text-slate-400">{stencil.hint}</span>
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                  <div key={group} className="rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] overflow-hidden">
+                    {/* Group header — clickable to toggle */}
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between px-2.5 py-2 text-left transition hover:bg-[var(--flux-primary)]/10"
+                      onClick={toggleGroup}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">{groupLabel}</span>
+                      <span className="text-[10px] text-[var(--flux-text-muted)] transition-transform duration-200" style={{ display: "inline-block", transform: isGroupCollapsed ? "rotate(0deg)" : "rotate(90deg)" }}>▶</span>
+                    </button>
+                    {/* Group items */}
+                    {!isGroupCollapsed && (
+                      <div className="grid grid-cols-1 gap-1 px-2 pb-2">
+                        {groupItems.map((stencil, idx) => (
+                          <button
+                            key={`${stencil.type}_${stencil.semanticVariant ?? idx}`}
+                            type="button"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("application/x-bpmn-type", stencil.type);
+                              if (stencil.semanticVariant) e.dataTransfer.setData("application/x-bpmn-variant", stencil.semanticVariant);
+                              setDraggingType(stencil.type);
+                            }}
+                            onDragEnd={() => { setDraggingType(""); setIsCanvasDropActive(false); setDragPreview(null); }}
+                            className="text-left transition hover:opacity-95"
+                            title={stencil.hint}
+                          >
+                            <div className="flex items-center gap-2.5 rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-2.5 py-2 shadow-[var(--flux-shadow-sm)] transition hover:border-[var(--flux-primary)]/40 hover:shadow-[var(--flux-shadow-md)]">
+                              <span className="pointer-events-none shrink-0">
+                                {stencil.category === "events" ? (
+                                  <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                                ) : stencil.category === "gateways" ? (
+                                  <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                                ) : stencil.category === "dados" && stencil.type === "annotation" ? (
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
+                                    <span className="text-[14px]">✎</span>
+                                  </span>
+                                ) : stencil.category === "dados" && stencil.type === "system_box" ? (
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border-2 border-dashed bg-[var(--flux-surface-elevated)]" style={{ borderColor: "var(--flux-primary)" }}>
+                                    <span className="text-[12px]">⚙</span>
+                                  </span>
+                                ) : stencil.category === "dados" ? (
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] text-[14px]">
+                                    📄
+                                  </span>
+                                ) : (
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] shadow-sm">
+                                    <span className="h-6 w-1.5 rounded-full" style={{ background: stencil.accentColor ?? "#6C5CE7" }} aria-hidden />
+                                  </span>
+                                )}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[11px] font-bold leading-tight text-[var(--flux-text)]">{stencil.label}</span>
+                                <span className="mt-0.5 block truncate text-[10px] font-medium leading-snug text-[var(--flux-text-muted)]">{stencil.hint}</span>
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
 
               {/* Swim Lanes section */}
-              <div className="space-y-2 rounded-lg border border-slate-200/80 bg-[#F0F2F5]/80 p-2.5 dark:border-slate-700 dark:bg-slate-950/40">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-500">Swim Lanes</p>
+              <div className="space-y-2 rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] p-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Swim Lanes</p>
                 <button
                   type="button"
-                  className="w-full rounded-[10px] border border-dashed border-[#00897B]/60 bg-white px-2.5 py-2 text-left shadow-sm transition hover:border-[#00897B] hover:shadow-md dark:bg-slate-900/70"
+                  className="w-full rounded-[10px] border border-dashed border-[var(--flux-primary)]/50 bg-[var(--flux-surface-card)] px-2.5 py-2 text-left shadow-sm transition hover:border-[var(--flux-primary)] hover:shadow-[var(--flux-shadow-primary-soft)]"
                   onClick={() => {
                     setModel((prev) => {
                       const idx = prev.lanes.length;
@@ -1491,22 +1543,22 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     });
                   }}
                 >
-                  <span className="flex items-center gap-2 text-[11px] font-bold text-[#00897B]">
+                  <span className="flex items-center gap-2 text-[11px] font-bold" style={{ color: "var(--flux-primary-light)" }}>
                     <span className="text-lg leading-none">+</span> Nova Swim Lane
                   </span>
-                  <span className="mt-0.5 block text-[10px] text-[#546E7A]">Arrastar nós para dentro após criar</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--flux-text-muted)]">Arrastar nós para dentro após criar</span>
                 </button>
               </div>
               {/* Connect elements section (inside expanded palette) */}
-              <div className="space-y-2 pt-1 border-t border-slate-200/80 dark:border-slate-700">
-                <p className="text-xs font-semibold text-[#546E7A] dark:text-slate-400">Conectar elementos</p>
-                <select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-800">
+              <div className="space-y-2 pt-1 border-t border-[var(--flux-border-muted)]">
+                <p className="text-xs font-semibold text-[var(--flux-text-muted)]">Conectar elementos</p>
+                <select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)} className="w-full rounded-lg border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 text-xs text-[var(--flux-text)]">
                   <option value="">Origem</option>
                   {model.nodes.map((n) => (
                     <option key={n.id} value={n.id}>{n.label}</option>
                   ))}
                 </select>
-                <select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-800">
+                <select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)} className="w-full rounded-lg border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] px-2 py-1.5 text-xs text-[var(--flux-text)]">
                   <option value="">Destino</option>
                   {model.nodes.map((n) => (
                     <option key={n.id} value={n.id}>{n.label}</option>
@@ -1693,19 +1745,133 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   "rgba(255,179,0,.04)",
                 ][i % 5];
                 const border = ["rgba(124,179,66,.2)", "rgba(0,137,123,.15)", "rgba(66,165,245,.15)", "rgba(126,87,194,.15)", "rgba(255,179,0,.15)"][i % 5];
+                const isDraggingThisLane = laneDrag?.laneId === lane.id;
+                const isHovered = hoveredLaneId === lane.id;
                 return (
                   <div
                     key={lane.id}
-                    className="pointer-events-none absolute left-1 right-1 overflow-visible rounded-md"
-                    style={{ top, height: h, border: `2px solid ${border}`, background: tint, borderRadius: 6 }}
+                    className="absolute left-1 right-1 overflow-visible rounded-md"
+                    style={{
+                      top,
+                      height: h,
+                      border: `2px solid ${isDraggingThisLane ? "rgba(56,189,248,0.6)" : border}`,
+                      background: tint,
+                      borderRadius: 6,
+                      boxShadow: isDraggingThisLane ? "0 8px 28px rgba(0,0,0,0.18)" : undefined,
+                      zIndex: isDraggingThisLane ? 5 : 1,
+                      transition: isDraggingThisLane ? "none" : "box-shadow 150ms",
+                    }}
+                    onMouseEnter={() => setHoveredLaneId(lane.id)}
+                    onMouseLeave={() => setHoveredLaneId("")}
                   >
-                    {/* Lane label — vertical, Barlow Condensed 800, uppercase */}
+                    {/* Lane label bar — drag handle */}
                     <div
-                      className={`${barlowCondensed.className} absolute bottom-0 left-0 top-0 flex w-[52px] items-center justify-center rounded-l-md text-[14px] font-extrabold uppercase text-white`}
-                      style={{ background: grad, writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "2px", textOrientation: "mixed" }}
+                      className={`${barlowCondensed.className} absolute bottom-0 left-0 top-0 flex w-[52px] select-none items-center justify-center rounded-l-md text-[14px] font-extrabold uppercase text-white`}
+                      style={{
+                        background: grad,
+                        writingMode: "vertical-rl",
+                        transform: "rotate(180deg)",
+                        letterSpacing: "2px",
+                        textOrientation: "mixed",
+                        cursor: isDraggingThisLane ? "grabbing" : "grab",
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                        setLaneDrag({ laneId: lane.id, startClientY: e.clientY, originY: top });
+                      }}
+                      onPointerMove={(e) => {
+                        if (!laneDragRef.current || laneDragRef.current.laneId !== lane.id) return;
+                        e.stopPropagation();
+                        const deltaCanvas = (e.clientY - laneDragRef.current.startClientY) / zoom;
+                        const newY = Math.max(0, snap(laneDragRef.current.originY + deltaCanvas));
+                        setModel((prev) => ({
+                          ...prev,
+                          lanes: prev.lanes.map((l) => l.id === lane.id ? { ...l, y: newY } : l),
+                        }));
+                      }}
+                      onPointerUp={(e) => {
+                        if (!laneDragRef.current || laneDragRef.current.laneId !== lane.id) return;
+                        e.stopPropagation();
+                        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                        setModel((prev) => {
+                          const next: BpmnModel = {
+                            ...prev,
+                            nodes: prev.nodes.map((n) => ({ ...n, laneId: laneForY(n.y, prev.lanes) })),
+                          };
+                          syncCodeFromModel(next);
+                          return next;
+                        });
+                        setLaneDrag(null);
+                      }}
                     >
                       {lane.label}
                     </div>
+
+                    {/* Delete button — visible on hover */}
+                    {isHovered && !isDraggingThisLane && (
+                      <button
+                        type="button"
+                        title="Excluir swim lane"
+                        className="absolute flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#EF5350] text-[11px] font-bold text-white shadow-md transition hover:bg-[#C62828] hover:scale-110"
+                        style={{ top: 6, left: 6, zIndex: 20, lineHeight: 1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModel((prev) => {
+                            const next: BpmnModel = {
+                              ...prev,
+                              lanes: prev.lanes.filter((l) => l.id !== lane.id),
+                              nodes: prev.nodes.map((n) => n.laneId === lane.id ? { ...n, laneId: undefined } : n),
+                            };
+                            syncCodeFromModel(next);
+                            return next;
+                          });
+                          setHoveredLaneId("");
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {/* Resize handle at bottom edge */}
+                    {isHovered && !isDraggingThisLane && (
+                      <div
+                        className="absolute bottom-0 left-[52px] right-0 flex h-3 cursor-ns-resize items-center justify-center"
+                        title="Arrastar para redimensionar"
+                        style={{ zIndex: 20 }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          const el = e.currentTarget as HTMLElement;
+                          el.setPointerCapture(e.pointerId);
+                          const originH = h;
+                          const startY = e.clientY;
+                          const pointerId = e.pointerId;
+                          const onMove = (ev: PointerEvent) => {
+                            const dh = (ev.clientY - startY) / zoom;
+                            const newH = Math.max(80, snap(originH + dh));
+                            setModel((prev) => ({
+                              ...prev,
+                              lanes: prev.lanes.map((l) => l.id === lane.id ? { ...l, height: newH } : l),
+                            }));
+                          };
+                          const onUp = () => {
+                            try { el.releasePointerCapture(pointerId); } catch { /* ignore */ }
+                            setModel((prev) => {
+                              const next: BpmnModel = { ...prev, nodes: prev.nodes.map((n) => ({ ...n, laneId: laneForY(n.y, prev.lanes) })) };
+                              syncCodeFromModel(next);
+                              return next;
+                            });
+                            window.removeEventListener("pointermove", onMove as EventListener);
+                            window.removeEventListener("pointerup", onUp);
+                          };
+                          window.addEventListener("pointermove", onMove as EventListener);
+                          window.addEventListener("pointerup", onUp);
+                        }}
+                      >
+                        <div className="h-1 w-10 rounded-full bg-slate-400/50" />
+                      </div>
+                    )}
+
                     {/* Tag badge */}
                     {lane.tag ? (
                       <span
