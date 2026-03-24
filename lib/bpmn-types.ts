@@ -46,6 +46,11 @@ export type BpmnNode = {
   tooltip?: string;
   /** Pain-point badge (e.g. 1, 2). */
   painBadge?: string;
+  /** Per-node appearance overrides. */
+  fontSize?: number;
+  labelColor?: string;
+  bgColor?: string;
+  borderColor?: string;
 };
 
 export type BpmnEdge = {

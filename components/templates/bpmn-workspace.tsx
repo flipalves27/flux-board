@@ -50,52 +50,42 @@ type BoxSelectState = {
   baseIds: string[];
 };
 
+/**
+ * Core palette — only what's relevant to the Reborn BPMN context.
+ * BPMN standard subtypes (user_task, service_task, etc.) are hidden by default
+ * and appear in the collapsed "Avançado" group.
+ */
 const BPMN_STENCILS: BpmnStencil[] = [
-  { type: "start_event",          label: "Start event",        hint: "Início do processo",       category: "events",  width: 88,  height: 48 },
-  { type: "intermediate_event",   label: "Intermediate event", hint: "Evento intermediário",      category: "events",  width: 96,  height: 52 },
-  { type: "timer_event",          label: "Timer event",        hint: "Controle por tempo",        category: "events",  width: 96,  height: 52 },
-  { type: "message_event",        label: "Message event",      hint: "Recebe ou envia mensagem",  category: "events",  width: 96,  height: 52 },
-  { type: "end_event",            label: "End event",          hint: "Fim do processo",           category: "events",  width: 88,  height: 48 },
-  // Tasks – 5 variantes visuais explícitas (Reborn Design System)
-  { type: "task", label: "Task — Default",    hint: "Atividade padrão (teal)",    category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
-  { type: "task", label: "Task — Reborn",     hint: "Já implementado (lime)",     category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
-  { type: "task", label: "Task — Automated",  hint: "Integração API (cyan)",      category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
-  { type: "task", label: "Task — Pain Point", hint: "Retrabalho / dor (red)",     category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
-  { type: "task", label: "Task — System",     hint: "Sistema interno (blue)",     category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
-  // Subtypes
-  { type: "user_task",     label: "User task",     hint: "Atividade humana",      category: "tasks", width: 134, height: 60 },
-  { type: "service_task",  label: "Service task",  hint: "Automação sistêmica",   category: "tasks", width: 140, height: 60 },
-  { type: "script_task",   label: "Script task",   hint: "Execução de script",    category: "tasks", width: 134, height: 60 },
-  { type: "call_activity", label: "Call activity", hint: "Reuso de subprocesso",  category: "tasks", width: 146, height: 60 },
-  { type: "sub_process",   label: "Sub process",   hint: "Agrupa macro fluxo",    category: "tasks", width: 146, height: 60 },
+  // Events (core 3)
+  { type: "start_event",   label: "Início",          hint: "Início do processo",        category: "events",  width: 44, height: 44 },
+  { type: "message_event", label: "Mensagem",         hint: "Recebe / envia mensagem",   category: "events",  width: 44, height: 44 },
+  { type: "end_event",     label: "Fim",              hint: "Fim do processo",           category: "events",  width: 44, height: 44 },
+  // Tasks – 5 variantes visuais do Reborn Design System
+  { type: "task", label: "Task — Padrão",       hint: "Tarefa manual / padrão",       category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
+  { type: "task", label: "Task — Reborn",       hint: "Já construído no Reborn",      category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
+  { type: "task", label: "Task — Automação",    hint: "Integração API / sistêmica",   category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
+  { type: "task", label: "Task — Pain Point",   hint: "Retrabalho / ponto de dor",    category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
+  { type: "task", label: "Task — Sistema",      hint: "Sistema / serviço interno",    category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
   // Gateways
-  { type: "exclusive_gateway", label: "Exclusive (XOR)", hint: "Decisão única",       category: "gateways", width: 108, height: 58 },
-  { type: "parallel_gateway",  label: "Parallel (AND)",  hint: "Execução paralela",   category: "gateways", width: 108, height: 58 },
-  { type: "inclusive_gateway", label: "Inclusive (OR)",  hint: "Uma ou mais saídas",  category: "gateways", width: 112, height: 58 },
+  { type: "exclusive_gateway", label: "XOR — Exclusivo", hint: "Decisão única (Sim/Não)",   category: "gateways", width: 56, height: 56 },
+  { type: "parallel_gateway",  label: "AND — Paralelo",  hint: "Execução paralela",         category: "gateways", width: 56, height: 56 },
+  { type: "inclusive_gateway", label: "OR — Inclusivo",  hint: "Uma ou mais saídas",        category: "gateways", width: 56, height: 56 },
   // Dados & Acessórios
-  { type: "system_box",  label: "System Box",  hint: "Sistema externo (FastFlow, I4PRO...)", category: "dados", width: 150, height: 64 },
-  { type: "annotation",  label: "Annotation",  hint: "Nota / comentário no diagrama",        category: "dados", width: 160, height: 56 },
-  { type: "data_object", label: "Data Object", hint: "Documento / artefato de dados",        category: "dados", width: 96,  height: 60 },
+  { type: "system_box",  label: "System Box",  hint: "Sistema externo (FastFlow, I4PRO, Guardian…)", category: "dados", width: 150, height: 60 },
+  { type: "annotation",  label: "Anotação",    hint: "Nota / observação no diagrama",               category: "dados", width: 160, height: 56 },
+  { type: "data_object", label: "Documento",   hint: "Artefato / documento de dados",               category: "dados", width: 96,  height: 60 },
 ];
 
 const SAMPLE_MD = `# BPMN Template
-name: Sales intake flow
+name: Fluxo AS-IS — Cadastro Tomador & Subscrição Garantia
 version: bpmn-2.0-lite
 
 ## Lanes
-- sales: Sales
-- ops: Operations
-
-## Nodes
-- start_1 | start_event | Start | (100,120) | lane:sales
-- task_qualify | task | Qualify lead | (260,120) | lane:sales
-- gw_approve | exclusive_gateway | Approved? | (430,120) | lane:ops
-- end_done | end_event | End | (590,120) | lane:ops
-
-## Edges
-- flow_1 | start_1 -> task_qualify |
-- flow_2 | task_qualify -> gw_approve |
-- flow_3 | gw_approve -> end_done | yes
+- comercial: Comercial — Reborn
+- credito: Avaliação de Crédito
+- comite: Garantia — Comitê
+- contrag: Contragarantia
+- juridico: Jurídico
 `;
 
 const GRID_SIZE = 20;
@@ -111,21 +101,122 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [xml, setXml] = useState("");
   const [model, setModel] = useState<BpmnModel>({
     version: "bpmn-2.0-lite",
-    name: "Sales intake flow",
+    name: "Fluxo AS-IS — Cadastro Tomador & Subscrição Garantia",
     lanes: [
-      { id: "sales", label: "Sales", y: 12, height: 128 },
-      { id: "ops", label: "Operations", y: 152, height: 128 },
+      { id: "comercial", label: "Comercial — Reborn",  y: 60,   height: 380, tag: "✓ JÁ CONSTRUÍDO NO REBORN", gradient: ["#558B2F","#7CB342"] },
+      { id: "credito",   label: "Avaliação de Crédito", y: 480,  height: 530, tag: "AS-IS — Subscrição / Crédito", gradient: ["#00695C","#00897B"] },
+      { id: "comite",    label: "Garantia — Comitê",   y: 1060, height: 410, tag: "AS-IS — Aprovação / Registro", gradient: ["#1565C0","#42A5F5"] },
+      { id: "contrag",   label: "Contragarantia",       y: 1510, height: 310, tag: "AS-IS — Análise CCG / Fiadores", gradient: ["#5E35B1","#7E57C2"] },
+      { id: "juridico",  label: "Jurídico",             y: 1860, height: 240, tag: "AS-IS — Formalização", gradient: ["#E65100","#FF9800"] },
     ],
     nodes: [
-      { id: "start_1", type: "start_event", label: "Start", x: 130, y: 60, laneId: "sales", width: 88, height: 48 },
-      { id: "task_1", type: "task", label: "Qualify lead", x: 300, y: 60, laneId: "sales", width: 120, height: 56 },
-      { id: "gw_1", type: "exclusive_gateway", label: "Approved?", x: 490, y: 60, laneId: "sales", width: 108, height: 56 },
-      { id: "end_1", type: "end_event", label: "End", x: 680, y: 60, laneId: "sales", width: 88, height: 48 },
+      // ── Comercial ──────────────────────────────────────────────────────────
+      { id:"c-start",  type:"start_event",       label:"Início",                   x:130,  y:205, laneId:"comercial", width:44,  height:44,  tooltip:"Início: Usuário comercial acessa a plataforma Reborn" },
+      { id:"c1",       type:"task",              label:"Informa CPF / CNPJ",       x:210,  y:180, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"1",  subtitle:"Usuário Comercial → Reborn" },
+      { id:"c2a",      type:"task",              label:"Puxa dados Receita Federal",x:470,  y:120, laneId:"comercial", width:170, height:60,  semanticVariant:"automation", stepNumber:"2",  subtitle:"API — endereço, quadro social, fiscal" },
+      { id:"c2b",      type:"task",              label:"Puxa dados Serasa",        x:470,  y:240, laneId:"comercial", width:160, height:60,  semanticVariant:"automation", stepNumber:"2b", subtitle:"API — score, pendências, protestos" },
+      { id:"c3",       type:"task",              label:"Vincula Filial Austral",   x:720,  y:120, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"3",  subtitle:"Rio de Janeiro / São Paulo" },
+      { id:"c4",       type:"task",              label:"Vincula Executivo & Produtor",x:720,y:240, laneId:"comercial", width:170, height:60,  semanticVariant:"reborn",     stepNumber:"4",  subtitle:"Integração I4PRO — produtores" },
+      { id:"c5",       type:"task",              label:"Anexa Documentos",         x:990,  y:175, laneId:"comercial", width:160, height:60,  semanticVariant:"reborn",     stepNumber:"5",  subtitle:"Contrato Social, Atas, Balanços" },
+      { id:"c6",       type:"task",              label:"Enriquecimento Cadastro",  x:1260, y:135, laneId:"comercial", width:165, height:60,  semanticVariant:"reborn",     stepNumber:"6",  subtitle:"Contatos, Conta, Comunicação" },
+      { id:"c-gw1",    type:"exclusive_gateway", label:"Demanda?",                 x:1540, y:195, laneId:"comercial", width:56,  height:56 },
+      { id:"c7a",      type:"task",              label:"Prioridade + Modalidade + IS",x:1660,y:100,laneId:"comercial", width:175, height:60,  semanticVariant:"reborn",     subtitle:"Sim, com demanda" },
+      { id:"c7b",      type:"task",              label:"Cadastro sem demanda",     x:1660, y:265, laneId:"comercial", width:160, height:60,  subtitle:"Segue fluxo padrão" },
+      { id:"c-i4pro",  type:"system_box",        label:"Integração I4PRO",         x:1960, y:150, laneId:"comercial", width:150, height:60,  subtitle:"Status: Cadastro Preliminar" },
+      { id:"c-email",  type:"task",              label:"Envia Planilha Crédito",   x:2220, y:260, laneId:"comercial", width:165, height:60,  semanticVariant:"pain",       stepNumber:"!", subtitle:"E-mail → Subscrição" },
+      // ── Avaliação de Crédito ───────────────────────────────────────────────
+      { id:"cr-start",   type:"message_event",     label:"E-mail recebido",           x:155,  y:660, laneId:"credito", width:44,  height:44,  tooltip:"Recebimento do e-mail de cadastro/recadastro na caixa monitorada" },
+      { id:"cr-ff1",     type:"system_box",        label:"FastFlow",                  x:290,  y:610, laneId:"credito", width:140, height:56,  subtitle:"Monitora caixa de e-mail" },
+      { id:"cr-capture", type:"task",              label:"Captura dados → SharePoint",x:340,  y:690, laneId:"credito", width:175, height:60,  semanticVariant:"system",     stepNumber:"A", subtitle:"Status inicial: Backlog" },
+      { id:"cr-assume",  type:"task",              label:"Subscritor assume análise", x:620,  y:655, laneId:"credito", width:165, height:60,  stepNumber:"B", subtitle:"Nome → Status: Em Análise" },
+      { id:"cr-pasta",   type:"task",              label:"Consulta pasta tomador",    x:650,  y:780, laneId:"credito", width:160, height:60,  stepNumber:"C", subtitle:"SharePoint Subscrição" },
+      { id:"cr-gw1",     type:"exclusive_gateway", label:"Docs completos?",           x:940,  y:695, laneId:"credito", width:56,  height:56 },
+      { id:"cr-pend",    type:"task",              label:"Solicita docs faltantes",   x:1060, y:600, laneId:"credito", width:160, height:60,  semanticVariant:"pain",       painBadge:"1", subtitle:"Responde e-mail → Comercial" },
+      { id:"cr-serasa",  type:"task",              label:"Analisa Serasa",            x:1060, y:755, laneId:"credito", width:160, height:60,  stepNumber:"D", subtitle:"Score, inadimplência, protestos" },
+      { id:"cr-score",   type:"task",              label:"Preenche Planilha Score",   x:1340, y:660, laneId:"credito", width:170, height:60,  semanticVariant:"pain",       stepNumber:"E", painBadge:"4", subtitle:"Rating interno, limite máx" },
+      { id:"cr-gw2",     type:"exclusive_gateway", label:"Dados OK?",                 x:1630, y:705, laneId:"credito", width:56,  height:56 },
+      { id:"cr-quest",   type:"task",              label:"Questionamento → Comercial",x:1750, y:610, laneId:"credito", width:170, height:60,  subtitle:"Status: Aguardando resposta" },
+      { id:"cr-comite",  type:"task",              label:"E-mail Comitê (Alçada)",    x:1750, y:775, laneId:"credito", width:165, height:60,  stepNumber:"F", subtitle:"Conforme política de alçadas" },
+      { id:"cr-ff2",     type:"system_box",        label:"FastFlow",                  x:1750, y:895, laneId:"credito", width:140, height:56,  subtitle:"Atualiza → Em Comitê" },
+      { id:"cr-ann1",    type:"annotation",        label:"⚠ Retrabalho: dados Serasa re-digitados manualmente na planilha de score", x:1340, y:870, laneId:"credito", width:210, height:56 },
+      { id:"cr-ann2",    type:"annotation",        label:"Se demora alinhamento → Status: Road (discussão interna)", x:1560, y:895, laneId:"credito", width:185, height:52 },
+      // ── Comitê / Aprovação ─────────────────────────────────────────────────
+      { id:"ap-start",  type:"message_event",     label:"E-mail comitê",            x:155,  y:1268, laneId:"comite", width:44,  height:44,  tooltip:"Recepção do e-mail de comitê pela alçada responsável" },
+      { id:"ap-alcada", type:"task",              label:"Avaliação pela Alçada",    x:260,  y:1252, laneId:"comite", width:165, height:60,  stepNumber:"G", subtitle:"Comitê de Crédito" },
+      { id:"ap-gw",     type:"exclusive_gateway", label:"Aprovado?",                x:530,  y:1268, laneId:"comite", width:56,  height:56 },
+      { id:"ap-ok",     type:"task",              label:"Resultado: Aprovado",      x:660,  y:1165, laneId:"comite", width:160, height:60,  semanticVariant:"reborn",  stepNumber:"✓", subtitle:"E-mail resultado → FastFlow" },
+      { id:"ap-neg",    type:"task",              label:"Resultado: Negado",        x:660,  y:1345, laneId:"comite", width:160, height:60,  semanticVariant:"pain",    stepNumber:"✗", subtitle:"+ Justificativa obrigatória" },
+      { id:"ap-i4pro",  type:"task",              label:"Registra Follow-up I4PRO", x:920,  y:1165, laneId:"comite", width:165, height:60,  semanticVariant:"pain",    painBadge:"2", subtitle:"Copia corpo do e-mail" },
+      { id:"ap-guard",  type:"task",              label:"Preenche Guardian",        x:1180, y:1165, laneId:"comite", width:165, height:60,  semanticVariant:"pain",    painBadge:"3", subtitle:"Limites, rating, modalidades" },
+      { id:"ap-notif",  type:"task",              label:"Notifica Comercial",       x:1440, y:1165, laneId:"comite", width:160, height:60,  stepNumber:"H", subtitle:"Resultado final" },
+      { id:"ap-ff",     type:"system_box",        label:"FastFlow → SharePoint",    x:920,  y:1345, laneId:"comite", width:160, height:56,  subtitle:"Status final atualizado" },
+      { id:"ap-ann",    type:"annotation",        label:"⚠ RETRABALHO TRIPLO: mesmos dados em E-mail + I4PRO + Guardian + SharePoint", x:1180, y:1320, laneId:"comite", width:220, height:52 },
+      // ── Contragarantia ─────────────────────────────────────────────────────
+      { id:"cg-anal", type:"task",              label:"Análise Contragarantia",  x:260, y:1615, laneId:"contrag", width:160, height:60, stepNumber:"I", subtitle:"CCG, fiadores, garantias" },
+      { id:"cg-gw",   type:"exclusive_gateway", label:"Suficiente?",            x:530, y:1628, laneId:"contrag", width:56,  height:56 },
+      { id:"cg-adj",  type:"task",              label:"Solicita ajustes",       x:660, y:1545, laneId:"contrag", width:160, height:60, subtitle:"→ Retorno ao Comercial" },
+      { id:"cg-min",  type:"task",              label:"Gera Minuta / Doc CCS",  x:660, y:1695, laneId:"contrag", width:165, height:60, semanticVariant:"reborn", stepNumber:"J", subtitle:"Para formalização" },
+      // ── Jurídico ───────────────────────────────────────────────────────────
+      { id:"jr-form", type:"task",      label:"Formalização Jurídica",  x:260, y:1955, laneId:"juridico", width:160, height:60, stepNumber:"K", subtitle:"I4PRO / CCS" },
+      { id:"jr-arq",  type:"task",      label:"Arquivo Documentação",   x:530, y:1955, laneId:"juridico", width:160, height:60, stepNumber:"L", subtitle:"I4PRO + CRM APRO" },
+      { id:"jr-end",  type:"end_event", label:"Fim",                    x:810, y:1970, laneId:"juridico", width:44,  height:44,  tooltip:"Tomador apto para emissão no I4PRO" },
+      { id:"jr-ann",  type:"annotation",label:"✓ Tomador apto para emissão no I4PRO", x:876, y:1962, laneId:"juridico", width:200, height:44 },
     ],
     edges: [
-      { id: "flow_1", sourceId: "start_1", targetId: "task_1" },
-      { id: "flow_2", sourceId: "task_1", targetId: "gw_1" },
-      { id: "flow_3", sourceId: "gw_1", targetId: "end_1", label: "yes" },
+      // Comercial
+      { id:"f-c0",     sourceId:"c-start",  targetId:"c1",       kind:"primary" },
+      { id:"f-c1a",    sourceId:"c1",       targetId:"c2a",      kind:"primary" },
+      { id:"f-c1b",    sourceId:"c1",       targetId:"c2b",      kind:"primary" },
+      { id:"f-c2a3",   sourceId:"c2a",      targetId:"c3",       kind:"primary" },
+      { id:"f-c2b4",   sourceId:"c2b",      targetId:"c4",       kind:"primary" },
+      { id:"f-c35",    sourceId:"c3",       targetId:"c5",       kind:"primary" },
+      { id:"f-c45",    sourceId:"c4",       targetId:"c5",       kind:"primary" },
+      { id:"f-c56",    sourceId:"c5",       targetId:"c6",       kind:"primary" },
+      { id:"f-c6gw",   sourceId:"c6",       targetId:"c-gw1",    kind:"primary" },
+      { id:"f-gw7a",   sourceId:"c-gw1",    targetId:"c7a",      kind:"primary", label:"Sim" },
+      { id:"f-gw7b",   sourceId:"c-gw1",    targetId:"c7b",      label:"Não" },
+      { id:"f-7ai4",   sourceId:"c7a",      targetId:"c-i4pro",  kind:"primary" },
+      { id:"f-7bi4",   sourceId:"c7b",      targetId:"c-i4pro" },
+      { id:"f-i4-em",  sourceId:"c-i4pro",  targetId:"c-email",  kind:"cross_lane" },
+      // Comercial → Crédito
+      { id:"f-em-cr",  sourceId:"c-email",  targetId:"cr-start", kind:"cross_lane" },
+      // Crédito
+      { id:"f-cr0a",   sourceId:"cr-start", targetId:"cr-ff1",     kind:"system" },
+      { id:"f-cr0b",   sourceId:"cr-start", targetId:"cr-capture", kind:"system" },
+      { id:"f-crca",   sourceId:"cr-capture",targetId:"cr-assume" },
+      { id:"f-cras",   sourceId:"cr-assume",targetId:"cr-pasta" },
+      { id:"f-crpg",   sourceId:"cr-pasta", targetId:"cr-gw1" },
+      { id:"f-crag",   sourceId:"cr-assume",targetId:"cr-gw1" },
+      { id:"f-gw1p",   sourceId:"cr-gw1",   targetId:"cr-pend",   kind:"rework",    label:"Não" },
+      { id:"f-pbk",    sourceId:"cr-pend",   targetId:"c-email",   kind:"rework",    label:"Retorno Comercial" },
+      { id:"f-gw1s",   sourceId:"cr-gw1",   targetId:"cr-serasa", label:"Sim" },
+      { id:"f-crss",   sourceId:"cr-serasa", targetId:"cr-score" },
+      { id:"f-scgw2",  sourceId:"cr-score",  targetId:"cr-gw2" },
+      { id:"f-gw2q",   sourceId:"cr-gw2",   targetId:"cr-quest",  kind:"rework",    label:"Não" },
+      { id:"f-gw2c",   sourceId:"cr-gw2",   targetId:"cr-comite", kind:"cross_lane",label:"Sim" },
+      { id:"f-cff2",   sourceId:"cr-comite", targetId:"cr-ff2",    kind:"system" },
+      // Crédito → Comitê
+      { id:"f-cr-ap",  sourceId:"cr-comite", targetId:"ap-start", kind:"cross_lane" },
+      // Comitê
+      { id:"f-ap0a",   sourceId:"ap-start", targetId:"ap-alcada" },
+      { id:"f-apag",   sourceId:"ap-alcada",targetId:"ap-gw" },
+      { id:"f-apgs",   sourceId:"ap-gw",    targetId:"ap-ok",     kind:"primary",  label:"Sim" },
+      { id:"f-apgn",   sourceId:"ap-gw",    targetId:"ap-neg",    kind:"rework",   label:"Não" },
+      { id:"f-apoi",   sourceId:"ap-ok",    targetId:"ap-i4pro" },
+      { id:"f-apig",   sourceId:"ap-i4pro", targetId:"ap-guard" },
+      { id:"f-apgn2",  sourceId:"ap-guard", targetId:"ap-notif" },
+      { id:"f-apnf",   sourceId:"ap-neg",   targetId:"ap-ff" },
+      // Comitê → Contragarantia
+      { id:"f-ap-cg",  sourceId:"ap-notif", targetId:"cg-anal",  kind:"cross_lane" },
+      // Contragarantia
+      { id:"f-cgag",   sourceId:"cg-anal",  targetId:"cg-gw" },
+      { id:"f-cgga",   sourceId:"cg-gw",    targetId:"cg-adj",   kind:"rework",   label:"Não" },
+      { id:"f-cggm",   sourceId:"cg-gw",    targetId:"cg-min",   kind:"primary",  label:"Sim" },
+      // Contragarantia → Jurídico
+      { id:"f-cg-jr",  sourceId:"cg-min",   targetId:"jr-form",  kind:"cross_lane" },
+      // Jurídico
+      { id:"f-jrfa",   sourceId:"jr-form",  targetId:"jr-arq" },
+      { id:"f-jrae",   sourceId:"jr-arq",   targetId:"jr-end" },
     ],
   });
   const [issues, setIssues] = useState<Array<{ severity: "error" | "warning"; message: string }>>([]);
@@ -134,8 +225,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [edgeFrom, setEdgeFrom] = useState<string>("");
   const [edgeTo, setEdgeTo] = useState<string>("");
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(0.55);
+  const [pan, setPan] = useState({ x: 30, y: 15 });
   const [isPanning, setIsPanning] = useState(false);
   const [connectingFromId, setConnectingFromId] = useState<string>("");
   const [connectPreview, setConnectPreview] = useState<{ x: number; y: number } | null>(null);
@@ -166,6 +257,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [paletteCollapsed, setPaletteCollapsed] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [savingBoard, setSavingBoard] = useState(false);
+  /** Context menu: right-click on a node shows quick actions. */
+  const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
   /** Durante arrasto: delta em canvas; commit no pointerup. */
   const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
   const dragRafRef = useRef<number | null>(null);
@@ -496,10 +589,27 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   function onCanvasWheel(e: WheelEvent<HTMLDivElement>) {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 0.92 : 1.08;
-    setZoom((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Number((prev * factor).toFixed(2)))));
+    // Zoom toward mouse cursor (focal-point zoom, same as reference HTML)
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) {
+      setZoom((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Number((prev * factor).toFixed(2)))));
+      return;
+    }
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    setZoom((prev) => {
+      const ns = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev * factor));
+      setPan((p) => ({
+        x: mx - (mx - p.x) * (ns / prev),
+        y: my - (my - p.y) * (ns / prev),
+      }));
+      return ns;
+    });
   }
 
   function onCanvasPointerDown(e: PointerEvent<HTMLDivElement>) {
+    // Dismiss context menu on any canvas click
+    if (contextMenu) { setContextMenu(null); }
     if (e.button === 1 || e.altKey) {
       e.preventDefault();
       setIsPanning(true);
@@ -1098,6 +1208,44 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
       if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "s") {
         ev.preventDefault();
         setSnapEnabled((v) => !v);
+      }
+      // Font size shortcuts: [ to decrease, ] to increase for selected node
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key === "[" || ev.key === "]")) {
+        const nodeId = selectedNodeId || (selectedNodeIds.length === 1 ? selectedNodeIds[0] : "");
+        if (!nodeId) return;
+        ev.preventDefault();
+        setModel((prev) => {
+          const next: BpmnModel = {
+            ...prev,
+            nodes: prev.nodes.map((n) => {
+              if (n.id !== nodeId) return n;
+              const current = n.fontSize ?? 13;
+              const next = ev.key === "[" ? Math.max(8, current - 1) : Math.min(32, current + 1);
+              return { ...n, fontSize: next };
+            }),
+          };
+          syncCodeFromModel(next);
+          return next;
+        });
+        return;
+      }
+      // Zoom with +/- keys (no modifier needed)
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key === "+" || ev.key === "=")) {
+        ev.preventDefault();
+        setZoom((z) => Math.min(MAX_ZOOM, z + ZOOM_STEP));
+        return;
+      }
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key === "-") {
+        ev.preventDefault();
+        setZoom((z) => Math.max(MIN_ZOOM, z - ZOOM_STEP));
+        return;
+      }
+      // Reset view with R key
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.shiftKey && ev.key.toLowerCase() === "r") {
+        ev.preventDefault();
+        setZoom(0.55);
+        setPan({ x: 30, y: 15 });
+        return;
       }
     };
 
@@ -1821,6 +1969,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     if (connectingFromId) return;
                     if (e.button !== 0) return;
                     e.stopPropagation();
+                    // Use pointer capture so drag never loses track of the pointer
+                    (e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId);
                     const coords = toCanvasCoords(e.clientX, e.clientY);
                     if (!coords) return;
                     const baseSelection =
@@ -1874,14 +2024,43 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     setConnectingFromId("");
                     setConnectPreview(null);
                   }}
-                  className={`absolute px-2 py-1 text-left text-[11px] ${
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY });
+                    setSelectedNodeId(node.id);
+                    setSelectedNodeIds([node.id]);
+                  }}
+                  className={`absolute px-2 py-1 text-left text-[11px] select-none touch-none ${
                     isDraggingThis
-                      ? "scale-[1.06] opacity-90 transition-none will-change-[left,top] z-[1000]"
-                      : "transition-[left,top,transform,box-shadow] duration-150 ease-out hover:scale-[1.04] hover:z-[100]"
+                      ? "z-[1000] cursor-grabbing"
+                      : "cursor-grab hover:z-[100]"
                   } ${
-                    selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]" : ""
+                    selectedNodeSet.has(node.id) || selectedNodeId === node.id
+                      ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]"
+                      : ""
                   }`}
-                  style={{ left: pe.x, top: pe.y, width: node.width ?? 110, height: node.height ?? 54, boxShadow: isDraggingThis ? "0 8px 28px rgba(26,39,68,0.18)" : "0 3px 12px rgba(26,39,68,0.10)" }}
+                  style={{
+                    left: pe.x,
+                    top: pe.y,
+                    width: node.width ?? 110,
+                    height: node.height ?? 54,
+                    willChange: isDraggingThis ? "transform, left, top" : "auto",
+                    transform: isDraggingThis
+                      ? "scale(1.06)"
+                      : selectedNodeSet.has(node.id) || selectedNodeId === node.id
+                        ? "scale(1.02)"
+                        : "scale(1)",
+                    opacity: isDraggingThis ? 0.9 : 1,
+                    transition: isDraggingThis
+                      ? "transform 80ms ease-out, opacity 80ms ease-out"
+                      : "transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease",
+                    boxShadow: isDraggingThis
+                      ? "0 12px 36px rgba(26,39,68,0.22), 0 4px 12px rgba(26,39,68,0.12)"
+                      : selectedNodeSet.has(node.id) || selectedNodeId === node.id
+                        ? "0 4px 16px rgba(0,137,123,0.20)"
+                        : "0 3px 12px rgba(26,39,68,0.10)",
+                  }}
                   title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
                   {isTaskLikeType(node.type) ? (
@@ -1890,8 +2069,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       <span
                         className="pointer-events-none absolute inset-0 rounded-[10px]"
                         style={{
-                          borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
-                          backgroundColor: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
+                          borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
+                          backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
                           borderTop: "1px solid rgba(0,0,0,0.06)",
                           borderRight: "1px solid rgba(0,0,0,0.06)",
                           borderBottom: "1px solid rgba(0,0,0,0.06)",
@@ -1920,7 +2099,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         </span>
                       ) : null}
                       {/* Label (.lb) */}
-                      <span className="pointer-events-none relative z-[1] block px-2 pt-2 text-center text-[13px] font-bold leading-snug text-[#1A2744] dark:text-slate-100">
+                      <span
+                        className="pointer-events-none relative z-[1] block px-2 pt-2 text-center font-bold leading-snug dark:text-slate-100"
+                        style={{ fontSize: node.fontSize ?? 13, color: node.labelColor ?? "#1A2744" }}
+                      >
                         {node.label}
                       </span>
                       {/* Sublabel (.sb) */}
@@ -1933,30 +2115,50 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   ) : getBpmnVisualSpec(node.type).shape === "circle" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-0.5">
                       <RebornEventGlyph nodeType={node.type} />
-                      <span className="max-w-[min(168px,100%)] text-center text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{node.label}</span>
+                      <span
+                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight dark:text-slate-100"
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                      >{node.label}</span>
                     </div>
                   ) : getBpmnVisualSpec(node.type).shape === "diamond" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
                       <RebornGatewayGlyph nodeType={node.type} />
-                      <span className="max-w-[min(168px,100%)] text-center text-[11px] font-bold leading-tight text-[#1A2744] dark:text-slate-100">{node.label}</span>
+                      <span
+                        className="max-w-[min(168px,100%)] text-center font-bold leading-tight dark:text-slate-100"
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                      >{node.label}</span>
                     </div>
                   ) : node.type === "annotation" ? (
                     /* Annotation: bg #FFFDE7, border-left 4px solid #FFB300 */
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col justify-center px-3"
-                      style={{ background: "#FFFDE7", borderLeft: "4px solid #FFB300", borderRadius: "0 10px 10px 0" }}
+                      style={{
+                        background: node.bgColor ?? "#FFFDE7",
+                        borderLeft: `4px solid ${node.borderColor ?? "#FFB300"}`,
+                        borderRadius: "0 10px 10px 0",
+                      }}
                     >
-                      <span className="text-[11px] font-semibold leading-snug text-[#1A2744]">{node.label || "Anotação"}</span>
+                      <span
+                        className="font-semibold leading-snug"
+                        style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "#1A2744" }}
+                      >{node.label || "Anotação"}</span>
                       {node.subtitle && <span className="mt-0.5 text-[10px] text-[#546E7A]">{node.subtitle}</span>}
                     </div>
                   ) : node.type === "system_box" ? (
                     /* System Box: bg #E8EAF6, border 2px dashed #5C6BC0 */
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-3"
-                      style={{ background: "#E8EAF6", border: "2px dashed #5C6BC0", borderRadius: 10 }}
+                      style={{
+                        background: node.bgColor ?? "#E8EAF6",
+                        border: `2px dashed ${node.borderColor ?? "#5C6BC0"}`,
+                        borderRadius: 10,
+                      }}
                     >
                       <span className="text-[14px]">⚙</span>
-                      <span className="text-center text-[12px] font-bold leading-tight" style={{ color: "#3949AB" }}>{node.label || "Sistema"}</span>
+                      <span
+                        className="text-center font-bold leading-tight"
+                        style={{ fontSize: node.fontSize ?? 12, color: node.labelColor ?? "#3949AB" }}
+                      >{node.label || "Sistema"}</span>
                       {node.subtitle && <span className="text-center text-[10px]" style={{ color: "#7986CB" }}>{node.subtitle}</span>}
                     </div>
                   ) : (
@@ -2331,6 +2533,98 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   </div>
                 </>
               ) : null}
+              {/* Aparência — fonte e cores */}
+              <div className="rounded-lg border border-slate-200/80 bg-slate-50/80 p-2.5 space-y-2.5 dark:border-slate-700 dark:bg-slate-950/40">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#546E7A]">Aparência <span className="ml-1 font-normal normal-case text-[#90A4AE]">[/] = tam. fonte · clique na cor</span></p>
+                {/* Font size stepper */}
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] text-[var(--flux-text-muted)] w-20 shrink-0">Tam. fonte</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      title="Diminuir fonte ([)"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800"
+                      onClick={() => updateSelectedNode({ fontSize: Math.max(8, (selectedNode.fontSize ?? 13) - 1) })}
+                    >−</button>
+                    <span className="w-8 text-center text-[11px] font-mono font-bold text-[#1A2744] dark:text-slate-100">
+                      {selectedNode.fontSize ?? 13}
+                    </span>
+                    <button
+                      type="button"
+                      title="Aumentar fonte (])"
+                      className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800"
+                      onClick={() => updateSelectedNode({ fontSize: Math.min(32, (selectedNode.fontSize ?? 13) + 1) })}
+                    >+</button>
+                    {selectedNode.fontSize !== undefined && (
+                      <button type="button" className="ml-1 text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ fontSize: undefined })}>↺</button>
+                    )}
+                  </div>
+                </div>
+                {/* Label color */}
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] text-[var(--flux-text-muted)] w-20 shrink-0">Cor do texto</label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={selectedNode.labelColor ?? "#1A2744"}
+                      onChange={(e) => updateSelectedNode({ labelColor: e.target.value })}
+                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      title="Cor do texto (Ctrl+Shift+T)"
+                    />
+                    <div className="flex gap-1">
+                      {["#1A2744","#FFFFFF","#00897B","#EF5350","#42A5F5"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ labelColor: c })} />
+                      ))}
+                    </div>
+                    {selectedNode.labelColor !== undefined && (
+                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ labelColor: undefined })}>↺</button>
+                    )}
+                  </div>
+                </div>
+                {/* Background color */}
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] text-[var(--flux-text-muted)] w-20 shrink-0">Cor de fundo</label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={selectedNode.bgColor ?? "#FFFFFF"}
+                      onChange={(e) => updateSelectedNode({ bgColor: e.target.value })}
+                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      title="Cor de fundo"
+                    />
+                    <div className="flex gap-1">
+                      {["#FFFFFF","#F1F8E9","#E0F7FA","#FFEBEE","#E3F2FD","#FFFDE7"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ bgColor: c })} />
+                      ))}
+                    </div>
+                    {selectedNode.bgColor !== undefined && (
+                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ bgColor: undefined })}>↺</button>
+                    )}
+                  </div>
+                </div>
+                {/* Border / accent color */}
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] text-[var(--flux-text-muted)] w-20 shrink-0">Cor da borda</label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={selectedNode.borderColor ?? "#00897B"}
+                      onChange={(e) => updateSelectedNode({ borderColor: e.target.value })}
+                      className="h-7 w-10 cursor-pointer rounded border border-slate-200 p-0.5 dark:border-slate-600"
+                      title="Cor da borda / acento"
+                    />
+                    <div className="flex gap-1">
+                      {["#00897B","#7CB342","#00ACC1","#EF5350","#42A5F5","#FFB300"].map((c) => (
+                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-white shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ borderColor: c })} />
+                      ))}
+                    </div>
+                    {selectedNode.borderColor !== undefined && (
+                      <button type="button" className="text-[10px] text-[#90A4AE] hover:text-[#EF5350]" title="Resetar" onClick={() => updateSelectedNode({ borderColor: undefined })}>↺</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <label className="text-[11px] text-[var(--flux-text-muted)]">Dica (tooltip)</label>
                 <textarea
@@ -2460,6 +2754,64 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
         </div>
       )}
       <BoardTemplateExportModal open={openPublish} onClose={() => setOpenPublish(false)} boardId={boardId} getHeaders={getHeaders} defaultTemplateKind="bpmn" />
+
+      {/* ── Context Menu ────────────────────────────────────────────────── */}
+      {contextMenu && (() => {
+        const cmNode = model.nodes.find((n) => n.id === contextMenu.nodeId);
+        if (!cmNode) return null;
+        return (
+          <>
+            {/* backdrop to close */}
+            <div className="fixed inset-0 z-[1990]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+            <div
+              className="fixed z-[2000] min-w-[200px] overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_8px_28px_rgba(26,39,68,0.18)] dark:border-slate-700 dark:bg-slate-900"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-700">
+                <p className="text-[11px] font-bold text-[#1A2744] dark:text-slate-100 truncate max-w-[180px]">{cmNode.label}</p>
+                <p className="text-[10px] text-[#546E7A]">{cmNode.type}</p>
+              </div>
+              <div className="py-1">
+                {[
+                  { label: "Editar inline", icon: "✎", action: () => { setInlineEditNodeId(cmNode.id); setInlineTitle(cmNode.label); setInlineDesc(cmNode.subtitle ?? ""); setEditingLabel(cmNode.label); } },
+                  { label: "Duplicar  Ctrl+D", icon: "⿻", action: () => {
+                    setModel((prev) => {
+                      const clone = { ...cmNode, id: `${cmNode.type}_${Math.random().toString(36).slice(2,7)}`, x: cmNode.x + 40, y: cmNode.y + 40, label: `${cmNode.label} cópia` };
+                      const next: BpmnModel = { ...prev, nodes: [...prev.nodes, clone] };
+                      syncCodeFromModel(next);
+                      setSelectedNodeId(clone.id); setSelectedNodeIds([clone.id]);
+                      return next;
+                    });
+                  }},
+                  { label: "Tamanho fonte  [ ]", icon: "A", action: () => {} },
+                  { label: "Aumentar fonte", icon: "+", action: () => { updateSelectedNode({ fontSize: Math.min(32, (cmNode.fontSize ?? 13) + 1) }); } },
+                  { label: "Diminuir fonte", icon: "−", action: () => { updateSelectedNode({ fontSize: Math.max(8, (cmNode.fontSize ?? 13) - 1) }); } },
+                  { label: "Remover", icon: "🗑", danger: true, action: () => {
+                    setModel((prev) => {
+                      const next: BpmnModel = { ...prev, nodes: prev.nodes.filter((n) => n.id !== cmNode.id), edges: prev.edges.filter((e) => e.sourceId !== cmNode.id && e.targetId !== cmNode.id) };
+                      syncCodeFromModel(next);
+                      setSelectedNodeId(""); setSelectedNodeIds([]);
+                      return next;
+                    });
+                  }},
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[12px] font-medium transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                      (item as { danger?: boolean }).danger ? "text-[#EF5350]" : "text-[#1A2744] dark:text-slate-100"
+                    }`}
+                    onClick={() => { (item as { action: () => void }).action(); setContextMenu(null); }}
+                  >
+                    <span className="w-4 text-center text-[13px]">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
