@@ -11,7 +11,9 @@ const EV = {
   timer: { bg: "#E1F5FE", border: "#039BE5", fg: "#0277BD", glyph: "⏱" as const },
 };
 
-function eventPalette(t: BpmnNodeType): (typeof EV)["start"] {
+type EventPaletteStyle = (typeof EV)[keyof typeof EV];
+
+function eventPalette(t: BpmnNodeType): EventPaletteStyle {
   if (t === "start_event") return EV.start;
   if (t === "end_event") return EV.end;
   if (t === "message_event") return EV.msg;
