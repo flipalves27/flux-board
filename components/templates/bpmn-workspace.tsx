@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type WheelEvent, type PointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type WheelEvent, type PointerEvent } from "react";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
+import { BPMN_VISUAL_STATE_TOKENS, BPMN_VISUAL_TOKENS, getBpmnVisualSpec } from "@/lib/bpmn-visual-system";
+import { renderBpmnIcon } from "@/lib/bpmn-icon-render";
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -154,97 +156,46 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
 
   const canPublish = useMemo(() => isAdmin && boardId.trim().length > 0 && !!model, [isAdmin, boardId, model]);
 
-  function nodeStyle(type: string): string {
-    if (type === "start_event") return "border-emerald-400/50 bg-emerald-500/20";
-    if (type === "end_event") return "border-rose-400/50 bg-rose-500/20";
-    if (type === "intermediate_event" || type === "timer_event" || type === "message_event") return "border-fuchsia-400/55 bg-fuchsia-500/20";
-    if (type === "exclusive_gateway") return "border-amber-400/50 bg-amber-500/20";
-    if (type === "parallel_gateway") return "border-sky-400/50 bg-sky-500/20";
-    if (type === "inclusive_gateway") return "border-violet-400/60 bg-violet-500/20";
-    if (type === "service_task" || type === "script_task") return "border-cyan-400/55 bg-cyan-500/20";
-    if (type === "user_task" || type === "call_activity" || type === "sub_process") return "border-indigo-400/55 bg-indigo-500/20";
-    return "border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-15)]";
+  function colorWithAlpha(hex: string, alpha: number): string {
+    const normalized = hex.replace("#", "");
+    if (normalized.length !== 6) return hex;
+    const r = Number.parseInt(normalized.slice(0, 2), 16);
+    const g = Number.parseInt(normalized.slice(2, 4), 16);
+    const b = Number.parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  function isGatewayType(type: string): boolean {
-    return type.includes("gateway");
+  function paletteForType(type: string): string {
+    const spec = getBpmnVisualSpec(type);
+    const key = spec.colorToken as keyof typeof BPMN_VISUAL_TOKENS.semanticPalette;
+    return BPMN_VISUAL_TOKENS.semanticPalette[key] ?? BPMN_VISUAL_TOKENS.semanticPalette.task;
   }
 
-  function isEventType(type: string): boolean {
-    return type.includes("event");
+  function shapeClass(type: string): string {
+    const { shape } = getBpmnVisualSpec(type);
+    if (shape === "diamond") return "rotate-45 rounded-[4px]";
+    if (shape === "circle") return "rounded-full";
+    if (shape === "document") return "rounded-[2px]";
+    return "rounded-[var(--flux-rad)]";
   }
 
-  function markerSvg(type: string): ReactNode {
-    if (type === "timer_event") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <circle cx="12" cy="13" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <line x1="12" y1="13" x2="12" y2="9.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="12" y1="13" x2="15" y2="14.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="9.2" y1="4.4" x2="14.8" y2="4.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    if (type === "message_event") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <rect x="5" y="7" width="14" height="10" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M5.8 8 L12 12.7 L18.2 8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    }
-    if (type === "start_event") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <polygon points="9,7 17,12 9,17" fill="currentColor" />
-        </svg>
-      );
-    }
-    if (type === "end_event") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3 h-3 opacity-95" aria-hidden>
-          <rect x="7.5" y="7.5" width="9" height="9" fill="currentColor" />
-        </svg>
-      );
-    }
-    if (type === "exclusive_gateway") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <path d="M8 8 L16 16 M16 8 L8 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    if (type === "parallel_gateway") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <path d="M12 7 L12 17 M7 12 L17 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    if (type === "inclusive_gateway") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    }
-    if (type === "service_task") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M12 5.5v2.1M12 16.4v2.1M5.5 12h2.1M16.4 12h2.1M7.6 7.6l1.5 1.5M14.9 14.9l1.5 1.5M16.4 7.6l-1.5 1.5M9.1 14.9l-1.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    if (type === "user_task") {
-      return (
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 opacity-95" aria-hidden>
-          <circle cx="12" cy="9" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M7.5 17.2c1.2-2.3 2.8-3.5 4.5-3.5s3.3 1.2 4.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    return null;
+  function isRotatedShape(type: string): boolean {
+    return getBpmnVisualSpec(type).shape === "diamond";
+  }
+
+  function nodeStyle(type: string, state: "default" | "selected" = "default"): CSSProperties {
+    const spec = getBpmnVisualSpec(type);
+    const stateToken = state === "selected" ? BPMN_VISUAL_STATE_TOKENS.selected : BPMN_VISUAL_STATE_TOKENS.default;
+    const baseColor = state === "selected" ? BPMN_VISUAL_TOKENS.semanticPalette.selected : paletteForType(type);
+    const borderWidth =
+      spec.borderStyle === "thick" ? BPMN_VISUAL_TOKENS.strokeEmphasis : BPMN_VISUAL_TOKENS.stroke * stateToken.strokeScale;
+    return {
+      borderColor: colorWithAlpha(baseColor, 0.78),
+      backgroundColor: colorWithAlpha(baseColor, 0.18),
+      borderWidth,
+      borderStyle: spec.borderStyle === "double" ? "double" : "solid",
+      opacity: stateToken.opacity,
+    };
   }
 
   function cloneModel(source: BpmnModel): BpmnModel {
@@ -1014,18 +965,19 @@ ${edges}
                       setIsCanvasDropActive(false);
                       setDragPreview(null);
                     }}
-                    className={`text-[11px] px-2 py-2 rounded-[var(--flux-rad)] border text-left transition hover:translate-x-0.5 hover:border-white/25 ${nodeStyle(stencil.type)}`}
+                    className="text-[11px] px-2 py-2 rounded-[var(--flux-rad)] border text-left transition hover:translate-x-0.5 hover:border-white/25"
+                    style={nodeStyle(stencil.type)}
                     title={stencil.hint}
                   >
                     <span
-                      className={`mb-1 relative inline-flex h-5 w-5 items-center justify-center border border-white/40 ${
-                        isGatewayType(stencil.type) ? "rotate-45 rounded-[2px]" : isEventType(stencil.type) ? "rounded-full" : "rounded-[4px]"
-                      }`}
+                      className={`mb-1 relative inline-flex h-5 w-5 items-center justify-center border border-white/40 ${shapeClass(stencil.type)}`}
                     >
-                      {stencil.type === "intermediate_event" ? (
+                      {getBpmnVisualSpec(stencil.type).borderStyle === "double" && getBpmnVisualSpec(stencil.type).shape === "circle" ? (
                         <span className="absolute inset-[2px] rounded-full border border-white/40" aria-hidden />
                       ) : null}
-                      <span className={`${isGatewayType(stencil.type) ? "-rotate-45" : ""} text-white`}>{markerSvg(stencil.type) ?? <span className="text-[9px] font-semibold">T</span>}</span>
+                      <span className={`${isRotatedShape(stencil.type) ? "-rotate-45" : ""} text-white`} style={{ width: BPMN_VISUAL_TOKENS.iconSize, height: BPMN_VISUAL_TOKENS.iconSize }}>
+                        {renderBpmnIcon(getBpmnVisualSpec(stencil.type).icon) ?? <span className="text-[9px] font-semibold">T</span>}
+                      </span>
                     </span>
                     <span className="block font-semibold">{stencil.label}</span>
                     <span className="block text-[10px] opacity-80">{stencil.hint}</span>
@@ -1231,10 +1183,26 @@ ${edges}
               ))}
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
                 <defs>
-                  <marker id="bpmnArrowHead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <marker
+                    id="bpmnArrowHead"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                    markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                    orient="auto-start-reverse"
+                  >
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(161,161,170,0.95)" />
                   </marker>
-                  <marker id="bpmnArrowHeadPreview" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <marker
+                    id="bpmnArrowHeadPreview"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                    markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
+                    orient="auto-start-reverse"
+                  >
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(56,189,248,0.95)" />
                   </marker>
                 </defs>
@@ -1244,7 +1212,7 @@ ${edges}
                       d={orthogonalPathFromPoints(edge.points)}
                       fill="none"
                       stroke={selectedEdgeId === edge.id ? "rgba(56,189,248,0.95)" : "rgba(161,161,170,0.85)"}
-                      strokeWidth={2}
+                      strokeWidth={BPMN_VISUAL_TOKENS.connectorStroke}
                       markerEnd="url(#bpmnArrowHead)"
                       className="pointer-events-auto cursor-pointer"
                       onPointerDown={() => {
@@ -1317,7 +1285,7 @@ ${edges}
                       ])}
                       fill="none"
                       stroke="rgba(56,189,248,0.95)"
-                      strokeWidth={2}
+                      strokeWidth={BPMN_VISUAL_TOKENS.connectorStroke}
                       strokeDasharray="6 4"
                       markerEnd="url(#bpmnArrowHeadPreview)"
                     />
@@ -1399,30 +1367,23 @@ ${edges}
                   title="Arraste para reposicionar"
                 >
                   <span
-                    className={`absolute inset-0 ${node.type === "end_event" ? "border-2" : "border"} ${nodeStyle(node.type)} ${
-                      isGatewayType(node.type) ? "rotate-45 rounded-[4px]" : isEventType(node.type) ? "rounded-full" : "rounded-[var(--flux-rad)]"
-                    }`}
+                    className={`absolute inset-0 ${node.type === "end_event" ? "border-2" : "border"} ${shapeClass(node.type)}`}
+                    style={nodeStyle(node.type, selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "selected" : "default")}
                   />
-                  {node.type === "intermediate_event" ? (
+                  {getBpmnVisualSpec(node.type).borderStyle === "double" && getBpmnVisualSpec(node.type).shape === "circle" ? (
                     <span className="pointer-events-none absolute inset-[4px] rounded-full border border-white/45" aria-hidden />
                   ) : null}
                   <span
                     className={`pointer-events-none absolute left-1/2 top-[43%] -translate-x-1/2 -translate-y-1/2 text-white ${
-                      isGatewayType(node.type) || isEventType(node.type) || node.type === "service_task" || node.type === "user_task" ? (isGatewayType(node.type) ? "-rotate-45" : "") : "hidden"
+                      isRotatedShape(node.type) ? "-rotate-45" : ""
                     }`}
                     aria-hidden
+                    style={{ width: BPMN_VISUAL_TOKENS.iconSize, height: BPMN_VISUAL_TOKENS.iconSize }}
                   >
-                    {markerSvg(node.type)}
+                    {renderBpmnIcon(getBpmnVisualSpec(node.type).icon)}
                   </span>
-                  {node.type === "sub_process" ? (
-                    <span className="pointer-events-none absolute left-1/2 bottom-[3px] -translate-x-1/2 inline-flex h-3.5 w-3.5 items-center justify-center rounded-[2px] border border-white/75 bg-black/20 text-white">
-                      <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 opacity-95" aria-hidden>
-                        <path d="M12 6.5v11M6.5 12h11" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
-                      </svg>
-                    </span>
-                  ) : null}
-                  <span className={`relative block font-semibold truncate ${isGatewayType(node.type) ? "-rotate-45" : ""}`}>{node.label}</span>
-                  <span className={`relative block text-[10px] opacity-80 truncate ${isGatewayType(node.type) ? "-rotate-45" : ""}`}>{displayType(node.type)}</span>
+                  <span className={`relative block font-semibold truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{node.label}</span>
+                  <span className={`relative block text-[10px] opacity-80 truncate ${isRotatedShape(node.type) ? "-rotate-45" : ""}`}>{displayType(node.type)}</span>
                   <span
                     role="button"
                     aria-label="Criar conexão"

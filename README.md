@@ -76,6 +76,14 @@ Para deploy na Vercel: `vercel` ou push para o repositório conectado.
 - Ativar painel: adicione `?fluxDebug=1` à URL ou `localStorage.setItem("fluxDiag","1")`.
 - No console do navegador: `window.__FLUX_DIAG__.dump()` para exportar o buffer de eventos.
 
+## BPMN Visual Design System
+
+- Guia mestre: [`docs/bpmn-design-system-guide.md`](docs/bpmn-design-system-guide.md)
+- Tokens visuais: [`docs/bpmn-visual-tokens.json`](docs/bpmn-visual-tokens.json)
+- Matriz semântica: [`docs/bpmn-semantic-mapping.md`](docs/bpmn-semantic-mapping.md)
+- Biblioteca de ícones: [`docs/bpmn-icon-library.md`](docs/bpmn-icon-library.md)
+- Relatório de validação v1.1: [`docs/bpmn-validation-report-v1.1.md`](docs/bpmn-validation-report-v1.1.md)
+
 ## Configuração: MongoDB (Vercel)
 
 Usuários, boards e metadados ficam no **MongoDB**.

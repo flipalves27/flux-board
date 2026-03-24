@@ -1,9 +1,19 @@
 export const BPMN_NODE_TYPES = [
   "start_event",
+  "intermediate_event",
+  "timer_event",
+  "message_event",
   "end_event",
   "task",
+  "user_task",
+  "service_task",
+  "script_task",
+  "call_activity",
+  "sub_process",
   "exclusive_gateway",
   "parallel_gateway",
+  "inclusive_gateway",
+  "data_object",
 ] as const;
 
 export type BpmnNodeType = (typeof BPMN_NODE_TYPES)[number];

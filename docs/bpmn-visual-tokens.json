@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "grid": 8,
+  "node": {
+    "stroke": 1.5,
+    "strokeEmphasis": 2.5,
+    "radius": 8,
+    "iconSize": 16
+  },
+  "connector": {
+    "stroke": 2,
+    "sequenceArrowSize": 7,
+    "associationDash": "6 4"
+  },
+  "label": {
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "fontSize": 12,
+    "fontWeight": 600,
+    "lineHeight": 1.35,
+    "minWidth": 56
+  },
+  "constraints": {
+    "minReadableZoom": 0.55,
+    "minContrastRatio": 4.5
+  },
+  "palette": {
+    "eventStart": "#84cc16",
+    "eventIntermediate": "#eab308",
+    "eventEnd": "#ef4444",
+    "task": "#3b82f6",
+    "gateway": "#f59e0b",
+    "artifact": "#94a3b8",
+    "selected": "#38bdf8",
+    "invalid": "#f43f5e"
+  },
+  "states": {
+    "default": { "opacity": 1, "strokeScale": 1, "glow": "none" },
+    "hover": { "opacity": 1, "strokeScale": 1.05, "glow": "soft" },
+    "selected": { "opacity": 1, "strokeScale": 1.15, "glow": "strong" },
+    "dragging": { "opacity": 0.92, "strokeScale": 1, "glow": "soft" },
+    "invalid": { "opacity": 1, "strokeScale": 1.1, "glow": "strong" },
+    "connected": { "opacity": 1, "strokeScale": 1.05, "glow": "soft" },
+    "disabled": { "opacity": 0.45, "strokeScale": 1, "glow": "none" }
+  }
+}
