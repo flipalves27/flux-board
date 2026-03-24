@@ -1391,7 +1391,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           </div>
         </div>
       </header>
-      <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_272px]" : "grid-cols-1 xl:grid-cols-[240px_1fr_260px]"}`}>
+      <div className={`grid min-h-0 flex-1 gap-3 xl:items-stretch xl:gap-4 ${
+        paletteCollapsed && !isPropertiesVisible ? "grid-cols-1 xl:grid-cols-[48px_1fr_48px]"
+        : paletteCollapsed ? "grid-cols-1 xl:grid-cols-[48px_1fr_260px]"
+        : !isPropertiesVisible ? "grid-cols-1 xl:grid-cols-[240px_1fr_48px]"
+        : "grid-cols-1 xl:grid-cols-[240px_1fr_260px]"
+      }`}>
         <aside className={`flex min-h-0 flex-col gap-3 overflow-y-auto rounded-xl border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-md)] ${paletteCollapsed ? "p-2" : "p-3"}`}>
           {/* Palette header */}
           <div className="flex items-center justify-between gap-2">
@@ -1764,7 +1769,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     onMouseEnter={() => setHoveredLaneId(lane.id)}
                     onMouseLeave={() => setHoveredLaneId("")}
                   >
-                    {/* Lane label bar — drag handle */}
+                    {/* Lane label bar — drag handle + inline edit on dblclick */}
                     <div
                       className={`${barlowCondensed.className} absolute bottom-0 left-0 top-0 flex w-[52px] select-none items-center justify-center rounded-l-md text-[14px] font-extrabold uppercase text-white`}
                       style={{
@@ -1773,9 +1778,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         transform: "rotate(180deg)",
                         letterSpacing: "2px",
                         textOrientation: "mixed",
-                        cursor: isDraggingThisLane ? "grabbing" : "grab",
+                        cursor: editingLaneId === lane.id ? "text" : isDraggingThisLane ? "grabbing" : "grab",
                       }}
                       onPointerDown={(e) => {
+                        if (editingLaneId === lane.id) return; // let input handle it
                         e.stopPropagation();
                         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                         setLaneDrag({ laneId: lane.id, startClientY: e.clientY, originY: top });
@@ -1804,8 +1810,63 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         });
                         setLaneDrag(null);
                       }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setEditingLaneId(lane.id);
+                        setEditingLaneLabelInput(lane.label);
+                      }}
                     >
-                      {lane.label}
+                      {editingLaneId === lane.id ? (
+                        <input
+                          autoFocus
+                          value={editingLaneLabelInput}
+                          onChange={(e) => setEditingLaneLabelInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const val = editingLaneLabelInput.trim() || lane.label;
+                              setModel((prev) => ({
+                                ...prev,
+                                lanes: prev.lanes.map((l) => l.id === lane.id ? { ...l, label: val } : l),
+                              }));
+                              setEditingLaneId(null);
+                            } else if (e.key === "Escape") {
+                              setEditingLaneId(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            const val = editingLaneLabelInput.trim() || lane.label;
+                            setModel((prev) => ({
+                              ...prev,
+                              lanes: prev.lanes.map((l) => l.id === lane.id ? { ...l, label: val } : l),
+                            }));
+                            setEditingLaneId(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full bg-transparent text-center text-[11px] font-extrabold uppercase text-white outline-none placeholder:text-white/50"
+                          style={{
+                            writingMode: "vertical-rl",
+                            textOrientation: "mixed",
+                            transform: "rotate(0deg)",
+                            letterSpacing: "1px",
+                            width: "100%",
+                            height: "100%",
+                            padding: "4px 0",
+                          }}
+                        />
+                      ) : (
+                        <>
+                          {lane.label}
+                          {isHovered && !isDraggingThisLane && (
+                            <span
+                              className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] text-white"
+                              style={{ writingMode: "horizontal-tb", transform: "none" }}
+                              title="Duplo clique para editar"
+                            >
+                              ✎
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
 
                     {/* Delete button — visible on hover */}
@@ -2512,17 +2573,39 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <p className="text-[11px] text-[var(--flux-text-muted)]">Canvas interativo com auto-routing ortogonal, desvio de obstáculos e feedback visual de arraste.</p>
         </div>
 
-        <aside className="flex min-h-0 flex-col gap-0 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 p-3 dark:border-slate-700">
-            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Propriedades</p>
-            <button type="button" className="btn-secondary" onClick={() => setIsPropertiesVisible((v) => !v)}>
-              {isPropertiesVisible ? "Esconder" : "Mostrar"}
+        <aside className={`flex min-h-0 flex-col gap-0 overflow-hidden rounded-xl border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-md)] ${!isPropertiesVisible ? "p-2" : ""}`}>
+          {!isPropertiesVisible ? (
+            /* Collapsed strip — mirrors palette behaviour */
+            <div className="flex flex-col items-center gap-2 pt-1">
+              <button
+                type="button"
+                title="Mostrar propriedades"
+                className="ml-auto rounded-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--flux-text-muted)] transition hover:border-[var(--flux-primary)]/60 hover:text-[var(--flux-primary-light)]"
+                onClick={() => setIsPropertiesVisible(true)}
+              >
+                ◀
+              </button>
+              <span
+                className="mt-1 select-none text-[9px] font-extrabold uppercase tracking-widest text-[var(--flux-text-muted)]"
+                style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              >
+                Propriedades
+              </span>
+            </div>
+          ) : (
+          <>
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--flux-border-muted)] p-3">
+            <p className="text-[11px] font-extrabold uppercase tracking-wide text-[var(--flux-text)]">Propriedades</p>
+            <button
+              type="button"
+              className="rounded-md border border-[var(--flux-border-default)] bg-[var(--flux-surface-elevated)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--flux-text-muted)] transition hover:border-[var(--flux-primary)]/60 hover:text-[var(--flux-primary-light)]"
+              onClick={() => setIsPropertiesVisible(false)}
+            >
+              ▶
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          {!isPropertiesVisible ? (
-            <p className="text-xs text-[var(--flux-text-muted)]">Painel oculto para ampliar a area visual do diagrama.</p>
-          ) : selectedEdge ? (
+          {selectedEdge ? (
             <>
               <div className="space-y-1">
                 <label className="text-[11px] text-[var(--flux-text-muted)]">ID do fluxo</label>
@@ -2781,9 +2864,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             </>
           )}
           </div>
-          <div className="shrink-0 border-t border-slate-200/80 p-3 dark:border-slate-700">
+          <div className="shrink-0 border-t border-[var(--flux-border-muted)] p-3">
             <BpmnLegend expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((v) => !v)} />
           </div>
+          </>
+          )}
         </aside>
       </div>
 
