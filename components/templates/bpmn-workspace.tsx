@@ -1908,7 +1908,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           const startY = e.clientY;
                           const pointerId = e.pointerId;
                           const onMove = ((ev: Event) => {
-                            const pe = ev as PointerEvent;
+                            const pe = ev as unknown as PointerEvent;
                             const dh = (pe.clientY - startY) / zoom;
                             const newH = Math.max(80, snap(originH + dh));
                             setModel((prev) => ({
