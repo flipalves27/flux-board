@@ -140,13 +140,27 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [isPropertiesVisible, setIsPropertiesVisible] = useState(true);
   const [showEdges, setShowEdges] = useState(true);
-  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  /** Legenda na coluna direita: oculta por padrão. */
+  const [legendExpanded, setLegendExpanded] = useState(false);
   const [presentMode, setPresentMode] = useState(false);
   const [editingSubtitle, setEditingSubtitle] = useState("");
   const [editingTooltip, setEditingTooltip] = useState("");
   const [editingStep, setEditingStep] = useState("");
   const [editingPain, setEditingPain] = useState("");
   const [editingLaneTag, setEditingLaneTag] = useState("");
+  /** Durante arrasto: delta em canvas; commit no pointerup. */
+  const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
+  const dragRafRef = useRef<number | null>(null);
+  const pendingDragDeltaRef = useRef<{ dx: number; dy: number } | null>(null);
+  /** Duplo clique: edição rápida de título e descrição (subtitle). */
+  const [inlineEditNodeId, setInlineEditNodeId] = useState<string | null>(null);
+  const [inlineTitle, setInlineTitle] = useState("");
+  const [inlineDesc, setInlineDesc] = useState("");
+  const inlineEditRef = useRef<HTMLDivElement | null>(null);
+  const nodeDragRef = useRef(nodeDrag);
+  nodeDragRef.current = nodeDrag;
+  const liveDragDeltaRef = useRef(liveDragDelta);
+  liveDragDeltaRef.current = liveDragDelta;
   const panStartRef = useRef<{ x: number; y: number; originX: number; originY: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const modelRef = useRef(model);
@@ -494,9 +508,33 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }
 
   function onCanvasPointerUp() {
+    const nd = nodeDragRef.current;
+    const ld = liveDragDeltaRef.current;
+    if (nd && ld) {
+      setModel((prev) => {
+        const next: BpmnModel = {
+          ...prev,
+          nodes: prev.nodes.map((n) => {
+            if (!nd.ids.includes(n.id)) return n;
+            const origin = nd.origins[n.id];
+            const x = Math.max(16, snap(origin.x + ld.dx));
+            const y = Math.max(16, snap(origin.y + ld.dy));
+            return { ...n, x, y, laneId: laneForY(y, prev.lanes) };
+          }),
+        };
+        syncCodeFromModel(next);
+        return next;
+      });
+    }
+    if (dragRafRef.current != null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+    pendingDragDeltaRef.current = null;
     setIsPanning(false);
     panStartRef.current = null;
     setNodeDrag(null);
+    setLiveDragDelta(null);
     setAlignGuides([]);
     setBoxSelect(null);
   }
@@ -606,7 +644,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
 
   function buildEdgePoints(
     edge: { sourceId: string; targetId: string; waypoints?: Array<{ x: number; y: number }> },
-    byId: Map<string, BpmnModel["nodes"][number]>
+    byId: Map<string, BpmnModel["nodes"][number]>,
+    obstacleNodes: BpmnModel["nodes"],
   ): Array<{ x: number; y: number }> {
     const a = byId.get(edge.sourceId);
     const b = byId.get(edge.targetId);
@@ -625,8 +664,18 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     const end = anchorForPort(b, targetPort);
     const rawWps = Array.isArray(edge.waypoints) ? edge.waypoints : [];
     if (rawWps.length === 0) {
+      const sameRow = Math.abs(start.y - end.y) < 3;
+      const sameCol = Math.abs(start.x - end.x) < 3;
+      if (sameRow && start.x <= end.x && startPort === "east" && targetPort === "west") {
+        const straight = applyAutoRouting([start, end], edge, obstacleNodes);
+        if (straight.length === 2) return straight;
+      }
+      if (sameCol && start.y <= end.y && startPort === "south" && targetPort === "north") {
+        const straight = applyAutoRouting([start, end], edge, obstacleNodes);
+        if (straight.length === 2) return straight;
+      }
       const midX = snap(start.x + (end.x - start.x) / 2);
-      return applyAutoRouting([start, { x: midX, y: start.y }, { x: midX, y: end.y }, end], edge, model.nodes);
+      return applyAutoRouting([start, { x: midX, y: start.y }, { x: midX, y: end.y }, end], edge, obstacleNodes);
     }
     const points: Array<{ x: number; y: number }> = [start];
     for (let i = 0; i < rawWps.length; i++) {
@@ -645,7 +694,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     const last = points[points.length - 1];
     points.push({ x: last.x, y: end.y });
     points.push(end);
-    return applyAutoRouting(points, edge, model.nodes);
+    return applyAutoRouting(points, edge, obstacleNodes);
   }
 
   function nearestPort(
@@ -709,26 +758,38 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     return { x: snapCandidate.x, y: bestY };
   }
 
-  const edgesWithPoints = (() => {
-    const byId = new Map(model.nodes.map((n) => [n.id, n]));
+  const nodesForEdges = useMemo(() => {
+    if (!nodeDrag) return model.nodes;
+    const ld = liveDragDelta ?? { dx: 0, dy: 0 };
+    return model.nodes.map((n) => {
+      if (!nodeDrag.ids.includes(n.id)) return n;
+      const o = nodeDrag.origins[n.id];
+      const x = Math.max(16, snap(o.x + ld.dx));
+      const y = Math.max(16, snap(o.y + ld.dy));
+      return { ...n, x, y, laneId: laneForY(y, model.lanes) };
+    });
+  }, [model.nodes, model.lanes, nodeDrag, liveDragDelta]);
+
+  const edgesWithPoints = useMemo(() => {
+    const byId = new Map(nodesForEdges.map((n) => [n.id, n]));
     return model.edges
       .map((e) => {
-        const points = buildEdgePoints(e, byId);
+        const points = buildEdgePoints(e, byId, nodesForEdges);
         if (!points.length) return null;
         const wps = Array.isArray(e.waypoints) ? e.waypoints : [];
         return { ...e, points, waypoints: wps };
       })
       .filter(Boolean) as Array<{ id: string; points: Array<{ x: number; y: number }>; label?: string; waypoints: Array<{ x: number; y: number }> }>;
-  })();
+  }, [model.edges, nodesForEdges]);
 
   const connectPreviewLine = useMemo(() => {
     if (!connectingFromId || !connectPreview) return null;
-    const from = model.nodes.find((n) => n.id === connectingFromId);
+    const from = nodesForEdges.find((n) => n.id === connectingFromId);
     if (!from) return null;
     const x1 = from.x + (from.width ?? 110);
     const y1 = from.y + (from.height ?? 54) / 2;
     return { x1, y1, x2: connectPreview.x, y2: connectPreview.y };
-  }, [connectingFromId, connectPreview, model.nodes]);
+  }, [connectingFromId, connectPreview, nodesForEdges]);
 
   const selectedNode = useMemo(() => model.nodes.find((n) => n.id === selectedNodeId) ?? null, [model.nodes, selectedNodeId]);
   const selectedEdge = useMemo(() => model.edges.find((e) => e.id === selectedEdgeId) ?? null, [model.edges, selectedEdgeId]);
@@ -755,6 +816,24 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
       syncCodeFromModel(next);
       return next;
     });
+  }
+
+  function commitInlineEdit() {
+    if (!inlineEditNodeId) return;
+    const id = inlineEditNodeId;
+    const title = inlineTitle.trim();
+    const desc = inlineDesc.trim();
+    setModel((prev) => {
+      const next: BpmnModel = {
+        ...prev,
+        nodes: prev.nodes.map((n) =>
+          n.id === id ? { ...n, label: title || n.label, subtitle: desc || undefined } : n,
+        ),
+      };
+      syncCodeFromModel(next);
+      return next;
+    });
+    setInlineEditNodeId(null);
   }
 
   function updateLaneLabel() {
@@ -801,11 +880,25 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   }, [selectedNodeId, model]);
 
   useEffect(() => {
+    if (!inlineEditNodeId) return;
+    const t = window.setTimeout(() => {
+      const el = inlineEditRef.current?.querySelector("input");
+      (el as HTMLInputElement | undefined)?.focus();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [inlineEditNodeId]);
+
+  useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
       const target = ev.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
 
       if (ev.key === "Escape") {
+        if (inlineEditNodeId) {
+          ev.preventDefault();
+          setInlineEditNodeId(null);
+          return;
+        }
         if (connectingFromId || connectPreview) {
           ev.preventDefault();
           setConnectingFromId("");
@@ -988,7 +1081,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [connectingFromId, connectPreview, selectedNodeId, selectedNodeIds, selectedWaypoint, selectedEdgeId, syncCodeFromModel]);
+  }, [connectingFromId, connectPreview, selectedNodeId, selectedNodeIds, selectedWaypoint, selectedEdgeId, syncCodeFromModel, inlineEditNodeId]);
 
   const selectedNodeSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   const boxRect = useMemo(() => {
@@ -1000,12 +1093,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     return { left, top, width, height };
   }, [boxSelect]);
   const miniMapBounds = useMemo(() => {
-    const minX = Math.min(...model.nodes.map((n) => n.x), 0);
-    const minY = Math.min(...model.nodes.map((n) => n.y), 0);
-    const maxX = Math.max(...model.nodes.map((n) => n.x + (n.width ?? 110)), 1200);
-    const maxY = Math.max(...model.nodes.map((n) => n.y + (n.height ?? 54)), 700);
+    const minX = Math.min(...nodesForEdges.map((n) => n.x), 0);
+    const minY = Math.min(...nodesForEdges.map((n) => n.y), 0);
+    const maxX = Math.max(...nodesForEdges.map((n) => n.x + (n.width ?? 110)), 1200);
+    const maxY = Math.max(...nodesForEdges.map((n) => n.y + (n.height ?? 54)), 700);
     return { minX: minX - 80, minY: minY - 60, width: maxX - minX + 160, height: maxY - minY + 120 };
-  }, [model.nodes]);
+  }, [nodesForEdges]);
 
   return (
     <div className={`${barlow.className} flex min-h-0 flex-1 flex-col gap-3`}>
@@ -1075,9 +1168,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              !legendCollapsed ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              legendExpanded ? "border-[#00897B] bg-[#00897B] text-white" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
-            onClick={() => setLegendCollapsed((v) => !v)}
+            aria-pressed={legendExpanded}
+            onClick={() => setLegendExpanded((v) => !v)}
           >
             Legenda
           </button>
@@ -1243,27 +1337,21 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 if (!coords) return;
                 const baseDx = snap(coords.x - nodeDrag.start.x);
                 const baseDy = snap(coords.y - nodeDrag.start.y);
-                setModel((prev) => {
-                  const moving = prev.nodes.find((n) => n.id === nodeDrag.ids[0]);
-                  if (!moving) return prev;
-                  const others = prev.nodes.filter((n) => !nodeDrag.ids.includes(n.id));
-                  const aligned = snapEnabled
-                    ? alignDeltaForNode(moving, others, baseDx, baseDy)
-                    : { dx: baseDx, dy: baseDy, guides: [] as AlignGuide[] };
-                  setAlignGuides(snapEnabled ? aligned.guides : []);
-                  const next: BpmnModel = {
-                    ...prev,
-                    nodes: prev.nodes.map((n) => {
-                      if (!nodeDrag.ids.includes(n.id)) return n;
-                      const origin = nodeDrag.origins[n.id];
-                      const x = Math.max(16, snap(origin.x + aligned.dx));
-                      const y = Math.max(16, snap(origin.y + aligned.dy));
-                      return { ...n, x, y, laneId: laneForY(y, prev.lanes) };
-                    }),
-                  };
-                  syncCodeFromModel(next);
-                  return next;
-                });
+                const moving = model.nodes.find((n) => n.id === nodeDrag.ids[0]);
+                if (!moving) return;
+                const others = model.nodes.filter((n) => !nodeDrag.ids.includes(n.id));
+                const aligned = snapEnabled
+                  ? alignDeltaForNode(moving, others, baseDx, baseDy)
+                  : { dx: baseDx, dy: baseDy, guides: [] as AlignGuide[] };
+                setAlignGuides(snapEnabled ? aligned.guides : []);
+                pendingDragDeltaRef.current = { dx: aligned.dx, dy: aligned.dy };
+                if (dragRafRef.current == null) {
+                  dragRafRef.current = requestAnimationFrame(() => {
+                    dragRafRef.current = null;
+                    const p = pendingDragDeltaRef.current;
+                    if (p) setLiveDragDelta(p);
+                  });
+                }
                 return;
               }
               if (boxSelect) {
@@ -1301,7 +1389,6 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 setConnectPreview(null);
               }
               if (draggingWaypoint) setDraggingWaypoint(null);
-              if (nodeDrag) setNodeDrag(null);
             }}
             onPointerLeave={onCanvasPointerUp}
             className={`relative min-h-[760px] cursor-crosshair rounded-[var(--flux-rad-lg)] border border-slate-200/80 bg-[#F0F2F5] shadow-inner transition dark:border-slate-700 dark:bg-[#111827] ${
@@ -1496,7 +1583,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   </g>
                 ) : null}
               </svg>
-              {model.nodes.map((node) => (
+              {model.nodes.map((node) => {
+                const pe = nodesForEdges.find((n) => n.id === node.id) ?? node;
+                const isDraggingThis = Boolean(nodeDrag?.ids.includes(node.id) && liveDragDelta !== null);
+                return (
                 <button
                   key={node.id}
                   type="button"
@@ -1507,6 +1597,25 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       setSelectedNodeIds([node.id]);
                     }
                     setSelectedNodeId(node.id);
+                    setEditingLabel(node.label);
+                    setEditingLane(model.lanes.find((l) => l.id === node.laneId)?.label ?? "");
+                    setSelectedEdgeId("");
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    if (dragRafRef.current != null) {
+                      cancelAnimationFrame(dragRafRef.current);
+                      dragRafRef.current = null;
+                    }
+                    pendingDragDeltaRef.current = null;
+                    setNodeDrag(null);
+                    setLiveDragDelta(null);
+                    setAlignGuides([]);
+                    setInlineEditNodeId(node.id);
+                    setInlineTitle(node.label);
+                    setInlineDesc(node.subtitle ?? "");
+                    setSelectedNodeId(node.id);
+                    setSelectedNodeIds([node.id]);
                     setEditingLabel(node.label);
                     setEditingLane(model.lanes.find((l) => l.id === node.laneId)?.label ?? "");
                     setSelectedEdgeId("");
@@ -1534,6 +1643,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       if (found) origins[id] = { x: found.x, y: found.y };
                     }
                     setNodeDrag({ ids, start: coords, origins });
+                    setLiveDragDelta({ dx: 0, dy: 0 });
                   }}
                   onPointerUp={(e) => {
                     if (!connectingFromId) return;
@@ -1567,11 +1677,15 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     setConnectingFromId("");
                     setConnectPreview(null);
                   }}
-                  className={`absolute px-2 py-1 text-left text-[11px] shadow-sm transition hover:scale-[1.02] hover:shadow-md ${
+                  className={`absolute px-2 py-1 text-left text-[11px] shadow-sm hover:scale-[1.02] hover:shadow-md ${
+                    isDraggingThis
+                      ? "transition-none will-change-[left,top] scale-[1.01]"
+                      : "transition-[left,top,transform] duration-150 ease-out"
+                  } ${
                     selectedNodeSet.has(node.id) || selectedNodeId === node.id ? "ring-2 ring-[#00897B]/90 ring-offset-2 ring-offset-[#F0F2F5] dark:ring-offset-[#111827]" : ""
                   }`}
-                  style={{ left: node.x, top: node.y, width: node.width ?? 110, height: node.height ?? 54 }}
-                  title={node.tooltip || "Arraste para reposicionar"}
+                  style={{ left: pe.x, top: pe.y, width: node.width ?? 110, height: node.height ?? 54 }}
+                  title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
                   {isTaskLikeType(node.type) ? (
                     <>
@@ -1648,8 +1762,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     aria-label="Criar conexão"
                     onPointerDown={(e) => {
                       e.stopPropagation();
-                      const startX = node.x + (node.width ?? 110);
-                      const startY = node.y + (node.height ?? 54) / 2;
+                      const startX = pe.x + (node.width ?? 110);
+                      const startY = pe.y + (node.height ?? 54) / 2;
                       setConnectingFromId(node.id);
                       setConnectPreview({ x: startX, y: startY });
                     }}
@@ -1675,7 +1789,71 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     );
                   })}
                 </button>
-              ))}
+                );
+              })}
+              {inlineEditNodeId ? (
+                (() => {
+                  const n = model.nodes.find((x) => x.id === inlineEditNodeId);
+                  if (!n) return null;
+                  const pos = nodesForEdges.find((x) => x.id === inlineEditNodeId) ?? n;
+                  return (
+                    <div
+                      ref={inlineEditRef}
+                      role="dialog"
+                      aria-label="Editar elemento"
+                      className="absolute z-[50] rounded-lg border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-600 dark:bg-slate-900"
+                      style={{
+                        left: pos.x,
+                        top: pos.y + (n.height ?? 54) + 8,
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <div className="text-[11px] font-semibold text-[#1A2744] dark:text-slate-100">Editar no canvas</div>
+                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-400">Título</label>
+                      <input
+                        className="mt-2 w-full min-w-[240px] rounded border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-[#1A2744] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        value={inlineTitle}
+                        onChange={(e) => setInlineTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            setInlineEditNodeId(null);
+                          }
+                          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            commitInlineEdit();
+                          }
+                        }}
+                      />
+                      <label className="mt-2 block text-[10px] font-bold uppercase tracking-wide text-[#546E7A] dark:text-slate-400">Descrição</label>
+                      <input
+                        className="mt-2 w-full min-w-[240px] rounded border border-slate-200 bg-white px-2 py-1.5 text-[12px] text-[#546E7A] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        value={inlineDesc}
+                        onChange={(e) => setInlineDesc(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            setInlineEditNodeId(null);
+                          }
+                          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            commitInlineEdit();
+                          }
+                        }}
+                        placeholder="Texto secundário (subtitle)"
+                      />
+                      <div className="mt-3 flex gap-2">
+                        <button type="button" className="btn-secondary flex-1 text-xs" onClick={() => setInlineEditNodeId(null)}>
+                          Cancelar
+                        </button>
+                        <button type="button" className="btn-secondary flex-1 text-xs" style={{ background: "#00897B", color: "#fff" }} onClick={commitInlineEdit}>
+                          OK
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : null}
               {alignGuides.map((guide, idx) =>
                 guide.axis === "x" ? (
                   <div key={`gx_${idx}`} className="absolute top-0 bottom-0 w-px bg-sky-300/70" style={{ left: guide.value }} />
@@ -1737,7 +1915,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   });
                 }}
               >
-                {model.nodes.map((n) => {
+                {nodesForEdges.map((n) => {
                   const nx = ((n.x - miniMapBounds.minX) / miniMapBounds.width) * 100;
                   const ny = ((n.y - miniMapBounds.minY) / miniMapBounds.height) * 100;
                   const nw = (((n.width ?? 110) / miniMapBounds.width) * 100);
@@ -1763,11 +1941,6 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 ) : null}
               </div>
             </div>
-            <BpmnLegend
-              className="absolute bottom-5 left-5 z-[500] max-w-[min(320px,92vw)]"
-              collapsed={legendCollapsed}
-              onToggleCollapsed={() => setLegendCollapsed((v) => !v)}
-            />
           </div>
           <div className="flex gap-2 flex-wrap">
             {selectedEdgeId ? (
@@ -1821,13 +1994,14 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <p className="text-[11px] text-[var(--flux-text-muted)]">Canvas interativo com auto-routing ortogonal, desvio de obstáculos e feedback visual de arraste.</p>
         </div>
 
-        <aside className="flex max-h-[min(920px,calc(100vh-140px))] flex-col gap-3 overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-3 shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
-          <div className="flex items-center justify-between gap-2">
+        <aside className="flex max-h-[min(920px,calc(100vh-140px))] min-h-0 flex-col gap-0 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-[0_3px_12px_rgba(26,39,68,0.08)] dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 p-3 dark:border-slate-700">
             <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Propriedades</p>
             <button type="button" className="btn-secondary" onClick={() => setIsPropertiesVisible((v) => !v)}>
               {isPropertiesVisible ? "Esconder" : "Mostrar"}
             </button>
           </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {!isPropertiesVisible ? (
             <p className="text-xs text-[var(--flux-text-muted)]">Painel oculto para ampliar a area visual do diagrama.</p>
           ) : selectedEdge ? (
@@ -1995,6 +2169,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               </button>
             </>
           )}
+          </div>
+          <div className="shrink-0 border-t border-slate-200/80 p-3 dark:border-slate-700">
+            <BpmnLegend expanded={legendExpanded} onToggleExpanded={() => setLegendExpanded((v) => !v)} />
+          </div>
         </aside>
       </div>
 
