@@ -1451,12 +1451,18 @@
   background: var(--flux-primary) !important;
   border: 2px solid white !important;
   box-shadow: 0 2px 8px rgba(108,92,231,0.35) !important;
+  pointer-events: auto !important;
+}
+
+.bpmn-lane-resize-line {
+  pointer-events: auto !important;
 }
 
 /* Swim lane React Flow node overrides */
 .bpmn-react-flow .react-flow__node[data-type="swim_lane"] {
   z-index: -10 !important;
   transition: none;
+  pointer-events: all;
 }
 
 .bpmn-react-flow .react-flow__node[data-type="swim_lane"]:hover {

@@ -89,11 +89,11 @@ function SwimLaneNodeInner(props: NodeProps) {
         onResizeEnd={handleResize}
       />
 
-      <div className="bpmn-swim-lane-body flex h-full w-full" data-selected={selected ? "true" : undefined}>
-        {/* Vertical gradient label bar */}
+      <div className="bpmn-swim-lane-body flex h-full w-full" style={{ pointerEvents: "none" }} data-selected={selected ? "true" : undefined}>
+        {/* Vertical gradient label bar — interactive */}
         <div
           className="bpmn-swim-lane-bar relative flex h-full w-[52px] shrink-0 select-none items-center justify-center rounded-l-md"
-          style={{ background: gradient }}
+          style={{ background: gradient, pointerEvents: "auto" }}
           onDoubleClick={(e) => {
             e.stopPropagation();
             onStartEdit();
@@ -118,7 +118,7 @@ function SwimLaneNodeInner(props: NodeProps) {
           )}
         </div>
 
-        {/* Lane body area */}
+        {/* Lane body area — pointer-events pass through to nodes below */}
         <div className="relative min-w-0 flex-1">
           {/* Tag pill */}
           {isTagEditing ? (
@@ -133,7 +133,7 @@ function SwimLaneNodeInner(props: NodeProps) {
               onBlur={onFinishTagEdit}
               onClick={(e) => e.stopPropagation()}
               className="absolute left-3 top-2.5 z-10 max-w-[280px] rounded px-2 py-0.5 text-[12px] font-bold text-[#1A2744] shadow-sm outline-none ring-2 ring-[var(--flux-primary)]/40"
-              style={{ background: "rgba(255,255,255,0.95)" }}
+              style={{ background: "rgba(255,255,255,0.95)", pointerEvents: "auto" }}
               placeholder="Tag da raia (ex: AS-IS — Área)"
             />
           ) : data.laneTag ? (
@@ -143,6 +143,7 @@ function SwimLaneNodeInner(props: NodeProps) {
                 background: "rgba(255,255,255,0.92)",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                 letterSpacing: "0.5px",
+                pointerEvents: "auto",
               }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -155,7 +156,7 @@ function SwimLaneNodeInner(props: NodeProps) {
             <button
               type="button"
               className="absolute left-3 top-2.5 z-10 rounded px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-text-muted)] opacity-50 transition hover:opacity-90 hover:ring-1 hover:ring-[var(--flux-primary)]/30"
-              style={{ background: "rgba(255,255,255,0.7)" }}
+              style={{ background: "rgba(255,255,255,0.7)", pointerEvents: "auto" }}
               onClick={(e) => {
                 e.stopPropagation();
                 onStartTagEdit();
@@ -167,7 +168,7 @@ function SwimLaneNodeInner(props: NodeProps) {
 
           {/* Toolbar: shown when selected */}
           {selected && (
-            <div className="bpmn-swim-lane-toolbar">
+            <div className="bpmn-swim-lane-toolbar" style={{ pointerEvents: "auto" }}>
               <button
                 type="button"
                 title="Editar nome"
@@ -199,7 +200,7 @@ function SwimLaneNodeInner(props: NodeProps) {
           {showColorPicker && (
             <div
               className="absolute right-2 top-10 z-50 flex flex-wrap gap-1.5 rounded-lg border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-2 shadow-xl"
-              style={{ maxWidth: 180 }}
+              style={{ maxWidth: 180, pointerEvents: "auto" }}
               onClick={(e) => e.stopPropagation()}
             >
               <p className="w-full text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Gradiente</p>

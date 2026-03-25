@@ -250,7 +250,10 @@ function BpmnWorkspaceInner({ getHeaders, isAdmin }: Props) {
               snapToGrid={snapEnabled}
               snapGrid={[GRID_SIZE, GRID_SIZE]}
               fitView
-              fitViewOptions={{ padding: 0.12 }}
+              fitViewOptions={{
+                padding: 0.15,
+                nodes: nodes.filter((n) => n.data.bpmnType !== "swim_lane"),
+              }}
               defaultEdgeOptions={{ type: "orthogonal" }}
               connectionLineType={ConnectionLineType.Step}
               multiSelectionKeyCode="Shift"

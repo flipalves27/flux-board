@@ -392,6 +392,19 @@ export const useBpmnStore = create<BpmnStore>()(
       /* ---- React Flow handlers ---- */
       onNodesChange: (changes) => {
         set((s) => {
+          const removeChanges = changes.filter((c) => c.type === "remove");
+          if (removeChanges.length > 0) {
+            const removedLaneModelIds = new Set<string>();
+            for (const c of removeChanges) {
+              const node = s.nodes.find((n) => n.id === c.id);
+              if (node?.data.bpmnType === "swim_lane" && node.data.laneModelId) {
+                removedLaneModelIds.add(node.data.laneModelId);
+              }
+            }
+            if (removedLaneModelIds.size > 0) {
+              s.lanes = s.lanes.filter((l) => !removedLaneModelIds.has(l.id));
+            }
+          }
           s.nodes = applyNodeChanges(changes, s.nodes) as BpmnFlowNode[];
         });
       },
@@ -415,10 +428,24 @@ export const useBpmnStore = create<BpmnStore>()(
       removeNodes: (ids) => {
         const idSet = new Set(ids);
         set((s) => {
+          const removedLaneModelIds = new Set<string>();
+          for (const n of s.nodes) {
+            if (idSet.has(n.id) && n.data.bpmnType === "swim_lane" && n.data.laneModelId) {
+              removedLaneModelIds.add(n.data.laneModelId);
+            }
+          }
           s.nodes = s.nodes.filter((n) => !idSet.has(n.id));
           s.edges = s.edges.filter((e) => !idSet.has(e.source) && !idSet.has(e.target));
           s.selectedNodeIds = s.selectedNodeIds.filter((id) => !idSet.has(id));
           if (ids.includes(s.selectedEdgeId)) s.selectedEdgeId = "";
+          if (removedLaneModelIds.size > 0) {
+            s.lanes = s.lanes.filter((l) => !removedLaneModelIds.has(l.id));
+            for (const n of s.nodes) {
+              if (n.data.laneId && removedLaneModelIds.has(n.data.laneId)) {
+                n.data.laneId = undefined;
+              }
+            }
+          }
         });
         get().pushHistory();
         get().syncCode();
