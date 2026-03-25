@@ -207,16 +207,21 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
       if (!card) return;
       setSaving(true);
       try {
-        const patch = { ...card, subtasks: updated };
         const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`, {
           method: "PATCH",
           body: JSON.stringify({ subtasks: updated }),
           headers: getApiHeaders(getHeaders()),
         });
         if (res.ok) {
+          const data = (await res.json()) as { subtaskProgress?: Record<string, unknown> };
           updateDb((db) => {
             const idx = db.cards.findIndex((c) => c.id === cardId);
-            if (idx >= 0) Object.assign(db.cards[idx], { subtasks: updated });
+            if (idx >= 0) {
+              Object.assign(db.cards[idx], {
+                subtasks: updated,
+                ...(data.subtaskProgress ? { subtaskProgress: data.subtaskProgress } : {}),
+              });
+            }
           });
         }
       } finally {
