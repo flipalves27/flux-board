@@ -48,7 +48,9 @@ export function useBoardPersistence(boardId: string) {
   const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
   const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? EMPTY_LABELS);
   const searchQuery = useFilterStore((s) => s.filtersByBoard[boardId]?.searchQuery ?? "");
-  const insightFocusCardIdsArr = useFilterStore((s) => s.getFilters(boardId).insightFocusCardIds);
+  const insightFocusCardIdsArr = useFilterStore(
+    (s) => s.filtersByBoard[boardId]?.insightFocusCardIds ?? EMPTY_LABELS,
+  );
 
   const boardView = useKanbanUiStore((s) => s.getBoardView(boardId));
 
