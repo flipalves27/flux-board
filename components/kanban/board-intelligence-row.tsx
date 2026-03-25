@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { FlowInsightChipModel } from "@/lib/board-flow-insights";
 import type { BoardPortfolioMetrics } from "@/lib/board-portfolio-metrics";
 import { BoardMetricsStrip } from "@/components/kanban/board-metrics-strip";
+import { BoardHealthScoreWidget } from "@/components/kanban/board-health-score-widget";
 
 type ExecutionInsights = {
   inProgress: number;
@@ -25,6 +26,12 @@ export type BoardIntelligenceRowProps = {
   onOpenFlowHealth: () => void;
   onOpenSprintCoach: () => void;
   sprintCoachVisible: boolean;
+  onOpenCadence?: () => void;
+  cadenceVisible?: boolean;
+  boardId?: string;
+  getHeaders?: () => Record<string, string>;
+  onOpenWorkloadBalance?: () => void;
+  onOpenKnowledgeGraph?: () => void;
 };
 
 function chipLabel(
@@ -68,6 +75,12 @@ export function BoardIntelligenceRow({
   onOpenFlowHealth,
   onOpenSprintCoach,
   sprintCoachVisible,
+  onOpenCadence,
+  cadenceVisible,
+  boardId,
+  getHeaders,
+  onOpenWorkloadBalance,
+  onOpenKnowledgeGraph,
 }: BoardIntelligenceRowProps) {
   const t = useTranslations("kanban");
   const [metricsOpen, setMetricsOpen] = useState(false);
@@ -89,6 +102,9 @@ export function BoardIntelligenceRow({
         className="flex flex-wrap items-center gap-2 px-4 sm:px-5 lg:px-6 py-2 border-t border-[var(--flux-border-muted)]"
         data-tour="board-intelligence"
       >
+        {boardId && getHeaders && (
+          <BoardHealthScoreWidget boardId={boardId} getHeaders={getHeaders} />
+        )}
         <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
           {portfolio.risco !== null && (
             <span className="text-[10px] tabular-nums text-[var(--flux-text-muted)] shrink-0">
@@ -141,6 +157,33 @@ export function BoardIntelligenceRow({
               className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
             >
               {t("board.intelligence.sprintCoach")}
+            </button>
+          ) : null}
+          {cadenceVisible && onOpenCadence ? (
+            <button
+              type="button"
+              onClick={onOpenCadence}
+              className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+            >
+              {t("board.intelligence.cadence")}
+            </button>
+          ) : null}
+          {onOpenWorkloadBalance ? (
+            <button
+              type="button"
+              onClick={onOpenWorkloadBalance}
+              className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+            >
+              {t("board.intelligence.workloadBalance")}
+            </button>
+          ) : null}
+          {onOpenKnowledgeGraph ? (
+            <button
+              type="button"
+              onClick={onOpenKnowledgeGraph}
+              className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+            >
+              {t("board.knowledgeGraph.open")}
             </button>
           ) : null}
         </div>

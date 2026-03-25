@@ -1116,6 +1116,17 @@
   }
 }
 
+@keyframes flux-ai-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--flux-primary-alpha-25);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 8px 3px var(--flux-primary-alpha-25);
+    transform: scale(1.08);
+  }
+}
+
 @layer utilities {
   .flux-animate-skeleton-pulse {
     animation: flux-skeleton-pulse var(--flux-skeleton-pulse-duration) var(--flux-ease-standard) infinite;

@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { KanbanCard } from "./kanban-card";
+import { CardTemplatePicker } from "./card-template-picker";
 import type { CardData, BucketConfig } from "@/app/board/[id]/page";
+import type { CardTemplate } from "@/lib/kv-card-templates";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useTranslations } from "next-intl";
 
@@ -35,6 +38,8 @@ interface KanbanColumnProps {
   /** Arrasto multi — opacidade nos cards de origem. */
   activeDragIds?: string[] | null;
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
+  onAddCardFromTemplate?: (template: CardTemplate) => void;
+  getHeaders?: () => Record<string, string>;
 }
 
 function DroppableSlot({ id }: { id: string }) {
@@ -73,8 +78,11 @@ export function KanbanColumn({
   isFirstColumn,
   activeDragIds = null,
   sprintBoardQuickActions,
+  onAddCardFromTemplate,
+  getHeaders,
 }: KanbanColumnProps) {
   const t = useTranslations("kanban");
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const policyText =
     typeof (bucket as { policy?: string }).policy === "string"
       ? (bucket as { policy: string }).policy.trim()
@@ -149,8 +157,11 @@ export function KanbanColumn({
           className="w-2 h-2 rounded-full shrink-0"
           style={{ background: bucket.color || "var(--flux-text-muted)" }}
         />
-        <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate">
+        <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate flex items-center">
           {bucket.label}
+          <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--flux-chrome-alpha-12)] px-1.5 text-[10px] font-semibold tabular-nums text-[var(--flux-text-muted)]">
+            {cards.length}
+          </span>
         </div>
         {policyText ? (
           <CustomTooltip content={policyText} position="top">
@@ -180,20 +191,34 @@ export function KanbanColumn({
           </div>
         )}
         <div className="flex items-center gap-1.5 shrink-0">
-          <CustomTooltip content={t("column.tooltips.newCard")} position="top">
-            <button
-              type="button"
-              data-tour={isFirstColumn ? "board-new-card" : undefined}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddCard();
-              }}
-              className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
-              aria-label={t("column.tooltips.newCard")}
-            >
-              +
-            </button>
-          </CustomTooltip>
+          <div className="relative">
+            <CustomTooltip content={t("column.tooltips.newCard")} position="top">
+              <button
+                type="button"
+                data-tour={isFirstColumn ? "board-new-card" : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onAddCardFromTemplate && getHeaders) {
+                    setTemplatePickerOpen((v) => !v);
+                  } else {
+                    onAddCard();
+                  }
+                }}
+                className="w-6 h-6 rounded-full border border-[var(--flux-control-border)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center text-[11px] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)]"
+                aria-label={t("column.tooltips.newCard")}
+              >
+                +
+              </button>
+            </CustomTooltip>
+            {templatePickerOpen && getHeaders && (
+              <CardTemplatePicker
+                getHeaders={getHeaders}
+                onBlank={() => { setTemplatePickerOpen(false); onAddCard(); }}
+                onSelect={(tpl) => { setTemplatePickerOpen(false); onAddCardFromTemplate?.(tpl); }}
+                onClose={() => setTemplatePickerOpen(false)}
+              />
+            )}
+          </div>
           {onRenameColumn && (
             <CustomTooltip content={t("column.tooltips.renameColumn")} position="top">
               <button
@@ -246,12 +271,12 @@ export function KanbanColumn({
           aria-label={t("column.dropRegionAriaLabel", { label: bucket.label })}
           className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
         >
-          {isFirstColumn && cards.length === 0 ? (
+          {cards.length === 0 ? (
             <div
-              data-tour="board-card"
-              className="min-h-[52px] rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-black-alpha-08)] flex items-center justify-center px-2 text-center text-[11px] text-[var(--flux-text-muted)]"
+              {...(isFirstColumn ? { "data-tour": "board-card" as const } : {})}
+              className="min-h-[52px] rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-black-alpha-08)] flex items-center justify-center px-2 py-4 text-center text-xs text-[var(--flux-text-muted)]/50"
             >
-              {t("column.tourEmptyCardHint")}
+              {isFirstColumn ? t("column.tourEmptyCardHint") : t("column.emptyHint")}
             </div>
           ) : null}
           {cards.map((c, idx) => (
@@ -278,6 +303,18 @@ export function KanbanColumn({
             </div>
           ))}
           <DroppableSlot id={`slot-${bucket.key}-${cards.length}`} />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddCard();
+            }}
+            className="mt-1 w-full rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-transparent py-2 text-xs font-medium text-[var(--flux-text-muted)] flex items-center justify-center gap-1.5 transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)] active:scale-[0.98]"
+            aria-label={t("column.tooltips.newCard")}
+          >
+            <span className="text-sm leading-none">+</span>
+            {t("column.addCardButton")}
+          </button>
         </div>
         </>
       )}

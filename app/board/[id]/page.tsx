@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
@@ -17,7 +17,8 @@ import { BoardTemplateExportModal } from "@/components/board/board-template-expo
 import { BoardEmbedModal } from "@/components/board/board-embed-modal";
 import { BoardAnomalyNotificationsModal } from "@/components/kanban/board-anomaly-notifications-modal";
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
-import { apiFetch, getApiHeaders } from "@/lib/api-client";
+import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
+import { BoardExecutiveBriefModal } from "@/components/kanban/board-executive-brief-modal";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
@@ -335,10 +336,12 @@ function sanitizeDodChecks(raw: unknown, validIds: Set<string>): Record<string, 
 export default function BoardPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const boardId = Array.isArray(params.id) ? params.id[0] ?? "" : (params.id as string);
   const { user, getHeaders, isChecked, setAuth } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
+  const backToBoards = `/${locale}/boards`;
   const t = useTranslations("board");
   const tTour = useTranslations("board.productTour");
   const [boardName, setBoardName] = useState("Board");
@@ -353,6 +356,9 @@ export default function BoardPage() {
   const [embedOpen, setEmbedOpen] = useState(false);
   const [anomalySettingsOpen, setAnomalySettingsOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveRequestSeqRef = useRef(0);
   const tBoardRef = useRef(t);
@@ -482,6 +488,13 @@ export default function BoardPage() {
   }, [boardId]);
 
   useEffect(() => {
+    if (searchParams.get("automations") === "1") {
+      setAutomationsOpen(true);
+      router.replace(`/${locale}/board/${boardId}`, { scroll: false });
+    }
+  }, [searchParams, boardId, locale, router]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     setFormOrigin(window.location.origin);
   }, []);
@@ -580,6 +593,23 @@ export default function BoardPage() {
     return () => setBoardPersistenceHandler(null);
   }, [persist]);
 
+  const handleGenerateBrief = useCallback(async () => {
+    setBriefLoading(true);
+    try {
+      const data = await apiGet<{ markdown: string; cached: boolean; model?: string }>(
+        `/api/boards/${encodeURIComponent(boardId)}/executive-brief-ai`,
+        getHeaders(),
+      );
+      setBriefData(data);
+      setBriefOpen(true);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : t("executiveBrief.error");
+      pushToast({ kind: "error", title: msg });
+    } finally {
+      setBriefLoading(false);
+    }
+  }, [boardId, getHeaders, pushToast, t]);
+
   if (authWaiting) {
     return <BoardRouteLoadingFallback />;
   }
@@ -607,6 +637,8 @@ export default function BoardPage() {
             title={boardName}
             titleLine2={clientLabel ? t("clientLabelInHeader", { label: clientLabel }) : undefined}
             boardTourHeader
+            backHref={backToBoards}
+            backLabel={t("backToBoards")}
           >
             <div className="flex items-center justify-end gap-1.5 flex-wrap">
               {/* Presence */}
@@ -636,29 +668,67 @@ export default function BoardPage() {
 
               <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
 
-              {/* Feature actions */}
-              <button
-                type="button"
-                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
-                onClick={() => setAutomationsOpen(true)}
-              >
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                {t("automations.open")}
-              </button>
+              {/* Board Settings dropdown — secondary actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                    aria-label={t("boardSettings.open")}
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {t("boardSettings.open")}
+                    <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuItem onSelect={() => setAutomationsOpen(true)}>
+                    <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {t("automations.open")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setAnomalySettingsOpen(true)}>
+                    <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {t("anomalyAlerts.open")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setPortalOpen(true)}>
+                    <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    {t("portal.open")}
+                  </DropdownMenuItem>
+                  {formLink && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={async () => {
+                          try {
+                            await navigator.clipboard.writeText(formLink);
+                            pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
+                          } catch {
+                            pushToast({ kind: "error", title: "Não foi possível copiar o link." });
+                          }
+                        }}
+                      >
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Flux Forms
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <button
-                type="button"
-                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
-                onClick={() => setAnomalySettingsOpen(true)}
-              >
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {t("anomalyAlerts.open")}
-              </button>
-
+              {/* Sprint — kept visible */}
               <button
                 type="button"
                 className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
@@ -670,37 +740,6 @@ export default function BoardPage() {
                 </svg>
                 Sprint
               </button>
-
-              <button
-                type="button"
-                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
-                onClick={() => setPortalOpen(true)}
-              >
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                {t("portal.open")}
-              </button>
-
-              {formLink && (
-                <button
-                  type="button"
-                  className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(formLink);
-                      pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
-                    } catch {
-                      pushToast({ kind: "error", title: "Não foi possível copiar o link." });
-                    }
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  Flux Forms
-                </button>
-              )}
 
               {/* Admin tools — collapsed into dropdown */}
               {user.isAdmin && (
@@ -774,6 +813,13 @@ export default function BoardPage() {
                         </svg>
                         Exportar CSV
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={handleGenerateBrief} disabled={briefLoading}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {briefLoading ? t("executiveBrief.generating") : t("executiveBrief.menuItem")}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
@@ -807,25 +853,6 @@ export default function BoardPage() {
                 </CustomTooltip>
               )}
 
-              {/* Save status indicator */}
-              <div
-                className={`flex items-center gap-1 text-xs font-semibold transition-opacity font-display ${
-                  saveStatus === "idle" ? "opacity-0" : "opacity-100"
-                } ${saveStatus === "error" ? "text-[var(--flux-danger)]" : "text-[var(--flux-secondary)]"}`}
-              >
-                <div
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    saveStatus === "error" ? "bg-[var(--flux-danger)]" : "bg-[var(--flux-secondary)]"
-                  }`}
-                />
-                <span>
-                  {saveStatus === "error"
-                    ? t("status.errorApi")
-                    : saveStatus === "saving"
-                      ? t("status.saving")
-                      : t("status.saved")}
-                </span>
-              </div>
             </div>
           </Header>
 
@@ -897,6 +924,14 @@ export default function BoardPage() {
       <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
 
       <BoardDesktopToolsRail />
+
+      <BoardExecutiveBriefModal
+        open={briefOpen}
+        onClose={() => setBriefOpen(false)}
+        markdown={briefData?.markdown ?? ""}
+        cached={briefData?.cached ?? false}
+        model={briefData?.model}
+      />
 
       <BoardProductTour
         ref={tourRef}

@@ -94,7 +94,7 @@ type NlqPostBody = NlqApiResponse & { llmModel?: string; error?: string };
 type BoardNlqDockProps = {
   boardId: string;
   getHeaders: () => Record<string, string>;
-  onExpandFilters: () => void;
+  onExpandFilters?: () => void;
   boardView: BoardViewMode;
   setBoardView: (v: BoardViewMode) => void;
   searchQuery: string;
@@ -198,7 +198,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
         if (data.resultType === "cards") {
           setBoardNlqMetric(boardId, null);
           setBoardNlqCards(boardId, data.cardIds);
-          onExpandFiltersRef.current();
+          onExpandFiltersRef.current?.();
           pushToast({
             kind: "success",
             title: t("toastTitle"),

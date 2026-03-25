@@ -115,7 +115,9 @@ export function buildKanbanOverlayModel(args: {
   const d = board.dailySession;
 
   const dailyPanelProps: DailyInsightsPanelProps = {
+    boardId,
     boardName,
+    getHeaders,
     dailyTab: d.dailyTab,
     dailyGenerating: d.dailyGenerating,
     dailyStatusPhase: d.dailyStatusPhase,

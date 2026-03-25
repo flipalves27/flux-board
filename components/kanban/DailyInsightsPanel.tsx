@@ -6,6 +6,7 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { getDailyActionSuggestions, getDailyCreateSuggestions, renderOrganizedContext } from "./daily-utils";
 import { useTranslations } from "next-intl";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { StandupSummarySection } from "./StandupSummarySection";
 
 export type DailyTab = "entrada" | "historico" | "status";
 export type DailyLogStatus = "start" | "success" | "error";
@@ -23,7 +24,9 @@ export type DailyLog = {
 };
 
 export type DailyInsightsPanelProps = {
+  boardId: string;
   boardName: string;
+  getHeaders: () => Record<string, string>;
 
   dailyTab: DailyTab;
   dailyGenerating: boolean;
@@ -82,7 +85,9 @@ export type DailyInsightsPanelProps = {
 
 export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
   const {
+    boardId,
     boardName,
+    getHeaders,
     dailyTab,
     dailyGenerating,
     dailyTranscribing = false,
@@ -850,6 +855,13 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     {t("daily.history.emptyNoMatches")}
                   </p>
                 )}
+
+                <StandupSummarySection
+                  boardId={boardId}
+                  dailyInsights={dailyInsights}
+                  getHeaders={getHeaders}
+                  onCreateCardsFromInsight={onCreateCardsFromInsight}
+                />
               </>
             ) : (
               <p className="text-xs text-[var(--flux-text-muted)]">{t("daily.history.emptyNoSummaryYet")}</p>

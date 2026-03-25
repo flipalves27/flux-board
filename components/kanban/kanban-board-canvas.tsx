@@ -4,6 +4,7 @@ import { useEffect, useRef, type ComponentProps, type RefObject } from "react";
 import { DndContext, DragOverlay, type CollisionDetection, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
+import type { CardTemplate } from "@/lib/kv-card-templates";
 import type { BoardViewMode } from "./kanban-constants";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
@@ -17,7 +18,6 @@ type KanbanBoardCanvasProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
   boardScrollRef: RefObject<HTMLDivElement | null>;
   boardView: BoardViewMode;
-  priorityBarVisible: boolean;
   isPanning: boolean;
   onPanPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
   onPanPointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -63,6 +63,8 @@ type KanbanBoardCanvasProps = {
   onVisibleColumnKeyChange?: (columnKey: string | null) => void;
   /** Incluir/remover card de sprint a partir do menu do card (usa sprint-store + API). */
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
+  onAddCardFromTemplate?: (bucketKey: string, template: CardTemplate) => void;
+  getHeaders?: () => Record<string, string>;
 };
 
 function bucketToEisenhowerKey(bucket: string): "do_first" | "schedule" | "delegate" | "eliminate" | null {
@@ -78,7 +80,6 @@ export function KanbanBoardCanvas({
   t,
   boardScrollRef,
   boardView,
-  priorityBarVisible,
   isPanning,
   onPanPointerDown,
   onPanPointerMove,
@@ -116,6 +117,8 @@ export function KanbanBoardCanvas({
   onPinCardToTop,
   onVisibleColumnKeyChange,
   sprintBoardQuickActions,
+  onAddCardFromTemplate,
+  getHeaders,
 }: KanbanBoardCanvasProps) {
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
   const bucketKeysSig = buckets.map((b) => b.key).join("|");
@@ -185,7 +188,7 @@ export function KanbanBoardCanvas({
         boardView === "kanban"
           ? `flex gap-4 overflow-x-auto items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
           : "flex flex-col overflow-x-hidden"
-      } ${priorityBarVisible ? "min-h-[calc(100vh-240px)]" : "min-h-[calc(100vh-140px)]"}`}
+      } min-h-[calc(100vh-240px)]`}
       style={{ touchAction: boardView === "kanban" ? (isPanning ? "none" : "pan-y") : undefined }}
     >
       {boardView === "timeline" ? (
@@ -337,6 +340,8 @@ export function KanbanBoardCanvas({
                 isFirstColumn={colIdx === 0}
                 activeDragIds={activeDragIds}
                 sprintBoardQuickActions={sprintBoardQuickActions}
+                onAddCardFromTemplate={onAddCardFromTemplate ? (tpl) => onAddCardFromTemplate(b.key, tpl) : undefined}
+                getHeaders={getHeaders}
               />
             ))}
           </SortableContext>

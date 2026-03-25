@@ -609,6 +609,22 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               ) : null}
             </div>
           ) : null}
+          {mode === "new" && !smartEnrichBusy && !smartEnrichPending && title.trim().length >= 2 && !descriptionForSave.trim() ? (
+            <button
+              type="button"
+              onClick={() => requestSmartEnrich({ immediate: true })}
+              className="mt-2.5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 motion-safe:active:scale-[0.97] shadow-[0_2px_12px_-2px_var(--flux-primary-alpha-35)]"
+              style={{
+                background: "linear-gradient(135deg, var(--flux-primary), color-mix(in srgb, var(--flux-primary) 75%, var(--flux-secondary)))",
+                border: "1px solid var(--flux-primary-alpha-45)",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" aria-hidden>
+                <path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74L12 2z" />
+              </svg>
+              {t("card.aiHints.enrichButton")}
+            </button>
+          ) : null}
           {mode === "new" && smartEnrichBusy ? (
             <p className="mt-1.5 text-[11px] text-[var(--flux-text-muted)]">{t("cardModal.smartEnrich.busy")}</p>
           ) : null}

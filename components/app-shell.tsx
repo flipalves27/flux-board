@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { SidebarLayoutProvider, useSidebarLayout } from "@/context/sidebar-layout-context";
 import { Sidebar } from "@/components/sidebar";
-import { MobileAppHeader } from "@/components/mobile-app-header";
 import { TrialBillingBanner } from "@/components/trial-billing-banner";
 import { CommandPalette } from "@/components/command-palette/command-palette";
 import { GlobalHotkeys } from "@/components/hotkeys/global-hotkeys";
@@ -39,7 +38,6 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
-        <MobileAppHeader />
         <TrialBillingBanner />
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
       </div>

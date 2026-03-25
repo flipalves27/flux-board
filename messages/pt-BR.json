@@ -17,10 +17,12 @@
     "tracer": "Tracer",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
+    "programIncrements": "Incrementos",
+    "docs": "Flux Docs",
     "section": {
-      "flow": "Fluxo",
+      "work": "Trabalho",
       "intelligence": "Inteligência",
-      "organization": "Espaço da org"
+      "admin": "Admin"
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
@@ -36,7 +38,9 @@
       "invites": "Convites pendentes para novos membros.",
       "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
       "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
-      "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias."
+      "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
+      "programIncrements": "Planejamento de incrementos e PIs entre boards.",
+      "docs": "Documentos, RAG e geração com IA."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -272,7 +276,8 @@
     "escape": "Fechar diálogo ou paleta (quando estiver aberto)",
     "newCard": "Novo card (board atual)",
     "toggleFilters": "Alternar filtros e barra de busca",
-    "focusSearch": "Focar busca do board"
+    "focusSearch": "Focar busca do board",
+    "focusMode": "Alternar modo foco"
   },
   "rateLimitAbuse": {
     "title": "Abuso — rate limit",
@@ -665,6 +670,7 @@
   },
   "header": {
     "userFallback": "Usuário",
+    "openNavigation": "Abrir navegação",
     "anomalyBell": {
       "ariaLabel": "Alertas de anomalia",
       "title": "Alertas",
@@ -1045,6 +1051,10 @@
   "boards": {
     "pageTitle": "Meus boards",
     "pageSubtitle": "Busque, filtre e abra seus boards. Métricas e portfólio ficam abaixo para consulta quando precisar.",
+    "tabs": {
+      "myBoards": "Meus boards",
+      "analytics": "Analytics"
+    },
     "sections": {
       "search": "Buscar e filtrar",
       "snapshot": "Visão rápida",
@@ -1138,6 +1148,10 @@
     }
   },
   "board": {
+    "backToBoards": "Boards",
+    "boardSettings": {
+      "open": "Configurações"
+    },
     "clientLabelInHeader": "Cliente: {label}",
     "persistence": {
       "saving": "Salvando…",
@@ -1268,6 +1282,17 @@
           "body": "Em Relatórios você vê métricas agregadas da organização, gráficos e narrativa sobre o desempenho."
         }
       }
+    },
+    "executiveBrief": {
+      "title": "Brief Executivo (IA)",
+      "menuItem": "Brief Executivo IA",
+      "generating": "Gerando brief…",
+      "error": "Não foi possível gerar o brief executivo.",
+      "cached": "cache",
+      "copy": "Copiar",
+      "download": "Baixar .md",
+      "close": "Fechar",
+      "generatedBy": "Gerado por {model}"
     },
     "portal": {
       "open": "Portal do cliente",
@@ -2008,12 +2033,21 @@
       "direction": {
         "heading": "Direcionamento"
       },
+      "aiHints": {
+        "unblockAssist": "IA pode ajudar a desbloquear",
+        "refineAvailable": "Refinamento com IA disponível",
+        "enrichButton": "Enriquecer com IA"
+      },
       "serviceClass": {
         "expedite": "Expedite",
         "datebound": "Prazo curto",
         "blocked": "Bloqueado",
         "prioritize": "Priorizar",
         "intangible": "Intangível"
+      },
+      "predictiveDelivery": {
+        "estimate": "Est.",
+        "late": "Atrasado"
       },
       "quickActions": {
         "copyTitleSuffix": "(cópia)",
@@ -2039,6 +2073,8 @@
       "dragAriaLabel": "Coluna {label}. {count} card(s). Arraste para reorganizar.",
       "dropRegionAriaLabel": "Coluna {label}. Área para soltar cards.",
       "tourEmptyCardHint": "Nenhum card ainda — use + acima para criar o primeiro.",
+      "emptyHint": "Sem cards — solte cards aqui ou adicione um novo",
+      "addCardButton": "Adicionar card",
       "tooltips": {
         "newCard": "Novo card",
         "renameColumn": "Renomear coluna",
@@ -2122,6 +2158,7 @@
         "colDue": "Prazo",
         "colColumn": "Coluna",
         "colTags": "Tags",
+        "colEstDelivery": "Previsão",
         "emptyTitle": "Nenhum card corresponde aos filtros",
         "emptyHint": "Ajuste filtros ou busca — as mesmas regras do Kanban se aplicam aqui."
       },
@@ -2268,7 +2305,31 @@
         "clearFocus": "Limpar filtro de insights",
         "openFlowHealth": "Saúde do fluxo",
         "sprintCoach": "Coach de sprint",
-        "openCopilot": "Copilot"
+        "cadence": "Cadência",
+        "openCopilot": "Copilot",
+        "workloadBalance": "Carga",
+        "workloadTitle": "Equilíbrio de Carga",
+        "workloadHint": "Análise IA da distribuição de cards entre membros com sugestões de rebalanceamento.",
+        "workloadClose": "Fechar",
+        "workloadError": "Não foi possível carregar o balanceamento de carga.",
+        "workloadRetry": "Tentar novamente",
+        "workloadMembers": "Membros do time",
+        "workloadEmpty": "Nenhum responsável encontrado nos cards.",
+        "workloadSuggestions": "Sugestões de rebalanceamento",
+        "workloadRefresh": "Atualizar análise"
+      },
+      "healthScore": {
+        "label": "Saúde",
+        "unavailable": "Score de saúde indisponível"
+      },
+      "intelligenceCollapse": {
+        "label": "Inteligência",
+        "expand": "Expandir linha de inteligência",
+        "collapse": "Recolher linha de inteligência"
+      },
+      "nlqCompact": {
+        "expand": "Abrir busca NLQ",
+        "collapse": "Recolher dock NLQ"
       },
       "flowHealth": {
         "title": "Saúde do fluxo",
@@ -2288,6 +2349,22 @@
         "cfdHint": "O CFD da org fica em Flux Reports (plano / portfólio).",
         "cfdGated": "Histórico CFD exige acesso a portfólio ou snapshots do cron.",
         "openReports": "Abrir Flux Reports"
+      },
+      "knowledgeGraph": {
+        "title": "Grafo de Conhecimento",
+        "open": "Grafo",
+        "empty": "Dados insuficientes para gerar o grafo.",
+        "loading": "Gerando grafo…",
+        "retry": "Tentar novamente",
+        "error": "Não foi possível carregar o grafo."
+      },
+      "automationSuggestions": {
+        "title": "Sugestões de Automação",
+        "badge": "{count, plural, one {# sugestão} other {# sugestões}}",
+        "apply": "Aplicar",
+        "dismiss": "Dispensar",
+        "confidence": "Confiança",
+        "noSuggestions": "Nenhum padrão detectado ainda"
       },
       "sprintCoach": {
         "title": "Coach de sprint (IA)",
@@ -2314,6 +2391,25 @@
       "newCard": {
         "defaultDescription": "Sem descrição."
       },
+      "standupSummary": {
+        "title": "Resumo do Standup",
+        "generate": "Gerar Resumo",
+        "generating": "Gerando...",
+        "impediments": "Impedimentos",
+        "suggestedCards": "Cards Sugeridos",
+        "createCard": "Criar Card",
+        "copy": "Copiar",
+        "copied": "Copiado!",
+        "error": "Não foi possível gerar o resumo"
+      },
+      "focusMode": {
+        "enter": "Modo Foco",
+        "exit": "Sair do Foco",
+        "timer": "Timer",
+        "start": "Iniciar",
+        "pause": "Pausar",
+        "reset": "Reiniciar"
+      },
       "dnd": {
         "screenReaderInstructions": {
           "draggable": "Arraste e solte cards usando teclado. Use Tab para focar um card. Pressione Enter/Espaço para iniciar o arrasto. Use as setas para alternar entre as colunas/posições e pressione Enter/Espaço para soltar."
@@ -2338,6 +2434,19 @@
           "dragCancel": "Arrasto cancelado."
         }
       }
+    },
+    "cardTemplates": {
+      "saveAsTemplate": "Salvar como Template",
+      "templateName": "Nome do template",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "createFromTemplate": "A partir de template",
+      "blankCard": "Card em branco",
+      "pickTemplate": "Escolher template",
+      "noTemplates": "Nenhum template ainda",
+      "noTemplatesHint": "Salve um card como template para reutilizar depois",
+      "delete": "Excluir template",
+      "saved": "Template salvo!"
     },
     "batchSelection": {
       "toolbarAriaLabel": "Ações em lote nos cards selecionados",

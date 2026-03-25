@@ -160,6 +160,25 @@ function IconGoals({ className }: { className?: string }) {
   );
 }
 
+function IconDocs({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9l-5-5H7a2 2 0 00-2 2v13a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 4v5h5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
+function IconProgramIncrements({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 16l2 2 4-4" />
+    </svg>
+  );
+}
+
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -380,6 +399,8 @@ export function Sidebar() {
     if (href === "/templates") return normalizedPath.startsWith("/templates");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
+    if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
+    if (href === "/docs") return normalizedPath.startsWith("/docs");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/billing") return normalizedPath === "/billing";
     if (href === "/org-settings") return normalizedPath === "/org-settings";
@@ -535,7 +556,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3">
-          <NavSectionTitle>{t("section.flow")}</NavSectionTitle>
+          <NavSectionTitle>{t("section.work")}</NavSectionTitle>
           <NavLink
             path="/boards"
             hint={t("hints.boards")}
@@ -565,6 +586,12 @@ export function Sidebar() {
                 : undefined
             }
           />
+          <NavLink
+            path="/program-increments"
+            hint={t("hints.programIncrements")}
+            icon={<IconProgramIncrements className="h-4 w-4 shrink-0" />}
+            label={t("programIncrements")}
+          />
 
           <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>
           <NavLink
@@ -590,109 +617,66 @@ export function Sidebar() {
             icon={<IconGoals className="h-4 w-4 shrink-0" />}
             label={t("okrs")}
           />
+          <NavLink
+            path="/docs"
+            hint={t("hints.docs")}
+            icon={<IconDocs className="h-4 w-4 shrink-0" />}
+            label={t("docs")}
+          />
 
           {user?.isAdmin && (
             <>
-              <NavSectionTitle>{t("section.organization")}</NavSectionTitle>
-              {compactMode ? (
-                <CustomTooltip content={t("hints.users")} position="right">
-                  <Link href={`/${locale}/users`} className={linkClass("/users")}>
-                    <IconUsers className="h-4 w-4 shrink-0" />
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <NavLink
-                  path="/users"
-                  hint={t("hints.users")}
-                  icon={<IconUsers className="h-4 w-4 shrink-0" />}
-                  label={t("users")}
-                />
-              )}
-              {compactMode ? (
-                <CustomTooltip content={t("hints.organization")} position="right">
-                  <Link href={`/${locale}/org-settings`} className={linkClass("/org-settings")}>
-                    <IconSettings className="h-4 w-4 shrink-0" />
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <NavLink
-                  path="/org-settings"
-                  hint={t("hints.organization")}
-                  icon={<IconSettings className="h-4 w-4 shrink-0" />}
-                  label={t("organization")}
-                />
-              )}
-              {compactMode ? (
-                <CustomTooltip content={t("hints.billing")} position="right">
-                  <Link href={`/${locale}/billing`} className={linkClass("/billing")}>
-                    <IconBilling className="h-4 w-4 shrink-0" />
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <NavLink
-                  path="/billing"
-                  hint={t("hints.billing")}
-                  icon={<IconBilling className="h-4 w-4 shrink-0" />}
-                  label={t("billing")}
-                />
-              )}
-              {compactMode ? (
-                <CustomTooltip content={t("hints.rateLimitAbuse")} position="right">
-                  <Link href={`/${locale}/rate-limit-abuse`} className={linkClass("/rate-limit-abuse")}>
-                    <IconShield className="h-4 w-4 shrink-0" />
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <NavLink
-                  path="/rate-limit-abuse"
-                  hint={t("hints.rateLimitAbuse")}
-                  icon={<IconShield className="h-4 w-4 shrink-0" />}
-                  label={t("rateLimitAbuse")}
-                />
-              )}
-              {compactMode ? (
-                <CustomTooltip content={t("hints.tracer")} position="right">
-                  <Link href={`/${locale}/admin/tracer`} className={linkClass("/admin/tracer")}>
-                    <IconTracer className="h-4 w-4 shrink-0" />
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <NavLink
-                  path="/admin/tracer"
-                  hint={t("hints.tracer")}
-                  icon={<IconTracer className="h-4 w-4 shrink-0" />}
-                  label={t("tracer")}
-                />
-              )}
-              {compactMode ? (
-                <CustomTooltip
-                  content={
-                    activeInvites !== null && activeInvites > 0
-                      ? `${t("hints.invites")} (${activeInvites})`
-                      : t("hints.invites")
-                  }
-                  position="right"
-                >
-                  <Link href={`/${locale}/org-invites`} className={`${linkClass("/org-invites")} relative`}>
-                    <IconInvites className="h-4 w-4 shrink-0" />
-                    {activeInvites !== null && activeInvites > 0 && (
-                      <span className="absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--flux-primary)] px-1 text-[10px] font-bold text-white ring-2 ring-[var(--flux-surface-dark)]">
-                        {activeInvites > 9 ? "9+" : activeInvites}
-                      </span>
-                    )}
-                  </Link>
-                </CustomTooltip>
-              ) : (
-                <Link href={`/${locale}/org-invites`} onClick={() => layout === "mobile" && closeMobile()} className={linkClass("/org-invites")}>
-                  <IconInvites className="h-4 w-4 shrink-0" />
-                  <span>{t("invites")}</span>
-                  {activeInvites !== null && activeInvites > 0 && (
-                    <span className="ml-auto rounded-full bg-[var(--flux-primary)] px-2 py-0.5 text-[10px] font-bold text-white">
-                      {activeInvites}
-                    </span>
-                  )}
-                </Link>
-              )}
+              <NavSectionTitle>{t("section.admin")}</NavSectionTitle>
+              {/* People */}
+              <NavLink
+                path="/users"
+                hint={t("hints.users")}
+                icon={<IconUsers className="h-4 w-4 shrink-0" />}
+                label={t("users")}
+              />
+              <NavLink
+                path="/org-invites"
+                hint={
+                  activeInvites !== null && activeInvites > 0
+                    ? `${t("hints.invites")} (${activeInvites})`
+                    : t("hints.invites")
+                }
+                icon={<IconInvites className="h-4 w-4 shrink-0" />}
+                label={t("invites")}
+                sublabel={
+                  activeInvites !== null && activeInvites > 0
+                    ? String(activeInvites)
+                    : undefined
+                }
+              />
+              {/* Settings */}
+              <div className="h-[6px]" />
+              <NavLink
+                path="/org-settings"
+                hint={t("hints.organization")}
+                icon={<IconSettings className="h-4 w-4 shrink-0" />}
+                label={t("organization")}
+              />
+              <NavLink
+                path="/billing"
+                hint={t("hints.billing")}
+                icon={<IconBilling className="h-4 w-4 shrink-0" />}
+                label={t("billing")}
+              />
+              {/* Ops */}
+              <div className="h-[6px]" />
+              <NavLink
+                path="/rate-limit-abuse"
+                hint={t("hints.rateLimitAbuse")}
+                icon={<IconShield className="h-4 w-4 shrink-0" />}
+                label={t("rateLimitAbuse")}
+              />
+              <NavLink
+                path="/admin/tracer"
+                hint={t("hints.tracer")}
+                icon={<IconTracer className="h-4 w-4 shrink-0" />}
+                label={t("tracer")}
+              />
             </>
           )}
         </nav>

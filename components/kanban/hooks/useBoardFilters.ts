@@ -83,12 +83,7 @@ export function useBoardFilters({
 }: UseBoardFiltersArgs) {
   const [focusMode, setFocusMode] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
-  const [priorityBarVisible, setPriorityBarVisible] = useState(true);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (forceExpandTourFilters) setPriorityBarVisible(true);
-  }, [forceExpandTourFilters]);
 
   const activeLabelsSize = activeLabels.size;
   useEffect(() => {
@@ -186,8 +181,6 @@ export function useBoardFilters({
     setFocusMode,
     labelsOpen,
     setLabelsOpen,
-    priorityBarVisible,
-    setPriorityBarVisible,
     searchInputRef,
     clearFilters,
     applyFocusMode,

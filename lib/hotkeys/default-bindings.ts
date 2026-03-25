@@ -8,4 +8,5 @@ export const DEFAULT_HOTKEY_PATTERNS: Record<HotkeyId, string> = {
   "board.newCard": "n",
   "board.toggleFilters": "f",
   "board.focusSearch": "Slash",
+  "board.focusMode": "Control+Shift+f",
 };

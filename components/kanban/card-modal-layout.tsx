@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslations as useCollabTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -10,6 +10,7 @@ import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { CardModalAiOverlay } from "@/components/kanban/card-modal-ai-overlay";
 import { useCardModal } from "@/components/kanban/card-modal-context";
 import { CardEditForm } from "@/components/kanban/card-modal-tabs/card-edit-form";
+import { CardSaveAsTemplateDialog } from "@/components/kanban/card-save-as-template-dialog";
 
 const CardAiContextTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-ai-context-tab"));
 const CardLinksPanel = lazy(() => import("@/components/kanban/card-modal-tabs/card-links-panel"));
@@ -96,6 +97,7 @@ function CardModalTabs({
   onSelect,
   t,
   ariaLabel,
+  tabCounts,
 }: {
   primaryItems: TabDef[];
   secondaryItems: TabDef[];
@@ -103,6 +105,7 @@ function CardModalTabs({
   onSelect: (id: CardModalTabId) => void;
   t: (key: string) => string;
   ariaLabel: string;
+  tabCounts: Partial<Record<CardModalTabId, number>>;
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const activeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -118,6 +121,7 @@ function CardModalTabs({
 
   const renderTab = (def: TabDef) => {
     const selected = activeTab === def.id;
+    const count = tabCounts[def.id];
     return (
       <button
         key={def.id}
@@ -144,7 +148,12 @@ function CardModalTabs({
         >
           {TAB_ICONS[def.id]}
         </span>
-        <span className="whitespace-nowrap pr-0.5">{t(`cardModal.tabs.${def.labelKey}`)}</span>
+        <span className="whitespace-nowrap pr-0.5">
+          {t(`cardModal.tabs.${def.labelKey}`)}
+          {count != null && count > 0 && (
+            <span className="ml-1 text-[10px] opacity-60 tabular-nums">({count})</span>
+          )}
+        </span>
       </button>
     );
   };
@@ -210,6 +219,9 @@ export function CardModalLayout() {
     dialogRef,
     closeBtnRef,
     t,
+    links,
+    docRefs,
+    blockedBy,
   } = useCardModal();
   const tCollab = useCollabTranslations("board.collab");
   const { user } = useAuth();
@@ -219,6 +231,7 @@ export function CardModalLayout() {
 
   const remoteLock = mode === "edit" && card.id ? cardLocks[card.id] : undefined;
   const showRemoteLockBanner = Boolean(remoteLock && remoteLock.userId !== user?.id);
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
 
   useEffect(() => {
     if (mode !== "edit" || !card.id?.trim() || !connectionId || !clientId) return;
@@ -294,6 +307,14 @@ export function CardModalLayout() {
     });
     return () => cancelAnimationFrame(raf);
   }, [card.id]);
+
+  const tabCounts = useMemo<Partial<Record<CardModalTabId, number>>>(() => {
+    const counts: Partial<Record<CardModalTabId, number>> = {};
+    if (links.length > 0) counts.links = links.length;
+    if (docRefs.length > 0) counts.docs = docRefs.length;
+    if (blockedBy.length > 0) counts.deps = blockedBy.length;
+    return counts;
+  }, [links, docRefs, blockedBy]);
 
   const primaryTabItems: TabDef[] = [
     { id: "edit", labelKey: "edit" },
@@ -402,6 +423,7 @@ export function CardModalLayout() {
             onSelect={setActiveTab}
             t={t}
             ariaLabel={t("cardModal.tabsNavAria")}
+            tabCounts={tabCounts}
           />
         </header>
 
@@ -463,6 +485,16 @@ export function CardModalLayout() {
                 {t("cardModal.buttons.delete")}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setSaveAsTemplateOpen(true)}
+              className="btn-secondary inline-flex items-center gap-1.5"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+              </svg>
+              {t("cardTemplates.saveAsTemplate")}
+            </button>
             <button type="button" onClick={onClose} className="btn-secondary">
               {t("cardModal.buttons.cancel")}
             </button>
@@ -495,6 +527,10 @@ export function CardModalLayout() {
             onClose();
           }}
         />
+
+        {saveAsTemplateOpen && (
+          <CardSaveAsTemplateDialog onClose={() => setSaveAsTemplateOpen(false)} />
+        )}
       </div>
     </div>
   );

@@ -18,8 +18,51 @@ import {
 import type { BucketConfig } from "@/app/board/[id]/page";
 import { useTranslations } from "next-intl";
 import { computeCardRiskScore, inferStagnationDaysFromCard } from "@/lib/card-risk-score";
+import { predictDelivery } from "@/lib/predictive-delivery";
 
 type SubtaskItem = { id: string; status: "pending" | "in_progress" | "done" | "blocked" };
+
+function AiSparkleIcon({ className = "w-3 h-3" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74L12 2z" />
+    </svg>
+  );
+}
+
+function AiBlockedHintBadge({ tooltip }: { tooltip: string }) {
+  return (
+    <CustomTooltip content={tooltip} position="top">
+      <span
+        className="absolute top-1.5 right-8 z-[5] flex items-center justify-center w-[22px] h-[22px] rounded-full cursor-default"
+        style={{
+          background: "var(--flux-primary-alpha-18)",
+          border: "1px solid var(--flux-primary-alpha-35)",
+          animation: "flux-ai-pulse 2.4s ease-in-out infinite",
+        }}
+        aria-label={tooltip}
+      >
+        <AiSparkleIcon className="w-2.5 h-2.5 text-[var(--flux-primary-light)]" />
+      </span>
+    </CustomTooltip>
+  );
+}
+
+function AiRefineHintBadge({ tooltip }: { tooltip: string }) {
+  return (
+    <CustomTooltip content={tooltip} position="top">
+      <span
+        className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border cursor-default border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)]"
+        aria-label={tooltip}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-2.5 h-2.5" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        <AiSparkleIcon className="w-2 h-2" />
+      </span>
+    </CustomTooltip>
+  );
+}
 
 function RiskScoreBadge({ score }: { score: number }) {
   const color =
@@ -127,6 +170,10 @@ interface KanbanCardProps {
   activeDragIds?: string[] | null;
   /** Menu rápido: incluir/remover do sprint (board com sprint_engine). */
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
+  /** Historical cycle times from completed cards on this board (days). */
+  historicalCycleDays?: number[];
+  /** Whether this card lives in the last (done) column. */
+  isFinalColumn?: boolean;
 }
 
 /** Compara apenas datas de calendário em UTC — evita divergência SSR (Node UTC) vs browser (fuso local). */
@@ -171,6 +218,8 @@ function KanbanCardInner({
   dragOverlayPreview = false,
   activeDragIds = null,
   sprintBoardQuickActions,
+  historicalCycleDays,
+  isFinalColumn = false,
 }: KanbanCardProps) {
   const currentBoardId = useBoardStore((s) => s.boardId ?? "");
   const inActiveSprint = useSprintStore((s) => {
@@ -433,6 +482,14 @@ function KanbanCardInner({
       })
     : 0;
 
+  const delivery = useMemo(() => {
+    if (isFinalColumn || !datesReady || !historicalCycleDays?.length) return null;
+    return predictDelivery(
+      { columnEnteredAt: card.columnEnteredAt, dueDate: card.dueDate, completedAt: card.completedAt },
+      historicalCycleDays,
+    );
+  }, [card.columnEnteredAt, card.dueDate, card.completedAt, historicalCycleDays, isFinalColumn, datesReady]);
+
   const ariaLabel = t("card.ariaLabel", {
     cardTitle: card.title,
     columnLabel: card.bucket,
@@ -480,6 +537,14 @@ function KanbanCardInner({
   const sprintEmphasis = inActiveSprint && !selected;
   const matrixWeight = typeof card.matrixWeight === "number" ? Math.max(0, Math.min(100, Math.round(card.matrixWeight))) : null;
 
+  const isBlocked = Array.isArray(card.blockedBy) && card.blockedBy.length > 0;
+  const showAiBlockedHint = isBlocked && card.progress !== "Concluída";
+
+  const dorObj = (card as unknown as Record<string, unknown>).dorReady as Record<string, boolean> | undefined;
+  const hasSparseContent = !card.desc || card.desc === "Sem descrição." || card.desc.trim().length < 10;
+  const dorIncomplete = !dorObj || !dorObj.titleOk || !dorObj.acceptanceOk || !dorObj.depsOk || !dorObj.sizedOk;
+  const showAiRefineHint = card.progress !== "Concluída" && (hasSparseContent || dorIncomplete) && hasSparseContent;
+
   return (
     <div
       ref={setNodeRef}
@@ -506,6 +571,9 @@ function KanbanCardInner({
       ) : null}
       {riskScore > 40 && card.progress !== "Concluída" && (
         <RiskScoreBadge score={riskScore} />
+      )}
+      {showAiBlockedHint && (
+        <AiBlockedHintBadge tooltip={t("card.aiHints.unblockAssist")} />
       )}
       <div
         ref={cardRef}
@@ -759,8 +827,13 @@ function KanbanCardInner({
             ) : null}
           </div>
         </div>
-        <div className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight mb-1.5">
-          {card.title}
+        <div className="flex items-start gap-1.5 mb-1.5">
+          <span className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight flex-1 min-w-0">
+            {card.title}
+          </span>
+          {showAiRefineHint && (
+            <AiRefineHintBadge tooltip={t("card.aiHints.refineAvailable")} />
+          )}
         </div>
         {card.progress !== "Concluída" &&
         (showExpedite ||
@@ -831,6 +904,22 @@ function KanbanCardInner({
             <span className={`flex items-center gap-1 text-[11px] font-semibold ${dueClass}`}>
               <span>◷</span>
               {dueText}
+            </span>
+          )}
+          {delivery && (
+            <span
+              className={`flex items-center gap-1 text-[11px] font-medium tabular-nums ${
+                delivery.isLate
+                  ? "text-[var(--flux-danger)]"
+                  : "text-[var(--flux-text-muted)]"
+              }`}
+              title={`${t("predictiveDelivery.estimate")} ${delivery.estimatedDate} (${delivery.confidencePercent}%)`}
+            >
+              <span className="text-[9px]">⏱</span>
+              {t("predictiveDelivery.estimate")} {delivery.estimatedDate.slice(5)}
+              {delivery.isLate && (
+                <span className="text-[9px] font-bold uppercase">{t("predictiveDelivery.late")}</span>
+              )}
             </span>
           )}
         </div>

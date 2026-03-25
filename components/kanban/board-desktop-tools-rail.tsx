@@ -8,6 +8,7 @@ import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insight
 import { openBoardDesktopDaily } from "@/lib/board-desktop-daily-bridge";
 
 const RAIL_LEAVE_MS = 320;
+const LS_PINNED_KEY = "flux:desktop-tools-rail-pinned";
 
 function toolButtonClass(active: boolean) {
   return [
@@ -39,7 +40,11 @@ export function BoardDesktopToolsRail() {
 
   const setCopilotOpen = useCopilotStore((s) => s.setOpen);
 
-  const [pinned, setPinned] = useState(false);
+  const [pinned, setPinned] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem(LS_PINNED_KEY);
+    return stored === null ? true : stored === "1";
+  });
   const [hoverOpen, setHoverOpen] = useState(false);
   const [focusInside, setFocusInside] = useState(false);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,7 +104,11 @@ export function BoardDesktopToolsRail() {
   }, []);
 
   const onHandleClick = useCallback(() => {
-    setPinned((p) => !p);
+    setPinned((p) => {
+      const next = !p;
+      localStorage.setItem(LS_PINNED_KEY, next ? "1" : "0");
+      return next;
+    });
   }, []);
 
   const onFocusCapture = useCallback(() => {
@@ -131,19 +140,31 @@ export function BoardDesktopToolsRail() {
         onMouseEnter={onRailEnter}
         onMouseLeave={onRailLeave}
       >
-        <svg
-          viewBox="0 0 24 24"
-          className={`h-4 w-4 motion-safe:transition-transform motion-safe:duration-300 ${showTools ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 6l-6 6 6 6" />
-        </svg>
-        <span className="pointer-events-none select-none text-[9px] font-bold uppercase tracking-widest text-[var(--flux-text-muted)] opacity-80 [writing-mode:vertical-rl] group-hover/handle:opacity-100">
-          AI
-        </span>
+        {showTools ? (
+          <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 motion-safe:transition-transform motion-safe:duration-300 rotate-180"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 6l-6 6 6 6" />
+          </svg>
+        ) : (
+          <svg
+            viewBox="0 0 16 16"
+            className="h-4 w-4"
+            fill="currentColor"
+            aria-hidden
+          >
+            <circle cx="4" cy="4" r="1.5" />
+            <circle cx="12" cy="4" r="1.5" />
+            <circle cx="4" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="8" cy="8" r="1.5" />
+          </svg>
+        )}
       </button>
 
       <div
@@ -153,6 +174,7 @@ export function BoardDesktopToolsRail() {
         onMouseEnter={onRailEnter}
         onMouseLeave={onRailLeave}
       >
+        {/* AI tools */}
         <button
           type="button"
           data-tour="board-copilot"
@@ -178,6 +200,26 @@ export function BoardDesktopToolsRail() {
           </span>
         </button>
 
+        <button
+          type="button"
+          data-tour="board-daily"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={onDailyClick}
+          aria-label={tFilters("dailyButton")}
+        >
+          <span className={toolButtonClass(false)}>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{tFilters("dailyButton")}</span>
+          </span>
+        </button>
+
+        <div className="w-6 mx-auto my-1 border-t border-[var(--flux-chrome-alpha-12)]" />
+
+        {/* Analytics tools */}
         <button
           type="button"
           className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
@@ -214,23 +256,6 @@ export function BoardDesktopToolsRail() {
             <span className="text-[11px] font-semibold whitespace-nowrap">
               {executionOpen ? tExecution("fabClose") : tExecution("fabOpen")}
             </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-tour="board-daily"
-          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
-          onClick={onDailyClick}
-          aria-label={tFilters("dailyButton")}
-        >
-          <span className={toolButtonClass(false)}>
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-                <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
-              </svg>
-            </span>
-            <span className="text-[11px] font-semibold whitespace-nowrap">{tFilters("dailyButton")}</span>
           </span>
         </button>
       </div>
