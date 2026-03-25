@@ -293,9 +293,7 @@ function modelNodeToFlowNode(n: BpmnTemplateModel["nodes"][number]): BpmnFlowNod
       borderColor: n.borderColor,
     },
     style: { width: w, height: h },
-    ...(n.type === "annotation" || n.type === "system_box" || n.type === "data_object"
-      ? {}
-      : {}),
+    zIndex: 1,
   };
 }
 

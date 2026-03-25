@@ -1153,10 +1153,13 @@
    don't bleed into the rest of the Flux-Board design system.
    ─────────────────────────────────────────────────────────────────────────── */
 .bpmn-workspace {
-  /* ── BPMN toolbar always uses dark values for the command bar ── */
+  /* ── BPMN toolbar ── */
   --bpmn-toolbar-bg:    linear-gradient(135deg, #1A1730 0%, #2D2952 100%);
   --bpmn-toolbar-text:  #F0EEFF;
   --bpmn-toolbar-muted: rgba(240, 238, 255, 0.65);
+
+  /* ── Canvas dots ── */
+  --bpmn-dots-color: rgba(108,92,231,0.18);
 
   /* ── Lane gradients (index-ordered) ── */
   --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);
@@ -1202,20 +1205,14 @@
   cursor: grab;
 }
 
-.bpmn-react-flow .react-flow__node:hover {
-  z-index: 100 !important;
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]):hover {
   filter: drop-shadow(0 6px 16px rgba(0,0,0,0.18));
 }
 
-.bpmn-react-flow .react-flow__node.dragging {
-  z-index: 1000 !important;
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).dragging {
   opacity: 0.92;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,0.22));
   cursor: grabbing;
-}
-
-.bpmn-react-flow .react-flow__node.selected {
-  z-index: 100 !important;
 }
 
 .bpmn-react-flow .react-flow__edge path {
@@ -1325,6 +1322,27 @@
   border-color: var(--flux-primary);
   outline: none;
   box-shadow: 0 0 0 2px rgba(108,92,231,0.15);
+}
+
+/* ─── BPMN Legend inputs ──────────────────────────────────────────────── */
+.bpmn-legend-input {
+  min-width: 0;
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--flux-text-muted);
+}
+
+.bpmn-legend-input:hover {
+  border-color: var(--flux-border-subtle);
+}
+
+.bpmn-legend-input:focus {
+  border-color: rgba(0,137,123,0.5);
+  outline: none;
 }
 
 /* ─── BPMN Swim Lane Styles ───────────────────────────────────────────── */
@@ -1458,7 +1476,7 @@
   pointer-events: auto !important;
 }
 
-/* Swim lane React Flow node overrides */
+/* Swim lane React Flow node overrides — always behind everything */
 .bpmn-react-flow .react-flow__node[data-type="swim_lane"] {
   z-index: -10 !important;
   transition: none;
@@ -1466,12 +1484,158 @@
 }
 
 .bpmn-react-flow .react-flow__node[data-type="swim_lane"]:hover {
+  z-index: -10 !important;
   filter: none;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"].selected {
+  z-index: -10 !important;
 }
 
 .bpmn-react-flow .react-flow__node[data-type="swim_lane"].dragging {
   opacity: 0.85;
   z-index: -5 !important;
+}
+
+/* Non-swim-lane nodes always above lanes */
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]) {
+  z-index: 1 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]):hover {
+  z-index: 100 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).selected {
+  z-index: 100 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).dragging {
+  z-index: 1000 !important;
+}
+
+/* ─── BPMN Light Theme ─────────────────────────────────────────────────── */
+[data-theme="light"] .bpmn-workspace {
+  --bpmn-toolbar-bg: linear-gradient(135deg, #F5F4FF 0%, #E8E6F9 100%);
+  --bpmn-toolbar-text: #1A1730;
+  --bpmn-toolbar-muted: rgba(26, 23, 48, 0.55);
+  --bpmn-dots-color: rgba(108,92,231,0.12);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__background {
+  background-color: #F8F7FF;
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__node:hover {
+  filter: drop-shadow(0 6px 16px rgba(108,92,231,0.12));
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__node.dragging {
+  filter: drop-shadow(0 8px 24px rgba(108,92,231,0.16));
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__connection-line {
+  stroke: rgba(108,92,231,0.7);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__controls button {
+  background: #fff;
+  border-color: rgba(108,92,231,0.18);
+  color: #1A1730;
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__minimap {
+  box-shadow: 0 4px 16px rgba(108,92,231,0.10);
+}
+
+[data-theme="light"] .bpmn-toolbar-btn {
+  border-color: rgba(108,92,231,0.22);
+  background: rgba(108,92,231,0.06);
+  color: #1A1730;
+}
+
+[data-theme="light"] .bpmn-toolbar-btn:hover {
+  background: rgba(108,92,231,0.14);
+}
+
+[data-theme="light"] .bpmn-toolbar-btn-active {
+  background: var(--flux-primary) !important;
+  border-color: var(--flux-primary) !important;
+  color: #fff !important;
+}
+
+[data-theme="light"] .bpmn-handle {
+  background: #fff !important;
+  border-color: var(--flux-primary) !important;
+}
+
+[data-theme="light"] .bpmn-handle:hover {
+  background: var(--flux-primary-light) !important;
+}
+
+[data-theme="light"] .bpmn-task-card {
+  border-top-color: rgba(108,92,231,0.10) !important;
+  border-right-color: rgba(108,92,231,0.10) !important;
+  border-bottom-color: rgba(108,92,231,0.10) !important;
+}
+
+[data-theme="light"] .react-flow__node:hover .bpmn-task-card {
+  box-shadow: 0 8px 28px rgba(108,92,231,0.14) !important;
+}
+
+[data-theme="light"] .react-flow__node.selected .bpmn-task-card {
+  box-shadow: 0 4px 16px rgba(108,92,231,0.22) !important;
+}
+
+[data-theme="light"] .bpmn-prop-input {
+  background: #fff;
+  border-color: rgba(108,92,231,0.18);
+  color: #1A1730;
+}
+
+[data-theme="light"] .bpmn-prop-input:focus {
+  border-color: var(--flux-primary);
+  box-shadow: 0 0 0 2px rgba(108,92,231,0.12);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body {
+  border-color: rgba(108,92,231,0.12);
+  background: rgba(108,92,231,0.02);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body[data-selected="true"] {
+  border-color: rgba(108,92,231,0.32);
+  background: rgba(108,92,231,0.03);
+  box-shadow: 0 0 0 2px rgba(108,92,231,0.10), 0 8px 32px rgba(108,92,231,0.08);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body:hover {
+  border-color: rgba(108,92,231,0.22);
+}
+
+[data-theme="light"] .bpmn-swim-lane-toolbar {
+  background: #fff;
+  border-color: rgba(108,92,231,0.18);
+  box-shadow: 0 4px 16px rgba(108,92,231,0.10);
+}
+
+[data-theme="light"] .bpmn-lane-tool-btn {
+  background: #F8F7FF;
+  border-color: rgba(108,92,231,0.18);
+}
+
+[data-theme="light"] .bpmn-lane-tool-btn:hover {
+  background: var(--flux-primary);
+  border-color: var(--flux-primary);
+  color: #fff;
+}
+
+[data-theme="light"] .bpmn-lane-resize-handle {
+  border-color: #F5F4FF !important;
+}
+
+[data-theme="light"] .bpmn-lane-resize-line {
+  border-color: rgba(108,92,231,0.25) !important;
 }
 
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */

@@ -54,6 +54,7 @@ export function useDragFromPalette() {
           ...(variant ? { semanticVariant: variant } : {}),
         } satisfies BpmnNodeData,
         style: { width, height },
+        zIndex: 1,
       };
 
       addNode(newNode);

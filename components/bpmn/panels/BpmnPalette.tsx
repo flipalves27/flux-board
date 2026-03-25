@@ -98,7 +98,8 @@ function BpmnPaletteInner() {
               draggable
               title={stencil.label}
               onDragStart={(e) => onDragStart(e, stencil)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-[#00897B]/50 dark:border-slate-600 dark:bg-slate-900"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm hover:border-[#00897B]/50"
+              style={{ borderColor: "var(--flux-border-default)", background: "var(--flux-surface-card)" }}
             >
               {stencil.category === "events" ? (
                 <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
@@ -259,7 +260,7 @@ function BpmnPaletteInner() {
         )}
       </div>
 
-      <p className="text-[11px] text-[#546E7A] dark:text-slate-400">
+      <p className="text-[11px] text-[var(--flux-text-muted)]">
         {nodes.length} nós • {edges.length} fluxos
       </p>
     </aside>

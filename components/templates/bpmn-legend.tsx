@@ -46,7 +46,6 @@ function loadLabels(): LegendLabels {
 
 type Props = {
   className?: string;
-  /** Painel da legenda visível (expandido na coluna). */
   expanded: boolean;
   onToggleExpanded: () => void;
 };
@@ -98,13 +97,28 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
   }, []);
 
   return (
-    <div className={`rounded-lg border border-slate-200/90 bg-[#F8FAFC] dark:border-slate-600 dark:bg-slate-950/50 ${className}`}>
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200/80 px-2.5 py-2 dark:border-slate-600">
-        <h4 className="font-semibold text-[11px] uppercase tracking-wide text-[#1A2744] dark:text-slate-200">Legenda BPMN</h4>
+    <div
+      className={`rounded-lg border ${className}`}
+      style={{
+        borderColor: "var(--flux-border-default)",
+        background: "var(--flux-surface-card)",
+      }}
+    >
+      <div
+        className="flex items-center justify-between gap-2 border-b px-2.5 py-2"
+        style={{ borderColor: "var(--flux-border-muted)" }}
+      >
+        <h4
+          className="font-semibold text-[11px] uppercase tracking-wide"
+          style={{ color: "var(--flux-text)" }}
+        >
+          Legenda BPMN
+        </h4>
         <button
           type="button"
           onClick={onToggleExpanded}
-          className="rounded-md px-2 py-0.5 text-[10px] font-semibold text-[#546E7A] hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="rounded-md px-2 py-0.5 text-[10px] font-semibold transition"
+          style={{ color: "var(--flux-text-muted)" }}
           aria-expanded={expanded}
         >
           {expanded ? "Ocultar" : "Mostrar"}
@@ -113,7 +127,7 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
 
       {expanded ? (
         <div className="max-h-[min(420px,50vh)] space-y-1 overflow-y-auto px-2.5 py-2">
-          <p className="text-[10px] leading-snug text-[#546E7A] dark:text-slate-500">
+          <p className="text-[10px] leading-snug" style={{ color: "var(--flux-text-muted)" }}>
             Textos editáveis (guardados neste navegador). Clique nos grupos para expandir.
           </p>
 
@@ -143,7 +157,7 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
                   type="text"
                   value={labels.gateways[0] ?? ""}
                   onChange={(e) => updateRow("gateways", 0, e.target.value)}
-                  className="min-w-0 flex-1 rounded border border-transparent bg-white/80 px-1 py-0.5 text-[11px] text-[#546E7A] hover:border-slate-200 focus:border-[#00897B]/50 focus:outline-none dark:bg-slate-900/80 dark:text-slate-400 dark:hover:border-slate-600"
+                  className="bpmn-legend-input"
                 />
               </li>
               <li className="flex items-start gap-2">
@@ -154,7 +168,7 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
                   type="text"
                   value={labels.gateways[1] ?? ""}
                   onChange={(e) => updateRow("gateways", 1, e.target.value)}
-                  className="min-w-0 flex-1 rounded border border-transparent bg-white/80 px-1 py-0.5 text-[11px] text-[#546E7A] hover:border-slate-200 focus:border-[#00897B]/50 focus:outline-none dark:bg-slate-900/80 dark:text-slate-400 dark:hover:border-slate-600"
+                  className="bpmn-legend-input"
                 />
               </li>
             </ul>
@@ -168,26 +182,37 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
             </ul>
           </CollapsibleGroup>
 
-          <div className="border-t border-slate-200/80 pt-2 dark:border-slate-600">
-            <label className="text-[10px] font-semibold uppercase tracking-wide text-[#1A2744] dark:text-slate-300">Dica do canvas</label>
+          <div className="border-t pt-2" style={{ borderColor: "var(--flux-border-muted)" }}>
+            <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--flux-text)" }}>Dica do canvas</label>
             <textarea
               value={labels.footerHint}
               onChange={(e) => updateFooter(e.target.value)}
               rows={2}
-              className="mt-1 w-full resize-y rounded border border-slate-200/90 bg-white px-2 py-1.5 text-[10px] italic text-[#90A4AE] focus:border-[#00897B]/50 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500"
+              className="mt-1 w-full resize-y rounded border px-2 py-1.5 text-[10px] italic focus:outline-none"
+              style={{
+                borderColor: "var(--flux-control-border)",
+                background: "var(--flux-surface-elevated)",
+                color: "var(--flux-text-muted)",
+              }}
             />
           </div>
 
           <button
             type="button"
-            className="mt-1 w-full rounded border border-slate-200/80 py-1 text-[10px] font-semibold text-[#546E7A] hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+            className="mt-1 w-full rounded border py-1 text-[10px] font-semibold transition"
+            style={{
+              borderColor: "var(--flux-control-border)",
+              color: "var(--flux-text-muted)",
+            }}
             onClick={() => persist(DEFAULT_LABELS)}
           >
             Restaurar textos padrão
           </button>
         </div>
       ) : (
-        <p className="px-2.5 py-2 text-[10px] text-[#546E7A] dark:text-slate-500">Use &quot;Mostrar&quot; para ver e editar a legenda.</p>
+        <p className="px-2.5 py-2 text-[10px]" style={{ color: "var(--flux-text-muted)" }}>
+          Use &quot;Mostrar&quot; para ver e editar a legenda.
+        </p>
       )}
     </div>
   );
@@ -197,15 +222,22 @@ function CollapsibleGroup({ id, title, children }: { id: string; title: string; 
   return (
     <details
       id={id}
-      className="group rounded-md border border-slate-200/70 bg-white/60 open:bg-white dark:border-slate-700 dark:bg-slate-900/40 dark:open:bg-slate-900/70"
+      className="group rounded-md border"
+      style={{
+        borderColor: "var(--flux-border-subtle)",
+        background: "var(--flux-surface-elevated)",
+      }}
     >
-      <summary className="cursor-pointer list-none px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#546E7A] marker:content-none dark:text-slate-400 [&::-webkit-details-marker]:hidden">
+      <summary
+        className="cursor-pointer list-none px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide marker:content-none [&::-webkit-details-marker]:hidden"
+        style={{ color: "var(--flux-text-muted)" }}
+      >
         <span className="flex items-center justify-between gap-2">
           {title}
-          <span className="text-[10px] font-normal text-[#90A4AE] group-open:rotate-180 transition-transform">▼</span>
+          <span className="text-[10px] font-normal group-open:rotate-180 transition-transform" style={{ color: "var(--flux-text-muted)" }}>▼</span>
         </span>
       </summary>
-      <div className="border-t border-slate-100 px-2 pb-2 pt-1.5 dark:border-slate-700">{children}</div>
+      <div className="border-t px-2 pb-2 pt-1.5" style={{ borderColor: "var(--flux-border-muted)" }}>{children}</div>
     </details>
   );
 }
@@ -226,7 +258,7 @@ function LegendTaskRow({
         type="text"
         value={label}
         onChange={(e) => onChange(e.target.value)}
-        className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-[11px] text-[#546E7A] hover:border-slate-200 focus:border-[#00897B]/50 focus:outline-none dark:text-slate-400 dark:hover:border-slate-600"
+        className="bpmn-legend-input"
       />
     </li>
   );
@@ -244,12 +276,16 @@ function LegendEventRow({
   const swatchNode =
     swatch === "start" ? (
       <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#43A047] bg-[#E8F5E9]" aria-hidden>
-        <span className="text-[8px] font-bold text-[#2E7D32">▶</span>
+        <span className="text-[8px] font-bold text-[#2E7D32]">▶</span>
       </span>
     ) : swatch === "end" ? (
-      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[3px] border-[#C62828] bg-white dark:bg-slate-900" aria-hidden />
+      <span
+        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[3px] border-[#C62828]"
+        style={{ background: "var(--flux-surface-card)" }}
+        aria-hidden
+      />
     ) : (
-      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#FB8C00] bg-amber-50 dark:bg-amber-950/40" aria-hidden>
+      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#FB8C00] bg-amber-50" aria-hidden>
         <span className="h-2 w-2 rounded-full bg-[#FB8C00]" />
       </span>
     );
@@ -261,7 +297,7 @@ function LegendEventRow({
         type="text"
         value={label}
         onChange={(e) => onChange(e.target.value)}
-        className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-[11px] text-[#546E7A] hover:border-slate-200 focus:border-[#00897B]/50 focus:outline-none dark:text-slate-400 dark:hover:border-slate-600"
+        className="bpmn-legend-input"
       />
     </li>
   );
@@ -285,7 +321,7 @@ function LegendLine({
         type="text"
         value={label}
         onChange={(e) => onChange(e.target.value)}
-        className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-[11px] text-[#546E7A] hover:border-slate-200 focus:border-[#00897B]/50 focus:outline-none dark:text-slate-400 dark:hover:border-slate-600"
+        className="bpmn-legend-input"
       />
     </li>
   );

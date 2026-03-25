@@ -67,31 +67,38 @@ function BpmnToolbarInner({ getHeaders }: Props) {
 
   return (
     <header
-      className="flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(13,11,26,0.55)] sm:gap-3 sm:px-4"
+      className="bpmn-toolbar-header flex flex-wrap items-center gap-2 rounded-xl px-3 sm:gap-3 sm:px-4"
       style={{
-        background: "linear-gradient(135deg, #1A2744, #263859)",
+        background: "var(--bpmn-toolbar-bg)",
         minHeight: presentMode ? 48 : 52,
         padding: presentMode ? "8px 16px" : "10px 16px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+        borderBottom: "1px solid var(--flux-border-default)",
       }}
     >
       {/* Brand */}
-      <span className="font-display text-[22px] font-extrabold uppercase tracking-[2px] text-white">
-        FLUX <span style={{ color: "var(--flux-primary-light)" }}>BPMN</span>
+      <span className="font-display text-[22px] font-extrabold uppercase tracking-[2px]" style={{ color: "var(--bpmn-toolbar-text)" }}>
+        FLUX <span style={{ color: "var(--flux-primary)" }}>BPMN</span>
       </span>
 
-      <div className="hidden h-7 w-px bg-white/20 sm:block" />
-      <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold text-white/90 sm:max-w-[min(380px,45vw)] sm:text-[14px]">
+      <div className="hidden h-7 w-px sm:block" style={{ background: "var(--flux-border-subtle)" }} />
+      <span className="max-w-[min(280px,38vw)] truncate text-[13px] font-semibold sm:max-w-[min(380px,45vw)] sm:text-[14px]" style={{ color: "var(--bpmn-toolbar-muted)" }}>
         {modelName}
       </span>
 
       {/* Board ID */}
-      <div className="flex flex-wrap items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
+      <div className="flex flex-wrap items-center gap-2 pl-2 sm:pl-3" style={{ borderLeft: "1px solid var(--flux-border-subtle)" }}>
         <label htmlFor="bpmn-board-id" className="sr-only">Board ID</label>
         <input
           id="bpmn-board-id"
           value={boardId}
           onChange={(e) => setBoardId(e.target.value)}
-          className="w-[min(140px,28vw)] rounded-lg border border-white/15 bg-white/8 px-2 py-1.5 text-[12px] text-white placeholder:text-white/35 focus:border-[var(--flux-primary)]/70 focus:outline-none sm:w-40"
+          className="w-[min(140px,28vw)] rounded-lg border px-2 py-1.5 text-[12px] focus:outline-none sm:w-40"
+          style={{
+            borderColor: "var(--flux-control-border)",
+            background: "var(--flux-surface-card)",
+            color: "var(--flux-text)",
+          }}
           placeholder="Board ID"
         />
       </div>
@@ -100,17 +107,17 @@ function BpmnToolbarInner({ getHeaders }: Props) {
       <div className="ml-auto flex flex-wrap items-center gap-1.5">
         {/* Zoom */}
         <button type="button" className="bpmn-toolbar-btn" onClick={handleZoomIn}>+</button>
-        <span className="min-w-[44px] text-center text-[13px] font-semibold text-white/80">
+        <span className="min-w-[44px] text-center text-[13px] font-semibold" style={{ color: "var(--bpmn-toolbar-muted)" }}>
           {(zoom * 100).toFixed(0)}%
         </span>
         <button type="button" className="bpmn-toolbar-btn" onClick={handleZoomOut}>−</button>
 
-        <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+        <div className="mx-1 hidden h-7 w-px sm:block" style={{ background: "var(--flux-border-subtle)" }} />
 
         <button type="button" className="bpmn-toolbar-btn" onClick={handleReset}>Reset</button>
         <button type="button" className="bpmn-toolbar-btn" onClick={handleFitView}>Encaixar</button>
 
-        <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+        <div className="mx-1 hidden h-7 w-px sm:block" style={{ background: "var(--flux-border-subtle)" }} />
 
         {/* Toggles */}
         <button
@@ -137,13 +144,13 @@ function BpmnToolbarInner({ getHeaders }: Props) {
           Apresentação
         </button>
 
-        <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+        <div className="mx-1 hidden h-7 w-px sm:block" style={{ background: "var(--flux-border-subtle)" }} />
 
         {/* Undo / Redo */}
         <button type="button" title="Desfazer (Ctrl+Z)" className="bpmn-toolbar-btn" onClick={undo}>↩</button>
         <button type="button" title="Refazer (Ctrl+Y)" className="bpmn-toolbar-btn" onClick={redo}>↪</button>
 
-        <div className="mx-1 hidden h-7 w-px bg-white/20 sm:block" />
+        <div className="mx-1 hidden h-7 w-px sm:block" style={{ background: "var(--flux-border-subtle)" }} />
 
         {/* Save */}
         <button

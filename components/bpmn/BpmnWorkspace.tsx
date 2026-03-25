@@ -267,7 +267,7 @@ function BpmnWorkspaceInner({ getHeaders, isAdmin }: Props) {
                 variant={BackgroundVariant.Dots}
                 gap={GRID_SIZE}
                 size={1.2}
-                color="rgba(108,92,231,0.18)"
+                color="var(--bpmn-dots-color, rgba(108,92,231,0.18))"
               />
               <MiniMap
                 style={{
