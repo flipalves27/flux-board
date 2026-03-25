@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { useBoardStore } from "@/stores/board-store";
 import { useFilterStore } from "@/stores/filter-store";
 
+const EMPTY_LABELS: string[] = [];
+
 const PRIORITIES = [
   { key: "all", label: "All" },
   { key: "Crítica", label: "Critical" },
@@ -14,7 +16,7 @@ const PRIORITIES = [
 
 export function BoardFilterBar({ boardId }: { boardId: string }) {
   const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
-  const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? []);
+  const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? EMPTY_LABELS);
   const patchFilters = useFilterStore((s) => s.patchFilters);
 
   const activeLabels = useMemo(() => new Set(activeLabelsArr), [activeLabelsArr]);

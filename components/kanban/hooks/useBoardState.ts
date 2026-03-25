@@ -20,6 +20,8 @@ import { useDailySession } from "./useDailySession";
 import { COLUMN_COLORS } from "../kanban-constants";
 import { daysUntilDueDate } from "../utils/days-until-due";
 
+const EMPTY_LABELS: string[] = [];
+
 type UseBoardStateArgs = {
   boardId: string;
   getHeaders: () => Record<string, string>;
@@ -218,8 +220,9 @@ export function useBoardState({
   });
 
   const buckets = db.config.bucketOrder;
-  const boardLabels = db.config.labels ?? [];
-  const collapsed = new Set(db.config.collapsedColumns || []);
+  const boardLabels = db.config.labels ?? EMPTY_LABELS;
+  const collapsedArr = db.config.collapsedColumns;
+  const collapsed = useMemo(() => new Set(collapsedArr || []), [collapsedArr]);
   const cards = db.cards;
 
   const moveCard = useCallback(

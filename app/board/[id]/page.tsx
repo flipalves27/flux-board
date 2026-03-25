@@ -25,6 +25,7 @@ import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
 import type { CardServiceClass } from "@/lib/schemas";
 import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
+import { useFilterStore } from "@/stores/filter-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useSprintStore } from "@/stores/sprint-store";
@@ -380,6 +381,13 @@ export default function BoardPage() {
   pushToastRef.current = pushToast;
   const userRef = useRef(user);
   userRef.current = user;
+
+  /** Rehydrate persisted stores early (while skeleton shows) so KanbanBoardLoaded
+   *  doesn't trigger a state-update cascade on its first render (#185). */
+  useEffect(() => {
+    void useKanbanUiStore.persist.rehydrate();
+    void useFilterStore.persist.rehydrate();
+  }, []);
 
   /** Incrementado a cada `loadBoard`; evita `hydrate` com resposta atrasada após troca de rota (#corrida). */
   const loadSeqRef = useRef(0);

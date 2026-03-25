@@ -30,6 +30,7 @@ type DailySessionState = {
   historySearchQuery: string;
 };
 
+const EMPTY_INSIGHTS: DailyInsightEntry[] = [];
 const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
 const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
 const DAILY_SESSION_MAX_JSON_CHARS = 120000;
@@ -50,7 +51,7 @@ export function useDailySession({
 
   const db = useBoardStore((s) => s.db);
   const updateDb = useBoardStore((s) => s.updateDb);
-  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : [];
+  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : EMPTY_INSIGHTS;
 
   const dailyOpen = useKanbanUiStore((s) => s.dailyOpen);
 

@@ -17,6 +17,8 @@ import {
 } from "@/lib/schemas";
 import { useSprintStore } from "@/stores/sprint-store";
 
+const EMPTY_SPRINTS: SprintData[] = [];
+
 type DupMatch = {
   cardId: string;
   title: string;
@@ -96,7 +98,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     pushToast,
   } = useCardModal();
 
-  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? []);
+  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
   const upsertSprint = useSprintStore((s) => s.upsertSprint);
   const [sprintPatching, setSprintPatching] = useState<string | null>(null);
 
