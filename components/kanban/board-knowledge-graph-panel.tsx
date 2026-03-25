@@ -216,7 +216,7 @@ function buildGraph(
     target: e.target,
     animated: e.type === "duplicate_risk",
     style: {
-      stroke: edgeColor(e),
+      stroke: edgeColor(e.type),
       strokeWidth: 1 + e.similarity * 3,
       opacity: 0.6 + e.similarity * 0.4,
     },

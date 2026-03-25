@@ -459,6 +459,14 @@ function KanbanCardInner({
     e.stopPropagation();
   }, []);
 
+  const delivery = useMemo(() => {
+    if (!card || isFinalColumn || !datesReady || !historicalCycleDays?.length) return null;
+    return predictDelivery(
+      { columnEnteredAt: card.columnEnteredAt, dueDate: card.dueDate, completedAt: card.completedAt },
+      historicalCycleDays,
+    );
+  }, [card, isFinalColumn, datesReady, historicalCycleDays]);
+
   if (!card) return null;
 
   const dr = datesReady ? daysRemaining(card.dueDate) : null;
@@ -481,14 +489,6 @@ function KanbanCardInner({
         blockedHint: Array.isArray(card.blockedBy) && (card.blockedBy as string[]).length > 0,
       })
     : 0;
-
-  const delivery = useMemo(() => {
-    if (isFinalColumn || !datesReady || !historicalCycleDays?.length) return null;
-    return predictDelivery(
-      { columnEnteredAt: card.columnEnteredAt, dueDate: card.dueDate, completedAt: card.completedAt },
-      historicalCycleDays,
-    );
-  }, [card.columnEnteredAt, card.dueDate, card.completedAt, historicalCycleDays, isFinalColumn, datesReady]);
 
   const ariaLabel = t("card.ariaLabel", {
     cardTitle: card.title,

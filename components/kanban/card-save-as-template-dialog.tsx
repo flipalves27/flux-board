@@ -24,7 +24,7 @@ export function CardSaveAsTemplateDialog({ onClose }: { onClose: () => void }) {
         description: descriptionForSave || card.desc,
         tags: [...tags],
         priority: priority || card.priority,
-        subtasks: (card as Record<string, unknown>).subtasks ?? undefined,
+        subtasks: (card as unknown as Record<string, unknown>).subtasks ?? undefined,
       };
       await apiFetch("/api/card-templates", {
         method: "POST",
