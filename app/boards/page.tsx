@@ -108,7 +108,8 @@ export default function BoardsPage() {
   const showListSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
 
   useEffect(() => {
-    if (!isChecked || !user) {
+    if (!isChecked) return;
+    if (!user) {
       router.replace(`${localeRoot}/login`);
       return;
     }

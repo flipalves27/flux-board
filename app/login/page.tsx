@@ -31,14 +31,16 @@ export default function LoginPage() {
   const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const localeRoot = `/${locale}`;
   const inviteCode = searchParams.get("invite") ?? undefined;
+  const redirectTo = searchParams.get("redirect");
+  const postLoginPath = redirectTo && redirectTo.startsWith("/") ? redirectTo : `${localeRoot}/boards`;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
 
   useEffect(() => {
-    if (isChecked && user && !suppressAutoRedirect) router.replace(`${localeRoot}/boards`);
-  }, [isChecked, user, router, suppressAutoRedirect]);
+    if (isChecked && user && !suppressAutoRedirect) router.replace(postLoginPath);
+  }, [isChecked, user, router, suppressAutoRedirect, postLoginPath]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
-        router.replace(`${localeRoot}/boards`);
+        router.replace(postLoginPath);
       } else {
         setError(result.error);
       }

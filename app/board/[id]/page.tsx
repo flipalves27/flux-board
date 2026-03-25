@@ -394,7 +394,7 @@ export default function BoardPage() {
       });
       if (seq !== loadSeqRef.current) return;
       if (r.status === 401) {
-        routerRef.current.replace(`/${locale}/login`);
+        routerRef.current.replace(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/board/${boardId}`)}`);
         return;
       }
       if (r.status === 403) {
@@ -467,8 +467,9 @@ export default function BoardPage() {
   }, [boardId, locale]);
 
   useEffect(() => {
-    if (!isChecked || !user) {
-      routerRef.current.replace(`/${locale}/login`);
+    if (!isChecked) return;
+    if (!user) {
+      routerRef.current.replace(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/board/${boardId}`)}`);
       return;
     }
     if (!boardId) {
