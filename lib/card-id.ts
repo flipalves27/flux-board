@@ -1,4 +1,8 @@
-const CARD_ID_PATTERN = /^ID(\d{4,})$/i;
+/**
+ * Accepts current numeric IDs (e.g. 0001) and legacy IDs with ID prefix (e.g. ID0001)
+ * so existing boards keep sequence continuity.
+ */
+const CARD_ID_PATTERN = /^(?:ID)?(\d+)$/i;
 
 export function parseCardSequence(cardId: string): number | null {
   const match = CARD_ID_PATTERN.exec(String(cardId || "").trim());
@@ -10,7 +14,7 @@ export function parseCardSequence(cardId: string): number | null {
 
 export function formatCardSequence(sequence: number): string {
   const safeSequence = Number.isFinite(sequence) && sequence > 0 ? Math.floor(sequence) : 1;
-  return `ID${String(safeSequence).padStart(4, "0")}`;
+  return String(safeSequence).padStart(4, "0");
 }
 
 export function nextBoardCardId(existingIds: Iterable<string>): string {

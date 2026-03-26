@@ -1485,7 +1485,7 @@
       "fields": {
         "id": {
           "label": "ID",
-          "placeholder": "Ex: ID0001"
+          "placeholder": "Ex: 0001"
         },
         "column": {
           "label": "Coluna"
