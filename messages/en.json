@@ -1687,6 +1687,10 @@
         "description": "View description",
         "copyCardId": "Copy card ID"
       },
+      "completeMove": {
+        "tooltip": "Move to column or mark complete",
+        "menuTitle": "Which column should this move to?"
+      },
       "actions": {
         "copy": "Copy"
       },

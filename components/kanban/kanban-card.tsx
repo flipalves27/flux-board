@@ -442,6 +442,7 @@ function KanbanCardInner({
       if (
         el.closest(".dir-btn") ||
         el.closest(".card-quick-actions") ||
+        el.closest(".card-complete-btn") ||
         el.closest('[role="menu"]') ||
         el.closest('[role="menuitem"]')
       ) {
@@ -542,6 +543,9 @@ function KanbanCardInner({
   const showPin = Boolean(onPinToTop) && !quickActionsDisabled;
 
   const showSprintQuick = Boolean(sprintMenuMeta?.visible) && !quickActionsDisabled;
+
+  const showCompleteMove =
+    Boolean(onPatchCard) && buckets.length > 0 && card.progress !== "Concluída" && !quickActionsDisabled;
 
   const toolbarOn = (hasQuick || showPin || showSprintQuick) && !isDragging && (showToolbar || touchPinned);
 
@@ -813,6 +817,55 @@ function KanbanCardInner({
                 </button>
               </CustomTooltip>
             )}
+
+            {showCompleteMove ? (
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={stopDrag}
+                    title={t("card.completeMove.tooltip")}
+                    className="card-complete-btn w-[22px] h-[22px] rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-success-solid-dark)] hover:text-white hover:border-[var(--flux-success-solid-dark)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
+                    aria-label={t("card.completeMove.tooltip")}
+                    aria-haspopup="menu"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  sideOffset={6}
+                  className="min-w-[220px] max-h-[min(320px,50vh)] overflow-y-auto scrollbar-kanban"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
+                  <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                    {t("card.completeMove.menuTitle")}
+                  </div>
+                  {buckets.map((b) => (
+                    <DropdownMenuItem
+                      key={b.key}
+                      disabled={b.key === card.bucket}
+                      className="gap-2"
+                      onSelect={() => {
+                        onPatchCard?.(cardId, { bucket: b.key });
+                        setTouchPinned(false);
+                      }}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: b.color || "var(--flux-text-muted)" }}
+                        aria-hidden
+                      />
+                      <span className="min-w-0 truncate">{b.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
 
             <button
               type="button"

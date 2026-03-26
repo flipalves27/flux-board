@@ -552,6 +552,14 @@ export function useBoardState({
           if (patch.dueDate !== undefined) merged.dueDate = patch.dueDate;
           if (patch.tags !== undefined) merged.tags = patch.tags;
           merged.bucket = targetBucket;
+          const doneKeys = resolveDoneBucketKeys(
+            d.config.bucketOrder,
+            d.config.definitionOfDone?.doneBucketKeys ?? null
+          );
+          if (doneKeys.includes(targetBucket)) {
+            merged.progress = "Concluída";
+            merged.completedAt = new Date().toISOString();
+          }
           bucketCards.push(merged);
           bucketCards.forEach((c, i) => {
             c.order = i;

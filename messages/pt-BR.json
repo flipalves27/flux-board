@@ -2044,6 +2044,10 @@
         "description": "Ver descrição",
         "copyCardId": "Copiar ID do card"
       },
+      "completeMove": {
+        "tooltip": "Concluir ou mover de coluna",
+        "menuTitle": "Mover para qual coluna?"
+      },
       "actions": {
         "copy": "Copiar"
       },
