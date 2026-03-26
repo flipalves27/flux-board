@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useShallow } from "zustand/shallow";
 import { useBoardStore } from "@/stores/board-store";
 import { generateProactiveNudges, type ProactiveNudge } from "@/lib/copilot-proactive-engine";
@@ -22,10 +23,16 @@ const SEVERITY_ICON_COLOR: Record<ProactiveNudge["severity"], string> = {
 };
 
 export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
+  const t = useTranslations("board.copilotNudges");
   const db = useBoardStore(useShallow((s) => s.db));
   const [nudges, setNudges] = useState<ProactiveNudge[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(true);
+
+  useEffect(() => {
+    setDismissed(new Set());
+    setCollapsed(true);
+  }, [boardId]);
 
   useEffect(() => {
     if (!db || !db.cards) return;
@@ -61,49 +68,54 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
   if (visible.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-30 max-w-sm">
-      <button
-        type="button"
-        onClick={() => setCollapsed(!collapsed)}
-        className="mb-2 flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)] shadow-lg backdrop-blur-sm"
-      >
-        <svg className="h-3.5 w-3.5 text-[var(--flux-primary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-        </svg>
-        Copilot ({visible.length})
-        <svg className={`h-3 w-3 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {!collapsed && (
-        <div className="space-y-2">
-          {visible.map((nudge) => (
-            <div
-              key={nudge.id}
-              className={`flex items-start gap-2 rounded-xl border p-3 shadow-md backdrop-blur-sm ${SEVERITY_STYLES[nudge.severity]}`}
-            >
-              <svg className={`mt-0.5 h-4 w-4 shrink-0 ${SEVERITY_ICON_COLOR[nudge.severity]}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              <p className="min-w-0 flex-1 text-xs leading-relaxed text-[var(--flux-text)]">
-                {nudge.message}
-              </p>
-              {nudge.dismissible && (
-                <button
-                  type="button"
-                  onClick={() => dismiss(nudge.id)}
-                  className="shrink-0 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                  aria-label="Dispensar"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+    <div
+      data-tour="board-nudge-toast"
+      className="pointer-events-none fixed z-[var(--flux-z-app-routine-toasts)] flex max-w-sm flex-col items-end max-md:left-auto max-md:right-4 max-md:bottom-[calc(max(1rem,env(safe-area-inset-bottom,0px))+4.5rem)] md:bottom-6 md:left-auto md:right-56"
+    >
+      <div className="pointer-events-auto w-full max-w-sm">
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? t("expand") : t("collapse")}
+          className="mb-2 inline-flex max-w-full items-center gap-2 self-end rounded-full border border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)] shadow-lg backdrop-blur-sm"
+        >
+          <svg className="h-3.5 w-3.5 shrink-0 text-[var(--flux-primary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          <span className="min-w-0 truncate">{t("toggleLabel", { count: visible.length })}</span>
+          <svg className={`h-3 w-3 shrink-0 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {!collapsed && (
+          <div className="space-y-2">
+            {visible.map((nudge) => (
+              <div
+                key={nudge.id}
+                className={`flex items-start gap-2 rounded-xl border p-3 shadow-md backdrop-blur-sm ${SEVERITY_STYLES[nudge.severity]}`}
+              >
+                <svg className={`mt-0.5 h-4 w-4 shrink-0 ${SEVERITY_ICON_COLOR[nudge.severity]}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <p className="min-w-0 flex-1 text-xs leading-relaxed text-[var(--flux-text)]">{nudge.message}</p>
+                {nudge.dismissible && (
+                  <button
+                    type="button"
+                    onClick={() => dismiss(nudge.id)}
+                    className="shrink-0 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    aria-label={t("dismiss")}
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

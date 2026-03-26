@@ -1255,6 +1255,12 @@
       "pollingHint": "Tempo real indisponível; o board é atualizado periodicamente.",
       "remoteLock": "Card sendo editado por {name}"
     },
+    "copilotNudges": {
+      "toggleLabel": "Sugestões ({count})",
+      "expand": "Mostrar sugestões do quadro",
+      "collapse": "Ocultar sugestões",
+      "dismiss": "Dispensar sugestão"
+    },
     "productTour": {
       "skip": "Pular tour",
       "start": "Tour guiado",

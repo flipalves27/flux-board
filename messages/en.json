@@ -1250,6 +1250,12 @@
       "pollingHint": "Real-time unavailable; the board refreshes periodically.",
       "remoteLock": "Card is being edited by {name}"
     },
+    "copilotNudges": {
+      "toggleLabel": "Suggestions ({count})",
+      "expand": "Show board suggestions",
+      "collapse": "Hide suggestions",
+      "dismiss": "Dismiss suggestion"
+    },
     "productTour": {
       "skip": "Skip tour",
       "start": "Guided tour",
