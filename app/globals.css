@@ -186,6 +186,8 @@
   --flux-z-fab-activity: 469;
   --flux-z-fab-copilot: 470;
   --flux-z-board-tools-rail: 471;
+  /** Card / description modals on the board — above canvas (120), sticky chrome (150) and tools rail (471). */
+  --flux-z-kanban-modal-stack: 475;
   --flux-z-sprint-scrim-mobile: 199;
   --flux-z-header-sticky: 200;
   --flux-z-sprint-panel: 200;

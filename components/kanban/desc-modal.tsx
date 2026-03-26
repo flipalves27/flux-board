@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import type { CardData } from "@/app/board/[id]/page";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
@@ -25,6 +26,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const t = useTranslations("kanban");
   const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
   const resizeStart = useRef({ x: 0, w: 0 });
@@ -41,6 +43,10 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
   useEffect(() => {
     setDescBlocks(parseDescriptionToBlocks(card.desc));
   }, [card]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   const handleSave = () => {
     const nextDescription = serializeDescriptionBlocks(descBlocks);
@@ -88,9 +94,9 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
     };
   }, [dragging, resizing]);
 
-  return (
+  const overlay = (
     <div
-      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-base)] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center backdrop-blur-sm p-4 modal-overlay-animate"
       role="dialog"
       aria-modal="true"
       aria-labelledby="desc-modal-title"
@@ -211,4 +217,7 @@ export function DescModal({ card, onClose, onSave }: DescModalProps) {
       </div>
     </div>
   );
+
+  if (!portalReady || typeof document === "undefined") return null;
+  return createPortal(overlay, document.body);
 }
