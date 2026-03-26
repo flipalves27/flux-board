@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useBoardStore } from "@/stores/board-store";
 import { useSprintStore } from "@/stores/sprint-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -272,11 +272,23 @@ function KanbanCardInner({
   const selectionCount = selection?.selectedIds.size ?? 0;
   const isGhostSource = Boolean(activeDragIds?.includes(cardId));
 
-  const { attributes, listeners, setNodeRef } = useDraggable({
+  const { attributes, listeners, setNodeRef: setDraggableRef } = useDraggable({
     id: `card-${cardId}`,
     disabled: dragOverlayPreview,
     data: card ? { card, bucket: card.bucket, dragIds } : { card: null, bucket: "", dragIds: [cardId] },
   });
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: `card-${cardId}`,
+    disabled: dragOverlayPreview,
+  });
+
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDraggableRef(node);
+      setDroppableRef(node);
+    },
+    [setDraggableRef, setDroppableRef]
+  );
 
   const t = useTranslations("kanban");
   const cardRef = useRef<HTMLDivElement | null>(null);

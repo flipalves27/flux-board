@@ -79,6 +79,72 @@ describe("useBoardDnd", () => {
     expect(moveCardsBatch).toHaveBeenCalledWith(["C1"], "doing", 1);
   });
 
+  it("moves card when dropping over another card id", () => {
+    const moveCardsBatch = vi.fn();
+    const reorderColumns = vi.fn();
+    const cards = [
+      {
+        id: "C1",
+        bucket: "todo",
+        priority: "Média",
+        progress: "Não iniciado",
+        title: "Card 1",
+        desc: "",
+        tags: [],
+        direction: null,
+        dueDate: null,
+        order: 0,
+      },
+      {
+        id: "C2",
+        bucket: "doing",
+        priority: "Média",
+        progress: "Não iniciado",
+        title: "Card 2",
+        desc: "",
+        tags: [],
+        direction: null,
+        dueDate: null,
+        order: 0,
+      },
+      {
+        id: "C3",
+        bucket: "doing",
+        priority: "Média",
+        progress: "Não iniciado",
+        title: "Card 3",
+        desc: "",
+        tags: [],
+        direction: null,
+        dueDate: null,
+        order: 1,
+      },
+    ];
+    const getCardsByBucket = (bucketKey: string) => cards.filter((c) => c.bucket === bucketKey);
+
+    const { result } = renderHook(() =>
+      useBoardDnd({
+        buckets: [
+          { key: "todo", label: "Todo", color: "#111" },
+          { key: "doing", label: "Doing", color: "#222" },
+        ],
+        cards,
+        getCardsByBucket,
+        moveCardsBatch,
+        reorderColumns,
+      })
+    );
+
+    act(() => {
+      result.current.handleDragEnd({
+        active: { id: "card-C1", data: { current: { dragIds: ["C1"] } } },
+        over: { id: "card-C2" },
+      } as never);
+    });
+
+    expect(moveCardsBatch).toHaveBeenCalledWith(["C1"], "doing", 0);
+  });
+
   it("reorders columns even when over id uses bucket prefix", () => {
     const moveCardsBatch = vi.fn();
     const reorderColumns = vi.fn();
