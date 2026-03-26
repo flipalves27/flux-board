@@ -20,6 +20,9 @@
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
     "programIncrements": "Incrementos",
     "docs": "Flux Docs",
+    "copilot": "Copiloto",
+    "copilotSublabelOnBoard": "Assistente deste quadro",
+    "copilotSublabelPickBoard": "Abra um quadro para usar",
     "section": {
       "work": "Trabalho",
       "intelligence": "Inteligência",
@@ -42,7 +45,8 @@
       "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
       "programIncrements": "Planejamento de incrementos e PIs entre boards.",
-      "docs": "Documentos, RAG e geração com IA."
+      "docs": "Documentos, RAG e geração com IA.",
+      "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -1275,9 +1279,13 @@
           "title": "Arrastar entre colunas",
           "body": "Arraste o card para outra coluna para mudar o estágio. A ordem dentro da coluna também pode ser ajustada arrastando."
         },
+        "sidebarCopilot": {
+          "title": "Copiloto no menu lateral",
+          "body": "O item Copiloto fica logo abaixo de Boards: abre o assistente deste quadro. Fora de um quadro, o mesmo atalho leva à lista de quadros."
+        },
         "copilot": {
-          "title": "Copiloto IA",
-          "body": "Abra o Copiloto para perguntas em linguagem natural sobre o board, métricas e próximos passos."
+          "title": "Atalho no trilho",
+          "body": "No desktop, o mesmo Copiloto aparece no trilho à direita (canto inferior). Use o que for mais confortável."
         },
         "daily": {
           "title": "Daily Insights",

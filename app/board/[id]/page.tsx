@@ -35,7 +35,11 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
-import { BoardProductTour, type BoardProductTourHandle } from "@/components/board/board-product-tour";
+import {
+  BoardProductTour,
+  BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX,
+  type BoardProductTourHandle,
+} from "@/components/board/board-product-tour";
 import { BoardPresenceAvatars } from "@/components/kanban/board-presence-avatars";
 import {
   DropdownMenu,
@@ -374,7 +378,7 @@ export default function BoardPage() {
 
   const authWaiting = !isChecked || !user;
   const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
-  const tourExpandFilters = tourStep === 5;
+  const tourExpandFilters = tourStep === BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX;
 
   /** next/navigation `useRouter()` pode mudar identidade entre renders — evita re-disparar loadBoard (#185). */
   const routerRef = useRef(router);

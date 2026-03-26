@@ -25,10 +25,19 @@ const TOUR_SELECTORS = [
   '[data-tour="board-column"]',
   '[data-tour="board-new-card"]',
   '[data-tour="board-card"]',
+  '[data-tour="sidebar-copilot"]',
   '[data-tour="board-copilot"]',
   '[data-tour="board-daily"]',
   '[data-tour="board-reports"]',
 ] as const;
+
+/** Índice do passo «Daily» — usado p.ex. para expandir filtros no Kanban durante o tour. */
+export const BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX = TOUR_SELECTORS.indexOf('[data-tour="board-daily"]');
+
+const MOBILE_SIDEBAR_DRAWER_SELECTORS = new Set<string>([
+  '[data-tour="sidebar-copilot"]',
+  '[data-tour="board-reports"]',
+]);
 
 export type BoardProductTourHandle = {
   skip: () => void;
@@ -177,7 +186,7 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
           });
         };
 
-        if (stepIndex === 6 && layout === "mobile") {
+        if (layout === "mobile" && MOBILE_SIDEBAR_DRAWER_SELECTORS.has(sel)) {
           openMobile();
           requestAnimationFrame(() => {
             el = document.querySelector(sel) as HTMLElement | null;
@@ -244,10 +253,19 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       "column",
       "newCard",
       "card",
+      "sidebarCopilot",
       "copilot",
       "daily",
       "reports",
-    ][stepIndex] as "header" | "column" | "newCard" | "card" | "copilot" | "daily" | "reports";
+    ][stepIndex] as
+      | "header"
+      | "column"
+      | "newCard"
+      | "card"
+      | "sidebarCopilot"
+      | "copilot"
+      | "daily"
+      | "reports";
 
     if (!active) return null;
 

@@ -20,6 +20,9 @@
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
     "programIncrements": "Increments",
     "docs": "Flux Docs",
+    "copilot": "Copilot",
+    "copilotSublabelOnBoard": "This board’s assistant",
+    "copilotSublabelPickBoard": "Open a board to use it",
     "section": {
       "work": "Work",
       "intelligence": "Intelligence",
@@ -42,7 +45,8 @@
       "tracer": "Client-side error buffer (Flux diagnostics) for admins.",
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
       "programIncrements": "Increment planning and PIs across boards.",
-      "docs": "Documents, RAG and AI generation."
+      "docs": "Documents, RAG and AI generation.",
+      "copilot": "Board chat: summaries, search, and actions. On a board it opens the panel; elsewhere it goes to your boards list."
     },
     "menu": {
       "expand": "Expand menu",
@@ -1270,9 +1274,13 @@
           "title": "Drag between columns",
           "body": "Drag a card to another column to change its stage. You can also reorder within a column by dragging."
         },
+        "sidebarCopilot": {
+          "title": "Copilot in the sidebar",
+          "body": "Copilot sits just below Boards: it opens this board’s assistant. When you’re not on a board, the same shortcut goes to your boards list."
+        },
         "copilot": {
-          "title": "AI Copilot",
-          "body": "Open Copilot for natural-language questions about the board, metrics, and next steps."
+          "title": "Shortcut on the rail",
+          "body": "On desktop, the same Copilot is on the right-hand tools rail (bottom corner). Use whichever is easier."
         },
         "daily": {
           "title": "Daily Insights",
