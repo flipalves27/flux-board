@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
-import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
 import { SubtaskSchema, computeSubtaskProgress, sanitizeDeep } from "@/lib/schemas";
 import { z } from "zod";
 
@@ -24,14 +22,6 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
-  }
-
-  const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
-  try {
-    assertFeatureAllowed(org, "subtasks", gateCtx);
-  } catch {
-    return NextResponse.json({ error: "Disponível em planos pagos." }, { status: 403 });
   }
 
   let body: unknown;

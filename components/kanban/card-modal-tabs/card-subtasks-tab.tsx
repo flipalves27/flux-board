@@ -21,7 +21,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { useBoardStore } from "@/stores/board-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useCardModal } from "@/components/kanban/card-modal-context";
-import type { SubtaskData } from "@/lib/schemas";
+import { useToast } from "@/context/toast-context";
+import { computeSubtaskProgress, type SubtaskData } from "@/lib/schemas";
 import { useTranslations } from "next-intl";
 
 type SubtaskStatus = "pending" | "in_progress" | "done" | "blocked";
@@ -180,6 +181,7 @@ function SubtaskItem({
 
 export default function CardSubtasksTab({ cardId }: { cardId: string }) {
   const { boardId, getHeaders } = useCardModal();
+  const { pushToast } = useToast();
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
   const updateDb = useBoardStore((s) => s.updateDb);
 
@@ -206,6 +208,13 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
     async (updated: SubtaskData[]) => {
       if (!card) return;
       setSaving(true);
+      const progress = computeSubtaskProgress(updated);
+      updateDb((db) => {
+        const idx = db.cards.findIndex((c) => c.id === cardId);
+        if (idx >= 0) {
+          Object.assign(db.cards[idx], { subtasks: updated, subtaskProgress: progress });
+        }
+      });
       try {
         const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`, {
           method: "PATCH",
@@ -213,22 +222,34 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
           headers: getApiHeaders(getHeaders()),
         });
         if (res.ok) {
-          const data = (await res.json()) as { subtaskProgress?: Record<string, unknown> };
+          const data = (await res.json()) as {
+            subtasks?: SubtaskData[];
+            subtaskProgress?: Record<string, unknown>;
+          };
           updateDb((db) => {
             const idx = db.cards.findIndex((c) => c.id === cardId);
-            if (idx >= 0) {
+            if (idx < 0) return;
+            if (Array.isArray(data.subtasks)) {
               Object.assign(db.cards[idx], {
-                subtasks: updated,
+                subtasks: data.subtasks,
                 ...(data.subtaskProgress ? { subtaskProgress: data.subtaskProgress } : {}),
               });
+            } else if (data.subtaskProgress) {
+              Object.assign(db.cards[idx], { subtaskProgress: data.subtaskProgress });
             }
+          });
+        } else {
+          const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+          pushToast({
+            kind: "error",
+            title: errBody.error ?? `Erro ao salvar subtasks (${res.status})`,
           });
         }
       } finally {
         setSaving(false);
       }
     },
-    [boardId, card, cardId, getHeaders, updateDb]
+    [boardId, card, cardId, getHeaders, pushToast, updateDb]
   );
 
   const handleDragEnd = useCallback(
