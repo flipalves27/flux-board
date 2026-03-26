@@ -9,6 +9,7 @@
     "discovery": "Discovery",
     "templates": "Templates",
     "tasks": "Minhas tarefas",
+    "myWork": "My Work",
     "users": "Usuários",
     "organization": "Organização",
     "billing": "Billing",
@@ -32,6 +33,7 @@
       "discovery": "Iniciativas e discoverys em formato de board.",
       "templates": "Showcase de templates públicos e importação com um clique.",
       "tasks": "Rotinas com lembretes (Pro/Business).",
+      "myWork": "Dashboard pessoal com cards atribuídos, workload e sugestões de prioridade IA.",
       "users": "Membros e permissões da organização.",
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
@@ -170,6 +172,8 @@
     "empty": "Nenhum resultado.",
     "footer": "↑↓ navegar · Enter abrir · 1–9 atalho · Esc fechar",
     "aiComingSoon": "Comandos em linguagem natural (/ai) serão integrados quando o Copilot com function calling estiver pronto.",
+    "aiHint": "Digite um comando em linguagem natural após /ai (ex: 'mova cards urgentes para Em andamento', 'abrir dashboard')",
+    "aiAction": "Ação IA",
     "groups": {
       "recent": "Recentes",
       "boards": "Boards",
@@ -204,6 +208,8 @@
       "discovery": "Discovery",
       "templates": "Templates",
       "tasks": "Minhas tarefas",
+      "myWork": "My Work",
+      "marketplace": "Template Marketplace",
       "sprints": "Sprints",
       "users": "Usuários",
       "orgSettings": "Config. da organização",
@@ -1536,7 +1542,8 @@
         "createLabel": "+ Criar",
         "delete": "Excluir",
         "cancel": "Cancelar",
-        "save": "Salvar"
+        "save": "Salvar",
+        "aiWriter": "Escrever com IA"
       },
       "tooltips": {
         "deleteLabel": "Excluir rótulo \"{label}\"",
@@ -2456,6 +2463,51 @@
       "deleteSelected": "Deletar selecionados",
       "clearHint": "Esc para limpar",
       "draggingCount": "Movendo {count} cards"
+    }
+  },
+  "myWork": {
+    "title": "My Work",
+    "stats": {
+      "assigned": "Atribuídos",
+      "inProgress": "Em andamento",
+      "blocked": "Bloqueados",
+      "overdue": "Atrasados",
+      "dueSoon": "Vence em breve",
+      "completedWeek": "Concluídos (7d)"
+    },
+    "prioritized": "Sugestão de prioridade (IA)",
+    "empty": "Nenhum card atribuído a você no momento.",
+    "error": "Não foi possível carregar seu workload."
+  },
+  "deliveryForecast": {
+    "title": "Previsão de Entrega",
+    "monteCarlo": "Simulação Monte Carlo",
+    "p50": "50% chance",
+    "p85": "85% chance",
+    "p95": "95% chance",
+    "daysUnit": "dias",
+    "riskCards": "Cards com maior risco",
+    "riskScore": "Risco",
+    "throughputForecast": "Previsão de Throughput",
+    "sprintHealth": "Saúde do Sprint",
+    "healthy": "Saudável",
+    "atRisk": "Em risco",
+    "critical": "Crítico",
+    "scopeCreep": "Scope creep"
+  },
+  "templateMarketplace": {
+    "title": "Template Marketplace",
+    "search": "Buscar templates...",
+    "useTemplate": "Usar template",
+    "downloads": "downloads",
+    "empty": "Nenhum template publicado ainda.",
+    "publish": "Publicar template",
+    "categories": {
+      "all": "Todos",
+      "kanban": "Kanban",
+      "scrum": "Scrum",
+      "bpmn": "BPMN",
+      "matrix": "Matriz"
     }
   }
 }

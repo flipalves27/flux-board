@@ -11,6 +11,7 @@ import { getBoardShortcuts } from "@/lib/board-shortcuts";
 import { getRecentCards } from "@/lib/recent-cards";
 import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-history";
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
+import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
 
 type BoardRow = { id: string; name: string; boardMethodology?: "scrum" | "kanban" };
 
@@ -67,6 +68,7 @@ function inferCategoryFromAction(action: PaletteAction): Exclude<PaletteCategory
     case "newBoard":
     case "copilot":
     case "boardDeep":
+    case "aiCommand":
       return "actions";
     default:
       return "navigation";
@@ -97,6 +99,11 @@ function runAction(action: PaletteAction, localeRoot: string, router: ReturnType
       break;
     case "boardDeep":
       router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?${action.query}`);
+      break;
+    case "aiCommand":
+      if (action.boardId) {
+        router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?copilot=1&q=${encodeURIComponent(action.command)}`);
+      }
       break;
     default:
       break;
@@ -327,6 +334,8 @@ export function CommandPalette() {
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },
       { path: "/tasks", title: t("nav.tasks"), kw: "tasks" },
+      { path: "/my-work", title: t("nav.myWork"), kw: "my work meu trabalho workload pessoal" },
+      { path: "/template-marketplace", title: t("nav.marketplace"), kw: "marketplace templates galeria" },
       { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
     ];
@@ -370,11 +379,40 @@ export function CommandPalette() {
     });
   }, [allItems]);
 
-  const aiPlaceholder = search.trim().toLowerCase().startsWith("/ai") || search.trim().toLowerCase() === "ai";
+  const aiMode = search.trim().toLowerCase().startsWith("/ai") || search.trim().toLowerCase() === "ai";
+  const aiPlaceholder = false;
+
+  const aiParsedItems = useMemo((): PaletteItem[] => {
+    if (!aiMode) return [];
+    const query = search.replace(/^\/ai\s*/i, "").trim();
+    if (query.length < 3) return [];
+    const currentBoardId = boards[0]?.id;
+    const result: AiCommandResult = parseNaturalLanguageCommand(query, {
+      boardNames: boards.map((b) => b.name),
+      columnNames: [],
+      currentBoardId,
+    });
+    if (result.type === "unknown" || result.confidence < 0.5) return [];
+    const action: PaletteAction =
+      result.type === "navigate" && typeof result.params.path === "string"
+        ? { type: "navigate", path: result.params.path }
+        : result.type === "open_copilot" && currentBoardId
+          ? { type: "copilot", boardId: currentBoardId }
+          : { type: "aiCommand", command: query, boardId: currentBoardId };
+    return [{
+      id: `ai:${query}`,
+      category: "actions",
+      title: result.displayMessage || query,
+      subtitle: t("aiAction"),
+      keywords: query,
+      action,
+      icon: "actions",
+    }];
+  }, [aiMode, search, boards, t]);
 
   const filteredFlat = useMemo(() => {
     const q = search.trim();
-    if (aiPlaceholder) return [] as PaletteItem[];
+    if (aiMode) return aiParsedItems;
 
     if (!q) {
       const hist = historyState.map(historyEntryToItem);
@@ -574,8 +612,8 @@ export function CommandPalette() {
       </div>
 
       <Command.List className="max-h-[min(420px,55vh)] overflow-y-auto overscroll-contain px-1 py-2 scrollbar-kanban">
-        {aiPlaceholder ? (
-          <div className="px-3 py-6 text-center text-sm text-[var(--flux-text-muted)]">{t("aiComingSoon")}</div>
+        {aiMode && aiParsedItems.length === 0 ? (
+          <div className="px-3 py-6 text-center text-sm text-[var(--flux-text-muted)]">{t("aiHint")}</div>
         ) : filteredFlat.length === 0 ? (
           <Command.Empty className="py-8 text-center text-sm text-[var(--flux-text-muted)]">{t("empty")}</Command.Empty>
         ) : (

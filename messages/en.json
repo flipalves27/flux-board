@@ -9,6 +9,7 @@
     "discovery": "Discovery",
     "templates": "Templates",
     "tasks": "My tasks",
+    "myWork": "My Work",
     "users": "Users",
     "organization": "Organization",
     "billing": "Billing",
@@ -32,6 +33,7 @@
       "discovery": "Initiatives and discovery boards.",
       "templates": "Public template showcase and one-click import.",
       "tasks": "Routine reminders (Pro/Business).",
+      "myWork": "Personal dashboard with assigned cards, workload, and AI priority suggestions.",
       "users": "Members and organization permissions.",
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
@@ -170,6 +172,8 @@
     "empty": "No results.",
     "footer": "↑↓ navigate · Enter select · 1–9 quick · Esc close",
     "aiComingSoon": "Natural language (/ai) will connect here when Copilot function calling ships.",
+    "aiHint": "Type a natural language command after /ai (e.g., 'move urgent cards to In Progress', 'open dashboard')",
+    "aiAction": "AI Action",
     "groups": {
       "recent": "Recent",
       "boards": "Boards",
@@ -204,6 +208,8 @@
       "discovery": "Discovery",
       "templates": "Templates",
       "tasks": "My tasks",
+      "myWork": "My Work",
+      "marketplace": "Template Marketplace",
       "sprints": "Sprints",
       "users": "Users",
       "orgSettings": "Organization settings",
@@ -1531,7 +1537,8 @@
         "createLabel": "+ Create",
         "delete": "Delete",
         "cancel": "Cancel",
-        "save": "Save"
+        "save": "Save",
+        "aiWriter": "Write with AI"
       },
       "tooltips": {
         "deleteLabel": "Delete label \"{label}\"",
@@ -2451,6 +2458,51 @@
       "deleteSelected": "Delete selected",
       "clearHint": "Esc to clear",
       "draggingCount": "Moving {count} cards"
+    }
+  },
+  "myWork": {
+    "title": "My Work",
+    "stats": {
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "blocked": "Blocked",
+      "overdue": "Overdue",
+      "dueSoon": "Due Soon",
+      "completedWeek": "Completed (7d)"
+    },
+    "prioritized": "AI Priority Suggestions",
+    "empty": "No cards assigned to you right now.",
+    "error": "Could not load your workload."
+  },
+  "deliveryForecast": {
+    "title": "Delivery Forecast",
+    "monteCarlo": "Monte Carlo Simulation",
+    "p50": "50% chance",
+    "p85": "85% chance",
+    "p95": "95% chance",
+    "daysUnit": "days",
+    "riskCards": "Highest Risk Cards",
+    "riskScore": "Risk",
+    "throughputForecast": "Throughput Forecast",
+    "sprintHealth": "Sprint Health",
+    "healthy": "Healthy",
+    "atRisk": "At Risk",
+    "critical": "Critical",
+    "scopeCreep": "Scope Creep"
+  },
+  "templateMarketplace": {
+    "title": "Template Marketplace",
+    "search": "Search templates...",
+    "useTemplate": "Use template",
+    "downloads": "downloads",
+    "empty": "No templates published yet.",
+    "publish": "Publish template",
+    "categories": {
+      "all": "All",
+      "kanban": "Kanban",
+      "scrum": "Scrum",
+      "bpmn": "BPMN",
+      "matrix": "Matrix"
     }
   }
 }

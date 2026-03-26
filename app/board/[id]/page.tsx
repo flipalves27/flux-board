@@ -16,6 +16,8 @@ import { BoardPortalModal, type PortalClientState } from "@/components/kanban/bo
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import { BoardEmbedModal } from "@/components/board/board-embed-modal";
 import { BoardAnomalyNotificationsModal } from "@/components/kanban/board-anomaly-notifications-modal";
+import { CopilotNudgeToast } from "@/components/kanban/copilot-nudge-toast";
+import { CollaborationCursors } from "@/components/kanban/collaboration-cursors";
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { BoardExecutiveBriefModal } from "@/components/kanban/board-executive-brief-modal";
@@ -939,6 +941,9 @@ export default function BoardPage() {
       <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
 
       <BoardDesktopToolsRail />
+
+      <CopilotNudgeToast boardId={boardId} />
+      <CollaborationCursors />
 
       <BoardExecutiveBriefModal
         open={briefOpen}

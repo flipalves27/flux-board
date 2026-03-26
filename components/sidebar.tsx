@@ -398,6 +398,7 @@ export function Sidebar() {
     if (href === "/okrs") return normalizedPath === "/okrs";
     if (href === "/templates") return normalizedPath.startsWith("/templates");
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
+    if (href === "/my-work") return normalizedPath.startsWith("/my-work");
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
@@ -574,6 +575,16 @@ export function Sidebar() {
             hint={t("hints.tasks")}
             icon={<IconTasks className="h-4 w-4 shrink-0" />}
             label={t("tasks")}
+          />
+          <NavLink
+            path="/my-work"
+            hint={t("hints.myWork")}
+            icon={
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            }
+            label={t("myWork")}
           />
           <NavLink
             path="/sprints"

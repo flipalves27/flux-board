@@ -12,6 +12,7 @@ import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
 import { AppShell } from "@/components/app-shell";
 import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnostics-root";
+import { PwaRegister } from "@/components/pwa-register";
 import { headers } from "next/headers";
 
 const dmSans = DM_Sans({
@@ -44,6 +45,10 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#6c5ce7" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         {/* suppressHydrationWarning: browsers strip the nonce attr from the DOM after CSP, causing React 19 hydration mismatch */}
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeBootstrapInlineScript() }} />
       </head>
@@ -56,6 +61,7 @@ export default async function RootLayout({
                   <ToastProvider>
                     <ThemeProvider>
                       <RoutineTasksProvider>
+                        <PwaRegister />
                         <AppShell>{children}</AppShell>
                       </RoutineTasksProvider>
                     </ThemeProvider>
