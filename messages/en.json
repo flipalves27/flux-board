@@ -1280,13 +1280,9 @@
           "title": "Drag between columns",
           "body": "Drag a card to another column to change its stage. You can also reorder within a column by dragging."
         },
-        "sidebarCopilot": {
-          "title": "Copilot in the sidebar",
-          "body": "Copilot sits just below Boards: it opens this board’s assistant. When you’re not on a board, the same shortcut goes to your boards list."
-        },
         "copilot": {
-          "title": "Shortcut on the rail",
-          "body": "On desktop, the same Copilot is on the right-hand tools rail (bottom corner). Use whichever is easier."
+          "title": "Board Copilot",
+          "body": "On desktop, open it from the icon on the right-hand tools rail (bottom corner). On mobile, use the board’s floating tools menu. It answers with this board’s context."
         },
         "daily": {
           "title": "Daily Insights",

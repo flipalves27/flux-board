@@ -1,23 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { FlowInsightChipModel } from "@/lib/board-flow-insights";
 import type { BoardPortfolioMetrics } from "@/lib/board-portfolio-metrics";
-import { BoardMetricsStrip } from "@/components/kanban/board-metrics-strip";
 import { BoardHealthScoreWidget } from "@/components/kanban/board-health-score-widget";
 
-type ExecutionInsights = {
-  inProgress: number;
-  doneRate: number;
-  overdue: number;
-  dueSoon: number;
-};
-
 export type BoardIntelligenceRowProps = {
-  tKanban: (key: string, values?: Record<string, string | number>) => string;
-  totalCards: number;
-  executionInsights: ExecutionInsights;
   portfolio: BoardPortfolioMetrics;
   chips: FlowInsightChipModel[];
   insightFocusActive: boolean;
@@ -64,9 +52,6 @@ function chipLabel(
 }
 
 export function BoardIntelligenceRow({
-  tKanban,
-  totalCards,
-  executionInsights,
   portfolio,
   chips,
   insightFocusActive,
@@ -83,21 +68,9 @@ export function BoardIntelligenceRow({
   onOpenKnowledgeGraph,
 }: BoardIntelligenceRowProps) {
   const t = useTranslations("kanban");
-  const [metricsOpen, setMetricsOpen] = useState(false);
 
   return (
     <div className="flex flex-col border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)]">
-      <div className="px-4 sm:px-5 lg:px-6 py-1.5 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-06)]">
-        <button
-          type="button"
-          onClick={() => setMetricsOpen((v) => !v)}
-          className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-          aria-expanded={metricsOpen}
-        >
-          {metricsOpen ? "Ocultar totalizadores" : "Mostrar totalizadores"}
-        </button>
-      </div>
-      {metricsOpen ? <BoardMetricsStrip t={tKanban} totalCards={totalCards} executionInsights={executionInsights} /> : null}
       <div
         className="flex flex-wrap items-center gap-2 px-4 sm:px-5 lg:px-6 py-2 border-t border-[var(--flux-border-muted)]"
         data-tour="board-intelligence"

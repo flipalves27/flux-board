@@ -636,6 +636,12 @@ function KanbanBoardLoaded({
 
       {!focusMode && (
       <div className="sticky top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col">
+        <BoardAutomationSuggestions
+          variant="topStrip"
+          boardId={boardId}
+          cards={board.cards}
+          buckets={board.buckets}
+        />
         {/* --- NLQ Dock: compact / expanded -------------------------------- */}
         {nlqExpanded ? (
           <div className="relative">
@@ -747,9 +753,6 @@ function KanbanBoardLoaded({
         {intelligenceExpanded ? (
           <div className="relative">
             <BoardIntelligenceRow
-              tKanban={t}
-              totalCards={board.cards.length}
-              executionInsights={board.executionInsights}
               portfolio={portfolioSnapshot}
               chips={flowChips}
               insightFocusActive={insightFocusCardIds.size > 0}
@@ -774,9 +777,6 @@ function KanbanBoardLoaded({
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden><path d="M18 15l-6-6-6 6" /></svg>
             </button>
-            <div className="px-4 sm:px-5 lg:px-6 pb-1.5">
-              <BoardAutomationSuggestions boardId={boardId} cards={board.cards} buckets={board.buckets} />
-            </div>
           </div>
         ) : (
           <div className="flex items-center gap-3 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1 sm:px-5 lg:px-6">

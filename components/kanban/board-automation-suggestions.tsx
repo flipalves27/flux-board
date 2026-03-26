@@ -33,12 +33,15 @@ export interface BoardAutomationSuggestionsProps {
   boardId: string;
   cards: CardData[];
   buckets: BucketConfig[];
+  /** Aligned with board top chrome; totals stay in the bottom dock only. */
+  variant?: "inline" | "topStrip";
 }
 
 export function BoardAutomationSuggestions({
   boardId,
   cards,
   buckets,
+  variant = "inline",
 }: BoardAutomationSuggestionsProps) {
   const t = useTranslations("kanban.board.automationSuggestions");
   const locale = useLocale();
@@ -81,13 +84,13 @@ export function BoardAutomationSuggestions({
 
   if (suggestions.length === 0) return null;
 
-  return (
-    <div className="flex items-start gap-2 py-1">
+  const inner = (
+    <>
       {!expanded ? (
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-06)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-12)] hover:border-[var(--flux-primary-alpha-45)] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-06)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-12)] hover:border-[var(--flux-primary-alpha-45)] transition-colors shrink-0"
         >
           <svg
             width="12"
@@ -104,15 +107,15 @@ export function BoardAutomationSuggestions({
           {t("badge", { count: suggestions.length })}
         </button>
       ) : (
-        <div className="flex flex-col gap-2 w-full animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 w-full min-w-0 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-[var(--flux-text)]">
               {t("title")}
             </span>
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="rounded-md p-0.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
+              className="rounded-md p-0.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors shrink-0"
               aria-label="Collapse"
             >
               <svg
@@ -141,8 +144,18 @@ export function BoardAutomationSuggestions({
           ))}
         </div>
       )}
-    </div>
+    </>
   );
+
+  if (variant === "topStrip") {
+    return (
+      <div className="flex flex-col gap-1 border-b border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-06)] px-4 py-1.5 sm:px-5 lg:px-6">
+        {inner}
+      </div>
+    );
+  }
+
+  return <div className="flex items-start gap-2 py-1">{inner}</div>;
 }
 
 function SuggestionCard({

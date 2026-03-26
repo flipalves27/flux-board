@@ -1285,13 +1285,9 @@
           "title": "Arrastar entre colunas",
           "body": "Arraste o card para outra coluna para mudar o estágio. A ordem dentro da coluna também pode ser ajustada arrastando."
         },
-        "sidebarCopilot": {
-          "title": "Copiloto no menu lateral",
-          "body": "O item Copiloto fica logo abaixo de Boards: abre o assistente deste quadro. Fora de um quadro, o mesmo atalho leva à lista de quadros."
-        },
         "copilot": {
-          "title": "Atalho no trilho",
-          "body": "No desktop, o mesmo Copiloto aparece no trilho à direita (canto inferior). Use o que for mais confortável."
+          "title": "Copiloto do quadro",
+          "body": "No desktop, abra pelo ícone no trilho de ferramentas à direita (canto inferior). No mobile, use o menu flutuante de ferramentas do quadro. O assistente usa o contexto deste Kanban."
         },
         "daily": {
           "title": "Daily Insights",

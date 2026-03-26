@@ -36,15 +36,6 @@ function IconBoards({ className }: { className?: string }) {
   );
 }
 
-function IconCopilot({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
-      <circle cx="12" cy="12" r="2.2" />
-    </svg>
-  );
-}
-
 function IconReports({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -288,12 +279,6 @@ export function Sidebar() {
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
   const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
-  const boardSidebarMatch = normalizedPath.match(/^\/board\/([^/]+)$/);
-  const boardIdForCopilotNav = boardSidebarMatch?.[1];
-  const copilotNavPath = boardIdForCopilotNav
-    ? `/board/${boardIdForCopilotNav}?copilot=1`
-    : "/boards";
-
   useEffect(() => {
     try {
       const v = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
@@ -422,8 +407,6 @@ export function Sidebar() {
     if (href === "/org-invites") return normalizedPath === "/org-invites";
     if (href === "/rate-limit-abuse") return normalizedPath === "/rate-limit-abuse";
     if (href === "/admin/tracer") return normalizedPath.startsWith("/admin/tracer");
-    const copilotBoard = href.match(/^\/board\/([^/?]+)\?copilot=1$/);
-    if (copilotBoard) return normalizedPath === `/board/${copilotBoard[1]}`;
     return normalizedPath === href;
   };
 
@@ -587,15 +570,6 @@ export function Sidebar() {
             hint={t("hints.boards")}
             icon={<IconBoards className="h-4 w-4 shrink-0" />}
             label={t("boards")}
-          />
-          <NavLink
-            path={copilotNavPath}
-            hint={t("hints.copilot")}
-            icon={<IconCopilot className="h-4 w-4 shrink-0" />}
-            label={t("copilot")}
-            sublabel={boardIdForCopilotNav ? t("copilotSublabelOnBoard") : t("copilotSublabelPickBoard")}
-            dataTour="sidebar-copilot"
-            isActiveOverride={boardIdForCopilotNav ? isActive(copilotNavPath) : false}
           />
           <NavLink
             path="/templates"
