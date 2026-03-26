@@ -47,6 +47,7 @@ import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
 import { BoardKnowledgeGraphPanel } from "./board-knowledge-graph-panel";
 import { BoardWorkloadPanel } from "./board-workload-panel";
 import { BoardFocusModeBar } from "./board-focus-mode-bar";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { BoardAutomationSuggestions } from "./board-automation-suggestions";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
@@ -132,6 +133,7 @@ function KanbanBoardLoaded({
   allowExternalMerge = true,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
+  const tView = useTranslations("kanban.board.timeline");
   const router = useRouter();
   const searchParams = useSearchParams();
   /** String estável — `searchParams` pode mudar de identidade a cada render no App Router. */
@@ -662,20 +664,29 @@ function KanbanBoardLoaded({
               role="group"
               aria-label={t("board.timeline.toggleGroupAria")}
             >
-              {(["kanban", "table", "timeline", "eisenhower"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setBoardView(v)}
-                  className={`px-2 py-1.5 rounded-md transition-all duration-200 flex items-center justify-center ${
-                    boardView === v
-                      ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                      : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-                  }`}
-                  aria-pressed={boardView === v}
-                >
-                  <span className="text-[10px] font-semibold uppercase tracking-wide">{v === "kanban" ? "K" : v === "table" ? "T" : v === "timeline" ? "TL" : "E"}</span>
-                </button>
+              {(
+                [
+                  ["kanban", "K", "viewKanbanTooltip", "viewKanbanAria"],
+                  ["table", "T", "viewTableTooltip", "viewTableAria"],
+                  ["timeline", "TL", "viewTimelineTooltip", "viewTimelineAria"],
+                  ["eisenhower", "E", "viewEisenhowerTooltip", "viewEisenhowerAria"],
+                ] as const
+              ).map(([v, label, tooltipKey, ariaKey]) => (
+                <CustomTooltip key={v} content={tView(tooltipKey)} position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setBoardView(v)}
+                    className={`px-2 py-1.5 rounded-md transition-all duration-200 flex items-center justify-center ${
+                      boardView === v
+                        ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+                    }`}
+                    aria-pressed={boardView === v}
+                    aria-label={tView(ariaKey)}
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
+                  </button>
+                </CustomTooltip>
               ))}
             </div>
 
