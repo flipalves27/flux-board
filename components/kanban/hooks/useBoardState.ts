@@ -13,6 +13,7 @@ import {
   simulateMoveSingleCard,
   simulatePatchBucketMove,
 } from "@/lib/board-wip";
+import { nextBoardCardId } from "@/lib/card-id";
 import { assertDodAllowsCompleting, resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { useFilterStore } from "@/stores/filter-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
@@ -478,10 +479,7 @@ export function useBoardState({
       updateDb((d) => {
         const source = d.cards.find((c) => c.id === cardId);
         if (!source) return;
-        const newId =
-          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-            ? `COPY-${crypto.randomUUID().slice(0, 8)}`
-            : `COPY-${Date.now()}`;
+        const newId = nextBoardCardId(d.cards.map((c) => c.id));
         const titleBase = String(source.title || "").trim();
         const dup: CardData = {
           ...source,

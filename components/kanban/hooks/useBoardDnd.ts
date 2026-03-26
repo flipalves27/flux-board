@@ -77,6 +77,21 @@ export function useBoardDnd({
         const raw = active.data.current as { dragIds?: string[] } | undefined;
         const dragIds = raw?.dragIds?.length ? raw.dragIds : [cardId];
         const idSet = new Set(dragIds);
+        if (overId.startsWith("card-")) {
+          const overCardId = overId.replace("card-", "");
+          if (!idSet.has(overCardId)) {
+            const overCard = cards.find((c) => c.id === overCardId);
+            if (overCard) {
+              const visibleDest = getCardsByBucket(overCard.bucket);
+              const overIndex = visibleDest.findIndex((c) => c.id === overCardId);
+              if (overIndex >= 0) {
+                const insertIndex = adjustSlotInsertIndexForBatch(overIndex, visibleDest, idSet);
+                moveCardsBatch(dragIds, overCard.bucket, insertIndex);
+                return;
+              }
+            }
+          }
+        }
         const slotInfo = parseSlotId(overId);
         if (slotInfo) {
           const visibleDest = getCardsByBucket(slotInfo.bucketKey);
@@ -91,7 +106,7 @@ export function useBoardDnd({
         }
       }
     },
-    [buckets, getCardsByBucket, moveCardsBatch, reorderColumns]
+    [buckets, cards, getCardsByBucket, moveCardsBatch, reorderColumns]
   );
 
   const activeCard =

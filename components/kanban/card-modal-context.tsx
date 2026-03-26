@@ -24,6 +24,7 @@ import type {
 import type { BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass } from "@/lib/schemas";
 import { assertDodAllowsCompleting } from "@/lib/board-scrum";
+import { nextBoardCardId } from "@/lib/card-id";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import {
@@ -98,6 +99,7 @@ export type CardModalContextValue = {
 
   id: string;
   setId: (v: string) => void;
+  generatedCardId: string;
   title: string;
   setTitle: (v: string) => void;
   descBlocks: Record<string, string>;
@@ -308,6 +310,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   } | null>(null);
 
   const descriptionForSave = serializeDescriptionBlocks(descBlocks);
+  const generatedCardId = useMemo(
+    () => nextBoardCardId(peerCards.map((c) => c.id)),
+    [peerCards]
+  );
 
   const selfId = useMemo(() => id.trim() || card.id, [id, card.id]);
 
@@ -686,7 +692,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       pushToast({ kind: "error", title: t("cardModal.toasts.missingTitle") });
       return;
     }
-    const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
+    const finalId = mode === "new" ? generatedCardId : id.trim() || card.id;
     const validIds = new Set(selectablePeers.map((c) => c.id));
     const nextBlocked = blockedBy.filter((bid) => validIds.has(bid));
     const dorPatch: CardDorReady = {};
@@ -762,6 +768,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     t,
     id,
     mode,
+    generatedCardId,
     card,
     selectablePeers,
     blockedBy,
@@ -986,6 +993,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       directions,
       id,
       setId,
+      generatedCardId,
       title,
       setTitle,
       descBlocks,
@@ -1083,6 +1091,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       onCreateLabel,
       onDeleteLabel,
       id,
+      generatedCardId,
       title,
       descBlocks,
       bucket,

@@ -21,6 +21,7 @@ import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
 import { appendBoardCopilotMessages, getBoardCopilotChat, type CopilotMessageRole } from "@/lib/kv-board-copilot";
 import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
 import { buildCopilotWorldSnapshot } from "@/lib/copilot-world-snapshot";
+import { nextBoardCardId } from "@/lib/card-id";
 
 export const runtime = "nodejs";
 
@@ -869,9 +870,7 @@ async function executeCopilotActions(params: {
         const dir = args.direction === null || args.direction === undefined ? null : directionSafe(args.direction) ?? null;
         const dueDate = args.dueDate === null || args.dueDate === undefined ? null : toLocalIsoDate(String(args.dueDate)) ?? null;
 
-        const existingIds = new Set(cards.map((c: any) => String(c.id)));
-        let id = `IMP-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
-        while (existingIds.has(id)) id = `IMP-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+        const id = nextBoardCardId(cards.map((c: any) => String(c.id)));
 
         const bucketCards = cards
           .filter((c: any) => String(c.bucket || "") === bucketKey)

@@ -8,6 +8,7 @@ import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
+import { nextBoardCardId } from "@/lib/card-id";
 import type {
   DailyLog,
   DailyStatusPhase,
@@ -332,6 +333,7 @@ export function useDailySession({
           "Backlog";
 
         const nextOrderByBucket: Record<string, number> = {};
+        const usedCardIds = new Set(d.cards.map((c) => c.id));
         const created: CardData[] = [];
         const createdCardsPayload: DailyCreatedCard[] = [];
         let createdCount = 0;
@@ -357,9 +359,11 @@ export function useDailySession({
 
           const directionLower = String(s.direcionamento || "").toLowerCase();
           const direction = directions.map((d) => d.toLowerCase()).includes(directionLower) ? directionLower : null;
+          const generatedCardId = alreadyExists ? "" : nextBoardCardId(usedCardIds);
+          if (generatedCardId) usedCardIds.add(generatedCardId);
 
           const cardPayload: DailyCreatedCard = {
-            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
+            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : generatedCardId,
             title: s.titulo,
             bucket: bucketKey,
             priority: s.prioridade,

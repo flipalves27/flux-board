@@ -34,6 +34,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
   const {
     id,
     setId,
+    generatedCardId,
     title,
     setTitle,
     setAiContextApplied,
@@ -104,13 +105,13 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
 
   const cardIdReadyForSprint = useMemo(() => {
     const cid = String(selfId || "").trim();
-    return Boolean(cid && !cid.startsWith("NEW-"));
-  }, [selfId]);
+    return Boolean(mode === "edit" && cid);
+  }, [selfId, mode]);
 
   const toggleSprintMembership = useCallback(
     async (sprint: SprintData, include: boolean) => {
       const cid = String(selfId || "").trim();
-      if (!cid || cid.startsWith("NEW-")) return;
+      if (mode !== "edit" || !cid) return;
       if (sprint.status !== "planning" && sprint.status !== "active") return;
       const nextIds = include
         ? [...new Set([...(sprint.cardIds ?? []), cid])]
@@ -137,7 +138,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         setSprintPatching(null);
       }
     },
-    [selfId, boardId, getHeaders, upsertSprint, pushToast, t]
+    [selfId, mode, boardId, getHeaders, upsertSprint, pushToast, t]
   );
 
   const currentBucketWip = useMemo(() => {
@@ -150,7 +151,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
 
   const runUnblockAssist = useCallback(async () => {
     const cid = String(selfId || "").trim();
-    if (!cid || cid.startsWith("NEW-")) return;
+    if (mode !== "edit" || !cid) return;
     setUnblockBusy(true);
     setUnblockText(null);
     try {
@@ -170,7 +171,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     } finally {
       setUnblockBusy(false);
     }
-  }, [boardId, getHeaders, selfId]);
+  }, [boardId, getHeaders, selfId, mode]);
 
   const [refineBusy, setRefineBusy] = useState(false);
   const [refinePreview, setRefinePreview] = useState<string | null>(null);
@@ -345,10 +346,11 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                placeholder={t("cardModal.fields.id.placeholder")}
-                className={`${inputBase} flex-1`}
+                value={mode === "new" ? generatedCardId : id}
+                onChange={mode === "new" ? undefined : (e) => setId(e.target.value)}
+                readOnly={mode === "new"}
+                placeholder={mode === "new" ? generatedCardId : t("cardModal.fields.id.placeholder")}
+                className={`${inputBase} flex-1 ${mode === "new" ? "cursor-not-allowed opacity-85" : ""}`}
               />
               <CustomTooltip content={t("cardModal.aiContext.tooltips.trigger")}>
                 <button
@@ -975,7 +977,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         ) : null}
       </CardModalSection>
 
-      {blockedBy.length > 0 && selfId && !String(selfId).startsWith("NEW-") ? (
+      {mode === "edit" && blockedBy.length > 0 && selfId ? (
         <CardModalSection title={t("cardModal.sections.unblock.title")} description={t("cardModal.sections.unblock.description")}>
           <button
             type="button"

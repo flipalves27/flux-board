@@ -1480,7 +1480,7 @@
       "fields": {
         "id": {
           "label": "ID",
-          "placeholder": "Ex: DI-700"
+          "placeholder": "Ex: ID0001"
         },
         "column": {
           "label": "Column"

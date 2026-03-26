@@ -12,6 +12,7 @@ import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/s
 import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
+import { nextBoardCardId } from "@/lib/card-id";
 
 type BoardCard = {
   id: string;
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const order = existingCards.filter((c) => c.bucket === targetBucket).length;
     const card: BoardCard = {
-      id: `FORM-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase(),
+      id: nextBoardCardId(existingCards.map((c) => c.id)),
       bucket: targetBucket,
       priority: classifier.priority || String(form.defaultPriority || "Média"),
       progress: String(form.defaultProgress || "Não iniciado"),
