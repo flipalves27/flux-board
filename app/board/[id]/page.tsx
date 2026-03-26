@@ -22,7 +22,7 @@ import { BoardExecutiveBriefModal } from "@/components/kanban/board-executive-br
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
-import type { CardServiceClass } from "@/lib/schemas";
+import type { CardServiceClass, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useFilterStore } from "@/stores/filter-store";
@@ -152,6 +152,8 @@ export interface CardData {
   storyPoints?: number | null;
   /** Classe de serviço explícita (Kanban). */
   serviceClass?: CardServiceClass | null;
+  subtasks?: SubtaskData[];
+  subtaskProgress?: SubtaskProgress;
   /** Peso calculado para priorização em templates de matriz (0-100). */
   matrixWeight?: number;
   /** Faixa de prioridade visual derivada do peso da matriz. */
@@ -434,6 +436,8 @@ export default function BoardPage() {
               .filter((d) => d && typeof d.docId === "string" && d.docId.trim())
               .map((d) => ({ docId: String(d.docId), title: d.title ? String(d.title) : undefined, excerpt: d.excerpt ? String(d.excerpt) : undefined }))
           : [],
+        subtasks: Array.isArray(c.subtasks) ? c.subtasks : [],
+        subtaskProgress: c.subtaskProgress,
         dorReady: sanitizeDorReady((c as CardData).dorReady),
         dodChecks: dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : undefined,
       }));
@@ -562,6 +566,8 @@ export default function BoardPage() {
                           excerpt: d.excerpt ? String(d.excerpt) : undefined,
                         }))
                     : [],
+                  subtasks: Array.isArray(c.subtasks) ? c.subtasks : [],
+                  subtaskProgress: c.subtaskProgress,
                   dorReady: sanitizeDorReady(c.dorReady),
                   dodChecks:
                     dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : (c as CardData).dodChecks,

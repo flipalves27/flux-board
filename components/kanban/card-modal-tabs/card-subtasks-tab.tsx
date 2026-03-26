@@ -183,9 +183,9 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
   const updateDb = useBoardStore((s) => s.updateDb);
 
-  const rawSubtasks = (card as Record<string, unknown> | undefined)?.subtasks;
+  const rawSubtasks = card?.subtasks;
   const [subtasks, setSubtasks] = useState<SubtaskData[]>(() =>
-    Array.isArray(rawSubtasks) ? (rawSubtasks as SubtaskData[]) : []
+    Array.isArray(rawSubtasks) ? rawSubtasks : []
   );
   const [newTitle, setNewTitle] = useState("");
   const [adding, setAdding] = useState(false);
@@ -194,7 +194,7 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
   const newInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (Array.isArray(rawSubtasks)) setSubtasks(rawSubtasks as SubtaskData[]);
+    if (Array.isArray(rawSubtasks)) setSubtasks(rawSubtasks);
   }, [rawSubtasks]);
 
   const sensors = useSensors(

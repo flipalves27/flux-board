@@ -162,10 +162,12 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     }
     if (subtasksParsed && subtasksParsed.length > 0) {
       base.subtasks = subtasksParsed;
-    }
-    if (c.subtaskProgress && typeof c.subtaskProgress === "object") {
-      const sp = SubtaskProgressSchema.safeParse(c.subtaskProgress);
-      if (sp.success) base.subtaskProgress = sp.data;
+      if (c.subtaskProgress && typeof c.subtaskProgress === "object") {
+        const sp = SubtaskProgressSchema.safeParse(c.subtaskProgress);
+        if (sp.success) base.subtaskProgress = sp.data;
+      }
+    } else if (Array.isArray(c.subtasks)) {
+      base.subtasks = [];
     }
     const dor = (c as { dorReady?: unknown }).dorReady;
     if (dor && typeof dor === "object") {

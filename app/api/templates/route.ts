@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       category: t.category,
       pricingTier: t.pricingTier,
       creatorRevenueSharePercent: t.creatorRevenueSharePercent,
+      creatorOrgId: t.creatorOrgId,
       creatorOrgName: t.creatorOrgName,
       createdAt: t.createdAt,
       status: t.status ?? "published",

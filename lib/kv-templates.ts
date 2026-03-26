@@ -86,7 +86,11 @@ export async function listPublishedTemplates(params?: {
     await ensureIndexes(db);
     const q: Record<string, unknown> = {};
     if (cat && TEMPLATE_CATEGORIES.includes(cat)) q.category = cat;
-    if (status) q.status = status;
+    if (status) {
+      q.status = status;
+    } else {
+      q.status = { $ne: "archived" };
+    }
     const docs = await db
       .collection<PublishedTemplate>(COL)
       .find(q)
@@ -100,8 +104,9 @@ export async function listPublishedTemplates(params?: {
   const all = [...memoryStore.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   const filtered = all.filter((t) => {
     if (cat && t.category !== cat) return false;
-    if (status && (t.status ?? "published") !== status) return false;
-    return true;
+    const effectiveStatus = t.status ?? "published";
+    if (status) return effectiveStatus === status;
+    return effectiveStatus !== "archived";
   });
   return filtered.slice(0, limit);
 }

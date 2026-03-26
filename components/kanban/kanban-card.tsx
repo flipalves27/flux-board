@@ -889,8 +889,8 @@ function KanbanCardInner({
             {card.docRefs.length} doc(s) vinculado(s)
           </div>
         )}
-        {Array.isArray((card as unknown as Record<string, unknown>).subtasks) && ((card as unknown as Record<string, unknown>).subtasks as unknown[]).length > 0 && (
-          <SubtaskProgressMini subtasks={(card as unknown as Record<string, unknown>).subtasks as SubtaskItem[]} />
+        {Array.isArray(card.subtasks) && card.subtasks.length > 0 && (
+          <SubtaskProgressMini subtasks={card.subtasks as SubtaskItem[]} />
         )}
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <div className="flex items-center gap-1">

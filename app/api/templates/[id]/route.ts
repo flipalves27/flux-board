@@ -59,14 +59,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ error: "Sem permissão para excluir este template." }, { status: 403 });
   }
 
-  const archived = await updatePublishedTemplate(tpl._id, {
-    status: "archived",
-    archivedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    updatedBy: payload.id,
-  });
-  if (archived) return NextResponse.json({ ok: true });
-
   const ok = await deletePublishedTemplate(tpl._id);
   if (!ok) return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
   return NextResponse.json({ ok: true });

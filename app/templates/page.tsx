@@ -17,6 +17,7 @@ type Row = {
   description: string;
   category: TemplateCategory;
   pricingTier: "free" | "premium";
+  creatorOrgId: string;
   creatorOrgName?: string;
   templateKind?: "kanban" | "priority_matrix" | "bpmn";
   priorityMatrixModel?: "eisenhower" | "grid4";
@@ -308,7 +309,7 @@ export default function TemplatesShowcasePage() {
                   >
                     {importingId === r.id ? t("importing") : t("import")}
                   </button>
-                  {user?.isAdmin ? (
+                  {user?.isAdmin || user?.orgId === r.creatorOrgId ? (
                     <button
                       type="button"
                       className="btn-secondary shrink-0"
@@ -318,7 +319,7 @@ export default function TemplatesShowcasePage() {
                       {editingId === r.id ? "Salvando..." : "Editar"}
                     </button>
                   ) : null}
-                  {user?.isAdmin && r.status === "draft" ? (
+                  {(user?.isAdmin || user?.orgId === r.creatorOrgId) && r.status === "draft" ? (
                     <button
                       type="button"
                       className="btn-secondary shrink-0"
@@ -328,7 +329,7 @@ export default function TemplatesShowcasePage() {
                       {editingId === r.id ? "Publicando..." : "Publicar"}
                     </button>
                   ) : null}
-                  {user?.isAdmin ? (
+                  {user?.isAdmin || user?.orgId === r.creatorOrgId ? (
                     <button
                       type="button"
                       className="btn-secondary shrink-0"
