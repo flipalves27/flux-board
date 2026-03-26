@@ -24,6 +24,7 @@ type BoardCard = {
   tags: string[];
   direction: string | null;
   dueDate: string | null;
+  assigneeId?: string | null;
   order: number;
 };
 
@@ -220,6 +221,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       tags: [...mergedTags].map((t) => String(t).trim()).filter(Boolean).slice(0, 20),
       direction: null,
       dueDate: null,
+      assigneeId: (board as any).config?.cardRules?.requireAssignee ? String((board as any).ownerId || "") : null,
       order,
     };
 

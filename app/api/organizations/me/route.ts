@@ -24,6 +24,7 @@ import {
   planOverrideBlockedByStripe,
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
+import { ensureOrgManager } from "@/lib/api-authz";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -66,7 +67,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : undefined;

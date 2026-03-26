@@ -3,15 +3,17 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getUserById, updateUser, ensureAdminUser, deleteUser, listUsers } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
+import { ensureOrgManager } from "@/lib/api-authz";
+import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const payload = await getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const { id } = await params;
   if (!id || id === "users") {
@@ -27,7 +29,10 @@ export async function GET(
 
   try {
     await ensureAdminUser();
-    const user = await getUserById(id, payload.orgId);
+    const targetOrgId = isPlatformAdmin(payload)
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const user = await getUserById(id, targetOrgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
@@ -55,9 +60,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const payload = await getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const { id } = await params;
   if (!id || id === "users") {
@@ -80,13 +85,16 @@ export async function PUT(
     }
 
     const clean = parsed.data;
-    const existingUser = await getUserById(id, payload.orgId);
+    const targetOrgId = isPlatformAdmin(payload)
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const existingUser = await getUserById(id, targetOrgId);
     if (!existingUser) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
     if (clean.isAdmin === false && existingUser.isAdmin) {
-      const members = await listUsers(payload.orgId);
+      const members = await listUsers(targetOrgId);
       const adminCount = members.filter((m) => m.isAdmin).length;
       if (adminCount <= 1) {
         return NextResponse.json(
@@ -117,7 +125,7 @@ export async function PUT(
       updates.isExecutive = clean.isExecutive;
     }
 
-    const user = await updateUser(id, payload.orgId, updates as Parameters<typeof updateUser>[2]);
+    const user = await updateUser(id, targetOrgId, updates as Parameters<typeof updateUser>[2]);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
@@ -145,9 +153,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const payload = await getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const { id } = await params;
   if (!id || id === "users") {
@@ -163,12 +171,15 @@ export async function DELETE(
 
   try {
     await ensureAdminUser();
-    const user = await getUserById(id, payload.orgId);
+    const targetOrgId = isPlatformAdmin(payload)
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const user = await getUserById(id, targetOrgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
     if (user.isAdmin) {
-      const members = await listUsers(payload.orgId);
+      const members = await listUsers(targetOrgId);
       const adminCount = members.filter((m) => m.isAdmin).length;
       if (adminCount <= 1) {
         return NextResponse.json(
@@ -177,7 +188,7 @@ export async function DELETE(
         );
       }
     }
-    await deleteUser(id, payload.orgId);
+    await deleteUser(id, targetOrgId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("User API error:", err);

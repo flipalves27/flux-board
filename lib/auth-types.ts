@@ -1,4 +1,5 @@
 import type { ThemePreference } from "./theme-storage";
+import type { OrgRole, PlatformRole } from "./rbac";
 
 export type ValidateResult =
   | {
@@ -11,6 +12,8 @@ export type ValidateResult =
         isAdmin: boolean;
         isExecutive?: boolean;
         orgId: string;
+        platformRole: PlatformRole;
+        orgRole: OrgRole;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
       };

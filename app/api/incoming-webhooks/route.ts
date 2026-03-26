@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       tags: action.tags ?? [],
       direction: null,
       dueDate: null,
+      assigneeId: (board as any).config?.cardRules?.requireAssignee ? String((board as any).ownerId || "") : null,
       order: cards.filter((raw) => (raw as Record<string, unknown>).bucket === bucket).length,
       links: action.externalRef ? [{ url: action.externalRef, label: source }] : [],
     };

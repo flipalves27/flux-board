@@ -144,6 +144,7 @@ export interface CardData {
   docRefs?: CardDocRef[];
   direction: string | null;
   dueDate: string | null;
+  assigneeId?: string | null;
   /** Cards que precisam concluir antes deste (IDs). */
   blockedBy?: string[];
   order: number;
@@ -191,6 +192,7 @@ export interface BoardData {
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
     definitionOfDone?: BoardDefinitionOfDone;
+    cardRules?: { requireAssignee?: boolean };
   };
   mapaProducao?: { papel: string; equipe: string; linha: string; operacoes: string }[];
   dailyInsights?: DailyInsightEntry[];
@@ -435,6 +437,7 @@ export default function BoardPage() {
           ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
           : [],
         direction: c.direction ?? null,
+        assigneeId: typeof c.assigneeId === "string" && c.assigneeId.trim() ? c.assigneeId.trim() : null,
         tags: Array.isArray(c.tags) ? c.tags : [],
         links: Array.isArray(c.links) ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim()) : [],
         docRefs: Array.isArray(c.docRefs)
@@ -464,6 +467,7 @@ export default function BoardPage() {
           ...(productGoal ? { productGoal } : {}),
           ...(backlogBucketKey ? { backlogBucketKey } : {}),
           ...(definitionOfDone ? { definitionOfDone } : {}),
+          ...(d.config?.cardRules ? { cardRules: d.config.cardRules } : {}),
         },
         mapaProducao: d.mapaProducao,
         dailyInsights: Array.isArray(d.dailyInsights) ? d.dailyInsights : [],
@@ -559,6 +563,7 @@ export default function BoardPage() {
                     ? [...new Set(c.blockedBy.filter((id) => typeof id === "string" && id.trim()))]
                     : [],
                   direction: c.direction ?? null,
+                  assigneeId: typeof c.assigneeId === "string" && c.assigneeId.trim() ? c.assigneeId.trim() : null,
                   tags: Array.isArray(c.tags) ? c.tags : [],
                   links: Array.isArray(c.links)
                     ? c.links.filter((l) => l && typeof l.url === "string" && l.url.trim())

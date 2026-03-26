@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateSessionAction } from "@/app/actions/auth";
 import type { ThemePreference } from "@/lib/theme-storage";
+import type { OrgRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
@@ -15,6 +16,8 @@ export interface AuthUser {
   isAdmin: boolean;
   isExecutive?: boolean;
   orgId: string;
+  platformRole: PlatformRole;
+  orgRole: OrgRole;
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;
 }

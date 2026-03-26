@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { getJwtSecret } from "./jwt-secret";
 import { ACCESS_COOKIE } from "./auth-cookie-names";
 import { accessTokenExpiresSeconds } from "./session-ttl";
+import { deriveEffectiveRoles, type OrgRole, type PlatformRole } from "./rbac";
 
 const SALT_LEN = 16;
 
@@ -26,7 +27,10 @@ export function createToken(user: {
   isAdmin?: boolean;
   isExecutive?: boolean;
   orgId?: string;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
 }): string {
+  const roles = deriveEffectiveRoles(user);
   const secret = getJwtSecret();
   const expiresIn = accessTokenExpiresSeconds();
   return jwt.sign(
@@ -36,6 +40,8 @@ export function createToken(user: {
       isAdmin: !!user.isAdmin,
       isExecutive: !!user.isExecutive,
       orgId: user.orgId ? String(user.orgId) : "org_default",
+      platformRole: roles.platformRole,
+      orgRole: roles.orgRole,
     },
     secret,
     { expiresIn }
@@ -44,7 +50,15 @@ export function createToken(user: {
 
 export function verifyToken(
   token: string
-): { id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null {
+): {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  isExecutive: boolean;
+  orgId: string;
+  platformRole: PlatformRole;
+  orgRole: OrgRole;
+} | null {
   try {
     const secret = getJwtSecret();
     const payload = jwt.verify(token, secret) as {
@@ -53,13 +67,18 @@ export function verifyToken(
       isAdmin: boolean;
       isExecutive?: boolean;
       orgId?: string;
+      platformRole?: PlatformRole;
+      orgRole?: OrgRole;
     };
+    const roles = deriveEffectiveRoles(payload);
     return {
       id: payload.id,
       username: payload.username,
       isAdmin: !!payload.isAdmin,
       isExecutive: !!payload.isExecutive,
       orgId: payload.orgId ? String(payload.orgId) : "org_default",
+      platformRole: roles.platformRole,
+      orgRole: roles.orgRole,
     };
   } catch {
     return null;
@@ -72,7 +91,15 @@ export function verifyToken(
  */
 export async function getAuthFromRequest(
   req: NextRequest
-): Promise<{ id: string; username: string; isAdmin: boolean; isExecutive: boolean; orgId: string } | null> {
+): Promise<{
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  isExecutive: boolean;
+  orgId: string;
+  platformRole: PlatformRole;
+  orgRole: OrgRole;
+} | null> {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
   let token: string | null = null;
   if (auth?.startsWith("Bearer ")) token = auth.slice(7);
@@ -83,11 +110,20 @@ export async function getAuthFromRequest(
   const { getUserById } = await import("./kv-users");
   const user = await getUserById(payload.id, payload.orgId);
   if (!user) return null;
+  const roles = deriveEffectiveRoles({
+    id: user.id,
+    isAdmin: user.id === "admin" || !!user.isAdmin,
+    isExecutive: !!user.isExecutive,
+    platformRole: user.platformRole,
+    orgRole: user.orgRole,
+  });
   return {
     id: user.id,
     username: user.username,
     isAdmin: user.id === "admin" || !!user.isAdmin,
     isExecutive: !!user.isExecutive,
     orgId: user.orgId,
+    platformRole: roles.platformRole,
+    orgRole: roles.orgRole,
   };
 }

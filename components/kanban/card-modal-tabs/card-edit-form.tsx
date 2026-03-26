@@ -48,6 +48,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     setProgress,
     dueDate,
     setDueDate,
+    assigneeId,
+    setAssigneeId,
     blockedBy,
     setBlockedBy,
     depSearch,
@@ -799,6 +801,18 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
                 </p>
               ) : null}
             </SmartEnrichFieldShell>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+              Responsável (userId)
+            </label>
+            <input
+              type="text"
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+              placeholder="Ex: u_123..."
+              className={inputBase}
+            />
           </div>
           {directions.length ? (
             <div>

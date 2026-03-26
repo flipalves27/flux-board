@@ -5,16 +5,21 @@ import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxForAuth } from "@/lib/plan-gates";
+import { ensureOrgManager } from "@/lib/api-authz";
+import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   try {
     await ensureAdminUser();
-    const users = await listUsers(payload.orgId);
+    const targetOrgId = isPlatformAdmin(payload)
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const users = await listUsers(targetOrgId);
     return NextResponse.json({ users });
   } catch (err) {
     console.error("Users API error:", err);
@@ -27,9 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   try {
     await ensureAdminUser();
@@ -51,8 +56,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
-    const org = await getOrganizationById(payload.orgId);
-    const members = await listUsers(payload.orgId);
+    const targetOrgId = isPlatformAdmin(payload)
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const org = await getOrganizationById(targetOrgId);
+    const members = await listUsers(targetOrgId);
     const cap = getUserCap(org, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
     if (cap !== null && members.length >= cap) {
       return NextResponse.json(
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
-      orgId: payload.orgId,
+      orgId: targetOrgId,
       ...(wantAdmin ? { isAdmin: true } : {}),
     });
 

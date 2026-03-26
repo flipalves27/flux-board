@@ -21,6 +21,7 @@ import { getUserCap } from "@/lib/plan-gates";
 import type { ThemePreference } from "@/lib/theme-storage";
 import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
 import type { ValidateResult } from "@/lib/auth-types";
+import { deriveEffectiveRoles } from "@/lib/rbac";
 
 export type { ValidateResult } from "@/lib/auth-types";
 
@@ -35,6 +36,8 @@ export type AuthResult =
         isAdmin: boolean;
         isExecutive?: boolean;
         orgId: string;
+        platformRole: "platform_admin" | "platform_user";
+        orgRole: "org_manager" | "org_member";
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
       };
@@ -82,6 +85,13 @@ export async function loginAction(
 
     const isAdmin = user.id === "admin" || !!user.isAdmin;
     const isExecutive = !!user.isExecutive;
+    const roles = deriveEffectiveRoles({
+      id: user.id,
+      isAdmin,
+      isExecutive,
+      platformRole: user.platformRole,
+      orgRole: user.orgRole,
+    });
     await issueSessionForCredentials(
       {
         id: user.id,
@@ -89,6 +99,8 @@ export async function loginAction(
         isAdmin,
         ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
+        platformRole: roles.platformRole,
+        orgRole: roles.orgRole,
       },
       remember
     );
@@ -102,6 +114,8 @@ export async function loginAction(
         isAdmin,
         ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
+        platformRole: roles.platformRole,
+        orgRole: roles.orgRole,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
@@ -177,6 +191,13 @@ export async function registerAction(
         passwordHash: hashPassword(password),
         orgId: validated.orgId,
         isAdmin: false,
+        orgRole: "org_member",
+      });
+      const roles = deriveEffectiveRoles({
+        id: user.id,
+        isAdmin: false,
+        platformRole: user.platformRole,
+        orgRole: user.orgRole,
       });
 
       const ok = await consumeOrganizationInvite({ code: inviteCode, email: emailNorm, userId: user.id });
@@ -191,6 +212,8 @@ export async function registerAction(
           username: user.username,
           isAdmin: false,
           orgId: user.orgId,
+          platformRole: roles.platformRole,
+          orgRole: roles.orgRole,
         },
         remember
       );
@@ -203,6 +226,8 @@ export async function registerAction(
           email: user.email,
           isAdmin: false,
           orgId: user.orgId,
+          platformRole: roles.platformRole,
+          orgRole: roles.orgRole,
           ...(user.themePreference ? { themePreference: user.themePreference } : {}),
           ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
         },
@@ -219,6 +244,13 @@ export async function registerAction(
       passwordHash: hashPassword(password),
       orgId: org._id,
       isAdmin: true,
+      orgRole: "org_manager",
+    });
+    const roles = deriveEffectiveRoles({
+      id: user.id,
+      isAdmin: true,
+      platformRole: user.platformRole,
+      orgRole: user.orgRole,
     });
 
     await updateOrganizationOwner(org._id, user.id);
@@ -229,6 +261,8 @@ export async function registerAction(
         username: user.username,
         isAdmin: true,
         orgId: user.orgId,
+        platformRole: roles.platformRole,
+        orgRole: roles.orgRole,
       },
       remember
     );
@@ -241,6 +275,8 @@ export async function registerAction(
         email: user.email,
         isAdmin: true,
         orgId: user.orgId,
+        platformRole: roles.platformRole,
+        orgRole: roles.orgRole,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },

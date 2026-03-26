@@ -342,6 +342,7 @@ export const CardDataSchema = z
     docRefs: z.array(CardDocRefSchema).optional(),
     direction: z.string().trim().nullable().optional(),
     dueDate: z.string().trim().nullable().optional(),
+    assigneeId: z.string().trim().max(200).nullable().optional(),
     blockedBy: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
     order: z.number().int().nonnegative().max(1_000_000),
     columnEnteredAt: z.string().trim().max(80).optional(),
@@ -655,6 +656,11 @@ export const BoardUpdateSchema = z
         productGoal: z.string().trim().max(800).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
+        cardRules: z
+          .object({
+            requireAssignee: z.boolean().optional(),
+          })
+          .optional(),
       })
       .optional(),
     mapaProducao: z.array(MapaProducaoItemSchema).optional(),

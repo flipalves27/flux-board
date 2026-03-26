@@ -3,6 +3,7 @@ import { getDb, isMongoConfigured } from "./mongo";
 import { hashPassword, verifyPassword } from "./auth";
 import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
 import type { ThemePreference } from "./theme-storage";
+import type { OrgRole, PlatformRole } from "./rbac";
 import type { Db } from "mongodb";
 
 const USERS_KEY = "flux_users";
@@ -37,6 +38,8 @@ export interface User {
   themePreference?: ThemePreference;
   /** Quando true, o tour guiado do board não inicia mais automaticamente. */
   boardProductTourCompleted?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
 }
 
 type UserDoc = {
@@ -52,6 +55,8 @@ type UserDoc = {
   emailLower: string;
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
 };
 
 function recreateAdminUser(): User {
@@ -74,6 +79,8 @@ function toUser(doc: UserDoc): User {
     ...(doc.isExecutive ? { isExecutive: true } : {}),
     ...(tp === "light" || tp === "dark" || tp === "system" ? { themePreference: tp } : {}),
     ...(doc.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
+    ...(doc.platformRole ? { platformRole: doc.platformRole } : {}),
+    ...(doc.orgRole ? { orgRole: doc.orgRole } : {}),
   };
 }
 
@@ -266,6 +273,8 @@ export async function createUser(user: {
   passwordHash: string;
   orgId: string;
   isAdmin?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
 }): Promise<User> {
   await ensureTenancyMigrationOnce();
   const id = "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
@@ -279,6 +288,8 @@ export async function createUser(user: {
     orgId: user.orgId || DEFAULT_ORG_ID,
     usernameLower: user.username.toLowerCase(),
     emailLower: user.email.toLowerCase(),
+    ...(user.platformRole ? { platformRole: user.platformRole } : {}),
+    ...(user.orgRole ? { orgRole: user.orgRole } : {}),
   };
 
   if (isMongoConfigured()) {
@@ -334,6 +345,12 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     if (updates.isAdmin !== undefined) {
       $set.isAdmin = !!updates.isAdmin;
     }
+    if (updates.platformRole !== undefined) {
+      $set.platformRole = updates.platformRole;
+    }
+    if (updates.orgRole !== undefined) {
+      $set.orgRole = updates.orgRole;
+    }
     // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
     if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
     return getUserById(id, orgId);
@@ -367,6 +384,12 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
   }
   if (updates.isAdmin !== undefined) {
     user.isAdmin = !!updates.isAdmin;
+  }
+  if (updates.platformRole !== undefined) {
+    user.platformRole = updates.platformRole;
+  }
+  if (updates.orgRole !== undefined) {
+    user.orgRole = updates.orgRole;
   }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
   return user;

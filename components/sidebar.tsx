@@ -96,6 +96,14 @@ function IconUsers({ className }: { className?: string }) {
   );
 }
 
+function IconTeam({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-1a4 4 0 00-5.874-3.526M17 20H7m10 0v-1c0-1.08-.206-2.11-.58-3.052M7 20H2v-1a4 4 0 015.874-3.526M7 20v-1c0-1.08.206-2.11.58-3.052M15 8a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
 function IconSettings({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -402,6 +410,7 @@ export function Sidebar() {
     if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
     if (href === "/users") return normalizedPath === "/users";
+    if (href === "/equipe") return normalizedPath.startsWith("/equipe");
     if (href === "/billing") return normalizedPath === "/billing";
     if (href === "/org-settings") return normalizedPath === "/org-settings";
     if (href === "/org-invites") return normalizedPath === "/org-invites";
@@ -645,6 +654,12 @@ export function Sidebar() {
           {user?.isAdmin && (
             <>
               <NavSectionTitle>{t("section.admin")}</NavSectionTitle>
+              <NavLink
+                path="/equipe"
+                hint={t("hints.users")}
+                icon={<IconTeam className="h-4 w-4 shrink-0" />}
+                label="Equipe"
+              />
               {/* People */}
               <NavLink
                 path="/users"

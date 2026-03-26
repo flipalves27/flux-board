@@ -125,6 +125,17 @@ export async function PUT(
       if (!wipCheck.ok) {
         return NextResponse.json({ error: wipCheck.message }, { status: 400 });
       }
+      const requireAssignee =
+        Boolean((clean.config as { cardRules?: { requireAssignee?: boolean } } | undefined)?.cardRules?.requireAssignee) ||
+        Boolean((prevBoard.config as { cardRules?: { requireAssignee?: boolean } } | undefined)?.cardRules?.requireAssignee);
+      if (requireAssignee) {
+        const missing = (cards as Array<{ assigneeId?: string | null }>).find(
+          (c) => !String(c.assigneeId ?? "").trim()
+        );
+        if (missing) {
+          return NextResponse.json({ error: "Este board exige responsável em todos os cards." }, { status: 400 });
+        }
+      }
       updates.cards = cards;
     }
     if (clean.config !== undefined) {
@@ -133,6 +144,17 @@ export async function PUT(
         const wipOnlyConfig = validateBoardWip(clean.config.bucketOrder, prevForWip.cards as WipCountCardLike[]);
         if (!wipOnlyConfig.ok) {
           return NextResponse.json({ error: wipOnlyConfig.message }, { status: 400 });
+        }
+      }
+      if (clean.config.cardRules?.requireAssignee) {
+        const hasMissingAssignee = (prevForWip?.cards ?? []).some(
+          (card) => !String((card as { assigneeId?: string | null }).assigneeId ?? "").trim()
+        );
+        if (hasMissingAssignee) {
+          return NextResponse.json(
+            { error: "Existem cards sem responsável. Preencha antes de ativar esta regra." },
+            { status: 400 }
+          );
         }
       }
       updates.config = clean.config;

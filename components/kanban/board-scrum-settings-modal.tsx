@@ -38,6 +38,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
   const [dodLines, setDodLines] = useState("");
   const [doneKeys, setDoneKeys] = useState<string[]>([]);
   const [methodologyDraft, setMethodologyDraft] = useState<"scrum" | "kanban">("scrum");
+  const [requireAssignee, setRequireAssignee] = useState(false);
 
   const buckets: BucketConfig[] = db?.config?.bucketOrder ?? [];
 
@@ -51,6 +52,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
     setDodEnforce(Boolean(def?.enforce));
     setDodLines((def?.items ?? []).map((i) => i.label).join("\n"));
     setDoneKeys([...(def?.doneBucketKeys ?? [])]);
+    setRequireAssignee(Boolean(db.config.cardRules?.requireAssignee));
   }, [open, db]);
 
   const toggleDoneKey = useCallback((key: string) => {
@@ -98,9 +100,10 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
       } else {
         delete d.config.definitionOfDone;
       }
+      d.config.cardRules = { ...(d.config.cardRules ?? {}), requireAssignee };
     });
     onClose();
-  }, [db, updateDb, methodologyDraft, productGoal, backlogKey, dodEnabled, dodEnforce, parsedItems, doneKeys, onClose]);
+  }, [db, updateDb, methodologyDraft, productGoal, backlogKey, dodEnabled, dodEnforce, parsedItems, doneKeys, requireAssignee, onClose]);
 
   if (!open) return null;
 
@@ -209,6 +212,15 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
           ) : null}
 
           <div className="rounded-xl border border-[var(--flux-border-muted)] p-3 space-y-3">
+            <label className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requireAssignee}
+                onChange={(e) => setRequireAssignee(e.target.checked)}
+                className="rounded border-[var(--flux-chrome-alpha-20)]"
+              />
+              Exigir responsável em todos os cards
+            </label>
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
                 <input

@@ -11,11 +11,19 @@ import { getUserById } from "./kv-users";
 import type { ThemePreference } from "./theme-storage";
 import type { ValidateResult } from "./auth-types";
 import type { User } from "./kv-users";
+import { deriveEffectiveRoles, type OrgRole, type PlatformRole } from "./rbac";
 
 async function userToValidate(user: User | null): Promise<ValidateResult> {
   if (!user) return { ok: false };
   const isAdmin = user.id === "admin" || !!user.isAdmin;
   const isExecutive = !!user.isExecutive;
+  const roles = deriveEffectiveRoles({
+    id: user.id,
+    isAdmin,
+    isExecutive,
+    platformRole: user.platformRole,
+    orgRole: user.orgRole,
+  });
   return {
     ok: true,
     user: {
@@ -26,6 +34,8 @@ async function userToValidate(user: User | null): Promise<ValidateResult> {
       isAdmin,
       ...(isExecutive ? { isExecutive: true } : {}),
       orgId: user.orgId,
+      platformRole: roles.platformRole,
+      orgRole: roles.orgRole,
       ...(user.themePreference ? { themePreference: user.themePreference as ThemePreference } : {}),
       ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
     },
@@ -39,6 +49,8 @@ export async function issueSessionForCredentials(
     isAdmin: boolean;
     isExecutive?: boolean;
     orgId: string;
+    platformRole?: PlatformRole;
+    orgRole?: OrgRole;
   },
   remember: boolean
 ): Promise<void> {
@@ -48,6 +60,8 @@ export async function issueSessionForCredentials(
     isAdmin: user.isAdmin,
     isExecutive: user.isExecutive,
     orgId: user.orgId,
+    platformRole: user.platformRole,
+    orgRole: user.orgRole,
   });
   const familyId = randomBytes(16).toString("hex");
   const expiresAt = refreshRecordExpiresAt(remember);
@@ -82,6 +96,8 @@ export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promi
     isAdmin: user.id === "admin" || !!user.isAdmin,
     isExecutive: !!user.isExecutive,
     orgId: user.orgId,
+    platformRole: user.platformRole,
+    orgRole: user.orgRole,
   });
   const expiresAt = refreshRecordExpiresAt(persistent);
   const { plain } = await createRefreshSession({

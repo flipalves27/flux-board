@@ -113,6 +113,8 @@ export type CardModalContextValue = {
   setProgress: (v: string) => void;
   dueDate: string;
   setDueDate: (v: string) => void;
+  assigneeId: string;
+  setAssigneeId: (v: string) => void;
   blockedBy: string[];
   setBlockedBy: Dispatch<SetStateAction<string[]>>;
   depSearch: string;
@@ -252,6 +254,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   const [priority, setPriority] = useState(card.priority);
   const [progress, setProgress] = useState(card.progress);
   const [dueDate, setDueDate] = useState(card.dueDate || "");
+  const [assigneeId, setAssigneeId] = useState(card.assigneeId || "");
   const [direction, setDirection] = useState<string | null>(() =>
     typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
   );
@@ -422,6 +425,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     setPriority(card.priority);
     setProgress(card.progress);
     setDueDate(card.dueDate || "");
+    setAssigneeId(card.assigneeId || "");
     setDirection(
       typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
     );
@@ -706,6 +710,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       return;
     }
     const finalId = mode === "new" ? generatedCardId : id.trim() || card.id;
+    const requireAssignee = Boolean(useBoardStore.getState().db?.config?.cardRules?.requireAssignee);
+    if (requireAssignee && !assigneeId.trim()) {
+      pushToast({ kind: "error", title: "Este board exige responsável no card." });
+      return;
+    }
     const validIds = new Set(selectablePeers.map((c) => c.id));
     const nextBlocked = blockedBy.filter((bid) => validIds.has(bid));
     const dorPatch: CardDorReady = {};
@@ -748,6 +757,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       priority,
       progress,
       dueDate: dueDate || null,
+      assigneeId: assigneeId.trim() || null,
       direction,
       blockedBy: nextBlocked,
       ...(Object.keys(dodChecksOut).length > 0 ? { dodChecks: dodChecksOut } : { dodChecks: undefined }),
@@ -815,6 +825,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     priority,
     progress,
     dueDate,
+    assigneeId,
     direction,
     dorReady,
     dodChecks,
@@ -1044,6 +1055,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setProgress,
       dueDate,
       setDueDate,
+      assigneeId,
+      setAssigneeId,
       direction,
       setDirection,
       dorReady,

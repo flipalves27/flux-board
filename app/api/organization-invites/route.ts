@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { createOrganizationInvite, listOrganizationInvites } from "@/lib/kv-organization-invites";
+import { ensureOrgManager } from "@/lib/api-authz";
 
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
   const email = typeof body?.email === "string" ? body.email : "";
@@ -28,7 +30,8 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const invites = await listOrganizationInvites(payload.orgId);
   return NextResponse.json({ invites });
