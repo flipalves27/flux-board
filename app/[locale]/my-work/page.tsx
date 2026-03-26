@@ -110,7 +110,7 @@ export default function MyWorkPage() {
             ))}
           </div>
         ) : data ? (
-          <DataFadeIn>
+          <DataFadeIn active={!loading}>
             <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               <StatCard label={t("stats.assigned")} value={data.stats.totalAssigned} />
               <StatCard label={t("stats.inProgress")} value={data.stats.inProgress} accent="text-[var(--flux-info)]" />

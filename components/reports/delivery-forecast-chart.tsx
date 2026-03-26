@@ -78,7 +78,7 @@ export function DeliveryForecastChart({ boardId }: Props) {
   const health = HEALTH_STYLES[data.sprintHealthLabel] ?? HEALTH_STYLES.healthy!;
 
   return (
-    <DataFadeIn>
+    <DataFadeIn active={!loading}>
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <h3 className="font-display text-base font-bold text-[var(--flux-text)]">{t("title")}</h3>
