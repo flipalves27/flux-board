@@ -50,15 +50,14 @@ export function simulateMoveCardsBatch(
   const without = cards.filter((c) => !idSet.has(c.id));
   const bucketCards = without
     .filter((c) => c.bucket === newBucket)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((c) => ({ ...c }));
   const toInsert = moving.map((c) => ({ ...c, bucket: newBucket }));
   const safeIdx = Math.max(0, Math.min(insertIndex, bucketCards.length));
   bucketCards.splice(safeIdx, 0, ...toInsert);
-  bucketCards.forEach((c, i) => {
-    (c as { order?: number }).order = i;
-  });
+  const reordered = bucketCards.map((c, i) => ({ ...c, order: i }));
   const otherBuckets = without.filter((c) => c.bucket !== newBucket);
-  return [...otherBuckets, ...bucketCards];
+  return [...otherBuckets, ...reordered];
 }
 
 export function simulateMoveSingleCard(
@@ -80,12 +79,11 @@ export function simulatePatchBucketMove(
   const withoutCard = cards.filter((c) => c.id !== cardId);
   const bucketCards = withoutCard
     .filter((c) => c.bucket === targetBucket)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((c) => ({ ...c }));
   const merged = { ...card, bucket: targetBucket };
   bucketCards.push(merged);
-  bucketCards.forEach((c, i) => {
-    (c as { order?: number }).order = i;
-  });
+  const reordered = bucketCards.map((c, i) => ({ ...c, order: i }));
   const otherBuckets = withoutCard.filter((c) => c.bucket !== targetBucket);
-  return [...otherBuckets, ...bucketCards];
+  return [...otherBuckets, ...reordered];
 }
