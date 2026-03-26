@@ -123,7 +123,7 @@ export function BoardDesktopToolsRail() {
 
   return (
     <div
-      className={`max-md:hidden fixed z-[var(--flux-z-board-tools-rail)] top-1/2 -translate-y-1/2 flex flex-row-reverse items-start gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
+      className={`max-md:hidden fixed z-[var(--flux-z-board-tools-rail)] bottom-6 top-auto flex flex-row-reverse items-end gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
@@ -174,52 +174,6 @@ export function BoardDesktopToolsRail() {
         onMouseEnter={onRailEnter}
         onMouseLeave={onRailLeave}
       >
-        {/* AI tools */}
-        <button
-          type="button"
-          data-tour="board-copilot"
-          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
-          onClick={onCopilotClick}
-          aria-expanded={copilotOpen}
-        >
-          <span className={toolButtonClass(copilotOpen)}>
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
-                <circle cx="12" cy="12" r="2.2" />
-              </svg>
-            </span>
-            <span className="text-[11px] font-semibold whitespace-nowrap">
-              {copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}
-            </span>
-            {tier === "free" && freeDemoRemaining !== null ? (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
-                {freeDemoRemaining}
-              </span>
-            ) : null}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-tour="board-daily"
-          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
-          onClick={onDailyClick}
-          aria-label={tFilters("dailyButton")}
-        >
-          <span className={toolButtonClass(false)}>
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-                <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
-              </svg>
-            </span>
-            <span className="text-[11px] font-semibold whitespace-nowrap">{tFilters("dailyButton")}</span>
-          </span>
-        </button>
-
-        <div className="w-6 mx-auto my-1 border-t border-[var(--flux-chrome-alpha-12)]" />
-
-        {/* Analytics tools */}
         <button
           type="button"
           className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
@@ -256,6 +210,50 @@ export function BoardDesktopToolsRail() {
             <span className="text-[11px] font-semibold whitespace-nowrap">
               {executionOpen ? tExecution("fabClose") : tExecution("fabOpen")}
             </span>
+          </span>
+        </button>
+
+        <div className="mx-auto my-1 w-6 border-t border-[var(--flux-chrome-alpha-12)]" />
+
+        <button
+          type="button"
+          data-tour="board-daily"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={onDailyClick}
+          aria-label={tFilters("dailyButton")}
+        >
+          <span className={toolButtonClass(false)}>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                <path d="M12 2l2.09 6.26L20 10l-5.91 4.26L16.18 21 12 17.27 7.82 21l2.09-6.74L4 10l5.91-1.74z" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{tFilters("dailyButton")}</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-tour="board-copilot"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={onCopilotClick}
+          aria-expanded={copilotOpen}
+        >
+          <span className={toolButtonClass(copilotOpen)}>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
+                <circle cx="12" cy="12" r="2.2" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">
+              {copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}
+            </span>
+            {tier === "free" && freeDemoRemaining !== null ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
+                {freeDemoRemaining}
+              </span>
+            ) : null}
           </span>
         </button>
       </div>

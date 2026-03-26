@@ -22,7 +22,8 @@ import type {
   BoardDefinitionOfDone,
 } from "@/app/board/[id]/page";
 import type { BoardMethodology } from "@/lib/board-methodology";
-import type { CardServiceClass } from "@/lib/schemas";
+import { computeSubtaskProgress, type CardServiceClass, type SubtaskData } from "@/lib/schemas";
+import { useBoardStore } from "@/stores/board-store";
 import { assertDodAllowsCompleting } from "@/lib/board-scrum";
 import { nextBoardCardId } from "@/lib/card-id";
 import { useToast } from "@/context/toast-context";
@@ -180,6 +181,8 @@ export type CardModalContextValue = {
   requestSmartEnrich: (opts?: { immediate?: boolean }) => void;
 
   toggleTag: (tag: string) => void;
+  /** Lista atual da aba Subtasks — usada no Salvar (a prop `card` do modal fica desatualizada). */
+  syncSubtasksSnapshot: (cardId: string, subtasks: SubtaskData[]) => void;
   handleSave: () => void;
   handleCreateLabel: () => void;
   handleDeleteLabel: (label: string) => void;
@@ -275,6 +278,16 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const subtasksSnapshotRef = useRef<Map<string, SubtaskData[]>>(new Map());
+
+  useEffect(() => {
+    subtasksSnapshotRef.current = new Map();
+  }, [card.id, mode]);
+
+  const syncSubtasksSnapshot = useCallback((cid: string, list: SubtaskData[]) => {
+    if (!cid) return;
+    subtasksSnapshotRef.current.set(cid, list);
+  }, []);
 
   const { pushToast } = useToast();
   const t = useTranslations("kanban");
@@ -761,6 +774,30 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       if (serviceClass != null) saved.serviceClass = serviceClass;
       else delete saved.serviceClass;
     }
+    /**
+     * Subtasks: a prop `card` é fixa ao abrir o modal; a aba atualiza o store e/ou este snapshot.
+     * `onSave` faz merge `{ ...d.cards[i], ...updated }` — sem isto, `updated` reintroduz subtasks antigas.
+     */
+    const hasSnap = subtasksSnapshotRef.current.has(finalId);
+    const snapList = hasSnap ? subtasksSnapshotRef.current.get(finalId)! : undefined;
+    const live = useBoardStore.getState().db?.cards.find((c) => c.id === finalId);
+    let subtasksToSave: SubtaskData[] | undefined;
+    if (hasSnap) {
+      subtasksToSave = snapList;
+    } else if (live && Array.isArray(live.subtasks)) {
+      subtasksToSave = live.subtasks as SubtaskData[];
+    } else if (Array.isArray(card.subtasks)) {
+      subtasksToSave = card.subtasks as SubtaskData[];
+    }
+    if (subtasksToSave !== undefined) {
+      saved.subtasks = JSON.parse(JSON.stringify(subtasksToSave)) as CardData["subtasks"];
+      if (saved.subtasks.length > 0) {
+        saved.subtaskProgress = computeSubtaskProgress(saved.subtasks);
+      } else {
+        saved.subtasks = [];
+        delete saved.subtaskProgress;
+      }
+    }
     onSave(saved);
   }, [
     title,
@@ -1061,6 +1098,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dismissSmartEnrichKey,
       requestSmartEnrich,
       toggleTag,
+      syncSubtasksSnapshot,
       handleSave,
       handleCreateLabel,
       handleDeleteLabel,
@@ -1137,6 +1175,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dismissSmartEnrichKey,
       requestSmartEnrich,
       toggleTag,
+      syncSubtasksSnapshot,
       handleSave,
       handleCreateLabel,
       handleDeleteLabel,

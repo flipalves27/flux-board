@@ -180,7 +180,7 @@ function SubtaskItem({
 }
 
 export default function CardSubtasksTab({ cardId }: { cardId: string }) {
-  const { boardId, getHeaders } = useCardModal();
+  const { boardId, getHeaders, syncSubtasksSnapshot } = useCardModal();
   const { pushToast } = useToast();
   const card = useBoardStore((s) => s.db?.cards.find((c) => c.id === cardId));
   const updateDb = useBoardStore((s) => s.updateDb);
@@ -198,6 +198,10 @@ export default function CardSubtasksTab({ cardId }: { cardId: string }) {
   useEffect(() => {
     if (Array.isArray(rawSubtasks)) setSubtasks(rawSubtasks);
   }, [rawSubtasks]);
+
+  useEffect(() => {
+    if (cardId) syncSubtasksSnapshot(cardId, subtasks);
+  }, [cardId, subtasks, syncSubtasksSnapshot]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

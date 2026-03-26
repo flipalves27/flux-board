@@ -209,6 +209,7 @@ export function CardModalLayout() {
   const {
     card,
     mode,
+    generatedCardId,
     boardId,
     getHeaders,
     onClose,
@@ -223,6 +224,7 @@ export function CardModalLayout() {
     docRefs,
     blockedBy,
   } = useCardModal();
+  const subtasksTargetCardId = mode === "new" ? generatedCardId : card.id;
   const tCollab = useCollabTranslations("board.collab");
   const { user } = useAuth();
   const connectionId = useBoardCollabStore((s) => s.connectionId);
@@ -437,7 +439,7 @@ export function CardModalLayout() {
             {activeTab === "edit" && <CardEditForm cardId={card.id} />}
             {activeTab === "subtasks" && (
               <Suspense fallback={<TabSkeleton />}>
-                <CardSubtasksTab cardId={card.id} />
+                <CardSubtasksTab cardId={subtasksTargetCardId} />
               </Suspense>
             )}
             {activeTab === "comments" && (
