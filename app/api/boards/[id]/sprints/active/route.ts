@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "sprint_engine", gateCtx); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }

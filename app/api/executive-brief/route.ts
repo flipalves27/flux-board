@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "executive_brief", gateCtx);
     } catch (err) {

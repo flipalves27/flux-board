@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {

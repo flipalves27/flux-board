@@ -447,7 +447,7 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try {
     assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {

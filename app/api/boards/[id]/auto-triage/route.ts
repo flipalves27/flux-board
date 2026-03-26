@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
 
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });

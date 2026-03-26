@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "ceremonies", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "ceremonies", gateCtxPost); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }

@@ -69,7 +69,7 @@ export default function TasksPage() {
       try {
         const data = await apiGet<{ organization: any }>("/api/organizations/me", getHeaders());
         const org = data?.organization;
-        const next = getEffectiveTier(org, planGateCtxForAuth(user?.isAdmin));
+        const next = getEffectiveTier(org, planGateCtxForAuth(user?.isAdmin, user?.isExecutive));
         setTier(next);
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {

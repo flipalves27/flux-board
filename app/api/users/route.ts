@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const org = await getOrganizationById(payload.orgId);
     const members = await listUsers(payload.orgId);
-    const cap = getUserCap(org, planGateCtxForAuth(payload.isAdmin));
+    const cap = getUserCap(org, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
     if (cap !== null && members.length >= cap) {
       return NextResponse.json(
         { error: `Limite do plano: no máximo ${cap} usuário(s) por organização.` },

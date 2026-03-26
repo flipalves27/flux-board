@@ -193,7 +193,7 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      const tier = getEffectiveTier(current, planGateCtxForAuth(payload.isAdmin));
+      const tier = getEffectiveTier(current, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
       if (tier !== "business" && tier !== "enterprise") {
         return NextResponse.json(
           { error: "Configurações de IA avançadas disponíveis no plano Business." },

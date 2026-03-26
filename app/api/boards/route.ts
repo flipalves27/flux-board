@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
     const currentCount = orgBoardIds.length;
-    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
+    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
     const isPro = cap === null;
 
     const plan =
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Use apenas templateId ou templateSnapshot, não ambos." }, { status: 400 });
     }
 
-    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin));
+    const cap = getBoardCap(org, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
     if (cap !== null) {
       const existingIds = await getBoardIds(payload.id, payload.orgId, true);
       const currentCount = existingIds.length;

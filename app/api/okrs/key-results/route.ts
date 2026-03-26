@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
 
     const { searchParams } = new URL(request.url);
     const boardId = searchParams.get("boardId") || undefined;
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
 
     const body = (await request.json()) as {
       sourceBoardId?: string;
@@ -152,7 +152,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
 
     const { searchParams } = new URL(request.url);
     const linkId = searchParams.get("linkId") || "";

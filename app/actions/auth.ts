@@ -239,7 +239,7 @@ export async function registerAction(
         username: user.username,
         name: user.name,
         email: user.email,
-        isAdmin: false,
+        isAdmin: true,
         orgId: user.orgId,
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),

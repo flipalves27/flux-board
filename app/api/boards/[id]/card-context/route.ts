@@ -386,7 +386,7 @@ export async function POST(
   const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   let planBlocksAiContext = false;
   try {
     assertFeatureAllowed(org, "card_context", gateCtx);

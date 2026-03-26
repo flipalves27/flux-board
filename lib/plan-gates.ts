@@ -9,16 +9,19 @@ const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 export type EffectiveGateTier = "free" | "pro" | "business" | "enterprise";
 
 /**
- * Usuário **admin da organização** (`isAdmin`): desvinculado de Stripe/plano — tier efetivo
- * **enterprise** para liberar todas as funcionalidades e limites (boards/usuários/IA).
+ * Admin (`isAdmin`) ou executivo (`isExecutive`) da organização: desvinculados de Stripe/plano —
+ * tier efetivo **enterprise** para liberar funcionalidades e limites (boards/usuários/IA).
  */
 export type PlanGateContext = {
   isOrgAdmin?: boolean;
 };
 
-/** Monta contexto a partir do JWT (rotas autenticadas). */
-export function planGateCtxForAuth(isAdmin: boolean | undefined): PlanGateContext | undefined {
-  return isAdmin ? { isOrgAdmin: true } : undefined;
+/** Monta contexto a partir do JWT/DB (rotas autenticadas). */
+export function planGateCtxForAuth(
+  isAdmin: boolean | undefined,
+  isExecutive?: boolean | undefined
+): PlanGateContext | undefined {
+  return isAdmin || isExecutive ? { isOrgAdmin: true } : undefined;
 }
 
 export type Tier = Organization["plan"];

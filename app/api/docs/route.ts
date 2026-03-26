@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   if (!canUseFeature(org, "flux_docs", gateCtx)) {
     return NextResponse.json({ error: "Flux Docs indisponível no plano atual." }, { status: 403 });
   }
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   if (!canUseFeature(org, "flux_docs", gateCtxPost)) {
     return NextResponse.json({ error: "Flux Docs indisponível no plano atual." }, { status: 403 });
   }

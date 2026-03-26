@@ -965,7 +965,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
@@ -1008,7 +1008,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {

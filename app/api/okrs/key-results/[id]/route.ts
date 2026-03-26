@@ -19,7 +19,7 @@ export async function PATCH(
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
@@ -105,7 +105,7 @@ export async function DELETE(
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtxDel = planGateCtxForAuth(payload.isAdmin);
+    const gateCtxDel = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtxDel);
     } catch (err) {

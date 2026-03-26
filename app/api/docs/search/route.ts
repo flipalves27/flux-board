@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin)))
+  if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin, payload.isExecutive)))
     return NextResponse.json({ error: "Flux Docs indisponível." }, { status: 403 });
 
   const q = request.nextUrl.searchParams.get("q") || "";

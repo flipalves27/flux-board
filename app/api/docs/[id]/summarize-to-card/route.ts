@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs_rag", planGateCtxForAuth(payload.isAdmin)))
+  if (!canUseFeature(org, "flux_docs_rag", planGateCtxForAuth(payload.isAdmin, payload.isExecutive)))
     return NextResponse.json({ error: "RAG indisponível no plano atual." }, { status: 403 });
 
   const { id: docId } = await params;

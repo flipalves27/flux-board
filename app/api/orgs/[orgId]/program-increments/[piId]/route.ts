@@ -30,7 +30,7 @@ async function checkAccess(request: NextRequest, orgId: string) {
     return { error: "Sem permissão", status: 403 as const, payload: null };
   }
   const org = await getOrganizationById(orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtx); } catch {
     return { error: "Disponível em planos Business ou Enterprise.", status: 403 as const, payload: null };
   }

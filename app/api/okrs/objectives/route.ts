@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin);
+    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+    const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtxPost);
     } catch (err) {

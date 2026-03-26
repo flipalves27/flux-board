@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 
   const org = await getOrganizationById(orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const org = await getOrganizationById(orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtxPost); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }

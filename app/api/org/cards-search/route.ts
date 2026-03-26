@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin));
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
 
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get("q") || "").trim().toLowerCase();

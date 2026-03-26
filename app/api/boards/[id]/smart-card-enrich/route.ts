@@ -212,7 +212,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   let planBlocksAi = false;
   try {
     assertFeatureAllowed(org, "card_context", gateCtx);

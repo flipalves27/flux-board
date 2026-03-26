@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin);
+  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try {
     assertFeatureAllowed(org, "sprint_engine", gateCtx);
   } catch {

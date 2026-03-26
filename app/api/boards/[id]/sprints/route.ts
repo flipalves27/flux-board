@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtxGet = planGateCtxForAuth(payload.isAdmin);
+  const gateCtxGet = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "sprint_engine", gateCtxGet); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin);
+  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try { assertFeatureAllowed(org, "sprint_engine", gateCtxPost); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }

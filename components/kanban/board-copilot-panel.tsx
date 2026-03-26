@@ -186,9 +186,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
   const canSend = useMemo(() => {
     if (generating) return false;
+    if (user?.isAdmin || user?.isExecutive) return true;
     if (tier === "free" && freeDemoRemaining !== null && freeDemoRemaining <= 0) return false;
     return true;
-  }, [generating, tier, freeDemoRemaining]);
+  }, [generating, tier, freeDemoRemaining, user?.isAdmin, user?.isExecutive]);
 
   // setters do zustand são estáveis; omitir do array evita re-fetch desnecessário ao abrir o board.
   useEffect(() => {

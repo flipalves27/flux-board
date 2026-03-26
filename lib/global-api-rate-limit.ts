@@ -100,7 +100,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     category = "ai";
     if (payload) {
       orgForMessage = await getOrganizationById(payload.orgId);
-      const tier = getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin));
+      const tier = getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
       limit = tier === "free" ? RL_AI_FREE_PER_MIN : RL_AI_PRO_PER_MIN;
       key = `mw:sliding:ai:user:${payload.id}:org:${payload.orgId}`;
     } else {
@@ -138,7 +138,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     };
     const tierLabel =
       category === "ai" && payload
-        ? getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin)) === "free"
+        ? getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin, payload.isExecutive)) === "free"
           ? "Free"
           : "Pro/Business"
         : "";
