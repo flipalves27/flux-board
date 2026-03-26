@@ -289,7 +289,7 @@ export const SubtaskSchema = z.object({
   assigneeId: z.string().trim().max(200).nullable().default(null),
   dueDate: z.string().trim().max(30).nullable().default(null),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
-  order: z.number().int().nonnegative().max(1000),
+  order: z.coerce.number().int().nonnegative().max(1000),
   estimateHours: z.number().min(0).max(9999).nullable().default(null),
   completedAt: z.string().trim().max(80).nullable().default(null),
   createdAt: z.string().trim().max(80),

@@ -3,6 +3,7 @@ import type { SubtaskData } from "@/lib/schemas";
 import {
   CardAutomationStateSchema,
   CARD_SERVICE_CLASS_VALUES,
+  computeSubtaskProgress,
   DailyInsightEntrySchema,
   isSafeLinkUrl,
   MapaProducaoItemSchema,
@@ -120,8 +121,17 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
           }))
       : undefined;
 
-    const subtasksParsed = Array.isArray(c.subtasks)
-      ? c.subtasks
+    /** Clona para objetos literais — Immer/proxies podem falhar no SubtaskSchema.safeParse e viravam []. */
+    let subtasksPlain: unknown[] | undefined;
+    if (Array.isArray(c.subtasks) && c.subtasks.length > 0) {
+      try {
+        subtasksPlain = JSON.parse(JSON.stringify(c.subtasks)) as unknown[];
+      } catch {
+        subtasksPlain = [...c.subtasks];
+      }
+    }
+    const subtasksParsed = Array.isArray(subtasksPlain)
+      ? subtasksPlain
           .map((s: unknown) => SubtaskSchema.safeParse(s))
           .filter((r): r is { success: true; data: SubtaskData } => r.success)
           .map((r) => r.data)
@@ -162,11 +172,16 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     }
     if (subtasksParsed && subtasksParsed.length > 0) {
       base.subtasks = subtasksParsed;
-      if (c.subtaskProgress && typeof c.subtaskProgress === "object") {
-        const sp = SubtaskProgressSchema.safeParse(c.subtaskProgress);
-        if (sp.success) base.subtaskProgress = sp.data;
+      const prog =
+        c.subtaskProgress && typeof c.subtaskProgress === "object"
+          ? SubtaskProgressSchema.safeParse(c.subtaskProgress)
+          : null;
+      if (prog?.success) {
+        base.subtaskProgress = prog.data;
+      } else {
+        base.subtaskProgress = computeSubtaskProgress(subtasksParsed);
       }
-    } else if (Array.isArray(c.subtasks)) {
+    } else if (Array.isArray(c.subtasks) && c.subtasks.length === 0) {
       base.subtasks = [];
     }
     const dor = (c as { dorReady?: unknown }).dorReady;

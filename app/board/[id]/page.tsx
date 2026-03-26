@@ -514,13 +514,7 @@ export default function BoardPage() {
 
   const persist = useCallback(
     (data?: BoardData) => {
-      const raw = data ?? useBoardStore.getState().db;
-      if (!raw) return;
-      const toSave = normalizeBoardForPersist(raw);
-      const payload = {
-        ...toSave,
-        lastUpdated: new Date().toISOString(),
-      };
+      if (!data && !useBoardStore.getState().db) return;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       setSaveStatus("saving");
       saveTimeoutRef.current = setTimeout(async () => {
@@ -531,6 +525,12 @@ export default function BoardPage() {
         try {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
+              const rawNow = data ?? useBoardStore.getState().db;
+              if (!rawNow) return;
+              const payload = {
+                ...normalizeBoardForPersist(rawNow),
+                lastUpdated: new Date().toISOString(),
+              };
               const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
                 method: "PUT",
                 body: JSON.stringify(payload),
