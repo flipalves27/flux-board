@@ -790,9 +790,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       subtasksToSave = card.subtasks as SubtaskData[];
     }
     if (subtasksToSave !== undefined) {
-      saved.subtasks = JSON.parse(JSON.stringify(subtasksToSave)) as CardData["subtasks"];
-      if (saved.subtasks.length > 0) {
-        saved.subtaskProgress = computeSubtaskProgress(saved.subtasks);
+      const clonedSubtasks = JSON.parse(JSON.stringify(subtasksToSave)) as SubtaskData[];
+      saved.subtasks = clonedSubtasks;
+      if (clonedSubtasks.length > 0) {
+        saved.subtaskProgress = computeSubtaskProgress(clonedSubtasks);
       } else {
         saved.subtasks = [];
         delete saved.subtaskProgress;
