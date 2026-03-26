@@ -62,10 +62,11 @@ export function useBoardDnd({
       if (!over) return;
       const overId = String(over.id);
       const activeIdStr = String(active.id);
+      const normalizedOverBucketKey = overId.startsWith("bucket-") ? overId.replace("bucket-", "") : overId;
 
       const colIndex = buckets.findIndex((b) => b.key === activeIdStr);
       if (colIndex >= 0) {
-        const overColIndex = buckets.findIndex((b) => b.key === overId);
+        const overColIndex = buckets.findIndex((b) => b.key === normalizedOverBucketKey);
         if (overColIndex >= 0 && overColIndex !== colIndex) {
           reorderColumns(colIndex, overColIndex);
         }
@@ -99,8 +100,9 @@ export function useBoardDnd({
           moveCardsBatch(dragIds, slotInfo.bucketKey, insertIndex);
           return;
         }
-        if (overId.startsWith("bucket-")) {
-          const newBucket = overId.replace("bucket-", "");
+        const validBucketDrop = buckets.some((b) => b.key === normalizedOverBucketKey);
+        if (validBucketDrop) {
+          const newBucket = normalizedOverBucketKey;
           const bucketCards = getCardsByBucket(newBucket).filter((c) => !idSet.has(c.id));
           moveCardsBatch(dragIds, newBucket, bucketCards.length);
         }
