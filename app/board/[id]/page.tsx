@@ -536,16 +536,16 @@ export default function BoardPage() {
                 body: JSON.stringify(payload),
                 headers: getApiHeaders(getHeaders()),
               });
-              const data = (await res.json()) as {
+              const saveJson = (await res.json()) as {
                 error?: string;
                 lastUpdated?: string;
                 cards?: CardData[];
               };
-              if (!res.ok) throw new Error(data.error || "save");
-              if (Array.isArray(data.cards)) {
+              if (!res.ok) throw new Error(saveJson.error || "save");
+              if (Array.isArray(saveJson.cards)) {
                 const snap = useBoardStore.getState().db;
                 const dodIdSet = new Set((snap?.config?.definitionOfDone?.items ?? []).map((x) => x.id));
-                const cards = data.cards!.map((c: CardData, i: number) => ({
+                const cards = saveJson.cards!.map((c: CardData, i: number) => ({
                   ...c,
                   order: c.order ?? i,
                   dueDate: c.dueDate ?? null,
@@ -574,7 +574,7 @@ export default function BoardPage() {
                 }));
                 useBoardStore.getState().updateDbSilent((d) => {
                   d.cards = cards;
-                  if (data.lastUpdated) d.lastUpdated = data.lastUpdated;
+                  if (saveJson.lastUpdated) d.lastUpdated = saveJson.lastUpdated;
                 });
               }
               if (saveRequestSeqRef.current !== requestSeq) return;
