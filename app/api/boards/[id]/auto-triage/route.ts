@@ -55,21 +55,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { title, desc } = parsed.data;
   const cards = Array.isArray(board.cards) ? board.cards : [];
-  const config = board.config ?? {};
-  const columns = Array.isArray(config.columns)
-    ? config.columns.map((c: Record<string, unknown>) => String(c.label || c.key || ""))
+  const bucketOrder = Array.isArray(board.config?.bucketOrder) ? board.config.bucketOrder : [];
+  const columns = bucketOrder.length > 0
+    ? bucketOrder.map((b: unknown) => {
+        if (b && typeof b === "object") {
+          const bo = b as Record<string, unknown>;
+          return String(bo.label || bo.key || "");
+        }
+        return "";
+      }).filter(Boolean)
     : ["Backlog", "Em andamento", "Concluída"];
   const priorities = ["Urgente", "Importante", "Média"];
 
   const completedCards = cards
-    .filter((c: Record<string, unknown>) => String(c.progress || "") === "Concluída")
-    .map((c: Record<string, unknown>) => ({
-      title: String(c.title || ""),
-      priority: String(c.priority || ""),
-      bucket: String(c.bucket || ""),
-      tags: Array.isArray(c.tags) ? c.tags.filter((t: unknown) => typeof t === "string") : [],
-      progress: String(c.progress || ""),
-    }));
+    .filter((raw) => {
+      const c = raw as Record<string, unknown>;
+      return String(c.progress || "") === "Concluída";
+    })
+    .map((raw) => {
+      const c = raw as Record<string, unknown>;
+      return {
+        title: String(c.title || ""),
+        priority: String(c.priority || ""),
+        bucket: String(c.bucket || ""),
+        tags: Array.isArray(c.tags) ? c.tags.filter((t: unknown) => typeof t === "string") : [],
+        progress: String(c.progress || ""),
+      };
+    });
 
   const useAi = canUseFeature(org, "ai_card_writer", gateCtx);
 

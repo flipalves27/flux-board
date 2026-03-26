@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Board not found" }, { status: 404 });
   }
 
-  const webhookConfig = (board as Record<string, unknown>).incomingWebhookToken;
+  const webhookConfig = (board as unknown as Record<string, unknown>).incomingWebhookToken;
   if (typeof webhookConfig !== "string" || webhookConfig !== token) {
     return NextResponse.json({ error: "Invalid token" }, { status: 403 });
   }
@@ -43,15 +43,15 @@ export async function POST(request: NextRequest) {
 
   if (action.action === "create") {
     const cards = Array.isArray(board.cards) ? [...board.cards] : [];
-    const maxId = cards.reduce((max: number, c: Record<string, unknown>) => {
+    const maxId = cards.reduce((max: number, raw: unknown) => {
+      const c = raw as Record<string, unknown>;
       const n = parseInt(String(c.id || "0").replace(/\D/g, ""), 10);
       return n > max ? n : max;
     }, 0);
 
-    const config = (board.config ?? {}) as Record<string, unknown>;
-    const columns = Array.isArray(config.columns) ? config.columns : [];
-    const firstCol = columns[0] as Record<string, unknown> | undefined;
-    const bucket = action.targetColumn ?? String(firstCol?.key ?? firstCol?.label ?? "Backlog");
+    const bucketOrder = Array.isArray(board.config?.bucketOrder) ? board.config.bucketOrder : [];
+    const firstBucket = bucketOrder[0] as Record<string, unknown> | undefined;
+    const bucket = action.targetColumn ?? String(firstBucket?.key ?? firstBucket?.label ?? "Backlog");
 
     const newCard = {
       id: `c${maxId + 1}`,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       tags: action.tags ?? [],
       direction: null,
       dueDate: null,
-      order: cards.filter((c: Record<string, unknown>) => c.bucket === bucket).length,
+      order: cards.filter((raw) => (raw as Record<string, unknown>).bucket === bucket).length,
       links: action.externalRef ? [{ url: action.externalRef, label: source }] : [],
     };
 

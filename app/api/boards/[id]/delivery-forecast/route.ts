@@ -47,12 +47,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const cards = Array.isArray(board.cards) ? board.cards : [];
   const now = Date.now();
 
-  const incompleteCards = cards.filter(
-    (c: Record<string, unknown>) => String(c.progress || "") !== "Concluída"
-  );
-  const completedCards = cards.filter(
-    (c: Record<string, unknown>) => String(c.progress || "") === "Concluída"
-  );
+  const incompleteCards = cards.filter((raw) => {
+    const c = raw as Record<string, unknown>;
+    return String(c.progress || "") !== "Concluída";
+  });
+  const completedCards = cards.filter((raw) => {
+    const c = raw as Record<string, unknown>;
+    return String(c.progress || "") === "Concluída";
+  });
 
   const completedByDay = new Map<string, number>();
   for (const card of completedCards) {
@@ -80,8 +82,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const monteCarlo = runMonteCarloSimulation(incompleteCards.length, last30Days);
 
   const riskCards = incompleteCards
-    .map((c: Record<string, unknown>) =>
-      computeCardRiskScore({
+    .map((raw) => {
+      const c = raw as Record<string, unknown>;
+      return computeCardRiskScore({
         id: String(c.id || ""),
         title: String(c.title || ""),
         createdAt: typeof c.columnEnteredAt === "string" ? c.columnEnteredAt : null,
@@ -90,9 +93,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         dependencyCount: Array.isArray(c.blockedBy) ? c.blockedBy.length : 0,
         progress: String(c.progress || ""),
         dueDate: typeof c.dueDate === "string" ? c.dueDate : null,
-      })
-    )
-    .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
+      });
+    })
+    .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
   const throughputForecast = computeThroughputForecast(weeklyThroughput, 4);
@@ -103,7 +106,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   );
 
   const avgRisk = riskCards.length > 0
-    ? riskCards.reduce((a: number, r: { score: number }) => a + r.score, 0) / riskCards.length
+    ? riskCards.reduce((a, r) => a + r.score, 0) / riskCards.length
     : 0;
 
   const sprintHealthLabel = deriveSprintHealth(scopeCreepRatio, avgRisk, monteCarlo, 14);

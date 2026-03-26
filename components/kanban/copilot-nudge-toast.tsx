@@ -30,25 +30,23 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
   useEffect(() => {
     if (!db || !db.cards) return;
     const cards = Array.isArray(db.cards) ? db.cards : [];
-    const config = (db.config ?? {}) as Record<string, unknown>;
-    const columns = Array.isArray(config.columns)
-      ? config.columns.map((c: Record<string, unknown>) => ({
-          key: String(c.key || c.label || ""),
-          label: String(c.label || c.key || ""),
-          wipLimit: typeof c.wipLimit === "number" ? c.wipLimit : undefined,
-        }))
-      : [];
+    const bucketOrder = db.config?.bucketOrder ?? [];
+    const columns = bucketOrder.map((c) => ({
+      key: String(c.key || c.label || ""),
+      label: String(c.label || c.key || ""),
+      wipLimit: c.wipLimit,
+    }));
 
-    const cardData = cards.map((c: Record<string, unknown>) => ({
-      id: String(c.id || ""),
-      title: String(c.title || ""),
-      desc: typeof c.desc === "string" ? c.desc : undefined,
-      bucket: String(c.bucket || ""),
-      progress: String(c.progress || ""),
-      columnEnteredAt: typeof c.columnEnteredAt === "string" ? c.columnEnteredAt : undefined,
-      dueDate: typeof c.dueDate === "string" ? c.dueDate : null,
-      blockedBy: Array.isArray(c.blockedBy) ? c.blockedBy.filter((x: unknown) => typeof x === "string") : undefined,
-      assignee: typeof c.assignee === "string" ? c.assignee : undefined,
+    const cardData = cards.map((c) => ({
+      id: c.id,
+      title: c.title,
+      desc: c.desc || undefined,
+      bucket: c.bucket,
+      progress: c.progress,
+      columnEnteredAt: c.columnEnteredAt,
+      dueDate: c.dueDate ?? null,
+      blockedBy: c.blockedBy,
+      assignee: undefined as string | undefined,
     }));
 
     const result = generateProactiveNudges(cardData, columns, { maxNudges: 6 });

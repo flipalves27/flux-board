@@ -74,8 +74,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { prompt, cardType } = parsed.data;
 
-  const config = board.config ?? {};
-  const columns = Array.isArray(config.columns) ? config.columns.map((c: Record<string, unknown>) => String(c.label || c.key || "")) : [];
+  const bucketOrder = Array.isArray(board.config?.bucketOrder) ? board.config.bucketOrder : [];
+  const columns = bucketOrder.map((b: unknown) => {
+    if (b && typeof b === "object") {
+      const bo = b as Record<string, unknown>;
+      return String(bo.label || bo.key || "");
+    }
+    return "";
+  }).filter(Boolean);
   const allTags = new Set<string>();
   for (const card of (board.cards ?? [])) {
     const c = card as Record<string, unknown>;

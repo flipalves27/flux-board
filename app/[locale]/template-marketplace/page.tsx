@@ -9,14 +9,12 @@ import { apiGet } from "@/lib/api-client";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 
 type TemplateItem = {
-  id: string;
-  name: string;
+  _id: string;
+  title: string;
   description?: string;
   category?: string;
-  downloads?: number;
-  rating?: number;
-  authorOrg?: string;
-  columns?: Array<{ label: string }>;
+  creatorOrgName?: string;
+  snapshot?: { bucketOrder?: Array<{ key: string; label: string }> };
 };
 
 type MarketplaceResponse = {
@@ -95,43 +93,46 @@ export default function TemplateMarketplacePage() {
         ) : (
           <DataFadeIn active={!loading}>
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {templates.map((tpl) => (
-                <div
-                  key={tpl.id}
-                  className="flex flex-col rounded-2xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-5 transition-colors hover:border-[var(--flux-primary-alpha-30)]"
-                >
-                  <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{tpl.name}</h3>
-                  {tpl.description && (
-                    <p className="mt-1 line-clamp-2 text-xs text-[var(--flux-text-muted)]">{tpl.description}</p>
-                  )}
-                  <div className="mt-3 flex items-center gap-3 text-xs text-[var(--flux-text-muted)]">
-                    {tpl.category && (
-                      <span className="rounded-full border border-[var(--flux-chrome-alpha-10)] px-2 py-0.5">{tpl.category}</span>
+              {templates.map((tpl) => {
+                const buckets = tpl.snapshot?.bucketOrder ?? [];
+                return (
+                  <div
+                    key={tpl._id}
+                    className="flex flex-col rounded-2xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-5 transition-colors hover:border-[var(--flux-primary-alpha-30)]"
+                  >
+                    <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{tpl.title}</h3>
+                    {tpl.description && (
+                      <p className="mt-1 line-clamp-2 text-xs text-[var(--flux-text-muted)]">{tpl.description}</p>
                     )}
-                    {tpl.downloads != null && (
-                      <span>{tpl.downloads} {t("downloads")}</span>
-                    )}
-                  </div>
-                  {tpl.columns && tpl.columns.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {tpl.columns.slice(0, 5).map((col, i) => (
-                        <span key={i} className="rounded-md bg-[var(--flux-chrome-alpha-06)] px-2 py-0.5 text-[10px] text-[var(--flux-text-muted)]">
-                          {col.label}
-                        </span>
-                      ))}
+                    <div className="mt-3 flex items-center gap-3 text-xs text-[var(--flux-text-muted)]">
+                      {tpl.category && (
+                        <span className="rounded-full border border-[var(--flux-chrome-alpha-10)] px-2 py-0.5">{tpl.category}</span>
+                      )}
+                      {tpl.creatorOrgName && (
+                        <span>{tpl.creatorOrgName}</span>
+                      )}
                     </div>
-                  )}
-                  <div className="mt-auto pt-4">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/${locale}/templates?import=${tpl.id}`)}
-                      className="btn-primary w-full text-xs"
-                    >
-                      {t("useTemplate")}
-                    </button>
+                    {buckets.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {buckets.slice(0, 5).map((col, i) => (
+                          <span key={i} className="rounded-md bg-[var(--flux-chrome-alpha-06)] px-2 py-0.5 text-[10px] text-[var(--flux-text-muted)]">
+                            {col.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-auto pt-4">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/${locale}/templates?import=${tpl._id}`)}
+                        className="btn-primary w-full text-xs"
+                      >
+                        {t("useTemplate")}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {templates.length === 0 && (
               <p className="py-12 text-center text-sm text-[var(--flux-text-muted)]">{t("empty")}</p>

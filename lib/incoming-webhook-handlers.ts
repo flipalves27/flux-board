@@ -107,7 +107,7 @@ export function parseJiraWebhook(payload: JiraPayload): WebhookCardAction | null
 export function parseGenericWebhook(body: Record<string, unknown>): WebhookCardAction | null {
   if (typeof body.title === "string") {
     return {
-      action: (body.action as string) || "create",
+      action: (["create", "move", "comment"].includes(body.action as string) ? body.action as WebhookCardAction["action"] : "create"),
       title: String(body.title).slice(0, 300),
       description: typeof body.description === "string" ? body.description.slice(0, 2000) : undefined,
       targetColumn: typeof body.targetColumn === "string" ? body.targetColumn : undefined,

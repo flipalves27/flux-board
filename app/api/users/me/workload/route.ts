@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { listUserBoards, getBoard } from "@/lib/kv-boards";
+import { getBoardIds, getBoard } from "@/lib/kv-boards";
 import {
   computePersonalWorkload,
   suggestWorkPriority,
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const boardIds = await listUserBoards(payload.id, payload.orgId);
+  const boardIds = await getBoardIds(payload.id, payload.orgId, !!payload.isAdmin);
   const assignedCards: PersonalCardSummary[] = [];
   const completedDates: string[] = [];
 

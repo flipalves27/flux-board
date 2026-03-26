@@ -17,22 +17,16 @@ function hashToColor(id: string): string {
   return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length] ?? CURSOR_COLORS[0]!;
 }
 
-type CursorData = {
-  userId: string;
-  userName: string;
-  column?: string;
-};
-
 export function CollaborationCursors() {
   const { user } = useAuth();
-  const peers = useBoardCollabStore((s) => s.peers);
+  const presencePeers = useBoardCollabStore((s) => s.presencePeers);
 
   const otherPeers = useMemo(() => {
     if (!user) return [];
-    return Object.values(peers)
-      .filter((p): p is CursorData => p != null && p.userId !== user.id)
+    return presencePeers
+      .filter((p) => p.userId !== user.id)
       .slice(0, 10);
-  }, [peers, user]);
+  }, [presencePeers, user]);
 
   if (otherPeers.length === 0) return null;
 
@@ -50,11 +44,11 @@ export function CollaborationCursors() {
               style={{ backgroundColor: color }}
             />
             <span className="text-xs font-medium text-[var(--flux-text)]">
-              {peer.userName || "Usuário"}
+              {peer.displayName || peer.username || "Usuário"}
             </span>
-            {peer.column && (
+            {peer.columnKey && (
               <span className="text-[10px] text-[var(--flux-text-muted)]">
-                em {peer.column}
+                em {peer.columnKey}
               </span>
             )}
           </div>

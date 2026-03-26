@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getAllPublishedTemplates, type PublishedTemplate } from "@/lib/kv-templates";
+import { listPublishedTemplates } from "@/lib/kv-templates";
+import type { TemplateCategory } from "@/lib/template-types";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -9,25 +10,23 @@ export async function GET(request: NextRequest) {
   const category = request.nextUrl.searchParams.get("category") ?? "all";
   const search = request.nextUrl.searchParams.get("q") ?? "";
 
-  let templates: PublishedTemplate[] = [];
   try {
-    templates = await getAllPublishedTemplates();
+    const catParam = category !== "all" ? (category as TemplateCategory) : undefined;
+    let templates = await listPublishedTemplates({ category: catParam, limit: 60 });
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      templates = templates.filter(
+        (t) => t.title.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q)
+      );
+    }
+
+    templates.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return NextResponse.json({ ok: true, templates: templates.slice(0, 50) });
   } catch {
     return NextResponse.json({ ok: true, templates: [] });
   }
-
-  if (category !== "all") {
-    templates = templates.filter((t) => t.category === category);
-  }
-
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    templates = templates.filter(
-      (t) => t.name.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q)
-    );
-  }
-
-  templates.sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0));
-
-  return NextResponse.json({ ok: true, templates: templates.slice(0, 50) });
 }
