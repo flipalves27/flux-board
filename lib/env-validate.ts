@@ -28,5 +28,11 @@ export function validateServerEnv(): void {
     if (process.env.ALLOW_PUBLIC_BOARDS_CORS === "1") {
       console.warn("[env] ALLOW_PUBLIC_BOARDS_CORS=1 — CORS amplo em /api/boards; use só se necessário.");
     }
+    if (!process.env.RATE_LIMIT_INTERNAL_SECRET?.trim()) {
+      console.warn("[env] RATE_LIMIT_INTERNAL_SECRET ausente — rotas internas de rate-limit ficarão indisponíveis.");
+    }
+    if (!process.env.INTERNAL_HOST_RESOLVE_SECRET?.trim()) {
+      console.warn("[env] INTERNAL_HOST_RESOLVE_SECRET ausente — resolução de domínio interno ficará indisponível.");
+    }
   }
 }

@@ -105,6 +105,14 @@ function IconTeam({ className }: { className?: string }) {
   );
 }
 
+function IconBriefcase({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M7 9V7a2 2 0 012-2h6a2 2 0 012 2v2m-1 0v9a2 2 0 01-2 2H8a2 2 0 01-2-2V9" />
+    </svg>
+  );
+}
+
 function IconSettings({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -422,6 +430,7 @@ export function Sidebar() {
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
+    if (href === "/negocios") return normalizedPath.startsWith("/negocios");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/equipe") return normalizedPath.startsWith("/equipe");
     if (href === "/billing") return normalizedPath === "/billing";
@@ -701,6 +710,14 @@ export function Sidebar() {
             icon={<IconDocs className="h-4 w-4 shrink-0" />}
             label={t("docs")}
           />
+          {user?.isAdmin && (
+            <NavLink
+              path="/negocios"
+              hint={t("hints.business")}
+              icon={<IconBriefcase className="h-4 w-4 shrink-0" />}
+              label={t("business")}
+            />
+          )}
 
           {user?.isAdmin && (
             <>
@@ -710,6 +727,7 @@ export function Sidebar() {
                 hint={t("hints.users")}
                 icon={<IconTeam className="h-4 w-4 shrink-0" />}
                 label="Equipe"
+                sublabel={t("teamWorkspace")}
               />
               {/* People */}
               <NavLink
@@ -717,6 +735,7 @@ export function Sidebar() {
                 hint={t("hints.users")}
                 icon={<IconUsers className="h-4 w-4 shrink-0" />}
                 label={t("users")}
+                sublabel={t("userDirectory")}
               />
               <NavLink
                 path="/org-invites"

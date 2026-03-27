@@ -39,6 +39,36 @@ const IDEIAS = [
   },
 ];
 
+const PLANO_IA = [
+  {
+    fase: "0-30 dias",
+    foco: "Confiança e adoção",
+    entregas: [
+      "Copilot e command palette com mensagens unificadas de plano/trial e limites.",
+      "Explicabilidade no Flux Forms: mostrar racional de classificação e quando houve mesclagem por duplicata.",
+      "Medição: taxa de uso de IA por board e taxa de conclusão após sugestão.",
+    ],
+  },
+  {
+    fase: "31-60 dias",
+    foco: "Produtividade operacional",
+    entregas: [
+      "Digest executivo multicanal (e-mail/Slack) com links diretos para ações no board.",
+      "Sugestões de próxima ação por card com base em atraso, WIP e risco.",
+      "Medição: redução de cards parados por mais de 5 dias.",
+    ],
+  },
+  {
+    fase: "61-90 dias",
+    foco: "Diferencial de mercado",
+    entregas: [
+      "Copilot em modo comercial (priorização por valor/risco e cliente).",
+      "NLQ unificado entre palette e Copilot com comandos consistentes.",
+      "Medição: tempo até primeira decisão executiva (brief + ação no board).",
+    ],
+  },
+];
+
 export default function NegociosPage() {
   const router = useRouter();
   const { user, isChecked } = useAuth();
@@ -52,12 +82,12 @@ export default function NegociosPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title="Oportunidades comerciais" backHref="/boards" backLabel="← Boards" />
+      <Header title="Estratégia de negócios do produto" backHref="/boards" backLabel="← Boards" />
       <main className="max-w-[900px] mx-auto px-6 py-8 space-y-8">
         <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">Produto</p>
           <h2 className="font-display text-2xl font-bold text-[var(--flux-text)]">
-            Cinco linhas de receita alinhadas ao Flux-Board
+            Tese comercial e de inovação do Flux-Board
           </h2>
           <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed max-w-2xl">
             Cada ideia abaixo aponta para um problema que compradores corporativos já reconhecem: visibilidade executiva,
@@ -105,6 +135,32 @@ export default function NegociosPage() {
             </article>
           ))}
         </div>
+
+        <section className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-30)] bg-[var(--flux-surface-card)] p-5">
+          <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">Plano de inovação com IA (90 dias)</h3>
+          <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
+            Sequência pragmática para destacar o produto sem quebrar experiência, orçamento e identidade visual.
+          </p>
+          <div className="mt-4 grid gap-3">
+            {PLANO_IA.map((fase) => (
+              <article
+                key={fase.fase}
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-elevated)] p-4"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">{fase.fase}</p>
+                <h4 className="mt-1 text-sm font-semibold text-[var(--flux-text)]">{fase.foco}</h4>
+                <ul className="mt-2 space-y-1.5 text-xs text-[var(--flux-text-muted)]">
+                  {fase.entregas.map((entrega) => (
+                    <li key={entrega} className="flex gap-2">
+                      <span className="text-[var(--flux-secondary)]">•</span>
+                      <span>{entrega}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );

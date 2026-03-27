@@ -36,6 +36,7 @@ export default function PublicIntakeFormPage() {
   const [lastSubmit, setLastSubmit] = useState<"merged" | "created" | null>(null);
   const [lastCardId, setLastCardId] = useState<string | null>(null);
   const [lastClassificationLlm, setLastClassificationLlm] = useState<{ model?: string; provider?: string } | null>(null);
+  const [lastClassificationRationale, setLastClassificationRationale] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +128,8 @@ export default function PublicIntakeFormPage() {
       if (!r.ok) throw new Error(String(data.error || "Falha ao enviar."));
       setLastSubmit(data.merged ? "merged" : "created");
       setLastCardId(typeof data.cardId === "string" ? data.cardId : null);
-      const cls = data.classification as { llmModel?: string; llmProvider?: string; usedLlm?: boolean } | undefined;
+      const cls = data.classification as { llmModel?: string; llmProvider?: string; usedLlm?: boolean; rationale?: string } | undefined;
+      setLastClassificationRationale(typeof cls?.rationale === "string" && cls.rationale.trim() ? cls.rationale.trim() : null);
       if (cls?.usedLlm && (cls.llmModel || cls.llmProvider)) {
         setLastClassificationLlm({ model: cls.llmModel, provider: cls.llmProvider });
       } else {
@@ -181,6 +183,11 @@ export default function PublicIntakeFormPage() {
                         <AiModelHint model={lastClassificationLlm.model} provider={lastClassificationLlm.provider} />
                       </div>
                     ) : null}
+                    {lastClassificationRationale ? (
+                      <div className="mt-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-10)] px-3 py-2 text-xs text-[var(--flux-text-muted)]">
+                        Classificação aplicada: {lastClassificationRationale}
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <p>Demanda enviada com sucesso. Seu card já foi criado no board.</p>
@@ -188,6 +195,11 @@ export default function PublicIntakeFormPage() {
                 {lastSubmit === "created" && lastClassificationLlm ? (
                   <div className="mt-2">
                     <AiModelHint model={lastClassificationLlm.model} provider={lastClassificationLlm.provider} />
+                  </div>
+                ) : null}
+                {lastSubmit === "created" && lastClassificationRationale ? (
+                  <div className="mt-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-success-alpha-35)] bg-[var(--flux-success-alpha-12)] px-3 py-2 text-xs text-[var(--flux-text-muted)]">
+                    Classificação aplicada: {lastClassificationRationale}
                   </div>
                 ) : null}
               </div>

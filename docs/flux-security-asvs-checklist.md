@@ -84,6 +84,17 @@ Legenda: **Feito** | **Parcial** | **Falta**
 |----|------|--------|
 | 14.1 | Validação de env na subida | **Feito** — `env-validate.ts` |
 | 14.2 | Crons exigem segredo em produção | **Feito** — `cron-secret.ts` |
+| 14.3 | Segredos internos dedicados (sem fallback JWT) | **Feito** — `internal/*` |
+
+---
+
+## Checklist rápido para PR de API (obrigatório)
+
+- Confirmar autenticação (`getAuthFromRequest`) quando a rota não for pública por design.
+- Confirmar autorização por recurso (`orgId`, `boardId`, papel/admin), com retorno `403` quando negar acesso.
+- Revisar validação/sanitização de entrada (Zod + `sanitize*` quando aplicável).
+- Garantir que segredos internos usem env dedicado e nunca fallback para `JWT_SECRET`.
+- Registrar cobertura mínima de testes para `401` e, quando aplicável, `403`.
 
 ---
 

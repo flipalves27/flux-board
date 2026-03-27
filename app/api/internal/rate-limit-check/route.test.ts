@@ -31,6 +31,18 @@ describe("POST /api/internal/rate-limit-check", () => {
     expect(res.status).toBe(401);
   });
 
+  it("does not fallback to JWT_SECRET for internal auth", async () => {
+    delete process.env.RATE_LIMIT_INTERNAL_SECRET;
+    process.env.JWT_SECRET = "jwt-secret-that-must-not-auth-internal-route";
+    const req = new NextRequest("http://localhost/api/internal/rate-limit-check", {
+      method: "POST",
+      headers: { "x-flux-rate-internal": "jwt-secret-that-must-not-auth-internal-route" },
+      body: JSON.stringify({ pathname: "/api/boards", method: "GET" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+  });
+
   it("returns 400 when pathname is not under /api/", async () => {
     vi.mocked(runGlobalApiRateLimit).mockResolvedValue({
       ok: true,

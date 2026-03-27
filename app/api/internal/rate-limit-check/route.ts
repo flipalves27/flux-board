@@ -4,7 +4,7 @@ import { runGlobalApiRateLimit } from "@/lib/global-api-rate-limit";
 export const runtime = "nodejs";
 
 function internalSecret(): string | null {
-  return (process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET)?.trim() || null;
+  return process.env.RATE_LIMIT_INTERNAL_SECRET?.trim() || null;
 }
 
 export async function POST(req: NextRequest) {

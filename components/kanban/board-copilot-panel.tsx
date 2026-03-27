@@ -605,7 +605,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
           Modo demo: {freeDemoRemaining} mensagem(ns) restante(s).
         </div>
         <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-          Faça upgrade para Pro/Business para usar o Copiloto ilimitadamente.
+          Faça upgrade para Pro/Business para liberar Copiloto ilimitado e automações com IA.
         </div>
       </div>
     ) : null;

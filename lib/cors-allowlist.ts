@@ -37,7 +37,11 @@ function appOrigins(): string[] {
  * Caso contrário, ecoa `Origin` apenas se estiver na allowlist.
  */
 export function boardsApiCorsHeaders(request: NextRequest): Record<string, string> {
-  if (process.env.ALLOW_PUBLIC_BOARDS_CORS === "1") {
+  if (
+    process.env.ALLOW_PUBLIC_BOARDS_CORS === "1" &&
+    process.env.NODE_ENV !== "production" &&
+    process.env.VERCEL_ENV !== "production"
+  ) {
     return {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",

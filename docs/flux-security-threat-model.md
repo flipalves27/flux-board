@@ -1,6 +1,6 @@
 # Modelo de ameaças (STRIDE) — Flux-Board
 
-Documento vivo para reavaliação periódica. **Última revisão:** março/2025.
+Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 
 ## Ativos sensíveis
 
@@ -70,6 +70,12 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2025.
 | `GET /api/cron/*` | `x-cron-secret` | Em produção exige segredo dedicado ([`lib/cron-secret.ts`](../lib/cron-secret.ts)) |
 | `GET/POST /api/portal/[token]` | Token de URL | Rate limit; escopo mínimo |
 | `POST /api/boards/[id]/copilot` | JWT + plano | Custo LLM + orçamento org |
+
+## Decisões recentes de hardening (março/2026)
+
+- Rotas internas de segurança deixaram de reutilizar `JWT_SECRET` como fallback de autenticação.
+- `resolve-host` e `rate-limit-check` agora exigem segredos dedicados (`INTERNAL_HOST_RESOLVE_SECRET` e `RATE_LIMIT_INTERNAL_SECRET`).
+- CORS wildcard legado em `/api/boards` foi limitado a ambientes não produtivos.
 
 ## Referências internas
 

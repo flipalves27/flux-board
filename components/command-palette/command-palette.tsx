@@ -338,9 +338,11 @@ export function CommandPalette() {
       { path: "/template-marketplace", title: t("nav.marketplace"), kw: "marketplace templates galeria" },
       { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
+      { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
     ];
     if (user.isAdmin) {
       nav.push(
+        { path: "/negocios", title: t("nav.business"), kw: "negocios business estrategia monetizacao receita" },
         { path: "/users", title: t("nav.users"), kw: "users members" },
         { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
