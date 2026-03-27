@@ -123,14 +123,14 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         });
         if (!res.ok) throw new Error("members_fetch_error");
         const data = (await res.json()) as {
-          members?: Array<{ userId?: string; username?: string }>;
+          members?: Array<{ userId?: string; username?: string; name?: string }>;
         };
         const map = new Map<string, CardAssigneeOption>();
         for (const m of data.members ?? []) {
           const userId = String(m?.userId ?? "").trim();
           if (!userId) continue;
-          const username = String(m?.username ?? "").trim();
-          map.set(userId, { userId, label: username || userId });
+          const display = String(m?.name ?? m?.username ?? "").trim();
+          map.set(userId, { userId, label: display || userId });
         }
         const selfId = String(user?.id ?? "").trim();
         const selfLabel = String(user?.name ?? user?.username ?? "").trim();

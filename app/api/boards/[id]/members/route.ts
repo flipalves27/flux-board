@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
-import {
-  listBoardMembers,
-  upsertBoardMember,
-  getBoardEffectiveRole,
-  roleCanAdmin,
-  type BoardRole,
-} from "@/lib/kv-board-members";
+import { upsertBoardMember, getBoardEffectiveRole, roleCanAdmin, type BoardRole } from "@/lib/kv-board-members";
+import { listUsers } from "@/lib/kv-users";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -28,7 +23,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
-  const members = await listBoardMembers(payload.orgId, boardId);
+  /** Usuários da organização (assignee, cerimônias). Board-level RBAC fica em POST/delete; sem convites explícitos o board é “aberto” à org. */
+  const orgUsers = await listUsers(payload.orgId);
+  const members = orgUsers.map((u) => ({
+    userId: u.id,
+    username: u.username,
+    name: u.name,
+  }));
   return NextResponse.json({ members });
 }
 
