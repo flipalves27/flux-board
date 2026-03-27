@@ -20,7 +20,6 @@
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
     "programIncrements": "Incrementos",
     "docs": "Flux Docs",
-    "business": "Negócios",
     "teamWorkspace": "Time e estrutura",
     "userDirectory": "Cadastro e acessos",
     "copilot": "Copiloto",
@@ -49,7 +48,6 @@
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
       "programIncrements": "Planejamento de incrementos e PIs entre boards.",
       "docs": "Documentos, RAG e geração com IA.",
-      "business": "Espaço de estratégia comercial e monetização do produto.",
       "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."
     },
     "menu": {
@@ -227,7 +225,6 @@
       "myWork": "My Work",
       "marketplace": "Template Marketplace",
       "sprints": "Sprints",
-      "business": "Negócios",
       "docs": "Flux Docs",
       "users": "Usuários",
       "orgSettings": "Config. da organização",

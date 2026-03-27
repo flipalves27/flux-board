@@ -342,7 +342,6 @@ export function CommandPalette() {
     ];
     if (user.isAdmin) {
       nav.push(
-        { path: "/negocios", title: t("nav.business"), kw: "negocios business estrategia monetizacao receita" },
         { path: "/users", title: t("nav.users"), kw: "users members" },
         { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },

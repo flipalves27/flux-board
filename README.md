@@ -154,7 +154,6 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `/boards` | Lista de boards |
 | `/board/[id]` | Kanban do board |
 | `/forms/[slug]` | Formulário público para intake de demandas |
-| `/negocios` | Hub de oportunidades comerciais (produto) |
 | `/users` | Administração de usuários (admin) |
 
 ### API comercial / go-to-market

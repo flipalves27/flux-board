@@ -87,6 +87,17 @@ export async function middleware(req: NextRequest) {
     return applyNonCspSecurityHeaders(NextResponse.next());
   }
 
+  /** Rota legada removida do produto — envia usuários para a lista de boards. */
+  if (pathname === "/negocios" || pathname === "/negocios/") {
+    return NextResponse.redirect(new URL("/pt-BR/boards", req.url));
+  }
+  if (pathname === "/pt-BR/negocios" || pathname === "/pt-BR/negocios/") {
+    return NextResponse.redirect(new URL("/pt-BR/boards", req.url));
+  }
+  if (pathname === "/en/negocios" || pathname === "/en/negocios/") {
+    return NextResponse.redirect(new URL("/en/boards", req.url));
+  }
+
   const nonce = generateNonce();
   const res = intlMiddleware(req);
   const embed = isEmbedDocumentPath(pathname);

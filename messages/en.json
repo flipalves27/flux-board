@@ -20,7 +20,6 @@
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
     "programIncrements": "Increments",
     "docs": "Flux Docs",
-    "business": "Business",
     "teamWorkspace": "Team workspace",
     "userDirectory": "Directory and access",
     "copilot": "Copilot",
@@ -49,7 +48,6 @@
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
       "programIncrements": "Increment planning and PIs across boards.",
       "docs": "Documents, RAG and AI generation.",
-      "business": "Product business strategy and monetization workspace.",
       "copilot": "Board chat: summaries, search, and actions. On a board it opens the panel; elsewhere it goes to your boards list."
     },
     "menu": {
@@ -227,7 +225,6 @@
       "myWork": "My Work",
       "marketplace": "Template Marketplace",
       "sprints": "Sprints",
-      "business": "Business",
       "docs": "Flux Docs",
       "users": "Users",
       "orgSettings": "Organization settings",
