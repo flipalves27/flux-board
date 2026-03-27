@@ -8,6 +8,7 @@ import { apiPost, apiFetch, getApiHeaders, ApiError } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
+import { CardIntakeVisionBlock } from "@/components/kanban/card-intake-vision-block";
 import { AiModelHint } from "@/components/ai-model-hint";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
 import {
@@ -617,6 +618,14 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         description={t("cardModal.sections.content.description")}
       >
         <div>
+          <CardIntakeVisionBlock
+            boardId={boardId}
+            getHeaders={getHeaders}
+            mode={mode}
+            setTitle={setTitle}
+            setDescBlocks={setDescBlocks}
+            onApplied={() => setAiContextApplied(null)}
+          />
           <div className="mb-2 flex items-center justify-between gap-2">
             <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
               {t("cardModal.fields.title.label")}

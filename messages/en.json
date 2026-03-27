@@ -670,6 +670,26 @@
       "risk": "Risk",
       "throughput": "Throughput",
       "cards": "Cards"
+    },
+    "portfolioAi": {
+      "badge": "Portfolio · AI",
+      "title": "Multi-board portfolio assistant",
+      "subtitle": "Combines board metrics with OKRs and internal docs (RAG) for strategic Q&A.",
+      "heatmapTitle": "Heatmap by board",
+      "heatmapEmpty": "No boards with cards to show.",
+      "colBoard": "Board",
+      "colRisk": "Risk",
+      "colThroughput": "Throughput",
+      "colPrev": "Pred.",
+      "assistantTitle": "Ask the assistant",
+      "placeholder": "e.g. Where are the biggest priority conflicts between teams?",
+      "send": "Send",
+      "sending": "Generating…",
+      "replyLabel": "Answer",
+      "error": "Could not generate a response.",
+      "chip1": "Which boards most threaten quarterly goals?",
+      "chip2": "Summarize risks across throughput and OKRs.",
+      "chip3": "Where should we focus in the next two weeks?"
     }
   },
   "appShell": {
@@ -1387,6 +1407,14 @@
   },
   "kanban": {
     "cardModal": {
+      "intakeVision": {
+        "badge": "Image → text",
+        "hint": "Upload a screenshot or mock; AI suggests a title and fills notes. Requires OPENAI_API_KEY on the server.",
+        "pick": "Choose image",
+        "busy": "Analyzing image…",
+        "apply": "Apply to card",
+        "error": "Could not analyze the image."
+      },
       "smartEnrich": {
         "badge": "AI suggestion",
         "accept": "Accept",
@@ -2545,7 +2573,44 @@
     "healthy": "Healthy",
     "atRisk": "At Risk",
     "critical": "Critical",
-    "scopeCreep": "Scope Creep"
+    "scopeCreep": "Scope Creep",
+    "whatIfTitle": "What-if scenario",
+    "whatIfHint": "Adjust scope and capacity; optionally describe in natural language.",
+    "removeItems": "Remove items from scope",
+    "capacityMul": "Capacity (throughput)",
+    "nlPlaceholder": "e.g. remove 3 items and 20% more capacity",
+    "runScenario": "Apply scenario",
+    "scenarioLoading": "Calculating…",
+    "baseline": "Baseline",
+    "scenarioLabel": "Scenario",
+    "explanation": "Takeaway",
+    "scenarioError": "Could not compute the scenario."
+  },
+  "fluxAiHub": {
+    "title": "AI in Flux",
+    "subtitle": "Shortcuts to intelligence features: portfolio, docs, forecasting, and Copilot on boards.",
+    "cards": {
+      "exec": {
+        "badge": "Leadership",
+        "title": "Executive dashboard",
+        "desc": "Multi-board heatmap and portfolio assistant."
+      },
+      "docs": {
+        "badge": "RAG",
+        "title": "Flux Docs",
+        "desc": "Document base used by Copilot and the portfolio assistant."
+      },
+      "forecast": {
+        "badge": "Forecast",
+        "title": "Reports and scenarios",
+        "desc": "Monte Carlo, throughput, and what-if on Flux Reports."
+      },
+      "copilot": {
+        "badge": "Board",
+        "title": "Copilot",
+        "desc": "Open a board and use Copilot from the side panel."
+      }
+    }
   },
   "templateMarketplace": {
     "title": "Template Marketplace",

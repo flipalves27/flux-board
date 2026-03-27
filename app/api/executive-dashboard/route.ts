@@ -140,6 +140,19 @@ export async function GET(request: NextRequest) {
         cardCount: r.portfolio.cardCount,
       }));
 
+    const portfolioBoards = [...rows]
+      .filter((r) => r.portfolio.cardCount > 0)
+      .sort((a, b) => (a.portfolio.risco ?? 100) - (b.portfolio.risco ?? 100))
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        clientLabel: r.clientLabel ?? null,
+        risco: r.portfolio.risco,
+        throughput: r.portfolio.throughput,
+        previsibilidade: r.portfolio.previsibilidade,
+        cardCount: r.portfolio.cardCount,
+      }));
+
     const nowMs = Date.now();
     const weeks = buildRollingWeekRanges(NUM_WEEKS, nowMs);
     const boardIds = boards.map((b) => b.id).filter(Boolean);
@@ -241,6 +254,7 @@ export async function GET(request: NextRequest) {
       },
       throughputTrend,
       topRiskBoards,
+      portfolioBoards,
       anomalies,
       meta: {
         boardCount: boards.length,

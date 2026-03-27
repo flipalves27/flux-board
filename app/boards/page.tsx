@@ -27,6 +27,7 @@ import {
   type BoardPortfolioMetrics,
 } from "@/lib/board-portfolio-metrics";
 import { FluxCapabilityStrip } from "@/components/boards/flux-capability-strip";
+import { FluxAiHub } from "@/components/boards/flux-ai-hub";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
@@ -459,6 +460,12 @@ export default function BoardsPage() {
             <>
             {activeTab === "myBoards" && (
               <>
+                {user ? (
+                  <FluxAiHub
+                    localeRoot={localeRoot}
+                    isExec={Boolean(user.isAdmin || user.isExecutive)}
+                  />
+                ) : null}
                 <section className="mb-6 space-y-3" aria-labelledby="boards-search-heading">
                   <h2 id="boards-search-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
                     {t("sections.search")}

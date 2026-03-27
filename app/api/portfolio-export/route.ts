@@ -6,9 +6,11 @@ import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-expor
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
+import { maskPii } from "@/lib/pii-scan";
 
 /**
  * Export JSON do portfólio para integrações (BI, n8n, data warehouse).
+ * `?piiSafe=1` mascara e-mails e padrões sensíveis em campos de texto (clientLabel, nomes).
  */
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -31,26 +33,34 @@ export async function GET(request: NextRequest) {
     const aggregates = aggregatePortfolio(rows);
 
     const exportedAt = new Date().toISOString();
+    const piiSafe = request.nextUrl.searchParams.get("piiSafe") === "1" || request.nextUrl.searchParams.get("piiSafe") === "true";
+
+    const boardPayload = rows.map((r) => ({
+      id: r.id,
+      name: piiSafe ? maskPii(r.name).masked : r.name,
+      ownerId: r.ownerId,
+      clientLabel: r.clientLabel
+        ? piiSafe
+          ? maskPii(r.clientLabel).masked
+          : r.clientLabel
+        : null,
+      lastUpdated: r.lastUpdated ?? null,
+      metrics: {
+        cardCount: r.portfolio.cardCount,
+        risco: r.portfolio.risco,
+        throughput: r.portfolio.throughput,
+        previsibilidade: r.portfolio.previsibilidade,
+      },
+    }));
 
     return NextResponse.json({
       schema: "flux-board.portfolio.v1",
       exportedAt,
       userId: payload.id,
       isAdmin: payload.isAdmin,
+      piiSafe,
       aggregates,
-      boards: rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        ownerId: r.ownerId,
-        clientLabel: r.clientLabel ?? null,
-        lastUpdated: r.lastUpdated ?? null,
-        metrics: {
-          cardCount: r.portfolio.cardCount,
-          risco: r.portfolio.risco,
-          throughput: r.portfolio.throughput,
-          previsibilidade: r.portfolio.previsibilidade,
-        },
-      })),
+      boards: boardPayload,
     });
   } catch (err) {
     console.error("Portfolio export API error:", err);

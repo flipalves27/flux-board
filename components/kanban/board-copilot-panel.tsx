@@ -14,6 +14,7 @@ import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
 import type { RagRetrievalDebug } from "@/lib/docs-rag";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { AiFeedbackInline } from "@/components/ai/ai-feedback-inline";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -716,6 +717,14 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                                 provider={m.meta?.llmProvider != null ? String(m.meta.llmProvider) : undefined}
                               />
                             </div>
+                          ) : null}
+                          {m.role === "assistant" ? (
+                            <AiFeedbackInline
+                              feature="board_copilot"
+                              targetId={m.id}
+                              boardId={boardId}
+                              getHeaders={getHeaders}
+                            />
                           ) : null}
                         </div>
                       ))

@@ -25,6 +25,7 @@ import { SprintPredictionPanel } from "@/components/reports/sprint-prediction-pa
 import { CrossBoardDependenciesPanel } from "@/components/reports/cross-board-dependencies-panel";
 import { CfdAccumulatedPanel } from "@/components/reports/cfd-accumulated-panel";
 import { CycleTimeScatterPanel } from "@/components/reports/cycle-time-scatter-panel";
+import { DeliveryForecastChart } from "@/components/reports/delivery-forecast-chart";
 import type { CycleTimeScatterPoint } from "@/lib/flux-reports-metrics";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
@@ -179,6 +180,10 @@ export function FluxReportsDashboard() {
       </Suspense>
 
       <SprintPredictionPanel prediction={data.sprintPrediction} />
+
+      {data.portfolioHeatmap[0]?.boardId ? (
+        <DeliveryForecastChart boardId={data.portfolioHeatmap[0].boardId} />
+      ) : null}
 
       <CycleTimeScatterPanel points={data.cycleTimeScatter} />
 

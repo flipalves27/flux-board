@@ -20,6 +20,7 @@ import { apiGet, ApiError } from "@/lib/api-client";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { PortfolioAiPanel } from "@/components/dashboard/portfolio-ai-panel";
 
 const CHART_COLORS = [
   "var(--flux-primary)",
@@ -66,6 +67,15 @@ export type ExecutiveDashboardPayload = {
   };
   throughputTrend: Array<{ weekLabel: string; concluded: number }>;
   topRiskBoards: Array<{
+    id: string;
+    name: string;
+    clientLabel: string | null;
+    risco: number | null;
+    throughput: number | null;
+    previsibilidade: number | null;
+    cardCount: number;
+  }>;
+  portfolioBoards?: Array<{
     id: string;
     name: string;
     clientLabel: string | null;
@@ -288,6 +298,8 @@ export function ExecutiveDashboard() {
               </div>
             )}
           </section>
+
+          <PortfolioAiPanel data={data} />
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-4">

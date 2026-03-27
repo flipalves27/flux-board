@@ -670,6 +670,26 @@
       "risk": "Risco",
       "throughput": "Throughput",
       "cards": "Cards"
+    },
+    "portfolioAi": {
+      "badge": "Portfólio · IA",
+      "title": "Assistente de portfólio (multi-board)",
+      "subtitle": "Cruza métricas dos boards com OKRs e documentação interna (RAG) para responder perguntas estratégicas.",
+      "heatmapTitle": "Mapa de calor por board",
+      "heatmapEmpty": "Nenhum board com cards para exibir.",
+      "colBoard": "Board",
+      "colRisk": "Risco",
+      "colThroughput": "Throughput",
+      "colPrev": "Prev.",
+      "assistantTitle": "Pergunte ao assistente",
+      "placeholder": "Ex.: Onde estão os maiores conflitos de prioridade entre times?",
+      "send": "Enviar",
+      "sending": "Gerando…",
+      "replyLabel": "Resposta",
+      "error": "Não foi possível gerar a resposta.",
+      "chip1": "Quais boards mais comprometem as metas do trimestre?",
+      "chip2": "Resuma riscos cruzando throughput e OKRs.",
+      "chip3": "Onde focar esforço nas próximas duas semanas?"
     }
   },
   "appShell": {
@@ -1392,6 +1412,14 @@
   },
   "kanban": {
     "cardModal": {
+      "intakeVision": {
+        "badge": "Imagem → texto",
+        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer OPENAI_API_KEY no servidor.",
+        "pick": "Escolher imagem",
+        "busy": "Analisando imagem…",
+        "apply": "Aplicar ao card",
+        "error": "Não foi possível analisar a imagem."
+      },
       "smartEnrich": {
         "badge": "Sugestão IA",
         "accept": "Aceitar",
@@ -2550,7 +2578,44 @@
     "healthy": "Saudável",
     "atRisk": "Em risco",
     "critical": "Crítico",
-    "scopeCreep": "Scope creep"
+    "scopeCreep": "Scope creep",
+    "whatIfTitle": "Cenário “e se?”",
+    "whatIfHint": "Ajuste escopo e capacidade; opcionalmente descreva em linguagem natural.",
+    "removeItems": "Remover itens do escopo",
+    "capacityMul": "Capacidade (throughput)",
+    "nlPlaceholder": "Ex.: remover 3 itens e 20% mais capacidade",
+    "runScenario": "Aplicar cenário",
+    "scenarioLoading": "Calculando…",
+    "baseline": "Baseline",
+    "scenarioLabel": "Cenário",
+    "explanation": "Leitura",
+    "scenarioError": "Não foi possível calcular o cenário."
+  },
+  "fluxAiHub": {
+    "title": "IA no Flux",
+    "subtitle": "Atalhos para recursos de inteligência: portfólio, documentação, previsão e Copiloto nos boards.",
+    "cards": {
+      "exec": {
+        "badge": "Gestão",
+        "title": "Dashboard executivo",
+        "desc": "Heatmap multi-board e assistente de portfólio."
+      },
+      "docs": {
+        "badge": "RAG",
+        "title": "Flux Docs",
+        "desc": "Base documental usada pelo Copiloto e pelo assistente de portfólio."
+      },
+      "forecast": {
+        "badge": "Previsão",
+        "title": "Relatórios e cenários",
+        "desc": "Monte Carlo, throughput e simulador “e se?” no Flux Reports."
+      },
+      "copilot": {
+        "badge": "Quadro",
+        "title": "Copiloto",
+        "desc": "Abra um board e use o Copiloto no painel lateral."
+      }
+    }
   },
   "templateMarketplace": {
     "title": "Template Marketplace",
