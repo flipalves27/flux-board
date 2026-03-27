@@ -420,19 +420,21 @@ export function Sidebar() {
   };
 
   const linkClass = (href: string) =>
-    `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
+    `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden border
      ${isActive(href)
-       ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)] shadow-none"
-       : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
+       ? "border-[var(--flux-primary-alpha-25)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-20),var(--flux-primary-alpha-10))] text-[var(--flux-primary-light)] shadow-[0_6px_20px_var(--flux-primary-alpha-12)]"
+       : "border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
      }`;
 
   function NavSectionTitle({ children }: { children: ReactNode }) {
     if (!showExpandedNav) return null;
     return (
-      <div className="px-2.5 pt-3 first:pt-1 pb-1">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]/65">
+      <div className="mt-2 flex items-center gap-2 px-2.5 pt-3 first:mt-0 first:pt-1 pb-1">
+        <span className="h-px flex-1 bg-[var(--flux-primary-alpha-12)]" aria-hidden />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--flux-text-muted)]/70">
           {children}
         </span>
+        <span className="h-px flex-1 bg-[var(--flux-primary-alpha-12)]" aria-hidden />
       </div>
     );
   }
@@ -451,10 +453,10 @@ export function Sidebar() {
   function NavLink({ path, icon, label, hint, sublabel, dataTour, isActiveOverride }: NavLinkProps) {
     const href = `/${locale}${path}`;
     const navActive = isActiveOverride ?? isActive(path);
-    const itemClass = `flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
+    const itemClass = `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] border font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
      ${navActive
-       ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)] shadow-none"
-       : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
+       ? "border-[var(--flux-primary-alpha-25)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-20),var(--flux-primary-alpha-10))] text-[var(--flux-primary-light)] shadow-[0_6px_20px_var(--flux-primary-alpha-12)]"
+       : "border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
      }`;
     const afterNav = () => {
       if (layout === "mobile") closeMobile();
@@ -466,6 +468,12 @@ export function Sidebar() {
         data-tour={dataTour}
         className={`${itemClass} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
       >
+        <span
+          className={`absolute left-1.5 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full transition-opacity duration-200 ${
+            navActive ? "bg-[var(--flux-primary-light)] opacity-100" : "bg-[var(--flux-primary)] opacity-0"
+          }`}
+          aria-hidden
+        />
         <span className="mt-0.5 shrink-0">{icon}</span>
         {showExpandedNav && (
           <span className="flex min-w-0 flex-col gap-0 leading-tight">
@@ -508,7 +516,7 @@ export function Sidebar() {
         aria-hidden={mobileClosed || undefined}
         onMouseEnter={() => layout === "tablet" && setTabletHover(true)}
         onMouseLeave={() => layout === "tablet" && setTabletHover(false)}
-        className={`flex shrink-0 flex-col overflow-hidden border-r border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/80 backdrop-blur-sm transition-[width,transform] duration-300 ease-out
+        className={`flex shrink-0 flex-col overflow-hidden border-r border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))] backdrop-blur-md transition-[width,transform] duration-300 ease-out
           max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[var(--flux-z-sidebar-drawer)] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
           max-md:-translate-x-full max-md:pointer-events-none max-md:data-[open]:translate-x-0 max-md:data-[open]:pointer-events-auto
           md:relative md:z-auto md:h-full md:min-h-0 md:translate-x-0 md:pointer-events-auto md:shadow-none`}
@@ -522,7 +530,7 @@ export function Sidebar() {
         data-open={layout === "mobile" && mobileOpen ? "" : undefined}
       >
         <div
-          className={`flex h-11 shrink-0 items-center gap-1.5 border-b border-[var(--flux-primary-alpha-06)] px-2.5 ${
+          className={`flex h-12 shrink-0 items-center gap-1.5 border-b border-[var(--flux-primary-alpha-08)] px-2.5 ${
             compactMode ? "justify-center" : "justify-between"
           }`}
         >
@@ -572,7 +580,7 @@ export function Sidebar() {
           ) : null}
         </div>
 
-        <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3">
+        <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3">
           <NavSectionTitle>{t("section.work")}</NavSectionTitle>
           <NavLink
             path="/boards"
@@ -714,7 +722,7 @@ export function Sidebar() {
           )}
         </nav>
 
-        <div className="flex shrink-0 flex-col gap-0.5 border-t border-[var(--flux-primary-alpha-06)] p-2.5">
+        <div className="flex shrink-0 flex-col gap-1 border-t border-[var(--flux-primary-alpha-08)] p-2.5">
           <CustomTooltip
             content={t("theme.cycleTooltip", { current: themeModeLabel })}
             position="right"

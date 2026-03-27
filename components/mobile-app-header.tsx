@@ -21,11 +21,11 @@ export function MobileAppHeader() {
   if (layout !== "mobile") return null;
 
   return (
-    <header className="sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-primary-alpha-08)] bg-[var(--flux-surface-dark)]/90 px-3 backdrop-blur-md md:hidden">
+    <header className="sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))] px-3 backdrop-blur-md md:hidden">
       <button
         type="button"
         onClick={openMobile}
-        className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad-sm)] text-[var(--flux-text)] transition-colors hover:bg-[var(--flux-primary-alpha-08)]"
+        className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad-sm)] border border-transparent text-[var(--flux-text)] transition-all duration-200 hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-08)]"
         aria-label={t("openNavigation")}
         aria-haspopup="dialog"
         aria-expanded={mobileOpen}
