@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/header";
+import { TeamWorkspacePanel } from "@/components/team/team-workspace-panel";
 import { useAuth } from "@/context/auth-context";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
@@ -29,7 +31,10 @@ export default function TeamPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
   const { getHeaders } = useAuth();
+  const hideInlineTabs = /^\/(pt-BR|en)\/equipe/.test(pathname);
   const { pushToast } = useToast();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [users, setUsers] = useState<UserLite[]>([]);
@@ -234,38 +239,46 @@ export default function TeamPage() {
     }
   }
 
+  const rootClass = hideInlineTabs
+    ? "flex min-h-0 flex-1 flex-col bg-[var(--flux-surface-dark)]"
+    : "flex min-h-screen flex-col bg-[var(--flux-surface-dark)]";
+
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title="Equipe" />
-      <div className="mx-auto max-w-5xl p-6">
-        <div className="mb-4 flex gap-2">
-          {([
-            { key: "membros", label: "Membros" },
-            { key: "funcoes", label: "Funções" },
-            { key: "acessos", label: "Acessos" },
-          ] as Array<{ key: TeamTab; label: string }>).map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => updateQuery({ tab: item.key, page: "1" })}
-              className={`rounded-lg px-3 py-2 text-sm ${
-                tab === item.key
-                  ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
-                  : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)]"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+    <div className={rootClass}>
+      <Header title="Equipe" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
+      <TeamWorkspacePanel>
+        {!hideInlineTabs ? (
+          <div className="mb-5 flex flex-wrap gap-2">
+            {([
+              { key: "membros", label: "Membros" },
+              { key: "funcoes", label: "Funções" },
+              { key: "acessos", label: "Acessos" },
+            ] as Array<{ key: TeamTab; label: string }>).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => updateQuery({ tab: item.key, page: "1" })}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  tab === item.key
+                    ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)] ring-1 ring-[var(--flux-primary-alpha-35)]"
+                    : "bg-[var(--flux-chrome-alpha-08)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {tab === "membros" ? (
           <>
-        <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4 space-y-4">
-          <h2 className="text-base font-semibold text-[var(--flux-text)]">CRUD de Responsáveis (Equipe)</h2>
-          <p className="text-xs text-[var(--flux-text-muted)]">
-            Selecione usuário por nome/e-mail, defina nível e escopo (organização ou board).
-          </p>
+        <div className="space-y-4 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+          <div>
+            <h2 className="font-display text-base font-semibold text-[var(--flux-text)]">Responsáveis da equipe</h2>
+            <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
+              Selecione usuário por nome ou e-mail, defina nível e escopo (organização ou board).
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-2">
@@ -277,12 +290,12 @@ export default function TeamPage() {
                   setSelectedUserId("");
                 }}
                 placeholder="Nome, usuário ou e-mail"
-                className="w-full rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
               />
               <select
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
               >
                 <option value="">Selecione um usuário...</option>
                 {filteredUsers.map((u) => (
@@ -295,13 +308,13 @@ export default function TeamPage() {
 
             <div className="grid grid-cols-1 gap-2">
               <label className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Nível</label>
-              <select value={role} onChange={(e) => setRole(e.target.value as TeamMember["role"])} className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm">
+              <select value={role} onChange={(e) => setRole(e.target.value as TeamMember["role"])} className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]">
                 {ROLE_OPTIONS.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
               <label className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Escopo</label>
-              <select value={boardId} onChange={(e) => setBoardId(e.target.value)} className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm">
+              <select value={boardId} onChange={(e) => setBoardId(e.target.value)} className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]">
                 <option value="org">Organização inteira</option>
                 {boards.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
@@ -326,18 +339,24 @@ export default function TeamPage() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-          <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mt-5 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">
+              Vínculos cadastrados ({filteredMembers.length})
+            </h3>
+            <p className="mt-0.5 text-xs text-[var(--flux-text-muted)]">Filtre, ordene e edite vínculos existentes.</p>
+          </div>
+          <div className="mb-1 flex flex-wrap gap-2">
             <input
               value={membersQuery}
               onChange={(e) => updateQuery({ q: e.target.value || null, page: "1" })}
               placeholder="Filtro por nome, e-mail, userId ou board"
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             />
             <select
               value={roleFilter}
               onChange={(e) => updateQuery({ role: e.target.value === "all" ? null : e.target.value, page: "1" })}
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             >
               <option value="all">Todos os níveis</option>
               {ROLE_OPTIONS.map((r) => (
@@ -347,7 +366,7 @@ export default function TeamPage() {
             <select
               value={statusFilter}
               onChange={(e) => updateQuery({ status: e.target.value === "all" ? null : e.target.value, page: "1" })}
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             >
               <option value="all">Todos os status</option>
               <option value="active">Ativos</option>
@@ -356,7 +375,7 @@ export default function TeamPage() {
             <select
               value={scopeFilter}
               onChange={(e) => updateQuery({ scope: e.target.value === "all" ? null : e.target.value, page: "1" })}
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             >
               <option value="all">Todos os escopos</option>
               <option value="org">Somente organização</option>
@@ -365,7 +384,7 @@ export default function TeamPage() {
             <select
               value={String(pageSize)}
               onChange={(e) => updateQuery({ pageSize: e.target.value, page: "1" })}
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             >
               {PAGE_SIZES.map((size) => (
                 <option key={size} value={size}>
@@ -376,7 +395,7 @@ export default function TeamPage() {
             <select
               value={sort}
               onChange={(e) => updateQuery({ sort: e.target.value, page: "1" })}
-              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
+              className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
             >
               <option value="updatedAt_desc">Mais recentes</option>
               <option value="updatedAt_asc">Mais antigos</option>
@@ -397,13 +416,12 @@ export default function TeamPage() {
                     sort: "updatedAt_desc",
                   })
                 }
-                className="rounded-lg border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
               >
                 Resetar filtros
               </button>
             ) : null}
           </div>
-          <h3 className="text-sm font-semibold text-[var(--flux-text)]">Vínculos cadastrados ({filteredMembers.length})</h3>
           {loading ? <p className="mt-3 text-sm text-[var(--flux-text-muted)]">Carregando...</p> : null}
           {!loading && filteredMembers.length === 0 ? (
             <p className="mt-3 text-sm text-[var(--flux-text-muted)]">Nenhum vínculo cadastrado.</p>
@@ -511,8 +529,8 @@ export default function TeamPage() {
         ) : null}
 
         {tab === "funcoes" ? (
-          <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-            <h3 className="text-sm font-semibold text-[var(--flux-text)]">Funções e responsabilidades</h3>
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Funções e responsabilidades</h3>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--flux-text-muted)]">
               <li><strong className="text-[var(--flux-text)]">Admin de Equipe</strong>: gerencia vínculos e níveis no contexto EQUIPE.</li>
               <li><strong className="text-[var(--flux-text)]">Membro</strong>: executa cards e pode ser responsável.</li>
@@ -522,8 +540,8 @@ export default function TeamPage() {
         ) : null}
 
         {tab === "acessos" ? (
-          <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-            <h3 className="text-sm font-semibold text-[var(--flux-text)]">Acessos por escopo</h3>
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Acessos por escopo</h3>
             <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
               Visão resumida dos vínculos por organização e por board.
             </p>
@@ -543,7 +561,7 @@ export default function TeamPage() {
             </div>
           </div>
         ) : null}
-      </div>
+      </TeamWorkspacePanel>
     </div>
   );
 }
