@@ -6,6 +6,7 @@ import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
   buildRollingWeekRanges,
@@ -70,9 +71,7 @@ export async function GET(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 

@@ -25,6 +25,7 @@ import {
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
 import { ensureOrgManager } from "@/lib/api-authz";
+import { writeSecurityAudit } from "@/lib/security-audit";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -233,6 +234,19 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Plano inválido. Use: free, trial, pro, business ou enterprise." }, { status: 400 });
       }
       planPatch = raw as Organization["plan"];
+      if (planPatch !== current.plan) {
+        writeSecurityAudit({
+          event: "admin_plan_override",
+          actorUserId: payload.id,
+          orgId: payload.orgId,
+          route: "/api/organizations/me",
+          details: {
+            fromPlan: current.plan,
+            toPlan: planPatch,
+            viaEnv: "FLUX_ALLOW_ADMIN_PLAN_OVERRIDE",
+          },
+        });
+      }
     }
 
     const org = await updateOrganization(payload.orgId, {

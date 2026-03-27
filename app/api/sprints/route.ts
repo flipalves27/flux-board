@@ -3,7 +3,8 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { listBoardsForUser } from "@/lib/kv-boards";
 import { listSprints } from "@/lib/kv-sprints";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { countActiveSprints, mergeSprintsWithBoardMeta } from "@/lib/sprints-org-overview";
 
 export const runtime = "nodejs";
@@ -16,7 +17,8 @@ export async function GET(request: NextRequest) {
   const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
   try {
     assertFeatureAllowed(org, "sprint_engine", gateCtx);
-  } catch {
+  } catch (err) {
+    if (err instanceof PlanGateError) return denyPlan(err);
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }
 

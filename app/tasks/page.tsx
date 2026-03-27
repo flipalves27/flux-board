@@ -9,6 +9,7 @@ import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routin
 import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, getAlertSoundSettings, playAlertSound, setAlertSoundSettings } from "@/lib/alert-sounds";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { getEffectiveTier, planGateCtxForAuth, type Tier } from "@/lib/plan-gates";
+import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -154,17 +155,12 @@ export default function TasksPage() {
       <div className="min-h-screen bg-[var(--flux-surface-dark)]">
         <Header title="Minhas tarefas" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
         <main className="max-w-[780px] mx-auto px-6 py-10">
-          <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)] p-6">
-            <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">Routine é Pro/Business</h2>
-            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
-              Para criar e sincronizar rotinas, faça upgrade no Stripe.
-            </p>
-            <div className="mt-5">
-              <button className="btn-primary" onClick={() => router.replace(`${localeRoot}/billing`)}>
-                Ver planos e assinar
-              </button>
-            </div>
-          </div>
+          <FeatureGateNotice
+            title="Routine é Pro/Business"
+            description="Para criar e sincronizar rotinas, faça upgrade no Stripe."
+            ctaLabel="Ver planos e assinar"
+            ctaHref={`${localeRoot}/billing`}
+          />
         </main>
       </div>
     );

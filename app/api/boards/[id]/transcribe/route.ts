@@ -4,6 +4,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 
 const MAX_AUDIO_BYTES = 24 * 1024 * 1024;
 const ALLOWED_EXT = new Set(["mp3", "wav", "webm", "mpeg", "x-m4a", "m4a"]);
@@ -29,9 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
   }
 

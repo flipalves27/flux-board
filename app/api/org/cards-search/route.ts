@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { listBoardsForUser } from "@/lib/kv-boards";
 
 export async function GET(request: NextRequest) {
@@ -47,9 +48,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ schema: "flux-board.cards_search.v1", results });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("cards-search GET:", err);
     return NextResponse.json({ error: "Erro na busca." }, { status: 500 });
   }

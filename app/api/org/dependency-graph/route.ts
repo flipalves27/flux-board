@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { listBoardsForUser } from "@/lib/kv-boards";
 import { listCrossDependencyLinksForOrg } from "@/lib/kv-card-dependencies";
 import { isMongoConfigured } from "@/lib/mongo";
@@ -96,9 +97,7 @@ export async function GET(request: NextRequest) {
       edges,
     });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("dependency-graph GET:", err);
     return NextResponse.json({ error: "Erro ao montar grafo." }, { status: 500 });
   }

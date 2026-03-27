@@ -7,6 +7,7 @@ import {
   planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import {
   runMonteCarloSimulation,
   computeCardRiskScore,
@@ -35,9 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     assertFeatureAllowed(org, "risk_score", gateCtx);
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
   }
 

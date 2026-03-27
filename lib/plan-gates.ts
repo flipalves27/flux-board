@@ -1,6 +1,7 @@
 import type { Organization } from "./kv-organizations";
 import { isProTenant } from "./commercial-plan";
 import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
+import { writeSecurityAudit } from "./security-audit";
 
 /** Audit log retention for Free tier (days). Pro/Business: unlimited (no TTL window). */
 const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
@@ -25,6 +26,8 @@ export function planGateCtxForAuth(
 }
 
 export type Tier = Organization["plan"];
+
+export type PlanGateCode = "PLAN_UPGRADE_REQUIRED" | "PLAN_LIMIT_REACHED";
 
 const PAID: EffectiveGateTier[] = ["pro", "business", "enterprise"];
 const BIZ_UP: EffectiveGateTier[] = ["business", "enterprise"];
@@ -99,18 +102,49 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   board_health_score: BIZ_UP,
 };
 
+/** Matriz canônica para UI/backend (fonte única da política de planos). */
+export const PLAN_FEATURE_MATRIX = FEATURE_ALLOWED_TIERS;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class PlanGateError extends Error {
   status: number;
-  constructor(message: string, status = 403) {
+  code: PlanGateCode;
+  feature?: FeatureKey;
+  requiredTiers?: EffectiveGateTier[];
+  currentTier?: EffectiveGateTier;
+  constructor(
+    message: string,
+    status = 403,
+    code: PlanGateCode = "PLAN_UPGRADE_REQUIRED",
+    details?: { feature?: FeatureKey; requiredTiers?: EffectiveGateTier[]; currentTier?: EffectiveGateTier }
+  ) {
     super(message);
     this.status = status;
+    this.code = code;
+    this.feature = details?.feature;
+    this.requiredTiers = details?.requiredTiers;
+    this.currentTier = details?.currentTier;
   }
 }
 
+function envEnabled(raw: string | undefined, fallback: boolean): boolean {
+  if (raw == null) return fallback;
+  const v = raw.trim().toLowerCase();
+  if (!v) return fallback;
+  return !(v === "0" || v === "false" || v === "off" || v === "no");
+}
+
+function adminSuperpowersEnabled(): boolean {
+  return envEnabled(process.env.FLUX_ADMIN_SUPERPOWERS, true);
+}
+
+function getTierWithoutAdminBypass(org: Organization | null | undefined): EffectiveGateTier {
+  return getEffectiveTier(org, undefined);
+}
+
 export function getEffectiveTier(org: Organization | null | undefined, ctx?: PlanGateContext): EffectiveGateTier {
-  if (ctx?.isOrgAdmin) return "enterprise";
+  if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) return "enterprise";
   if (isProTenant()) return "pro";
   const plan = org?.plan ?? "free";
 
@@ -189,7 +223,22 @@ export function canUseFeature(org: Organization | null | undefined, feature: Fea
     if (raw === "false" || raw === "0" || raw === "off") return false;
   }
   const tier = getEffectiveTier(org, ctx);
-  return FEATURE_ALLOWED_TIERS[feature].includes(tier);
+  const allowed = FEATURE_ALLOWED_TIERS[feature].includes(tier);
+  if (allowed && ctx?.isOrgAdmin && adminSuperpowersEnabled()) {
+    const baseTier = getTierWithoutAdminBypass(org);
+    if (!FEATURE_ALLOWED_TIERS[feature].includes(baseTier)) {
+      writeSecurityAudit({
+        event: "admin_superpower_bypass",
+        orgId: org?._id ?? "unknown",
+        details: {
+          feature,
+          baseTier,
+          elevatedTier: tier,
+        },
+      });
+    }
+  }
+  return allowed;
 }
 
 export function assertFeatureAllowed(
@@ -198,14 +247,24 @@ export function assertFeatureAllowed(
   ctx?: PlanGateContext
 ): void {
   if (canUseFeature(org, feature, ctx)) return;
-  throw new PlanGateError("Recurso disponível apenas para planos pagos (Pro, Business ou Enterprise).");
+  const currentTier = getEffectiveTier(org, ctx);
+  throw new PlanGateError(
+    "Upgrade de plano necessário para acessar este recurso.",
+    402,
+    "PLAN_UPGRADE_REQUIRED",
+    {
+      feature,
+      requiredTiers: FEATURE_ALLOWED_TIERS[feature],
+      currentTier,
+    }
+  );
 }
 
 export function assertCanCreateBoard(org: Organization | null | undefined, currentCount: number, ctx?: PlanGateContext): void {
   const cap = getBoardCap(org, ctx);
   if (cap === null) return;
   if (currentCount >= cap) {
-    throw new PlanGateError(`Limite do plano: no máximo ${cap} board(s).`, 403);
+    throw new PlanGateError(`Limite do plano: no máximo ${cap} board(s).`, 403, "PLAN_LIMIT_REACHED");
   }
 }
 
@@ -213,7 +272,7 @@ export function assertCanCreateUser(org: Organization | null | undefined, curren
   const cap = getUserCap(org, ctx);
   if (cap === null) return;
   if (currentCount >= cap) {
-    throw new PlanGateError(`Limite do plano: no máximo ${cap} usuário(s).`, 403);
+    throw new PlanGateError(`Limite do plano: no máximo ${cap} usuário(s).`, 403, "PLAN_LIMIT_REACHED");
   }
 }
 

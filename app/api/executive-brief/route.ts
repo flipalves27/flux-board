@@ -5,6 +5,7 @@ import { listBoardsForUser } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, buildExecutiveBriefMarkdown } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -19,9 +20,7 @@ export async function GET(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "executive_brief", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
     const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);

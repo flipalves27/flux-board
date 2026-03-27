@@ -11,6 +11,7 @@ import {
   PlanGateError,
   getDailyAiCallsWindowMs,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { generateFluxReportExplain } from "@/lib/flux-reports-explain";
 
@@ -36,9 +37,7 @@ export async function POST(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 

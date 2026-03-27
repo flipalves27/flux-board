@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "next-intl";
@@ -62,6 +62,9 @@ export default function BillingPage() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   /** false quando já existe assinatura Stripe ativa — trocar plano via Portal, não novo checkout. */
   const [allowStripeCheckout, setAllowStripeCheckout] = useState(true);
+  const cancelDialogRef = useRef<HTMLDivElement | null>(null);
+  const cancelTitleId = "billing-cancel-title";
+  const cancelDescId = "billing-cancel-desc";
 
   const isAdmin = Boolean(user?.isAdmin);
   const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
@@ -241,6 +244,43 @@ export default function BillingPage() {
     }
   }
 
+  useEffect(() => {
+    if (!cancelOpen) return;
+    const panel = cancelDialogRef.current;
+    const focusable = panel?.querySelector<HTMLElement>(
+      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+    );
+    focusable?.focus();
+
+    const onKey = (ev: KeyboardEvent) => {
+      if (!cancelDialogRef.current) return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        setCancelOpen(false);
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      const els = Array.from(
+        cancelDialogRef.current.querySelectorAll<HTMLElement>(
+          "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+        )
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (!els.length) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (ev.shiftKey && active === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && active === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cancelOpen]);
+
   if (!user) return null;
 
   return (
@@ -370,9 +410,14 @@ export default function BillingPage() {
               )}
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--flux-text-muted)]">Cobrança</span>
-                <div className="inline-flex rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                <div
+                  className="inline-flex rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]"
+                  role="group"
+                  aria-label="Intervalo de cobrança"
+                >
                   <button
                     type="button"
+                    aria-pressed={billingInterval === "month"}
                     className={`px-3 py-1.5 text-xs rounded-[calc(var(--flux-rad)-2px)] ${
                       billingInterval === "month" ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-text)]" : "text-[var(--flux-text-muted)]"
                     }`}
@@ -382,6 +427,7 @@ export default function BillingPage() {
                   </button>
                   <button
                     type="button"
+                    aria-pressed={billingInterval === "year"}
                     className={`px-3 py-1.5 text-xs rounded-[calc(var(--flux-rad)-2px)] ${
                       billingInterval === "year" ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-text)]" : "text-[var(--flux-text-muted)]"
                     }`}
@@ -574,10 +620,17 @@ export default function BillingPage() {
       </main>
 
       {cancelOpen ? (
-        <div className="fixed inset-0 z-[var(--flux-z-modal-critical)] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
-          <div className="max-w-md w-full rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
-            <h4 className="font-display font-bold text-lg text-[var(--flux-text)]">Antes de cancelar</h4>
-            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
+        <div className="fixed inset-0 z-[var(--flux-z-modal-critical)] flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <div
+            ref={cancelDialogRef}
+            className="max-w-md w-full rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={cancelTitleId}
+            aria-describedby={cancelDescId}
+          >
+            <h4 id={cancelTitleId} className="font-display font-bold text-lg text-[var(--flux-text)]">Antes de cancelar</h4>
+            <p id={cancelDescId} className="mt-2 text-sm text-[var(--flux-text-muted)]">
               Nos diga o motivo (opcional). Você também pode pausar a cobrança por 30 dias mantendo os dados no Stripe.
             </p>
             <label className="mt-4 block text-xs font-semibold text-[var(--flux-text-muted)]">Motivo</label>

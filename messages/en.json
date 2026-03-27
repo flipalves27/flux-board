@@ -82,6 +82,8 @@
     "loadError": "Could not load sprints.",
     "authError": "Session expired.",
     "upgradeRequired": "Sprints are available on paid plans.",
+    "upgradeTitle": "Sprint hub requires a paid plan",
+    "upgradeCta": "View plans",
     "activeSprint": "Active sprint",
     "openBoard": "Open board",
     "allSprints": "All sprints",

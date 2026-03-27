@@ -4,6 +4,7 @@ import { ensureAdminUser } from "@/lib/kv-users";
 import { listBoardsForUser } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
   buildCfdDailyChartRows,
@@ -43,9 +44,7 @@ export async function GET(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
     const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);

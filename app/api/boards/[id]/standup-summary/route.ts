@@ -10,6 +10,7 @@ import {
   planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 
 type SuggestedCard = {
   title: string;
@@ -170,9 +171,7 @@ export async function POST(
   try {
     assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
   }
 

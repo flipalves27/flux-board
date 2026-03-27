@@ -8,6 +8,7 @@ import type { SprintData } from "@/lib/schemas";
 import type { SprintWithBoardName } from "@/lib/sprints-org-overview";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { KanbanCadencePanel } from "@/components/ceremonies/kanban-cadence-panel";
+import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -74,9 +75,9 @@ export function SprintsHub({ getHeaders }: Props) {
       setRows(Array.isArray(data?.sprints) ? data.sprints : []);
       setBoardSummaries(Array.isArray(data?.boards) ? data.boards : []);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) {
+      if (e instanceof ApiError && (e.status === 402 || e.status === 403)) {
         setError(t("upgradeRequired"));
-      } else if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+      } else if (e instanceof ApiError && e.status === 401) {
         setError(t("authError"));
       } else {
         setError(t("loadError"));
@@ -106,6 +107,7 @@ export function SprintsHub({ getHeaders }: Props) {
               <button
                 type="button"
                 onClick={() => setHubMode("scrum")}
+                aria-pressed={hubMode === "scrum"}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                   hubMode === "scrum"
                     ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
@@ -117,6 +119,7 @@ export function SprintsHub({ getHeaders }: Props) {
               <button
                 type="button"
                 onClick={() => setHubMode("kanban")}
+                aria-pressed={hubMode === "kanban"}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                   hubMode === "kanban"
                     ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
@@ -134,9 +137,18 @@ export function SprintsHub({ getHeaders }: Props) {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
-          {error}
-        </div>
+        error === t("upgradeRequired") ? (
+          <FeatureGateNotice
+            title={t("upgradeTitle")}
+            description={error}
+            ctaLabel={t("upgradeCta")}
+            ctaHref={`${localeRoot}/billing`}
+          />
+        ) : (
+          <div className="rounded-xl border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
+            {error}
+          </div>
+        )
       ) : null}
 
       {loading ? (

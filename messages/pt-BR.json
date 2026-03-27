@@ -82,6 +82,8 @@
     "loadError": "Não foi possível carregar os sprints.",
     "authError": "Sessão expirada.",
     "upgradeRequired": "Sprints disponíveis em planos pagos.",
+    "upgradeTitle": "Central de sprints exige plano pago",
+    "upgradeCta": "Ver planos",
     "activeSprint": "Sprint ativo",
     "openBoard": "Abrir board",
     "allSprints": "Todos os sprints",

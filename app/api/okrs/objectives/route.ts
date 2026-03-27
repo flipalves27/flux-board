@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { listObjectives, createObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtxPost);
     } catch (err) {
-      if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 

@@ -11,6 +11,7 @@ import {
   planGateCtxForAuth,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { buildCardRefineUserPrompt, parseCardRefineJson } from "@/lib/card-refine-ai";
@@ -38,9 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     assertFeatureAllowed(org, "executive_brief", gateCtx);
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
   }
 

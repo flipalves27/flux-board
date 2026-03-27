@@ -255,21 +255,28 @@ async function applySubscriptionStateToOrganization(params: {
   }
 }
 
-export async function handleStripeWebhook(request: NextRequest): Promise<{ handled: boolean }> {
+export async function handleStripeWebhook(
+  request: NextRequest
+): Promise<{ handled: boolean; status: number; reason?: string }> {
   const sig = request.headers.get("stripe-signature");
-  if (!sig) return { handled: false };
+  if (!sig) return { handled: false, status: 400, reason: "missing_signature" };
 
   const rawBody = await request.text();
-  const event = stripe().webhooks.constructEvent(rawBody, sig, readEnv("STRIPE_WEBHOOK_SECRET"));
+  let event: Stripe.Event;
+  try {
+    event = stripe().webhooks.constructEvent(rawBody, sig, readEnv("STRIPE_WEBHOOK_SECRET"));
+  } catch {
+    return { handled: false, status: 400, reason: "invalid_signature" };
+  }
 
   const type = event.type;
   if (!["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(type)) {
-    return { handled: false };
+    return { handled: false, status: 200, reason: "ignored_event_type" };
   }
 
   const subscription = event.data.object as Stripe.Subscription;
   const orgId = subscription.metadata?.orgId;
-  if (!orgId) return { handled: false };
+  if (!orgId) return { handled: false, status: 400, reason: "missing_org_id_metadata" };
 
   if (type === "customer.subscription.deleted") {
     const tier = resolveBillingTierFromSubscription(subscription) ?? "pro";
@@ -279,12 +286,12 @@ export async function handleStripeWebhook(request: NextRequest): Promise<{ handl
       tier,
       isActive: false,
     });
-    return { handled: true };
+    return { handled: true, status: 200 };
   }
 
   const isActive = subscription.status === "active" || subscription.status === "trialing";
   const tier = resolveBillingTierFromSubscription(subscription);
-  if (!tier) return { handled: false };
+  if (!tier) return { handled: false, status: 400, reason: "unmapped_tier" };
 
   await applySubscriptionStateToOrganization({
     orgId,
@@ -293,5 +300,5 @@ export async function handleStripeWebhook(request: NextRequest): Promise<{ handl
     isActive,
   });
 
-  return { handled: true };
+  return { handled: true, status: 200 };
 }

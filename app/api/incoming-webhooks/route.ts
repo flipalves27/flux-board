@@ -4,14 +4,35 @@ import {
   detectWebhookSource,
   routeIncomingWebhook,
 } from "@/lib/incoming-webhook-handlers";
+import { rateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
+import { ensureNoWebhookReplay, verifyIncomingWebhookSignature } from "@/lib/incoming-webhook-security";
 
 export async function POST(request: NextRequest) {
-  const token = request.headers.get("x-webhook-token") ?? request.nextUrl.searchParams.get("token");
+  const token = request.headers.get("x-webhook-token");
   const boardId = request.headers.get("x-board-id") ?? request.nextUrl.searchParams.get("boardId");
   const orgId = request.headers.get("x-org-id") ?? request.nextUrl.searchParams.get("orgId");
+  const webhookTs = request.headers.get("x-webhook-timestamp");
+  const webhookSig = request.headers.get("x-webhook-signature");
+  const webhookEventId = request.headers.get("x-webhook-id");
+  const ip = getClientIpFromHeaders(request.headers);
 
-  if (!token || !boardId || !orgId) {
-    return NextResponse.json({ error: "Missing token, boardId, or orgId" }, { status: 400 });
+  const rl = await rateLimit({
+    key: `incoming-webhook:ip:${ip}:org:${orgId ?? "unknown"}`,
+    limit: Number(process.env.FLUX_RL_INCOMING_WEBHOOK_PER_MIN || 60),
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições neste webhook. Tente novamente em instantes.", code: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
+  }
+
+  if ((!token && (!webhookTs || !webhookSig)) || !boardId || !orgId) {
+    return NextResponse.json(
+      { error: "Missing auth (token or signature), boardId, or orgId" },
+      { status: 400 }
+    );
   }
 
   const board = await getBoard(boardId, orgId);
@@ -20,15 +41,39 @@ export async function POST(request: NextRequest) {
   }
 
   const webhookConfig = (board as unknown as Record<string, unknown>).incomingWebhookToken;
-  if (typeof webhookConfig !== "string" || webhookConfig !== token) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+  if (typeof webhookConfig !== "string" || webhookConfig.length < 8) {
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 403 });
   }
 
+  const rawBody = await request.text();
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    body = JSON.parse(rawBody) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (webhookTs || webhookSig) {
+    const sig = verifyIncomingWebhookSignature({
+      payload: rawBody,
+      timestamp: webhookTs,
+      signature: webhookSig,
+      secret: webhookConfig,
+    });
+    if (!sig.ok) {
+      return NextResponse.json({ error: "Invalid webhook signature", code: sig.reason }, { status: 403 });
+    }
+    const replay = await ensureNoWebhookReplay({
+      orgId,
+      boardId,
+      timestamp: webhookTs as string,
+      eventId: webhookEventId,
+    });
+    if (!replay.ok) {
+      return NextResponse.json({ error: "Webhook replay detected", code: replay.reason }, { status: 409 });
+    }
+  } else if (token !== webhookConfig) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 403 });
   }
 
   const rawHeaders: Record<string, string> = {};

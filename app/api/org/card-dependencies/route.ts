@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import {
   createCrossDependencyLink,
@@ -55,9 +56,7 @@ export async function GET(request: NextRequest) {
       suggestions,
     });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies GET:", err);
     return NextResponse.json({ error: "Erro ao carregar dependências." }, { status: 500 });
   }
@@ -133,9 +132,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, link: created });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies POST:", err);
     return NextResponse.json({ error: "Erro ao criar dependência." }, { status: 500 });
   }
@@ -179,9 +176,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies DELETE:", err);
     return NextResponse.json({ error: "Erro ao remover dependência." }, { status: 500 });
   }
