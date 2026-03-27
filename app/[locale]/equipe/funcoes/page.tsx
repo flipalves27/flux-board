@@ -16,7 +16,7 @@ export default function Page() {
         <p className="mt-1 text-xs text-[var(--flux-text-muted)]">Papéis usados nos vínculos de membros (organização ou board).</p>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-[var(--flux-text-muted)]">
           <li>
-            <strong className="text-[var(--flux-text)]">Admin de equipe</strong> — gerencia vínculos e níveis no contexto Equipe.
+            <strong className="text-[var(--flux-text)]">Gestor</strong> — gerencia vínculos e níveis no contexto Equipe.
           </li>
           <li>
             <strong className="text-[var(--flux-text)]">Membro</strong> — executa trabalho no board.

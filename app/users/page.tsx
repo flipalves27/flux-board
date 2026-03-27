@@ -92,12 +92,15 @@ export default function UsersPage() {
       return;
     }
     try {
-      await apiPost("/api/users", {
-        name: formName.trim(),
-        email: formEmail.trim(),
-        password: formPwd,
-        ...(formIsAdmin ? { isAdmin: true } : {}),
-      }, getHeaders());
+      await apiPost(
+        "/api/users",
+        {
+          name: formName.trim(),
+          email: formEmail.trim(),
+          password: formPwd,
+        },
+        getHeaders()
+      );
       setModalOpen(false);
       loadUsers();
     } catch (e) {
@@ -270,20 +273,28 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={formIsAdmin}
-                  onChange={(e) => setFormIsAdmin(e.target.checked)}
-                  className="rounded border-[var(--flux-chrome-alpha-12)]"
-                />
-                <span className="text-sm text-[var(--flux-text)]">
-                  Administrador da organização
-                </span>
-              </label>
-              <p className="text-[11px] text-[var(--flux-text-muted)]">
-                Admins podem gerenciar membros, billing, convites e configurações. A organização precisa ter pelo menos um admin.
-              </p>
+              {modalMode === "edit" ? (
+                <>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formIsAdmin}
+                      onChange={(e) => setFormIsAdmin(e.target.checked)}
+                      className="rounded border-[var(--flux-chrome-alpha-12)]"
+                    />
+                    <span className="text-sm text-[var(--flux-text)]">
+                      Administrador da organização
+                    </span>
+                  </label>
+                  <p className="text-[11px] text-[var(--flux-text-muted)]">
+                    Admins podem gerenciar membros, billing, convites e configurações. A organização precisa ter pelo menos um admin.
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-[var(--flux-text-muted)]">
+                  Novos usuários são criados sem perfil de administrador da organização.
+                </p>
+              )}
             </div>
             <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
               <button

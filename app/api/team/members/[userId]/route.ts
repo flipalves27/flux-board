@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { removeTeamMember, upsertTeamMember } from "@/lib/kv-team-members";
+import { normalizeTeamRole, type TeamRole } from "@/lib/rbac";
 import { z } from "zod";
+
+const TeamMemberRoleSchema = z
+  .enum(["team_manager", "team_admin", "member", "guest"])
+  .transform((r): TeamRole => normalizeTeamRole(r));
 
 const PatchSchema = z.object({
   boardId: z.string().trim().max(200).optional(),
-  role: z.enum(["team_admin", "member", "guest"]).optional(),
+  role: TeamMemberRoleSchema.optional(),
   active: z.boolean().optional(),
 });
 

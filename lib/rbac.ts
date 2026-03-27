@@ -1,6 +1,13 @@
 export type PlatformRole = "platform_admin" | "platform_user";
 export type OrgRole = "org_manager" | "org_member";
-export type TeamRole = "team_admin" | "member" | "guest";
+export type TeamRole = "team_manager" | "member" | "guest";
+
+export function normalizeTeamRole(role: unknown): TeamRole {
+  if (role === "team_admin" || role === "team_manager") return "team_manager";
+  if (role === "member") return "member";
+  if (role === "guest") return "guest";
+  return "member";
+}
 
 export type EffectiveRoles = {
   platformRole: PlatformRole;

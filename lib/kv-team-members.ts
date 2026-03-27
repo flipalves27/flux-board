@@ -1,6 +1,6 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import { getStore } from "./storage";
-import type { TeamRole } from "./rbac";
+import { normalizeTeamRole, type TeamRole } from "./rbac";
 
 type TeamMember = {
   orgId: string;
@@ -18,34 +18,41 @@ function kvKey(orgId: string): string {
   return `team_members:${orgId}`;
 }
 
+function withNormalizedRoles(rows: TeamMember[]): TeamMember[] {
+  return rows.map((r) => ({ ...r, role: normalizeTeamRole(r.role) }));
+}
+
 export async function listTeamMembers(orgId: string, boardId?: string): Promise<TeamMember[]> {
   if (isMongoConfigured()) {
     const db = await getDb();
     const q = boardId ? { orgId, boardId } : { orgId };
-    return db.collection<TeamMember>(COL).find(q).toArray();
+    const raw = await db.collection<TeamMember>(COL).find(q).toArray();
+    return withNormalizedRoles(raw);
   }
   const store = await getStore();
   const rows = (await store.get<TeamMember[]>(kvKey(orgId))) ?? [];
-  return boardId ? rows.filter((r) => (r.boardId ?? "") === boardId) : rows;
+  const filtered = boardId ? rows.filter((r) => (r.boardId ?? "") === boardId) : rows;
+  return withNormalizedRoles(filtered);
 }
 
 export async function upsertTeamMember(input: TeamMember): Promise<TeamMember> {
+  const row: TeamMember = { ...input, role: normalizeTeamRole(input.role) };
   if (isMongoConfigured()) {
     const db = await getDb();
     await db.collection<TeamMember>(COL).updateOne(
-      { orgId: input.orgId, userId: input.userId, boardId: input.boardId ?? null } as never,
-      { $set: input },
+      { orgId: row.orgId, userId: row.userId, boardId: row.boardId ?? null } as never,
+      { $set: row },
       { upsert: true }
     );
-    return input;
+    return row;
   }
   const store = await getStore();
-  const rows = (await store.get<TeamMember[]>(kvKey(input.orgId))) ?? [];
-  const idx = rows.findIndex((r) => r.userId === input.userId && (r.boardId ?? "") === (input.boardId ?? ""));
-  if (idx >= 0) rows[idx] = input;
-  else rows.push(input);
-  await store.set(kvKey(input.orgId), rows);
-  return input;
+  const rows = (await store.get<TeamMember[]>(kvKey(row.orgId))) ?? [];
+  const idx = rows.findIndex((r) => r.userId === row.userId && (r.boardId ?? "") === (row.boardId ?? ""));
+  if (idx >= 0) rows[idx] = row;
+  else rows.push(row);
+  await store.set(kvKey(row.orgId), rows);
+  return row;
 }
 
 export async function removeTeamMember(orgId: string, userId: string, boardId?: string): Promise<boolean> {

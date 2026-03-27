@@ -69,14 +69,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const wantAdmin = !!parsed.data.isAdmin;
     const user = await createUser({
       username: emailNorm,
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
       orgId: targetOrgId,
-      ...(wantAdmin ? { isAdmin: true } : {}),
     });
 
     return NextResponse.json(

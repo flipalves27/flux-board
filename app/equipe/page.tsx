@@ -8,10 +8,11 @@ import { TeamWorkspacePanel } from "@/components/team/team-workspace-panel";
 import { useAuth } from "@/context/auth-context";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
+import { normalizeTeamRole, type TeamRole } from "@/lib/rbac";
 
 type TeamMember = {
   userId: string;
-  role: "team_admin" | "member" | "guest";
+  role: TeamRole;
   boardId?: string;
   active: boolean;
   updatedAt: string;
@@ -20,7 +21,7 @@ type UserLite = { id: string; username: string; name: string; email: string; isA
 type BoardLite = { id: string; name: string };
 
 const ROLE_OPTIONS: Array<{ value: TeamMember["role"]; label: string }> = [
-  { value: "team_admin", label: "Admin de Equipe" },
+  { value: "team_manager", label: "Gestor" },
   { value: "member", label: "Membro" },
   { value: "guest", label: "Convidado" },
 ];
@@ -86,7 +87,9 @@ export default function TeamPage() {
         apiGet<{ users: UserLite[] }>("/api/users", getHeaders()),
         apiGet<{ boards: BoardLite[] }>("/api/boards", getHeaders()),
       ]);
-      setMembers(membersData.members ?? []);
+      setMembers(
+        (membersData.members ?? []).map((m) => ({ ...m, role: normalizeTeamRole(m.role) }))
+      );
       setUsers(usersData.users ?? []);
       setBoards((boardsData.boards ?? []).map((b) => ({ id: b.id, name: b.name })));
     } catch (e) {
@@ -127,7 +130,7 @@ export default function TeamPage() {
     return members.filter((m) => {
       const user = usersById.get(m.userId);
       const board = m.boardId ? boardsById.get(m.boardId) : undefined;
-      if (roleFilter !== "all" && m.role !== roleFilter) return false;
+      if (roleFilter !== "all" && normalizeTeamRole(m.role) !== normalizeTeamRole(roleFilter)) return false;
       if (statusFilter === "active" && !m.active) return false;
       if (statusFilter === "inactive" && m.active) return false;
       if (scopeFilter === "org" && m.boardId) return false;
@@ -153,11 +156,11 @@ export default function TeamPage() {
       return list;
     }
     if (sort === "role_asc") {
-      list.sort((a, b) => a.role.localeCompare(b.role));
+      list.sort((a, b) => normalizeTeamRole(a.role).localeCompare(normalizeTeamRole(b.role)));
       return list;
     }
     if (sort === "role_desc") {
-      list.sort((a, b) => b.role.localeCompare(a.role));
+      list.sort((a, b) => normalizeTeamRole(b.role).localeCompare(normalizeTeamRole(a.role)));
       return list;
     }
     // default: updatedAt_desc
@@ -446,7 +449,8 @@ export default function TeamPage() {
                     {!isEditing ? (
                       <div className="flex items-center gap-2">
                         <span className="rounded-full border border-[var(--flux-primary-alpha-35)] px-2 py-0.5 text-xs">
-                          {ROLE_OPTIONS.find((r) => r.value === m.role)?.label ?? m.role}
+                          {ROLE_OPTIONS.find((r) => r.value === normalizeTeamRole(m.role))?.label ??
+                            normalizeTeamRole(m.role)}
                         </span>
                         {!m.active ? (
                           <span className="rounded-full border border-[var(--flux-warning-alpha-35)] px-2 py-0.5 text-xs">Inativo</span>
@@ -456,7 +460,7 @@ export default function TeamPage() {
                           className="btn-secondary px-2 py-1 text-xs"
                           onClick={() => {
                             setEditingKey(key);
-                            setEditRole(m.role);
+                            setEditRole(normalizeTeamRole(m.role));
                             setEditBoardId(m.boardId ?? "org");
                             setEditActive(m.active);
                           }}
@@ -532,7 +536,7 @@ export default function TeamPage() {
           <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
             <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Funções e responsabilidades</h3>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--flux-text-muted)]">
-              <li><strong className="text-[var(--flux-text)]">Admin de Equipe</strong>: gerencia vínculos e níveis no contexto EQUIPE.</li>
+              <li><strong className="text-[var(--flux-text)]">Gestor</strong>: gerencia vínculos e níveis no contexto EQUIPE.</li>
               <li><strong className="text-[var(--flux-text)]">Membro</strong>: executa cards e pode ser responsável.</li>
               <li><strong className="text-[var(--flux-text)]">Convidado</strong>: leitura/acompanhamento.</li>
             </ul>
