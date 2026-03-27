@@ -160,7 +160,7 @@ export function CardAssigneeCombobox({
   }, [open, closePanel]);
 
   const optionBase =
-    "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]";
+    "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]";
   const activeRow =
     "border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]";
   const inactiveRow = "border border-transparent text-[var(--flux-text)] hover:bg-[var(--flux-primary-alpha-08)]";
@@ -238,13 +238,13 @@ export function CardAssigneeCombobox({
                   role="option"
                   id={`${listId}-opt-${idx}`}
                   aria-selected={highlight === idx}
+                  aria-label={opt.label}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => selectUser(opt.userId)}
                   onMouseEnter={() => setHighlight(idx)}
                   className={`${optionBase} ${highlight === idx ? activeRow : sel ? activeRow : inactiveRow}`}
                 >
                   <span className="truncate">{opt.label}</span>
-                  <span className="ml-2 shrink-0 font-mono text-[11px] text-[var(--flux-text-muted)]">{opt.userId}</span>
                 </button>
               );
             })}
