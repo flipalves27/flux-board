@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { useTheme } from "@/context/theme-context";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
+import { useNavigationVariant, useNavigationVariantActions } from "@/context/navigation-variant-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
@@ -251,6 +252,14 @@ function IconClose({ className }: { className?: string }) {
   );
 }
 
+function IconNavStyle({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
+    </svg>
+  );
+}
+
 const SIDEBAR_WIDTH_EXPANDED = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 72;
 const SIDEBAR_WIDTH_TABLET_RAIL = 60;
@@ -264,6 +273,9 @@ export function Sidebar() {
   const platformName = usePlatformDisplayName();
   const { themePreference, cycleThemePreference } = useTheme();
   const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
+  const navVariant = useNavigationVariant();
+  const navActions = useNavigationVariantActions();
+  const isMinimal = navVariant === "minimal";
   const [collapsed, setCollapsed] = useState(false);
   const [tabletHover, setTabletHover] = useState(false);
   const t = useTranslations("navigation");
@@ -273,6 +285,7 @@ export function Sidebar() {
       : themePreference === "light"
         ? t("theme.mode.light")
         : t("theme.mode.dark");
+  const variantLabel = navVariant === "aurora" ? t("variant.aurora") : t("variant.minimal");
 
   const { drawerProps } = useMobileDrawerPointer({
     enabled: layout === "mobile",
@@ -419,15 +432,33 @@ export function Sidebar() {
     return normalizedPath === href;
   };
 
-  const linkClass = (href: string) =>
-    `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden border
-     ${isActive(href)
+  const linkClass = (href: string) => {
+    const active = isActive(href);
+    if (isMinimal) {
+      return `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-r-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden border-y-0 border-r-0 border-l-2
+       ${active
+         ? "border-l-[var(--flux-primary-light)] bg-[var(--flux-primary-alpha-08)] text-[var(--flux-text)]"
+         : "border-l-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-05)] hover:text-[var(--flux-text)]"
+       }`;
+    }
+    return `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden border
+     ${active
        ? "border-[var(--flux-primary-alpha-25)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-20),var(--flux-primary-alpha-10))] text-[var(--flux-primary-light)] shadow-[0_6px_20px_var(--flux-primary-alpha-12)]"
        : "border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
      }`;
+  };
 
   function NavSectionTitle({ children }: { children: ReactNode }) {
     if (!showExpandedNav) return null;
+    if (isMinimal) {
+      return (
+        <div className="px-2.5 pt-3 first:pt-1 pb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--flux-text-muted)]/55">
+            {children}
+          </span>
+        </div>
+      );
+    }
     return (
       <div className="mt-2 flex items-center gap-2 px-2.5 pt-3 first:mt-0 first:pt-1 pb-1">
         <span className="h-px flex-1 bg-[var(--flux-primary-alpha-12)]" aria-hidden />
@@ -453,11 +484,17 @@ export function Sidebar() {
   function NavLink({ path, icon, label, hint, sublabel, dataTour, isActiveOverride }: NavLinkProps) {
     const href = `/${locale}${path}`;
     const navActive = isActiveOverride ?? isActive(path);
-    const itemClass = `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] border font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
-     ${navActive
-       ? "border-[var(--flux-primary-alpha-25)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-20),var(--flux-primary-alpha-10))] text-[var(--flux-primary-light)] shadow-[0_6px_20px_var(--flux-primary-alpha-12)]"
-       : "border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
-     }`;
+    const itemClass = isMinimal
+      ? `relative flex items-center gap-2.5 w-full pl-3 pr-2.5 py-2 rounded-r-[var(--flux-rad-sm)] border-y-0 border-r-0 border-l-2 font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
+         ${navActive
+           ? "border-l-[var(--flux-primary-light)] bg-[var(--flux-primary-alpha-08)] text-[var(--flux-text)]"
+           : "border-l-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-05)] hover:text-[var(--flux-text)]"
+         }`
+      : `relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[var(--flux-rad-sm)] border font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
+         ${navActive
+           ? "border-[var(--flux-primary-alpha-25)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-20),var(--flux-primary-alpha-10))] text-[var(--flux-primary-light)] shadow-[0_6px_20px_var(--flux-primary-alpha-12)]"
+           : "border-transparent text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-text)]"
+         }`;
     const afterNav = () => {
       if (layout === "mobile") closeMobile();
     };
@@ -468,12 +505,14 @@ export function Sidebar() {
         data-tour={dataTour}
         className={`${itemClass} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
       >
-        <span
-          className={`absolute left-1.5 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full transition-opacity duration-200 ${
-            navActive ? "bg-[var(--flux-primary-light)] opacity-100" : "bg-[var(--flux-primary)] opacity-0"
-          }`}
-          aria-hidden
-        />
+        {!isMinimal ? (
+          <span
+            className={`absolute left-1.5 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full transition-opacity duration-200 ${
+              navActive ? "bg-[var(--flux-primary-light)] opacity-100" : "bg-[var(--flux-primary)] opacity-0"
+            }`}
+            aria-hidden
+          />
+        ) : null}
         <span className="mt-0.5 shrink-0">{icon}</span>
         {showExpandedNav && (
           <span className="flex min-w-0 flex-col gap-0 leading-tight">
@@ -516,7 +555,11 @@ export function Sidebar() {
         aria-hidden={mobileClosed || undefined}
         onMouseEnter={() => layout === "tablet" && setTabletHover(true)}
         onMouseLeave={() => layout === "tablet" && setTabletHover(false)}
-        className={`flex shrink-0 flex-col overflow-hidden border-r border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))] backdrop-blur-md transition-[width,transform] duration-300 ease-out
+        className={`flex shrink-0 flex-col overflow-hidden transition-[width,transform] duration-300 ease-out
+          ${isMinimal
+            ? "border-r border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-dark)]/92 backdrop-blur-sm"
+            : "border-r border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))] backdrop-blur-md"
+          }
           max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[var(--flux-z-sidebar-drawer)] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
           max-md:-translate-x-full max-md:pointer-events-none max-md:data-[open]:translate-x-0 max-md:data-[open]:pointer-events-auto
           md:relative md:z-auto md:h-full md:min-h-0 md:translate-x-0 md:pointer-events-auto md:shadow-none`}
@@ -530,9 +573,9 @@ export function Sidebar() {
         data-open={layout === "mobile" && mobileOpen ? "" : undefined}
       >
         <div
-          className={`flex h-12 shrink-0 items-center gap-1.5 border-b border-[var(--flux-primary-alpha-08)] px-2.5 ${
-            compactMode ? "justify-center" : "justify-between"
-          }`}
+          className={`flex h-12 shrink-0 items-center gap-1.5 border-b px-2.5 ${
+            isMinimal ? "border-[var(--flux-chrome-alpha-08)]" : "border-[var(--flux-primary-alpha-08)]"
+          } ${compactMode ? "justify-center" : "justify-between"}`}
         >
           <Link
             href={`/${locale}/boards`}
@@ -722,7 +765,55 @@ export function Sidebar() {
           )}
         </nav>
 
-        <div className="flex shrink-0 flex-col gap-1 border-t border-[var(--flux-primary-alpha-08)] p-2.5">
+        <div
+          className={`flex shrink-0 flex-col gap-1 border-t p-2.5 ${
+            isMinimal ? "border-[var(--flux-chrome-alpha-08)]" : "border-[var(--flux-primary-alpha-08)]"
+          }`}
+        >
+          {showExpandedNav ? (
+            <div
+              className={`flex rounded-[var(--flux-rad-sm)] border p-0.5 ${
+                isMinimal ? "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-04)]" : "border-[var(--flux-primary-alpha-12)] bg-[var(--flux-black-alpha-04)]"
+              }`}
+              role="group"
+              aria-label={t("variant.toggleTooltip")}
+            >
+              <button
+                type="button"
+                onClick={() => navActions?.setVariant("aurora")}
+                className={`flex-1 rounded-[calc(var(--flux-rad-sm)-2px)] px-2 py-1.5 text-[11px] font-semibold transition-all ${
+                  navVariant === "aurora"
+                    ? "bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("variant.aurora")}
+              </button>
+              <button
+                type="button"
+                onClick={() => navActions?.setVariant("minimal")}
+                className={`flex-1 rounded-[calc(var(--flux-rad-sm)-2px)] px-2 py-1.5 text-[11px] font-semibold transition-all ${
+                  navVariant === "minimal"
+                    ? "bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("variant.minimal")}
+              </button>
+            </div>
+          ) : (
+            <CustomTooltip content={t("variant.cycleTooltip", { current: variantLabel })} position="right">
+              <button
+                type="button"
+                onClick={() => navActions?.toggleVariant()}
+                aria-label={t("variant.cycleTooltip", { current: variantLabel })}
+                className={`flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-[var(--flux-rad-sm)] px-2.5 py-2 font-display text-sm font-semibold transition-all
+                  text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
+              >
+                <IconNavStyle className="h-4 w-4 shrink-0" />
+              </button>
+            </CustomTooltip>
+          )}
           <CustomTooltip
             content={t("theme.cycleTooltip", { current: themeModeLabel })}
             position="right"

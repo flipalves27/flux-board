@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { AnomalyNotificationBell } from "@/components/anomaly-notification-bell";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { useSidebarLayoutOptional } from "@/context/sidebar-layout-context";
+import { useNavigationVariant } from "@/context/navigation-variant-context";
 
 interface HeaderProps {
   title?: string;
@@ -51,9 +52,15 @@ export function Header({
   const resolvedTitle = title ?? defaultTitle;
   const sidebarCtx = useSidebarLayoutOptional();
   const isMobile = sidebarCtx?.layout === "mobile";
+  const navVariant = useNavigationVariant();
+  const isMinimalNav = navVariant === "minimal";
 
   return (
-    <header className="bg-[var(--flux-surface-mid)] border-b border-[var(--flux-primary-alpha-12)] sticky top-0 z-[var(--flux-z-header-sticky)]">
+    <header
+      className={`sticky top-0 z-[var(--flux-z-header-sticky)] border-b bg-[var(--flux-surface-mid)] ${
+        isMinimalNav ? "border-[var(--flux-chrome-alpha-10)]" : "border-[var(--flux-primary-alpha-12)]"
+      }`}
+    >
       <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           {isMobile && sidebarCtx && (
@@ -68,24 +75,44 @@ export function Header({
               <IconMenu className="h-5 w-5" />
             </button>
           )}
-          {backHref && (
-            <div className="flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-primary-alpha-06)] px-2 py-1">
-              <Link
-                href={backHref}
-                className="text-[11px] font-semibold text-[var(--flux-text-muted)] no-underline transition-colors hover:text-[var(--flux-primary-light)]"
-              >
-                {backLabel}
-              </Link>
-              {resolvedTitle ? (
-                <>
-                  <IconChevronRight className="h-3.5 w-3.5 text-[var(--flux-text-muted)]/70" />
-                  <span className="max-w-[260px] truncate text-[11px] font-semibold text-[var(--flux-text)]">
-                    {resolvedTitle}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          )}
+          {backHref &&
+            (isMinimalNav ? (
+              <div className="flex min-w-0 items-center gap-2 text-xs">
+                <Link
+                  href={backHref}
+                  className="shrink-0 font-medium text-[var(--flux-text-muted)] no-underline transition-colors hover:text-[var(--flux-primary-light)]"
+                >
+                  {backLabel}
+                </Link>
+                {resolvedTitle ? (
+                  <>
+                    <span className="shrink-0 text-[var(--flux-text-muted)]/45" aria-hidden>
+                      /
+                    </span>
+                    <span className="min-w-0 max-w-[min(260px,40vw)] truncate font-semibold text-[var(--flux-text)]">
+                      {resolvedTitle}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-primary-alpha-06)] px-2 py-1">
+                <Link
+                  href={backHref}
+                  className="text-[11px] font-semibold text-[var(--flux-text-muted)] no-underline transition-colors hover:text-[var(--flux-primary-light)]"
+                >
+                  {backLabel}
+                </Link>
+                {resolvedTitle ? (
+                  <>
+                    <IconChevronRight className="h-3.5 w-3.5 text-[var(--flux-text-muted)]/70" />
+                    <span className="max-w-[260px] truncate text-[11px] font-semibold text-[var(--flux-text)]">
+                      {resolvedTitle}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            ))}
           {boardTourHeader ? (
             <div data-tour="board-header" className="min-w-0 flex flex-col gap-0.5">
               <h1 className="font-display font-bold text-base tracking-tight text-[var(--flux-text)] flex items-center gap-2 min-w-0">

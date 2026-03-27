@@ -55,6 +55,12 @@
       "closeNavigation": "Fechar navegação",
       "navigationPanel": "Menu principal"
     },
+    "variant": {
+      "aurora": "Aurora",
+      "minimal": "Clean",
+      "toggleTooltip": "Estilo do menu: alternar entre Aurora (profundidade) e Clean (minimalista).",
+      "cycleTooltip": "Estilo do menu: {current}. Clique para alternar Aurora e Clean."
+    },
     "theme": {
       "light": "Tema claro",
       "dark": "Tema escuro",

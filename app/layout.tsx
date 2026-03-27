@@ -8,6 +8,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/context/auth-context";
 import { OrgBrandingProvider } from "@/context/org-branding-context";
 import { ThemeProvider } from "@/context/theme-context";
+import { NavigationVariantProvider } from "@/context/navigation-variant-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
 import { AppShell } from "@/components/app-shell";
@@ -60,10 +61,12 @@ export default async function RootLayout({
                 <OrgBrandingProvider>
                   <ToastProvider>
                     <ThemeProvider>
-                      <RoutineTasksProvider>
-                        <PwaRegister />
-                        <AppShell>{children}</AppShell>
-                      </RoutineTasksProvider>
+                      <NavigationVariantProvider>
+                        <RoutineTasksProvider>
+                          <PwaRegister />
+                          <AppShell>{children}</AppShell>
+                        </RoutineTasksProvider>
+                      </NavigationVariantProvider>
                     </ThemeProvider>
                   </ToastProvider>
                 </OrgBrandingProvider>

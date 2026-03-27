@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { usePlatformDisplayName } from "@/context/org-branding-context";
+import { useNavigationVariant } from "@/context/navigation-variant-context";
 
 function IconMenu({ className }: { className?: string }) {
   return (
@@ -17,11 +18,19 @@ export function MobileAppHeader() {
   const { layout, mobileOpen, openMobile } = useSidebarLayout();
   const t = useTranslations("navigation.menu");
   const platformName = usePlatformDisplayName();
+  const navVariant = useNavigationVariant();
+  const isMinimal = navVariant === "minimal";
 
   if (layout !== "mobile") return null;
 
   return (
-    <header className="sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))] px-3 backdrop-blur-md md:hidden">
+    <header
+      className={`sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md md:hidden ${
+        isMinimal
+          ? "border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-dark)]/95"
+          : "border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))]"
+      }`}
+    >
       <button
         type="button"
         onClick={openMobile}
