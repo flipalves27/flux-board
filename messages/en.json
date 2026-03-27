@@ -1550,6 +1550,13 @@
         "dueDate": {
           "label": "Completion date"
         },
+        "assignee": {
+          "label": "Assignee",
+          "unassigned": "Unassigned",
+          "selected": "selected",
+          "selectedLabel": "Selected:",
+          "clear": "Clear"
+        },
         "direction": {
           "label": "Direction",
           "none": "None"

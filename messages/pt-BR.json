@@ -1555,6 +1555,13 @@
         "dueDate": {
           "label": "Data de Conclusão"
         },
+        "assignee": {
+          "label": "Responsável",
+          "unassigned": "Sem responsável",
+          "selected": "selecionado",
+          "selectedLabel": "Selecionado:",
+          "clear": "Limpar"
+        },
         "direction": {
           "label": "Direcionamento",
           "none": "Nenhum"
