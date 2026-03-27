@@ -14,6 +14,14 @@ describe("board-methodology", () => {
   it("defaultBucketOrderForMethodology returns five columns", () => {
     expect(defaultBucketOrderForMethodology("scrum")).toHaveLength(5);
     expect(defaultBucketOrderForMethodology("kanban")).toHaveLength(5);
+    expect(defaultBucketOrderForMethodology("lean_six_sigma")).toHaveLength(5);
+    expect(defaultBucketOrderForMethodology("lean_six_sigma").map((b) => b.key)).toEqual([
+      "define",
+      "measure",
+      "analyze",
+      "improve",
+      "control",
+    ]);
   });
 
   it("initialBoardPayloadForMethodology sets backlog key for Scrum", () => {
@@ -24,5 +32,10 @@ describe("board-methodology", () => {
     const kanban = initialBoardPayloadForMethodology("kanban");
     expect(kanban.boardMethodology).toBe("kanban");
     expect(kanban.config?.backlogBucketKey).toBeUndefined();
+
+    const lss = initialBoardPayloadForMethodology("lean_six_sigma");
+    expect(lss.boardMethodology).toBe("lean_six_sigma");
+    expect(lss.config?.backlogBucketKey).toBeUndefined();
+    expect(lss.config?.labels?.length).toBeGreaterThan(0);
   });
 });

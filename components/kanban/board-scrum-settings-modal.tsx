@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import type { BoardDefinitionOfDoneItem, BucketConfig } from "@/app/board/[id]/page";
 import { useBoardStore } from "@/stores/board-store";
+import type { BoardMethodology } from "@/lib/board-methodology";
 
 function stableItemId(label: string, idx: number): string {
   const base = label
@@ -37,14 +38,20 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
   const [dodEnforce, setDodEnforce] = useState(false);
   const [dodLines, setDodLines] = useState("");
   const [doneKeys, setDoneKeys] = useState<string[]>([]);
-  const [methodologyDraft, setMethodologyDraft] = useState<"scrum" | "kanban">("scrum");
+  const [methodologyDraft, setMethodologyDraft] = useState<BoardMethodology>("scrum");
   const [requireAssignee, setRequireAssignee] = useState(false);
 
   const buckets: BucketConfig[] = db?.config?.bucketOrder ?? [];
 
   useEffect(() => {
     if (!open || !db) return;
-    setMethodologyDraft(db.boardMethodology === "kanban" ? "kanban" : "scrum");
+    setMethodologyDraft(
+      db.boardMethodology === "kanban"
+        ? "kanban"
+        : db.boardMethodology === "lean_six_sigma"
+          ? "lean_six_sigma"
+          : "scrum"
+    );
     setProductGoal(db.config.productGoal ?? "");
     setBacklogKey(db.config.backlogBucketKey ?? "");
     const def = db.config.definitionOfDone;
@@ -134,7 +141,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
         <div className="p-4 space-y-5">
           <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-06)] p-3 space-y-2">
             <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">{t("methodologyLabel")}</p>
-            <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5">
+            <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5">
               <button
                 type="button"
                 onClick={() => setMethodologyDraft("scrum")}
@@ -156,6 +163,17 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
                 }`}
               >
                 {t("methodologyKanban")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMethodologyDraft("lean_six_sigma")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  methodologyDraft === "lean_six_sigma"
+                    ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("methodologyLss")}
               </button>
             </div>
             <p className="text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("methodologyHint")}</p>

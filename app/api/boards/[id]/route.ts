@@ -177,13 +177,16 @@ export async function PUT(
         const sprints = await listSprints(payload.orgId, boardId);
         prevEffective = inferLegacyBoardMethodology(sprints.length > 0);
       }
-      if (clean.boardMethodology === "kanban" && prevEffective === "scrum") {
+      if (
+        (clean.boardMethodology === "kanban" || clean.boardMethodology === "lean_six_sigma") &&
+        prevEffective === "scrum"
+      ) {
         const active = await getActiveSprint(payload.orgId, boardId);
         if (active) {
           return NextResponse.json(
             {
               error:
-                "Não é possível mudar para Kanban com sprint ativo. Encerre ou feche o sprint antes, ou escolha outro board.",
+                "Não é possível mudar de Scrum com sprint ativo. Encerre ou feche o sprint antes, ou escolha outro board.",
             },
             { status: 400 }
           );

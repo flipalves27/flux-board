@@ -780,7 +780,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       if (storyPoints != null) saved.storyPoints = storyPoints;
       else delete saved.storyPoints;
     }
-    if (boardMethodology === "kanban") {
+    if (boardMethodology === "kanban" || boardMethodology === "lean_six_sigma") {
       if (serviceClass != null) saved.serviceClass = serviceClass;
       else delete saved.serviceClass;
     }

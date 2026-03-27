@@ -18,6 +18,7 @@ import {
   getOnboardingDoneStorageKey,
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
+import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -140,7 +141,7 @@ export default function OnboardingPage() {
   const [cardBucketKey, setCardBucketKey] = useState<string>("");
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
-  const [wizardMethodology, setWizardMethodology] = useState<"scrum" | "kanban">("scrum");
+  const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -278,7 +279,10 @@ export default function OnboardingPage() {
       setInitError(null);
       try {
         const name = (nextBoardName || "").trim() || "Meu Board";
-        const templateBuckets = ONBOARDING_TEMPLATES[nextTemplateId].buckets;
+        const templateBuckets =
+          wizardMethodology === "lean_six_sigma"
+            ? defaultBucketOrderLeanSixSigma()
+            : ONBOARDING_TEMPLATES[nextTemplateId].buckets;
 
         const { board } = await apiPost<{ board: { id: string; name: string } }>(
           "/api/boards",
@@ -484,7 +488,7 @@ export default function OnboardingPage() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">
                     {t("fields.methodology")}
                   </p>
-                  <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                  <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
                     <button
                       type="button"
                       disabled={busy}
@@ -508,6 +512,18 @@ export default function OnboardingPage() {
                       }`}
                     >
                       {t("fields.methodologyKanban")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("lean_six_sigma")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "lean_six_sigma"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyLss")}
                     </button>
                   </div>
                 </div>

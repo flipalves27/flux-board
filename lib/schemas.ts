@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LSS_ASSIST_MODES } from "./lss-assist-prompt";
 import { BPMN_NODE_TYPES } from "./bpmn-types";
 import { WEBHOOK_EVENT_TYPES } from "./webhook-types";
 
@@ -139,7 +140,13 @@ export function isSafeLinkUrl(url: string): boolean {
 // Request body schemas
 // -----------------------
 
-export const BoardMethodologySchema = z.enum(["scrum", "kanban"]);
+export const BoardMethodologySchema = z.enum(["scrum", "kanban", "lean_six_sigma"]);
+
+export const LssAssistBodySchema = z.object({
+  mode: z.enum(LSS_ASSIST_MODES as unknown as [string, ...string[]]),
+  context: z.string().max(12_000).optional().default(""),
+  cardId: z.string().trim().max(200).optional(),
+});
 
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
 

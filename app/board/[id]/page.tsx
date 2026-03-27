@@ -24,6 +24,7 @@ import { BoardExecutiveBriefModal } from "@/components/kanban/board-executive-br
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
+import { isScrumMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
@@ -180,8 +181,8 @@ export interface BucketConfig {
 export interface BoardData {
   version: string;
   lastUpdated: string;
-  /** Scrum ou Kanban — condiciona sprints vs cadências no produto. */
-  boardMethodology?: "scrum" | "kanban";
+  /** Scrum, Kanban ou Lean Six Sigma — condiciona sprints, cadências e UI do quadro. */
+  boardMethodology?: BoardMethodology;
   cards: CardData[];
   config: {
     bucketOrder: BucketConfig[];
@@ -454,7 +455,9 @@ export default function BoardPage() {
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
-        methodologyRaw === "kanban" || methodologyRaw === "scrum" ? methodologyRaw : undefined;
+        methodologyRaw === "kanban" || methodologyRaw === "scrum" || methodologyRaw === "lean_six_sigma"
+          ? methodologyRaw
+          : undefined;
       useBoardStore.getState().hydrate(boardId, {
         version: d.version || "2.0",
         lastUpdated: d.lastUpdated || "",
@@ -943,7 +946,7 @@ export default function BoardPage() {
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
-      {(db?.boardMethodology ?? "scrum") === "scrum" ? (
+      {isScrumMethodology(db?.boardMethodology ?? "scrum") ? (
         <SprintPanel boardId={boardId} getHeaders={getHeaders} />
       ) : null}
 

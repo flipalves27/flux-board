@@ -18,6 +18,7 @@ import {
   type SprintData,
 } from "@/lib/schemas";
 import { useSprintStore } from "@/stores/sprint-store";
+import { isKanbanMethodology, isLeanSixSigmaMethodology } from "@/lib/board-methodology";
 
 const EMPTY_SPRINTS: SprintData[] = [];
 
@@ -578,7 +579,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </CardModalSection>
       ) : null}
 
-      {boardMethodology === "kanban" ? (
+      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
         <CardModalSection
           title={t("cardModal.methodology.kanban.title")}
           description={t("cardModal.methodology.kanban.description")}
@@ -1105,7 +1106,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
-      {boardMethodology === "kanban" ? (
+      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
         <details className="rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] px-3 py-2">
           <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--flux-text)] [&::-webkit-details-marker]:hidden">
             {t("cardModal.sections.dor.summaryKanban")}

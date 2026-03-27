@@ -212,7 +212,8 @@
       "standup": "Iniciar standup — {board}",
       "scrumSettings": "Scrum e DoD — {board}",
       "incrementReview": "Incremento / review — {board}",
-      "kanbanCadence": "Cadência Kanban — {board}"
+      "kanbanCadence": "Cadência Kanban — {board}",
+      "lssAssist": "Assistente Lean Six Sigma — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1066,6 +1067,7 @@
       "methodology": "Metodologia do quadro",
       "methodologyScrum": "Scrum — sprints e cerimônias",
       "methodologyKanban": "Kanban — fluxo e cadências",
+      "methodologyLss": "Lean Six Sigma — DMAIC",
       "template": "Template",
       "cardTitle": "Título",
       "column": "Coluna",
@@ -1171,7 +1173,8 @@
       "methodologyLabel": "Metodologia",
       "methodologyScrum": "Scrum",
       "methodologyKanban": "Kanban",
-      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. Kanban: fluxo contínuo, WIP e cadências de serviço.",
+      "methodologyLss": "Lean Six Sigma",
+      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. Kanban: fluxo contínuo, WIP e cadências de serviço. Lean Six Sigma: projeto DMAIC (Define–Measure–Analyze–Improve–Control) com assistente de artefatos.",
       "cancel": "Cancelar",
       "create": "Criar",
       "save": "Salvar"
@@ -2297,7 +2300,8 @@
         "methodologyLabel": "Metodologia do quadro",
         "methodologyScrum": "Scrum",
         "methodologyKanban": "Kanban",
-        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Mudar para Kanban não é permitido com sprint ativo.",
+        "methodologyLss": "Lean Six Sigma",
+        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Lean Six Sigma organiza melhoria em DMAIC. Sair de Scrum para Kanban ou LSS não é permitido com sprint ativo.",
         "refScrumGuide": "Scrum Guide",
         "refKanbanGuide": "Kanban Guide for Scrum Teams",
         "closeAria": "Fechar",
@@ -2314,6 +2318,48 @@
         "doneColumnsHint": "Deixe todas desmarcadas para detectar pelo nome (ex.: Concluído, Done, Produção).",
         "cancel": "Cancelar",
         "save": "Salvar"
+      },
+      "lss": {
+        "dmaicFocus": "Foco DMAIC",
+        "openAssist": "Assistente LSS",
+        "phases": {
+          "define": "Define",
+          "measure": "Measure",
+          "analyze": "Analyze",
+          "improve": "Improve",
+          "control": "Control",
+          "unknown": "Geral"
+        },
+        "checklist": {
+          "define": "Carta do projeto, problema mensurável, escopo e stakeholders.",
+          "measure": "Plano de medição, baseline e definição operacional da métrica Y.",
+          "analyze": "Hipóteses de causa raiz e validação com dados.",
+          "improve": "Contramedidas, piloto e critérios de sucesso.",
+          "control": "Plano de controle, padronização e reação a desvios."
+        }
+      },
+      "lssAssist": {
+        "title": "Assistente Lean Six Sigma",
+        "closeAria": "Fechar",
+        "close": "Fechar",
+        "copy": "Copiar resultado",
+        "generate": "Gerar",
+        "generating": "Gerando…",
+        "errorGeneric": "Não foi possível gerar. Tente novamente.",
+        "modeLabel": "Artefato",
+        "contextLabel": "Contexto (opcional)",
+        "contextPlaceholder": "Descreva o processo, problema ou dados disponíveis…",
+        "cardIdLabel": "Card de referência (opcional)",
+        "cardIdNone": "Nenhum",
+        "modes": {
+          "project_charter": "Carta do projeto",
+          "sipoc": "SIPOC",
+          "voc_ctq": "VOC e CTQ",
+          "measurement_plan": "Plano de medição",
+          "root_cause": "Causa raiz",
+          "improvement_ideas": "Ideias de melhoria",
+          "control_plan": "Plano de controle"
+        }
       },
       "incrementReview": {
         "title": "Incremento — o que foi entregue",

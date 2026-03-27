@@ -12,8 +12,9 @@ import { getRecentCards } from "@/lib/recent-cards";
 import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-history";
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
 import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
+import type { BoardMethodology } from "@/lib/board-methodology";
 
-type BoardRow = { id: string; name: string; boardMethodology?: "scrum" | "kanban" };
+type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
 function CategoryIcon({ kind }: { kind: NonNullable<PaletteItem["icon"]> }) {
   const common = "h-4 w-4 shrink-0 text-[var(--flux-text-muted)]";
@@ -191,7 +192,10 @@ export function CommandPalette() {
     const recentCards = getRecentCards(user.id);
 
     for (const b of boards) {
-      const isKanban = b.boardMethodology === "kanban";
+      const methodology = b.boardMethodology ?? "scrum";
+      const isKanban = methodology === "kanban";
+      const isScrum = methodology === "scrum";
+      const isLss = methodology === "lean_six_sigma";
       items.push({
         id: `board:${b.id}`,
         category: "boards",
@@ -238,7 +242,26 @@ export function CommandPalette() {
           action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
           icon: "actions",
         });
-      } else {
+      } else if (isLss) {
+        items.push({
+          id: `lssAssist:${b.id}`,
+          category: "actions",
+          title: t("actions.lssAssist", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `lean six sigma dmaic assistente lss ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "lssAssist=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `metodologia board settings ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+      } else if (isScrum) {
         items.push({
           id: `sprintpanel:${b.id}`,
           category: "actions",

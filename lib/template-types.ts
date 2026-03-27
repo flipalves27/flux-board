@@ -49,7 +49,7 @@ export type BoardTemplateSnapshot = {
   labelPalette: string[];
   automations: AutomationRule[];
   /** Opcional: metodologia do quadro exportado. */
-  boardMethodology?: "scrum" | "kanban";
+  boardMethodology?: "scrum" | "kanban" | "lean_six_sigma";
   /** Ausente ou `kanban`: snapshot clássico; `priority_matrix`: quatro colunas + `templateCards`. */
   templateKind?: TemplateKind;
   /** Com `priority_matrix`: quadrantes Eisenhower ou grade 4×4 (16 colunas). */

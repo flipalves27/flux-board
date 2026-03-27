@@ -92,4 +92,21 @@ describe("normalizeBoardForPersist", () => {
     const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
     expect(parsed.success).toBe(true);
   });
+
+  it("preserves boardMethodology lean_six_sigma", () => {
+    const db: BoardData = {
+      version: "1",
+      lastUpdated: "t",
+      boardMethodology: "lean_six_sigma",
+      cards: [],
+      config: {
+        bucketOrder: [{ key: "define", label: "Define", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+      },
+    };
+    const n = normalizeBoardForPersist(db);
+    expect(n.boardMethodology).toBe("lean_six_sigma");
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
 });

@@ -40,10 +40,13 @@ import { BoardMobileToolHub } from "./board-mobile-tool-hub";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 import { resolveDoneBucketKeys } from "@/lib/board-scrum";
+import { isLeanSixSigmaMethodology, isScrumMethodology } from "@/lib/board-methodology";
 import { BoardProductGoalStrip } from "./board-product-goal-strip";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
+import { BoardLssAssistPanel } from "./board-lss-assist-panel";
+import { BoardLssContextStrip } from "./board-lss-context-strip";
 import { BoardKnowledgeGraphPanel } from "./board-knowledge-graph-panel";
 import { BoardWorkloadPanel } from "./board-workload-panel";
 import { BoardFocusModeBar } from "./board-focus-mode-bar";
@@ -183,6 +186,7 @@ function KanbanBoardLoaded({
   const [kanbanCadenceOpen, setKanbanCadenceOpen] = useState(false);
   const [workloadBalanceOpen, setWorkloadBalanceOpen] = useState(false);
   const [knowledgeGraphOpen, setKnowledgeGraphOpen] = useState(false);
+  const [lssAssistOpen, setLssAssistOpen] = useState(false);
   const [matrixWeightFilter, setMatrixWeightFilter] = useState<
     "all" | "critical_high" | "high_plus" | "medium_plus" | "critical"
   >("all");
@@ -400,6 +404,7 @@ function KanbanBoardLoaded({
     const scrumSettings = q.get("scrumSettings");
     const incrementReview = q.get("incrementReview");
     const kanbanCadence = q.get("kanbanCadence");
+    const lssAssist = q.get("lssAssist");
 
     const hasDeepLink =
       Boolean(cardId) ||
@@ -411,7 +416,8 @@ function KanbanBoardLoaded({
       standup === "1" ||
       scrumSettings === "1" ||
       incrementReview === "1" ||
-      kanbanCadence === "1";
+      kanbanCadence === "1" ||
+      lssAssist === "1";
 
     if (!hasDeepLink) {
       handledQueryRef.current = null;
@@ -427,7 +433,12 @@ function KanbanBoardLoaded({
       sprintCoach === "1" ||
       standup === "1" ||
       incrementReview === "1";
-    if (methodology === "kanban" && scrumOnlyDeepLink) {
+    if (methodology !== "scrum" && scrumOnlyDeepLink) {
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+
+    if (methodology !== "kanban" && kanbanCadence === "1") {
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
     }
@@ -505,6 +516,13 @@ function KanbanBoardLoaded({
     }
     if (kanbanCadence === "1") {
       setKanbanCadenceOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+    if (lssAssist === "1") {
+      if (isLeanSixSigmaMethodology(methodology)) {
+        setLssAssistOpen(true);
+      }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
   }, [searchParamsKey, boardId, localeRoot, methodology]);
@@ -697,7 +715,7 @@ function KanbanBoardLoaded({
             </div>
 
             {/* Sprint badge (inline) */}
-            {methodology === "scrum" && activeSprintBoard?.status === "active" && sprintProgress && sprintProgress.total > 0 ? (
+            {isScrumMethodology(methodology) && activeSprintBoard?.status === "active" && sprintProgress && sprintProgress.total > 0 ? (
               <button
                 type="button"
                 onClick={toggleSprintScopeOnly}
@@ -764,9 +782,9 @@ function KanbanBoardLoaded({
               onClearInsightFocus={clearInsightFocus}
               onOpenFlowHealth={() => setFlowHealthOpen(true)}
               onOpenSprintCoach={() => setSprintCoachOpen(true)}
-              sprintCoachVisible={methodology === "scrum" && activeSprintBoard?.status === "active"}
+              sprintCoachVisible={isScrumMethodology(methodology) && activeSprintBoard?.status === "active"}
               onOpenCadence={() => setKanbanCadenceOpen(true)}
-              cadenceVisible
+              cadenceVisible={methodology === "kanban"}
               boardId={boardId}
               getHeaders={getHeaders}
               onOpenWorkloadBalance={() => setWorkloadBalanceOpen(true)}
@@ -810,7 +828,7 @@ function KanbanBoardLoaded({
           </div>
         )}
 
-        {methodology === "scrum" ? (
+        {isScrumMethodology(methodology) ? (
           <BoardProductGoalStrip
             boardId={boardId}
             getHeaders={getHeaders}
@@ -819,8 +837,16 @@ function KanbanBoardLoaded({
           />
         ) : null}
 
+        {isLeanSixSigmaMethodology(methodology) ? (
+          <BoardLssContextStrip
+            buckets={board.buckets}
+            cards={board.cards}
+            onOpenAssist={() => setLssAssistOpen(true)}
+          />
+        ) : null}
+
         {/* Sprint bar: only shows as full row when NLQ dock is expanded (compact badge handles it otherwise) */}
-        {nlqExpanded && methodology === "scrum" && activeSprintBoard?.status === "active" ? (
+        {nlqExpanded && isScrumMethodology(methodology) && activeSprintBoard?.status === "active" ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
             {sprintProgress && sprintProgress.total > 0 ? (
               <div
@@ -981,7 +1007,7 @@ function KanbanBoardLoaded({
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
-          sprintBoardQuickActions={methodology === "scrum" ? { boardId, getHeaders } : undefined}
+          sprintBoardQuickActions={isScrumMethodology(methodology) ? { boardId, getHeaders } : undefined}
           getHeaders={getHeaders}
           onAddCardFromTemplate={(bucketKey, tpl) => {
             board.setModalCard({
@@ -1058,6 +1084,12 @@ function KanbanBoardLoaded({
       />
 
       <BoardScrumSettingsModal open={scrumSettingsOpen} onClose={() => setScrumSettingsOpen(false)} />
+      <BoardLssAssistPanel
+        open={lssAssistOpen}
+        onClose={() => setLssAssistOpen(false)}
+        boardId={boardId}
+        getHeaders={getHeaders}
+      />
       <BoardIncrementReviewModal
         open={incrementReviewOpen}
         onClose={() => setIncrementReviewOpen(false)}

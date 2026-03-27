@@ -238,7 +238,9 @@ export function buildTemplateSnapshotFromBoard(board: BoardData, rules: Automati
     mapaProducao: mapa,
     labelPalette,
     automations: Array.isArray(rules) ? rules : [],
-    ...(board.boardMethodology === "scrum" || board.boardMethodology === "kanban"
+    ...(board.boardMethodology === "scrum" ||
+    board.boardMethodology === "kanban" ||
+    board.boardMethodology === "lean_six_sigma"
       ? { boardMethodology: board.boardMethodology }
       : {}),
   };

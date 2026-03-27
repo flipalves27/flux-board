@@ -118,6 +118,15 @@ export async function buildCopilotWorldSnapshot(params: {
   lines.push(`boardAtualNome=${clampText(String((board as BoardData).name || "Board"), 120)}`);
   lines.push("");
 
+  if ((board as BoardData).boardMethodology === "lean_six_sigma") {
+    lines.push("## Metodologia do board atual");
+    lines.push("tipo=Lean_Six_Sigma; ciclo=DMAIC (Define, Measure, Analyze, Improve, Control).");
+    lines.push(
+      "Orientação: não prescreva cerimônias Scrum obrigatórias. Sugira entregáveis, métricas e próximos passos alinhados à fase DMAIC e a ferramentas LSS (SIPOC, VOC/CTQ, causa raiz, plano de controle)."
+    );
+    lines.push("");
+  }
+
   // --- Outros boards (nomes + métricas para comparação) ---
   lines.push("## Portfólio / relatórios (agregado)");
   const rows = boardsToPortfolioRows(boards);

@@ -9,6 +9,7 @@ import type { SprintWithBoardName } from "@/lib/sprints-org-overview";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { KanbanCadencePanel } from "@/components/ceremonies/kanban-cadence-panel";
 import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
+import type { BoardMethodology } from "@/lib/board-methodology";
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -26,7 +27,7 @@ export function SprintsHub({ getHeaders }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<SprintWithBoardName[]>([]);
-  const [boardSummaries, setBoardSummaries] = useState<Array<{ id: string; name: string; boardMethodology?: "scrum" | "kanban" }>>(
+  const [boardSummaries, setBoardSummaries] = useState<Array<{ id: string; name: string; boardMethodology?: BoardMethodology }>>(
     []
   );
   const openRetro = useCeremonyStore((s) => s.openRetro);
@@ -38,7 +39,7 @@ export function SprintsHub({ getHeaders }: Props) {
 
   const boardsUnique = useMemo(() => {
     if (boardSummaries.length > 0) return boardSummaries;
-    const m = new Map<string, { id: string; name: string; boardMethodology?: "scrum" | "kanban" }>();
+    const m = new Map<string, { id: string; name: string; boardMethodology?: BoardMethodology }>();
     for (const r of rows) {
       if (!m.has(r.boardId)) {
         m.set(r.boardId, { id: r.boardId, name: r.boardName, boardMethodology: r.boardMethodology });
@@ -70,7 +71,7 @@ export function SprintsHub({ getHeaders }: Props) {
     try {
       const data = await apiGet<{
         sprints: SprintWithBoardName[];
-        boards?: Array<{ id: string; name: string; boardMethodology?: "scrum" | "kanban" }>;
+        boards?: Array<{ id: string; name: string; boardMethodology?: BoardMethodology }>;
       }>("/api/sprints", getHeaders());
       setRows(Array.isArray(data?.sprints) ? data.sprints : []);
       setBoardSummaries(Array.isArray(data?.boards) ? data.boards : []);

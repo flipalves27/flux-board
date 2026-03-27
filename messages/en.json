@@ -212,7 +212,8 @@
       "standup": "Start standup — {board}",
       "scrumSettings": "Scrum & DoD settings — {board}",
       "incrementReview": "Increment / review — {board}",
-      "kanbanCadence": "Kanban cadence — {board}"
+      "kanbanCadence": "Kanban cadence — {board}",
+      "lssAssist": "Lean Six Sigma assistant — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -1065,6 +1066,7 @@
       "methodology": "Board methodology",
       "methodologyScrum": "Scrum — sprints and ceremonies",
       "methodologyKanban": "Kanban — flow and cadences",
+      "methodologyLss": "Lean Six Sigma — DMAIC",
       "template": "Template",
       "cardTitle": "Title",
       "column": "Column",
@@ -1170,7 +1172,8 @@
       "methodologyLabel": "Methodology",
       "methodologyScrum": "Scrum",
       "methodologyKanban": "Kanban",
-      "methodologyHint": "Scrum: sprints, product goal, and sprint ceremonies. Kanban: continuous flow, WIP, and service cadences.",
+      "methodologyLss": "Lean Six Sigma",
+      "methodologyHint": "Scrum: sprints, product goal, and sprint ceremonies. Kanban: continuous flow, WIP, and service cadences. Lean Six Sigma: DMAIC project flow (Define–Measure–Analyze–Improve–Control) with artifact assistant.",
       "cancel": "Cancel",
       "create": "Create",
       "save": "Save"
@@ -2292,7 +2295,8 @@
         "methodologyLabel": "Board methodology",
         "methodologyScrum": "Scrum",
         "methodologyKanban": "Kanban",
-        "methodologyHint": "Scrum uses sprints and events (planning, daily, review, retro). Kanban emphasizes continuous flow, WIP limits, and review cadences. Switching to Kanban is blocked while a sprint is active.",
+        "methodologyLss": "Lean Six Sigma",
+        "methodologyHint": "Scrum uses sprints and events (planning, daily, review, retro). Kanban emphasizes continuous flow, WIP limits, and review cadences. Lean Six Sigma structures improvement as DMAIC. Leaving Scrum for Kanban or LSS is blocked while a sprint is active.",
         "refScrumGuide": "Scrum Guide",
         "refKanbanGuide": "Kanban Guide for Scrum Teams",
         "closeAria": "Close",
@@ -2309,6 +2313,48 @@
         "doneColumnsHint": "Leave all unchecked to auto-detect from column names (e.g. Concluído, Done, Produção).",
         "cancel": "Cancel",
         "save": "Save"
+      },
+      "lss": {
+        "dmaicFocus": "DMAIC focus",
+        "openAssist": "LSS assistant",
+        "phases": {
+          "define": "Define",
+          "measure": "Measure",
+          "analyze": "Analyze",
+          "improve": "Improve",
+          "control": "Control",
+          "unknown": "Overview"
+        },
+        "checklist": {
+          "define": "Project charter, measurable problem, scope, and stakeholders.",
+          "measure": "Measurement plan, baseline, and operational definition of Y.",
+          "analyze": "Root-cause hypotheses validated with data.",
+          "improve": "Countermeasures, pilot, and success criteria.",
+          "control": "Control plan, standard work, and reaction to deviations."
+        }
+      },
+      "lssAssist": {
+        "title": "Lean Six Sigma assistant",
+        "closeAria": "Close",
+        "close": "Close",
+        "copy": "Copy output",
+        "generate": "Generate",
+        "generating": "Generating…",
+        "errorGeneric": "Could not generate. Try again.",
+        "modeLabel": "Artifact",
+        "contextLabel": "Context (optional)",
+        "contextPlaceholder": "Describe the process, problem, or available data…",
+        "cardIdLabel": "Reference card (optional)",
+        "cardIdNone": "None",
+        "modes": {
+          "project_charter": "Project charter",
+          "sipoc": "SIPOC",
+          "voc_ctq": "VOC and CTQ",
+          "measurement_plan": "Measurement plan",
+          "root_cause": "Root cause",
+          "improvement_ideas": "Improvement ideas",
+          "control_plan": "Control plan"
+        }
       },
       "incrementReview": {
         "title": "Increment — what was delivered",

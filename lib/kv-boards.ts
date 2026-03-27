@@ -25,7 +25,7 @@ export interface BoardData {
   ownerId: string;
   orgId: string;
   name: string;
-  /** Scrum (sprints e eventos) ou Kanban (fluxo contínuo e cadências). */
+  /** Scrum, Kanban (fluxo contínuo) ou Lean Six Sigma (DMAIC). */
   boardMethodology?: BoardMethodology;
   /** Rótulo comercial opcional (cliente, conta, linha de negócio) — útil para consultorias e B2B. */
   clientLabel?: string;

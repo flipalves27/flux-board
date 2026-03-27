@@ -32,6 +32,7 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
+import type { BoardMethodology } from "@/lib/board-methodology";
 
 interface Board {
   id: string;
@@ -39,7 +40,7 @@ interface Board {
   ownerId: string;
   clientLabel?: string;
   lastUpdated?: string;
-  boardMethodology?: "scrum" | "kanban";
+  boardMethodology?: BoardMethodology;
   portfolio?: BoardPortfolioMetrics;
 }
 
@@ -91,7 +92,7 @@ export default function BoardsPage() {
   const [modalMode, setModalMode] = useState<"new" | "edit">("new");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState("");
-  const [createMethodology, setCreateMethodology] = useState<"scrum" | "kanban">("scrum");
+  const [createMethodology, setCreateMethodology] = useState<BoardMethodology>("scrum");
   const [empty, setEmpty] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [query, setQuery] = useState("");
@@ -630,6 +631,10 @@ export default function BoardsPage() {
                                 <span className="shrink-0 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
                                   Scrum
                                 </span>
+                              ) : b.boardMethodology === "lean_six_sigma" ? (
+                                <span className="shrink-0 rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
+                                  LSS
+                                </span>
                               ) : null}
                             </div>
                             {b.clientLabel ? (
@@ -849,7 +854,7 @@ export default function BoardsPage() {
                 <p className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 font-display">
                   {t("modal.methodologyLabel")}
                 </p>
-                <div className="inline-flex rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
                   <button
                     type="button"
                     onClick={() => setCreateMethodology("scrum")}
@@ -871,6 +876,17 @@ export default function BoardsPage() {
                     }`}
                   >
                     {t("modal.methodologyKanban")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateMethodology("lean_six_sigma")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "lean_six_sigma"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    {t("modal.methodologyLss")}
                   </button>
                 </div>
                 <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>
