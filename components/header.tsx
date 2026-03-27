@@ -89,7 +89,13 @@ export function Header({
                     <span className="shrink-0 text-[var(--flux-text-muted)]/45" aria-hidden>
                       /
                     </span>
-                    <span className="min-w-0 max-w-[min(260px,40vw)] truncate font-semibold text-[var(--flux-text)]">
+                    <span
+                      className="min-w-0 max-w-[min(320px,46vw)] truncate font-display font-semibold bg-clip-text text-transparent"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
+                      }}
+                    >
                       {resolvedTitle}
                     </span>
                   </>
@@ -106,7 +112,13 @@ export function Header({
                 {resolvedTitle ? (
                   <>
                     <IconChevronRight className="h-3.5 w-3.5 text-[var(--flux-text-muted)]/70" />
-                    <span className="max-w-[260px] truncate text-[11px] font-semibold text-[var(--flux-text)]">
+                    <span
+                      className="max-w-[300px] truncate text-[11px] font-display font-semibold bg-clip-text text-transparent"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(135deg, var(--flux-text) 0%, var(--flux-primary-light) 100%)",
+                      }}
+                    >
                       {resolvedTitle}
                     </span>
                   </>
@@ -128,7 +140,7 @@ export function Header({
                 >
                   {platformName}
                 </span>
-                {resolvedTitle && resolvedTitle !== platformName && (
+                {resolvedTitle && resolvedTitle !== platformName && !backHref && (
                   <span className="text-[var(--flux-text-muted)] font-medium truncate"> — {resolvedTitle}</span>
                 )}
               </h1>
@@ -150,7 +162,7 @@ export function Header({
               >
                 {platformName}
               </span>
-              {resolvedTitle && resolvedTitle !== platformName && (
+              {resolvedTitle && resolvedTitle !== platformName && !backHref && (
                 <span className="text-[var(--flux-text-muted)] font-medium truncate"> — {resolvedTitle}</span>
               )}
             </h1>
