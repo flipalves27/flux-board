@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { DocsSidebarTree } from "@/components/docs/docs-sidebar-tree";
@@ -12,6 +13,8 @@ import type { DocData, DocTreeNode } from "@/lib/docs-types";
 
 export default function DocsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
   const { user, getHeaders, isChecked } = useAuth();
   const [docsTree, setDocsTree] = useState<DocTreeNode[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,11 +33,11 @@ export default function DocsPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
-      router.replace("/login");
+      router.replace(`${localeRoot}/login`);
       return;
     }
     loadDocs();
-  }, [isChecked, user, router, loadDocs]);
+  }, [isChecked, user, router, loadDocs, localeRoot]);
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -74,7 +77,7 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title="Flux Docs" backHref="/boards" backLabel="← Boards" />
+      <Header title="Flux Docs" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
       <div className="flex min-h-[calc(100vh-56px)]">
         <DocsSidebarTree docs={docsTree} selectedId={selectedId} onSelect={setSelectedId} onCreate={createDoc} />
         <div className="flex flex-1 flex-col">
