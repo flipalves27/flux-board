@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { DocsSidebarTree } from "@/components/docs/docs-sidebar-tree";
@@ -14,6 +14,7 @@ import type { DocData, DocTreeNode } from "@/lib/docs-types";
 export default function DocsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("docsPage");
   const localeRoot = `/${locale}`;
   const { user, getHeaders, isChecked } = useAuth();
   const [docsTree, setDocsTree] = useState<DocTreeNode[]>([]);
@@ -66,7 +67,7 @@ export default function DocsPage() {
     const res = await fetch("/api/docs", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getHeaders() },
-      body: JSON.stringify({ title: "Novo documento", parentId, contentMd: "" }),
+      body: JSON.stringify({ title: t("newDocTitle"), parentId, contentMd: "" }),
     });
     const data = (await res.json().catch(() => ({}))) as { doc?: DocData };
     if (res.ok && data.doc) {
@@ -77,7 +78,7 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header title="Flux Docs" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
+      <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
       <div className="flex min-h-[calc(100vh-56px)]">
         <DocsSidebarTree docs={docsTree} selectedId={selectedId} onSelect={setSelectedId} onCreate={createDoc} />
         <div className="flex flex-1 flex-col">

@@ -2711,6 +2711,85 @@
       }
     }
   },
+  "docsPage": {
+    "title": "Flux Docs",
+    "headerBack": "← Boards",
+    "newDocTitle": "New document",
+    "empty": {
+      "title": "No document selected",
+      "subtitle": "Pick a document from the tree on the left or create a new one to get started.",
+      "step1": "Use New or + subdoc in the sidebar to create documents and hierarchy.",
+      "step2": "Edit the title and body; content autosaves after you pause typing.",
+      "step3": "Open Generate with AI above to draft from boards, dailies, or OKRs."
+    },
+    "hint": {
+      "title": "How to use Flux Docs",
+      "expand": "Show tips",
+      "collapse": "Hide tips",
+      "step1": "Organize documents in the left tree (root and subdocuments).",
+      "step2": "Use search above to find titles and snippets quickly.",
+      "step3": "Use the Edit tab for the rich toolbar; Preview renders your Markdown.",
+      "step4": "Import .md files or export the current doc; Save now pushes immediately."
+    },
+    "aiBanner": {
+      "body": "Tip: use “Generate with AI” at the top of this page to create reports from your board and save them as a document.",
+      "dismiss": "Got it"
+    },
+    "save": {
+      "idle": "",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed",
+      "now": "Save now",
+      "lastUpdated": "Last updated: {date}"
+    },
+    "import": "Import .md",
+    "importConfirm": "Replace all current content with the imported file?",
+    "export": "Export .md",
+    "delete": "Delete",
+    "tab": {
+      "edit": "Edit",
+      "preview": "Preview"
+    },
+    "titlePlaceholder": "Document title",
+    "editorPlaceholder": "Start writing… Use the toolbar for headings, lists, tables, and links.",
+    "previewEmpty": "Nothing to preview yet.",
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "bold": "Bold: Ctrl+B (Windows) or ⌘B (Mac)",
+      "italic": "Italic: Ctrl+I or ⌘I",
+      "undo": "Undo: Ctrl+Z or ⌘Z"
+    },
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "strike": "Strikethrough",
+      "code": "Inline code",
+      "h1": "Heading 1",
+      "h2": "Heading 2",
+      "h3": "Heading 3",
+      "bulletList": "Bullet list",
+      "orderedList": "Ordered list",
+      "taskList": "Task list",
+      "blockquote": "Quote",
+      "codeBlock": "Code block",
+      "horizontalRule": "Horizontal rule",
+      "link": "Link",
+      "linkPrompt": "Link URL (empty removes the link)",
+      "table": "Insert 3×3 table",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "sidebar": {
+      "label": "Flux Docs",
+      "new": "New",
+      "subdoc": "+ subdoc"
+    },
+    "search": {
+      "placeholder": "Search documents…",
+      "empty": "No results."
+    }
+  },
   "templateMarketplace": {
     "title": "Template Marketplace",
     "search": "Search templates...",

@@ -2,6 +2,7 @@
 
 import type { DocTreeNode } from "@/lib/docs-types";
 import { useNavigationVariant } from "@/context/navigation-variant-context";
+import { useTranslations } from "next-intl";
 
 type Props = {
   docs: DocTreeNode[];
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function DocsSidebarTree({ docs, selectedId, onSelect, onCreate }: Props) {
+  const t = useTranslations("docsPage.sidebar");
   const navVariant = useNavigationVariant();
   const isMinimal = navVariant === "minimal";
   return (
@@ -22,9 +24,9 @@ export function DocsSidebarTree({ docs, selectedId, onSelect, onCreate }: Props)
       }`}
     >
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-[var(--flux-text-muted)]">Flux Docs</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-[var(--flux-text-muted)]">{t("label")}</div>
         <button className="btn-primary px-2 py-1 text-xs" onClick={() => onCreate(null)}>
-          Novo
+          {t("new")}
         </button>
       </div>
       <div className="space-y-1.5">
@@ -78,7 +80,7 @@ export function DocsSidebarTree({ docs, selectedId, onSelect, onCreate }: Props)
               </div>
             )}
             <button className="mt-1 text-[10px] text-[var(--flux-text-muted)] hover:text-[var(--flux-primary-light)]" onClick={() => onCreate(doc.id)}>
-              + subdoc
+              {t("subdoc")}
             </button>
           </div>
         ))}

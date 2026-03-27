@@ -1659,3 +1659,98 @@
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
+
+/* Flux Docs — markdown preview & TipTap surface */
+.flux-docs-prose h1,
+.flux-docs-prose h2,
+.flux-docs-prose h3 {
+  font-weight: 700;
+  color: var(--flux-text);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+.flux-docs-prose h1 {
+  font-size: var(--flux-text-2xl);
+}
+.flux-docs-prose h2 {
+  font-size: var(--flux-text-xl);
+}
+.flux-docs-prose h3 {
+  font-size: var(--flux-text-lg);
+}
+.flux-docs-prose p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+  color: var(--flux-text);
+}
+.flux-docs-prose ul,
+.flux-docs-prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: var(--flux-text);
+}
+.flux-docs-prose li {
+  margin: 0.25rem 0;
+}
+.flux-docs-prose blockquote {
+  margin: 0.75rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--flux-primary-alpha-25);
+  color: var(--flux-text-muted);
+}
+.flux-docs-prose hr {
+  margin: 1rem 0;
+  border: none;
+  border-top: 1px solid var(--flux-chrome-alpha-12);
+}
+.flux-docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: var(--flux-text-sm);
+}
+.flux-docs-prose th,
+.flux-docs-prose td {
+  border: 1px solid var(--flux-chrome-alpha-12);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.flux-docs-prose th {
+  background: var(--flux-surface-elevated);
+  color: var(--flux-primary-light);
+}
+.flux-docs-prose input[type="checkbox"] {
+  margin-right: 0.35rem;
+  accent-color: var(--flux-primary);
+}
+
+.flux-docs-prosemirror {
+  min-height: 50vh;
+}
+.flux-docs-prosemirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--flux-text-muted);
+}
+.flux-docs-prosemirror .ProseMirror-focused {
+  outline: none;
+}
+.flux-docs-prosemirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: var(--flux-text-sm);
+}
+.flux-docs-prosemirror th,
+.flux-docs-prosemirror td {
+  border: 1px solid var(--flux-chrome-alpha-12);
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.flux-docs-prosemirror th {
+  background: var(--flux-surface-elevated);
+  font-weight: 600;
+}

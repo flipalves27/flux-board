@@ -2716,6 +2716,85 @@
       }
     }
   },
+  "docsPage": {
+    "title": "Flux Docs",
+    "headerBack": "← Boards",
+    "newDocTitle": "Novo documento",
+    "empty": {
+      "title": "Nenhum documento selecionado",
+      "subtitle": "Escolha um documento na árvore à esquerda ou crie um novo para começar.",
+      "step1": "Use Novo ou + subdoc na barra lateral para criar documentos e hierarquia.",
+      "step2": "Edite o título e o corpo; o conteúdo é salvo automaticamente após você pausar a digitação.",
+      "step3": "Abra Gerar com IA acima para criar rascunhos a partir do board, Daily ou OKRs."
+    },
+    "hint": {
+      "title": "Como usar o Flux Docs",
+      "expand": "Mostrar dicas",
+      "collapse": "Ocultar dicas",
+      "step1": "Organize documentos na árvore à esquerda (raiz e subdocumentos).",
+      "step2": "Use a busca acima para encontrar títulos e trechos rapidamente.",
+      "step3": "Na aba Editar, use a barra de formatação; na Visualizar, veja o Markdown renderizado.",
+      "step4": "Importe arquivos .md ou exporte o documento atual; Salvar agora envia imediatamente ao servidor."
+    },
+    "aiBanner": {
+      "body": "Dica: use “Gerar com IA” no topo desta página para gerar relatórios a partir do board e salvá-los como documento.",
+      "dismiss": "Entendi"
+    },
+    "save": {
+      "idle": "",
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "error": "Erro ao salvar",
+      "now": "Salvar agora",
+      "lastUpdated": "Última atualização: {date}"
+    },
+    "import": "Importar .md",
+    "importConfirm": "Substituir todo o conteúdo atual pelo arquivo importado?",
+    "export": "Exportar .md",
+    "delete": "Excluir",
+    "tab": {
+      "edit": "Editar",
+      "preview": "Visualizar"
+    },
+    "titlePlaceholder": "Título do documento",
+    "editorPlaceholder": "Comece a escrever… Use a barra acima para títulos, listas, tabelas e links.",
+    "previewEmpty": "Nada para visualizar ainda.",
+    "shortcuts": {
+      "title": "Atalhos do teclado",
+      "bold": "Negrito: Ctrl+B (Windows) ou ⌘B (Mac)",
+      "italic": "Itálico: Ctrl+I ou ⌘I",
+      "undo": "Desfazer: Ctrl+Z ou ⌘Z"
+    },
+    "toolbar": {
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "strike": "Riscado",
+      "code": "Código inline",
+      "h1": "Título 1",
+      "h2": "Título 2",
+      "h3": "Título 3",
+      "bulletList": "Lista com marcadores",
+      "orderedList": "Lista numerada",
+      "taskList": "Lista de tarefas",
+      "blockquote": "Citação",
+      "codeBlock": "Bloco de código",
+      "horizontalRule": "Linha horizontal",
+      "link": "Link",
+      "linkPrompt": "URL do link (vazio remove o link)",
+      "table": "Inserir tabela 3×3",
+      "undo": "Desfazer",
+      "redo": "Refazer"
+    },
+    "sidebar": {
+      "label": "Flux Docs",
+      "new": "Novo",
+      "subdoc": "+ subdoc"
+    },
+    "search": {
+      "placeholder": "Buscar documentos…",
+      "empty": "Nenhum resultado."
+    }
+  },
   "templateMarketplace": {
     "title": "Template Marketplace",
     "search": "Buscar templates...",
