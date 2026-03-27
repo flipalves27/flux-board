@@ -1631,7 +1631,12 @@
           "unassigned": "Unassigned",
           "selected": "selected",
           "selectedLabel": "Selected:",
-          "clear": "Clear"
+          "clear": "Clear",
+          "placeholder": "Search member by name or ID…",
+          "meShortcut": "Me",
+          "loading": "Loading members…",
+          "emptyFilter": "No members match this filter.",
+          "hint": "Pick a board member without typing their ID."
         },
         "direction": {
           "label": "Direction",
@@ -2753,6 +2758,9 @@
     },
     "titlePlaceholder": "Document title",
     "editorPlaceholder": "Start writing… Use the toolbar for headings, lists, tables, and links.",
+    "cardBlock": {
+      "expandToEdit": "Expand this section to load the rich editor."
+    },
     "previewEmpty": "Nothing to preview yet.",
     "shortcuts": {
       "title": "Keyboard shortcuts",

@@ -1636,7 +1636,12 @@
           "unassigned": "Sem responsável",
           "selected": "selecionado",
           "selectedLabel": "Selecionado:",
-          "clear": "Limpar"
+          "clear": "Limpar",
+          "placeholder": "Buscar membro por nome ou ID…",
+          "meShortcut": "Eu",
+          "loading": "Carregando membros…",
+          "emptyFilter": "Nenhum membro encontrado para este filtro.",
+          "hint": "Selecione um membro do board sem precisar informar ID."
         },
         "direction": {
           "label": "Direcionamento",
@@ -2758,6 +2763,9 @@
     },
     "titlePlaceholder": "Título do documento",
     "editorPlaceholder": "Comece a escrever… Use a barra acima para títulos, listas, tabelas e links.",
+    "cardBlock": {
+      "expandToEdit": "Abra o bloco para carregar o editor de formatação."
+    },
     "previewEmpty": "Nada para visualizar ainda.",
     "shortcuts": {
       "title": "Atalhos do teclado",

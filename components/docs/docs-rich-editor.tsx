@@ -1,7 +1,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useEffect, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { createDocsEditorExtensions } from "@/lib/docs-editor-extensions";
 import { DocsEditorToolbar } from "@/components/docs/docs-editor-toolbar";
 
@@ -37,12 +37,32 @@ type Props = {
   editable: boolean;
   onMarkdownChange: (md: string) => void;
   toolbarLabels: ToolbarLabels;
+  /** Card modal: shorter editor, scroll; sync when parent replaces markdown while editor not focused */
+  variant?: "default" | "compact";
+  /** When true, apply `initialMarkdown` from parent if it differs and focus is outside the editor (e.g. smart enrich). */
+  syncExternalMarkdown?: boolean;
 };
 
+const editorBodyClass = {
+  default: "flux-docs-prosemirror min-h-[50vh] w-full max-w-none px-3 py-3 text-sm text-[var(--flux-text)] outline-none focus:outline-none",
+  compact:
+    "flux-docs-prosemirror min-h-[140px] max-h-[min(40vh,320px)] overflow-y-auto w-full max-w-none px-3 py-3 text-sm text-[var(--flux-text)] outline-none focus:outline-none scrollbar-kanban",
+} as const;
+
 export const DocsRichEditor = forwardRef<DocsRichEditorHandle, Props>(function DocsRichEditor(
-  { docId, initialMarkdown, placeholder, editable, onMarkdownChange, toolbarLabels },
+  {
+    docId,
+    initialMarkdown,
+    placeholder,
+    editable,
+    onMarkdownChange,
+    toolbarLabels,
+    variant = "default",
+    syncExternalMarkdown = false,
+  },
   ref
 ) {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -52,8 +72,7 @@ export const DocsRichEditor = forwardRef<DocsRichEditorHandle, Props>(function D
       contentType: "markdown",
       editorProps: {
         attributes: {
-          class:
-            "flux-docs-prosemirror min-h-[50vh] w-full max-w-none px-3 py-3 text-sm text-[var(--flux-text)] outline-none focus:outline-none",
+          class: editorBodyClass[variant],
         },
       },
       onUpdate: ({ editor: ed }) => {
@@ -62,6 +81,15 @@ export const DocsRichEditor = forwardRef<DocsRichEditorHandle, Props>(function D
     },
     [docId]
   );
+
+  useEffect(() => {
+    if (!syncExternalMarkdown || !editor) return;
+    const active = document.activeElement;
+    if (wrapRef.current?.contains(active)) return;
+    const cur = editor.getMarkdown();
+    if (cur === initialMarkdown) return;
+    editor.commands.setContent(initialMarkdown, { contentType: "markdown", emitUpdate: false });
+  }, [editor, initialMarkdown, syncExternalMarkdown]);
 
   useImperativeHandle(
     ref,
@@ -80,11 +108,13 @@ export const DocsRichEditor = forwardRef<DocsRichEditorHandle, Props>(function D
     editor.setEditable(editable);
   }, [editor, editable]);
 
+  const skeletonH = variant === "compact" ? "min-h-[140px]" : "min-h-[50vh]";
+
   return (
-    <div className="rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
+    <div ref={wrapRef} className="rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
       {editable ? <DocsEditorToolbar editor={editor} labels={toolbarLabels} /> : null}
       {!editor ? (
-        <div className="min-h-[50vh] w-full animate-pulse bg-[var(--flux-surface-card)]" aria-hidden />
+        <div className={`${skeletonH} w-full animate-pulse bg-[var(--flux-surface-card)]`} aria-hidden />
       ) : (
         <EditorContent editor={editor} />
       )}

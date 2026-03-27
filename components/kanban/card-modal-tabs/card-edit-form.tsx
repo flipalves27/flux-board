@@ -9,6 +9,8 @@ import { CardModalSection, inputBase } from "@/components/kanban/card-modal-sect
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
 import { CardIntakeVisionBlock } from "@/components/kanban/card-intake-vision-block";
+import { CardAssigneeCombobox, type CardAssigneeOption } from "@/components/kanban/card-form/card-assignee-combobox";
+import { CardDescriptionBlockEditor } from "@/components/kanban/card-form/card-description-block-editor";
 import { AiModelHint } from "@/components/ai-model-hint";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
 import {
@@ -30,11 +32,6 @@ type DupMatch = {
   levenshteinTitleRatio: number;
   bm25Norm: number;
   embeddingSimilarity?: number;
-};
-
-type AssigneeOption = {
-  userId: string;
-  label: string;
 };
 
 /** Campos principais do card (aba padrão, import síncrono para abertura rápida do modal). */
@@ -113,15 +110,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
   const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
   const upsertSprint = useSprintStore((s) => s.upsertSprint);
   const [sprintPatching, setSprintPatching] = useState<string | null>(null);
-  const [assigneeOptions, setAssigneeOptions] = useState<AssigneeOption[]>([]);
+  const [assigneeOptions, setAssigneeOptions] = useState<CardAssigneeOption[]>([]);
   const [assigneeLoading, setAssigneeLoading] = useState(false);
-  const [assigneeQuery, setAssigneeQuery] = useState("");
-  const assigneeOptionBase =
-    "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]";
-  const assigneeQuickBase =
-    "rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]";
-  const assigneeSearchInput =
-    `${inputBase} border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] transition-all duration-150 placeholder:text-[var(--flux-text-muted)]/85 focus-visible:border-[var(--flux-primary-alpha-35)] focus-visible:bg-[var(--flux-primary-alpha-08)] focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-35)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]`;
 
   useEffect(() => {
     let cancelled = false;
@@ -135,7 +125,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         const data = (await res.json()) as {
           members?: Array<{ userId?: string; username?: string }>;
         };
-        const map = new Map<string, AssigneeOption>();
+        const map = new Map<string, CardAssigneeOption>();
         for (const m of data.members ?? []) {
           const userId = String(m?.userId ?? "").trim();
           if (!userId) continue;
@@ -361,45 +351,11 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     Boolean(openExistingCard || mergeDraftIntoExistingCard) &&
     dupIgnoreFingerprint !== contentFingerprint &&
     (dupLoading || dupMatches.length > 0);
-  const filteredAssigneeOptions = useMemo(() => {
-    const q = assigneeQuery.trim().toLowerCase();
-    if (!q) return assigneeOptions;
-    return assigneeOptions.filter((opt) => {
-      const label = opt.label.toLowerCase();
-      const uid = opt.userId.toLowerCase();
-      return label.includes(q) || uid.includes(q);
-    });
-  }, [assigneeOptions, assigneeQuery]);
-  const selectedAssignee = useMemo(
-    () => assigneeOptions.find((opt) => opt.userId === assigneeId) ?? null,
-    [assigneeId, assigneeOptions]
+  const cardEditorId = useMemo(
+    () =>
+      (mode === "edit" ? String(selfId || id).trim() : String(generatedCardId || "").trim()) || "card",
+    [mode, selfId, id, generatedCardId]
   );
-  useEffect(() => {
-    if (!assigneeId) {
-      setAssigneeQuery("");
-      return;
-    }
-    if (selectedAssignee) setAssigneeQuery(selectedAssignee.label);
-  }, [assigneeId, selectedAssignee]);
-  const quickAssigneeOptions = useMemo(() => {
-    const used = new Set<string>();
-    const list: AssigneeOption[] = [];
-    const pushIfValid = (value: string) => {
-      const userId = String(value).trim();
-      if (!userId || used.has(userId)) return;
-      const option = assigneeOptions.find((x) => x.userId === userId);
-      if (!option) return;
-      list.push(option);
-      used.add(userId);
-    };
-    pushIfValid(user?.id ?? "");
-    pushIfValid(assigneeId);
-    for (const opt of assigneeOptions) {
-      if (list.length >= 3) break;
-      pushIfValid(opt.userId);
-    }
-    return list.slice(0, 3);
-  }, [assigneeId, assigneeOptions, user?.id]);
 
   const dorCheckboxGrid = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -504,115 +460,6 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           </div>
         </div>
       </CardModalSection>
-
-      {boardMethodology === "scrum" ? (
-        <CardModalSection
-          title={t("cardModal.methodology.scrum.title")}
-          description={t("cardModal.methodology.scrum.description")}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                {t("cardModal.methodology.storyPoints")}
-              </label>
-              <select
-                value={storyPoints ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setStoryPoints(v === "" ? null : Number.parseInt(v, 10));
-                }}
-                className={inputBase}
-              >
-                <option value="">{t("cardModal.methodology.storyPointsUnset")}</option>
-                {STORY_POINTS_FIBONACCI.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                {t("cardModal.methodology.sprintsTitle")}
-              </p>
-              {!cardIdReadyForSprint ? (
-                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.sprintNeedSave")}</p>
-              ) : sprints.length === 0 ? (
-                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.noSprints")}</p>
-              ) : (
-                <ul className="space-y-2">
-                  {sprints.map((sp) => {
-                    const inSprint = (sp.cardIds ?? []).includes(String(selfId).trim());
-                    const editable = sp.status === "planning" || sp.status === "active";
-                    return (
-                      <li
-                        key={sp.id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2"
-                      >
-                        <span className="min-w-0 text-sm">
-                          <span className="font-medium text-[var(--flux-text)]">{sp.name}</span>
-                          <span className="ml-2 text-[11px] text-[var(--flux-text-muted)]">({sp.status})</span>
-                        </span>
-                        {editable ? (
-                          <label className="flex items-center gap-2 text-sm shrink-0 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={inSprint}
-                              disabled={sprintPatching === sp.id}
-                              onChange={() => void toggleSprintMembership(sp, !inSprint)}
-                              className="rounded border-[var(--flux-chrome-alpha-20)]"
-                            />
-                            <span>{t("cardModal.methodology.inSprint")}</span>
-                          </label>
-                        ) : (
-                          <span className="text-[11px] text-[var(--flux-text-muted)] shrink-0">
-                            {inSprint ? t("cardModal.methodology.inSprintReadonly") : "—"}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-        </CardModalSection>
-      ) : null}
-
-      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
-        <CardModalSection
-          title={t("cardModal.methodology.kanban.title")}
-          description={t("cardModal.methodology.kanban.description")}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-                {t("cardModal.methodology.serviceClass")}
-              </label>
-              <select
-                value={serviceClass ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setServiceClass(v === "" ? null : (v as CardServiceClass));
-                }}
-                className={inputBase}
-              >
-                <option value="">{t("cardModal.methodology.serviceClassUnset")}</option>
-                {CARD_SERVICE_CLASS_VALUES.map((sc) => (
-                  <option key={sc} value={sc}>
-                    {t(`cardModal.methodology.serviceClassValues.${sc}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {currentBucketWip != null ? (
-              <p className="text-[11px] text-[var(--flux-text-muted)]">
-                {t("cardModal.methodology.wipHint", { limit: currentBucketWip })}
-              </p>
-            ) : null}
-          </div>
-        </CardModalSection>
-      ) : null}
 
       <CardModalSection
         title={t("cardModal.sections.content.title")}
@@ -767,49 +614,41 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             {t("cardModal.fields.description.label")}
           </label>
           <div className="rounded-xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]">
-            <div className="space-y-3">
-              {DESCRIPTION_BLOCKS.map((block) => (
-                <div key={block.key}>
-                  <label className="mb-1.5 block font-display text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    {block.label}
-                  </label>
-                  {block.key === "businessContext" ? (
-                    <SmartEnrichFieldShell
-                      active={Boolean(smartEnrichPending?.has("description"))}
-                      onAccept={() => acceptSmartEnrichField("description")}
-                      onReject={() => rejectSmartEnrichField("description")}
-                      badge={t("cardModal.smartEnrich.badge")}
-                      acceptLabel={t("cardModal.smartEnrich.accept")}
-                      rejectLabel={t("cardModal.smartEnrich.reject")}
-                    >
-                      <textarea
-                        value={descBlocks[block.key] || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
-                          setAiContextApplied(null);
-                          dismissSmartEnrichKey("description");
-                        }}
-                        placeholder={block.placeholder}
-                        rows={3}
-                        className={`${inputBase} min-h-[90px] resize-y border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 leading-relaxed whitespace-pre-wrap`}
-                      />
-                    </SmartEnrichFieldShell>
-                  ) : (
-                    <textarea
-                      value={descBlocks[block.key] || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
-                        setAiContextApplied(null);
-                      }}
-                      placeholder={block.placeholder}
-                      rows={3}
-                      className={`${inputBase} min-h-[90px] resize-y border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 leading-relaxed whitespace-pre-wrap`}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="space-y-2">
+              {DESCRIPTION_BLOCKS.map((block) => {
+                const editor = (
+                  <CardDescriptionBlockEditor
+                    editorKey={`${cardEditorId}-${block.key}`}
+                    blockLabel={block.label}
+                    placeholder={block.placeholder}
+                    value={descBlocks[block.key] || ""}
+                    onChange={(md) => {
+                      setDescBlocks((prev) => ({ ...prev, [block.key]: md }));
+                      setAiContextApplied(null);
+                      if (block.key === "businessContext") dismissSmartEnrichKey("description");
+                    }}
+                    defaultOpen={block.key === "businessContext"}
+                  />
+                );
+                return (
+                  <div key={block.key}>
+                    {block.key === "businessContext" ? (
+                      <SmartEnrichFieldShell
+                        active={Boolean(smartEnrichPending?.has("description"))}
+                        onAccept={() => acceptSmartEnrichField("description")}
+                        onReject={() => rejectSmartEnrichField("description")}
+                        badge={t("cardModal.smartEnrich.badge")}
+                        acceptLabel={t("cardModal.smartEnrich.accept")}
+                        rejectLabel={t("cardModal.smartEnrich.reject")}
+                      >
+                        {editor}
+                      </SmartEnrichFieldShell>
+                    ) : (
+                      editor
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           {aiContextApplied && (
@@ -910,100 +749,28 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               ) : null}
             </SmartEnrichFieldShell>
           </div>
-          <div>
+          <div className="rounded-xl border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-primary-alpha-06)] p-3 shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]">
             <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
               {t("cardModal.fields.assignee.label")}
             </label>
-            <div className="space-y-2">
-              <input
-                type="search"
-                value={assigneeQuery}
-                onChange={(e) => setAssigneeQuery(e.target.value)}
-                placeholder="Buscar membro por nome ou ID..."
-                className={assigneeSearchInput}
-                autoComplete="off"
-              />
-              <div
-                role="listbox"
-                aria-label="Selecionar responsável"
-                className="max-h-40 overflow-y-auto rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] p-1"
-              >
-                <button
-                  type="button"
-                  onClick={() => setAssigneeId("")}
-                  role="option"
-                  aria-selected={!assigneeId}
-                  className={`${assigneeOptionBase} ${
-                    !assigneeId
-                      ? "border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]"
-                      : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
-                  }`}
-                >
-                  <span>{t("cardModal.fields.assignee.unassigned")}</span>
-                  {!assigneeId ? <span className="text-[11px] font-semibold">{t("cardModal.fields.assignee.selected")}</span> : null}
-                </button>
-                {filteredAssigneeOptions.map((opt) => (
-                  <button
-                    key={opt.userId}
-                    type="button"
-                    onClick={() => setAssigneeId(opt.userId)}
-                    role="option"
-                    aria-selected={assigneeId === opt.userId}
-                    className={`${assigneeOptionBase} ${
-                      assigneeId === opt.userId
-                        ? "border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]"
-                        : "border border-transparent text-[var(--flux-text)] hover:bg-[var(--flux-primary-alpha-08)]"
-                    }`}
-                  >
-                    <span className="truncate">{opt.label}</span>
-                    <span className="ml-2 shrink-0 font-mono text-[11px] text-[var(--flux-text-muted)]">{opt.userId}</span>
-                  </button>
-                ))}
-                {filteredAssigneeOptions.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-[var(--flux-text-muted)]">Nenhum membro encontrado para este filtro.</p>
-                ) : null}
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {quickAssigneeOptions.map((opt) => (
-                <button
-                  key={opt.userId}
-                  type="button"
-                  onClick={() => setAssigneeId(opt.userId)}
-                  aria-pressed={assigneeId === opt.userId}
-                  className={`${assigneeQuickBase} ${
-                    assigneeId === opt.userId
-                      ? "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]"
-                      : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
-                  }`}
-                >
-                  {opt.userId === user?.id ? "Eu" : opt.label}
-                </button>
-              ))}
-              {assigneeId ? (
-                <button
-                  type="button"
-                  onClick={() => setAssigneeId("")}
-                  className={`${assigneeQuickBase} border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-03)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-30)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]`}
-                >
-                  {t("cardModal.fields.assignee.clear")}
-                </button>
-              ) : null}
-            </div>
-            <div className="mt-1 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-1.5">
-              <p className="text-[11px] leading-relaxed text-[var(--flux-text-muted)]">
-                {assigneeLoading ? (
-                  "Carregando membros..."
-                ) : selectedAssignee ? (
-                  <>
-                    <span className="font-semibold text-[var(--flux-text)]">{t("cardModal.fields.assignee.selectedLabel")}</span>{" "}
-                    {selectedAssignee.label}
-                  </>
-                ) : (
-                  "Selecione um membro do board sem precisar informar ID."
-                )}
-              </p>
-            </div>
+            <CardAssigneeCombobox
+              value={assigneeId}
+              onChange={setAssigneeId}
+              options={assigneeOptions}
+              loading={assigneeLoading}
+              currentUserId={user?.id}
+              labels={{
+                unassigned: t("cardModal.fields.assignee.unassigned"),
+                selectedTag: t("cardModal.fields.assignee.selected"),
+                selectedLabel: t("cardModal.fields.assignee.selectedLabel"),
+                clear: t("cardModal.fields.assignee.clear"),
+                placeholder: t("cardModal.fields.assignee.placeholder"),
+                meShortcut: t("cardModal.fields.assignee.meShortcut"),
+                loading: t("cardModal.fields.assignee.loading"),
+                emptyFilter: t("cardModal.fields.assignee.emptyFilter"),
+                hint: t("cardModal.fields.assignee.hint"),
+              }}
+            />
           </div>
           {directions.length ? (
             <div>
@@ -1042,6 +809,115 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           ) : null}
         </div>
       </CardModalSection>
+
+      {boardMethodology === "scrum" ? (
+        <CardModalSection
+          title={t("cardModal.methodology.scrum.title")}
+          description={t("cardModal.methodology.scrum.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.storyPoints")}
+              </label>
+              <select
+                value={storyPoints ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setStoryPoints(v === "" ? null : Number.parseInt(v, 10));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.storyPointsUnset")}</option>
+                {STORY_POINTS_FIBONACCI.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.sprintsTitle")}
+              </p>
+              {!cardIdReadyForSprint ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.sprintNeedSave")}</p>
+              ) : sprints.length === 0 ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.noSprints")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sprints.map((sp) => {
+                    const inSprint = (sp.cardIds ?? []).includes(String(selfId).trim());
+                    const editable = sp.status === "planning" || sp.status === "active";
+                    return (
+                      <li
+                        key={sp.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2"
+                      >
+                        <span className="min-w-0 text-sm">
+                          <span className="font-medium text-[var(--flux-text)]">{sp.name}</span>
+                          <span className="ml-2 text-[11px] text-[var(--flux-text-muted)]">({sp.status})</span>
+                        </span>
+                        {editable ? (
+                          <label className="flex items-center gap-2 text-sm shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={inSprint}
+                              disabled={sprintPatching === sp.id}
+                              onChange={() => void toggleSprintMembership(sp, !inSprint)}
+                              className="rounded border-[var(--flux-chrome-alpha-20)]"
+                            />
+                            <span>{t("cardModal.methodology.inSprint")}</span>
+                          </label>
+                        ) : (
+                          <span className="text-[11px] text-[var(--flux-text-muted)] shrink-0">
+                            {inSprint ? t("cardModal.methodology.inSprintReadonly") : "—"}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </CardModalSection>
+      ) : null}
+
+      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
+        <CardModalSection
+          title={t("cardModal.methodology.kanban.title")}
+          description={t("cardModal.methodology.kanban.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.serviceClass")}
+              </label>
+              <select
+                value={serviceClass ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setServiceClass(v === "" ? null : (v as CardServiceClass));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.serviceClassUnset")}</option>
+                {CARD_SERVICE_CLASS_VALUES.map((sc) => (
+                  <option key={sc} value={sc}>
+                    {t(`cardModal.methodology.serviceClassValues.${sc}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {currentBucketWip != null ? (
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                {t("cardModal.methodology.wipHint", { limit: currentBucketWip })}
+              </p>
+            ) : null}
+          </div>
+        </CardModalSection>
+      ) : null}
 
       <CardModalSection
         title={t("cardModal.sections.dependencies.title")}
