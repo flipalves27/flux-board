@@ -13,7 +13,7 @@ import {
 } from "@/lib/kv-users";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import {
-  createTrialOrganizationForSignup,
+  createOrganization,
   updateOrganizationOwner,
   getOrganizationById,
 } from "@/lib/kv-organizations";
@@ -23,6 +23,7 @@ import type { ThemePreference } from "@/lib/theme-storage";
 import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
 import type { ValidateResult } from "@/lib/auth-types";
 import { deriveEffectiveRoles } from "@/lib/rbac";
+import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 
 export type { ValidateResult } from "@/lib/auth-types";
 
@@ -243,7 +244,13 @@ export async function registerAction(
     }
 
     const orgOwnerPlaceholder = `pending_${Date.now()}`;
-    const org = await createTrialOrganizationForSignup(orgOwnerPlaceholder, emailNorm);
+    // Keep platform naming consistent on self-signup (avoid deriving from email domain).
+    const org = await createOrganization({
+      ownerId: orgOwnerPlaceholder,
+      name: DEFAULT_PLATFORM_NAME,
+      slug: "flux-board",
+      plan: "trial",
+    });
 
     const user = await createUser({
       username: emailNorm,

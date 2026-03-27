@@ -16,10 +16,11 @@ import {
 } from "@/lib/kv-users";
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import {
-  createTrialOrganizationForSignup,
+  createOrganization,
   getOrganizationById,
   updateOrganizationOwner,
 } from "@/lib/kv-organizations";
+import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import { getUserCap } from "@/lib/plan-gates";
 
 export type OAuthSignInProfile = {
@@ -172,7 +173,13 @@ export async function completeOAuthSignIn(
   }
 
   const orgOwnerPlaceholder = `pending_${Date.now()}`;
-  const org = await createTrialOrganizationForSignup(orgOwnerPlaceholder, emailNorm);
+  // Preserve platform identity on first social signup instead of deriving org name from email domain.
+  const org = await createOrganization({
+    ownerId: orgOwnerPlaceholder,
+    name: DEFAULT_PLATFORM_NAME,
+    slug: "flux-board",
+    plan: "trial",
+  });
 
   const user = await createUser({
     username: emailNorm,
