@@ -50,6 +50,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
@@ -797,13 +798,17 @@ export default function BoardPage() {
                         </svg>
                         Template
                       </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => router.push(`/${locale}/admin/tracer`)}>
-                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Tracer
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      {isPlatformAdminSession(user) ? (
+                        <>
+                          <DropdownMenuItem onSelect={() => router.push(`/${locale}/admin/tracer`)}>
+                            <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Tracer
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      ) : null}
                       <DropdownMenuItem onSelect={() => setEmbedOpen(true)}>
                         <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />

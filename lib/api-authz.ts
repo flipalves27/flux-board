@@ -1,3 +1,22 @@
+/**
+ * Inventário RBAC (plano vs org vs plataforma)
+ *
+ * - Plano comercial: em `Organization` + `lib/plan-gates.ts` (`getEffectiveTier`, `assertFeatureAllowed`).
+ *   Contexto `planGateCtxForAuth(isAdmin, isExecutive)` = admin/executivo **da organização** (não é admin global).
+ * - Gestão da org (billing, convites, webhooks, etc.): `ensureOrgManager` = `platform_admin` OU `org_manager`.
+ * - Operações globais / multi-tenant na URL: só `ensurePlatformAdmin` ou `isSameOrgOrPlatformAdmin` em
+ *   `lib/tenant-route-guard.ts` — nunca `payload.isAdmin` (flag de admin **da org**).
+ * - Acesso a boards: `userCanAccessBoard(..., isAdmin)` usa o mesmo boolean do JWT: “vê todos os boards da org”;
+ *   não concede acesso a outra organização.
+ *
+ * Rotas já padronizadas com `ensureOrgManager` onde antes havia só `payload.isAdmin` (gestão org):
+ * billing checkout/portal/pause/invoices/downgrade-impact/cancellation-feedback; organization-invites;
+ * org/webhooks*; organizations/verify-domain; boards export-template (publicar template).
+ *
+ * Plataforma: `/api/admin/rate-limit-abuse` → `ensurePlatformAdmin`.
+ * Cross-org na URL: program-increments → `isSameOrgOrPlatformAdmin`.
+ * Templates marketplace: bypass global → `isPlatformAdmin` (não org admin de outro tenant).
+ */
 import { NextResponse } from "next/server";
 import { canManageOrganization, isPlatformAdmin } from "./rbac";
 import type { getAuthFromRequest } from "./auth";

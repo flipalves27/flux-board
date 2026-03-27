@@ -7,6 +7,7 @@ import {
   updatePublishedTemplate,
 } from "@/lib/kv-templates";
 import { getAuthFromRequest } from "@/lib/auth";
+import { isPlatformAdmin } from "@/lib/rbac";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import { BoardTemplateSnapshotSchema, zodErrorToMessage } from "@/lib/schemas";
 import { z } from "zod";
@@ -54,7 +55,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
   if (!tpl) return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
 
-  const canDelete = payload.isAdmin || payload.orgId === tpl.creatorOrgId;
+  const canDelete = isPlatformAdmin(payload) || payload.orgId === tpl.creatorOrgId;
   if (!canDelete) {
     return NextResponse.json({ error: "Sem permissão para excluir este template." }, { status: 403 });
   }
@@ -91,7 +92,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   let tpl = await getPublishedTemplateById(id);
   if (!tpl && !id.startsWith("tpl_")) tpl = await getPublishedTemplateBySlug(id);
   if (!tpl) return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
-  if (!payload.isAdmin && payload.orgId !== tpl.creatorOrgId) {
+  if (!isPlatformAdmin(payload) && payload.orgId !== tpl.creatorOrgId) {
     return NextResponse.json({ error: "Sem permissão para editar este template." }, { status: 403 });
   }
   const body = await request.json().catch(() => ({}));
@@ -130,7 +131,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   let tpl = await getPublishedTemplateById(id);
   if (!tpl && !id.startsWith("tpl_")) tpl = await getPublishedTemplateBySlug(id);
   if (!tpl) return NextResponse.json({ error: "Template não encontrado." }, { status: 404 });
-  if (!payload.isAdmin && payload.orgId !== tpl.creatorOrgId) {
+  if (!isPlatformAdmin(payload) && payload.orgId !== tpl.creatorOrgId) {
     return NextResponse.json({ error: "Sem permissão para publicar este template." }, { status: 403 });
   }
   const next = await publishTemplate(tpl._id, payload.id);

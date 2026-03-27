@@ -25,6 +25,15 @@ export function isPlatformAdmin(roles: EffectiveRoles): boolean {
   return roles.platformRole === "platform_admin";
 }
 
+/** Cliente ou servidor: mesmo critério do JWT após `deriveEffectiveRoles` (ex.: usuário seed `admin`). */
+export function isPlatformAdminSession(user: {
+  id: string;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
+}): boolean {
+  return isPlatformAdmin(deriveEffectiveRoles(user));
+}
+
 export function canManageOrganization(roles: EffectiveRoles): boolean {
   return isPlatformAdmin(roles) || roles.orgRole === "org_manager";
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -18,7 +19,8 @@ import type { BpmnTemplateModel } from "@/lib/bpmn-types";
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Apenas administradores podem publicar templates." }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const { id: boardId } = await params;
   if (!boardId) return NextResponse.json({ error: "Board inválido." }, { status: 400 });

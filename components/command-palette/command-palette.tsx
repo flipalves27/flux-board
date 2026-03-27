@@ -13,6 +13,7 @@ import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-his
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
 import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
 import type { BoardMethodology } from "@/lib/board-methodology";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
@@ -368,7 +369,11 @@ export function CommandPalette() {
         { path: "/users", title: t("nav.users"), kw: "users members" },
         { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
-        { path: "/org-invites", title: t("nav.invites"), kw: "invites" },
+        { path: "/org-invites", title: t("nav.invites"), kw: "invites" }
+      );
+    }
+    if (isPlatformAdminSession(user)) {
+      nav.push(
         { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" },
         { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" }
       );

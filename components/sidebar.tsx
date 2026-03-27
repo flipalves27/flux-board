@@ -12,6 +12,7 @@ import { useNavigationVariant, useNavigationVariantActions } from "@/context/nav
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -749,8 +750,13 @@ export function Sidebar() {
                 icon={<IconBilling className="h-4 w-4 shrink-0" />}
                 label={t("billing")}
               />
-              {/* Ops */}
+            </>
+          )}
+
+          {user && isPlatformAdminSession(user) && (
+            <>
               <div className="h-[6px]" />
+              <NavSectionTitle>{t("section.platformOps")}</NavSectionTitle>
               <NavLink
                 path="/rate-limit-abuse"
                 hint={t("hints.rateLimitAbuse")}

@@ -28,7 +28,8 @@
     "section": {
       "work": "Trabalho",
       "intelligence": "Inteligência",
-      "admin": "Admin"
+      "admin": "Admin",
+      "platformOps": "Plataforma"
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",

@@ -28,7 +28,8 @@
     "section": {
       "work": "Work",
       "intelligence": "Intelligence",
-      "admin": "Admin"
+      "admin": "Admin",
+      "platformOps": "Platform"
     },
     "hints": {
       "boards": "Kanban boards — daily work and columns.",

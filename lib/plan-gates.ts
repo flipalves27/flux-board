@@ -3,6 +3,12 @@ import { isProTenant } from "./commercial-plan";
 import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
 import { writeSecurityAudit } from "./security-audit";
 
+/**
+ * Tier de produto é sempre por organização (`Organization.plan`, Stripe, trial).
+ * Usuários não carregam plano próprio; `PlanGateContext.isOrgAdmin` só reflete papel na org atual
+ * (admin/executivo), não administrador da plataforma — esse papel é `platformRole` em `lib/rbac.ts`.
+ */
+
 /** Audit log retention for Free tier (days). Pro/Business: unlimited (no TTL window). */
 const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 

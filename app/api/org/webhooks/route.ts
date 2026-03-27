@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { createWebhookSubscription, listWebhookSubscriptions } from "@/lib/kv-webhooks";
 import { WebhookSubscriptionCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { assertWebhookUrlAllowed } from "@/lib/webhook-url";
@@ -7,7 +8,8 @@ import { assertWebhookUrlAllowed } from "@/lib/webhook-url";
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedGet = ensureOrgManager(payload);
+  if (deniedGet) return deniedGet;
 
   const subs = await listWebhookSubscriptions(payload.orgId);
   return NextResponse.json({ webhooks: subs });
@@ -16,7 +18,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedPost = ensureOrgManager(payload);
+  if (deniedPost) return deniedPost;
 
   const body = await request.json().catch(() => ({}));
   const parsed = WebhookSubscriptionCreateSchema.safeParse(body);

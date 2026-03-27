@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import {
   deleteWebhookSubscription,
   getWebhookSubscription,
@@ -19,7 +20,8 @@ export async function GET(
 ) {
   const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedGet = ensureOrgManager(payload);
+  if (deniedGet) return deniedGet;
 
   const { id } = await params;
   const sub = await getWebhookSubscription(payload.orgId, id);
@@ -35,7 +37,8 @@ export async function PATCH(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedPatch = ensureOrgManager(payload);
+  if (deniedPatch) return deniedPatch;
 
   const { id } = await params;
   const existing = await getWebhookSubscription(payload.orgId, id);
@@ -77,7 +80,8 @@ export async function DELETE(
 ) {
   const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedDel = ensureOrgManager(payload);
+  if (deniedDel) return deniedDel;
 
   const { id } = await params;
   const ok = await deleteWebhookSubscription(payload.orgId, id);

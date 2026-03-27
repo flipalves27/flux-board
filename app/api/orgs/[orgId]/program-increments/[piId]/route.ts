@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { isSameOrgOrPlatformAdmin } from "@/lib/tenant-route-guard";
 import {
   getProgramIncrement,
   updateProgramIncrement,
@@ -26,7 +27,7 @@ const UpdatePISchema = z.object({
 async function checkAccess(request: NextRequest, orgId: string) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return { error: "Não autenticado", status: 401 as const, payload: null };
-  if (orgId !== payload.orgId && !payload.isAdmin) {
+  if (!isSameOrgOrPlatformAdmin(payload, orgId)) {
     return { error: "Sem permissão", status: 403 as const, payload: null };
   }
   const org = await getOrganizationById(orgId);

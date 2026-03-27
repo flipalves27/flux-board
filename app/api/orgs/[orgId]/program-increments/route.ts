@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { isSameOrgOrPlatformAdmin } from "@/lib/tenant-route-guard";
 import {
   listProgramIncrements,
   createProgramIncrement,
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { orgId } = await params;
-  if (orgId !== payload.orgId && !payload.isAdmin) {
+  if (!isSameOrgOrPlatformAdmin(payload, orgId)) {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { orgId } = await params;
-  if (orgId !== payload.orgId && !payload.isAdmin) {
+  if (!isSameOrgOrPlatformAdmin(payload, orgId)) {
     return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
   }
 

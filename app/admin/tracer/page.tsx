@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { useFluxDiagnosticsStore, type FluxDiagEntry } from "@/stores/flux-diagnostics-store";
 import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabled } from "@/lib/flux-diagnostics-shared";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 const KINDS: Array<FluxDiagEntry["kind"] | "all"> = ["all", "react-boundary", "window", "unhandledrejection", "console", "navigation"];
 
@@ -32,7 +33,7 @@ export default function AdminTracerPage() {
       router.replace("/login");
       return;
     }
-    if (!user.isAdmin) {
+    if (!isPlatformAdminSession(user)) {
       router.replace("/boards");
     }
   }, [isChecked, user, router]);
@@ -74,7 +75,7 @@ export default function AdminTracerPage() {
     }
   };
 
-  if (!isChecked || !user?.isAdmin) {
+  if (!isChecked || !user || !isPlatformAdminSession(user)) {
     return null;
   }
 
