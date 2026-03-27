@@ -959,7 +959,8 @@
       "missingCredentials": "Preencha usuário e senha.",
       "connection": "Erro de conexão. Tente novamente.",
       "missingAllFields": "Preencha todos os campos.",
-      "passwordTooShort": "Senha deve ter pelo menos 4 caracteres."
+      "passwordTooShort": "Senha deve ter pelo menos 4 caracteres.",
+      "oauthPasswordOnly": "Esta conta usa login social. Use Google ou Microsoft."
     },
     "fields": {
       "userOrEmail": "Usuário ou E-mail",
@@ -982,7 +983,31 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
-    "rememberAfter": {}
+    "rememberAfter": {},
+    "oauth": {
+      "continueGoogle": "Continuar com Google",
+      "continueMicrosoft": "Continuar com Microsoft",
+      "redirecting": "Redirecionando…",
+      "divider": "ou continue com e-mail",
+      "ariaGoogle": "Continuar com conta Google",
+      "ariaMicrosoft": "Continuar com conta Microsoft",
+      "errors": {
+        "generic": "Não foi possível concluir o login com Google ou Microsoft. Tente novamente.",
+        "oauth_denied": "Login cancelado.",
+        "oauth_invalid": "Resposta de login inválida. Tente novamente.",
+        "oauth_state": "Sessão expirada. Tente entrar novamente.",
+        "oauth_profile": "Não foi possível ler seu perfil no provedor.",
+        "oauth_exchange": "Não foi possível concluir o login no provedor.",
+        "oauth_email_unverified": "Seu e-mail não está verificado no provedor.",
+        "oauth_no_email": "Nenhum e-mail foi retornado para esta conta.",
+        "oauth_account_conflict": "Este e-mail já está vinculado a outra conta neste provedor.",
+        "oauth_invite_invalid": "Convite inválido ou expirado.",
+        "oauth_plan_limit": "Limite de usuários do plano da organização atingido.",
+        "oauth_consume_failed": "Não foi possível aplicar o convite. Tente novamente.",
+        "oauth_not_configured": "Login social não está configurado no servidor.",
+        "rate_limited": "Muitas tentativas. Aguarde e tente novamente."
+      }
+    }
   },
   "onboarding": {
     "dragReorderAria": "Arrastar para reordenar",

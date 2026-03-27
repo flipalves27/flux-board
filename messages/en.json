@@ -959,7 +959,8 @@
       "missingCredentials": "Enter username and password.",
       "connection": "Connection error. Please try again.",
       "missingAllFields": "Please fill in all fields.",
-      "passwordTooShort": "Password must be at least 4 characters."
+      "passwordTooShort": "Password must be at least 4 characters.",
+      "oauthPasswordOnly": "This account uses social sign-in. Use Google or Microsoft."
     },
     "fields": {
       "userOrEmail": "Username or Email",
@@ -981,6 +982,30 @@
     "actions": {
       "login": "Sign in",
       "register": "Register"
+    },
+    "oauth": {
+      "continueGoogle": "Continue with Google",
+      "continueMicrosoft": "Continue with Microsoft",
+      "redirecting": "Redirecting…",
+      "divider": "or continue with email",
+      "ariaGoogle": "Continue with Google account",
+      "ariaMicrosoft": "Continue with Microsoft account",
+      "errors": {
+        "generic": "Sign-in with Google or Microsoft could not be completed. Try again.",
+        "oauth_denied": "Sign-in was cancelled.",
+        "oauth_invalid": "Invalid sign-in response. Try again.",
+        "oauth_state": "Session expired. Try signing in again.",
+        "oauth_profile": "Could not read your profile from the provider.",
+        "oauth_exchange": "Could not complete sign-in with the provider.",
+        "oauth_email_unverified": "Your email is not verified with the provider.",
+        "oauth_no_email": "No email was returned for this account.",
+        "oauth_account_conflict": "This email is already linked to another account for this provider.",
+        "oauth_invite_invalid": "Invalid or expired invite.",
+        "oauth_plan_limit": "Organization user limit reached for this plan.",
+        "oauth_consume_failed": "The invite could not be applied. Try again.",
+        "oauth_not_configured": "Social sign-in is not configured on the server.",
+        "rate_limited": "Too many attempts. Wait and try again."
+      }
     }
   },
   "onboarding": {

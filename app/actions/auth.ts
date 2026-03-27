@@ -2,6 +2,7 @@
 
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import {
   getUserByUsername,
   getUserByEmail,
@@ -79,7 +80,14 @@ export async function loginAction(
       ? await getUserByEmail(ident)
       : await getUserByUsername(ident);
 
-    if (!user || !verifyPassword(password, user.passwordHash || "")) {
+    if (!user) {
+      return { ok: false, error: "Usuário ou senha inválidos" };
+    }
+    if (user.passwordHash === null) {
+      const t = await getTranslations("login.errors");
+      return { ok: false, error: t("oauthPasswordOnly") };
+    }
+    if (!verifyPassword(password, user.passwordHash)) {
       return { ok: false, error: "Usuário ou senha inválidos" };
     }
 

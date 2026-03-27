@@ -94,6 +94,28 @@ Usuários, boards e metadados ficam no **MongoDB**.
 4. Opcional: **`MONGODB_DB`** — nome do database se quiser forçar (senão usa o database da connection string).
 5. Opcional: **`JWT_SECRET`** em produção.
 
+### Login social (Google e Microsoft)
+
+OAuth 2.0 + OIDC via rotas `/api/auth/oauth/google/*` e `/api/auth/oauth/microsoft/*`; a sessão continua sendo JWT + cookies httpOnly como no login por senha.
+
+**Secrets (servidor):**
+
+- `AUTH_GOOGLE_CLIENT_ID` / `AUTH_GOOGLE_CLIENT_SECRET`
+- `AUTH_MICROSOFT_CLIENT_ID` / `AUTH_MICROSOFT_CLIENT_SECRET`
+- `AUTH_MICROSOFT_TENANT_ID` (opcional; padrão `common` para contas pessoais e escolares)
+
+**Base URL:** defina `NEXT_PUBLIC_APP_URL` com o mesmo esquema e host usados nos consoles OAuth (os redirect URIs devem coincidir).
+
+**Redirect URIs registrados nos provedores:**
+
+- `{NEXT_PUBLIC_APP_URL}/api/auth/oauth/google/callback`
+- `{NEXT_PUBLIC_APP_URL}/api/auth/oauth/microsoft/callback`
+
+**Exibir botões na tela de login (cliente):**
+
+- `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED` = `1` ou `true`
+- `NEXT_PUBLIC_OAUTH_MICROSOFT_ENABLED` = `1` ou `true`
+
 **Desenvolvimento local:** sem `MONGODB_URI`, a API usa armazenamento **em memória** (dados somem ao reiniciar o servidor).
 
 **Coleções criadas automaticamente:** `users`, `boards`, `user_boards`, `counters` (índices em `emailLower` / `usernameLower` na primeira execução).

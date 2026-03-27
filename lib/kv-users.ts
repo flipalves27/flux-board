@@ -10,6 +10,8 @@ const USERS_KEY = "flux_users";
 const USER_PREFIX = "flux_user:";
 const USER_BY_EMAIL = "flux_user_email:";
 const USER_BY_USERNAME = "flux_user_username:";
+/** KV: flux_oauth_link:{provider}:{subject} → user id */
+const OAUTH_LINK_PREFIX = "flux_oauth_link:";
 
 const COL_USERS = "users";
 
@@ -25,12 +27,22 @@ const ADMIN_USER = {
 
 export type { ThemePreference } from "./theme-storage";
 
+export type OAuthProviderId = "google" | "microsoft";
+
+export type OAuthLink = {
+  provider: OAuthProviderId;
+  /** Subject (`sub`) do IdP para este provedor */
+  subject: string;
+};
+
 export interface User {
   id: string;
   username: string;
   name: string;
   email: string;
   passwordHash: string | null;
+  /** Contas vinculadas a provedores OAuth (login social). */
+  oauthLinks?: OAuthLink[];
   isAdmin: boolean;
   /** Leitura executiva (C-level) sem permissões de administração da org. */
   isExecutive?: boolean;
@@ -57,6 +69,7 @@ type UserDoc = {
   boardProductTourCompleted?: boolean;
   platformRole?: PlatformRole;
   orgRole?: OrgRole;
+  oauthLinks?: { provider: string; subject: string }[];
 };
 
 function recreateAdminUser(): User {
@@ -81,6 +94,14 @@ function toUser(doc: UserDoc): User {
     ...(doc.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
     ...(doc.platformRole ? { platformRole: doc.platformRole } : {}),
     ...(doc.orgRole ? { orgRole: doc.orgRole } : {}),
+    ...(doc.oauthLinks?.length
+      ? {
+          oauthLinks: doc.oauthLinks.filter(
+            (l) =>
+              (l.provider === "google" || l.provider === "microsoft") && typeof l.subject === "string"
+          ) as OAuthLink[],
+        }
+      : {}),
   };
 }
 
@@ -230,6 +251,91 @@ export async function getUserById(id: string, orgId: string): Promise<User | nul
   return user.orgId === orgId ? user : null;
 }
 
+/** Carrega usuário por id sem filtrar por org (uso interno: OAuth, admin). */
+export async function getUserRecordById(id: string): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const doc = await db.collection<UserDoc>(COL_USERS).findOne({ _id: id });
+    return doc ? toUser(doc) : null;
+  }
+  const kv = await getStore();
+  const raw = await kv.get<string>(USER_PREFIX + id);
+  if (!raw) return null;
+  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+}
+
+function oauthLinkKey(provider: OAuthProviderId, subject: string): string {
+  return OAUTH_LINK_PREFIX + provider + ":" + subject;
+}
+
+async function setKvOAuthMappingsForUser(userId: string, links: OAuthLink[] | undefined): Promise<void> {
+  if (!links?.length) return;
+  const kv = await getStore();
+  for (const l of links) {
+    await kv.set(oauthLinkKey(l.provider, l.subject), userId);
+  }
+}
+
+async function deleteKvOAuthMappingsForUser(user: User): Promise<void> {
+  const links = user.oauthLinks;
+  if (!links?.length) return;
+  const kv = await getStore();
+  for (const l of links) {
+    await kv.del(oauthLinkKey(l.provider, l.subject));
+  }
+}
+
+/** Primeiro usuário que possui o vínculo provider+subject. */
+export async function findUserByOAuthProviderSubject(
+  provider: OAuthProviderId,
+  subject: string
+): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const doc = await db.collection<UserDoc>(COL_USERS).findOne({
+      oauthLinks: { $elemMatch: { provider, subject } },
+    });
+    return doc ? toUser(doc) : null;
+  }
+  const kv = await getStore();
+  const id = await kv.get<string>(oauthLinkKey(provider, subject));
+  if (!id) return null;
+  const raw = await kv.get<string>(USER_PREFIX + id);
+  if (!raw) return null;
+  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+}
+
+/**
+ * Adiciona vínculo OAuth ao usuário. Retorna null se conflito (outro `sub` já ligado ao mesmo provider nesta conta,
+ * ou vínculo já pertence a outro user id).
+ */
+export async function appendOAuthLink(
+  userId: string,
+  orgId: string,
+  link: OAuthLink
+): Promise<User | null> {
+  const existingOwner = await findUserByOAuthProviderSubject(link.provider, link.subject);
+  if (existingOwner && existingOwner.id !== userId) return null;
+
+  const user = await getUserById(userId, orgId);
+  if (!user) return null;
+
+  const links = user.oauthLinks ?? [];
+  const sameProvider = links.find((l) => l.provider === link.provider);
+  if (sameProvider && sameProvider.subject !== link.subject) return null;
+
+  if (links.some((l) => l.provider === link.provider && l.subject === link.subject)) {
+    return user;
+  }
+
+  const nextLinks = [...links.filter((l) => l.provider !== link.provider), link];
+  return updateUser(userId, orgId, { oauthLinks: nextLinks });
+}
+
 export async function getUserByUsername(username: string): Promise<User | null> {
   await ensureTenancyMigrationOnce();
   if (isMongoConfigured()) {
@@ -270,11 +376,12 @@ export async function createUser(user: {
   username: string;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   orgId: string;
   isAdmin?: boolean;
   platformRole?: PlatformRole;
   orgRole?: OrgRole;
+  oauthLinks?: OAuthLink[];
 }): Promise<User> {
   await ensureTenancyMigrationOnce();
   const id = "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
@@ -290,6 +397,11 @@ export async function createUser(user: {
     emailLower: user.email.toLowerCase(),
     ...(user.platformRole ? { platformRole: user.platformRole } : {}),
     ...(user.orgRole ? { orgRole: user.orgRole } : {}),
+    ...(user.oauthLinks?.length
+      ? {
+          oauthLinks: user.oauthLinks.map((l) => ({ provider: l.provider, subject: l.subject })),
+        }
+      : {}),
   };
 
   if (isMongoConfigured()) {
@@ -307,6 +419,7 @@ export async function createUser(user: {
   const users = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
   users.push(id);
   await kv.set(USERS_KEY, users);
+  await setKvOAuthMappingsForUser(id, u.oauthLinks);
   return u;
 }
 
@@ -351,6 +464,9 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     if (updates.orgRole !== undefined) {
       $set.orgRole = updates.orgRole;
     }
+    if (updates.oauthLinks !== undefined) {
+      $set.oauthLinks = updates.oauthLinks.map((l) => ({ provider: l.provider, subject: l.subject }));
+    }
     // `orgId` não deve ser alterado por este endpoint (evita troca de tenant por engano).
     if (Object.keys($set).length) await col.updateOne({ _id: id, orgId }, { $set });
     return getUserById(id, orgId);
@@ -390,6 +506,11 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
   }
   if (updates.orgRole !== undefined) {
     user.orgRole = updates.orgRole;
+  }
+  if (updates.oauthLinks !== undefined) {
+    await deleteKvOAuthMappingsForUser(user);
+    user.oauthLinks = updates.oauthLinks;
+    await setKvOAuthMappingsForUser(id, user.oauthLinks);
   }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
   return user;
@@ -433,6 +554,8 @@ export async function deleteUser(id: string, orgId: string): Promise<void> {
   await ensureTenancyMigrationOnce();
   const user = await getUserById(id, orgId);
   if (!user) return;
+
+  await deleteKvOAuthMappingsForUser(user);
 
   if (isMongoConfigured()) {
     const db = await getDb();

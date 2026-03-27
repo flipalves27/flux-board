@@ -7,6 +7,23 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
+import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
+
+const OAUTH_ERROR_KEYS = new Set([
+  "oauth_denied",
+  "oauth_invalid",
+  "oauth_state",
+  "oauth_profile",
+  "oauth_exchange",
+  "oauth_email_unverified",
+  "oauth_no_email",
+  "oauth_account_conflict",
+  "oauth_invite_invalid",
+  "oauth_plan_limit",
+  "oauth_consume_failed",
+  "oauth_not_configured",
+  "rate_limited",
+]);
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -183,6 +200,12 @@ export default function LoginPage() {
             {error}
           </div>
         )}
+
+        <OAuthProviderButtons
+          locale={locale}
+          invite={inviteCode}
+          redirect={redirectTo && redirectTo.startsWith("/") ? redirectTo : undefined}
+        />
 
         {activeTab === "login" && (
           <form onSubmit={handleLogin} className="space-y-4">

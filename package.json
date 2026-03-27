@@ -28,6 +28,7 @@
     "@react-email/render": "^2.0.4",
     "@tanstack/react-table": "^8.21.3",
     "@xyflow/react": "^12.10.1",
+    "arctic": "^3.7.0",
     "cmdk": "^1.1.1",
     "d3": "^7.9.0",
     "fuse.js": "^7.1.0",
