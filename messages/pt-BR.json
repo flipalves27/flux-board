@@ -485,6 +485,7 @@
     "badge": "Flux Reports",
     "title": "BI self-service com narrativa IA",
     "subtitle": "Dashboard ao vivo com dados agregados dos boards da organização. Use Explicar em cada gráfico para gerar uma narrativa executiva.",
+    "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
     "loadError": "Não foi possível carregar os relatórios.",
     "empty": "Sem dados.",
@@ -566,6 +567,47 @@
       "concludedCopilot": "Concluídos (Copilot)",
       "cards": "Cards",
       "sentimentScore": "Clima médio"
+    },
+    "lss": {
+      "badge": "Lean Six Sigma",
+      "title": "Portfólio executivo DMAIC",
+      "subtitle": "Visão C-level dos boards LSS: carga por fase, risco de aging, conclusões e vínculos com OKRs.",
+      "backToReports": "Voltar ao Flux Reports",
+      "generatedAt": "Atualizado em",
+      "loadError": "Não foi possível carregar o relatório LSS.",
+      "upgradeHint": "Este relatório exige plano Business ou superior. Faça upgrade para liberar analytics executivos Lean Six Sigma.",
+      "emptyNoLssBoards": "Ainda não há boards Lean Six Sigma nesta organização.",
+      "emptyNoLssBoardsHint": "Crie um board com metodologia \"Lean Six Sigma\" (DMAIC) para ver as métricas de portfólio aqui.",
+      "kpi": {
+        "lssBoards": "Boards LSS",
+        "openWip": "WIP em aberto (itens)",
+        "atRiskWip": "WIP em risco",
+        "atRiskHint": "Itens abertos com aging ≥ {days} dias",
+        "done8w": "Concluídos (8 semanas)"
+      },
+      "okrBridgeTitle": "OKRs ligados a boards LSS",
+      "charts": {
+        "dmaicOpen": "Em aberto por fase DMAIC",
+        "weeklyDone": "Conclusões semanais (boards LSS)",
+        "agingOpen": "Aging do WIP em aberto"
+      },
+      "hints": {
+        "dmaicOpen": "Cards não concluídos por coluna atual (chave do bucket).",
+        "weeklyDone": "Cards marcados como concluídos com data de conclusão em cada semana móvel.",
+        "agingOpen": "Dias desde criação do card ou entrada na coluna — distribuição de todos os itens abertos."
+      },
+      "series": {
+        "openCards": "Cards em aberto",
+        "completed": "Concluídos"
+      },
+      "portfolioTitle": "Portfólio de boards",
+      "portfolioHint": "Ordenado por WIP em risco e aging máximo.",
+      "table": {
+        "board": "Board",
+        "open": "Abertos",
+        "atRisk": "Em risco",
+        "maxAge": "Age máx."
+      }
     },
     "sprint": {
       "title": "Planejamento preditivo de sprint",
@@ -2359,6 +2401,17 @@
           "root_cause": "Causa raiz",
           "improvement_ideas": "Ideias de melhoria",
           "control_plan": "Plano de controle"
+        },
+        "tierStandard": "Artefatos DMAIC",
+        "tierPremium": "C-level e auditoria (Business+)",
+        "premiumBadge": "Premium",
+        "premiumLocked": "Faça upgrade para Business para liberar narrativa para steering, FMEA, hipótese/teste executivo, interpretação de gráfico de controle e checklist de prontidão para auditoria DMAIC.",
+        "premiumModes": {
+          "steering_narrative": "Narrativa para comitê / steering",
+          "fmea_draft": "Rascunho FMEA",
+          "hypothesis_test_exec": "Hipótese e teste (executivo)",
+          "control_chart_interpretation": "Interpretação de gráfico de controle",
+          "dmaic_audit_readiness": "Prontidão para auditoria DMAIC"
         }
       },
       "incrementReview": {

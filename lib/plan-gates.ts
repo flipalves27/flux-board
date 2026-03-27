@@ -65,7 +65,9 @@ export type FeatureKey =
   | "dependency_graph_visual"
   | "portfolio_sprint"
   | "flux_workflows_visual"
-  | "board_health_score";
+  | "board_health_score"
+  | "lss_executive_reports"
+  | "lss_ai_premium";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: PAID,
@@ -100,6 +102,8 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   portfolio_sprint: BIZ_UP,
   flux_workflows_visual: BIZ_UP,
   board_health_score: BIZ_UP,
+  lss_executive_reports: BIZ_UP,
+  lss_ai_premium: BIZ_UP,
 };
 
 /** Matriz canônica para UI/backend (fonte única da política de planos). */
@@ -177,6 +181,8 @@ export const PRO_FEATURE_LABELS_PT: { key: FeatureKey; label: string }[] = [
   { key: "okr_engine", label: "OKR engine" },
   { key: "flux_docs", label: "Flux Docs" },
   { key: "flux_docs_rag", label: "Flux Docs RAG" },
+  { key: "lss_executive_reports", label: "Relatórios executivos Lean Six Sigma" },
+  { key: "lss_ai_premium", label: "IA C-level Lean Six Sigma" },
 ];
 
 export function describeDowngradeImpact(params: {

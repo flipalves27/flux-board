@@ -27,6 +27,7 @@ import {
 import { computePortfolioHealthScore } from "@/lib/executive-dashboard-metrics";
 import { currentQuarterLabel } from "@/lib/quarter-label";
 import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
+import { buildLeanSixSigmaPortfolioSummary } from "@/lib/flux-reports-lss";
 
 const NUM_WEEKS = 8;
 
@@ -229,6 +230,9 @@ export async function GET(request: NextRequest) {
 
     const generatedAt = new Date().toISOString();
 
+    const lssReportsEnabled = canUseFeature(org, "lss_executive_reports", gateCtx);
+    const leanSixSigmaPortfolio = lssReportsEnabled ? buildLeanSixSigmaPortfolioSummary(boards) : null;
+
     return NextResponse.json(
       {
       schema: "flux-board.executive_dashboard.v1",
@@ -260,6 +264,7 @@ export async function GET(request: NextRequest) {
         boardCount: boards.length,
         copilotHistory: copilotChats.length > 0,
       },
+      leanSixSigmaPortfolio,
     },
       {
         headers: {

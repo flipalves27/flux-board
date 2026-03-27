@@ -12,12 +12,15 @@ export function ChartShell({
   children,
   chartId,
   explainPayload,
+  explainApiPath = "/api/flux-reports/explain",
 }: {
   title: string;
   hint?: string;
   children: React.ReactNode;
   chartId: string;
   explainPayload: unknown;
+  /** Ex.: `/api/flux-reports/lss/explain` para relatório Lean Six Sigma. */
+  explainApiPath?: string;
 }) {
   const t = useTranslations("reports");
   const { getHeaders } = useAuth();
@@ -40,7 +43,7 @@ export function ChartShell({
         model?: string;
         provider?: string;
       }>(
-        "/api/flux-reports/explain",
+        explainApiPath,
         {
           chartId,
           chartTitle: title,
@@ -60,7 +63,7 @@ export function ChartShell({
     } finally {
       setBusy(false);
     }
-  }, [chartId, explainPayload, getHeaders, title, t]);
+  }, [chartId, explainApiPath, explainPayload, getHeaders, title, t]);
 
   return (
     <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">

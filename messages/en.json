@@ -485,6 +485,7 @@
     "badge": "Flux Reports",
     "title": "Self-service BI with AI narrative",
     "subtitle": "Live dashboard aggregating boards in your organization. Use Explain on each chart to generate an executive narrative.",
+    "lssExecutiveLink": "Lean Six Sigma executive (Business+)",
     "loading": "Loading metrics…",
     "loadError": "Could not load reports.",
     "empty": "No data.",
@@ -566,6 +567,47 @@
       "concludedCopilot": "Completed (Copilot)",
       "cards": "Cards",
       "sentimentScore": "Avg. mood"
+    },
+    "lss": {
+      "badge": "Lean Six Sigma",
+      "title": "Executive DMAIC portfolio",
+      "subtitle": "C-level view of LSS boards: phase load, aging risk, completions, and OKR links.",
+      "backToReports": "Back to Flux Reports",
+      "generatedAt": "Updated at",
+      "loadError": "Could not load LSS report.",
+      "upgradeHint": "This report requires a Business plan or higher. Upgrade to unlock Lean Six Sigma executive analytics.",
+      "emptyNoLssBoards": "No Lean Six Sigma boards in this organization yet.",
+      "emptyNoLssBoardsHint": "Create a board with methodology \"Lean Six Sigma\" (DMAIC) to see portfolio metrics here.",
+      "kpi": {
+        "lssBoards": "LSS boards",
+        "openWip": "Open WIP (items)",
+        "atRiskWip": "WIP at risk",
+        "atRiskHint": "Open items with aging ≥ {days} days",
+        "done8w": "Completed (8 weeks)"
+      },
+      "okrBridgeTitle": "OKRs linked to LSS boards",
+      "charts": {
+        "dmaicOpen": "Open work by DMAIC phase",
+        "weeklyDone": "Weekly completions (LSS boards)",
+        "agingOpen": "Aging of open WIP"
+      },
+      "hints": {
+        "dmaicOpen": "Non-completed cards counted by current column (bucket key).",
+        "weeklyDone": "Cards marked complete with a completion date in each rolling week.",
+        "agingOpen": "Days since card creation or column entry — distribution of all open items."
+      },
+      "series": {
+        "openCards": "Open cards",
+        "completed": "Completed"
+      },
+      "portfolioTitle": "Board portfolio",
+      "portfolioHint": "Sorted by at-risk WIP and maximum aging.",
+      "table": {
+        "board": "Board",
+        "open": "Open",
+        "atRisk": "At risk",
+        "maxAge": "Max age"
+      }
     },
     "sprint": {
       "title": "Predictive sprint planning",
@@ -2354,6 +2396,17 @@
           "root_cause": "Root cause",
           "improvement_ideas": "Improvement ideas",
           "control_plan": "Control plan"
+        },
+        "tierStandard": "DMAIC artifacts",
+        "tierPremium": "C-level & audit (Business+)",
+        "premiumBadge": "Premium",
+        "premiumLocked": "Upgrade to Business to unlock steering narrative, FMEA, executive hypothesis framing, control-chart interpretation, and audit readiness checklists.",
+        "premiumModes": {
+          "steering_narrative": "Steering committee narrative",
+          "fmea_draft": "FMEA draft",
+          "hypothesis_test_exec": "Hypothesis & test (executive)",
+          "control_chart_interpretation": "Control chart interpretation",
+          "dmaic_audit_readiness": "DMAIC audit readiness"
         }
       },
       "incrementReview": {

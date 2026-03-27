@@ -7,11 +7,85 @@ import type {
   TemplatePricingTier,
 } from "./template-types";
 import { TEMPLATE_CATEGORIES } from "./template-types";
+import { defaultBucketOrderLeanSixSigma } from "./board-methodology";
 
 const COL = "published_templates";
 
 /** Fallback em memória quando Mongo não está configurado (dev). */
 const memoryStore = new Map<string, PublishedTemplate>();
+
+/** Showcase marketplace: templates LSS premium (DMAIC + metodologia no snapshot). */
+export function buildLssPremiumShowcaseTemplates(nowIso: string): PublishedTemplate[] {
+  const lssBuckets = defaultBucketOrderLeanSixSigma().map((b) => ({
+    key: b.key,
+    label: b.label,
+    color: b.color,
+  }));
+  return [
+    {
+      _id: "tpl_seed_lss_dmaic_premium",
+      slug: "lean-six-sigma-dmaic-premium",
+      title: "Lean Six Sigma — DMAIC (Premium)",
+      description:
+        "Quadro DMAIC com rótulos VOC, CTQ, Medida, Causa raiz, Contramedida e Controle. Para projetos de melhoria e Black Belt.",
+      category: "operations",
+      pricingTier: "premium",
+      creatorRevenueSharePercent: 100,
+      creatorOrgId: "org_flux_showcase",
+      creatorOrgName: "Flux-Board",
+      snapshot: {
+        config: {
+          bucketOrder: lssBuckets,
+          collapsedColumns: [],
+          labels: ["VOC", "CTQ", "Medida", "Causa raiz", "Contramedida", "Controle"],
+        },
+        mapaProducao: [],
+        labelPalette: [],
+        automations: [],
+        boardMethodology: "lean_six_sigma",
+      },
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      _id: "tpl_seed_lss_service_premium",
+      slug: "lean-six-sigma-service-recovery-premium",
+      title: "LSS — recuperação de serviço (Premium)",
+      description:
+        "Template DMAIC focado em falhas de atendimento, NPS e retrabalho; colunas e labels alinhados a VOC/CTQ.",
+      category: "customer_success",
+      pricingTier: "premium",
+      creatorRevenueSharePercent: 100,
+      creatorOrgId: "org_flux_showcase",
+      creatorOrgName: "Flux-Board",
+      snapshot: {
+        config: {
+          bucketOrder: lssBuckets,
+          collapsedColumns: [],
+          labels: ["VOC", "CTQ", "SLA", "Causa raiz", "Contramedida", "Controle"],
+        },
+        mapaProducao: [],
+        labelPalette: [],
+        automations: [],
+        boardMethodology: "lean_six_sigma",
+      },
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
+}
+
+let mongoLssPremiumShowcaseEnsured = false;
+
+async function ensureMongoLssPremiumShowcaseTemplates(db: Db): Promise<void> {
+  if (mongoLssPremiumShowcaseEnsured) return;
+  mongoLssPremiumShowcaseEnsured = true;
+  const col = db.collection<PublishedTemplate>(COL);
+  const now = new Date().toISOString();
+  for (const t of buildLssPremiumShowcaseTemplates(now)) {
+    await col.updateOne({ slug: t.slug }, { $setOnInsert: { ...t } }, { upsert: true });
+  }
+}
 
 async function seedMemoryTemplatesIfNeeded(): Promise<void> {
   if (isMongoConfigured() || memoryStore.size > 0) return;
@@ -45,6 +119,10 @@ async function seedMemoryTemplatesIfNeeded(): Promise<void> {
       updatedAt: now,
     };
     memoryStore.set(doc._id, doc);
+  }
+
+  for (const t of buildLssPremiumShowcaseTemplates(now)) {
+    memoryStore.set(t._id, t);
   }
 }
 
@@ -84,6 +162,7 @@ export async function listPublishedTemplates(params?: {
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureIndexes(db);
+    await ensureMongoLssPremiumShowcaseTemplates(db);
     const q: Record<string, unknown> = {};
     if (cat && TEMPLATE_CATEGORIES.includes(cat)) q.category = cat;
     if (status) {
