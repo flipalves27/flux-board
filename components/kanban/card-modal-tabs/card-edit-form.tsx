@@ -749,7 +749,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               ) : null}
             </SmartEnrichFieldShell>
           </div>
-          <div className="rounded-xl border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-primary-alpha-06)] p-3 shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]">
+          <div>
             <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
               {t("cardModal.fields.assignee.label")}
             </label>
@@ -762,7 +762,6 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               labels={{
                 unassigned: t("cardModal.fields.assignee.unassigned"),
                 selectedTag: t("cardModal.fields.assignee.selected"),
-                selectedLabel: t("cardModal.fields.assignee.selectedLabel"),
                 clear: t("cardModal.fields.assignee.clear"),
                 placeholder: t("cardModal.fields.assignee.placeholder"),
                 meShortcut: t("cardModal.fields.assignee.meShortcut"),

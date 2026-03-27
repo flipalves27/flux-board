@@ -1630,7 +1630,6 @@
           "label": "Assignee",
           "unassigned": "Unassigned",
           "selected": "selected",
-          "selectedLabel": "Selected:",
           "clear": "Clear",
           "placeholder": "Search member by name or ID…",
           "meShortcut": "Me",

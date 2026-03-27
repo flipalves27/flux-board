@@ -1635,7 +1635,6 @@
           "label": "Responsável",
           "unassigned": "Sem responsável",
           "selected": "selecionado",
-          "selectedLabel": "Selecionado:",
           "clear": "Limpar",
           "placeholder": "Buscar membro por nome ou ID…",
           "meShortcut": "Eu",

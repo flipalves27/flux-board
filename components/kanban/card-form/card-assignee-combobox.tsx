@@ -11,7 +11,6 @@ export type CardAssigneeOption = {
 type Labels = {
   unassigned: string;
   selectedTag: string;
-  selectedLabel: string;
   clear: string;
   placeholder: string;
   meShortcut: string;
@@ -40,6 +39,7 @@ export function CardAssigneeCombobox({
   inputClassName,
 }: Props) {
   const listId = useId();
+  const hintId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -167,11 +167,15 @@ export function CardAssigneeCombobox({
   const inactiveNone = "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]";
 
   const quickBase =
-    "rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]";
+    "rounded-xl border px-3 py-3 text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)] shrink-0";
+
+  const closedDisplay = open ? query : selected ? selected.label : value ? value : "";
+  const placeholderText =
+    loading && !closedDisplay ? labels.loading : labels.placeholder;
 
   return (
-    <div ref={wrapRef} className="space-y-2">
-      <div className="relative">
+    <div ref={wrapRef} className="flex flex-wrap items-stretch gap-2">
+      <div className="relative min-w-0 w-full sm:w-auto sm:min-w-0 sm:flex-1">
         <input
           ref={inputRef}
           type="text"
@@ -179,6 +183,8 @@ export function CardAssigneeCombobox({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
+          aria-describedby={hintId}
+          aria-busy={loading}
           autoComplete="off"
           value={open ? query : selected ? selected.label : value ? value : ""}
           onChange={(e) => {
@@ -191,7 +197,7 @@ export function CardAssigneeCombobox({
             openPanel();
           }}
           onKeyDown={onKeyDown}
-          placeholder={labels.placeholder}
+          placeholder={placeholderText}
           className={
             inputClassName ??
             `${inputBase} border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] pr-10 transition-all duration-150 placeholder:text-[var(--flux-text-muted)]/85 focus-visible:border-[var(--flux-primary-alpha-35)] focus-visible:bg-[var(--flux-primary-alpha-08)] focus-visible:ring-2 focus-visible:ring-[var(--flux-primary-alpha-35)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--flux-surface-card)]`
@@ -249,44 +255,36 @@ export function CardAssigneeCombobox({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {currentUserId ? (
-          <button
-            type="button"
-            onClick={() => selectUser(currentUserId)}
-            className={`${quickBase} ${
-              value === currentUserId
-                ? "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]"
-                : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
-            }`}
-          >
-            {labels.meShortcut}
-          </button>
-        ) : null}
-        {value ? (
-          <button
-            type="button"
-            onClick={() => selectNone()}
-            className={`${quickBase} border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-03)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-30)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]`}
-          >
-            {labels.clear}
-          </button>
-        ) : null}
-      </div>
+      {currentUserId || value ? (
+        <div className="flex flex-wrap gap-2">
+          {currentUserId ? (
+            <button
+              type="button"
+              onClick={() => selectUser(currentUserId)}
+              className={`${quickBase} ${
+                value === currentUserId
+                  ? "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)] shadow-[inset_0_0_0_1px_var(--flux-primary-alpha-18)]"
+                  : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
+              }`}
+            >
+              {labels.meShortcut}
+            </button>
+          ) : null}
+          {value ? (
+            <button
+              type="button"
+              onClick={() => selectNone()}
+              className={`${quickBase} border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-03)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-30)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]`}
+            >
+              {labels.clear}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-1.5">
-        <p className="text-[11px] leading-relaxed text-[var(--flux-text-muted)]">
-          {loading ? (
-            labels.loading
-          ) : selected ? (
-            <>
-              <span className="font-semibold text-[var(--flux-text)]">{labels.selectedLabel}</span> {selected.label}
-            </>
-          ) : (
-            labels.hint
-          )}
-        </p>
-      </div>
+      <span id={hintId} className="sr-only">
+        {labels.hint}
+      </span>
     </div>
   );
 }
