@@ -25,7 +25,7 @@ import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
-import { BoardFilterBar } from "./board-filter-bar";
+import { BoardFilterBar, BoardPriorityButtons } from "./board-filter-bar";
 import { BoardIntelligenceRow } from "./board-intelligence-row";
 import { BoardFlowHealthPanel } from "./board-flow-health-panel";
 import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
@@ -723,6 +723,10 @@ function KanbanBoardLoaded({
               </button>
             ) : null}
 
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              <BoardPriorityButtons boardId={boardId} />
+            </div>
+
             <button
               type="button"
               onClick={() => setNlqExpanded(true)}
@@ -747,7 +751,7 @@ function KanbanBoardLoaded({
           </div>
         )}
 
-        <BoardFilterBar boardId={boardId} />
+        <BoardFilterBar boardId={boardId} hidePriorities />
 
         {/* --- Intelligence Row: collapsible ------------------------------- */}
         {intelligenceExpanded ? (

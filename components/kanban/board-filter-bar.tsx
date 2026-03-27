@@ -14,7 +14,31 @@ const PRIORITIES = [
   { key: "Baixa", label: "Low" },
 ] as const;
 
-export function BoardFilterBar({ boardId }: { boardId: string }) {
+export function BoardPriorityButtons({ boardId }: { boardId: string }) {
+  const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
+  const patchFilters = useFilterStore((s) => s.patchFilters);
+
+  return (
+    <>
+      {PRIORITIES.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          onClick={() => patchFilters(boardId, { activePrio: p.key })}
+          className={`shrink-0 h-7 min-w-[72px] rounded-md px-2 text-[11px] font-semibold leading-none transition-colors ${
+            activePrio === p.key
+              ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
+              : "bg-[var(--flux-chrome-alpha-06)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-12)] hover:text-[var(--flux-text)]"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </>
+  );
+}
+
+export function BoardFilterBar({ boardId, hidePriorities = false }: { boardId: string; hidePriorities?: boolean }) {
   const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
   const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? EMPTY_LABELS);
   const patchFilters = useFilterStore((s) => s.patchFilters);
@@ -35,22 +59,9 @@ export function BoardFilterBar({ boardId }: { boardId: string }) {
 
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 sm:px-5 lg:px-6 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] scrollbar-none">
-      {PRIORITIES.map((p) => (
-        <button
-          key={p.key}
-          type="button"
-          onClick={() => patchFilters(boardId, { activePrio: p.key })}
-          className={`shrink-0 h-8 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
-            activePrio === p.key
-              ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
-              : "bg-[var(--flux-chrome-alpha-06)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-12)] hover:text-[var(--flux-text)]"
-          }`}
-        >
-          {p.label}
-        </button>
-      ))}
+      {!hidePriorities ? <BoardPriorityButtons boardId={boardId} /> : null}
 
-      {allLabels.length > 0 && (
+      {!hidePriorities && allLabels.length > 0 && (
         <span className="shrink-0 mx-0.5 h-4 w-px bg-[var(--flux-chrome-alpha-12)]" />
       )}
 
