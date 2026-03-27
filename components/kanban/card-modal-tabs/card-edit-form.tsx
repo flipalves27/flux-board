@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useCardModal } from "@/components/kanban/card-modal-context";
+import { useAuth } from "@/context/auth-context";
 import { apiPost, apiFetch, getApiHeaders, ApiError } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
@@ -29,8 +30,14 @@ type DupMatch = {
   embeddingSimilarity?: number;
 };
 
+type AssigneeOption = {
+  userId: string;
+  label: string;
+};
+
 /** Campos principais do card (aba padrão, import síncrono para abertura rápida do modal). */
 export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
+  const { user } = useAuth();
   const {
     id,
     setId,
@@ -104,6 +111,52 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
   const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
   const upsertSprint = useSprintStore((s) => s.upsertSprint);
   const [sprintPatching, setSprintPatching] = useState<string | null>(null);
+  const [assigneeOptions, setAssigneeOptions] = useState<AssigneeOption[]>([]);
+  const [assigneeLoading, setAssigneeLoading] = useState(false);
+  const [assigneeQuery, setAssigneeQuery] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadMembers = async () => {
+      setAssigneeLoading(true);
+      try {
+        const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/members`, {
+          headers: getApiHeaders(getHeaders()),
+        });
+        if (!res.ok) throw new Error("members_fetch_error");
+        const data = (await res.json()) as {
+          members?: Array<{ userId?: string; username?: string }>;
+        };
+        const map = new Map<string, AssigneeOption>();
+        for (const m of data.members ?? []) {
+          const userId = String(m?.userId ?? "").trim();
+          if (!userId) continue;
+          const username = String(m?.username ?? "").trim();
+          map.set(userId, { userId, label: username || userId });
+        }
+        const selfId = String(user?.id ?? "").trim();
+        const selfLabel = String(user?.name ?? user?.username ?? "").trim();
+        if (selfId && !map.has(selfId)) {
+          map.set(selfId, { userId: selfId, label: selfLabel || selfId });
+        }
+        if (!cancelled) {
+          setAssigneeOptions([...map.values()].sort((a, b) => a.label.localeCompare(b.label, "pt-BR")));
+        }
+      } catch {
+        if (!cancelled) {
+          const selfId = String(user?.id ?? "").trim();
+          const selfLabel = String(user?.name ?? user?.username ?? "").trim();
+          setAssigneeOptions(selfId ? [{ userId: selfId, label: selfLabel || selfId }] : []);
+        }
+      } finally {
+        if (!cancelled) setAssigneeLoading(false);
+      }
+    };
+    void loadMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, getHeaders, user?.id, user?.name, user?.username]);
 
   const cardIdReadyForSprint = useMemo(() => {
     const cid = String(selfId || "").trim();
@@ -300,6 +353,45 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     Boolean(openExistingCard || mergeDraftIntoExistingCard) &&
     dupIgnoreFingerprint !== contentFingerprint &&
     (dupLoading || dupMatches.length > 0);
+  const filteredAssigneeOptions = useMemo(() => {
+    const q = assigneeQuery.trim().toLowerCase();
+    if (!q) return assigneeOptions;
+    return assigneeOptions.filter((opt) => {
+      const label = opt.label.toLowerCase();
+      const uid = opt.userId.toLowerCase();
+      return label.includes(q) || uid.includes(q);
+    });
+  }, [assigneeOptions, assigneeQuery]);
+  const selectedAssignee = useMemo(
+    () => assigneeOptions.find((opt) => opt.userId === assigneeId) ?? null,
+    [assigneeId, assigneeOptions]
+  );
+  useEffect(() => {
+    if (!assigneeId) {
+      setAssigneeQuery("");
+      return;
+    }
+    if (selectedAssignee) setAssigneeQuery(selectedAssignee.label);
+  }, [assigneeId, selectedAssignee]);
+  const quickAssigneeOptions = useMemo(() => {
+    const used = new Set<string>();
+    const list: AssigneeOption[] = [];
+    const pushIfValid = (value: string) => {
+      const userId = String(value).trim();
+      if (!userId || used.has(userId)) return;
+      const option = assigneeOptions.find((x) => x.userId === userId);
+      if (!option) return;
+      list.push(option);
+      used.add(userId);
+    };
+    pushIfValid(user?.id ?? "");
+    pushIfValid(assigneeId);
+    for (const opt of assigneeOptions) {
+      if (list.length >= 3) break;
+      pushIfValid(opt.userId);
+    }
+    return list.slice(0, 3);
+  }, [assigneeId, assigneeOptions, user?.id]);
 
   const dorCheckboxGrid = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -804,15 +896,82 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           </div>
           <div>
             <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-              Responsável (userId)
+              Responsável
             </label>
-            <input
-              type="text"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              placeholder="Ex: u_123..."
-              className={inputBase}
-            />
+            <div className="space-y-2">
+              <input
+                type="search"
+                value={assigneeQuery}
+                onChange={(e) => setAssigneeQuery(e.target.value)}
+                placeholder="Buscar membro por nome ou ID..."
+                className={inputBase}
+                autoComplete="off"
+              />
+              <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--flux-chrome-alpha-10)] divide-y divide-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-12)]">
+                <button
+                  type="button"
+                  onClick={() => setAssigneeId("")}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
+                    !assigneeId
+                      ? "bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                      : "text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)]"
+                  }`}
+                >
+                  <span>Sem responsável</span>
+                  {!assigneeId ? <span className="text-[11px]">selecionado</span> : null}
+                </button>
+                {filteredAssigneeOptions.map((opt) => (
+                  <button
+                    key={opt.userId}
+                    type="button"
+                    onClick={() => setAssigneeId(opt.userId)}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
+                      assigneeId === opt.userId
+                        ? "bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text)] hover:bg-[var(--flux-primary-alpha-08)]"
+                    }`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    <span className="ml-2 shrink-0 font-mono text-[11px] text-[var(--flux-text-muted)]">{opt.userId}</span>
+                  </button>
+                ))}
+                {filteredAssigneeOptions.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-[var(--flux-text-muted)]">Nenhum membro encontrado para este filtro.</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {quickAssigneeOptions.map((opt) => (
+                <button
+                  key={opt.userId}
+                  type="button"
+                  onClick={() => setAssigneeId(opt.userId)}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    assigneeId === opt.userId
+                      ? "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                      : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-04)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+                  }`}
+                >
+                  {opt.userId === user?.id ? "Eu" : opt.label}
+                </button>
+              ))}
+              {assigneeId ? (
+                <button
+                  type="button"
+                  onClick={() => setAssigneeId("")}
+                  className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-[11px] font-medium text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                >
+                  Limpar
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">
+              {assigneeLoading
+                ? "Carregando membros..."
+                : selectedAssignee
+                  ? `Selecionado: ${selectedAssignee.label}`
+                  : "Selecione um membro do board sem precisar informar ID."}
+            </p>
           </div>
           {directions.length ? (
             <div>
