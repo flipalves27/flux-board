@@ -30,8 +30,8 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
 
   return (
     <header className="hero-shell home-landing-reveal sticky top-4 z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3 backdrop-blur-md md:px-5 md:py-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2 md:gap-3">
-        <Link href={`${localeRoot}/`} className="flex min-w-0 items-center gap-3" onClick={closeMobile}>
+      <div className="flex w-full flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4">
+        <Link href={`${localeRoot}/`} className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3" onClick={closeMobile}>
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] overflow-hidden"
             style={{
@@ -54,7 +54,10 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-3 text-sm font-semibold text-[var(--flux-text-muted)] md:flex lg:gap-4" aria-label={t("nav.mainLabel")}>
+        <nav
+          className="mx-1 hidden min-w-0 flex-1 items-center justify-center gap-x-2 gap-y-1 text-[13px] font-semibold text-[var(--flux-text-muted)] md:flex lg:gap-x-3 lg:text-sm"
+          aria-label={t("nav.mainLabel")}
+        >
           <a href="#why" className={navClass}>
             {t("nav.why", { appName })}
           </a>
@@ -75,7 +78,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
           </a>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] text-[var(--flux-text-muted)] md:hidden"
@@ -87,15 +90,18 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
             {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
           {user ? (
-            <Link href={`${localeRoot}/boards`} className="btn-primary whitespace-nowrap">
+            <Link href={`${localeRoot}/boards`} className="btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-4 sm:py-2.5 sm:text-[15px]">
               {t("actions.openDashboardLoggedIn")}
             </Link>
           ) : (
             <>
-              <Link href={`${localeRoot}/login`} className="btn-ghost hidden sm:inline-flex">
+              <Link
+                href={`${localeRoot}/login`}
+                className="btn-ghost hidden px-3 py-2 text-sm sm:inline-flex sm:px-3.5 sm:text-[15px]"
+              >
                 {t("actions.signIn")}
               </Link>
-              <Link href={`${localeRoot}/login`} className="btn-primary whitespace-nowrap">
+              <Link href={`${localeRoot}/login`} className="btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-[15px]">
                 {t("actions.getStarted")}
               </Link>
             </>
