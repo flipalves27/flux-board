@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import type { AuthUser } from "@/context/auth-context";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useSidebarLayoutOptional } from "@/context/sidebar-layout-context";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { useCopilotStore } from "@/stores/copilot-store";
 
 const TOUR_SELECTORS = [
@@ -86,7 +87,10 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     const popoverRef = useRef<HTMLDivElement | null>(null);
     const highlightRef = useRef<HTMLElement | null>(null);
     const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 80, left: 24 });
+    const [fluxyWelcomeOpen, setFluxyWelcomeOpen] = useState(false);
     const titleHeadingId = useId();
+    const fluxyWelcomeTitleId = useId();
+    const welcomePrimaryRef = useRef<HTMLButtonElement | null>(null);
 
     const userRef = useRef(user);
     userRef.current = user;
@@ -164,8 +168,45 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       useCopilotStore.getState().setOpen(false);
     }, [active]);
 
+    useEffect(() => {
+      if (!active || stepIndex !== 0) {
+        if (!active) setFluxyWelcomeOpen(false);
+        return;
+      }
+      try {
+        if (sessionStorage.getItem("fluxy:board-tour-intro-shown") === "1") return;
+      } catch {
+        return;
+      }
+      setFluxyWelcomeOpen(true);
+    }, [active, stepIndex]);
+
+    useEffect(() => {
+      if (!fluxyWelcomeOpen) return;
+      welcomePrimaryRef.current?.focus();
+    }, [fluxyWelcomeOpen]);
+
+    const dismissFluxyWelcome = useCallback(() => {
+      try {
+        sessionStorage.setItem("fluxy:board-tour-intro-shown", "1");
+      } catch {
+        // ignore
+      }
+      setFluxyWelcomeOpen(false);
+    }, []);
+
+    /** Mesmo efeito que «Pular tour» no popover: marca o tour como concluído e encerra. */
+    const skipWelcomeAndEndTour = useCallback(() => {
+      try {
+        sessionStorage.setItem("fluxy:board-tour-intro-shown", "1");
+      } catch {
+        // ignore
+      }
+      void skip();
+    }, [skip]);
+
     useLayoutEffect(() => {
-      if (!active) return;
+      if (!active || fluxyWelcomeOpen) return;
       const sel = TOUR_SELECTORS[stepIndex];
       if (!sel) return;
 
@@ -209,10 +250,10 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
         window.removeEventListener("scroll", onResize, true);
         highlightRef.current?.classList.remove("flux-tour-highlight");
       };
-    }, [active, stepIndex, layout, openMobile]);
+    }, [active, stepIndex, layout, openMobile, fluxyWelcomeOpen]);
 
     useLayoutEffect(() => {
-      if (!active) return;
+      if (!active || fluxyWelcomeOpen) return;
       const pop = popoverRef.current as HTMLElement & { showPopover?: () => void };
       if (pop && typeof pop.showPopover === "function") {
         try {
@@ -226,7 +267,7 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
         const p = popoverRef.current;
         if (h && p) positionPopoverNear(h, p, setPopoverPos);
       });
-    }, [active, stepIndex, tourStep]);
+    }, [active, stepIndex, tourStep, fluxyWelcomeOpen]);
 
     const next = useCallback(async () => {
       if (stepIndex >= total - 1) {
@@ -257,40 +298,80 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
 
     return createPortal(
       <>
-        <div
-          className="fixed inset-0 z-[var(--flux-z-product-tour)] bg-transparent"
-          aria-hidden
-          onPointerDown={onBackdropPointerDown}
-        />
-        <div
-          ref={popoverRef}
-          popover="manual"
-          role="dialog"
-          aria-labelledby={titleHeadingId}
-          className="flux-tour-popover m-0 flex max-w-[min(360px,calc(100vw-32px))] flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-4 text-[var(--flux-text)] shadow-[var(--flux-shadow-xl)]"
-          style={{
-            position: "fixed",
-            top: popoverPos.top,
-            left: popoverPos.left,
-            zIndex: 477,
-          }}
-        >
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)]">
-            {t("progress", { current: stepIndex + 1, total })}
+        {fluxyWelcomeOpen ? (
+          <div
+            className="fixed inset-0 z-[var(--flux-z-board-tour-fluxy-welcome)] flex items-center justify-center bg-[var(--flux-backdrop-scrim)] p-4 backdrop-blur-[2px] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
+            role="presentation"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={fluxyWelcomeTitleId}
+              className="w-full max-w-md rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-modal-depth)]"
+            >
+              <div className="flex flex-col items-center gap-4 text-center">
+                <FluxyAvatar state="waving" size="header" className="scale-125" />
+                <div>
+                  <h2 id={fluxyWelcomeTitleId} className="font-display text-lg font-bold text-[var(--flux-text)]">
+                    {t("fluxyWelcome.title")}
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("fluxyWelcome.body")}</p>
+                </div>
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
+                  <button
+                    ref={welcomePrimaryRef}
+                    type="button"
+                    className="btn-primary px-4 py-2.5 text-sm"
+                    onClick={dismissFluxyWelcome}
+                  >
+                    {t("fluxyWelcome.startTour")}
+                  </button>
+                  <button type="button" className="btn-secondary px-4 py-2.5 text-sm" onClick={() => void skipWelcomeAndEndTour()}>
+                    {t("skip")}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <h2 id={titleHeadingId} className="font-display text-sm font-bold text-[var(--flux-text)]">
-            {t(`steps.${stepKey}.title`)}
-          </h2>
-          <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">{t(`steps.${stepKey}.body`)}</p>
-          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-            <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => void skip()}>
-              {t("skip")}
-            </button>
-            <button type="button" className="btn-primary px-3 py-1.5 text-xs" onClick={() => void next()}>
-              {stepIndex >= total - 1 ? t("done") : t("next")}
-            </button>
-          </div>
-        </div>
+        ) : (
+          <>
+            <div
+              className="fixed inset-0 z-[var(--flux-z-product-tour)] bg-transparent"
+              aria-hidden
+              onPointerDown={onBackdropPointerDown}
+            />
+            <div
+              ref={popoverRef}
+              popover="manual"
+              role="dialog"
+              aria-labelledby={titleHeadingId}
+              className="flux-tour-popover m-0 flex max-w-[min(360px,calc(100vw-32px))] flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-4 text-[var(--flux-text)] shadow-[var(--flux-shadow-xl)]"
+              style={{
+                position: "fixed",
+                top: popoverPos.top,
+                left: popoverPos.left,
+                zIndex: 477,
+              }}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)]">
+                {t("progress", { current: stepIndex + 1, total })}
+              </div>
+              <h2 id={titleHeadingId} className="font-display text-sm font-bold text-[var(--flux-text)]">
+                {t(`steps.${stepKey}.title`)}
+              </h2>
+              <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">{t(`steps.${stepKey}.body`)}</p>
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => void skip()}>
+                  {t("skip")}
+                </button>
+                <button type="button" className="btn-primary px-3 py-1.5 text-xs" onClick={() => void next()}>
+                  {stepIndex >= total - 1 ? t("done") : t("next")}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </>,
       document.body
     );

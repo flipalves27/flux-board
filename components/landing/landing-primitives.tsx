@@ -11,9 +11,25 @@ export function FeatureRow({ label, included, dim = false }: { label: string; in
   );
 }
 
-export function FaqItem({ question, answer, open, onToggle }: { question: string; answer: string; open: boolean; onToggle: () => void }) {
+export function FaqItem({
+  question,
+  answer,
+  open,
+  onToggle,
+  faqId,
+}: {
+  question: string;
+  answer: string;
+  open: boolean;
+  onToggle: () => void;
+  /** Âncora estável para links (ex. #landing-faq-0). */
+  faqId?: number;
+}) {
   return (
-    <div className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-surface-card)] overflow-hidden transition-colors hover:border-[var(--flux-primary-alpha-22)]">
+    <div
+      id={faqId !== undefined ? `landing-faq-${faqId}` : undefined}
+      className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-surface-card)] overflow-hidden transition-colors hover:border-[var(--flux-primary-alpha-22)] scroll-mt-28"
+    >
       <button
         type="button"
         onClick={onToggle}

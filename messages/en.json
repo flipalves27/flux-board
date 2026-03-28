@@ -1115,6 +1115,21 @@
       "a6": "Yes. Business and Enterprise include native Slack and Microsoft Teams integrations for board event notifications, anomaly alerts, and Weekly AI Digest summaries.",
       "q7": "Does Enterprise include SSO?",
       "a7": "Yes. Enterprise supports SSO with SAML 2.0 and OIDC, enabling your team to log in with existing corporate credentials and centralizing access management in your Identity Provider."
+    },
+    "fluxyChat": {
+      "title": "Ask Fluxy",
+      "subtitle": "Answers from our FAQ",
+      "placeholder": "e.g. trial, pricing, Copilot…",
+      "send": "Send",
+      "open": "Open Fluxy",
+      "close": "Close panel",
+      "minimize": "Minimize",
+      "emptyHint": "Replies use only the FAQ below — no made-up details.",
+      "noMatch": "I couldn’t find a clear FAQ match. Open the FAQ section below or try different words.",
+      "seeFaq": "View in FAQ",
+      "suggestionsIntro": "Popular questions:",
+      "you": "You",
+      "fluxy": "Fluxy"
     }
   },
   "login": {
@@ -1178,6 +1193,7 @@
     }
   },
   "onboarding": {
+    "fluxyHint": "I’m Fluxy — once your board is ready, I’ll be there to answer questions and suggest shortcuts.",
     "dragReorderAria": "Drag to reorder",
     "header": {
       "title": "Onboarding",
@@ -1459,6 +1475,11 @@
       "dismiss": "Dismiss suggestion"
     },
     "productTour": {
+      "fluxyWelcome": {
+        "title": "Hi! I’m Fluxy",
+        "body": "I’ll walk you through this board in a few steps: columns, cards, the Fluxy assistant, and useful shortcuts. When you’re ready, we’ll start the tour.",
+        "startTour": "Start tour"
+      },
       "skip": "Skip tour",
       "start": "Guided tour",
       "redo": "Replay tour",
@@ -2561,6 +2582,13 @@
         "voiceNotSupported": "Your browser does not support speech recognition (Web Speech API).",
         "voiceMicError": "Could not capture audio. Check the microphone and try again.",
         "voiceStartError": "Could not start the microphone."
+      },
+      "fluxyDock": {
+        "openAssistant": "Open Fluxy — questions about this board",
+        "hideDock": "Hide Fluxy shortcut",
+        "restore": "Fluxy",
+        "restoreAria": "Show Fluxy assistant shortcut on the board",
+        "chipLabel": "Board questions"
       },
       "desktopToolsRail": {
         "handleTitle": "Hover to show board tools, or click to pin the strip open",

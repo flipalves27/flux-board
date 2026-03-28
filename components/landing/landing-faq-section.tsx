@@ -21,6 +21,7 @@ export function LandingFaqSection() {
         {faqItems.map((item, i) => (
           <FaqItem
             key={i}
+            faqId={i}
             question={item.q}
             answer={item.a}
             open={openFaq === i}

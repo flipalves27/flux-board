@@ -8,6 +8,7 @@ import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-c
 import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
 import type { LandingLocale } from "@/lib/landing-models";
 import { LandingFaqSection } from "./landing-faq-section";
+import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
 import { LandingFooter } from "./landing-footer";
 import { LandingFooterCta } from "./landing-footer-cta";
 import { LandingHeader } from "./landing-header";
@@ -91,6 +92,8 @@ export default function LandingPage() {
 
           <LandingFooter localeRoot={localeRoot} appName={appName} />
         </div>
+
+        <LandingFluxyFaqChat />
       </div>
     </div>
   );

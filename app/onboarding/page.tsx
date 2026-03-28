@@ -9,6 +9,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import {
   DEFAULT_TEMPLATE_ID,
@@ -451,6 +452,10 @@ export default function OnboardingPage() {
       </Header>
 
       <main className="max-w-[980px] mx-auto px-6 py-10">
+        <div className="mb-6 flex items-center gap-3 rounded-[var(--flux-rad-lg)] border border-[var(--flux-secondary-alpha-28)] bg-[linear-gradient(90deg,var(--flux-primary-alpha-10),var(--flux-secondary-alpha-08))] px-4 py-3">
+          <FluxyAvatar state="waving" size="compact" className="shrink-0" />
+          <p className="text-sm leading-snug text-[var(--flux-text)]">{t("fluxyHint")}</p>
+        </div>
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">{title}</h2>

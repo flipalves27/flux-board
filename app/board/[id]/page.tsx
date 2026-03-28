@@ -36,6 +36,7 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
+import { BoardFluxyDock } from "@/components/fluxy/board-fluxy-dock";
 import {
   BoardProductTour,
   BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX,
@@ -958,6 +959,8 @@ export default function BoardPage() {
       <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
 
       <BoardDesktopToolsRail />
+
+      <BoardFluxyDock />
 
       <CopilotNudgeToast boardId={boardId} />
       <CollaborationCursors />

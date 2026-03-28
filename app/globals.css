@@ -184,12 +184,17 @@
   --flux-z-sidebar-drawer: 50;
   --flux-z-board-summary-dock: 80;
   --flux-z-board-canvas: 120;
+  /** Fluxy dock (canto inferior esquerdo) — acima do canvas, abaixo do tour e do painel do copiloto */
+  --flux-z-board-fluxy-dock: 438;
+  /** Widget Fluxy FAQ na landing (fixo no viewport) */
+  --flux-z-landing-fluxy-chat: 160;
   --flux-z-board-sticky-chrome: 150;
   /* Below routine toasts (450) so alerts stay visible over the hub */
   --flux-z-mobile-tool-hub: 430;
   --flux-z-fab-daily: 467;
   --flux-z-fab-insights: 468;
   --flux-z-product-tour: 455;
+  --flux-z-board-tour-fluxy-welcome: 478;
   --flux-z-fab-activity: 469;
   --flux-z-fab-copilot: 470;
   --flux-z-board-tools-rail: 471;

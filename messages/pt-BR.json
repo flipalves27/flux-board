@@ -1115,6 +1115,21 @@
       "a6": "Sim. Business e Enterprise incluem integração nativa com Slack e Microsoft Teams para notificações de eventos, alertas de anomalia e resumos do Weekly AI Digest.",
       "q7": "O Enterprise inclui SSO?",
       "a7": "Sim. O Enterprise suporta SSO com SAML 2.0 e OIDC, permitindo login com credenciais corporativas e gerenciamento centralizado no seu Identity Provider."
+    },
+    "fluxyChat": {
+      "title": "Pergunte à Fluxy",
+      "subtitle": "Respostas com base no FAQ",
+      "placeholder": "Ex.: trial, preços, Copilot…",
+      "send": "Enviar",
+      "open": "Abrir Fluxy",
+      "close": "Fechar painel",
+      "minimize": "Minimizar",
+      "emptyHint": "As respostas vêm só do FAQ abaixo — sem inventar informações.",
+      "noMatch": "Não encontrei uma correspondência clara no FAQ. Abra a seção de perguntas frequentes ou reformule com outras palavras.",
+      "seeFaq": "Ver no FAQ",
+      "suggestionsIntro": "Perguntas frequentes:",
+      "you": "Você",
+      "fluxy": "Fluxy"
     }
   },
   "login": {
@@ -1179,6 +1194,7 @@
     }
   },
   "onboarding": {
+    "fluxyHint": "Sou a Fluxy — quando seu quadro estiver pronto, estarei no canto para tirar dúvidas sobre o board e sugerir atalhos.",
     "dragReorderAria": "Arrastar para reordenar",
     "header": {
       "title": "Onboarding",
@@ -1464,6 +1480,11 @@
       "dismiss": "Dispensar sugestão"
     },
     "productTour": {
+      "fluxyWelcome": {
+        "title": "Olá! Eu sou a Fluxy",
+        "body": "Vou te guiar por este quadro em poucos passos: colunas, cards, a assistente Fluxy no canto e os atalhos úteis. Quando estiver pronto, começamos o tour.",
+        "startTour": "Começar tour"
+      },
       "skip": "Pular tour",
       "start": "Tour guiado",
       "redo": "Refazer tour",
@@ -2566,6 +2587,13 @@
         "voiceNotSupported": "Seu navegador não suporta reconhecimento de voz (Web Speech API).",
         "voiceMicError": "Não foi possível capturar o áudio. Verifique o microfone e tente de novo.",
         "voiceStartError": "Não foi possível iniciar o microfone."
+      },
+      "fluxyDock": {
+        "openAssistant": "Abrir a Fluxy — dúvidas sobre o quadro",
+        "hideDock": "Ocultar atalho da Fluxy",
+        "restore": "Fluxy",
+        "restoreAria": "Mostrar atalho da assistente Fluxy no quadro",
+        "chipLabel": "Dúvidas do quadro"
       },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
