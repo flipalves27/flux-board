@@ -4,9 +4,22 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import {
+  SpecPlanAnalysisModal,
+  type SpecPlanAnalysisLogEntry,
+} from "@/components/spec-plan/spec-plan-analysis-modal";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+
+function safeStringify(obj: unknown, max = 16_000): string {
+  try {
+    const s = JSON.stringify(obj, null, 2);
+    return s.length > max ? `${s.slice(0, max)}\n…` : s;
+  } catch {
+    return String(obj);
+  }
+}
 
 type PhaseState = "pending" | "running" | "done" | "error";
 
@@ -46,8 +59,7 @@ function parseSseBlocks(buffer: string): { rest: string; events: { event: string
 
 export default function SpecPlanPage() {
   const router = useRouter();
-  const locale = useLocale();
-  const localeRoot = `/${locale}`;
+  const localeRoot = `/${useLocale()}`;
   const t = useTranslations("specPlanPage");
   const { user, getHeaders, isChecked } = useAuth();
 
@@ -62,11 +74,24 @@ export default function SpecPlanPage() {
   const [pasted, setPasted] = useState("");
 
   const [phaseParse, setPhaseParse] = useState<PhaseState>("pending");
+  const [phaseChunks, setPhaseChunks] = useState<PhaseState>("pending");
+  const [phaseEmbeddings, setPhaseEmbeddings] = useState<PhaseState>("pending");
+  const [phaseRetrieval, setPhaseRetrieval] = useState<PhaseState>("pending");
   const [phaseOutline, setPhaseOutline] = useState<PhaseState>("pending");
   const [phaseWork, setPhaseWork] = useState<PhaseState>("pending");
   const [phaseCards, setPhaseCards] = useState<PhaseState>("pending");
 
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [streamErrorDetail, setStreamErrorDetail] = useState<string | null>(null);
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [analysisLogs, setAnalysisLogs] = useState<SpecPlanAnalysisLogEntry[]>([]);
+  const [docReadMeta, setDocReadMeta] = useState<null | {
+    fileName: string;
+    kind: string;
+    charCount?: number;
+    pageCount?: number;
+    warnings: string[];
+  }>(null);
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [workItemsPayload, setWorkItemsPayload] = useState<string>("");
   const [outlineSummary, setOutlineSummary] = useState<string | null>(null);
@@ -144,14 +169,39 @@ export default function SpecPlanPage() {
     };
   }, [boardId, featureOk, getHeaders]);
 
+  const appendAnalysisLog = useCallback(
+    (level: SpecPlanAnalysisLogEntry["level"], message: string, detail?: string) => {
+      setAnalysisLogs((prev) => [
+        ...prev,
+        {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `${Date.now()}-${prev.length}`,
+          timestamp: Date.now(),
+          level,
+          message,
+          detail,
+        },
+      ]);
+    },
+    []
+  );
+
   const resetPhases = useCallback(() => {
     setPhaseParse("pending");
+    setPhaseChunks("pending");
+    setPhaseEmbeddings("pending");
+    setPhaseRetrieval("pending");
     setPhaseOutline("pending");
     setPhaseWork("pending");
     setPhaseCards("pending");
     setStreamError(null);
+    setStreamErrorDetail(null);
     setOutlineSummary(null);
     setMethodologySummary(null);
+    setAnalysisLogs([]);
+    setDocReadMeta(null);
   }, []);
 
   const runStream = useCallback(
@@ -159,13 +209,23 @@ export default function SpecPlanPage() {
       if (!boardId) return;
       setAnalyzing(true);
       setStreamError(null);
+      setStreamErrorDetail(null);
       resetPhases();
       setPreview([]);
       setApplyMsg(null);
+      setAnalysisModalOpen(true);
+      appendAnalysisLog(
+        "info",
+        t("analysisModal.logEvents.started"),
+        safeStringify({ remapOnly: opts.remapOnly, boardId })
+      );
       if (!opts.remapOnly) {
         setPhaseParse("running");
       } else {
         setPhaseParse("done");
+        setPhaseChunks("done");
+        setPhaseEmbeddings("done");
+        setPhaseRetrieval("done");
         setPhaseOutline("done");
         setPhaseWork("done");
         setPhaseCards("running");
@@ -197,22 +257,34 @@ export default function SpecPlanPage() {
 
       if (!res.ok) {
         const errText = await res.text();
-        let msg = t("streamError");
+        setStreamErrorDetail(errText.trim() || null);
+        let parsed: Record<string, unknown> = {};
         try {
-          const j = JSON.parse(errText) as { error?: string };
-          if (j.error) msg = j.error;
+          parsed = JSON.parse(errText) as Record<string, unknown>;
         } catch {
-          /* ignore */
+          parsed = { rawBody: errText };
         }
+        const msg = typeof parsed.error === "string" ? parsed.error : t("streamError");
         setStreamError(msg);
+        appendAnalysisLog(
+          "error",
+          t("analysisModal.logEvents.httpError", { status: res.status, message: msg }),
+          safeStringify({ httpStatus: res.status, ...parsed })
+        );
         setAnalyzing(false);
         setPhaseParse("error");
+        setPhaseChunks("error");
+        setPhaseEmbeddings("error");
+        setPhaseRetrieval("error");
         return;
       }
 
       const reader = res.body?.getReader();
       if (!reader) {
-        setStreamError(t("streamError"));
+        const msg = t("streamError");
+        setStreamError(msg);
+        setStreamErrorDetail("Resposta sem corpo (stream) — não foi possível ler eventos SSE.");
+        appendAnalysisLog("error", msg, "ReadableStream não disponível na resposta.");
         setAnalyzing(false);
         return;
       }
@@ -234,7 +306,68 @@ export default function SpecPlanPage() {
               payload = {};
             }
             if (event === "document_parsed") {
+              const fn = String(payload.fileName || "—");
+              const chars =
+                typeof payload.charCount === "number" && Number.isFinite(payload.charCount)
+                  ? payload.charCount
+                  : 0;
+              const warns = Array.isArray(payload.warnings)
+                ? payload.warnings.map((w) => String(w)).filter(Boolean)
+                : [];
+              setDocReadMeta({
+                fileName: fn,
+                kind: String(payload.kind || "—"),
+                charCount: typeof payload.charCount === "number" ? payload.charCount : undefined,
+                pageCount: typeof payload.pageCount === "number" ? payload.pageCount : undefined,
+                warnings: warns,
+              });
+              appendAnalysisLog(
+                "success",
+                t("analysisModal.logEvents.documentParsed", { fileName: fn, chars }),
+                safeStringify(payload)
+              );
               setPhaseParse("done");
+              setPhaseChunks("running");
+            } else if (event === "chunks_ready") {
+              appendAnalysisLog(
+                "info",
+                t("analysisModal.logEvents.chunksReady", {
+                  count: Number(payload.chunkCount) || 0,
+                  avgSize: Number(payload.avgSize) || 0,
+                  truncated: String(Boolean(payload.truncated)),
+                }),
+                safeStringify(payload)
+              );
+              setPhaseChunks("done");
+              setPhaseEmbeddings("running");
+            } else if (event === "embeddings_ready") {
+              const failed = Boolean(payload.failed);
+              appendAnalysisLog(
+                failed ? "error" : "success",
+                t("analysisModal.logEvents.embeddingsReady", {
+                  count: Number(payload.embeddedCount) || 0,
+                  model: String(payload.modelHint || "—"),
+                  status: failed
+                    ? t("analysisModal.logEvents.embedRunFailed")
+                    : t("analysisModal.logEvents.embedRunOk"),
+                }),
+                safeStringify(payload)
+              );
+              if (failed) {
+                appendAnalysisLog("error", t("analysisModal.logEvents.embeddingsFailed"), undefined);
+              }
+              setPhaseEmbeddings("done");
+              setPhaseRetrieval("running");
+            } else if (event === "retrieval_ready") {
+              appendAnalysisLog(
+                "info",
+                t("analysisModal.logEvents.retrievalReady", {
+                  chunksUsed: Number(payload.chunksUsed) || 0,
+                  fallback: String(Boolean(payload.fallback)),
+                }),
+                safeStringify(payload)
+              );
+              setPhaseRetrieval("done");
               setPhaseOutline("running");
             } else if (event === "outline_ready") {
               setPhaseOutline("done");
@@ -247,14 +380,25 @@ export default function SpecPlanPage() {
                   requirements: Array.isArray(kr) ? kr.length : 0,
                 })
               );
+              appendAnalysisLog(
+                "success",
+                t("analysisModal.logEvents.outlineReady"),
+                safeStringify({
+                  sectionCount: Array.isArray(sections) ? sections.length : 0,
+                  keyRequirementsCount: Array.isArray(kr) ? kr.length : 0,
+                })
+              );
             } else if (event === "work_items_draft") {
               setPhaseWork("done");
               setWorkItemsPayload(JSON.stringify(payload));
+              appendAnalysisLog("success", t("analysisModal.logEvents.workItemsReady"), safeStringify(payload));
             } else if (event === "methodology_applied") {
               const s = payload.summary;
               if (typeof s === "string") setMethodologySummary(s.slice(0, 800));
+              appendAnalysisLog("info", t("analysisModal.logEvents.methodologyApplied"), safeStringify(payload));
             } else if (event === "bucket_mapping") {
               setPhaseCards("running");
+              appendAnalysisLog("info", t("analysisModal.logEvents.bucketMapping"), safeStringify(payload));
             } else if (event === "cards_preview") {
               setPhaseCards("done");
               const rows = payload.cardRows as Record<string, unknown>[] | undefined;
@@ -284,10 +428,21 @@ export default function SpecPlanPage() {
                 }
               }
               setPreview(list);
+              appendAnalysisLog(
+                "success",
+                t("analysisModal.logEvents.cardsPreview", { count: list.length }),
+                safeStringify({ cardCount: list.length, payloadKeys: Object.keys(payload) })
+              );
             } else if (event === "error") {
               const msg = typeof payload.message === "string" ? payload.message : t("streamError");
               setStreamError(msg);
+              setStreamErrorDetail(safeStringify(payload));
+              appendAnalysisLog("error", t("analysisModal.logEvents.streamError", { message: msg }), safeStringify(payload));
+              setPhaseParse((p) => (p === "running" ? "error" : p));
               setPhaseCards("error");
+              setPhaseChunks((p) => (p === "running" ? "error" : p));
+              setPhaseEmbeddings((p) => (p === "running" ? "error" : p));
+              setPhaseRetrieval((p) => (p === "running" ? "error" : p));
               setPhaseOutline((p) => (p === "running" ? "error" : p));
               setPhaseWork((p) => (p === "running" ? "error" : p));
             } else if (event === "done") {
@@ -296,12 +451,17 @@ export default function SpecPlanPage() {
           }
         }
       } catch (e) {
-        setStreamError(e instanceof Error ? e.message : t("streamError"));
+        const m = e instanceof Error ? e.message : t("streamError");
+        const stack = e instanceof Error ? e.stack : undefined;
+        const detail = stack ? `${m}\n\n${stack}` : m;
+        setStreamError(m);
+        setStreamErrorDetail(detail);
+        appendAnalysisLog("error", m, detail);
       } finally {
         setAnalyzing(false);
       }
     },
-    [boardId, methodology, pasted, file, getHeaders, resetPhases, t, workItemsPayload]
+    [appendAnalysisLog, boardId, file, getHeaders, methodology, pasted, resetPhases, t, workItemsPayload]
   );
 
   const onStart = useCallback(() => {
@@ -350,14 +510,22 @@ export default function SpecPlanPage() {
     }
   }, [accept, boardId, getHeaders, preview, t]);
 
+  const analysisPhases = useMemo(
+    () =>
+      [
+        { key: "parse", label: t("phaseParse"), state: phaseParse },
+        { key: "chunks", label: t("phaseChunks"), state: phaseChunks },
+        { key: "embeddings", label: t("phaseEmbeddings"), state: phaseEmbeddings },
+        { key: "retrieval", label: t("phaseRetrieval"), state: phaseRetrieval },
+        { key: "outline", label: t("phaseOutline"), state: phaseOutline },
+        { key: "work", label: t("phaseWorkItems"), state: phaseWork },
+        { key: "cards", label: t("phaseCards"), state: phaseCards },
+      ] as const,
+    [phaseCards, phaseChunks, phaseEmbeddings, phaseOutline, phaseParse, phaseRetrieval, phaseWork, t]
+  );
+
   const phaseRow = useMemo(() => {
-    const Row = ({
-      label,
-      state,
-    }: {
-      label: string;
-      state: PhaseState;
-    }) => {
+    const Row = ({ label, state }: { label: string; state: PhaseState }) => {
       const color =
         state === "done"
           ? "text-[var(--flux-accent)]"
@@ -383,13 +551,12 @@ export default function SpecPlanPage() {
     };
     return (
       <div className="flex flex-col gap-2">
-        <Row label={t("phaseParse")} state={phaseParse} />
-        <Row label={t("phaseOutline")} state={phaseOutline} />
-        <Row label={t("phaseWorkItems")} state={phaseWork} />
-        <Row label={t("phaseCards")} state={phaseCards} />
+        {analysisPhases.map((p) => (
+          <Row key={p.key} label={p.label} state={p.state} />
+        ))}
       </div>
     );
-  }, [phaseCards, phaseOutline, phaseParse, phaseWork, t]);
+  }, [analysisPhases, t]);
 
   if (!isChecked || !user) {
     return <div className="min-h-screen bg-[var(--flux-surface-dark)]" />;
@@ -508,10 +675,33 @@ export default function SpecPlanPage() {
         </section>
 
         <section className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-black-alpha-04)] p-5">
-          <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
+            <button
+              type="button"
+              onClick={() => setAnalysisModalOpen(true)}
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary-light)]"
+            >
+              {t("openAnalysisPanel")}
+            </button>
+          </div>
           <div className="mt-4 grid gap-6 md:grid-cols-2">
             {phaseRow}
             <div className="space-y-2 text-xs text-[var(--flux-text-muted)]">
+              {docReadMeta ? (
+                <div className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3">
+                  <p className="font-semibold text-[var(--flux-text)]">{t("analysisModal.docReadTitle")}</p>
+                  <p className="mt-1">
+                    {docReadMeta.fileName} · {docReadMeta.kind}
+                    {typeof docReadMeta.charCount === "number"
+                      ? ` · ${t("docReadCharSummary", { count: docReadMeta.charCount })}`
+                      : null}
+                  </p>
+                  {docReadMeta.warnings.length > 0 ? (
+                    <p className="mt-1 text-[var(--flux-amber)]">{docReadMeta.warnings.join(" · ")}</p>
+                  ) : null}
+                </div>
+              ) : null}
               {outlineSummary ? (
                 <p>
                   <span className="font-semibold text-[var(--flux-text)]">Outline — </span>
@@ -526,7 +716,18 @@ export default function SpecPlanPage() {
               ) : null}
             </div>
           </div>
-          {streamError ? <p className="mt-3 text-sm text-[var(--flux-danger)]">{streamError}</p> : null}
+          {streamError ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-sm text-[var(--flux-danger)]">{streamError}</p>
+              <button
+                type="button"
+                onClick={() => setAnalysisModalOpen(true)}
+                className="text-xs font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+              >
+                {t("errorOpenPanelHint")}
+              </button>
+            </div>
+          ) : null}
         </section>
 
         {preview.length > 0 ? (
@@ -661,6 +862,18 @@ export default function SpecPlanPage() {
           </section>
         ) : null}
       </div>
+
+      <SpecPlanAnalysisModal
+        open={analysisModalOpen}
+        onClose={() => setAnalysisModalOpen(false)}
+        analyzing={analyzing}
+        phases={analysisPhases.map((p) => ({ key: p.key, label: p.label, state: p.state }))}
+        docMeta={docReadMeta}
+        logs={analysisLogs}
+        onClearLogs={() => setAnalysisLogs([])}
+        streamError={streamError}
+        errorDetail={streamErrorDetail}
+      />
     </div>
   );
 }

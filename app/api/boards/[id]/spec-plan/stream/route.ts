@@ -97,8 +97,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let formData: FormData;
   try {
     formData = await request.formData();
-  } catch {
-    return new Response(JSON.stringify({ error: "FormData inválido" }), { status: 400 });
+  } catch (e) {
+    const cause = e instanceof Error ? e.message : String(e);
+    console.error("[spec-plan/stream] formData parse failed", e);
+    return new Response(
+      JSON.stringify({
+        error:
+          "Não foi possível ler os dados enviados (multipart). Confirme o arquivo, o tamanho ou cole o texto da especificação.",
+        errorCode: "FORM_DATA_INVALID",
+        cause,
+      }),
+      { status: 400 }
+    );
   }
 
   const methodologyRaw = String(formData.get("methodology") || "").trim().toLowerCase();
@@ -150,18 +160,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "extract_failed";
+      console.error("[spec-plan/stream] extractSpecDocument", e);
       if (msg === "NO_INPUT") {
-        return new Response(JSON.stringify({ error: "Envie um arquivo ou cole texto." }), { status: 400 });
+        return new Response(
+          JSON.stringify({ error: "Envie um arquivo ou cole texto.", errorCode: "NO_INPUT" }),
+          { status: 400 }
+        );
       }
       if (msg === "FILE_TOO_LARGE") {
-        return new Response(JSON.stringify({ error: "Arquivo acima do limite." }), { status: 400 });
+        return new Response(
+          JSON.stringify({ error: "Arquivo acima do limite.", errorCode: "FILE_TOO_LARGE" }),
+          { status: 400 }
+        );
       }
       if (msg === "UNSUPPORTED_TYPE") {
-        return new Response(JSON.stringify({ error: "Use PDF, DOCX ou texto colado." }), { status: 400 });
+        return new Response(
+          JSON.stringify({ error: "Use PDF, DOCX ou texto colado.", errorCode: "UNSUPPORTED_TYPE" }),
+          { status: 400 }
+        );
       }
       if (msg === "EMPTY_DOCUMENT") {
         return new Response(
-          JSON.stringify({ error: "Não foi possível extrair texto. Cole o conteúdo manualmente ou use PDF com texto." }),
+          JSON.stringify({
+            error: "Não foi possível extrair texto. Cole o conteúdo manualmente ou use PDF com texto.",
+            errorCode: "EMPTY_DOCUMENT",
+          }),
           { status: 400 }
         );
       }
@@ -170,11 +193,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           JSON.stringify({
             error:
               "Não foi possível processar o PDF no servidor (arquivo protegido, corrompido ou ambiente). Tente DOCX, outro PDF ou cole o texto da especificação.",
+            errorCode: "PDF_EXTRACT_FAILED",
+            cause: e instanceof Error && e.cause instanceof Error ? e.cause.message : undefined,
           }),
           { status: 400 }
         );
       }
-      return new Response(JSON.stringify({ error: "Falha ao ler documento." }), { status: 500 });
+      return new Response(
+        JSON.stringify({
+          error: "Falha ao ler documento.",
+          errorCode: "EXTRACT_UNKNOWN",
+          cause: msg !== "extract_failed" ? msg : undefined,
+        }),
+        { status: 500 }
+      );
     }
   } else {
     if (!workItemsJson.trim()) {
@@ -213,8 +245,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         sendEvent("done", { ok: true });
       } catch (err) {
-        console.error("spec-plan stream", err);
-        sendEvent("error", { message: err instanceof Error ? err.message : "Erro interno" });
+        console.error("spec-plan stream pipeline", err);
+        const e = err instanceof Error ? err : new Error(String(err));
+        sendEvent("error", {
+          message: e.message || "Erro interno",
+          code: "pipeline_uncaught",
+          cause: e.message,
+          stack: process.env.NODE_ENV === "development" ? e.stack : undefined,
+        });
       } finally {
         controller.close();
       }
