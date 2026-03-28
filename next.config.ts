@@ -3,6 +3,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /** Evita bundling que quebra pdf.js (workers/cmaps) em Route Handlers — necessário para extração de PDF em produção. */
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
   /**
    * Preview Vercel ou `ENABLE_PROD_BROWSER_SOURCE_MAPS=1` no Vercel:
    * stack legível no console (aumenta tamanho do build).

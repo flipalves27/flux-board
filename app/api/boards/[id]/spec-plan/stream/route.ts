@@ -125,10 +125,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!remapOnly) {
     let buffer: Buffer | undefined;
     let fileName = "spec";
-    if (fileEntry instanceof File && fileEntry.size > 0) {
-      const ab = await fileEntry.arrayBuffer();
+    const isBlobLike =
+      fileEntry &&
+      typeof fileEntry === "object" &&
+      typeof (fileEntry as Blob).arrayBuffer === "function" &&
+      typeof (fileEntry as Blob).size === "number" &&
+      (fileEntry as Blob).size > 0;
+    if (isBlobLike) {
+      const ab = await (fileEntry as Blob).arrayBuffer();
       buffer = Buffer.from(ab);
-      fileName = fileEntry.name || "upload";
+      fileName =
+        fileEntry instanceof File && String(fileEntry.name || "").trim()
+          ? String(fileEntry.name).trim()
+          : "upload.pdf";
     }
     try {
       const extracted = await extractSpecDocument({ buffer, fileName, pastedText: pastedText || undefined });
@@ -153,6 +162,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (msg === "EMPTY_DOCUMENT") {
         return new Response(
           JSON.stringify({ error: "Não foi possível extrair texto. Cole o conteúdo manualmente ou use PDF com texto." }),
+          { status: 400 }
+        );
+      }
+      if (msg === "PDF_EXTRACT_FAILED") {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Não foi possível processar o PDF no servidor (arquivo protegido, corrompido ou ambiente). Tente DOCX, outro PDF ou cole o texto da especificação.",
+          }),
           { status: 400 }
         );
       }

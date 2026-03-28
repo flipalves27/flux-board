@@ -1,8 +1,30 @@
 import "server-only";
 
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
 import mammoth from "mammoth";
 import { SPEC_PLAN_MAX_FILE_BYTES } from "@/lib/spec-plan-constants";
 import { normalizeSpecDocumentText, truncateSpecText } from "@/lib/spec-plan-text-utils";
+
+/** Opções para pdf.js em Node/serverless (Vercel): evita @font-face e eval; cmaps via file:// do pacote. */
+function getPdfJsDocumentOptions(data: Uint8Array): Record<string, unknown> {
+  const base: Record<string, unknown> = {
+    data,
+    useSystemFonts: true,
+    disableFontFace: true,
+    isEvalSupported: false,
+  };
+  try {
+    const distRoot = path.join(process.cwd(), "node_modules", "pdfjs-dist");
+    const baseUrl = pathToFileURL(distRoot).href + "/";
+    base.cMapUrl = `${baseUrl}cmaps/`;
+    base.cMapPacked = true;
+  } catch {
+    /* ignore — pdf.js usa fallbacks */
+  }
+  return base;
+}
 
 export type SpecExtractResult = {
   text: string;
@@ -65,15 +87,23 @@ export async function extractSpecDocument(input: {
 
   if (ext === "pdf") {
     const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: new Uint8Array(input.buffer) });
+    const data = new Uint8Array(input.buffer);
+    const parser = new PDFParse(getPdfJsDocumentOptions(data) as ConstructorParameters<typeof PDFParse>[0]);
     let raw = "";
     let pageCount: number | undefined;
     try {
       const textRes = await parser.getText();
       raw = typeof textRes.text === "string" ? textRes.text : "";
       pageCount = typeof textRes.total === "number" ? textRes.total : undefined;
+    } catch (pdfErr) {
+      console.error("[spec-plan] PDFParse.getText failed:", pdfErr);
+      throw new Error("PDF_EXTRACT_FAILED");
     } finally {
-      await parser.destroy();
+      try {
+        await parser.destroy();
+      } catch {
+        /* ignore */
+      }
     }
     let combined = normalizeSpecDocumentText(raw);
     if (pasted) {
