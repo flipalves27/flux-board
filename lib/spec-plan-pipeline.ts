@@ -17,6 +17,7 @@ import { buildSpecPlanRetrievalContext } from "@/lib/spec-plan-retrieval";
 import { compactOutlineForWorkItemsJson } from "@/lib/spec-plan-outline-compact";
 import { compactRemapWorkItemsJsonString, compactWorkItemsForCardsJson } from "@/lib/spec-plan-work-items-compact";
 import { CardsLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec-plan-schemas";
+import { fluxyPromptPrefix } from "@/lib/fluxy-persona";
 
 const CARDS_LLM_JSON_RETRY_SUFFIX =
   "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Se necessário, use no máximo 40 cardRows e textos curtos em rationale/desc — prefira JSON válido a resposta longa truncada.";
@@ -53,7 +54,7 @@ async function llmJson(params: {
     org: params.org,
     orgId: params.orgId,
     feature: "spec_ai_scope_planner",
-    messages: [{ role: "user", content: params.userContent }],
+    messages: [{ role: "user", content: fluxyPromptPrefix() + params.userContent }],
     options: { temperature, maxTokens },
     mode: "batch",
     userId: params.userId,

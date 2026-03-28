@@ -8,6 +8,7 @@ import { SpecPlanAnalysisDrawer } from "@/components/spec-plan/spec-plan-analysi
 import type { SpecPlanRunLogEntry } from "@/lib/spec-plan-run-types";
 import { SpecPlanPreviewCards } from "@/components/spec-plan/spec-plan-preview-cards";
 import { SpecPlanProgressStepper } from "@/components/spec-plan/spec-plan-progress-stepper";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
 import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api-client";
@@ -100,6 +101,7 @@ export default function SpecPlanPage() {
   const searchParams = useSearchParams();
   const localeRoot = `/${useLocale()}`;
   const t = useTranslations("specPlanPage");
+  const tFluxy = useTranslations("kanban.board.fluxyCopilot");
   const { user, getHeaders, isChecked } = useAuth();
 
   const [featureOk, setFeatureOk] = useState<boolean | null>(null);
@@ -844,6 +846,11 @@ export default function SpecPlanPage() {
     return err?.key ?? null;
   }, [analysisPhases]);
 
+  const specFluxyAvatarState = useMemo(() => {
+    if (analysisPhases.some((p) => p.state === "running")) return "thinking" as const;
+    return "idle" as const;
+  }, [analysisPhases]);
+
   if (!isChecked || !user) {
     return <div className="min-h-screen bg-[var(--flux-surface-dark)]" />;
   }
@@ -1030,7 +1037,13 @@ export default function SpecPlanPage() {
         {tab === "progress" ? (
         <section className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-black-alpha-04)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FluxyAvatar state={specFluxyAvatarState} size="compact" className="scale-[0.85] origin-left" />
+              <div className="min-w-0">
+                <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
+                <p className="text-[10px] text-[var(--flux-text-muted)]">{tFluxy("subtitle")}</p>
+              </div>
+            </div>
           </div>
           <div className="mt-4 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-elevated)] p-3">
             <SpecPlanProgressStepper

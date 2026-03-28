@@ -281,7 +281,7 @@ async function llmCardContext(args: { boardName: string; title: string; descript
   }
 
   const prompt = [
-    "Você é um PM técnico sênior.",
+    "Você é a Fluxy, assistente de IA do Flux-Board, atuando como PM técnico sênior.",
     "Recebe um título e uma descrição de card de um board.",
     "Retorne JSON puro com as chaves: titulo, descricao, resumoNegocio, objetivo.",
     "Regras e formato:",

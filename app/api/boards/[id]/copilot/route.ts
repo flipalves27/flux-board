@@ -656,7 +656,7 @@ async function callCopilotLlmModel(input: {
   const histForPrompt = input.historyMessages.slice(-8);
 
   const system = [
-    "Você é um Copiloto de operações (Flux-Board): entende o board atual, OKRs da org, automações, documentos (RAG) e métricas de portfólio/relatórios.",
+    "Você é a Fluxy, assistente de operações do Flux-Board: entende o board atual, OKRs da org, automações, documentos (RAG) e métricas de portfólio/relatórios.",
     "Use o `worldSnapshot` como visão agregada da organização; use o JSON do board abaixo para detalhes e IDs dos cards deste quadro.",
     "Priorize coerência entre OKRs, boards e docs quando a pergunta for estratégica ou cross-funcional.",
     "",
@@ -1189,7 +1189,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         sendEvent("done", { ok: true });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro interno no Copiloto.";
+        const message = err instanceof Error ? err.message : "Erro interno na Fluxy.";
         sendEvent("error", { message });
         try {
           controller.close();

@@ -1483,8 +1483,8 @@
           "body": "Drag a card to another column to change its stage. You can also reorder within a column by dragging."
         },
         "copilot": {
-          "title": "Board Copilot",
-          "body": "On desktop, open it from the icon on the right-hand tools rail (bottom corner). On mobile, use the board’s floating tools menu. It answers with this board’s context."
+          "title": "Fluxy — board assistant",
+          "body": "On desktop, open it from the tools rail on the right (bottom corner). On mobile, use the board’s floating tools menu. Fluxy answers with this board’s context."
         },
         "daily": {
           "title": "Daily Insights",
@@ -1791,7 +1791,7 @@
         }
       },
       "aiContext": {
-        "title": "Card AI context",
+        "title": "Fluxy — card context",
         "boardLabel": "Board: {boardName}",
         "boardFallback": "Board",
         "close": "Close",
@@ -2528,12 +2528,46 @@
         "portalHint": "Share read-only view:",
         "close": "Close"
       },
+      "fluxyCopilot": {
+        "title": "Fluxy",
+        "subtitle": "Board assistant",
+        "fabOpen": "Open Fluxy",
+        "fabClose": "Close Fluxy",
+        "close": "Close",
+        "roleUser": "You",
+        "roleAssistant": "Fluxy",
+        "roleTool": "Tool",
+        "loadingHistory": "Loading history…",
+        "generating": "Fluxy is thinking…",
+        "emptyIntro": "Ask about the board, request summaries or actions. Ideas below:",
+        "emptyTipNlq": "Structured search: use /query (e.g. «/query urgent cards with no owner»).",
+        "emptyTipVoice": "Use the mic or ask to move cards and change priority.",
+        "emptyTipWeekly": "Try: “Which cards have been idle for more than 5 days?” or a weekly brief.",
+        "insightsHeading": "On the board now",
+        "insightTotal": "{count} cards on the board.",
+        "insightOverdue": "{count} past due — worth reprioritizing.",
+        "insightInProgress": "{count} in progress.",
+        "insightUrgent": "{count} marked urgent.",
+        "demoTitle": "Demo mode: {count} message(s) left.",
+        "demoBody": "Upgrade to Pro/Business for unlimited Fluxy and AI automations.",
+        "micSpeak": "Speak to Fluxy",
+        "micStop": "Stop microphone",
+        "listening": "Listening… speak now",
+        "stopRecording": "Stop",
+        "placeholder": "Ask a question or request an action…",
+        "hintFooter": "Tip: use voice or commands like “move card X to In progress”.",
+        "toastErrorTitle": "Fluxy",
+        "streamErrorFallback": "Fluxy error.",
+        "voiceNotSupported": "Your browser does not support speech recognition (Web Speech API).",
+        "voiceMicError": "Could not capture audio. Check the microphone and try again.",
+        "voiceStartError": "Could not start the microphone."
+      },
       "desktopToolsRail": {
         "handleTitle": "Hover to show board tools, or click to pin the strip open",
         "handlePin": "Pin tools strip open",
         "handleUnpin": "Unpin tools strip",
-        "copilotOpen": "AI Copilot",
-        "copilotClose": "Close AI"
+        "copilotOpen": "Open Fluxy",
+        "copilotClose": "Close Fluxy"
       },
       "nlq": {
         "label": "Smart board query",
@@ -2570,7 +2604,7 @@
         "openMenu": "Board tools",
         "closeMenu": "Close tools",
         "menuLabel": "Board tools",
-        "copilot": "Copilot",
+        "copilot": "Fluxy",
         "insights": "Execution insights",
         "activity": "Activity log",
         "daily": "Daily AI"

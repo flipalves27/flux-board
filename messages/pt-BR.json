@@ -1488,8 +1488,8 @@
           "body": "Arraste o card para outra coluna para mudar o estágio. A ordem dentro da coluna também pode ser ajustada arrastando."
         },
         "copilot": {
-          "title": "Copiloto do quadro",
-          "body": "No desktop, abra pelo ícone no trilho de ferramentas à direita (canto inferior). No mobile, use o menu flutuante de ferramentas do quadro. O assistente usa o contexto deste Kanban."
+          "title": "Fluxy — assistente do quadro",
+          "body": "No desktop, abra pelo ícone no trilho à direita (canto inferior). No mobile, use o menu flutuante de ferramentas. A Fluxy usa o contexto deste Kanban."
         },
         "daily": {
           "title": "Daily Insights",
@@ -1796,7 +1796,7 @@
         }
       },
       "aiContext": {
-        "title": "Contexto IA do Card",
+        "title": "Fluxy — contexto do card",
         "boardLabel": "Board: {boardName}",
         "boardFallback": "Board",
         "close": "Fechar",
@@ -2533,12 +2533,46 @@
         "portalHint": "Visão somente leitura:",
         "close": "Fechar"
       },
+      "fluxyCopilot": {
+        "title": "Fluxy",
+        "subtitle": "Assistente do quadro",
+        "fabOpen": "Abrir Fluxy",
+        "fabClose": "Fechar Fluxy",
+        "close": "Fechar",
+        "roleUser": "Você",
+        "roleAssistant": "Fluxy",
+        "roleTool": "Ferramenta",
+        "loadingHistory": "Carregando histórico…",
+        "generating": "Fluxy está pensando na resposta…",
+        "emptyIntro": "Pergunte sobre o quadro, peça resumos ou ações. Algumas ideias:",
+        "emptyTipNlq": "Buscas estruturadas: use /query (ex.: «/query cards urgentes sem dono»).",
+        "emptyTipVoice": "Use o microfone ou peça para mover cards e ajustar prioridade.",
+        "emptyTipWeekly": "Experimente: «Quais cards estão parados há mais de 5 dias?» ou um brief da semana.",
+        "insightsHeading": "No quadro agora",
+        "insightTotal": "{count} cards no quadro.",
+        "insightOverdue": "{count} com vencimento passado — vale revisar prioridade.",
+        "insightInProgress": "{count} em andamento.",
+        "insightUrgent": "{count} marcados como urgentes.",
+        "demoTitle": "Modo demo: {count} mensagem(ns) restante(s).",
+        "demoBody": "Faça upgrade para Pro/Business para a Fluxy sem limite e automações com IA.",
+        "micSpeak": "Falar com a Fluxy",
+        "micStop": "Parar microfone",
+        "listening": "Ouvindo… fale agora",
+        "stopRecording": "Parar",
+        "placeholder": "Pergunte ou peça uma ação…",
+        "hintFooter": "Dica: use voz ou comandos como «mova o card X para Em Execução».",
+        "toastErrorTitle": "Fluxy",
+        "streamErrorFallback": "Erro na Fluxy.",
+        "voiceNotSupported": "Seu navegador não suporta reconhecimento de voz (Web Speech API).",
+        "voiceMicError": "Não foi possível capturar o áudio. Verifique o microfone e tente de novo.",
+        "voiceStartError": "Não foi possível iniciar o microfone."
+      },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
         "handlePin": "Fixar faixa de ferramentas aberta",
         "handleUnpin": "Soltar faixa de ferramentas",
-        "copilotOpen": "Copiloto IA",
-        "copilotClose": "Fechar IA"
+        "copilotOpen": "Abrir Fluxy",
+        "copilotClose": "Fechar Fluxy"
       },
       "nlq": {
         "label": "Consulta inteligente",
@@ -2575,7 +2609,7 @@
         "openMenu": "Ferramentas do board",
         "closeMenu": "Fechar ferramentas",
         "menuLabel": "Ferramentas do board",
-        "copilot": "Copiloto",
+        "copilot": "Fluxy",
         "insights": "Insights de execução",
         "activity": "Atividade",
         "daily": "IA do dia"

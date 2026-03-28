@@ -15,6 +15,8 @@ import { useAuth } from "@/context/auth-context";
 import type { RagRetrievalDebug } from "@/lib/docs-rag";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { AiFeedbackInline } from "@/components/ai/ai-feedback-inline";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
+import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -130,6 +132,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
   const { pushToast } = useToast();
   const { user } = useAuth();
   const tNlq = useTranslations("kanban.board.nlq");
+  const tFluxy = useTranslations("kanban.board.fluxyCopilot");
   const copilotDebug = process.env.NODE_ENV === "development";
   const [ragDebug, setRagDebug] = useState<RagRetrievalDebug | null>(null);
 
@@ -184,6 +187,101 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
   const endRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
+  const copilotOpenPrevRef = useRef(false);
+  const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [fluxyWaving, setFluxyWaving] = useState(false);
+  const [fluxyCelebrating, setFluxyCelebrating] = useState(false);
+
+  const triggerFluxyCelebrate = useCallback(() => {
+    if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
+    setFluxyCelebrating(true);
+    celebrateTimerRef.current = setTimeout(() => {
+      setFluxyCelebrating(false);
+      celebrateTimerRef.current = null;
+    }, 2200);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!open) {
+      copilotOpenPrevRef.current = false;
+      return;
+    }
+    const wasClosed = !copilotOpenPrevRef.current;
+    copilotOpenPrevRef.current = true;
+    if (!wasClosed) return;
+    try {
+      if (typeof sessionStorage !== "undefined" && !sessionStorage.getItem("fluxy:copilot-waved")) {
+        sessionStorage.setItem("fluxy:copilot-waved", "1");
+        setFluxyWaving(true);
+        const t = window.setTimeout(() => setFluxyWaving(false), 2400);
+        return () => clearTimeout(t);
+      }
+    } catch {
+      // ignore
+    }
+  }, [open]);
+
+  const boardDb = useBoardStore(
+    useShallow((s) => (s.boardId === boardId && s.db ? s.db : null))
+  );
+
+  const fluxyInsights = useMemo(() => {
+    if (!boardDb?.cards?.length) return [];
+    const cards = boardDb.cards;
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    const startT = startToday.getTime();
+    let overdue = 0;
+    let inProgress = 0;
+    let urgent = 0;
+    for (const c of cards) {
+      if (c.progress === "Em andamento") inProgress += 1;
+      if (c.priority === "Urgente") urgent += 1;
+      if (c.dueDate && c.progress !== "Concluída") {
+        const t = new Date(c.dueDate).getTime();
+        if (Number.isFinite(t) && t < startT) overdue += 1;
+      }
+    }
+    const rows: string[] = [];
+    rows.push(tFluxy("insightTotal", { count: cards.length }));
+    if (overdue > 0) rows.push(tFluxy("insightOverdue", { count: overdue }));
+    else if (inProgress > 0) rows.push(tFluxy("insightInProgress", { count: inProgress }));
+    else if (urgent > 0) rows.push(tFluxy("insightUrgent", { count: urgent }));
+    return rows.slice(0, 3);
+  }, [boardDb, tFluxy]);
+
+  const lastAssistantContent = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.role === "assistant") return messages[i]?.content ?? "";
+    }
+    return "";
+  }, [messages]);
+
+  const fluxyVisualState = resolveFluxyCopilotState({
+    panelOpen: open,
+    loadingHistory,
+    generating,
+    lastAssistantContent,
+    waving: fluxyWaving,
+    celebrating: fluxyCelebrating,
+  });
+
+  const fabFluxyState = resolveFluxyCopilotState({
+    panelOpen: open,
+    loadingHistory: false,
+    generating,
+    lastAssistantContent,
+    waving: false,
+    celebrating: fluxyCelebrating,
+  });
 
   const canSend = useMemo(() => {
     if (generating) return false;
@@ -261,6 +359,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
         };
         setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
+        let nlqCelebrate = false;
         try {
           const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/nlq`, {
             method: "POST",
@@ -299,6 +398,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
               )
             );
             pushToast({ kind: "info", title: tNlq("toastTitle"), description: data.fallbackMessage });
+            nlqCelebrate = true;
             return;
           }
 
@@ -323,6 +423,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
               explanation: data.explanation,
             });
           }
+          nlqCelebrate = true;
         } catch {
           const txt = tNlq("errorGeneric");
           setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: txt } : m)));
@@ -330,6 +431,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
         } finally {
           setGenerating(false);
           endRef.current?.scrollIntoView({ behavior: "auto" });
+          if (nlqCelebrate) triggerFluxyCelebrate();
         }
         return;
       }
@@ -355,6 +457,9 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
       };
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
+
+      let sseStreamErrored = false;
+      let sseCelebrate = false;
 
       try {
         const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/copilot`, {
@@ -394,14 +499,15 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
           }
         ) => {
           if (event === "error") {
+            sseStreamErrored = true;
             const msg =
               typeof (data as { message?: string })?.message === "string"
                 ? String((data as { message: string }).message).trim()
-                : "Erro no Copiloto.";
+                : tFluxy("streamErrorFallback");
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantId ? { ...m, content: m.content || msg } : m))
             );
-            pushToast({ kind: "error", title: "Copiloto", description: msg });
+            pushToast({ kind: "error", title: tFluxy("toastErrorTitle"), description: msg });
             return;
           }
 
@@ -485,14 +591,17 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
             );
           }
         }
+
+        if (!sseStreamErrored && !controller.signal.aborted) sseCelebrate = true;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro interno ao gerar.";
-        pushToast({ kind: "error", title: "Copiloto", description: message });
+        pushToast({ kind: "error", title: tFluxy("toastErrorTitle"), description: message });
       } finally {
         setGenerating(false);
         setDraft("");
         abortRef.current = null;
         endRef.current?.scrollIntoView({ behavior: "auto" });
+        if (sseCelebrate) triggerFluxyCelebrate();
       }
     },
     [
@@ -505,7 +614,9 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
       setFreeDemoRemaining,
       setGenerating,
       setMessages,
+      tFluxy,
       tNlq,
+      triggerFluxyCelebrate,
     ]
   );
 
@@ -539,7 +650,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     };
     const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
     if (!Ctor) {
-      setVoiceError("Seu navegador não suporta reconhecimento de voz (Web Speech API).");
+      setVoiceError(tFluxy("voiceNotSupported"));
       return;
     }
     setVoiceError(null);
@@ -553,7 +664,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     setVoiceInterim("");
 
     rec.onerror = () => {
-      setVoiceError("Não foi possível capturar o áudio. Verifique o microfone e tente de novo.");
+      setVoiceError(tFluxy("voiceMicError"));
       stopVoice();
     };
 
@@ -586,7 +697,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     try {
       rec.start();
     } catch {
-      setVoiceError("Não foi possível iniciar o microfone.");
+      setVoiceError(tFluxy("voiceStartError"));
       stopVoice();
     }
   }, [
@@ -597,17 +708,16 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     setVoiceListening,
     stopVoice,
     streamCopilot,
+    tFluxy,
   ]);
 
   const freeBanner =
     tier === "free" && freeDemoRemaining !== null ? (
       <div className="px-3 py-2 rounded-[10px] border border-[var(--flux-warning-alpha-25)] bg-[var(--flux-warning-alpha-10)] mb-3">
         <div className="text-xs font-semibold text-[var(--flux-warning)]">
-          Modo demo: {freeDemoRemaining} mensagem(ns) restante(s).
+          {tFluxy("demoTitle", { count: freeDemoRemaining })}
         </div>
-        <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">
-          Faça upgrade para Pro/Business para liberar Copiloto ilimitado e automações com IA.
-        </div>
+        <div className="text-[11px] text-[var(--flux-text-muted)] mt-1">{tFluxy("demoBody")}</div>
       </div>
     ) : null;
 
@@ -628,15 +738,13 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
             toggleOpen();
           }}
           aria-expanded={open}
+          aria-label={open ? tFluxy("fabClose") : tFluxy("fabOpen")}
         >
           <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
-                <circle cx="12" cy="12" r="2.2" />
-              </svg>
+            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <FluxyAvatar state={fabFluxyState} size="fab" showConfetti={fluxyCelebrating} />
             </span>
-            <span className="text-[11px] font-semibold whitespace-nowrap">{open ? "Fechar IA" : "Copiloto IA"}</span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{open ? tFluxy("fabClose") : tFluxy("fabOpen")}</span>
             {tier === "free" && freeDemoRemaining !== null ? (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[var(--flux-warning-alpha-40)] text-[var(--flux-warning)]">
                 {freeDemoRemaining}
@@ -649,22 +757,33 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
       {open && (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-backdrop)] pointer-events-none">
           <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] pointer-events-auto flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--flux-chrome-alpha-08)] flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate">Copiloto</div>
-                <div className="text-[11px] text-[var(--flux-text-muted)] mt-1 truncate">
-                  {boardName || "Board"}
-                  {user?.username ? ` • ${user.username}` : ""}
+            <div className="px-4 py-3 border-b border-[var(--flux-chrome-alpha-08)] flex items-center justify-between gap-3">
+              <div className="min-w-0 flex items-center gap-2.5">
+                <FluxyAvatar
+                  state={fluxyVisualState}
+                  size="header"
+                  showConfetti={fluxyCelebrating}
+                  title={tFluxy("title")}
+                />
+                <div className="min-w-0">
+                  <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate leading-tight">
+                    {tFluxy("title")}
+                  </div>
+                  <div className="text-[10px] text-[var(--flux-text-muted)] truncate">{tFluxy("subtitle")}</div>
+                  <div className="text-[11px] text-[var(--flux-text-muted)] mt-0.5 truncate">
+                    {boardName || "Board"}
+                    {user?.username ? ` • ${user.username}` : ""}
+                  </div>
                 </div>
               </div>
-              <button type="button" className="btn-secondary px-3 py-1.5" onClick={() => setOpen(false)}>
-                Fechar
+              <button type="button" className="btn-secondary px-3 py-1.5 shrink-0" onClick={() => setOpen(false)}>
+                {tFluxy("close")}
               </button>
             </div>
 
             <div className="px-4 pt-3 pb-2 overflow-auto flex-1">
               {loadingHistory ? (
-                <p className="text-xs text-[var(--flux-text-muted)]">Carregando histórico...</p>
+                <p className="text-xs text-[var(--flux-text-muted)]">{tFluxy("loadingHistory")}</p>
               ) : (
                 <>
                   {freeBanner}
@@ -687,10 +806,25 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
                   <div className="space-y-2">
                     {messages.length === 0 ? (
-                      <div className="text-xs text-[var(--flux-text-muted)]">
-                        Envie uma mensagem, por exemplo: “Quais cards estão parados há mais de 5 dias?” ou “Resuma o progresso desta
-                        semana”. Para dados estruturados no board, use <span className="font-semibold">/query</span> (ex.: «/query cards
-                        urgentes sem dono»).
+                      <div className="space-y-2 text-xs text-[var(--flux-text-muted)]">
+                        <p className="text-[var(--flux-text)]">{tFluxy("emptyIntro")}</p>
+                        {fluxyInsights.length > 0 ? (
+                          <div className="rounded-[10px] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-secondary)]">
+                              {tFluxy("insightsHeading")}
+                            </div>
+                            <ul className="mt-1.5 list-disc pl-4 space-y-0.5">
+                              {fluxyInsights.map((line) => (
+                                <li key={line}>{line}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        <ul className="list-disc pl-4 space-y-1">
+                          <li>{tFluxy("emptyTipWeekly")}</li>
+                          <li>{tFluxy("emptyTipNlq")}</li>
+                          <li>{tFluxy("emptyTipVoice")}</li>
+                        </ul>
                       </div>
                     ) : (
                       messages.map((m) => (
@@ -705,7 +839,11 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                           }`}
                         >
                           <div className="text-[10px] uppercase tracking-wide font-bold text-[var(--flux-text-muted)]">
-                            {m.role === "user" ? "Você" : m.role === "assistant" ? "Copiloto" : "Tool"}
+                            {m.role === "user"
+                              ? tFluxy("roleUser")
+                              : m.role === "assistant"
+                                ? tFluxy("roleAssistant")
+                                : tFluxy("roleTool")}
                           </div>
                           <div className="text-xs text-[var(--flux-text)] mt-1 whitespace-pre-wrap leading-relaxed">
                             {m.content}
@@ -730,7 +868,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                       ))
                     )}
                     {generating ? (
-                      <div className="text-xs text-[var(--flux-text-muted)] pt-1">Gerando resposta...</div>
+                      <div className="text-xs text-[var(--flux-text-muted)] pt-1 flex items-center gap-2">
+                        <FluxyAvatar state={fluxyVisualState} size="compact" className="scale-[0.65] origin-left" />
+                        <span>{tFluxy("generating")}</span>
+                      </div>
                     ) : null}
                     <div ref={endRef} />
                   </div>
@@ -746,13 +887,13 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--flux-teal-brand)]" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-semibold text-[var(--flux-teal-brand)]">Ouvindo… fale agora</div>
+                    <div className="text-[11px] font-semibold text-[var(--flux-teal-brand)]">{tFluxy("listening")}</div>
                     {voiceInterim ? (
                       <div className="text-[11px] text-[var(--flux-text-muted)] mt-0.5 truncate">{voiceInterim}</div>
                     ) : null}
                   </div>
                   <button type="button" className="btn-secondary text-[10px] px-2 py-1 shrink-0" onClick={stopVoice}>
-                    Parar
+                    {tFluxy("stopRecording")}
                   </button>
                 </div>
               )}
@@ -762,15 +903,15 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Pergunte ou peça uma ação..."
+                  placeholder={tFluxy("placeholder")}
                   className="flex-1 min-h-[44px] max-h-[120px] px-3 py-2 rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-xs outline-none focus:border-[var(--flux-primary)] resize-none"
                   disabled={!canSend}
                 />
                 <div className="flex flex-col gap-1.5 shrink-0">
                   <button
                     type="button"
-                    title={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
-                    aria-label={voiceListening ? "Parar microfone" : "Falar com o Copiloto"}
+                    title={voiceListening ? tFluxy("micStop") : tFluxy("micSpeak")}
+                    aria-label={voiceListening ? tFluxy("micStop") : tFluxy("micSpeak")}
                     className={`btn-secondary px-3 min-h-[44px] flex items-center justify-center ${
                       voiceListening ? "border-[var(--flux-teal-alpha-45)] bg-[var(--flux-teal-alpha-12)]" : ""
                     } ${!canSend ? "!opacity-60" : ""}`}
@@ -800,9 +941,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                 </div>
               </div>
 
-              <div className="text-[11px] text-[var(--flux-text-muted)] mt-2">
-                Dica: use o microfone ou diga “mova o card X para Em Execução” ou “ajuste a prioridade para Urgente”.
-              </div>
+              <div className="text-[11px] text-[var(--flux-text-muted)] mt-2">{tFluxy("hintFooter")}</div>
             </div>
           </div>
         </div>

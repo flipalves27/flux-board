@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { useTranslations } from "next-intl";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
+import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
@@ -29,6 +31,24 @@ export function BoardDesktopToolsRail() {
   const toggleCopilot = useCopilotStore((s) => s.toggleOpen);
   const tier = useCopilotStore((s) => s.tier);
   const freeDemoRemaining = useCopilotStore((s) => s.freeDemoRemaining);
+  const copilotGenerating = useCopilotStore((s) => s.generating);
+  const copilotMessages = useCopilotStore((s) => s.messages);
+
+  const railFluxyAssistantContent = useMemo(() => {
+    for (let i = copilotMessages.length - 1; i >= 0; i--) {
+      if (copilotMessages[i]?.role === "assistant") return copilotMessages[i]?.content ?? "";
+    }
+    return "";
+  }, [copilotMessages]);
+
+  const railFluxyState = resolveFluxyCopilotState({
+    panelOpen: copilotOpen,
+    loadingHistory: false,
+    generating: copilotGenerating,
+    lastAssistantContent: railFluxyAssistantContent,
+    waving: false,
+    celebrating: false,
+  });
 
   const activityOpen = useBoardActivityStore((s) => s.open);
   const toggleActivity = useBoardActivityStore((s) => s.toggleOpen);
@@ -238,13 +258,11 @@ export function BoardDesktopToolsRail() {
           className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
           onClick={onCopilotClick}
           aria-expanded={copilotOpen}
+          aria-label={copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}
         >
           <span className={toolButtonClass(copilotOpen)}>
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M12 3l2.2 2.2L17 6l-1.1 2.8L18 12l-2.1 3.2L17 18l-2.8.8L12 21l-2.2-2.2L7 18l1.1-2.8L6 12l2.1-3.2L7 6l2.8-.8L12 3z" />
-                <circle cx="12" cy="12" r="2.2" />
-              </svg>
+            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <FluxyAvatar state={railFluxyState} size="fab" />
             </span>
             <span className="text-[11px] font-semibold whitespace-nowrap">
               {copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}
