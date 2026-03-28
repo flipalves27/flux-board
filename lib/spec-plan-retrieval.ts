@@ -5,6 +5,10 @@ import {
   fetchTextEmbeddingsWithMeta,
   type TextEmbeddingsResult,
 } from "@/lib/embeddings-together";
+
+function specPlanPrimaryEmbedModelHint(): string {
+  return (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
+}
 import type { SpecPlanChunk } from "@/lib/spec-plan-chunk";
 import {
   SPEC_PLAN_EMBED_BATCH,
@@ -61,28 +65,30 @@ function summarizeEmbedFailure(r: Extract<TextEmbeddingsResult, { ok: false }>):
 
 /**
  * Spec-plan só usa vetores em memória (não grava no índice RAG do Mongo).
- * Se `TOGETHER_DOCS_EMBEDDING_MODEL` falhar (modelo indisponível, quota, etc.), tenta o modelo geral.
+ * Usa primeiro o modelo **serverless** geral (evita 400 no m2-bert dedicado na Together).
+ * Se falhar, tenta `TOGETHER_DOCS_EMBEDDING_MODEL` / m2-bert.
  */
 async function fetchSpecPlanEmbeddingBatch(
   inputs: string[]
 ): Promise<{ ok: true; vectors: number[][] } | { ok: false; reason: string }> {
-  const docsModel = (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim();
-  const r1 = await fetchTextEmbeddingsWithMeta(inputs, { model: docsModel });
+  const generalModel = (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
+  const r1 = await fetchTextEmbeddingsWithMeta(inputs, { model: generalModel });
   if (r1.ok) return { ok: true, vectors: r1.vectors };
 
   const detail1 = summarizeEmbedFailure(r1);
-  const generalModel = (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
-  console.warn(
-    "[spec-plan-retrieval] modelo de documentos falhou; a repetir embeddings com modelo geral.",
-    { docsModel, generalModel, detail: detail1 }
-  );
+  const docsModel = (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim();
+  console.warn("[spec-plan-retrieval] modelo geral falhou; a tentar modelo de documentos.", {
+    generalModel,
+    docsModel,
+    detail: detail1,
+  });
 
-  const r2 = await fetchTextEmbeddingsWithMeta(inputs, { model: generalModel });
+  const r2 = await fetchTextEmbeddingsWithMeta(inputs, { model: docsModel });
   if (r2.ok) return { ok: true, vectors: r2.vectors };
 
   return {
     ok: false,
-    reason: `${detail1} | fallback ${generalModel}: ${summarizeEmbedFailure(r2)}`,
+    reason: `${detail1} | fallback ${docsModel}: ${summarizeEmbedFailure(r2)}`,
   };
 }
 
@@ -193,7 +199,7 @@ export async function buildSpecPlanRetrievalContext(input: {
       embeddedCount: 0,
       queries,
       preview: [],
-      modelHint: (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim(),
+      modelHint: specPlanPrimaryEmbedModelHint(),
       chunksUsed,
     };
   }
@@ -225,7 +231,7 @@ export async function buildSpecPlanRetrievalContext(input: {
 
   const merged = mergeHitsByChunkId(allHits);
   const { text, chunksUsed } = buildRetrievalContextFromHits(merged, maxContextChars);
-  const modelHint = (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim();
+  const modelHint = specPlanPrimaryEmbedModelHint();
   const preview = merged.slice(0, 15).map((h) => ({
     chunkIndex: h.chunkIndex,
     score: Math.round(h.score * 1000) / 1000,

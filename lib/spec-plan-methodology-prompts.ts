@@ -94,7 +94,8 @@ export function buildCardsUserPrompt(params: {
     }
   ]
 }`,
-    "Limite: no máximo 60 cardRows. Um card principal por work item (pode omitir itens redundantes).",
+    "Limite: no máximo 45 cardRows. Um card principal por work item (pode omitir itens redundantes).",
+    "O JSON tem de ser completo e válido (JSON.parse); não corte a resposta a meio. Se faltar espaço, reduza rationale, desc e bucketMappingPreview.",
     "Responda APENAS o JSON.",
     "",
     "Colunas (buckets):",

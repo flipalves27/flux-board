@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Organization } from "@/lib/kv-organizations";
-import { DEFAULT_DOCS_EMBEDDING_MODEL } from "@/lib/embeddings-together";
+import { DEFAULT_GENERAL_EMBEDDING_MODEL } from "@/lib/embeddings-together";
 import { safeJsonParse } from "@/lib/llm-utils";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { SPEC_PLAN_LLM_DOC_CHUNK_CHARS } from "@/lib/spec-plan-constants";
@@ -15,7 +15,11 @@ import {
 } from "@/lib/spec-plan-methodology-prompts";
 import { buildSpecPlanRetrievalContext } from "@/lib/spec-plan-retrieval";
 import { compactOutlineForWorkItemsJson } from "@/lib/spec-plan-outline-compact";
+import { compactRemapWorkItemsJsonString, compactWorkItemsForCardsJson } from "@/lib/spec-plan-work-items-compact";
 import { CardsLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec-plan-schemas";
+
+const CARDS_LLM_JSON_RETRY_SUFFIX =
+  "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Se necessário, use no máximo 40 cardRows e textos curtos em rationale/desc — prefira JSON válido a resposta longa truncada.";
 
 export type SpecPlanPipelineEvent =
   | { event: "document_parsed"; data: Record<string, unknown> }
@@ -41,14 +45,16 @@ async function llmJson(params: {
   userContent: string;
   /** Saída JSON: outline ~6k; itens/cartões até 8k (teto Anthropic no provider). */
   maxOutputTokens?: number;
+  temperature?: number;
 }): Promise<{ ok: true; json: unknown } | { ok: false; message: string }> {
   const maxTokens = params.maxOutputTokens ?? 7200;
+  const temperature = params.temperature ?? 0.15;
   const res = await runOrgLlmChat({
     org: params.org,
     orgId: params.orgId,
     feature: "spec_ai_scope_planner",
     messages: [{ role: "user", content: params.userContent }],
-    options: { temperature: 0.15, maxTokens },
+    options: { temperature, maxTokens },
     mode: "batch",
     userId: params.userId,
     isAdmin: params.isAdmin,
@@ -98,7 +104,7 @@ export async function runSpecPlanPipeline(input: {
       : input.documentText;
 
   const modelHintDefault = (
-    process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL
+    process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL
   ).trim();
 
   let outlineParsed = OutlineLlmSchema.safeParse({ sections: [], keyRequirements: [] });
@@ -326,8 +332,8 @@ export async function runSpecPlanPipeline(input: {
   );
 
   const workItemsJson = input.remapOnly
-    ? input.remapOnly.workItemsJson
-    : JSON.stringify(workParsed.data);
+    ? compactRemapWorkItemsJsonString(input.remapOnly.workItemsJson)
+    : compactWorkItemsForCardsJson(workParsed.data);
 
   const cardsPrompt = input.remapOnly
     ? buildRemapUserPrompt({
@@ -345,14 +351,25 @@ export async function runSpecPlanPipeline(input: {
 
   if (await abortIfCancelled()) return;
 
-  const cRes = await llmJson({
+  let cRes = await llmJson({
     org: input.org,
     orgId: input.orgId,
     userId: input.userId,
     isAdmin: input.isAdmin,
     userContent: cardsPrompt,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 10_000,
   });
+  if (!cRes.ok && cRes.message === "Resposta da IA não é JSON válido.") {
+    cRes = await llmJson({
+      org: input.org,
+      orgId: input.orgId,
+      userId: input.userId,
+      isAdmin: input.isAdmin,
+      userContent: cardsPrompt + CARDS_LLM_JSON_RETRY_SUFFIX,
+      maxOutputTokens: 10_000,
+      temperature: 0.05,
+    });
+  }
   if (!cRes.ok) {
     await emit({ event: "error", data: { message: cRes.message, code: "cards_llm" } });
     return;

@@ -54,17 +54,28 @@ export function extractTextFromLlmContent(content: unknown): string {
 }
 
 /**
- * Lenient JSON parse for LLM output: strips ``` fences, slices first `{`…`}` span, then JSON.parse.
+ * Lenient JSON parse for LLM output: strips ``` fences, tenta objeto `{…}` e por fim a string inteira.
  */
 export function safeJsonParse<T = unknown>(raw: string): T | null {
   const s = String(raw ?? "").trim();
   if (!s) return null;
-  const unfenced = s.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+  const unfenced = s
+    .replace(/^\uFEFF/, "")
+    .replace(/```(?:json)?/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
   const first = unfenced.indexOf("{");
   const last = unfenced.lastIndexOf("}");
-  const candidate = first >= 0 && last > first ? unfenced.slice(first, last + 1) : unfenced;
+  if (first >= 0 && last > first) {
+    try {
+      return JSON.parse(unfenced.slice(first, last + 1)) as T;
+    } catch {
+      /* tentar corpo completo */
+    }
+  }
   try {
-    return JSON.parse(candidate) as T;
+    return JSON.parse(unfenced) as T;
   } catch {
     return null;
   }
