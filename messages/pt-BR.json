@@ -1485,6 +1485,12 @@
         "body": "Vou te guiar por este quadro em poucos passos: colunas, cards, a assistente Fluxy no canto e os atalhos úteis. Quando estiver pronto, começamos o tour.",
         "startTour": "Começar tour"
       },
+      "fluxyCelebrate": {
+        "kicker": "Tour concluído",
+        "title": "Parabéns!",
+        "body": "Você concluiu o tour guiado — agora está pronto para tocar o trabalho com mais confiança. A Fluxy continua por aqui sempre que precisar de ajuda neste quadro.",
+        "cta": "Começar a usar o quadro"
+      },
       "skip": "Pular tour",
       "start": "Tour guiado",
       "redo": "Refazer tour",

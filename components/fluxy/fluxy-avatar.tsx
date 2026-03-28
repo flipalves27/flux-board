@@ -153,7 +153,7 @@ export function FluxyAvatar({
         height: "auto",
         }}
       >
-        <FluxyConfetti active={Boolean(showConfetti && isCelebrating)} />
+        <FluxyConfetti active={Boolean(showConfetti && isCelebrating && !reducedMotion)} />
 
         <circle
           cx="340"

@@ -1480,6 +1480,12 @@
         "body": "I’ll walk you through this board in a few steps: columns, cards, the Fluxy assistant, and useful shortcuts. When you’re ready, we’ll start the tour.",
         "startTour": "Start tour"
       },
+      "fluxyCelebrate": {
+        "kicker": "Guided tour complete",
+        "title": "You did it!",
+        "body": "You’ve finished the guided tour — you’re ready to move work forward with confidence. Fluxy is here whenever you need a hand on this board.",
+        "cta": "Start using the board"
+      },
       "skip": "Skip tour",
       "start": "Guided tour",
       "redo": "Replay tour",

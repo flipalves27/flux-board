@@ -88,9 +88,12 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     const highlightRef = useRef<HTMLElement | null>(null);
     const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 80, left: 24 });
     const [fluxyWelcomeOpen, setFluxyWelcomeOpen] = useState(false);
+    const [fluxyCelebrationOpen, setFluxyCelebrationOpen] = useState(false);
     const titleHeadingId = useId();
     const fluxyWelcomeTitleId = useId();
+    const fluxyCelebrateTitleId = useId();
     const welcomePrimaryRef = useRef<HTMLButtonElement | null>(null);
+    const celebrationPrimaryRef = useRef<HTMLButtonElement | null>(null);
 
     const userRef = useRef(user);
     userRef.current = user;
@@ -114,13 +117,17 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       }
     }, [setAuth]);
 
-    const endTour = useCallback(() => {
-      onTourStepChange(null);
+    const clearTourHighlightAndPopover = useCallback(() => {
       highlightRef.current?.classList.remove("flux-tour-highlight");
       highlightRef.current = null;
       const pop = popoverRef.current as HTMLElement & { hidePopover?: () => void };
       if (typeof pop?.hidePopover === "function") pop.hidePopover();
-    }, [onTourStepChange]);
+    }, []);
+
+    const endTour = useCallback(() => {
+      onTourStepChange(null);
+      clearTourHighlightAndPopover();
+    }, [onTourStepChange, clearTourHighlightAndPopover]);
 
     const skip = useCallback(async () => {
       await persistCompleted();
@@ -170,7 +177,10 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
 
     useEffect(() => {
       if (!active || stepIndex !== 0) {
-        if (!active) setFluxyWelcomeOpen(false);
+        if (!active) {
+          setFluxyWelcomeOpen(false);
+          setFluxyCelebrationOpen(false);
+        }
         return;
       }
       try {
@@ -185,6 +195,25 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
       if (!fluxyWelcomeOpen) return;
       welcomePrimaryRef.current?.focus();
     }, [fluxyWelcomeOpen]);
+
+    useEffect(() => {
+      if (!fluxyCelebrationOpen) return;
+      celebrationPrimaryRef.current?.focus();
+    }, [fluxyCelebrationOpen]);
+
+    const dismissCelebration = useCallback(() => {
+      setFluxyCelebrationOpen(false);
+      endTour();
+    }, [endTour]);
+
+    useEffect(() => {
+      if (!fluxyCelebrationOpen) return;
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") dismissCelebration();
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [fluxyCelebrationOpen, dismissCelebration]);
 
     const dismissFluxyWelcome = useCallback(() => {
       try {
@@ -206,7 +235,7 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
     }, [skip]);
 
     useLayoutEffect(() => {
-      if (!active || fluxyWelcomeOpen) return;
+      if (!active || fluxyWelcomeOpen || fluxyCelebrationOpen) return;
       const sel = TOUR_SELECTORS[stepIndex];
       if (!sel) return;
 
@@ -250,10 +279,10 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
         window.removeEventListener("scroll", onResize, true);
         highlightRef.current?.classList.remove("flux-tour-highlight");
       };
-    }, [active, stepIndex, layout, openMobile, fluxyWelcomeOpen]);
+    }, [active, stepIndex, layout, openMobile, fluxyWelcomeOpen, fluxyCelebrationOpen]);
 
     useLayoutEffect(() => {
-      if (!active || fluxyWelcomeOpen) return;
+      if (!active || fluxyWelcomeOpen || fluxyCelebrationOpen) return;
       const pop = popoverRef.current as HTMLElement & { showPopover?: () => void };
       if (pop && typeof pop.showPopover === "function") {
         try {
@@ -267,16 +296,17 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
         const p = popoverRef.current;
         if (h && p) positionPopoverNear(h, p, setPopoverPos);
       });
-    }, [active, stepIndex, tourStep, fluxyWelcomeOpen]);
+    }, [active, stepIndex, tourStep, fluxyWelcomeOpen, fluxyCelebrationOpen]);
 
     const next = useCallback(async () => {
       if (stepIndex >= total - 1) {
         await persistCompleted();
-        endTour();
+        clearTourHighlightAndPopover();
+        setFluxyCelebrationOpen(true);
         return;
       }
       onTourStepChange(stepIndex + 1);
-    }, [stepIndex, total, persistCompleted, endTour, onTourStepChange]);
+    }, [stepIndex, total, persistCompleted, clearTourHighlightAndPopover, onTourStepChange]);
 
     const onBackdropPointerDown = useCallback((e: React.PointerEvent) => {
       e.preventDefault();
@@ -331,6 +361,51 @@ export const BoardProductTour = forwardRef<BoardProductTourHandle, BoardProductT
                     {t("skip")}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : fluxyCelebrationOpen ? (
+          <div
+            className="fixed inset-0 z-[var(--flux-z-board-tour-fluxy-welcome)] flex items-center justify-center bg-[var(--flux-backdrop-scrim)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-[3px] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
+            role="presentation"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={fluxyCelebrateTitleId}
+              className="relative w-full max-w-lg overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] px-6 pb-8 pt-10 shadow-[var(--flux-shadow-modal-depth)] sm:px-10 sm:pb-10 sm:pt-12"
+            >
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[var(--flux-primary-alpha-15)] to-transparent"
+                aria-hidden
+              />
+              <div className="relative flex flex-col items-center gap-6 text-center">
+                <div className="flex min-h-[9.5rem] items-center justify-center sm:min-h-[11rem]">
+                  <FluxyAvatar
+                    state="celebrating"
+                    size="header"
+                    showConfetti
+                    className="scale-[1.55] motion-safe:transition-transform motion-safe:duration-500 sm:scale-[1.85]"
+                  />
+                </div>
+                <div className="max-w-md space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--flux-secondary)]">
+                    {t("fluxyCelebrate.kicker")}
+                  </p>
+                  <h2 id={fluxyCelebrateTitleId} className="font-display text-xl font-bold tracking-tight text-[var(--flux-text)] sm:text-2xl">
+                    {t("fluxyCelebrate.title")}
+                  </h2>
+                  <p className="text-sm leading-relaxed text-[var(--flux-text-muted)] sm:text-[15px]">{t("fluxyCelebrate.body")}</p>
+                </div>
+                <button
+                  ref={celebrationPrimaryRef}
+                  type="button"
+                  className="btn-primary mt-1 min-h-[44px] px-6 py-2.5 text-sm font-semibold sm:min-w-[12rem]"
+                  onClick={dismissCelebration}
+                >
+                  {t("fluxyCelebrate.cta")}
+                </button>
               </div>
             </div>
           </div>
