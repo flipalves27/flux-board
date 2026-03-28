@@ -14,6 +14,7 @@ import {
   type SpecPlanMethodology,
 } from "@/lib/spec-plan-methodology-prompts";
 import { buildSpecPlanRetrievalContext } from "@/lib/spec-plan-retrieval";
+import { compactOutlineForWorkItemsJson } from "@/lib/spec-plan-outline-compact";
 import { CardsLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec-plan-schemas";
 
 export type SpecPlanPipelineEvent =
@@ -22,6 +23,7 @@ export type SpecPlanPipelineEvent =
   | { event: "embeddings_ready"; data: Record<string, unknown> }
   | { event: "retrieval_ready"; data: Record<string, unknown> }
   | { event: "outline_ready"; data: Record<string, unknown> }
+  | { event: "work_items_llm_started"; data: Record<string, unknown> }
   | { event: "work_items_draft"; data: Record<string, unknown> }
   | { event: "methodology_applied"; data: Record<string, unknown> }
   | { event: "bucket_mapping"; data: Record<string, unknown> }
@@ -37,13 +39,16 @@ async function llmJson(params: {
   userId: string;
   isAdmin: boolean;
   userContent: string;
+  /** Saída JSON: outline ~6k; itens/cartões até 8k (teto Anthropic no provider). */
+  maxOutputTokens?: number;
 }): Promise<{ ok: true; json: unknown } | { ok: false; message: string }> {
+  const maxTokens = params.maxOutputTokens ?? 7200;
   const res = await runOrgLlmChat({
     org: params.org,
     orgId: params.orgId,
     feature: "spec_ai_scope_planner",
     messages: [{ role: "user", content: params.userContent }],
-    options: { temperature: 0.15, maxTokens: 7200 },
+    options: { temperature: 0.15, maxTokens },
     mode: "batch",
     userId: params.userId,
     isAdmin: params.isAdmin,
@@ -218,6 +223,7 @@ export async function runSpecPlanPipeline(input: {
       userId: input.userId,
       isAdmin: input.isAdmin,
       userContent: buildOutlineUserPrompt(outlineDocExcerpt),
+      maxOutputTokens: 6144,
     });
     if (!oRes.ok) {
       await emit({ event: "error", data: { message: oRes.message, code: "outline_llm" } });
@@ -239,6 +245,12 @@ export async function runSpecPlanPipeline(input: {
 
     if (await abortIfCancelled()) return;
 
+    const outlineJsonCompact = compactOutlineForWorkItemsJson(outlineParsed.data);
+    await emit({
+      event: "work_items_llm_started",
+      data: { outlineJsonChars: outlineJsonCompact.length },
+    });
+
     const wRes = await llmJson({
       org: input.org,
       orgId: input.orgId,
@@ -246,8 +258,9 @@ export async function runSpecPlanPipeline(input: {
       isAdmin: input.isAdmin,
       userContent: buildWorkItemsUserPrompt({
         methodology: input.methodology,
-        outlineJson: JSON.stringify(outlineParsed.data),
+        outlineJson: outlineJsonCompact,
       }),
+      maxOutputTokens: 8192,
     });
     if (!wRes.ok) {
       await emit({ event: "error", data: { message: wRes.message, code: "work_items_llm" } });
@@ -338,6 +351,7 @@ export async function runSpecPlanPipeline(input: {
     userId: input.userId,
     isAdmin: input.isAdmin,
     userContent: cardsPrompt,
+    maxOutputTokens: 8192,
   });
   if (!cRes.ok) {
     await emit({ event: "error", data: { message: cRes.message, code: "cards_llm" } });

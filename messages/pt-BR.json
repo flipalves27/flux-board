@@ -2999,7 +2999,7 @@
       "embeddings": "Os trechos são convertidos em vetores para compreensão semântica.",
       "retrieval": "Escolhemos o que melhor responde a perguntas sobre requisitos, riscos e escopo.",
       "outline": "A IA organiza secções e requisitos-chave antes de sugerir trabalho.",
-      "work": "Geramos um rascunho de itens alinhado à metodologia que escolheu.",
+      "work": "Geramos um rascunho de itens alinhado à metodologia. Em PDFs longos esta etapa pode levar vários minutos — o processo continua em curso.",
       "cards": "Mapeamos tudo às colunas do board com títulos, prioridades e tags sugeridas."
     },
     "analysisModal": {
@@ -3034,6 +3034,7 @@
         "embedRunFailed": "Falha no serviço de embeddings.",
         "retrievalReady": "Recuperação semântica: {chunksUsed} trecho(s) no contexto (fallback: {fallback}).",
         "outlineReady": "Outline e requisitos-chave gerados.",
+        "workItemsLlmStarted": "A gerar itens de trabalho (prompt com ~{chars} caracteres). PDFs grandes podem demorar vários minutos nesta fase.",
         "workItemsReady": "Rascunho de itens de trabalho recebido.",
         "methodologyApplied": "Metodologia aplicada ao rascunho.",
         "bucketMapping": "Mapeamento sugerido para colunas do board.",

@@ -583,6 +583,16 @@ export default function SpecPlanPage() {
                   keyRequirementsCount: Array.isArray(kr) ? kr.length : 0,
                 })
               );
+            } else if (event === "work_items_llm_started") {
+              const chars =
+                typeof payload.outlineJsonChars === "number" && Number.isFinite(payload.outlineJsonChars)
+                  ? payload.outlineJsonChars
+                  : 0;
+              appendAnalysisLog(
+                "info",
+                t("analysisModal.logEvents.workItemsLlmStarted", { chars }),
+                safeStringify(payload)
+              );
             } else if (event === "work_items_draft") {
               setPhaseWork("done");
               setWorkItemsPayload(JSON.stringify(payload));

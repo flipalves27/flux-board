@@ -2994,7 +2994,7 @@
       "embeddings": "Chunks are turned into vectors for semantic understanding.",
       "retrieval": "We pick excerpts that best match questions about requirements, risks, and scope.",
       "outline": "The AI structures sections and key requirements before suggesting work.",
-      "work": "We draft work items aligned with the methodology you picked.",
+      "work": "We draft work items aligned with your methodology. Long PDFs can take several minutes here—the run is still in progress.",
       "cards": "We map everything to your board columns with suggested titles, priorities, and tags."
     },
     "analysisModal": {
@@ -3029,6 +3029,7 @@
         "embedRunFailed": "Embedding service failed.",
         "retrievalReady": "Semantic retrieval: {chunksUsed} chunk(s) in context (fallback: {fallback}).",
         "outlineReady": "Outline and key requirements generated.",
+        "workItemsLlmStarted": "Generating work items (~{chars} chars of outline in prompt). Large PDFs may take several minutes at this step.",
         "workItemsReady": "Work items draft received.",
         "methodologyApplied": "Methodology applied to draft.",
         "bucketMapping": "Suggested mapping to board columns.",

@@ -10,7 +10,8 @@ import {
 import { runSpecPlanPipeline } from "@/lib/spec-plan-pipeline";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+/** PDFs longos: embeddings + 2–3 chamadas LLM; 120s cortava no meio da fase “itens”. */
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: boardId } = await params;
@@ -53,12 +54,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let acc = createStreamAccumulator(remapOnly);
+      /** Cliente fechou a ligação ou o runtime cancelou o stream — evita enqueue após controller fechado. */
+      let skipSseWrite = false;
 
       const sendEvent = (event: string, data: unknown) => {
         const dataObj = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
         acc = foldStreamEvent(acc, event, dataObj, remapOnly);
-        controller.enqueue(encoder.encode(`event: ${event}\n`));
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        if (skipSseWrite) return;
+        try {
+          controller.enqueue(encoder.encode(`event: ${event}\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          skipSseWrite = true;
+        }
       };
 
       try {
@@ -101,7 +109,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           sourceSummary,
           acc,
         });
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          /* já fechado (ex.: cliente abortou o fetch) */
+        }
       }
     },
   });

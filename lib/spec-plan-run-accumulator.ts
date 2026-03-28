@@ -200,6 +200,16 @@ export function applySpecPlanSseEvent(
     return { ...state, phases, outlineSummary, logs };
   }
 
+  if (event === "work_items_llm_started") {
+    const n = typeof data.outlineJsonChars === "number" && Number.isFinite(data.outlineJsonChars) ? data.outlineJsonChars : 0;
+    append(
+      "info",
+      `Itens de trabalho: chamada à IA em curso (outline no prompt ~${n} caracteres). PDFs longos podem demorar vários minutos nesta etapa.`,
+      safeStringify(data)
+    );
+    return { ...state, phases, logs };
+  }
+
   if (event === "work_items_draft") {
     phases.work = "done";
     const payload = JSON.stringify(data);

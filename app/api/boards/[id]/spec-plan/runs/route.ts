@@ -10,7 +10,7 @@ import { isMongoConfigured } from "@/lib/mongo";
 import { insertSpecPlanRun, listSpecPlanRuns } from "@/lib/spec-plan-runs";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: boardId } = await params;
