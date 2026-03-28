@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { apiDelete, apiGet, apiPut } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import type { PriorityMatrixQuadrantKey } from "@/lib/template-types";
+import { nextBoardCardId } from "@/lib/card-id";
 
 type CardRow = { id: string; title: string; bucket: string; order: number };
 type QuadrantDef = {
@@ -53,28 +54,6 @@ const QUADRANTS: QuadrantDef[] = [
   },
 ];
 
-function makeProjectPrefix(name: string): string {
-  const letters = (name || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z]/g, "")
-    .toUpperCase();
-  return (letters.slice(0, 3) || "PRJ").padEnd(3, "X");
-}
-
-function makeSequentialCardId(prefixSource: string, cards: CardRow[]): string {
-  const prefix = makeProjectPrefix(prefixSource);
-  const re = new RegExp(`^${prefix}-?(\\d{4})$`);
-  let max = 0;
-  for (const c of cards) {
-    const m = re.exec(c.id);
-    if (!m) continue;
-    const n = Number(m[1]);
-    if (Number.isFinite(n) && n > max) max = n;
-  }
-  return `${prefix}${String(max + 1).padStart(4, "0")}`;
-}
-
 type Props = {
   getHeaders: () => Record<string, string>;
   isAdmin: boolean;
@@ -90,10 +69,6 @@ export function EisenhowerWorkspace({ getHeaders, isAdmin }: Props) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [selectedByCard, setSelectedByCard] = useState<Partial<Record<string, PriorityMatrixQuadrantKey>>>({});
   const [movedCardIds, setMovedCardIds] = useState<Record<string, true>>({});
-  const selectedBoardName = useMemo(
-    () => boards.find((b) => b.id === selectedBoardId)?.name ?? "Projeto",
-    [boards, selectedBoardId]
-  );
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +148,7 @@ export function EisenhowerWorkspace({ getHeaders, isAdmin }: Props) {
   const createInboxTask = useCallback(async () => {
     const title = inboxTitle.trim();
     if (!selectedBoardId || !title) return;
-    const id = makeSequentialCardId(selectedBoardName, cards);
+    const id = nextBoardCardId(cards.map((c) => c.id));
     const maxOrder = cards.reduce((acc, c) => Math.max(acc, c.order), -1);
     await apiPut(
       `/api/boards/${encodeURIComponent(selectedBoardId)}`,
@@ -185,7 +160,7 @@ export function EisenhowerWorkspace({ getHeaders, isAdmin }: Props) {
     ).catch(() => null);
     setInboxTitle("");
     await reloadCards();
-  }, [cards, getHeaders, inboxTitle, reloadCards, selectedBoardId, selectedBoardName]);
+  }, [cards, getHeaders, inboxTitle, reloadCards, selectedBoardId]);
 
   const deleteCard = useCallback(
     async (cardId: string) => {

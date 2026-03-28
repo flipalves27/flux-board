@@ -19,6 +19,7 @@ import {
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
 import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
+import { nextBoardCardId } from "@/lib/card-id";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -378,7 +379,8 @@ export default function OnboardingPage() {
       const cards = Array.isArray(board.cards) ? board.cards : [];
 
       const bucketCardsCount = cards.filter((c) => (c as any)?.bucket === cardBucketKey).length;
-      const cardId = `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const existingIds = cards.map((c) => String((c as { id?: string }).id || ""));
+      const cardId = nextBoardCardId(existingIds);
 
       const newCard = {
         id: cardId,

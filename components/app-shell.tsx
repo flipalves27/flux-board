@@ -86,8 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     normalizedPath.startsWith("/portal/") ||
     normalizedPath.startsWith("/forms/") ||
     normalizedPath.startsWith("/embed/");
-  const isTeamRoute = normalizedPath === "/equipe" || normalizedPath.startsWith("/equipe/");
-  const showSidebar = isChecked && user && !isPublicRoute && !isTeamRoute;
+  const showSidebar = isChecked && user && !isPublicRoute;
 
   useEffect(() => {
     if (!showSidebar) return;

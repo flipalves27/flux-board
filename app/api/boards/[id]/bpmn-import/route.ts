@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { attachBpmnModelToMapa, markdownToBpmnModel, xmlToBpmnModel } from "@/lib/bpmn-io";
 import { validateBpmnModel } from "@/lib/bpmn-types";
+import { nextBoardCardId } from "@/lib/card-id";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
@@ -22,17 +23,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!validation.ok) {
     return NextResponse.json({ error: validation.issues.find((i) => i.severity === "error")?.message ?? "Modelo BPMN inválido.", issues: validation.issues }, { status: 400 });
   }
-  const cards = model.nodes.map((n, i) => ({
-    id: `bpmn_${Date.now()}_${i}`,
-    bucket: "bpmn_canvas",
-    priority: "Média",
-    progress: "Não iniciado",
-    title: n.label,
-    desc: `BPMN ${n.type}`,
-    tags: ["BPMN"],
-    order: i,
-    blockedBy: [],
-  }));
+  const idPool: string[] = [];
+  const cards = model.nodes.map((n, i) => {
+    const id = nextBoardCardId(idPool);
+    idPool.push(id);
+    return {
+      id,
+      bucket: "bpmn_canvas",
+      priority: "Média",
+      progress: "Não iniciado",
+      title: n.label,
+      desc: `BPMN ${n.type}`,
+      tags: ["BPMN"],
+      order: i,
+      blockedBy: [],
+    };
+  });
   const next = await updateBoard(id, payload.orgId, {
     cards,
     config: {

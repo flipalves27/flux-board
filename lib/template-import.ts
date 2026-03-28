@@ -4,10 +4,11 @@ import { setBoardAutomationRules } from "./kv-automations";
 import type { BoardTemplateSnapshot } from "./template-types";
 import type { BoardMethodology } from "./board-methodology";
 import { attachBpmnModelToMapa } from "./bpmn-io";
+import { nextBoardCardId } from "./card-id";
 
 function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
   const raw = Array.isArray(snap.templateCards) ? snap.templateCards : [];
-  const baseId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const usedIds: string[] = [];
   const matrixBandFromWeight = (weight: number): "low" | "medium" | "high" | "critical" => {
     if (weight >= 76) return "critical";
     if (weight >= 56) return "high";
@@ -28,7 +29,7 @@ function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
     const normalized = Math.max(0, Math.min(1, ((3 - row) + col) / 6));
     return Math.round(normalized * 100);
   };
-  return raw.map((item, i) => {
+  return raw.map((item) => {
     const o = item && typeof item === "object" ? ({ ...item } as Record<string, unknown>) : {};
     delete o.automationState;
     delete o.completedAt;
@@ -37,7 +38,9 @@ function instantiateTemplateCards(snap: BoardTemplateSnapshot): unknown[] {
     delete o.dodChecks;
     delete o.subtasks;
     delete o.subtaskProgress;
-    o.id = `tplc_${baseId}_${i}`;
+    const id = nextBoardCardId(usedIds);
+    usedIds.push(id);
+    o.id = id;
     o.blockedBy = [];
     const bucket = typeof o.bucket === "string" ? o.bucket : "";
     const weight =
