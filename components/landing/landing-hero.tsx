@@ -23,9 +23,12 @@ export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
     { k: t("hero.stats.portfolio.label"), v: t("hero.stats.portfolio.value") },
   ];
 
+  const ctaSubtle =
+    "font-semibold text-[var(--flux-primary-light)] underline decoration-transparent underline-offset-4 transition-colors hover:text-[var(--flux-text)] hover:decoration-[var(--flux-primary-light)]";
+
   return (
-    <section className="home-landing-reveal mt-10 md:mt-14" style={{ animationDelay: "80ms" }} aria-labelledby="landing-hero-heading">
-      <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+    <section className="home-landing-reveal mt-6 md:mt-8" style={{ animationDelay: "80ms" }} aria-labelledby="landing-hero-heading">
+      <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
         <div>
           <p className="hero-chip inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">{t("hero.chip")}</p>
           <h1
@@ -39,19 +42,33 @@ export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
             {t("hero.title.after")}
           </h1>
           <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("hero.description", { appName })}</p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-3">
             {user ? (
-              <Link href={`${localeRoot}/boards`} className="btn-primary px-6 py-3 text-[15px]">
+              <Link
+                href={`${localeRoot}/boards`}
+                className="btn-primary w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
+              >
                 {t("hero.primary.loggedIn")}
               </Link>
             ) : (
-              <Link href={`${localeRoot}/login`} className="btn-primary px-6 py-3 text-[15px]">
+              <Link
+                href={`${localeRoot}/login`}
+                className="btn-primary w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
+              >
                 {t("hero.primary.loggedOut")}
               </Link>
             )}
-            <a href="#pricing" className="btn-secondary px-6 py-3 text-[15px]">
-              {t("nav.pricing")}
-            </a>
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm sm:justify-start sm:text-[15px]">
+              <a href="#platform" className={ctaSubtle}>
+                {t("hero.secondary")}
+              </a>
+              <span className="text-[var(--flux-text-muted)]" aria-hidden>
+                ·
+              </span>
+              <a href="#pricing" className={ctaSubtle}>
+                {t("hero.pricingLink")}
+              </a>
+            </div>
           </div>
           <p className="mt-6 text-xs leading-relaxed text-[var(--flux-text-muted)] md:text-sm">{t("hero.quickLine")}</p>
         </div>

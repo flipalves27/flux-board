@@ -66,7 +66,7 @@ export default function LandingPage() {
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-20 pt-5 md:px-10 md:pt-6">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-16 pt-4 md:px-10 md:pb-20 md:pt-5">
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
           <main id="landing-main">

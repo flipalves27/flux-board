@@ -9,6 +9,9 @@ type LandingFooterCtaProps = {
   user: unknown;
 };
 
+const footerPricingLink =
+  "font-semibold text-[var(--flux-primary-light)] underline decoration-transparent underline-offset-4 transition-colors hover:text-[var(--flux-text)] hover:decoration-[var(--flux-primary-light)]";
+
 export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCtaProps) {
   const t = useTranslations("landing");
 
@@ -28,7 +31,7 @@ export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCta
         <p className="hero-chip mx-auto mb-4 inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">{t("pricing.trialNote")}</p>
         <h2 className="font-display text-2xl font-bold md:text-3xl">{t("cta.heading")}</h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("cta.description")}</p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-4">
           {user ? (
             <Link href={`${localeRoot}/boards`} className="btn-primary px-8 py-3 text-[15px]">
               {t("cta.actions.loggedIn", { appName })}
@@ -38,8 +41,8 @@ export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCta
               <Link href={`${localeRoot}/login`} className="btn-primary px-8 py-3 text-[15px]">
                 {t("cta.actions.loggedOutPrimary")}
               </Link>
-              <a href="#pricing" className="btn-secondary px-8 py-3 text-[15px]">
-                {t("nav.pricing")}
+              <a href="#pricing" className={`${footerPricingLink} text-[15px]`}>
+                {t("hero.pricingLink")}
               </a>
             </>
           )}

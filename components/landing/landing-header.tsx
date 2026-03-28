@@ -30,7 +30,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
 
   return (
     <header className="hero-shell home-landing-reveal sticky top-4 z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3 backdrop-blur-md md:px-5 md:py-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 md:gap-3">
         <Link href={`${localeRoot}/`} className="flex min-w-0 items-center gap-3" onClick={closeMobile}>
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] overflow-hidden"
@@ -54,7 +54,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm font-semibold text-[var(--flux-text-muted)] md:flex" aria-label={t("nav.mainLabel")}>
+        <nav className="hidden items-center gap-3 text-sm font-semibold text-[var(--flux-text-muted)] md:flex lg:gap-4" aria-label={t("nav.mainLabel")}>
           <a href="#why" className={navClass}>
             {t("nav.why", { appName })}
           </a>
