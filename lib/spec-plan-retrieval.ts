@@ -1,4 +1,10 @@
-import { cosineSimilarity, DEFAULT_DOCS_EMBEDDING_MODEL, fetchDocsChunkEmbeddings } from "@/lib/embeddings-together";
+import {
+  cosineSimilarity,
+  DEFAULT_DOCS_EMBEDDING_MODEL,
+  DEFAULT_GENERAL_EMBEDDING_MODEL,
+  fetchTextEmbeddingsWithMeta,
+  type TextEmbeddingsResult,
+} from "@/lib/embeddings-together";
 import type { SpecPlanChunk } from "@/lib/spec-plan-chunk";
 import {
   SPEC_PLAN_EMBED_BATCH,
@@ -46,30 +52,67 @@ export type SpecPlanRetrievalHit = {
   chunkIndex: number;
 };
 
-export async function embedSpecPlanChunks(
+function summarizeEmbedFailure(r: Extract<TextEmbeddingsResult, { ok: false }>): string {
+  const base = r.error;
+  if (r.bodySnippet?.trim()) return `${base}: ${r.bodySnippet.trim().slice(0, 220)}`;
+  if (r.status != null) return `${base} (status ${r.status})`;
+  return base;
+}
+
+/**
+ * Spec-plan só usa vetores em memória (não grava no índice RAG do Mongo).
+ * Se `TOGETHER_DOCS_EMBEDDING_MODEL` falhar (modelo indisponível, quota, etc.), tenta o modelo geral.
+ */
+async function fetchSpecPlanEmbeddingBatch(
+  inputs: string[]
+): Promise<{ ok: true; vectors: number[][] } | { ok: false; reason: string }> {
+  const docsModel = (process.env.TOGETHER_DOCS_EMBEDDING_MODEL || DEFAULT_DOCS_EMBEDDING_MODEL).trim();
+  const r1 = await fetchTextEmbeddingsWithMeta(inputs, { model: docsModel });
+  if (r1.ok) return { ok: true, vectors: r1.vectors };
+
+  const detail1 = summarizeEmbedFailure(r1);
+  const generalModel = (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
+  console.warn(
+    "[spec-plan-retrieval] modelo de documentos falhou; a repetir embeddings com modelo geral.",
+    { docsModel, generalModel, detail: detail1 }
+  );
+
+  const r2 = await fetchTextEmbeddingsWithMeta(inputs, { model: generalModel });
+  if (r2.ok) return { ok: true, vectors: r2.vectors };
+
+  return {
+    ok: false,
+    reason: `${detail1} | fallback ${generalModel}: ${summarizeEmbedFailure(r2)}`,
+  };
+}
+
+async function embedSpecPlanChunksWithMeta(
   fileName: string,
   chunks: SpecPlanChunk[]
-): Promise<SpecPlanChunkWithVector[] | null> {
-  if (!chunks.length) return [];
+): Promise<
+  | { ok: true; withVec: SpecPlanChunkWithVector[] }
+  | { ok: false; reason: string }
+> {
+  if (!chunks.length) return { ok: true, withVec: [] };
   const inputs = chunks.map((c) => embedInputForSpecChunk(fileName, c.text));
   const out: SpecPlanChunkWithVector[] = [];
   const batchSize = SPEC_PLAN_EMBED_BATCH;
 
   for (let i = 0; i < inputs.length; i += batchSize) {
     const batchIn = inputs.slice(i, i + batchSize);
-    const vecs = await fetchDocsChunkEmbeddings(batchIn);
-    if (!vecs || vecs.length !== batchIn.length) return null;
+    const batchRes = await fetchSpecPlanEmbeddingBatch(batchIn);
+    if (!batchRes.ok) return { ok: false, reason: batchRes.reason };
     for (let j = 0; j < batchIn.length; j++) {
       const ch = chunks[i + j];
       out.push({
         chunkId: ch.chunkId,
         text: ch.text,
-        vector: vecs[j],
+        vector: batchRes.vectors[j],
         chunkIndex: ch.chunkIndex,
       });
     }
   }
-  return out;
+  return { ok: true, withVec: out };
 }
 
 export function mergeHitsByChunkId(hits: SpecPlanRetrievalHit[]): SpecPlanRetrievalHit[] {
@@ -126,7 +169,7 @@ export type SpecPlanRetrievalOk = {
   chunksUsed: number;
 };
 
-export type SpecPlanRetrievalFail = { ok: false };
+export type SpecPlanRetrievalFail = { ok: false; reason: string };
 
 export async function buildSpecPlanRetrievalContext(input: {
   fileName: string;
@@ -139,8 +182,9 @@ export async function buildSpecPlanRetrievalContext(input: {
   const maxContextChars = input.maxContextChars ?? SPEC_PLAN_RETRIEVAL_CONTEXT_MAX_CHARS;
   const queries = specPlanRetrievalQueries(input.methodology);
 
-  const withVec = await embedSpecPlanChunks(input.fileName, input.chunks);
-  if (withVec === null) return { ok: false };
+  const embedded = await embedSpecPlanChunksWithMeta(input.fileName, input.chunks);
+  if (!embedded.ok) return { ok: false, reason: embedded.reason };
+  const withVec = embedded.withVec;
   if (!withVec.length) {
     const { text, chunksUsed } = buildRetrievalContextFromHits([], maxContextChars);
     return {
@@ -159,9 +203,9 @@ export async function buildSpecPlanRetrievalContext(input: {
   const batchSize = SPEC_PLAN_EMBED_BATCH;
   for (let i = 0; i < qTexts.length; i += batchSize) {
     const batch = qTexts.slice(i, i + batchSize);
-    const vecs = await fetchDocsChunkEmbeddings(batch);
-    if (!vecs || vecs.length !== batch.length) return { ok: false };
-    qEmbeds.push(...vecs);
+    const batchRes = await fetchSpecPlanEmbeddingBatch(batch);
+    if (!batchRes.ok) return { ok: false, reason: batchRes.reason };
+    qEmbeds.push(...batchRes.vectors);
   }
 
   const allHits: SpecPlanRetrievalHit[] = [];

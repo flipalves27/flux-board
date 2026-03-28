@@ -22,5 +22,5 @@ export const SPEC_PLAN_RETRIEVAL_TOP_K = 12;
 /** Orçamento máximo de caracteres do contexto montado para o outline (inclui cabeçalhos). */
 export const SPEC_PLAN_RETRIEVAL_CONTEXT_MAX_CHARS = 36_000;
 
-/** Tamanho do lote de embeddings (Together). */
-export const SPEC_PLAN_EMBED_BATCH = 24;
+/** Tamanho do lote de embeddings (Together). Lotes grandes + texto longo podem falhar por limite de pedido. */
+export const SPEC_PLAN_EMBED_BATCH = 8;

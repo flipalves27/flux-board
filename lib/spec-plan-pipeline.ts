@@ -145,6 +145,7 @@ export async function runSpecPlanPipeline(input: {
             embeddedCount: 0,
             modelHint: modelHintDefault,
             failed: true,
+            failureHint: ret.reason.slice(0, 1200),
           },
         });
         send({
