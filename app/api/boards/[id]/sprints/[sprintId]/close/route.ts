@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getSprint, updateSprint } from "@/lib/kv-sprints";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { mergeBurndownSnapshotRow } from "@/lib/sprint-burndown-snapshot";
 import {
   applyCarryoverTagToBoardCards,
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "sprint_engine", gateCtx);
   } catch {

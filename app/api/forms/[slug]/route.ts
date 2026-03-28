@@ -45,17 +45,28 @@ function safePublicForm(board: any) {
   };
 }
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+const FORM_NOT_FOUND_MSG = "Formulário não encontrado.";
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params;
   const slug = normalizeFormSlug(rawSlug);
   if (!slug) return NextResponse.json({ error: "Slug inválido." }, { status: 400 });
 
+  const ip = getClientIpFromHeaders(request.headers);
+  const rlGet = await rateLimit({ key: `forms:get:${slug}:${ip}`, limit: 60, windowMs: 60_000 });
+  if (!rlGet.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "Retry-After": String(rlGet.retryAfterSeconds) } }
+    );
+  }
+
   const index = await getIntakeFormIndexBySlug(slug);
-  if (!index || !index.enabled) return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 });
+  if (!index || !index.enabled) return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
 
   const board = await getBoard(index.boardId, index.orgId);
   if (!board || !(board as any).intakeForm?.enabled) {
-    return NextResponse.json({ error: "Formulário indisponível." }, { status: 404 });
+    return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
   }
 
   return NextResponse.json({ form: safePublicForm(board) });
@@ -76,12 +87,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const index = await getIntakeFormIndexBySlug(slug);
-  if (!index || !index.enabled) return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 });
+  if (!index || !index.enabled) return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
 
   const board = await getBoard(index.boardId, index.orgId);
   const form = (board as any)?.intakeForm;
   if (!board || !form?.enabled || normalizeFormSlug(String(form.slug || "")) !== slug) {
-    return NextResponse.json({ error: "Formulário indisponível." }, { status: 404 });
+    return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
   }
 
   try {

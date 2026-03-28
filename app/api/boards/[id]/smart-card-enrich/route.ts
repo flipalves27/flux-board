@@ -8,7 +8,7 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   let planBlocksAi = false;
   try {
     assertFeatureAllowed(org, "card_context", gateCtx);

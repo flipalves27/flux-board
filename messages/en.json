@@ -28,6 +28,8 @@
     "section": {
       "work": "Work",
       "intelligence": "Intelligence",
+      "org": "Organization",
+      "commercial": "Plan & billing",
       "admin": "Admin",
       "platformOps": "Platform"
     },
@@ -1028,7 +1030,7 @@
       "missingCredentials": "Enter username and password.",
       "connection": "Connection error. Please try again.",
       "missingAllFields": "Please fill in all fields.",
-      "passwordTooShort": "Password must be at least 4 characters.",
+      "passwordTooShort": "Password must be at least 8 characters.",
       "oauthPasswordOnly": "This account uses social sign-in. Use Google or Microsoft."
     },
     "fields": {
@@ -1042,7 +1044,7 @@
       "password": "••••••••",
       "name": "Your full name",
       "email": "you@email.com",
-      "passwordMin": "Minimum 4 characters"
+      "passwordMin": "Minimum 8 characters"
     },
     "remember": {
       "login": "Keep me connected (save in browser)",
@@ -1420,7 +1422,7 @@
       "regenerateToken": "Generate new link",
       "regenerateHint": "The previous link stops working.",
       "passwordNew": "New password",
-      "passwordPlaceholder": "At least 4 characters",
+      "passwordPlaceholder": "At least 8 characters",
       "removePassword": "Remove current password",
       "columns": "Columns visible on the portal",
       "columnsHint": "All selected = show every column that has items.",

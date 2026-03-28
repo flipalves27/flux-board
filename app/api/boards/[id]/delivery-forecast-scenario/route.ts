@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { computeDeliveryForecastForBoard } from "@/lib/board-delivery-forecast";
 import { parseDeliveryScenarioNl } from "@/lib/delivery-scenario-nl";
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "risk_score", gateCtx);
   } catch (err) {

@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { pickSimilarCardRefs } from "@/lib/smart-card-enrich";
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "ai_card_writer", gateCtx);
   } catch (err) {

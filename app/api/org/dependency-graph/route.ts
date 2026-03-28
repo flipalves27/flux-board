@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { listBoardsForUser } from "@/lib/kv-boards";
 import { listCrossDependencyLinksForOrg } from "@/lib/kv-card-dependencies";
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export", planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxFromAuthPayload(payload));
 
     const { searchParams } = new URL(request.url);
     const scope = (searchParams.get("scope") || "board") as "board" | "org";

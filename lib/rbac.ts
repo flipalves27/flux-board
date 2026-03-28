@@ -45,6 +45,17 @@ export function canManageOrganization(roles: EffectiveRoles): boolean {
   return isPlatformAdmin(roles) || roles.orgRole === "org_manager";
 }
 
+/** Para gates de plano: distingue admin da plataforma (fora do Stripe) de admin da org. */
+export function isPlatformAdminFromAuthPayload(payload: {
+  id: string;
+  isAdmin?: boolean;
+  isExecutive?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
+}): boolean {
+  return isPlatformAdmin(deriveEffectiveRoles(payload));
+}
+
 /** Cliente: alinhado a `ensureOrgTeamManager` (membros, convites, billing). */
 export function sessionCanManageMembersAndBilling(user: {
   platformRole?: PlatformRole;

@@ -11,7 +11,7 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
@@ -448,7 +448,7 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {

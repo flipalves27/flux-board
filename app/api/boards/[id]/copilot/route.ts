@@ -11,7 +11,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -572,13 +572,11 @@ function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>
   const err = failed.error || "";
   const status = failed.status;
   const snippet = failed.bodySnippet?.slice(0, 600) ?? "";
-
   console.error("[copilot] LLM call failed", {
     resolvedRoute: failed.resolvedRoute,
     provider: failed.provider,
     error: err,
     status,
-    bodySnippet: snippet,
   });
 
   if (failed.resolvedRoute === "anthropic") {
@@ -965,7 +963,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
@@ -1008,7 +1006,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {

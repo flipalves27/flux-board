@@ -10,7 +10,7 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -386,7 +386,7 @@ export async function POST(
   const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   let planBlocksAiContext = false;
   try {
     assertFeatureAllowed(org, "card_context", gateCtx);

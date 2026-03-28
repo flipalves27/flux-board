@@ -12,7 +12,7 @@ import { useToast } from "@/context/toast-context";
 import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
 import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
-import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 type Plan = "free" | "trial" | "pro" | "business" | "enterprise";
 
@@ -68,6 +68,7 @@ export default function BillingPage() {
   const cancelDescId = "billing-cancel-desc";
 
   const canBilling = Boolean(user && sessionCanManageMembersAndBilling(user));
+  const isPlatformOperator = Boolean(user && isPlatformAdminSession(user));
   const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
   const proCap = getProMaxUsers();
 
@@ -300,6 +301,38 @@ export default function BillingPage() {
               </div>
             )}
 
+            {isPlatformOperator ? (
+              <section
+                className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] p-5 shadow-[var(--flux-shadow-elevated-card)]"
+                aria-label="Modo operador da plataforma"
+              >
+                <h2 className="font-display font-semibold text-lg text-[var(--flux-text)]">Modo operador</h2>
+                <p className="mt-2 text-sm text-[var(--flux-text-muted)] leading-relaxed">
+                  Você está como administrador da plataforma. Esta tela mostra o estado de billing da organização atual apenas
+                  para suporte — checkout, portal e pausa Stripe não estão disponíveis aqui. Use o{" "}
+                  <a
+                    href="https://dashboard.stripe.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                  >
+                    Stripe Dashboard
+                  </a>{" "}
+                  ou uma sessão com usuário cliente.
+                </p>
+                <p className="mt-3 text-xs text-[var(--flux-text-muted)]">
+                  Ferramentas internas:{" "}
+                  <Link href={`${localeRoot}/rate-limit-abuse`} className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
+                    Rate limit
+                  </Link>
+                  {" · "}
+                  <Link href={`${localeRoot}/admin/tracer`} className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
+                    Tracer
+                  </Link>
+                </p>
+              </section>
+            ) : null}
+
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -330,7 +363,7 @@ export default function BillingPage() {
                       boards={maxBoards ?? "—"}; usuários={maxUsers ?? "—"}
                     </span>
                   </p>
-                  {isProOrBusiness && !allowStripeCheckout ? (
+                  {isProOrBusiness && !allowStripeCheckout && !isPlatformOperator ? (
                     <div className="mt-4 rounded-[var(--flux-rad)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
                       <p className="font-semibold text-[var(--flux-text)]">Como admin, altere o plano pelo Stripe</p>
                       <p className="mt-1 text-[var(--flux-text-muted)]">
@@ -344,7 +377,9 @@ export default function BillingPage() {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
-                  {isProOrBusiness ? (
+                  {isPlatformOperator ? (
+                    <p className="text-sm text-[var(--flux-text-muted)]">Ações Stripe desativadas no modo operador.</p>
+                  ) : isProOrBusiness ? (
                     <>
                       <button disabled={busy} className="btn-primary" onClick={openPortal}>
                         {busy ? "Abrindo..." : "Gerenciar assinatura (Portal Stripe)"}
@@ -398,7 +433,11 @@ export default function BillingPage() {
 
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
               <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-2">Assinar ou fazer upgrade</h3>
-              {!allowStripeCheckout ? (
+              {isPlatformOperator ? (
+                <p className="mb-4 text-sm text-[var(--flux-text-muted)]">
+                  Checkout e upgrade via Stripe não estão disponíveis para o administrador da plataforma nesta interface.
+                </p>
+              ) : !allowStripeCheckout ? (
                 <p className="mb-4 text-sm text-[var(--flux-text-muted)]">
                   Checkout abaixo fica disponível quando não há assinatura Stripe ativa (ex.: primeiro upgrade ou após
                   cancelamento). Com assinatura ativa, use o botão <strong>Portal Stripe</strong> acima para mudar de
@@ -409,6 +448,8 @@ export default function BillingPage() {
                   Primeira assinatura ou reativação: escolha o plano e conclua no Stripe.
                 </p>
               )}
+              {!isPlatformOperator ? (
+                <>
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--flux-text-muted)]">Cobrança</span>
                 <div
@@ -585,6 +626,8 @@ export default function BillingPage() {
                   Trial de 14 dias inclui recursos Pro. Após o trial, o espaço volta ao Free até você assinar.
                 </p>
               )}
+                </>
+              ) : null}
             </section>
 
             {isProOrBusiness && impact ? (

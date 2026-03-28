@@ -703,12 +703,9 @@ export function Sidebar() {
             label={t("docs")}
           />
 
-          {user &&
-            (sessionCanManageMembersAndBilling(user) || user.isAdmin || user.isExecutive) && (
-              <NavSectionTitle>{t("section.admin")}</NavSectionTitle>
-            )}
           {user && sessionCanManageMembersAndBilling(user) && (
             <>
+              <NavSectionTitle>{t("section.org")}</NavSectionTitle>
               <NavLink
                 path="/equipe"
                 hint={t("hints.users")}
@@ -716,7 +713,6 @@ export function Sidebar() {
                 label="Equipe"
                 sublabel={t("teamWorkspace")}
               />
-              {/* People */}
               <NavLink
                 path="/users"
                 hint={t("hints.users")}
@@ -739,8 +735,12 @@ export function Sidebar() {
                     : undefined
                 }
               />
-              {/* Settings */}
+            </>
+          )}
+          {user && sessionCanManageMembersAndBilling(user) && (
+            <>
               <div className="h-[6px]" />
+              <NavSectionTitle>{t("section.commercial")}</NavSectionTitle>
               <NavLink
                 path="/billing"
                 hint={t("hints.billing")}

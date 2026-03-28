@@ -34,5 +34,11 @@ export function validateServerEnv(): void {
     if (!process.env.INTERNAL_HOST_RESOLVE_SECRET?.trim()) {
       console.warn("[env] INTERNAL_HOST_RESOLVE_SECRET ausente — resolução de domínio interno ficará indisponível.");
     }
+    const superRaw = process.env.FLUX_ADMIN_SUPERPOWERS?.trim().toLowerCase();
+    if (superRaw === "1" || superRaw === "true" || superRaw === "on") {
+      console.warn(
+        "[env] FLUX_ADMIN_SUPERPOWERS ativo — admins/executivos da org ignoram limites de plano (Stripe). Use só se necessário."
+      );
+    }
   }
 }

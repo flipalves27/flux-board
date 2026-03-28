@@ -4,7 +4,7 @@ import { listUsers, createUser, getUserByEmail, ensureAdminUser } from "@/lib/kv
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { getUserCap, planGateCtxForAuth } from "@/lib/plan-gates";
+import { getUserCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { ensureOrgTeamManager } from "@/lib/api-authz";
 import { isPlatformAdmin } from "@/lib/rbac";
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       : payload.orgId;
     const org = await getOrganizationById(targetOrgId);
     const members = await listUsers(targetOrgId);
-    const cap = getUserCap(org, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
+    const cap = getUserCap(org, planGateCtxFromAuthPayload(payload));
     if (cap !== null && members.length >= cap) {
       return NextResponse.json(
         { error: `Limite do plano: no máximo ${cap} usuário(s) por organização.` },

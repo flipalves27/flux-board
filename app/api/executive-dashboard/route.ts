@@ -5,7 +5,7 @@ import { ensureAdminUser, getUserById } from "@/lib/kv-users";
 import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {

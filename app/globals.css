@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--flux-primary-light);
+    outline-offset: 2px;
+  }
+}
+
 /* Flux-Board design system — dark theme */
 :root {
   --flux-primary: #6C5CE7;

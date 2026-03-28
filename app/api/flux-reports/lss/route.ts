@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { listBoardsForUser } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { buildFluxReportsLssPayload, filterLeanSixSigmaBoards, type FluxReportsLssPayload } from "@/lib/flux-reports-lss";
 import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "lss_executive_reports", gateCtx);
     } catch (err) {

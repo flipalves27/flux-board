@@ -9,8 +9,9 @@
  * Protection Bypass for Automation → gerar secret → adicionar variável
  * NEXT_PUBLIC_VERCEL_BYPASS_SECRET com o mesmo valor.
  *
- * Segurança: o valor é exposto no bundle do cliente — use só para bypass de preview/proteção
- * Vercel; trate como segredo rotacionável se vazar.
+ * Segurança: o valor é exposto no bundle do cliente. Não use em produção pública voltada a
+ * clientes finais; prefira desativar Protection ou rotas server-only. Se precisar em preview/staging,
+ * rotacione o secret periodicamente.
  */
 
 const BYPASS_SECRET =

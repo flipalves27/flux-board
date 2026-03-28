@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { upsertStandupEntry, listStandupEntries } from "@/lib/kv-standup";
 import { sanitizeText } from "@/lib/schemas";
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "ceremonies", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtxPost = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "ceremonies", gateCtxPost); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }

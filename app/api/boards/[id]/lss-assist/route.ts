@@ -8,7 +8,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { LssAssistBodySchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });

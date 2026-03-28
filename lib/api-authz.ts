@@ -2,7 +2,7 @@
  * Inventário RBAC (plano vs org vs plataforma)
  *
  * - Plano comercial: em `Organization` + `lib/plan-gates.ts` (`getEffectiveTier`, `assertFeatureAllowed`).
- *   Contexto `planGateCtxForAuth(isAdmin, isExecutive)` = admin/executivo **da organização** (não é admin global).
+ *   Contexto `planGateCtxFromAuthPayload(payload)` — `platform_admin` bypassa plano; org admin/executivo só com `FLUX_ADMIN_SUPERPOWERS`.
  * - Membros + billing: `ensureOrgTeamManager` = `platform_admin` OU gestor ativo (Equipe, escopo org).
  * - Demais gestão (branding, webhooks, convites, etc.): `ensureOrgManager` = `platform_admin` OU `org_manager`.
  * - Operações globais / multi-tenant na URL: só `ensurePlatformAdmin` ou `isSameOrgOrPlatformAdmin` em
@@ -19,7 +19,7 @@
  * Templates marketplace: bypass global → `isPlatformAdmin` (não org admin de outro tenant).
  */
 import { NextResponse } from "next/server";
-import { canManageOrganization, isPlatformAdmin } from "./rbac";
+import { canManageOrganization, isPlatformAdmin, isPlatformAdminFromAuthPayload } from "./rbac";
 import type { getAuthFromRequest } from "./auth";
 import type { FeatureKey, PlanGateError } from "./plan-gates";
 
@@ -67,4 +67,13 @@ export function ensureOrgTeamManager(payload: AuthPayload): NextResponse | null 
   if (isPlatformAdmin(payload)) return null;
   if (payload.isOrgTeamManager) return null;
   return deny("Acesso negado. Apenas gestores (Equipe) podem gerenciar membros e billing.");
+}
+
+/** Checkout, portal e pausa Stripe são para contas cliente; admin da plataforma não dispara fluxo comercial aqui. */
+export function denyStripeCommercialForPlatformAdmin(payload: AuthPayload): NextResponse | null {
+  if (!isPlatformAdminFromAuthPayload(payload)) return null;
+  return deny(
+    "Administrador da plataforma não inicia checkout nem portal Stripe nesta rota. Use o Stripe Dashboard ou uma conta da organização cliente.",
+    403
+  );
 }

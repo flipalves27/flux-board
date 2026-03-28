@@ -8,7 +8,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Org não encontrada" }, { status: 404 });
   }
 
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "lss_ai_premium", gateCtx);
   } catch (err) {

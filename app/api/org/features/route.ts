@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { canUseFeature, planGateCtxForAuth } from "@/lib/plan-gates";
+import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 
 /**
  * Sinaliza recursos do plano para a UI (sem expor matriz completa).
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
 
     return NextResponse.json({
       lss_executive_reports: canUseFeature(org, "lss_executive_reports", gateCtx),

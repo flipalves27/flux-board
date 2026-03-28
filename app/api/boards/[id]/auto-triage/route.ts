@@ -8,7 +8,7 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
 
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });

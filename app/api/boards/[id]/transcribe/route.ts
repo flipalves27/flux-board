@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 
 const MAX_AUDIO_BYTES = 24 * 1024 * 1024;
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
     assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const text = await res.text();
     if (!res.ok) {
-      console.error("[transcribe] OpenAI error", res.status, text.slice(0, 400));
+      console.error("[transcribe] OpenAI error", { status: res.status });
       return NextResponse.json(
         { error: `Falha na transcrição (${res.status}).` },
         { status: res.status >= 500 ? 502 : 400 }

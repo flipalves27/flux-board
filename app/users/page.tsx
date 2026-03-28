@@ -88,8 +88,8 @@ export default function UsersPage() {
       setFormError("Preencha todos os campos.");
       return;
     }
-    if (formPwd.length < 4) {
-      setFormError("Senha deve ter pelo menos 4 caracteres.");
+    if (formPwd.length < 8) {
+      setFormError("Senha deve ter pelo menos 8 caracteres.");
       return;
     }
     try {
@@ -120,7 +120,7 @@ export default function UsersPage() {
       name: formName.trim(),
       isAdmin: formIsAdmin,
     };
-    if (formPwd.length >= 4) body.password = formPwd;
+    if (formPwd.length >= 8) body.password = formPwd;
     try {
       await apiPut(`/api/users/${editingId}`, body, getHeaders());
       setModalOpen(false);
@@ -270,7 +270,7 @@ export default function UsersPage() {
                   type="password"
                   value={formPwd}
                   onChange={(e) => setFormPwd(e.target.value)}
-                  placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 4 caracteres"}
+                  placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 8 caracteres"}
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>

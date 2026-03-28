@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { getSprint, updateSprint, getActiveSprint } from "@/lib/kv-sprints";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (!canAccess) return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "sprint_engine", gateCtx); } catch {
     return NextResponse.json({ error: "Recurso disponível em planos pagos." }, { status: 403 });
   }

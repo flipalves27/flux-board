@@ -175,8 +175,8 @@ export async function registerAction(
     const emailNorm = (email || "").trim().toLowerCase();
     const nameTrim = (name || "").trim().slice(0, 100);
 
-    if (password.length < 4) {
-      return { ok: false, error: "Senha deve ter pelo menos 4 caracteres." };
+    if (password.length < 8) {
+      return { ok: false, error: "Senha deve ter pelo menos 8 caracteres." };
     }
 
     await ensureAdminUser();

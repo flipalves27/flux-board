@@ -7,7 +7,7 @@ import {
   updateOrganization,
 } from "@/lib/kv-organizations";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
-import { getEffectiveTier, planGateCtxForAuth } from "@/lib/plan-gates";
+import { getEffectiveTier, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
 import {
   orgBrandingAllowsCustomDomain,
@@ -205,7 +205,7 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      const tier = getEffectiveTier(current, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
+      const tier = getEffectiveTier(current, planGateCtxFromAuthPayload(payload));
       if (tier !== "business" && tier !== "enterprise") {
         return NextResponse.json(
           { error: "Configurações de IA avançadas disponíveis no plano Business." },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { buildRollingWeekRanges } from "@/lib/flux-reports-metrics";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {

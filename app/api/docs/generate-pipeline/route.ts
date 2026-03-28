@@ -9,7 +9,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
-  planGateCtxForAuth,
+  planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
 import { logDocsMetric } from "@/lib/docs-metrics";
 import { rateLimit } from "@/lib/rate-limit";
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   if (!canUseFeature(org, "flux_docs_rag", gateCtx)) {
     return NextResponse.json({ error: "RAG / Flux Docs indisponível no plano atual." }, { status: 403 });
   }

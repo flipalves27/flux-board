@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { deleteKeyResult, getKeyResult, updateKeyResult } from "@/lib/kv-okrs";
@@ -20,7 +20,7 @@ export async function PATCH(
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
@@ -106,7 +106,7 @@ export async function DELETE(
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    const gateCtxDel = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtxDel = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "okr_engine", gateCtxDel);
     } catch (err) {

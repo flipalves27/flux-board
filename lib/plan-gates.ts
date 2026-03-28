@@ -2,11 +2,14 @@ import type { Organization } from "./kv-organizations";
 import { isProTenant } from "./commercial-plan";
 import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
 import { writeSecurityAudit } from "./security-audit";
+import { isPlatformAdminFromAuthPayload, type OrgRole, type PlatformRole } from "./rbac";
 
 /**
  * Tier de produto é sempre por organização (`Organization.plan`, Stripe, trial).
- * Usuários não carregam plano próprio; `PlanGateContext.isOrgAdmin` só reflete papel na org atual
- * (admin/executivo), não administrador da plataforma — esse papel é `platformRole` em `lib/rbac.ts`.
+ * Bypass de plano:
+ * - `isPlatformAdmin`: usuário seed / platform_admin — fora do contexto comercial Stripe; sempre enterprise.
+ * - `isOrgAdmin`: admin ou executivo da org — enterprise só se `FLUX_ADMIN_SUPERPOWERS=1` (default desligado).
+ * Ver `lib/plan-product.ts` para o mapa canônico de produto e prefixos de API.
  */
 
 /** Audit log retention for Free tier (days). Pro/Business: unlimited (no TTL window). */
@@ -15,20 +18,30 @@ const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 /** Plano efetivo para gates (trial ativo conta como Pro; grace pós-downgrade mantém tier pago). */
 export type EffectiveGateTier = "free" | "pro" | "business" | "enterprise";
 
-/**
- * Admin (`isAdmin`) ou executivo (`isExecutive`) da organização: desvinculados de Stripe/plano —
- * tier efetivo **enterprise** para liberar funcionalidades e limites (boards/usuários/IA).
- */
 export type PlanGateContext = {
+  /** Administrador da plataforma; bypass total, independente de Stripe. */
+  isPlatformAdmin?: boolean;
+  /** Admin ou executivo da organização; bypass só com FLUX_ADMIN_SUPERPOWERS. */
   isOrgAdmin?: boolean;
 };
 
-/** Monta contexto a partir do JWT/DB (rotas autenticadas). */
-export function planGateCtxForAuth(
-  isAdmin: boolean | undefined,
-  isExecutive?: boolean | undefined
-): PlanGateContext | undefined {
-  return isAdmin || isExecutive ? { isOrgAdmin: true } : undefined;
+export type PlanGateAuthPayload = {
+  id: string;
+  isAdmin?: boolean;
+  isExecutive?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
+};
+
+/** Contexto a partir do payload de `getAuthFromRequest` (ou JWT + mesmo shape no cliente). */
+export function planGateCtxFromAuthPayload(payload: PlanGateAuthPayload): PlanGateContext | undefined {
+  const platform = isPlatformAdminFromAuthPayload(payload);
+  const orgElevated = Boolean(payload.isAdmin || payload.isExecutive) && !platform;
+  if (!platform && !orgElevated) return undefined;
+  return {
+    ...(platform ? { isPlatformAdmin: true as const } : {}),
+    ...(orgElevated ? { isOrgAdmin: true as const } : {}),
+  };
 }
 
 export type Tier = Organization["plan"];
@@ -145,8 +158,9 @@ function envEnabled(raw: string | undefined, fallback: boolean): boolean {
   return !(v === "0" || v === "false" || v === "off" || v === "no");
 }
 
+/** Bypass comercial para admin/executivo da org (não aplica ao platform_admin). Default: desligado. */
 function adminSuperpowersEnabled(): boolean {
-  return envEnabled(process.env.FLUX_ADMIN_SUPERPOWERS, true);
+  return envEnabled(process.env.FLUX_ADMIN_SUPERPOWERS, false);
 }
 
 function getTierWithoutAdminBypass(org: Organization | null | undefined): EffectiveGateTier {
@@ -154,6 +168,7 @@ function getTierWithoutAdminBypass(org: Organization | null | undefined): Effect
 }
 
 export function getEffectiveTier(org: Organization | null | undefined, ctx?: PlanGateContext): EffectiveGateTier {
+  if (ctx?.isPlatformAdmin) return "enterprise";
   if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) return "enterprise";
   if (isProTenant()) return "pro";
   const plan = org?.plan ?? "free";
@@ -236,18 +251,30 @@ export function canUseFeature(org: Organization | null | undefined, feature: Fea
   }
   const tier = getEffectiveTier(org, ctx);
   const allowed = FEATURE_ALLOWED_TIERS[feature].includes(tier);
-  if (allowed && ctx?.isOrgAdmin && adminSuperpowersEnabled()) {
+  if (allowed) {
     const baseTier = getTierWithoutAdminBypass(org);
     if (!FEATURE_ALLOWED_TIERS[feature].includes(baseTier)) {
-      writeSecurityAudit({
-        event: "admin_superpower_bypass",
-        orgId: org?._id ?? "unknown",
-        details: {
-          feature,
-          baseTier,
-          elevatedTier: tier,
-        },
-      });
+      if (ctx?.isPlatformAdmin) {
+        writeSecurityAudit({
+          event: "platform_admin_bypass",
+          orgId: org?._id ?? "unknown",
+          details: {
+            feature,
+            baseTier,
+            elevatedTier: tier,
+          },
+        });
+      } else if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) {
+        writeSecurityAudit({
+          event: "org_admin_superpower_bypass",
+          orgId: org?._id ?? "unknown",
+          details: {
+            feature,
+            baseTier,
+            elevatedTier: tier,
+          },
+        });
+      }
     }
   }
   return allowed;
@@ -316,4 +343,3 @@ export function makeDailyAiCallsRateLimitKey(orgId: string): string {
 export function getDailyAiCallsWindowMs(): number {
   return DAY_MS;
 }
-

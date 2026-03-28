@@ -28,6 +28,8 @@
     "section": {
       "work": "Trabalho",
       "intelligence": "Inteligência",
+      "org": "Organização",
+      "commercial": "Plano e cobrança",
       "admin": "Admin",
       "platformOps": "Plataforma"
     },
@@ -1028,7 +1030,7 @@
       "missingCredentials": "Preencha usuário e senha.",
       "connection": "Erro de conexão. Tente novamente.",
       "missingAllFields": "Preencha todos os campos.",
-      "passwordTooShort": "Senha deve ter pelo menos 4 caracteres.",
+      "passwordTooShort": "Senha deve ter pelo menos 8 caracteres.",
       "oauthPasswordOnly": "Esta conta usa login social. Use Google ou Microsoft."
     },
     "fields": {
@@ -1042,7 +1044,7 @@
       "password": "••••••••",
       "name": "Seu nome completo",
       "email": "seu@email.com",
-      "passwordMin": "Mínimo 4 caracteres"
+      "passwordMin": "Mínimo 8 caracteres"
     },
     "remember": {
       "login": "Manter conectado (gravar no navegador)",
@@ -1425,7 +1427,7 @@
       "regenerateToken": "Gerar novo link",
       "regenerateHint": "O link anterior deixa de funcionar.",
       "passwordNew": "Nova senha",
-      "passwordPlaceholder": "Mínimo 4 caracteres",
+      "passwordPlaceholder": "Mínimo 8 caracteres",
       "removePassword": "Remover senha atual",
       "columns": "Colunas visíveis no portal",
       "columnsHint": "Todas selecionadas = mostrar todas as colunas com itens.",

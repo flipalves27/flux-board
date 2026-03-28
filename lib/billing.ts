@@ -1,3 +1,13 @@
+/**
+ * Stripe — modelo de sincronização
+ *
+ * - Webhook (`handleStripeWebhook`): apenas `customer.subscription.created|updated|deleted`.
+ *   Outros eventos (ex. `invoice.payment_failed`) retornam 200 com `ignored_event_type` — o estado do produto
+ *   segue o objeto subscription em `updated` (ex. status `past_due` não é `active`/`trialing`, então tratamos como inativo).
+ * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (preço mapeado em `STRIPE_PRICE_ID_*`
+ *   ou `metadata.plan`). Add-ons exigiriam iterar itens ou metadata adicional.
+ * - Enterprise não passa por checkout; plano `enterprise` na org é operacional/manual.
+ */
 import Stripe from "stripe";
 import type { NextRequest } from "next/server";
 

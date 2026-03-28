@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { searchDocs } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { canUseFeature, planGateCtxForAuth } from "@/lib/plan-gates";
+import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { logDocsMetric } from "@/lib/docs-metrics";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs", planGateCtxForAuth(payload.isAdmin, payload.isExecutive)))
+  if (!canUseFeature(org, "flux_docs", planGateCtxFromAuthPayload(payload)))
     return NextResponse.json({ error: "Flux Docs indisponível." }, { status: 403 });
 
   const q = request.nextUrl.searchParams.get("q") || "";

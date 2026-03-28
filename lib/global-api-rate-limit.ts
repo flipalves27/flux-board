@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuthFromRequest } from "./auth";
 import { getOrganizationById } from "./kv-organizations";
-import { getEffectiveTier, planGateCtxForAuth } from "./plan-gates";
+import { getEffectiveTier, planGateCtxFromAuthPayload } from "./plan-gates";
 import { logRateLimitAbuse } from "./rate-limit-abuse";
 import { rateLimitHeadersFromResult, slidingRateLimitConsume } from "./sliding-rate-limit";
 
@@ -100,7 +100,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     category = "ai";
     if (payload) {
       orgForMessage = await getOrganizationById(payload.orgId);
-      const tier = getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin, payload.isExecutive));
+      const tier = getEffectiveTier(orgForMessage, planGateCtxFromAuthPayload(payload));
       limit = tier === "free" ? RL_AI_FREE_PER_MIN : RL_AI_PRO_PER_MIN;
       key = `mw:sliding:ai:user:${payload.id}:org:${payload.orgId}`;
     } else {
@@ -138,7 +138,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     };
     const tierLabel =
       category === "ai" && payload
-        ? getEffectiveTier(orgForMessage, planGateCtxForAuth(payload.isAdmin, payload.isExecutive)) === "free"
+        ? getEffectiveTier(orgForMessage, planGateCtxFromAuthPayload(payload)) === "free"
           ? "Free"
           : "Pro/Business"
         : "";

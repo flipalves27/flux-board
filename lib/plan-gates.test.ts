@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { assertFeatureAllowed, PlanGateError, getEffectiveTier, canUseFeature } from "./plan-gates";
+import { assertFeatureAllowed, PlanGateError, getEffectiveTier, canUseFeature, planGateCtxFromAuthPayload } from "./plan-gates";
 
 describe("plan-gates", () => {
   const prevEnv = { ...process.env };
@@ -8,15 +8,37 @@ describe("plan-gates", () => {
     process.env = { ...prevEnv };
   });
 
-  it("returns enterprise tier for admin superpowers by default", () => {
-    const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, { isOrgAdmin: true });
+  it("returns enterprise for platform admin regardless of org plan and FLUX_ADMIN_SUPERPOWERS", () => {
+    process.env.FLUX_ADMIN_SUPERPOWERS = "false";
+    const ctx = planGateCtxFromAuthPayload({
+      id: "admin",
+      isAdmin: true,
+      isExecutive: false,
+    });
+    const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, ctx);
     expect(tier).toBe("enterprise");
   });
 
-  it("respects org plan when admin superpowers are disabled", () => {
+  it("does not give org admin enterprise tier when superpowers are disabled", () => {
     process.env.FLUX_ADMIN_SUPERPOWERS = "false";
-    const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, { isOrgAdmin: true });
+    const ctx = planGateCtxFromAuthPayload({
+      id: "u1",
+      isAdmin: true,
+      isExecutive: false,
+    });
+    const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, ctx);
     expect(tier).toBe("free");
+  });
+
+  it("gives org admin enterprise tier when superpowers are enabled", () => {
+    process.env.FLUX_ADMIN_SUPERPOWERS = "true";
+    const ctx = planGateCtxFromAuthPayload({
+      id: "u1",
+      isAdmin: true,
+      isExecutive: false,
+    });
+    const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, ctx);
+    expect(tier).toBe("enterprise");
   });
 
   it("throws standardized gate error payload", () => {
@@ -33,9 +55,11 @@ describe("plan-gates", () => {
     }
   });
 
-  it("allows admin bypass when enabled", () => {
+  it("allows org admin bypass when superpowers enabled", () => {
     process.env.FLUX_ADMIN_SUPERPOWERS = "true";
-    const allowed = canUseFeature({ _id: "o1", plan: "free" } as any, "board_health_score", { isOrgAdmin: true });
+    const allowed = canUseFeature({ _id: "o1", plan: "free" } as any, "board_health_score", {
+      isOrgAdmin: true,
+    });
     expect(allowed).toBe(true);
   });
 });

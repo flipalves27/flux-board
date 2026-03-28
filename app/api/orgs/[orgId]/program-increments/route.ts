@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, planGateCtxForAuth } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { isSameOrgOrPlatformAdmin } from "@/lib/tenant-route-guard";
 import {
   listProgramIncrements,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 
   const org = await getOrganizationById(orgId);
-  const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtx); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const org = await getOrganizationById(orgId);
-  const gateCtxPost = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+  const gateCtxPost = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtxPost); } catch {
     return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
   }

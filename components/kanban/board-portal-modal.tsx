@@ -108,7 +108,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
 
       if (removePassword && portal?.passwordProtected) {
         (body.portal as Record<string, unknown>).portalPassword = "";
-      } else if (newPassword.trim().length >= 4) {
+      } else if (newPassword.trim().length >= 8) {
         (body.portal as Record<string, unknown>).portalPassword = newPassword.trim();
       }
 

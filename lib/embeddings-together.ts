@@ -33,8 +33,8 @@ export async function fetchTextEmbeddings(
       body: JSON.stringify({ model, input: inputs }),
     });
     if (!res.ok) {
-      const snippet = (await res.text().catch(() => "")).slice(0, 200);
-      console.warn("[embeddings]", res.status, snippet);
+      await res.text().catch(() => "");
+      console.warn("[embeddings] HTTP error", res.status);
       return null;
     }
     const data = (await res.json()) as {

@@ -5,7 +5,7 @@ import { ensureAdminUser, getUserById } from "@/lib/kv-users";
 import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, canUseFeature, planGateCtxForAuth, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const org = await getOrganizationById(payload.orgId);
     if (!org) return NextResponse.json({ error: "Organização não encontrada" }, { status: 404 });
-    const gateCtx = planGateCtxForAuth(payload.isAdmin, payload.isExecutive);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
       assertFeatureAllowed(org, "executive_brief", gateCtx);
     } catch (err) {
