@@ -29,7 +29,10 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Flux-Board — Commercial operations with clarity",
+  title: {
+    default: "Flux-Board — Commercial operations with clarity",
+    template: "%s · Flux-Board",
+  },
   description:
     "Professional Kanban, daily insights, context on cards, and portfolio visibility. Built for sales, operations, and leadership teams.",
 };

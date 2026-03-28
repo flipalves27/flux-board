@@ -771,6 +771,13 @@
     }
   },
   "landing": {
+    "meta": {
+      "title": "Flux-Board — Commercial operations with clarity",
+      "description": "Professional Kanban, daily insights, context on cards, and portfolio visibility. Built for sales, operations, and leadership teams.",
+      "productName": "Flux-Board",
+      "jsonLdDescription": "Professional Kanban with AI-ready workflows for B2B commercial and operations teams."
+    },
+    "skipToContent": "Skip to main content",
     "header": {
       "tagline": "Commercial operations with clarity."
     },
@@ -778,7 +785,12 @@
       "why": "Why {appName}",
       "platform": "Platform",
       "how": "How it works",
-      "pricing": "Pricing"
+      "pricing": "Pricing",
+      "useCases": "Use cases",
+      "trust": "Security",
+      "openMenu": "Open navigation menu",
+      "closeMenu": "Close menu",
+      "mainLabel": "Site navigation"
     },
     "actions": {
       "openDashboardLoggedIn": "Open dashboard",
@@ -921,15 +933,97 @@
       "features": "Features",
       "pricing": "Pricing",
       "docs": "Docs",
-      "status": "Status"
+      "status": "Status",
+      "faq": "FAQ",
+      "templates": "Templates",
+      "columnProduct": "Product",
+      "columnPlatform": "Platform"
+    },
+    "midCta": {
+      "heading": "Ready to try {appName}?",
+      "description": "Create a board in minutes, invite your team, and keep delivery and commercial rhythm on the same surface.",
+      "primaryLoggedIn": "Open my boards",
+      "primaryLoggedOut": "Start for free",
+      "secondary": "Compare plans"
+    },
+    "useCases": {
+      "heading": "What you can do with it",
+      "description": "Pick a lens—same product, different outcomes for each part of the organization.",
+      "tablistLabel": "Use cases by audience"
+    },
+    "trust": {
+      "heading": "Security and your data",
+      "intro": "We design Flux-Board for teams that handle customer and pipeline information. Connection is encrypted in transit; access follows your organization and plan.",
+      "bullet1": "HTTPS for the web app and modern authentication flows.",
+      "bullet2": "Tenant-scoped data model so your org’s boards stay isolated.",
+      "bullet3": "Product docs cover features, limits, and how to get the most from each plan.",
+      "docsCta": "Browse product docs"
+    },
+    "roadmap": {
+      "heading": "New capabilities and plan fit",
+      "description": "Recent capabilities already in the product, with the plan that unlocks each item.",
+      "items": {
+        "sprint_engine": {
+          "title": "Sprint Engine and unified panel",
+          "detail": "Plan, run, and close sprints with a dedicated hub, forecasts, and backlog flow."
+        },
+        "ceremonies": {
+          "title": "AI-assisted Scrum/Kanban ceremonies",
+          "detail": "Planning, standup, review, and retro with board-context suggestions."
+        },
+        "dependency_graph_visual": {
+          "title": "Visual dependency map",
+          "detail": "Cross-board dependency mapping to reduce blockers and delays."
+        },
+        "flux_docs_rag": {
+          "title": "Flux Docs + card context RAG",
+          "detail": "Knowledge base with semantic retrieval to enrich day-to-day decisions."
+        },
+        "anomaly_email": {
+          "title": "Proactive anomalies and alerts",
+          "detail": "Deviation detection on throughput, WIP, and lead time with notifications and suggested actions."
+        },
+        "custom_domain": {
+          "title": "SSO and custom corporate domain",
+          "detail": "Enterprise governance with corporate authentication and dedicated branded environment."
+        }
+      }
+    },
+    "spotlight": {
+      "sectionAria": "Featured product capabilities",
+      "copilot": {
+        "title": "Board Copilot",
+        "body": "AI chat on the board—natural-language questions, automatic summaries, bottleneck hints, and actions without changing screens.",
+        "sampleLabel": "Copilot › ",
+        "sampleQuestion": "Which cards have been blocked for more than 3 days?"
+      },
+      "okr": {
+        "title": "OKR Engine",
+        "body": "Objectives and key results linked to board cards. Track progress in real time with delivery outlook and drift alerts.",
+        "demoObjective": "Q1 objective",
+        "demoKr": "Key result 1"
+      },
+      "anomaly": {
+        "title": "Anomaly detection",
+        "body": "Proactive signals on throughput, WIP, and lead time—with email and webhooks before issues escalate.",
+        "alert1": "WIP above rolling average (σ 2.4)",
+        "alert2": "Lead time +38% vs. prior week"
+      }
     },
     "socialProof": {
+      "ariaLabel": "Product highlights",
       "stat1": { "value": "3 min", "label": "to create your first board" },
       "stat2": { "value": "14 days", "label": "trial, no credit card" },
       "stat3": { "value": "100%", "label": "visual — zero spreadsheets" },
       "stat4": { "value": "∞", "label": "boards on Pro and above" }
     },
     "pricing": {
+      "tiers": {
+        "free": "Free",
+        "pro": "Pro",
+        "business": "Business",
+        "enterprise": "Enterprise"
+      },
       "heading": "Plans for every stage of growth",
       "description": "Start free and scale as your team evolves. No surprise invoices.",
       "monthly": "Monthly",

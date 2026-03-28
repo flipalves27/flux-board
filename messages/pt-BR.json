@@ -771,6 +771,13 @@
     }
   },
   "landing": {
+    "meta": {
+      "title": "Flux-Board — Operações comerciais com clareza",
+      "description": "Kanban profissional, insights diários, contexto nos cards e visibilidade do portfólio. Feito para vendas, operações e liderança.",
+      "productName": "Flux-Board",
+      "jsonLdDescription": "Kanban profissional com fluxos prontos para IA para equipes B2B comerciais e de operações."
+    },
+    "skipToContent": "Ir para o conteúdo principal",
     "header": {
       "tagline": "Operações comerciais com clareza."
     },
@@ -778,7 +785,12 @@
       "why": "Por que {appName}",
       "platform": "Plataforma",
       "how": "Como funciona",
-      "pricing": "Preços"
+      "pricing": "Preços",
+      "useCases": "Casos de uso",
+      "trust": "Segurança",
+      "openMenu": "Abrir menu de navegação",
+      "closeMenu": "Fechar",
+      "mainLabel": "Navegação do site"
     },
     "actions": {
       "openDashboardLoggedIn": "Abrir painel",
@@ -921,15 +933,97 @@
       "features": "Recursos",
       "pricing": "Preços",
       "docs": "Docs",
-      "status": "Status"
+      "status": "Status",
+      "faq": "FAQ",
+      "templates": "Templates",
+      "columnProduct": "Produto",
+      "columnPlatform": "Plataforma"
+    },
+    "midCta": {
+      "heading": "Pronto para experimentar o {appName}?",
+      "description": "Crie um board em minutos, convide o time e mantenha ritmo comercial e de entrega na mesma superfície.",
+      "primaryLoggedIn": "Ir para meus boards",
+      "primaryLoggedOut": "Começar grátis",
+      "secondary": "Comparar planos"
+    },
+    "useCases": {
+      "heading": "O que você pode fazer",
+      "description": "Escolha o foco — o mesmo produto, resultados diferentes para cada parte da organização.",
+      "tablistLabel": "Casos de uso por público"
+    },
+    "trust": {
+      "heading": "Segurança e seus dados",
+      "intro": "O Flux-Board é pensado para equipes que lidam com informações de clientes e pipeline. A conexão é criptografada em trânsito; o acesso segue sua organização e plano.",
+      "bullet1": "HTTPS no app web e fluxos de autenticação modernos.",
+      "bullet2": "Modelo multi-tenant para isolar os boards da sua organização.",
+      "bullet3": "A documentação do produto cobre recursos, limites e como aproveitar cada plano.",
+      "docsCta": "Ver documentação do produto"
+    },
+    "roadmap": {
+      "heading": "Novas capacidades e encaixe por plano",
+      "description": "Recursos recentes já no produto, com o plano que desbloqueia cada item.",
+      "items": {
+        "sprint_engine": {
+          "title": "Sprint Engine e painel unificado",
+          "detail": "Planejamento, execução e fechamento de sprint com hub dedicado, previsões e fluxo de backlog."
+        },
+        "ceremonies": {
+          "title": "Cerimônias Scrum/Kanban com IA",
+          "detail": "Planning, standup, review e retrospectiva com sugestões orientadas por contexto do board."
+        },
+        "dependency_graph_visual": {
+          "title": "Mapa visual de dependências",
+          "detail": "Dependências cross-board com análise de vínculo para reduzir bloqueios e atrasos."
+        },
+        "flux_docs_rag": {
+          "title": "Flux Docs + RAG no contexto do card",
+          "detail": "Base de conhecimento com busca semântica para enriquecer decisões no fluxo."
+        },
+        "anomaly_email": {
+          "title": "Anomalias proativas e alertas",
+          "detail": "Detecção de desvio em throughput, WIP e lead time com notificações e ação sugerida."
+        },
+        "custom_domain": {
+          "title": "SSO e domínio corporativo",
+          "detail": "Governança enterprise com autenticação corporativa e ambiente de marca dedicado."
+        }
+      }
+    },
+    "spotlight": {
+      "sectionAria": "Destaques do produto",
+      "copilot": {
+        "title": "Board Copilot",
+        "body": "Chat com IA direto no board. Perguntas em linguagem natural, resumos automáticos, identificação de gargalos e execução de ações sem trocar de tela.",
+        "sampleLabel": "Copilot › ",
+        "sampleQuestion": "Quais cards estão bloqueados há mais de 3 dias?"
+      },
+      "okr": {
+        "title": "OKR Engine",
+        "body": "Objetivos e Key Results conectados aos cards do board. Acompanhe o progresso em tempo real, com projeção de entrega e alertas de desvio.",
+        "demoObjective": "Objetivo Q1",
+        "demoKr": "Key Result 1"
+      },
+      "anomaly": {
+        "title": "Detecção de anomalias",
+        "body": "Sinais proativos em throughput, WIP e lead time — com e-mail e webhooks antes que o problema escale.",
+        "alert1": "WIP acima da média móvel (σ 2.4)",
+        "alert2": "Lead time +38% vs. semana anterior"
+      }
     },
     "socialProof": {
+      "ariaLabel": "Destaques do produto",
       "stat1": { "value": "3 min", "label": "para criar o primeiro board" },
       "stat2": { "value": "14 dias", "label": "trial sem cartão de crédito" },
       "stat3": { "value": "100%", "label": "visual — zero planilhas" },
       "stat4": { "value": "∞", "label": "boards no plano Pro e acima" }
     },
     "pricing": {
+      "tiers": {
+        "free": "Free",
+        "pro": "Pro",
+        "business": "Business",
+        "enterprise": "Enterprise"
+      },
       "heading": "Planos para cada etapa do crescimento",
       "description": "Comece grátis e escale conforme o time evolui. Sem surpresas na fatura.",
       "monthly": "Mensal",
