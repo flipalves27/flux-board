@@ -4,6 +4,30 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import mammoth from "mammoth";
+
+/**
+ * pdf.js (via pdf-parse) espera DOMMatrix / Path2D / ImageData no global em Node.
+ * O polyfill interno do pdfjs usa `createRequire(import.meta.url)` a partir do bundle em
+ * `node_modules/pdfjs-dist`, o que falha no Next — carregamos @napi-rs/canvas antes do import dinâmico.
+ */
+async function ensurePdfJsNodeGlobals(): Promise<void> {
+  if (typeof globalThis.DOMMatrix !== "undefined") return;
+  try {
+    const canvas = await import("@napi-rs/canvas");
+    const g = globalThis as unknown as Record<string, unknown>;
+    if (!g.DOMMatrix && canvas.DOMMatrix) g.DOMMatrix = canvas.DOMMatrix as object;
+    if (!g.Path2D && canvas.Path2D) g.Path2D = canvas.Path2D as object;
+    if (!g.ImageData && canvas.ImageData) g.ImageData = canvas.ImageData as object;
+  } catch (e) {
+    console.error("[spec-plan-extract] @napi-rs/canvas (polyfill PDF no servidor)", e);
+    throw new Error(
+      `CANVAS_FOR_PDF: ${e instanceof Error ? e.message : String(e)}`
+    );
+  }
+  if (typeof globalThis.DOMMatrix === "undefined") {
+    throw new Error("DOMMatrix is not defined after @napi-rs/canvas load");
+  }
+}
 import { SPEC_PLAN_MAX_FILE_BYTES } from "@/lib/spec-plan-constants";
 import { normalizeSpecDocumentText, truncateSpecText } from "@/lib/spec-plan-text-utils";
 
@@ -86,6 +110,7 @@ export async function extractSpecDocument(input: {
   }
 
   if (ext === "pdf") {
+    await ensurePdfJsNodeGlobals();
     const { PDFParse } = await import("pdf-parse");
     const data = new Uint8Array(input.buffer);
     const parser = new PDFParse(getPdfJsDocumentOptions(data) as ConstructorParameters<typeof PDFParse>[0]);
