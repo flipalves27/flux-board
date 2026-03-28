@@ -180,6 +180,15 @@ function IconDocs({ className }: { className?: string }) {
   );
 }
 
+function IconSpecScope({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8l2 2 4-4" />
+    </svg>
+  );
+}
+
 function IconProgramIncrements({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -297,6 +306,7 @@ export function Sidebar() {
 
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
   const [activeSprintCount, setActiveSprintCount] = useState<number | null>(null);
+  const [specScopePlannerEnabled, setSpecScopePlannerEnabled] = useState(false);
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
@@ -384,6 +394,31 @@ export function Sidebar() {
     };
   }, [isChecked, user?.orgId, getHeaders]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!isChecked || !user?.orgId) {
+        setSpecScopePlannerEnabled(false);
+        return;
+      }
+      try {
+        const data = await apiGet<{ spec_ai_scope_planner?: boolean }>("/api/org/features", getHeaders());
+        if (!cancelled) setSpecScopePlannerEnabled(Boolean(data?.spec_ai_scope_planner));
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          setSpecScopePlannerEnabled(false);
+          return;
+        }
+        setSpecScopePlannerEnabled(false);
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isChecked, user?.orgId, getHeaders]);
+
   const showExpandedNav =
     layout === "mobile" || (layout === "tablet" && tabletHover) || (layout === "desktop" && !collapsed);
   const compactMode = !showExpandedNav;
@@ -423,6 +458,7 @@ export function Sidebar() {
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
+    if (href === "/spec-plan") return normalizedPath.startsWith("/spec-plan");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/equipe") return normalizedPath.startsWith("/equipe");
     if (href === "/billing") return normalizedPath === "/billing";
@@ -702,6 +738,15 @@ export function Sidebar() {
             icon={<IconDocs className="h-4 w-4 shrink-0" />}
             label={t("docs")}
           />
+          {specScopePlannerEnabled ? (
+            <NavLink
+              path="/spec-plan"
+              hint={t("hints.specScopePlanner")}
+              icon={<IconSpecScope className="h-4 w-4 shrink-0" />}
+              label={t("specScopePlanner")}
+              sublabel={t("specScopePlannerProduct")}
+            />
+          ) : null}
 
           {user && sessionCanManageMembersAndBilling(user) && (
             <>
