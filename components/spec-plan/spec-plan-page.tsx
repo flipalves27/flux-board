@@ -181,12 +181,17 @@ export default function SpecPlanPage() {
         if (file) form.set("file", file, file.name);
       }
 
+      const streamHeaders: Record<string, string> = {
+        Accept: "text/event-stream",
+        ...getHeaders(),
+      };
+      // getApiHeaders define application/json; com FormData o browser deve enviar multipart com boundary.
+      delete streamHeaders["Content-Type"];
+
       const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/spec-plan/stream`, {
         method: "POST",
-        headers: {
-          Accept: "text/event-stream",
-          ...getHeaders(),
-        },
+        credentials: "same-origin",
+        headers: streamHeaders,
         body: form,
       });
 
