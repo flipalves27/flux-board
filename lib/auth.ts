@@ -99,6 +99,7 @@ export async function getAuthFromRequest(
   orgId: string;
   platformRole: PlatformRole;
   orgRole: OrgRole;
+  isOrgTeamManager: boolean;
 } | null> {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
   let token: string | null = null;
@@ -117,6 +118,8 @@ export async function getAuthFromRequest(
     platformRole: user.platformRole,
     orgRole: user.orgRole,
   });
+  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
+  const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
   return {
     id: user.id,
     username: user.username,
@@ -125,5 +128,6 @@ export async function getAuthFromRequest(
     orgId: user.orgId,
     platformRole: roles.platformRole,
     orgRole: roles.orgRole,
+    isOrgTeamManager,
   };
 }

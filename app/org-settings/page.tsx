@@ -10,6 +10,7 @@ import { useToast } from "@/context/toast-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { readImageFileAsDataUrl } from "@/lib/branding-upload-client";
 import { OrgWebhooksSettings } from "@/components/org-webhooks-settings";
+import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 function slugifyLocal(input: string): string {
   return String(input || "")
@@ -140,7 +141,12 @@ export default function OrgSettingsPage() {
   }, [isChecked, user, router, localeRoot, getHeaders]);
 
   useEffect(() => {
-    if (!isChecked || !user?.isAdmin || (orgPlan !== "business" && orgPlan !== "enterprise")) {
+    if (
+      !isChecked ||
+      !user ||
+      !sessionCanManageMembersAndBilling(user) ||
+      (orgPlan !== "business" && orgPlan !== "enterprise")
+    ) {
       setOrgUsers([]);
       return;
     }
@@ -155,10 +161,10 @@ export default function OrgSettingsPage() {
         setUsersLoading(false);
       }
     })();
-  }, [isChecked, user?.isAdmin, orgPlan, getHeaders]);
+  }, [isChecked, user, orgPlan, getHeaders]);
 
   useEffect(() => {
-    if (!isChecked || !user?.isAdmin || !stripeCustomerId) {
+    if (!isChecked || !user || !sessionCanManageMembersAndBilling(user) || !stripeCustomerId) {
       setInvoices([]);
       return;
     }
@@ -184,7 +190,7 @@ export default function OrgSettingsPage() {
         setInvoicesLoading(false);
       }
     })();
-  }, [isChecked, user?.isAdmin, stripeCustomerId, getHeaders]);
+  }, [isChecked, user, stripeCustomerId, getHeaders]);
 
   useEffect(() => {
     if (!slugTouched) setOrgSlug(suggestedSlug);
@@ -649,7 +655,7 @@ export default function OrgSettingsPage() {
                 </button>
               </div>
 
-              {user?.isAdmin && stripeCustomerId ? (
+              {user && sessionCanManageMembersAndBilling(user) && stripeCustomerId ? (
                 <div className="mt-10 pt-10 border-t border-[var(--flux-primary-alpha-15)]">
                   <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Faturas (Stripe)</h3>
                   <p className="text-sm text-[var(--flux-text-muted)] mb-4">

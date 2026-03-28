@@ -24,6 +24,8 @@ async function userToValidate(user: User | null): Promise<ValidateResult> {
     platformRole: user.platformRole,
     orgRole: user.orgRole,
   });
+  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
+  const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
   return {
     ok: true,
     user: {
@@ -36,6 +38,7 @@ async function userToValidate(user: User | null): Promise<ValidateResult> {
       orgId: user.orgId,
       platformRole: roles.platformRole,
       orgRole: roles.orgRole,
+      ...(isOrgTeamManager ? { isOrgTeamManager: true } : {}),
       ...(user.themePreference ? { themePreference: user.themePreference as ThemePreference } : {}),
       ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
     },

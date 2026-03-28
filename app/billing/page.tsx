@@ -12,6 +12,7 @@ import { useToast } from "@/context/toast-context";
 import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
 import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
+import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 type Plan = "free" | "trial" | "pro" | "business" | "enterprise";
 
@@ -66,7 +67,7 @@ export default function BillingPage() {
   const cancelTitleId = "billing-cancel-title";
   const cancelDescId = "billing-cancel-desc";
 
-  const isAdmin = Boolean(user?.isAdmin);
+  const canBilling = Boolean(user && sessionCanManageMembersAndBilling(user));
   const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
   const proCap = getProMaxUsers();
 
@@ -81,12 +82,12 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (!isChecked || !user) return;
-    if (!user.isAdmin) router.replace(`${localeRoot}/boards`);
+    if (!sessionCanManageMembersAndBilling(user)) router.replace(`${localeRoot}/boards`);
   }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
-    if (!isAdmin) return;
+    if (!canBilling) return;
 
     setLoading(true);
     setError(null);
@@ -151,7 +152,7 @@ export default function BillingPage() {
         setLoading(false);
       }
     })();
-  }, [isChecked, user, isAdmin, getHeaders, router, localeRoot]);
+  }, [isChecked, user, canBilling, getHeaders, router, localeRoot]);
 
   async function startCheckout(nextPlan: "pro" | "business") {
     if (!user) return;

@@ -28,6 +28,7 @@ describe("GET /api/admin/rate-limit-abuse", () => {
       orgId: "org_a",
       platformRole: "platform_user",
       orgRole: "org_manager",
+      isOrgTeamManager: false,
     });
     const req = new NextRequest("http://localhost/api/admin/rate-limit-abuse");
     const res = await GET(req);
@@ -44,6 +45,7 @@ describe("GET /api/admin/rate-limit-abuse", () => {
       orgId: "org_default",
       platformRole: "platform_admin",
       orgRole: "org_member",
+      isOrgTeamManager: false,
     });
     aggregateRateLimitAbuse.mockResolvedValue([]);
     const req = new NextRequest("http://localhost/api/admin/rate-limit-abuse?days=7");

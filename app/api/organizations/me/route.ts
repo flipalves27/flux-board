@@ -24,7 +24,7 @@ import {
   planOverrideBlockedByStripe,
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
-import { ensureOrgManager } from "@/lib/api-authz";
+import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { writeSecurityAudit } from "@/lib/security-audit";
 
 export async function GET(request: NextRequest) {
@@ -68,8 +68,6 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
-  if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : undefined;
@@ -79,7 +77,18 @@ export async function PUT(request: NextRequest) {
   const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
   const hasPlan = body && typeof body === "object" && "plan" in body && body.plan !== undefined;
 
-  if (!name && !slug && !hasBranding && !dismissBillingNotice && !hasAiSettings && !hasPlan) {
+  const needsTeamManager = dismissBillingNotice || hasPlan;
+  const needsOrgManager =
+    name !== undefined || slug !== undefined || hasBranding || hasAiSettings;
+  if (needsTeamManager) {
+    const deniedTm = ensureOrgTeamManager(payload);
+    if (deniedTm) return deniedTm;
+  }
+  if (needsOrgManager) {
+    const deniedOm = ensureOrgManager(payload);
+    if (deniedOm) return deniedOm;
+  }
+  if (!needsTeamManager && !needsOrgManager) {
     return NextResponse.json(
       { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `plan` ou `dismissBillingNotice`." },
       { status: 400 }

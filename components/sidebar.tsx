@@ -12,7 +12,7 @@ import { useNavigationVariant, useNavigationVariantActions } from "@/context/nav
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
-import { isPlatformAdminSession } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -332,7 +332,7 @@ export function Sidebar() {
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      if (!isChecked || !user?.isAdmin || !user?.orgId) {
+      if (!isChecked || !user?.orgId || !sessionCanManageMembersAndBilling(user)) {
         setActiveInvites(null);
         return;
       }
@@ -352,7 +352,7 @@ export function Sidebar() {
     return () => {
       cancelled = true;
     };
-  }, [isChecked, user?.isAdmin, user?.orgId, getHeaders]);
+  }, [isChecked, user?.orgId, user?.isOrgTeamManager, user?.platformRole, getHeaders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -703,9 +703,12 @@ export function Sidebar() {
             label={t("docs")}
           />
 
-          {user?.isAdmin && (
-            <>
+          {user &&
+            (sessionCanManageMembersAndBilling(user) || user.isAdmin || user.isExecutive) && (
               <NavSectionTitle>{t("section.admin")}</NavSectionTitle>
+            )}
+          {user && sessionCanManageMembersAndBilling(user) && (
+            <>
               <NavLink
                 path="/equipe"
                 hint={t("hints.users")}
@@ -739,18 +742,21 @@ export function Sidebar() {
               {/* Settings */}
               <div className="h-[6px]" />
               <NavLink
-                path="/org-settings"
-                hint={t("hints.organization")}
-                icon={<IconSettings className="h-4 w-4 shrink-0" />}
-                label={t("organization")}
-              />
-              <NavLink
                 path="/billing"
                 hint={t("hints.billing")}
                 icon={<IconBilling className="h-4 w-4 shrink-0" />}
                 label={t("billing")}
               />
             </>
+          )}
+
+          {(user?.isAdmin || user?.isExecutive) && (
+            <NavLink
+              path="/org-settings"
+              hint={t("hints.organization")}
+              icon={<IconSettings className="h-4 w-4 shrink-0" />}
+              label={t("organization")}
+            />
           )}
 
           {user && isPlatformAdminSession(user) && (

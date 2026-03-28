@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getUserById, updateUser, ensureAdminUser, deleteUser, listUsers } from "@/lib/kv-users";
+import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
-import { ensureOrgManager } from "@/lib/api-authz";
+import { ensureOrgTeamManager } from "@/lib/api-authz";
 import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensureOrgTeamManager(payload);
   if (denied) return denied;
 
   const { id } = await params;
@@ -61,7 +61,7 @@ export async function PUT(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensureOrgTeamManager(payload);
   if (denied) return denied;
 
   const { id } = await params;
@@ -91,17 +91,6 @@ export async function PUT(
     const existingUser = await getUserById(id, targetOrgId);
     if (!existingUser) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
-    }
-
-    if (clean.isAdmin === false && existingUser.isAdmin) {
-      const members = await listUsers(targetOrgId);
-      const adminCount = members.filter((m) => m.isAdmin).length;
-      if (adminCount <= 1) {
-        return NextResponse.json(
-          { error: "A organização precisa de pelo menos um administrador." },
-          { status: 400 }
-        );
-      }
     }
 
     const updates: Record<string, unknown> = {};
@@ -154,7 +143,7 @@ export async function DELETE(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensureOrgTeamManager(payload);
   if (denied) return denied;
 
   const { id } = await params;
@@ -177,16 +166,6 @@ export async function DELETE(
     const user = await getUserById(id, targetOrgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
-    }
-    if (user.isAdmin) {
-      const members = await listUsers(targetOrgId);
-      const adminCount = members.filter((m) => m.isAdmin).length;
-      if (adminCount <= 1) {
-        return NextResponse.json(
-          { error: "Não é possível excluir o único administrador da organização." },
-          { status: 400 }
-        );
-      }
     }
     await deleteUser(id, targetOrgId);
     return NextResponse.json({ ok: true });

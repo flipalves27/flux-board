@@ -24,6 +24,7 @@ import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/se
 import type { ValidateResult } from "@/lib/auth-types";
 import { deriveEffectiveRoles } from "@/lib/rbac";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
+import { userIsActiveOrgTeamManager } from "@/lib/org-team-gestor";
 
 export type { ValidateResult } from "@/lib/auth-types";
 
@@ -42,6 +43,7 @@ export type AuthResult =
         orgRole: "org_manager" | "org_member";
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
+        isOrgTeamManager?: boolean;
       };
     }
   | { ok: false; error: string; retryAfterSeconds?: number };
@@ -113,6 +115,7 @@ export async function loginAction(
       },
       remember
     );
+    const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
     return {
       ok: true,
       user: {
@@ -125,6 +128,7 @@ export async function loginAction(
         orgId: user.orgId,
         platformRole: roles.platformRole,
         orgRole: roles.orgRole,
+        ...(isOrgTeamManager ? { isOrgTeamManager: true } : {}),
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
@@ -226,6 +230,7 @@ export async function registerAction(
         },
         remember
       );
+      const isOrgTeamManagerInvite = await userIsActiveOrgTeamManager(user.orgId, user.id);
       return {
         ok: true,
         user: {
@@ -237,6 +242,7 @@ export async function registerAction(
           orgId: user.orgId,
           platformRole: roles.platformRole,
           orgRole: roles.orgRole,
+          ...(isOrgTeamManagerInvite ? { isOrgTeamManager: true } : {}),
           ...(user.themePreference ? { themePreference: user.themePreference } : {}),
           ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
         },
@@ -281,6 +287,7 @@ export async function registerAction(
       },
       remember
     );
+    const isOrgTeamManagerNewOrg = await userIsActiveOrgTeamManager(user.orgId, user.id);
     return {
       ok: true,
       user: {
@@ -292,6 +299,7 @@ export async function registerAction(
         orgId: user.orgId,
         platformRole: roles.platformRole,
         orgRole: roles.orgRole,
+        ...(isOrgTeamManagerNewOrg ? { isOrgTeamManager: true } : {}),
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },

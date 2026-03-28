@@ -33,6 +33,7 @@ import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import type { BoardMethodology } from "@/lib/board-methodology";
+import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 interface Board {
   id: string;
@@ -136,8 +137,7 @@ export default function BoardsPage() {
       const boardDoneKey = getOnboardingDoneStorageKey(user.id);
       if (localStorage.getItem(boardDoneKey) === "1") return;
 
-      // Só org-admin precisa configurar organização e convites.
-      if (!user.isAdmin) {
+      if (!(user.isAdmin || user.isExecutive || sessionCanManageMembersAndBilling(user))) {
         router.replace(`${localeRoot}/onboarding`);
         return;
       }

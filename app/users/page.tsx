@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 interface UserRow {
   id: string;
@@ -37,7 +38,7 @@ export default function UsersPage() {
       router.replace("/login");
       return;
     }
-    if (!user.isAdmin) {
+    if (!sessionCanManageMembersAndBilling(user)) {
       router.replace("/boards");
       return;
     }
@@ -287,7 +288,7 @@ export default function UsersPage() {
                     </span>
                   </label>
                   <p className="text-[11px] text-[var(--flux-text-muted)]">
-                    Admins podem gerenciar membros, billing, convites e configurações. A organização precisa ter pelo menos um admin.
+                    Administradores da organização podem gerenciar membros, billing, convites e configurações. Não é obrigatório manter um administrador; a gestão da equipe usa o papel Gestor nos vínculos de equipe.
                   </p>
                 </>
               ) : (

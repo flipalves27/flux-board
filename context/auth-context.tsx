@@ -20,6 +20,8 @@ export interface AuthUser {
   orgRole: OrgRole;
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;
+  /** Gestor (Equipe, escopo org): gerencia membros e billing. */
+  isOrgTeamManager?: boolean;
 }
 
 export interface AuthState {

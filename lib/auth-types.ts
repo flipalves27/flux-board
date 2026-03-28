@@ -16,6 +16,8 @@ export type ValidateResult =
         orgRole: OrgRole;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
+        /** Gestor (Equipe, escopo organização): membros e billing. */
+        isOrgTeamManager?: boolean;
       };
     }
   | { ok: false };

@@ -5,13 +5,13 @@ import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxForAuth } from "@/lib/plan-gates";
-import { ensureOrgManager } from "@/lib/api-authz";
+import { ensureOrgTeamManager } from "@/lib/api-authz";
 import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensureOrgTeamManager(payload);
   if (denied) return denied;
 
   try {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensureOrgTeamManager(payload);
   if (denied) return denied;
 
   try {

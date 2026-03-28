@@ -10,6 +10,7 @@ import {
   getOrganizationInvitesOnboardingDoneStorageKey,
   getOnboardingDoneStorageKey,
 } from "@/lib/onboarding";
+import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 export default function OrganizationInvitesOnboardingPage() {
   const router = useRouter();
@@ -37,8 +38,7 @@ export default function OrganizationInvitesOnboardingPage() {
       return;
     }
 
-    // Se não for org-admin, pula.
-    if (!user.isAdmin) {
+    if (!sessionCanManageMembersAndBilling(user)) {
       router.replace(`${localeRoot}/onboarding`);
       return;
     }

@@ -44,3 +44,12 @@ export function isPlatformAdminSession(user: {
 export function canManageOrganization(roles: EffectiveRoles): boolean {
   return isPlatformAdmin(roles) || roles.orgRole === "org_manager";
 }
+
+/** Cliente: alinhado a `ensureOrgTeamManager` (membros, convites, billing). */
+export function sessionCanManageMembersAndBilling(user: {
+  platformRole?: PlatformRole;
+  isOrgTeamManager?: boolean;
+}): boolean {
+  if (user.platformRole === "platform_admin") return true;
+  return Boolean(user.isOrgTeamManager);
+}
