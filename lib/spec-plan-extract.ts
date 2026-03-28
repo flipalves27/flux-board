@@ -29,25 +29,26 @@ async function ensurePdfJsNodeGlobals(): Promise<void> {
   }
 }
 import { SPEC_PLAN_MAX_FILE_BYTES } from "@/lib/spec-plan-constants";
+import { ensurePdfJsStandardFontsOnDisk } from "@/lib/spec-plan-pdf-assets";
 import { normalizeSpecDocumentText, truncateSpecText } from "@/lib/spec-plan-text-utils";
 
-/** Opções para pdf.js em Node/serverless (Vercel): evita @font-face e eval; cmaps via file:// do pacote. */
-function getPdfJsDocumentOptions(data: Uint8Array): Record<string, unknown> {
-  const base: Record<string, unknown> = {
+/** Opções para pdf.js em Node: cmaps locais, fontes padrão em cache (/tmp), OpenJPEG via JS (sem .wasm no pacote npm). */
+async function buildPdfParseLoadOptions(data: Uint8Array): Promise<Record<string, unknown>> {
+  const distRoot = path.join(process.cwd(), "node_modules", "pdfjs-dist");
+  const distUrl = pathToFileURL(distRoot).href + "/";
+  const wasmUrl = pathToFileURL(path.join(distRoot, "wasm")).href + "/";
+  const standardFontDataUrl = await ensurePdfJsStandardFontsOnDisk();
+  return {
     data,
     useSystemFonts: true,
     disableFontFace: true,
     isEvalSupported: false,
+    useWasm: false,
+    cMapUrl: `${distUrl}cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl,
+    wasmUrl,
   };
-  try {
-    const distRoot = path.join(process.cwd(), "node_modules", "pdfjs-dist");
-    const baseUrl = pathToFileURL(distRoot).href + "/";
-    base.cMapUrl = `${baseUrl}cmaps/`;
-    base.cMapPacked = true;
-  } catch {
-    /* ignore — pdf.js usa fallbacks */
-  }
-  return base;
 }
 
 export type SpecExtractResult = {
@@ -113,7 +114,16 @@ export async function extractSpecDocument(input: {
     await ensurePdfJsNodeGlobals();
     const { PDFParse } = await import("pdf-parse");
     const data = new Uint8Array(input.buffer);
-    const parser = new PDFParse(getPdfJsDocumentOptions(data) as ConstructorParameters<typeof PDFParse>[0]);
+    let loadOpts: ConstructorParameters<typeof PDFParse>[0];
+    try {
+      loadOpts = (await buildPdfParseLoadOptions(data)) as ConstructorParameters<typeof PDFParse>[0];
+    } catch (assetErr) {
+      console.error("[spec-plan] PDF assets (fonts/wasm config) failed:", assetErr);
+      const detail =
+        assetErr instanceof Error ? assetErr.message : String(assetErr);
+      throw new Error("PDF_EXTRACT_FAILED", { cause: `assets: ${detail}` });
+    }
+    const parser = new PDFParse(loadOpts);
     let raw = "";
     let pageCount: number | undefined;
     try {
@@ -122,7 +132,11 @@ export async function extractSpecDocument(input: {
       pageCount = typeof textRes.total === "number" ? textRes.total : undefined;
     } catch (pdfErr) {
       console.error("[spec-plan] PDFParse.getText failed:", pdfErr);
-      throw new Error("PDF_EXTRACT_FAILED");
+      const detail =
+        pdfErr instanceof Error
+          ? pdfErr.message + (pdfErr.cause != null ? ` | cause: ${String(pdfErr.cause)}` : "")
+          : String(pdfErr);
+      throw new Error("PDF_EXTRACT_FAILED", { cause: detail });
     } finally {
       try {
         await parser.destroy();

@@ -189,12 +189,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         );
       }
       if (msg === "PDF_EXTRACT_FAILED") {
+        const cause =
+          e instanceof Error && e.cause != null
+            ? e.cause instanceof Error
+              ? e.cause.message
+              : String(e.cause)
+            : undefined;
         return new Response(
           JSON.stringify({
             error:
               "Não foi possível processar o PDF no servidor (arquivo protegido, corrompido ou ambiente). Tente DOCX, outro PDF ou cole o texto da especificação.",
             errorCode: "PDF_EXTRACT_FAILED",
-            cause: e instanceof Error && e.cause instanceof Error ? e.cause.message : undefined,
+            cause,
           }),
           { status: 400 }
         );
