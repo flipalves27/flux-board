@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  SpecPlanAnalysisModal,
-  type SpecPlanAnalysisLogEntry,
-} from "@/components/spec-plan/spec-plan-analysis-modal";
+import { SpecPlanAnalysisDrawer } from "@/components/spec-plan/spec-plan-analysis-drawer";
+import type { SpecPlanRunLogEntry } from "@/lib/spec-plan-run-types";
+import { SpecPlanPreviewCards } from "@/components/spec-plan/spec-plan-preview-cards";
+import { SpecPlanProgressStepper } from "@/components/spec-plan/spec-plan-progress-stepper";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 
 function safeStringify(obj: unknown, max = 16_000): string {
   try {
@@ -24,6 +25,8 @@ function safeStringify(obj: unknown, max = 16_000): string {
 type PhaseState = "pending" | "running" | "done" | "error";
 
 type BucketOpt = { key: string; label: string };
+
+type SpecTab = "configure" | "progress" | "review" | "history";
 
 type PreviewRow = {
   title: string;
@@ -57,8 +60,44 @@ function parseSseBlocks(buffer: string): { rest: string; events: { event: string
   return { rest, events };
 }
 
+type RunSummary = {
+  id: string;
+  createdAt: string;
+  updatedAt?: string;
+  status: string;
+  methodology: string;
+  remapOnly: boolean;
+  sourceSummary: string;
+  previewCount: number;
+  streamError: string | null;
+};
+
+type RunFull = {
+  id: string;
+  status: string;
+  methodology: "scrum" | "kanban" | "lss";
+  remapOnly: boolean;
+  sourceSummary: string;
+  phases: Record<string, PhaseState>;
+  logs: SpecPlanRunLogEntry[];
+  docReadMeta: null | {
+    fileName: string;
+    kind: string;
+    charCount?: number;
+    pageCount?: number;
+    warnings: string[];
+  };
+  outlineSummary: string | null;
+  methodologySummary: string | null;
+  workItemsPayload: string;
+  preview: PreviewRow[];
+  streamError: string | null;
+  streamErrorDetail: string | null;
+};
+
 export default function SpecPlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const localeRoot = `/${useLocale()}`;
   const t = useTranslations("specPlanPage");
   const { user, getHeaders, isChecked } = useAuth();
@@ -83,8 +122,7 @@ export default function SpecPlanPage() {
 
   const [streamError, setStreamError] = useState<string | null>(null);
   const [streamErrorDetail, setStreamErrorDetail] = useState<string | null>(null);
-  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
-  const [analysisLogs, setAnalysisLogs] = useState<SpecPlanAnalysisLogEntry[]>([]);
+  const [analysisLogs, setAnalysisLogs] = useState<SpecPlanRunLogEntry[]>([]);
   const [docReadMeta, setDocReadMeta] = useState<null | {
     fileName: string;
     kind: string;
@@ -100,6 +138,58 @@ export default function SpecPlanPage() {
   const [applying, setApplying] = useState(false);
   const [applyMsg, setApplyMsg] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+
+  const [tab, setTab] = useState<SpecTab>("configure");
+  const [analysisDrawerOpen, setAnalysisDrawerOpen] = useState(false);
+  const [previewTableView, setPreviewTableView] = useState(false);
+  const [persistence, setPersistence] = useState<boolean | null>(null);
+  const [backgroundRunId, setBackgroundRunId] = useState<string | null>(null);
+  const [historyRuns, setHistoryRuns] = useState<RunSummary[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyErr, setHistoryErr] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const friendlyHints = useMemo(
+    () => ({
+      parse: t("stepperFriendly.parse"),
+      chunks: t("stepperFriendly.chunks"),
+      embeddings: t("stepperFriendly.embeddings"),
+      retrieval: t("stepperFriendly.retrieval"),
+      outline: t("stepperFriendly.outline"),
+      work: t("stepperFriendly.work"),
+      cards: t("stepperFriendly.cards"),
+    }),
+    [t]
+  );
+
+  const applyPhasesFromRecord = useCallback((ph: Record<string, PhaseState>) => {
+    const g = (k: string): PhaseState => (ph[k] as PhaseState) || "pending";
+    setPhaseParse(g("parse"));
+    setPhaseChunks(g("chunks"));
+    setPhaseEmbeddings(g("embeddings"));
+    setPhaseRetrieval(g("retrieval"));
+    setPhaseOutline(g("outline"));
+    setPhaseWork(g("work"));
+    setPhaseCards(g("cards"));
+  }, []);
+
+  const hydrateFromRunFull = useCallback(
+    (run: RunFull) => {
+      applyPhasesFromRecord(run.phases);
+      setAnalysisLogs(Array.isArray(run.logs) ? run.logs : []);
+      setDocReadMeta(run.docReadMeta);
+      setOutlineSummary(run.outlineSummary);
+      setMethodologySummary(run.methodologySummary);
+      setWorkItemsPayload(run.workItemsPayload || "");
+      setPreview(Array.isArray(run.preview) ? run.preview : []);
+      setStreamError(run.streamError);
+      setStreamErrorDetail(run.streamErrorDetail);
+      if (run.methodology === "scrum" || run.methodology === "kanban" || run.methodology === "lss") {
+        setMethodology(run.methodology);
+      }
+    },
+    [applyPhasesFromRecord]
+  );
 
   useEffect(() => {
     if (!isChecked) return;
@@ -169,8 +259,112 @@ export default function SpecPlanPage() {
     };
   }, [boardId, featureOk, getHeaders]);
 
+  const loadHistory = useCallback(async () => {
+    if (!boardId) return;
+    setHistoryLoading(true);
+    setHistoryErr(null);
+    try {
+      const data = await apiGet<{ runs?: RunSummary[]; persistence?: boolean }>(
+        `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs`,
+        getHeaders()
+      );
+      setHistoryRuns(Array.isArray(data.runs) ? data.runs : []);
+      if (typeof data.persistence === "boolean") setPersistence(data.persistence);
+    } catch (e) {
+      setHistoryErr(e instanceof ApiError ? e.message : t("historyLoadError"));
+      setHistoryRuns([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [boardId, getHeaders, t]);
+
+  useEffect(() => {
+    if (tab === "history" && boardId && featureOk) void loadHistory();
+  }, [tab, boardId, featureOk, loadHistory]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!boardId || !featureOk) {
+        setPersistence(null);
+        return;
+      }
+      try {
+        const data = await apiGet<{ persistence?: boolean }>(
+          `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs`,
+          getHeaders()
+        );
+        if (!cancelled && typeof data.persistence === "boolean") setPersistence(data.persistence);
+      } catch {
+        if (!cancelled) setPersistence(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, featureOk, getHeaders]);
+
+  useEffect(() => {
+    const r = searchParams.get("run");
+    if (r?.trim() && boardId) {
+      setBackgroundRunId(r.trim());
+      setTab("progress");
+      setAnalysisDrawerOpen(true);
+    }
+  }, [searchParams, boardId]);
+
+  useEffect(() => {
+    if (!boardId) return;
+    try {
+      const raw = sessionStorage.getItem("flux_spec_plan_bg");
+      if (!raw) return;
+      const o = JSON.parse(raw) as { boardId?: string; runId?: string };
+      if (o.boardId === boardId && o.runId) {
+        setBackgroundRunId(o.runId);
+        setTab("progress");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [boardId]);
+
+  useEffect(() => {
+    if (!backgroundRunId?.trim() || !boardId) return;
+    let cancelled = false;
+    const rid = backgroundRunId.trim();
+    const poll = async () => {
+      try {
+        const data = await apiGet<{ run?: RunFull }>(
+          `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(rid)}`,
+          getHeaders()
+        );
+        if (cancelled || !data.run) return;
+        hydrateFromRunFull(data.run);
+        const st = data.run.status;
+        if (st === "completed" || st === "failed" || st === "cancelled") {
+          setBackgroundRunId(null);
+          try {
+            sessionStorage.removeItem("flux_spec_plan_bg");
+          } catch {
+            /* ignore */
+          }
+          useSpecPlanActiveStore.getState().clearRun(rid);
+          if (st === "completed" && data.run.preview?.length) setTab("review");
+        }
+      } catch {
+        /* ignore transient */
+      }
+    };
+    void poll();
+    const id = window.setInterval(() => void poll(), 2200);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [backgroundRunId, boardId, getHeaders, hydrateFromRunFull]);
+
   const appendAnalysisLog = useCallback(
-    (level: SpecPlanAnalysisLogEntry["level"], message: string, detail?: string) => {
+    (level: SpecPlanRunLogEntry["level"], message: string, detail?: string) => {
       setAnalysisLogs((prev) => [
         ...prev,
         {
@@ -213,7 +407,8 @@ export default function SpecPlanPage() {
       resetPhases();
       setPreview([]);
       setApplyMsg(null);
-      setAnalysisModalOpen(true);
+      setAnalysisDrawerOpen(true);
+      setTab("progress");
       appendAnalysisLog(
         "info",
         t("analysisModal.logEvents.started"),
@@ -478,6 +673,114 @@ export default function SpecPlanPage() {
     void runStream({ remapOnly: true });
   }, [boardId, workItemsPayload, runStream]);
 
+  const postBackgroundRun = useCallback(
+    async (opts: { remapOnly: boolean }) => {
+      if (!boardId) return;
+      if (persistence === false) {
+        setStreamError(t("backgroundRequiresMongo"));
+        return;
+      }
+      if (!opts.remapOnly && !file && !pasted.trim()) {
+        setStreamError(t("noInputError"));
+        return;
+      }
+      if (opts.remapOnly && !workItemsPayload.trim()) return;
+
+      const form = new FormData();
+      form.set("methodology", methodology);
+      form.set("remapOnly", opts.remapOnly ? "1" : "0");
+      if (opts.remapOnly) {
+        form.set("workItemsJson", workItemsPayload);
+      } else {
+        if (pasted) form.set("pastedText", pasted);
+        if (file) form.set("file", file, file.name);
+      }
+      const h: Record<string, string> = { ...getHeaders() };
+      delete h["Content-Type"];
+      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: h,
+        body: form,
+      });
+      const data = (await res.json().catch(() => ({}))) as { runId?: string; error?: string };
+      if (!res.ok) {
+        setStreamError(typeof data.error === "string" ? data.error : t("streamError"));
+        return;
+      }
+      if (data.runId) {
+        setBackgroundRunId(data.runId);
+        try {
+          sessionStorage.setItem("flux_spec_plan_bg", JSON.stringify({ boardId, runId: data.runId }));
+        } catch {
+          /* ignore */
+        }
+        useSpecPlanActiveStore.setState((s) => ({
+          active: [
+            ...s.active.filter((a) => a.runId !== data.runId),
+            { runId: data.runId!, boardId, updatedAt: new Date().toISOString() },
+          ],
+        }));
+        resetPhases();
+        setPreview([]);
+        setStreamError(null);
+        setStreamErrorDetail(null);
+        setTab("progress");
+        setAnalysisDrawerOpen(true);
+      }
+    },
+    [boardId, file, getHeaders, methodology, pasted, persistence, resetPhases, t, workItemsPayload]
+  );
+
+  const cancelBackgroundRun = useCallback(async () => {
+    if (!backgroundRunId?.trim() || !boardId) return;
+    try {
+      await apiPost(
+        `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(backgroundRunId.trim())}/cancel`,
+        {},
+        getHeaders()
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [backgroundRunId, boardId, getHeaders]);
+
+  const restoreFromHistory = useCallback(
+    async (runId: string) => {
+      if (!boardId) return;
+      try {
+        const data = await apiGet<{ run?: RunFull }>(
+          `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(runId)}`,
+          getHeaders()
+        );
+        if (data.run) {
+          hydrateFromRunFull(data.run);
+          setTab("review");
+        }
+      } catch {
+        setHistoryErr(t("historyLoadError"));
+      }
+    },
+    [boardId, getHeaders, hydrateFromRunFull, t]
+  );
+
+  const deleteHistoryEntry = useCallback(
+    async (runId: string) => {
+      if (!boardId) return;
+      try {
+        await apiDelete(
+          `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(runId)}`,
+          getHeaders()
+        );
+        setDeleteConfirmId(null);
+        await loadHistory();
+      } catch (e) {
+        setHistoryErr(e instanceof ApiError ? e.message : t("historyDeleteError"));
+      }
+    },
+    [boardId, getHeaders, loadHistory, t]
+  );
+
   const onApply = useCallback(async () => {
     if (!boardId || !accept || preview.length === 0) return;
     setApplying(true);
@@ -524,39 +827,12 @@ export default function SpecPlanPage() {
     [phaseCards, phaseChunks, phaseEmbeddings, phaseOutline, phaseParse, phaseRetrieval, phaseWork, t]
   );
 
-  const phaseRow = useMemo(() => {
-    const Row = ({ label, state }: { label: string; state: PhaseState }) => {
-      const color =
-        state === "done"
-          ? "text-[var(--flux-accent)]"
-          : state === "running"
-            ? "text-[var(--flux-primary-light)]"
-            : state === "error"
-              ? "text-[var(--flux-danger)]"
-              : "text-[var(--flux-text-muted)]";
-      const status =
-        state === "done"
-          ? t("statusDone")
-          : state === "running"
-            ? t("statusRunning")
-            : state === "error"
-              ? t("statusError")
-              : t("statusPending");
-      return (
-        <div className="flex items-center justify-between gap-3 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-black-alpha-04)] px-3 py-2 text-sm">
-          <span className="font-medium text-[var(--flux-text)]">{label}</span>
-          <span className={`shrink-0 text-xs font-semibold ${color}`}>{status}</span>
-        </div>
-      );
-    };
-    return (
-      <div className="flex flex-col gap-2">
-        {analysisPhases.map((p) => (
-          <Row key={p.key} label={p.label} state={p.state} />
-        ))}
-      </div>
-    );
-  }, [analysisPhases, t]);
+  const expandedStepKey = useMemo(() => {
+    const running = analysisPhases.find((p) => p.state === "running");
+    if (running) return running.key;
+    const err = analysisPhases.find((p) => p.state === "error");
+    return err?.key ?? null;
+  }, [analysisPhases]);
 
   if (!isChecked || !user) {
     return <div className="min-h-screen bg-[var(--flux-surface-dark)]" />;
@@ -592,8 +868,63 @@ export default function SpecPlanPage() {
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
-      <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-24">
+        <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-dark)]/92 px-4 py-3 backdrop-blur-md">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["configure", t("tabs.configure")],
+                ["progress", t("tabs.progress")],
+                ["review", t("tabs.review")],
+                ["history", t("tabs.history")],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                disabled={key === "review" && preview.length === 0}
+                onClick={() => setTab(key)}
+                className={
+                  tab === key
+                    ? "rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] px-3 py-2 text-xs font-bold text-white"
+                    : "rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] px-3 py-2 text-xs font-bold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-light)] disabled:opacity-35"
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[var(--flux-text-muted)]">
+            <span>
+              {analyzing
+                ? t("sticky.analyzingSync")
+                : backgroundRunId
+                  ? t("sticky.analyzingBackground")
+                  : t("sticky.idle")}
+            </span>
+            <button
+              type="button"
+              onClick={() => setAnalysisDrawerOpen(true)}
+              className="font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+            >
+              {t("openAnalysisPanel")}
+            </button>
+            {backgroundRunId ? (
+              <button
+                type="button"
+                onClick={() => void cancelBackgroundRun()}
+                className="font-semibold text-[var(--flux-danger)]"
+              >
+                {t("cancelBackground")}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {tab === "configure" ? (
+          <div className="space-y-8">
         <p className="text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("privacyNote")}</p>
+        <p className="text-xs text-[var(--flux-text-muted)]">{t("privacyHistoryNote")}</p>
 
         <div className="grid gap-6 md:grid-cols-2">
           <section className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-08),transparent)] p-5">
@@ -664,30 +995,45 @@ export default function SpecPlanPage() {
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
           />
-          <button
-            type="button"
-            disabled={!boardId || analyzing}
-            onClick={() => void onStart()}
-            className="mt-4 w-full rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] py-3 text-sm font-bold text-white disabled:opacity-40 md:w-auto md:px-8"
-          >
-            {analyzing ? "…" : t("startAnalysis")}
-          </button>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button
+              type="button"
+              disabled={!boardId || analyzing}
+              onClick={() => void onStart()}
+              className="w-full rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] py-3 text-sm font-bold text-white disabled:opacity-40 sm:w-auto sm:px-8"
+            >
+              {analyzing ? "…" : t("startAnalysis")}
+            </button>
+            <button
+              type="button"
+              disabled={!boardId || analyzing || persistence === false}
+              onClick={() => void postBackgroundRun({ remapOnly: false })}
+              className="w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] py-3 text-sm font-semibold text-[var(--flux-primary-light)] disabled:opacity-40 sm:w-auto sm:px-6"
+            >
+              {t("startBackground")}
+            </button>
+          </div>
         </section>
+          </div>
+        ) : null}
 
+        {tab === "progress" ? (
         <section className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-black-alpha-04)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
-            <button
-              type="button"
-              onClick={() => setAnalysisModalOpen(true)}
-              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary-light)]"
-            >
-              {t("openAnalysisPanel")}
-            </button>
           </div>
-          <div className="mt-4 grid gap-6 md:grid-cols-2">
-            {phaseRow}
-            <div className="space-y-2 text-xs text-[var(--flux-text-muted)]">
+          <div className="mt-4 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-elevated)] p-3">
+            <SpecPlanProgressStepper
+              phases={analysisPhases.map((p) => ({ key: p.key, label: p.label, state: p.state }))}
+              friendlyHints={friendlyHints}
+              statusDone={t("statusDone")}
+              statusRunning={t("statusRunning")}
+              statusError={t("statusError")}
+              statusPending={t("statusPending")}
+              expandedKey={expandedStepKey}
+            />
+          </div>
+          <div className="mt-4 space-y-2 text-xs text-[var(--flux-text-muted)]">
               {docReadMeta ? (
                 <div className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3">
                   <p className="font-semibold text-[var(--flux-text)]">{t("analysisModal.docReadTitle")}</p>
@@ -714,14 +1060,13 @@ export default function SpecPlanPage() {
                   {methodologySummary}
                 </p>
               ) : null}
-            </div>
           </div>
           {streamError ? (
             <div className="mt-3 space-y-2">
               <p className="text-sm text-[var(--flux-danger)]">{streamError}</p>
               <button
                 type="button"
-                onClick={() => setAnalysisModalOpen(true)}
+                onClick={() => setAnalysisDrawerOpen(true)}
                 className="text-xs font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
               >
                 {t("errorOpenPanelHint")}
@@ -729,22 +1074,41 @@ export default function SpecPlanPage() {
             </div>
           ) : null}
         </section>
+        ) : null}
 
-        {preview.length > 0 ? (
+        {tab === "review" && preview.length > 0 ? (
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-lg font-bold text-[var(--flux-text)]">
                 {t("previewTitle")} · {t("previewCount", { count: preview.length })}
               </h2>
-              <button
-                type="button"
-                disabled={!workItemsPayload || analyzing}
-                onClick={() => void onRemap()}
-                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
-              >
-                {t("regenerateMapping")}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewTableView((v) => !v)}
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)]"
+                >
+                  {previewTableView ? t("previewCardView") : t("previewTableView")}
+                </button>
+                <button
+                  type="button"
+                  disabled={!workItemsPayload || analyzing}
+                  onClick={() => void onRemap()}
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
+                >
+                  {t("regenerateMapping")}
+                </button>
+                <button
+                  type="button"
+                  disabled={!boardId || analyzing || persistence === false || !workItemsPayload.trim()}
+                  onClick={() => void postBackgroundRun({ remapOnly: true })}
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
+                >
+                  {t("regenerateMappingBackground")}
+                </button>
+              </div>
             </div>
+            {previewTableView ? (
             <div className="overflow-x-auto rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)]">
               <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                 <thead>
@@ -838,6 +1202,31 @@ export default function SpecPlanPage() {
                 </tbody>
               </table>
             </div>
+            ) : (
+            <SpecPlanPreviewCards
+              preview={preview}
+              buckets={buckets}
+              colBucket={t("colBucket")}
+              colPriority={t("colPriority")}
+              colTags={t("colTags")}
+              colRationale={t("colRationale")}
+              colTitleField={t("colTitle")}
+              removeLabel={t("removeRow")}
+              onChangeTitle={(i, title) =>
+                setPreview((p) => p.map((x, j) => (j === i ? { ...x, title } : x)))
+              }
+              onChangeBucket={(i, bucketKey) =>
+                setPreview((p) => p.map((x, j) => (j === i ? { ...x, bucketKey } : x)))
+              }
+              onChangePriority={(i, priority) =>
+                setPreview((p) => p.map((x, j) => (j === i ? { ...x, priority } : x)))
+              }
+              onChangeTags={(i, tags) =>
+                setPreview((p) => p.map((x, j) => (j === i ? { ...x, tags } : x)))
+              }
+              onRemove={(i) => setPreview((p) => p.filter((_, j) => j !== i))}
+            />
+            )}
             <label className="flex items-start gap-2 text-sm text-[var(--flux-text-muted)]">
               <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} className="mt-1" />
               <span>{t("acceptCheck")}</span>
@@ -860,14 +1249,80 @@ export default function SpecPlanPage() {
             </div>
             {applyMsg ? <p className="text-sm text-[var(--flux-accent)]">{applyMsg}</p> : null}
           </section>
+        ) : tab === "review" ? (
+          <p className="mt-6 text-sm text-[var(--flux-text-muted)]">{t("reviewEmpty")}</p>
+        ) : null}
+
+        {tab === "history" ? (
+          <section className="mt-6 space-y-4">
+            <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("historyTitle")}</h2>
+            {historyErr ? <p className="text-sm text-[var(--flux-danger)]">{historyErr}</p> : null}
+            {historyLoading ? <p className="text-sm text-[var(--flux-text-muted)]">{t("historyLoading")}</p> : null}
+            {!historyLoading && historyRuns.length === 0 ? (
+              <p className="text-sm text-[var(--flux-text-muted)]">{t("historyEmpty")}</p>
+            ) : null}
+            <ul className="space-y-3">
+              {historyRuns.map((hr) => (
+                <li
+                  key={hr.id}
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-elevated)] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-[var(--flux-text)]">{hr.sourceSummary}</p>
+                      <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
+                        {new Date(hr.createdAt).toLocaleString()} · {hr.methodology} · {hr.status} ·{" "}
+                        {t("previewCount", { count: hr.previewCount })}
+                      </p>
+                      {hr.streamError ? (
+                        <p className="mt-1 text-xs text-[var(--flux-danger)]">{hr.streamError}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void restoreFromHistory(hr.id)}
+                        className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-primary-light)]"
+                      >
+                        {t("historyRestore")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmId(hr.id)}
+                        className="rounded-[var(--flux-rad-sm)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-danger)]"
+                      >
+                        {t("historyDelete")}
+                      </button>
+                    </div>
+                  </div>
+                  {deleteConfirmId === hr.id ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--flux-primary-alpha-08)] pt-3 text-xs">
+                      <span className="text-[var(--flux-text-muted)]">{t("historyDeleteConfirm")}</span>
+                      <button
+                        type="button"
+                        onClick={() => void deleteHistoryEntry(hr.id)}
+                        className="rounded-[var(--flux-rad-sm)] bg-[var(--flux-danger)] px-3 py-1.5 font-bold text-white"
+                      >
+                        {t("historyDeleteYes")}
+                      </button>
+                      <button type="button" onClick={() => setDeleteConfirmId(null)} className="btn-secondary">
+                        {t("historyDeleteNo")}
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
       </div>
 
-      <SpecPlanAnalysisModal
-        open={analysisModalOpen}
-        onClose={() => setAnalysisModalOpen(false)}
+      <SpecPlanAnalysisDrawer
+        open={analysisDrawerOpen}
+        onClose={() => setAnalysisDrawerOpen(false)}
         analyzing={analyzing}
         phases={analysisPhases.map((p) => ({ key: p.key, label: p.label, state: p.state }))}
+        friendlyHints={friendlyHints}
         docMeta={docReadMeta}
         logs={analysisLogs}
         onClearLogs={() => setAnalysisLogs([])}

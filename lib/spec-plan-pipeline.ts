@@ -43,7 +43,7 @@ async function llmJson(params: {
     orgId: params.orgId,
     feature: "spec_ai_scope_planner",
     messages: [{ role: "user", content: params.userContent }],
-    options: { temperature: 0.15, maxTokens: 8000 },
+    options: { temperature: 0.15, maxTokens: 7200 },
     mode: "batch",
     userId: params.userId,
     isAdmin: params.isAdmin,
@@ -68,11 +68,23 @@ export async function runSpecPlanPipeline(input: {
   extractMeta: { kind: string; fileName: string; pageCount?: number; warnings: string[] };
   allowSubtasks: boolean;
   board: { config?: { bucketOrder?: unknown[] } };
-  onEvent: (ev: SpecPlanPipelineEvent) => void;
+  onEvent: (ev: SpecPlanPipelineEvent) => void | Promise<void>;
+  /** Entre fases pesadas (ex.: cancelamento pedido pelo utilizador). */
+  shouldCancel?: () => boolean | Promise<boolean>;
   /** Só remapeamento (pula outline + work items). */
   remapOnly?: { workItemsJson: string };
 }): Promise<void> {
-  const send = input.onEvent;
+  const emit = async (ev: SpecPlanPipelineEvent) => {
+    await Promise.resolve(input.onEvent(ev));
+  };
+
+  const abortIfCancelled = async (): Promise<boolean> => {
+    if (!input.shouldCancel) return false;
+    const cancel = await Promise.resolve(input.shouldCancel());
+    if (!cancel) return false;
+    await emit({ event: "error", data: { message: "Análise cancelada.", code: "cancelled" } });
+    return true;
+  };
 
   const fallbackOutlineDoc =
     input.documentText.length > SPEC_PLAN_LLM_DOC_CHUNK_CHARS
@@ -88,7 +100,7 @@ export async function runSpecPlanPipeline(input: {
   let workParsed = WorkItemsLlmSchema.safeParse({ methodologySummary: "", items: [] });
 
   if (!input.remapOnly) {
-    send({
+    await emit({
       event: "document_parsed",
       data: {
         kind: input.extractMeta.kind,
@@ -105,21 +117,41 @@ export async function runSpecPlanPipeline(input: {
       chunkCount > 0
         ? Math.round(chunks.reduce((s, c) => s + c.text.length, 0) / chunkCount)
         : 0;
-    send({
+    await emit({
       event: "chunks_ready",
       data: { chunkCount, avgSize, truncated: subsampled },
     });
 
     let outlineDocExcerpt = fallbackOutlineDoc;
 
-    if (chunkCount > 0) {
+    /** Documentos com poucos trechos: pular embeddings/recuperação (usa texto truncado no outline). */
+    if (chunkCount > 0 && chunkCount <= 3) {
+      await emit({
+        event: "embeddings_ready",
+        data: {
+          embeddedCount: 0,
+          modelHint: modelHintDefault,
+          failed: false,
+          skippedTinyDoc: true,
+        },
+      });
+      await emit({
+        event: "retrieval_ready",
+        data: {
+          queries: [],
+          chunksUsed: 0,
+          preview: [],
+          fallback: true,
+        },
+      });
+    } else if (chunkCount > 0) {
       const ret = await buildSpecPlanRetrievalContext({
         fileName: input.extractMeta.fileName || "especificação",
         methodology: input.methodology,
         chunks,
       });
       if (ret.ok) {
-        send({
+        await emit({
           event: "embeddings_ready",
           data: {
             embeddedCount: ret.embeddedCount,
@@ -129,7 +161,7 @@ export async function runSpecPlanPipeline(input: {
         });
         const useRetrieval = ret.chunksUsed > 0;
         outlineDocExcerpt = useRetrieval ? ret.context : fallbackOutlineDoc;
-        send({
+        await emit({
           event: "retrieval_ready",
           data: {
             queries: ret.queries,
@@ -139,7 +171,7 @@ export async function runSpecPlanPipeline(input: {
           },
         });
       } else {
-        send({
+        await emit({
           event: "embeddings_ready",
           data: {
             embeddedCount: 0,
@@ -148,7 +180,7 @@ export async function runSpecPlanPipeline(input: {
             failureHint: ret.reason.slice(0, 1200),
           },
         });
-        send({
+        await emit({
           event: "retrieval_ready",
           data: {
             queries: [],
@@ -159,7 +191,7 @@ export async function runSpecPlanPipeline(input: {
         });
       }
     } else {
-      send({
+      await emit({
         event: "embeddings_ready",
         data: {
           embeddedCount: 0,
@@ -167,7 +199,7 @@ export async function runSpecPlanPipeline(input: {
           failed: false,
         },
       });
-      send({
+      await emit({
         event: "retrieval_ready",
         data: {
           queries: [],
@@ -178,6 +210,8 @@ export async function runSpecPlanPipeline(input: {
       });
     }
 
+    if (await abortIfCancelled()) return;
+
     const oRes = await llmJson({
       org: input.org,
       orgId: input.orgId,
@@ -186,12 +220,12 @@ export async function runSpecPlanPipeline(input: {
       userContent: buildOutlineUserPrompt(outlineDocExcerpt),
     });
     if (!oRes.ok) {
-      send({ event: "error", data: { message: oRes.message, code: "outline_llm" } });
+      await emit({ event: "error", data: { message: oRes.message, code: "outline_llm" } });
       return;
     }
     outlineParsed = OutlineLlmSchema.safeParse(oRes.json);
     if (!outlineParsed.success) {
-      send({
+      await emit({
         event: "error",
         data: {
           message: "Outline inválido da IA.",
@@ -201,7 +235,9 @@ export async function runSpecPlanPipeline(input: {
       });
       return;
     }
-    send({ event: "outline_ready", data: outlineParsed.data as unknown as Record<string, unknown> });
+    await emit({ event: "outline_ready", data: outlineParsed.data as unknown as Record<string, unknown> });
+
+    if (await abortIfCancelled()) return;
 
     const wRes = await llmJson({
       org: input.org,
@@ -214,12 +250,12 @@ export async function runSpecPlanPipeline(input: {
       }),
     });
     if (!wRes.ok) {
-      send({ event: "error", data: { message: wRes.message, code: "work_items_llm" } });
+      await emit({ event: "error", data: { message: wRes.message, code: "work_items_llm" } });
       return;
     }
     workParsed = WorkItemsLlmSchema.safeParse(wRes.json);
     if (!workParsed.success) {
-      send({
+      await emit({
         event: "error",
         data: {
           message: "Itens de trabalho inválidos da IA.",
@@ -229,11 +265,11 @@ export async function runSpecPlanPipeline(input: {
       });
       return;
     }
-    send({
+    await emit({
       event: "work_items_draft",
       data: workParsed.data as unknown as Record<string, unknown>,
     });
-    send({
+    await emit({
       event: "methodology_applied",
       data: { summary: workParsed.data.methodologySummary, methodology: input.methodology },
     });
@@ -242,7 +278,7 @@ export async function runSpecPlanPipeline(input: {
       const items = JSON.parse(input.remapOnly.workItemsJson) as unknown;
       workParsed = WorkItemsLlmSchema.safeParse(items);
       if (!workParsed.success) {
-        send({
+        await emit({
           event: "error",
           data: {
             message: "JSON de work items inválido.",
@@ -253,7 +289,7 @@ export async function runSpecPlanPipeline(input: {
         return;
       }
     } catch (e) {
-      send({
+      await emit({
         event: "error",
         data: {
           message: "JSON de work items inválido.",
@@ -294,6 +330,8 @@ export async function runSpecPlanPipeline(input: {
         allowSubtasks: input.allowSubtasks,
       });
 
+  if (await abortIfCancelled()) return;
+
   const cRes = await llmJson({
     org: input.org,
     orgId: input.orgId,
@@ -302,12 +340,12 @@ export async function runSpecPlanPipeline(input: {
     userContent: cardsPrompt,
   });
   if (!cRes.ok) {
-    send({ event: "error", data: { message: cRes.message, code: "cards_llm" } });
+    await emit({ event: "error", data: { message: cRes.message, code: "cards_llm" } });
     return;
   }
   const cardsParsed = CardsLlmSchema.safeParse(cRes.json);
   if (!cardsParsed.success) {
-    send({
+    await emit({
       event: "error",
       data: {
         message: "Cartões inválidos da IA.",
@@ -318,11 +356,11 @@ export async function runSpecPlanPipeline(input: {
     return;
   }
 
-  send({
+  await emit({
     event: "bucket_mapping",
     data: { rows: cardsParsed.data.bucketMappingPreview },
   });
-  send({
+  await emit({
     event: "cards_preview",
     data: {
       cardRows: cardsParsed.data.cardRows,

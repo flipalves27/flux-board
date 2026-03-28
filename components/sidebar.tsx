@@ -11,6 +11,7 @@ import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { useNavigationVariant, useNavigationVariantActions } from "@/context/navigation-variant-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
+import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
@@ -307,6 +308,7 @@ export function Sidebar() {
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
   const [activeSprintCount, setActiveSprintCount] = useState<number | null>(null);
   const [specScopePlannerEnabled, setSpecScopePlannerEnabled] = useState(false);
+  const specPlanActiveCount = useSpecPlanActiveStore((s) => s.active.length);
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
@@ -419,6 +421,32 @@ export function Sidebar() {
     };
   }, [isChecked, user?.orgId, getHeaders]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function tick() {
+      if (!isChecked || !user?.orgId || !specScopePlannerEnabled) {
+        useSpecPlanActiveStore.getState().setActive([]);
+        return;
+      }
+      try {
+        const data = await apiGet<{
+          active?: { runId: string; boardId: string; updatedAt: string }[];
+        }>("/api/spec-plan/active-runs", getHeaders());
+        if (!cancelled && Array.isArray(data?.active)) {
+          useSpecPlanActiveStore.getState().setActive(data.active);
+        }
+      } catch {
+        if (!cancelled) useSpecPlanActiveStore.getState().setActive([]);
+      }
+    }
+    void tick();
+    const id = window.setInterval(() => void tick(), 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [isChecked, user?.orgId, specScopePlannerEnabled, getHeaders]);
+
   const showExpandedNav =
     layout === "mobile" || (layout === "tablet" && tabletHover) || (layout === "desktop" && !collapsed);
   const compactMode = !showExpandedNav;
@@ -516,9 +544,11 @@ export function Sidebar() {
     dataTour?: string;
     /** When set, overrides `isActive(path)` (e.g. Copilot → /boards must not highlight with Boards). */
     isActiveOverride?: boolean;
+    /** Pulsing dot when análise spec-plan está em segundo plano. */
+    badgeDot?: boolean;
   };
 
-  function NavLink({ path, icon, label, hint, sublabel, dataTour, isActiveOverride }: NavLinkProps) {
+  function NavLink({ path, icon, label, hint, sublabel, dataTour, isActiveOverride, badgeDot }: NavLinkProps) {
     const href = `/${locale}${path}`;
     const navActive = isActiveOverride ?? isActive(path);
     const itemClass = isMinimal
@@ -540,8 +570,15 @@ export function Sidebar() {
         href={href}
         onClick={afterNav}
         data-tour={dataTour}
-        className={`${itemClass} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
+        className={`relative ${itemClass} ${showExpandedNav && sublabel ? "items-start py-2.5" : ""}`}
       >
+        {badgeDot ? (
+          <span
+            className="absolute right-2 top-2 h-2 w-2 shrink-0 rounded-full bg-[var(--flux-accent)] shadow-[0_0_8px_var(--flux-accent)] animate-pulse"
+            title=""
+            aria-hidden
+          />
+        ) : null}
         {!isMinimal ? (
           <span
             className={`absolute left-1.5 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full transition-opacity duration-200 ${
@@ -745,6 +782,7 @@ export function Sidebar() {
               icon={<IconSpecScope className="h-4 w-4 shrink-0" />}
               label={t("specScopePlanner")}
               sublabel={t("specScopePlannerProduct")}
+              badgeDot={specPlanActiveCount > 0}
             />
           ) : null}
 

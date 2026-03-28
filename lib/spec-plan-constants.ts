@@ -17,7 +17,7 @@ export const SPEC_PLAN_CHUNK_OVERLAP = 100;
 export const SPEC_PLAN_MAX_CHUNKS = 200;
 
 /** Top-K por query de recuperação semântica. */
-export const SPEC_PLAN_RETRIEVAL_TOP_K = 12;
+export const SPEC_PLAN_RETRIEVAL_TOP_K = 10;
 
 /** Orçamento máximo de caracteres do contexto montado para o outline (inclui cabeçalhos). */
 export const SPEC_PLAN_RETRIEVAL_CONTEXT_MAX_CHARS = 36_000;
