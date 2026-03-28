@@ -113,6 +113,15 @@ export async function extractSpecDocument(input: {
   if (ext === "pdf") {
     await ensurePdfJsNodeGlobals();
     const { PDFParse } = await import("pdf-parse");
+    const workerAbs = path.join(
+      process.cwd(),
+      "node_modules",
+      "pdfjs-dist",
+      "legacy",
+      "build",
+      "pdf.worker.mjs"
+    );
+    PDFParse.setWorker(pathToFileURL(workerAbs).href);
     const data = new Uint8Array(input.buffer);
     let loadOpts: ConstructorParameters<typeof PDFParse>[0];
     try {
