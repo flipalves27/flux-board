@@ -744,7 +744,27 @@
   },
   "appShell": {
     "routineReminder": "Routine reminder",
-    "dueLabel": "Due:"
+    "dueLabel": "Due:",
+    "workspaceFluxy": {
+      "fabAria": "Open Fluxy help panel",
+      "fabLabel": "Fluxy",
+      "fabHint": "Tips and shortcuts",
+      "restore": "Fluxy",
+      "restoreAria": "Show Fluxy shortcut",
+      "hideDock": "Hide shortcut",
+      "panelTitle": "Fluxy",
+      "panelSubtitle": "Quick workspace help",
+      "intro": "I’m the Flux-Board assistant. Here you’ll find shortcuts to key areas and a quick overview of what I can help with.",
+      "boardHint": "On an open board, I can discuss cards, metrics, and automations — use the Fluxy shortcut on the board for the full AI copilot.",
+      "linksHeading": "Go to",
+      "linksNavAria": "Workspace shortcuts",
+      "linkBoards": "Boards",
+      "linkReports": "Reports",
+      "linkDocs": "Docs",
+      "linkOrgSettings": "Organization",
+      "close": "Close",
+      "closeBackdrop": "Close panel"
+    }
   },
   "toasts": {
     "kinds": {

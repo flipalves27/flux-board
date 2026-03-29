@@ -15,6 +15,7 @@ import CeremonyRetroModal from "@/components/kanban/ceremony-retro-modal";
 import { useRoutineTasks } from "@/context/routine-tasks-context";
 import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
+import { WorkspaceFluxyDock } from "@/components/fluxy/workspace-fluxy-dock";
 
 function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,6 +42,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         <TrialBillingBanner />
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
       </div>
+      <WorkspaceFluxyDock />
       <CommandPalette />
       <GlobalHotkeys />
       <CeremonyRetroModal getHeaders={getHeaders} />
@@ -98,7 +100,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [alerts, showSidebar]);
 
   if (!showSidebar) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <WorkspaceFluxyDock />
+      </>
+    );
   }
 
   return (

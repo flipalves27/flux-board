@@ -744,7 +744,27 @@
   },
   "appShell": {
     "routineReminder": "Lembrete de rotina",
-    "dueLabel": "Prazo:"
+    "dueLabel": "Prazo:",
+    "workspaceFluxy": {
+      "fabAria": "Abrir painel de ajuda da Fluxy",
+      "fabLabel": "Fluxy",
+      "fabHint": "Dicas e atalhos",
+      "restore": "Fluxy",
+      "restoreAria": "Mostrar atalho da Fluxy",
+      "hideDock": "Ocultar atalho",
+      "panelTitle": "Fluxy",
+      "panelSubtitle": "Ajuda rápida no workspace",
+      "intro": "Sou a assistente do Flux-Board. Aqui você encontra atalhos para as áreas principais e um resumo do que posso fazer por você.",
+      "boardHint": "Em um board aberto, falo sobre os cards, métricas e automações do quadro — use o atalho da Fluxy no canto do quadro para o chat completo com IA.",
+      "linksHeading": "Ir para",
+      "linksNavAria": "Atalhos do workspace",
+      "linkBoards": "Boards",
+      "linkReports": "Relatórios",
+      "linkDocs": "Documentos",
+      "linkOrgSettings": "Organização",
+      "close": "Fechar",
+      "closeBackdrop": "Fechar painel"
+    }
   },
   "toasts": {
     "kinds": {
