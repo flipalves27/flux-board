@@ -16,6 +16,7 @@
     "invites": "Convites",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
+    "platformCommercial": "Planos (plataforma)",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
     "programIncrements": "Incrementos",
@@ -50,6 +51,7 @@
       "invites": "Convites pendentes para novos membros.",
       "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
       "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
+      "platformCommercial": "Preços de vitrine, planos no catálogo e sincronização Stripe.",
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
       "programIncrements": "Planejamento de incrementos e PIs entre boards.",
       "docs": "Documentos, RAG e geração com IA.",
@@ -239,7 +241,8 @@
       "billing": "Cobrança",
       "invites": "Convites",
       "rateLimit": "Rate limit (abuso)",
-      "tracer": "Tracer (diagnóstico)"
+      "tracer": "Tracer (diagnóstico)",
+      "platformCommercial": "Planos da plataforma (admin)"
     }
   },
   "diagnostics": {
@@ -1071,6 +1074,7 @@
       "forever": "para sempre",
       "customPrice": "Sob consulta",
       "customSub": "preço personalizado",
+      "tierUnavailable": "Indisponível no catálogo no momento.",
       "plans": {
         "free": {
           "name": "Free",

@@ -850,6 +850,12 @@ export function Sidebar() {
                 label={t("rateLimitAbuse")}
               />
               <NavLink
+                path="/admin/platform-commercial"
+                hint={t("hints.platformCommercial")}
+                icon={<IconBilling className="h-4 w-4 shrink-0" />}
+                label={t("platformCommercial")}
+              />
+              <NavLink
                 path="/admin/tracer"
                 hint={t("hints.tracer")}
                 icon={<IconTracer className="h-4 w-4 shrink-0" />}

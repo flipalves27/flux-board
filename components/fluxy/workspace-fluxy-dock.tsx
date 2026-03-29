@@ -54,7 +54,7 @@ function parseEventStreamFrame(frame: string): { event: string; data: unknown } 
   }
 }
 
-type Tier = "free" | "pro" | "business";
+type Tier = "free" | "pro" | "business" | "enterprise";
 
 type ChatRow = {
   id: string;

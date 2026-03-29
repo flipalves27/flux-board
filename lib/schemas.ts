@@ -917,6 +917,38 @@ export const UserThemePreferenceSchema = z.object({
   themePreference: z.enum(["light", "dark", "system"]),
 });
 
+/** Configuração global de planos (admin da plataforma). Valores em BRL inteiros (vitrine / base Stripe). */
+export const PlatformCommercialSettingsPatchSchema = z.object({
+  proEnabled: z.boolean(),
+  businessEnabled: z.boolean(),
+  proSeatMonth: z.number().finite().min(0).max(1_000_000),
+  proSeatYear: z.number().finite().min(0).max(1_000_000),
+  businessSeatMonth: z.number().finite().min(0).max(1_000_000),
+  businessSeatYear: z.number().finite().min(0).max(1_000_000),
+  /** Se true, cria novos Prices no Stripe quando valores mudam ou ainda não há ID persistido. */
+  publishStripe: z.boolean().optional().default(false),
+});
+
+export type PlatformCommercialSettingsPatch = z.infer<typeof PlatformCommercialSettingsPatchSchema>;
+
+/** Conta do admin da plataforma (seed ou platform_admin). */
+export const PlatformAdminProfilePatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    email: z.string().trim().email("E-mail invalido.").max(320).optional(),
+    currentPassword: z.string().min(1).max(200).optional(),
+    newPassword: z.string().min(8).max(200).optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.newPassword !== undefined && d.newPassword.length > 0) {
+        return Boolean(d.currentPassword && d.currentPassword.length >= 1);
+      }
+      return true;
+    },
+    { message: "Informe a senha atual para definir uma nova senha.", path: ["currentPassword"] }
+  );
+
 export const ProductTourPatchSchema = z.object({
   completed: z.boolean(),
 });

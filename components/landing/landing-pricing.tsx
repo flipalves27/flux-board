@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
+import { formatBrl } from "@/lib/billing-pricing";
+import type { CommercialDisplayPricing } from "@/lib/platform-commercial-settings";
 import type { PricingPlanViewModel } from "@/lib/landing-models";
 import { FeatureRow } from "./landing-primitives";
 
@@ -11,18 +12,24 @@ type LandingPricingProps = {
   user: unknown;
   billingYearly: boolean;
   onBillingYearlyChange: (yearly: boolean) => void;
+  pricing: CommercialDisplayPricing;
+  proEnabled: boolean;
+  businessEnabled: boolean;
 };
 
 function buildPlans(
   t: ReturnType<typeof useTranslations<"landing">>,
   billingYearly: boolean,
-  localeRoot: string
+  localeRoot: string,
+  pricing: CommercialDisplayPricing,
+  proEnabled: boolean,
+  businessEnabled: boolean
 ): PricingPlanViewModel[] {
-  const proPrice = billingYearly ? PRICING_BRL.proSeatYear : PRICING_BRL.proSeatMonth;
-  const bizPrice = billingYearly ? PRICING_BRL.businessSeatYear : PRICING_BRL.businessSeatMonth;
+  const proPrice = billingYearly ? pricing.proSeatYear : pricing.proSeatMonth;
+  const bizPrice = billingYearly ? pricing.businessSeatYear : pricing.businessSeatMonth;
   const priceSuffix = billingYearly ? t("pricing.perSeatYearBilled") : t("pricing.perSeatMonth");
 
-  return [
+  const all: PricingPlanViewModel[] = [
     {
       id: "free",
       name: t("pricing.plans.free.name"),
@@ -115,11 +122,24 @@ function buildPlans(
       inherit: t("pricing.allBusiness"),
     },
   ];
+  return all.filter((p) => {
+    if (p.id === "pro") return proEnabled;
+    if (p.id === "business") return businessEnabled;
+    return true;
+  });
 }
 
-export function LandingPricing({ localeRoot, user, billingYearly, onBillingYearlyChange }: LandingPricingProps) {
+export function LandingPricing({
+  localeRoot,
+  user,
+  billingYearly,
+  onBillingYearlyChange,
+  pricing,
+  proEnabled,
+  businessEnabled,
+}: LandingPricingProps) {
   const t = useTranslations("landing");
-  const pricingPlans = buildPlans(t, billingYearly, localeRoot);
+  const pricingPlans = buildPlans(t, billingYearly, localeRoot, pricing, proEnabled, businessEnabled);
 
   return (
     <section id="pricing" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-pricing-heading">

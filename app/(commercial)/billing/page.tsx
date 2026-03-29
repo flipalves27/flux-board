@@ -11,6 +11,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
 import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
+import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
 import { isPlatformAdminSession, sessionCanManageOrgBilling } from "@/lib/rbac";
 
@@ -61,6 +62,11 @@ export default function BillingPage() {
   const [cancelReason, setCancelReason] = useState("too_expensive");
   const [cancelDetail, setCancelDetail] = useState("");
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [commercialCatalog, setCommercialCatalog] = useState<PublicCommercialCatalog>(() => ({
+    pricing: { ...PRICING_BRL },
+    proEnabled: true,
+    businessEnabled: true,
+  }));
   /** false quando já existe assinatura Stripe ativa — trocar plano via Portal, não novo checkout. */
   const [allowStripeCheckout, setAllowStripeCheckout] = useState(true);
   const cancelDialogRef = useRef<HTMLDivElement | null>(null);
@@ -118,6 +124,19 @@ export default function BillingPage() {
             ? (org as { allowStripeCheckout: boolean }).allowStripeCheckout
             : true
         );
+
+        try {
+          const cat = await apiGet<PublicCommercialCatalog>("/api/platform/commercial-catalog", getHeaders());
+          if (cat?.pricing) {
+            setCommercialCatalog({
+              pricing: cat.pricing,
+              proEnabled: cat.proEnabled !== false,
+              businessEnabled: cat.businessEnabled !== false,
+            });
+          }
+        } catch {
+          /* mantém defaults */
+        }
 
         const usersData = await apiGet<{ users: unknown[] }>("/api/users", getHeaders());
         const count = Array.isArray(usersData?.users) ? usersData.users.length : 1;
@@ -496,17 +515,18 @@ export default function BillingPage() {
                   </div>
                 </div>
 
+                {commercialCatalog.proEnabled ? (
                 <div
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "pro" ? "border-[var(--flux-primary-alpha-55)] bg-[var(--flux-primary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pro</p>
                   <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">
                     {billingInterval === "year"
-                      ? `${formatBrl(PRICING_BRL.proSeatYear)}/seat/mês`
-                      : `${formatBrl(PRICING_BRL.proSeatMonth)}/seat/mês`}
+                      ? `${formatBrl(commercialCatalog.pricing.proSeatYear)}/seat/mês`
+                      : `${formatBrl(commercialCatalog.pricing.proSeatMonth)}/seat/mês`}
                   </p>
                   {billingInterval === "year" ? (
-                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(PRICING_BRL.proSeatYear)}/mês).</p>
+                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(commercialCatalog.pricing.proSeatYear)}/mês).</p>
                   ) : null}
                   <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
                     {PRO_FEATURE_LABELS_PT.slice(0, 5).map((x) => (
@@ -545,18 +565,20 @@ export default function BillingPage() {
                     )}
                   </div>
                 </div>
+                ) : null}
 
+                {commercialCatalog.businessEnabled ? (
                 <div
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "business" ? "border-[var(--flux-secondary-alpha-55)] bg-[var(--flux-secondary-alpha-10)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Business</p>
                   <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">
                     {billingInterval === "year"
-                      ? `${formatBrl(PRICING_BRL.businessSeatYear)}/seat/mês`
-                      : `${formatBrl(PRICING_BRL.businessSeatMonth)}/seat/mês`}
+                      ? `${formatBrl(commercialCatalog.pricing.businessSeatYear)}/seat/mês`
+                      : `${formatBrl(commercialCatalog.pricing.businessSeatMonth)}/seat/mês`}
                   </p>
                   {billingInterval === "year" ? (
-                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(PRICING_BRL.businessSeatYear)}/mês).</p>
+                    <p className="text-[11px] text-[var(--flux-text-muted)]">Cobrança anual (equivalente a {formatBrl(commercialCatalog.pricing.businessSeatYear)}/mês).</p>
                   ) : null}
                   <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
                     <li>Tudo do Pro</li>
@@ -594,6 +616,7 @@ export default function BillingPage() {
                     )}
                   </div>
                 </div>
+                ) : null}
 
                 <div
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "enterprise" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}

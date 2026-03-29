@@ -380,6 +380,11 @@ export function CommandPalette() {
     if (isPlatformAdminSession(user)) {
       nav.push(
         { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" },
+        {
+          path: "/admin/platform-commercial",
+          title: t("nav.platformCommercial"),
+          kw: "platform commercial plans stripe pricing catalog admin",
+        },
         { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" }
       );
     }

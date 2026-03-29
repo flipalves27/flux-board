@@ -4,6 +4,7 @@ import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/ap
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { shouldAllowStripeCheckoutForOrg } from "@/lib/admin-plan-override";
 import { createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
+import { getPlatformCommercialDocUncached, catalogFlagsFromDoc } from "@/lib/platform-commercial-settings";
 
 type BillingPlan = "pro" | "business";
 
@@ -36,6 +37,14 @@ export async function POST(request: NextRequest) {
   const intervalRaw = body?.interval as unknown;
 
   const plan: BillingPlan = planRaw === "pro" || planRaw === "business" ? planRaw : "pro";
+  const flags = catalogFlagsFromDoc(await getPlatformCommercialDocUncached());
+  if (plan === "pro" && !flags.proEnabled) {
+    return NextResponse.json({ error: "O plano Pro não está disponível no catálogo." }, { status: 400 });
+  }
+  if (plan === "business" && !flags.businessEnabled) {
+    return NextResponse.json({ error: "O plano Business não está disponível no catálogo." }, { status: 400 });
+  }
+
   const interval: CheckoutBillingInterval =
     intervalRaw === "year" || intervalRaw === "annual" ? "year" : "month";
 

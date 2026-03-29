@@ -4,8 +4,8 @@
  * - Webhook (`handleStripeWebhook`): apenas `customer.subscription.created|updated|deleted`.
  *   Outros eventos (ex. `invoice.payment_failed`) retornam 200 com `ignored_event_type` — o estado do produto
  *   segue o objeto subscription em `updated` (ex. status `past_due` não é `active`/`trialing`, então tratamos como inativo).
- * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (preço mapeado em `STRIPE_PRICE_ID_*`
- *   ou `metadata.plan`). Add-ons exigiriam iterar itens ou metadata adicional.
+ * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (`metadata.plan`, IDs ativos/legados em
+ *   `lib/platform-commercial-settings.ts`, fallback `STRIPE_PRICE_ID_*` no env). Add-ons exigiriam iterar itens ou metadata adicional.
  * - Enterprise não passa por checkout; plano `enterprise` na org é operacional/manual.
  */
 import Stripe from "stripe";
@@ -28,6 +28,7 @@ import {
   getProMaxUsers,
   PAUSE_BILLING_DAYS,
 } from "./billing-limits";
+import { getEffectiveStripePriceIds, resolveBillingPlanFromStripeSubscription } from "./platform-commercial-settings";
 
 /** Planos cobrados via Stripe (Enterprise é contrato manual / fora do checkout). */
 type BillingPlan = "pro" | "business";
@@ -49,16 +50,6 @@ function appBaseUrl(): string {
   return withProto.replace(/\/+$/, "");
 }
 
-function getStripePriceIds() {
-  const pro = process.env.STRIPE_PRICE_ID_PRO;
-  const business = process.env.STRIPE_PRICE_ID_BUSINESS;
-  if (!pro) throw new Error("Missing env var: STRIPE_PRICE_ID_PRO");
-  if (!business) throw new Error("Missing env var: STRIPE_PRICE_ID_BUSINESS");
-  const proAnnual = process.env.STRIPE_PRICE_ID_PRO_ANNUAL?.trim() || "";
-  const businessAnnual = process.env.STRIPE_PRICE_ID_BUSINESS_ANNUAL?.trim() || "";
-  return { pro, business, proAnnual, businessAnnual };
-}
-
 let stripeSingleton: Stripe | null = null;
 function stripe(): Stripe {
   if (stripeSingleton) return stripeSingleton;
@@ -75,7 +66,7 @@ export async function createCheckoutSession(input: {
   /** Mensal (Stripe default) ou anual (`STRIPE_PRICE_ID_*_ANNUAL`). */
   interval?: CheckoutBillingInterval;
 }): Promise<{ url: string; sessionId: string }> {
-  const ids = getStripePriceIds();
+  const ids = await getEffectiveStripePriceIds();
 
   const org = await getOrganizationById(input.orgId);
   if (!org) throw new Error("Organization não encontrada");
@@ -203,17 +194,6 @@ function isoFromUnixSeconds(s: number | null | undefined): string | undefined {
   return new Date(s * 1000).toISOString();
 }
 
-function resolveBillingTierFromSubscription(subscription: Stripe.Subscription): BillingPlan | null {
-  const metaPlan = subscription.metadata?.plan;
-  if (metaPlan === "pro" || metaPlan === "business") return metaPlan;
-
-  const ids = getStripePriceIds();
-  const priceId = subscription.items.data?.[0]?.price?.id;
-  if (!priceId) return null;
-  if (priceId === ids.pro || (ids.proAnnual && priceId === ids.proAnnual)) return "pro";
-  if (priceId === ids.business || (ids.businessAnnual && priceId === ids.businessAnnual)) return "business";
-  return null;
-}
 
 async function applySubscriptionStateToOrganization(params: {
   orgId: string;
@@ -289,7 +269,7 @@ export async function handleStripeWebhook(
   if (!orgId) return { handled: false, status: 400, reason: "missing_org_id_metadata" };
 
   if (type === "customer.subscription.deleted") {
-    const tier = resolveBillingTierFromSubscription(subscription) ?? "pro";
+    const tier = (await resolveBillingPlanFromStripeSubscription(subscription)) ?? "pro";
     await applySubscriptionStateToOrganization({
       orgId,
       subscription,
@@ -300,7 +280,7 @@ export async function handleStripeWebhook(
   }
 
   const isActive = subscription.status === "active" || subscription.status === "trialing";
-  const tier = resolveBillingTierFromSubscription(subscription);
+  const tier = await resolveBillingPlanFromStripeSubscription(subscription);
   if (!tier) return { handled: false, status: 400, reason: "unmapped_tier" };
 
   await applySubscriptionStateToOrganization({

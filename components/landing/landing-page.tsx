@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
+import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import type { LandingLocale } from "@/lib/landing-models";
 import { LandingFaqSection } from "./landing-faq-section";
 import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
@@ -23,7 +24,12 @@ import { LandingSpotlight } from "./landing-spotlight";
 import { LandingTrust } from "./landing-trust";
 import { LandingUseCases } from "./landing-use-cases";
 
-export default function LandingPage() {
+type LandingPageProps = {
+  /** Catálogo SSR (revalidado quando o admin da plataforma salva). */
+  initialCatalog?: PublicCommercialCatalog | null;
+};
+
+export default function LandingPage({ initialCatalog }: LandingPageProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const localeSegment = pathname.split("/")[1];
@@ -36,11 +42,18 @@ export default function LandingPage() {
 
   const [billingYearly, setBillingYearly] = useState(false);
   const priceSuffix = billingYearly ? t("pricing.perSeatYearBilled") : t("pricing.perSeatMonth");
-  const proPrice = billingYearly ? PRICING_BRL.proSeatYear : PRICING_BRL.proSeatMonth;
-  const bizPrice = billingYearly ? PRICING_BRL.businessSeatYear : PRICING_BRL.businessSeatMonth;
+  const pricing = initialCatalog?.pricing ?? PRICING_BRL;
+  const proEnabled = initialCatalog?.proEnabled !== false;
+  const businessEnabled = initialCatalog?.businessEnabled !== false;
+  const proPrice = billingYearly ? pricing.proSeatYear : pricing.proSeatMonth;
+  const bizPrice = billingYearly ? pricing.businessSeatYear : pricing.businessSeatMonth;
   const chargeLabelByTier = {
-    pro: `${t("pricing.plans.pro.name")} · ${formatBrl(proPrice)} ${priceSuffix}`,
-    business: `${t("pricing.plans.business.name")} · ${formatBrl(bizPrice)} ${priceSuffix}`,
+    pro: proEnabled
+      ? `${t("pricing.plans.pro.name")} · ${formatBrl(proPrice)} ${priceSuffix}`
+      : `${t("pricing.plans.pro.name")} · ${t("pricing.tierUnavailable")}`,
+    business: businessEnabled
+      ? `${t("pricing.plans.business.name")} · ${formatBrl(bizPrice)} ${priceSuffix}`
+      : `${t("pricing.plans.business.name")} · ${t("pricing.tierUnavailable")}`,
     enterprise: `${t("pricing.plans.enterprise.name")} · ${t("pricing.customPrice")}`,
   };
 
@@ -82,6 +95,9 @@ export default function LandingPage() {
               user={user}
               billingYearly={billingYearly}
               onBillingYearlyChange={setBillingYearly}
+              pricing={pricing}
+              proEnabled={proEnabled}
+              businessEnabled={businessEnabled}
             />
             <LandingSpotlight />
             <LandingUseCases />

@@ -20,7 +20,7 @@ export async function GET(
     return NextResponse.json({ error: "ID do usuário é obrigatório" }, { status: 400 });
   }
 
-  if (id === "admin") {
+  if (id === "admin" && payload.id !== "admin") {
     return NextResponse.json(
       { error: "O usuário Admin não pode ser alterado ou excluído" },
       { status: 400 }
@@ -69,7 +69,7 @@ export async function PUT(
     return NextResponse.json({ error: "ID do usuário é obrigatório" }, { status: 400 });
   }
 
-  if (id === "admin") {
+  if (id === "admin" && payload.id !== "admin") {
     return NextResponse.json(
       { error: "O usuário Admin não pode ser alterado ou excluído" },
       { status: 400 }
@@ -107,11 +107,13 @@ export async function PUT(
     if (clean.password !== undefined) {
       updates.passwordHash = hashPassword(clean.password);
     }
-    if (clean.isAdmin !== undefined) {
-      updates.isAdmin = clean.isAdmin;
-    }
-    if (clean.isExecutive !== undefined) {
-      updates.isExecutive = clean.isExecutive;
+    if (id !== "admin") {
+      if (clean.isAdmin !== undefined) {
+        updates.isAdmin = clean.isAdmin;
+      }
+      if (clean.isExecutive !== undefined) {
+        updates.isExecutive = clean.isExecutive;
+      }
     }
 
     const user = await updateUser(id, targetOrgId, updates as Parameters<typeof updateUser>[2]);

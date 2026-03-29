@@ -16,6 +16,7 @@
     "invites": "Invites",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
+    "platformCommercial": "Plans (platform)",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
     "programIncrements": "Increments",
@@ -50,6 +51,7 @@
       "invites": "Pending invites for new members.",
       "rateLimitAbuse": "API rate-limit blocks (abuse).",
       "tracer": "Client-side error buffer (Flux diagnostics) for admins.",
+      "platformCommercial": "Display pricing, catalog availability, and Stripe sync.",
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
       "programIncrements": "Increment planning and PIs across boards.",
       "docs": "Documents, RAG and AI generation.",
@@ -239,7 +241,8 @@
       "billing": "Billing",
       "invites": "Invites",
       "rateLimit": "Rate limit (abuse)",
-      "tracer": "Tracer (diagnostics)"
+      "tracer": "Tracer (diagnostics)",
+      "platformCommercial": "Platform plans (admin)"
     }
   },
   "diagnostics": {
@@ -1071,6 +1074,7 @@
       "forever": "forever",
       "customPrice": "Custom pricing",
       "customSub": "contact sales",
+      "tierUnavailable": "Not available in the catalog right now.",
       "plans": {
         "free": {
           "name": "Free",

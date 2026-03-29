@@ -9,6 +9,7 @@ import { apiPut } from "@/lib/api-client";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
 import { DOWNGRADE_GRACE_DAYS } from "@/lib/billing-limits";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
+import { shouldHideOrgBillingNudges } from "@/lib/plan-ui-context";
 
 function msUntil(iso: string | undefined | null): number | null {
   if (!iso) return null;
@@ -59,6 +60,8 @@ export function TrialBillingBanner() {
   }, [user, getHeaders, ctx]);
 
   if (!user || !org) return null;
+
+  if (shouldHideOrgBillingNudges(user)) return null;
 
   const canManageBilling = sessionCanManageOrgBilling(user);
 
