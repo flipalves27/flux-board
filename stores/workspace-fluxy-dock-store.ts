@@ -25,10 +25,15 @@ function writeLs(visible: boolean) {
   }
 }
 
+export type WorkspaceFluxySprintContext = { boardId: string; sprintId: string };
+
 type WorkspaceFluxyDockState = {
   dockVisible: boolean;
   hydrated: boolean;
+  /** Quando definido, o POST do fluxy-chat envia boardId/sprintId para contexto da sprint. */
+  sprintContext: WorkspaceFluxySprintContext | null;
   setDockVisible: (visible: boolean) => void;
+  setSprintContext: (ctx: WorkspaceFluxySprintContext | null) => void;
   hydrateFromStorage: () => void;
 };
 
@@ -39,6 +44,7 @@ export const useWorkspaceFluxyDockStore = create<WorkspaceFluxyDockState>()(
     (set) => ({
       dockVisible: true,
       hydrated: false,
+      sprintContext: null,
       hydrateFromStorage: () => {
         const fromLs = readLs();
         set({
@@ -50,6 +56,7 @@ export const useWorkspaceFluxyDockStore = create<WorkspaceFluxyDockState>()(
         set({ dockVisible });
         writeLs(dockVisible);
       },
+      setSprintContext: (sprintContext) => set({ sprintContext }),
     }),
     { name: "WorkspaceFluxyDock", enabled: devEnabled }
   )

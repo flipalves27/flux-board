@@ -50,7 +50,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const parsed = SprintCreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
 
-  const { name, goal, startDate, endDate, cardIds } = parsed.data;
+  const {
+    name,
+    goal,
+    startDate,
+    endDate,
+    cardIds,
+    cadenceType,
+    reviewCadenceDays,
+    wipPolicyNote,
+    plannedCapacity,
+    commitmentNote,
+    definitionOfDoneItemIds,
+    programIncrementId,
+    sprintTags,
+    customFields,
+  } = parsed.data;
   const sprint = await createSprint({
     orgId: payload.orgId,
     boardId,
@@ -59,6 +74,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     startDate: startDate ?? null,
     endDate: endDate ?? null,
     cardIds: cardIds ?? [],
+    cadenceType,
+    reviewCadenceDays,
+    wipPolicyNote,
+    plannedCapacity,
+    commitmentNote,
+    definitionOfDoneItemIds,
+    programIncrementId,
+    sprintTags,
+    customFields,
   });
 
   return NextResponse.json({ sprint }, { status: 201 });

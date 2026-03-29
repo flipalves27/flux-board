@@ -74,6 +74,7 @@ export function WorkspaceFluxyDock() {
   const hydrateFromStorage = useWorkspaceFluxyDockStore((s) => s.hydrateFromStorage);
   const dockVisible = useWorkspaceFluxyDockStore((s) => s.dockVisible);
   const hydrated = useWorkspaceFluxyDockStore((s) => s.hydrated);
+  const sprintContext = useWorkspaceFluxyDockStore((s) => s.sprintContext);
   const setDockVisible = useWorkspaceFluxyDockStore((s) => s.setDockVisible);
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -182,7 +183,10 @@ export function WorkspaceFluxyDock() {
       const res = await fetch("/api/workspace/fluxy-chat", {
         method: "POST",
         headers: { ...getHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          ...(sprintContext ? { boardId: sprintContext.boardId, sprintId: sprintContext.sprintId } : {}),
+        }),
         signal: controller.signal,
       });
 
@@ -258,7 +262,7 @@ export function WorkspaceFluxyDock() {
       abortRef.current = null;
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [canSend, draft, getHeaders, pushToast, t]);
+  }, [canSend, draft, getHeaders, pushToast, sprintContext, t]);
 
   if (!show || !hydrated) return null;
 
@@ -372,7 +376,9 @@ export function WorkspaceFluxyDock() {
               ) : (
                 <>
                   {freeBanner}
-                  <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">{t("emptyChatLead")}</p>
+                  <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">
+                    {sprintContext ? t("emptyChatLeadSprint") : t("emptyChatLead")}
+                  </p>
 
                   <div className="mt-4 space-y-2">
                     {messages.map((m) => (
@@ -444,7 +450,7 @@ export function WorkspaceFluxyDock() {
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder={t("chatPlaceholder")}
+                  placeholder={sprintContext ? t("chatPlaceholderSprint") : t("chatPlaceholder")}
                   rows={2}
                   disabled={generating || (tier === "free" && freeDemoRemaining === 0)}
                   className="min-h-[44px] flex-1 resize-none rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-mid)] px-3 py-2 text-xs text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)] disabled:opacity-60"

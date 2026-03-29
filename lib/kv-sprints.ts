@@ -7,13 +7,27 @@ import type { BurndownSnapshot, SprintData } from "./schemas";
 
 export type { SprintData };
 
-/** Legacy Mongo/KV docs may omit v6 sprint fields. */
+/** Legacy Mongo/KV docs may omit v6/v13 sprint fields. */
 export function normalizeSprintData(raw: SprintData): SprintData {
+  const cf =
+    raw.customFields && typeof raw.customFields === "object" && !Array.isArray(raw.customFields)
+      ? (raw.customFields as Record<string, string>)
+      : {};
   return {
     ...raw,
     burndownSnapshots: raw.burndownSnapshots ?? [],
     addedMidSprint: raw.addedMidSprint ?? [],
     removedCardIds: raw.removedCardIds ?? [],
+    cadenceType: raw.cadenceType ?? "timebox",
+    reviewCadenceDays: raw.reviewCadenceDays ?? null,
+    wipPolicyNote: raw.wipPolicyNote ?? "",
+    plannedCapacity: raw.plannedCapacity ?? null,
+    commitmentNote: raw.commitmentNote ?? "",
+    definitionOfDoneItemIds: raw.definitionOfDoneItemIds ?? [],
+    sprintGoalHistory: raw.sprintGoalHistory ?? [],
+    programIncrementId: raw.programIncrementId ?? null,
+    sprintTags: raw.sprintTags ?? [],
+    customFields: cf,
   };
 }
 
@@ -29,6 +43,17 @@ function kvIndexSprintsByBoard(orgId: string, boardId: string): string {
 
 function mkId(): string {
   return `spr_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function sanitizeCustomFields(raw: Record<string, string> | undefined): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const key = sanitizeText(k).trim().slice(0, 60);
+    if (!key) continue;
+    out[key] = sanitizeText(String(v)).trim().slice(0, 500);
+  }
+  return out;
 }
 
 let sprintsIndexEnsured = false;
@@ -89,15 +114,25 @@ export async function createSprint(params: {
   startDate?: string | null;
   endDate?: string | null;
   cardIds?: string[];
+  cadenceType?: SprintData["cadenceType"];
+  reviewCadenceDays?: number | null;
+  wipPolicyNote?: string;
+  plannedCapacity?: number | null;
+  commitmentNote?: string;
+  definitionOfDoneItemIds?: string[];
+  programIncrementId?: string | null;
+  sprintTags?: string[];
+  customFields?: Record<string, string>;
 }): Promise<SprintData> {
   const now = new Date().toISOString();
   const id = mkId();
+  const goalTrim = sanitizeText(params.goal ?? "").trim().slice(0, 1000);
   const sprint: SprintData = {
     id,
     orgId: params.orgId,
     boardId: params.boardId,
     name: sanitizeText(params.name).trim().slice(0, 200),
-    goal: sanitizeText(params.goal ?? "").trim().slice(0, 1000),
+    goal: goalTrim,
     status: "planning",
     startDate: params.startDate ?? null,
     endDate: params.endDate ?? null,
@@ -108,6 +143,16 @@ export async function createSprint(params: {
     burndownSnapshots: [],
     addedMidSprint: [],
     removedCardIds: [],
+    cadenceType: params.cadenceType ?? "timebox",
+    reviewCadenceDays: params.reviewCadenceDays ?? null,
+    wipPolicyNote: sanitizeText(params.wipPolicyNote ?? "").trim().slice(0, 500),
+    plannedCapacity: params.plannedCapacity ?? null,
+    commitmentNote: sanitizeText(params.commitmentNote ?? "").trim().slice(0, 1000),
+    definitionOfDoneItemIds: params.definitionOfDoneItemIds?.slice(0, 20) ?? [],
+    sprintGoalHistory: goalTrim ? [{ at: now, goal: goalTrim }] : [],
+    programIncrementId: params.programIncrementId?.trim().slice(0, 200) || null,
+    sprintTags: (params.sprintTags ?? []).map((t) => sanitizeText(t).trim().slice(0, 60)).filter(Boolean).slice(0, 20),
+    customFields: sanitizeCustomFields(params.customFields),
     createdAt: now,
     updatedAt: now,
   };
@@ -147,6 +192,16 @@ export async function updateSprint(
       | "burndownSnapshots"
       | "addedMidSprint"
       | "removedCardIds"
+      | "cadenceType"
+      | "reviewCadenceDays"
+      | "wipPolicyNote"
+      | "plannedCapacity"
+      | "commitmentNote"
+      | "definitionOfDoneItemIds"
+      | "sprintGoalHistory"
+      | "programIncrementId"
+      | "sprintTags"
+      | "customFields"
     >
   >
 ): Promise<SprintData | null> {
@@ -167,6 +222,31 @@ export async function updateSprint(
     ...(updates.burndownSnapshots !== undefined ? { burndownSnapshots: updates.burndownSnapshots } : {}),
     ...(updates.addedMidSprint !== undefined ? { addedMidSprint: updates.addedMidSprint } : {}),
     ...(updates.removedCardIds !== undefined ? { removedCardIds: updates.removedCardIds } : {}),
+    ...(updates.cadenceType !== undefined ? { cadenceType: updates.cadenceType } : {}),
+    ...(updates.reviewCadenceDays !== undefined ? { reviewCadenceDays: updates.reviewCadenceDays } : {}),
+    ...(updates.wipPolicyNote !== undefined
+      ? { wipPolicyNote: sanitizeText(updates.wipPolicyNote).trim().slice(0, 500) }
+      : {}),
+    ...(updates.plannedCapacity !== undefined ? { plannedCapacity: updates.plannedCapacity } : {}),
+    ...(updates.commitmentNote !== undefined
+      ? { commitmentNote: sanitizeText(updates.commitmentNote).trim().slice(0, 1000) }
+      : {}),
+    ...(updates.definitionOfDoneItemIds !== undefined
+      ? { definitionOfDoneItemIds: updates.definitionOfDoneItemIds.slice(0, 20) }
+      : {}),
+    ...(updates.sprintGoalHistory !== undefined ? { sprintGoalHistory: updates.sprintGoalHistory.slice(0, 30) } : {}),
+    ...(updates.programIncrementId !== undefined
+      ? { programIncrementId: updates.programIncrementId ? updates.programIncrementId.trim().slice(0, 200) : null }
+      : {}),
+    ...(updates.sprintTags !== undefined
+      ? {
+          sprintTags: updates.sprintTags
+            .map((t) => sanitizeText(t).trim().slice(0, 60))
+            .filter(Boolean)
+            .slice(0, 20),
+        }
+      : {}),
+    ...(updates.customFields !== undefined ? { customFields: sanitizeCustomFields(updates.customFields) } : {}),
     updatedAt: new Date().toISOString(),
   };
 

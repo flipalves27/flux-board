@@ -999,6 +999,14 @@ export const BurndownSnapshotSchema = z.object({
 
 export type BurndownSnapshot = z.infer<typeof BurndownSnapshotSchema>;
 
+export const SprintCadenceTypeSchema = z.enum(["timebox", "continuous"]);
+export type SprintCadenceType = z.infer<typeof SprintCadenceTypeSchema>;
+
+export const SprintGoalHistoryEntrySchema = z.object({
+  at: z.string().trim().max(80),
+  goal: z.string().trim().max(1000),
+});
+
 export const SprintDataSchema = z.object({
   id: z.string().trim().min(1).max(200),
   orgId: z.string().trim().min(1).max(200),
@@ -1015,6 +1023,19 @@ export const SprintDataSchema = z.object({
   burndownSnapshots: z.array(BurndownSnapshotSchema).max(90).default([]),
   addedMidSprint: z.array(z.string().trim().max(200)).default([]),
   removedCardIds: z.array(z.string().trim().max(200)).default([]),
+  /** Timebox (Scrum) vs fluxo contínuo (Kanban). */
+  cadenceType: SprintCadenceTypeSchema.default("timebox"),
+  /** Dias entre reviews de cadência (Kanban). */
+  reviewCadenceDays: z.number().int().min(1).max(365).nullable().default(null),
+  wipPolicyNote: z.string().trim().max(500).default(""),
+  /** Capacidade planejada (ex.: story points ou itens). */
+  plannedCapacity: z.number().min(0).nullable().default(null),
+  commitmentNote: z.string().trim().max(1000).default(""),
+  definitionOfDoneItemIds: z.array(z.string().trim().max(80)).max(20).default([]),
+  sprintGoalHistory: z.array(SprintGoalHistoryEntrySchema).max(30).default([]),
+  programIncrementId: z.string().trim().max(200).nullable().default(null),
+  sprintTags: z.array(z.string().trim().max(60)).max(20).default([]),
+  customFields: z.record(z.string().trim().max(60), z.string().trim().max(500)).default({}),
   createdAt: z.string().trim().max(80),
   updatedAt: z.string().trim().max(80),
 });
@@ -1027,6 +1048,15 @@ export const SprintCreateSchema = z.object({
   startDate: z.string().trim().max(30).nullable().optional(),
   endDate: z.string().trim().max(30).nullable().optional(),
   cardIds: z.array(z.string().trim().max(200)).optional(),
+  cadenceType: SprintCadenceTypeSchema.optional(),
+  reviewCadenceDays: z.number().int().min(1).max(365).nullable().optional(),
+  wipPolicyNote: z.string().trim().max(500).optional(),
+  plannedCapacity: z.number().min(0).nullable().optional(),
+  commitmentNote: z.string().trim().max(1000).optional(),
+  definitionOfDoneItemIds: z.array(z.string().trim().max(80)).max(20).optional(),
+  programIncrementId: z.string().trim().max(200).nullable().optional(),
+  sprintTags: z.array(z.string().trim().max(60)).max(20).optional(),
+  customFields: z.record(z.string().trim().max(60), z.string().trim().max(500)).optional(),
 });
 
 export const SprintUpdateSchema = z.object({
@@ -1041,6 +1071,16 @@ export const SprintUpdateSchema = z.object({
   burndownSnapshots: z.array(BurndownSnapshotSchema).max(90).optional(),
   addedMidSprint: z.array(z.string().trim().max(200)).optional(),
   removedCardIds: z.array(z.string().trim().max(200)).optional(),
+  cadenceType: SprintCadenceTypeSchema.optional(),
+  reviewCadenceDays: z.number().int().min(1).max(365).nullable().optional(),
+  wipPolicyNote: z.string().trim().max(500).optional(),
+  plannedCapacity: z.number().min(0).nullable().optional(),
+  commitmentNote: z.string().trim().max(1000).optional(),
+  definitionOfDoneItemIds: z.array(z.string().trim().max(80)).max(20).optional(),
+  sprintGoalHistory: z.array(SprintGoalHistoryEntrySchema).max(30).optional(),
+  programIncrementId: z.string().trim().max(200).nullable().optional(),
+  sprintTags: z.array(z.string().trim().max(60)).max(20).optional(),
+  customFields: z.record(z.string().trim().max(60), z.string().trim().max(500)).optional(),
 });
 
 // -----------------------

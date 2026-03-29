@@ -52,7 +52,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const parsed = SprintUpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
 
-  const updated = await updateSprint(payload.orgId, sprintId, parsed.data);
+  const patch = { ...parsed.data };
+  if (patch.goal !== undefined && patch.goal !== sprint.goal) {
+    const entry = { at: new Date().toISOString(), goal: patch.goal };
+    const merged = [...sprint.sprintGoalHistory, entry].slice(-30);
+    patch.sprintGoalHistory = merged;
+  }
+
+  const updated = await updateSprint(payload.orgId, sprintId, patch);
   return NextResponse.json({ sprint: updated });
 }
 
