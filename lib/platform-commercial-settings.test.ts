@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   collectBusinessPriceIdSet,
   collectProPriceIdSet,
+  isValidStripePriceId,
   mergeDisplayPricingFromDoc,
   readEnvStripePriceIds,
   type PlatformCommercialDoc,
@@ -77,6 +78,20 @@ describe("PlatformCommercialSettingsPatchSchema", () => {
   });
 });
 
+describe("isValidStripePriceId", () => {
+  it("rejects BRL amounts and garbage", () => {
+    expect(isValidStripePriceId("19,99")).toBe(false);
+    expect(isValidStripePriceId("19.99")).toBe(false);
+    expect(isValidStripePriceId("")).toBe(false);
+    expect(isValidStripePriceId("price_")).toBe(false);
+  });
+
+  it("accepts Stripe price_ ids", () => {
+    expect(isValidStripePriceId("price_1N2abcdEFG")).toBe(true);
+    expect(isValidStripePriceId("  price_1N2abcdEFG  ")).toBe(true);
+  });
+});
+
 describe("price id sets for webhook resolution", () => {
   const env = { pro: "price_pro_e", business: "price_bus_e", proAnnual: "price_pro_y", businessAnnual: "price_bus_y" };
 
@@ -106,6 +121,13 @@ describe("price id sets for webhook resolution", () => {
     expect(s.has(env.proAnnual)).toBe(true);
     expect(s.has("price_pro_db")).toBe(true);
     expect(s.has("price_old_pro")).toBe(true);
+  });
+
+  it("collectProPriceIdSet ignores invalid doc price strings (ex. BRL pasted as ID)", () => {
+    const doc: PlatformCommercialDoc = { _id: "default", stripePriceIdPro: "19,99" };
+    const s = collectProPriceIdSet(doc, readEnvStripePriceIds());
+    expect(s.has(env.pro)).toBe(true);
+    expect(s.has("19,99")).toBe(false);
   });
 
   it("collectBusinessPriceIdSet merges tiers", () => {

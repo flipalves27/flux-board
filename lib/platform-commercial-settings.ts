@@ -40,6 +40,28 @@ export type PublicCommercialCatalog = {
   businessEnabled: boolean;
 };
 
+/** Stripe Price id no Dashboard/API (ex.: price_1N2abc...). Rejeita valores em reais colados por engano (ex.: 19,99). */
+export function isValidStripePriceId(value: string | null | undefined): boolean {
+  const s = typeof value === "string" ? value.trim() : "";
+  if (!s) return false;
+  return /^price_[A-Za-z0-9_]+$/.test(s);
+}
+
+function pickEffectivePriceId(
+  docField: string | null | undefined,
+  envField: string,
+  fieldLabel: string
+): string {
+  const fromDoc = docField?.trim();
+  if (fromDoc && isValidStripePriceId(fromDoc)) return fromDoc;
+  if (fromDoc && !isValidStripePriceId(fromDoc)) {
+    console.warn(
+      `[platform-commercial] Ignorando Price ID inválido em ${fieldLabel}="${fromDoc}" (esperado price_... da Stripe). Usando variável de ambiente.`
+    );
+  }
+  return envField;
+}
+
 /** Lê Price IDs do env (checkout legado). Retorna null se Pro/Business obrigatórios faltarem. */
 export function readEnvStripePriceIds(): {
   pro: string;
@@ -125,19 +147,34 @@ export async function getEffectiveStripePriceIds(): Promise<{
   if (!env) {
     throw new Error("Stripe não configurado: defina STRIPE_PRICE_ID_PRO e STRIPE_PRICE_ID_BUSINESS.");
   }
-  return {
-    pro: (doc?.stripePriceIdPro && doc.stripePriceIdPro.trim()) || env.pro,
-    business: (doc?.stripePriceIdBusiness && doc.stripePriceIdBusiness.trim()) || env.business,
-    proAnnual: (doc?.stripePriceIdProAnnual && doc.stripePriceIdProAnnual.trim()) || env.proAnnual,
-    businessAnnual: (doc?.stripePriceIdBusinessAnnual && doc.stripePriceIdBusinessAnnual.trim()) || env.businessAnnual,
+  const merged = {
+    pro: pickEffectivePriceId(doc?.stripePriceIdPro, env.pro, "MongoDB stripePriceIdPro"),
+    business: pickEffectivePriceId(doc?.stripePriceIdBusiness, env.business, "MongoDB stripePriceIdBusiness"),
+    proAnnual: pickEffectivePriceId(doc?.stripePriceIdProAnnual, env.proAnnual, "MongoDB stripePriceIdProAnnual"),
+    businessAnnual: pickEffectivePriceId(doc?.stripePriceIdBusinessAnnual, env.businessAnnual, "MongoDB stripePriceIdBusinessAnnual"),
   };
+  if (!isValidStripePriceId(merged.pro) || !isValidStripePriceId(merged.business)) {
+    throw new Error(
+      "STRIPE_PRICE_ID_PRO e STRIPE_PRICE_ID_BUSINESS devem ser IDs da Stripe (começam com price_), não valores em reais. " +
+        "No Stripe Dashboard → Products → copie o Price ID. No Vercel/.env, corrija as variáveis; se houver IDs errados em platform_commercial_settings no MongoDB, remova ou substitua."
+    );
+  }
+  if (merged.proAnnual && !isValidStripePriceId(merged.proAnnual)) {
+    console.warn("[platform-commercial] STRIPE_PRICE_ID_PRO_ANNUAL inválido — usando fluxo sem preço anual Pro.");
+    merged.proAnnual = "";
+  }
+  if (merged.businessAnnual && !isValidStripePriceId(merged.businessAnnual)) {
+    console.warn("[platform-commercial] STRIPE_PRICE_ID_BUSINESS_ANNUAL inválido — usando fluxo sem preço anual Business.");
+    merged.businessAnnual = "";
+  }
+  return merged;
 }
 
 function asSet(ids: (string | null | undefined)[]): Set<string> {
   const s = new Set<string>();
   for (const id of ids) {
     const t = id?.trim();
-    if (t) s.add(t);
+    if (t && isValidStripePriceId(t)) s.add(t);
   }
   return s;
 }
