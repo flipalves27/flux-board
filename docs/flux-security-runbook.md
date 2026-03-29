@@ -54,3 +54,12 @@ npm run pentest:inventory
 ```
 
 O primeiro comando executa auditoria de dependências e varreduras estáticas. O segundo regera o inventário classificado de rotas em `docs/pentest-api-inventory.md`. Relatório amplo: `docs/pentest-execution-report.md`.
+
+## 9. Egresso (webhooks outbound e SSRF em profundidade)
+
+Em **VPC / self-hosted**, reforçar com política de rede na origem do runtime (security groups, firewall de saída, ou proxy HTTP(S) corporativo):
+
+- Negar destinos RFC1918, CGNAT `100.64.0.0/10`, link-local `169.254.0.0/16`, loopback e endereços de metadata conhecidos (alinhado à lógica em [`lib/webhook-url.ts`](../lib/webhook-url.ts)).
+- Documentar se o tráfego de saída passa por proxy e quais variáveis de ambiente aplicam.
+
+**Nota:** WAF em edge protege sobretudo tráfego **entrante**; para este vetor o paralelo operacional é **filtragem de egresso** ou proxy de saída, não substituir um pelo outro. Em ambientes totalmente geridos sem controlo de egresso (ex. serverless por defeito), o pinning em aplicação é o controlo principal.

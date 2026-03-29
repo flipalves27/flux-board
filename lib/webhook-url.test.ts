@@ -4,6 +4,7 @@ import { lookup } from "node:dns/promises";
 import {
   assertWebhookUrlAllowed,
   assertWebhookUrlResolvesSafely,
+  getValidatedWebhookConnectTargets,
   WebhookUrlBlockedError,
 } from "./webhook-url";
 
@@ -71,5 +72,26 @@ describe("assertWebhookUrlResolvesSafely", () => {
     await expect(assertWebhookUrlResolvesSafely("https://fake-public.example/hook")).rejects.toThrow(
       WebhookUrlBlockedError
     );
+  });
+});
+
+describe("getValidatedWebhookConnectTargets", () => {
+  beforeEach(() => {
+    mockedLookup.mockReset();
+  });
+
+  it("devolve IP literal como único destino de ligação", async () => {
+    const t = await getValidatedWebhookConnectTargets("https://203.0.113.55/x");
+    expect(t.connectAddresses).toEqual(["203.0.113.55"]);
+    expect(t.url.hostname).toBe("203.0.113.55");
+  });
+
+  it("ordena IPv4 antes de IPv6 após DNS", async () => {
+    mockedLookup.mockResolvedValueOnce([
+      { address: "2001:db8::1", family: 6 },
+      { address: "198.51.100.2", family: 4 },
+    ]);
+    const t = await getValidatedWebhookConnectTargets("https://multi.example/h");
+    expect(t.connectAddresses).toEqual(["198.51.100.2", "2001:db8::1"]);
   });
 });

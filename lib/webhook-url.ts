@@ -92,39 +92,60 @@ export function assertWebhookUrlAllowed(urlStr: string): void {
   const hostname = u.hostname;
   assertHostnameNotBlocked(hostname);
 
-  const hostForIp = normalizeHostname(hostname);
-  const ipKind = net.isIP(hostForIp);
+  const hostNorm = normalizeHostname(hostname);
+  const rawIp = hostNorm.replace(/^\[|\]$/g, "");
+  const ipKind = net.isIP(rawIp);
+
+  if (u.protocol === "http:" && isLoopbackHostname(hostname)) {
+    return;
+  }
+
   if (ipKind === 4 || ipKind === 6) {
-    if (isNonPublicAddress(hostForIp)) {
+    if (isNonPublicAddress(rawIp)) {
       throw new WebhookUrlBlockedError("A URL do webhook não pode usar endereço IP privado ou reservado.");
     }
   }
 
   if (u.protocol === "https:") return;
-  if (u.protocol === "http:" && (hostname === "localhost" || hostname === "127.0.0.1")) return;
   throw new WebhookUrlBlockedError("A URL do webhook deve usar HTTPS (HTTP permitido apenas para localhost).");
 }
 
 /**
- * Resolve DNS e garante que nenhum endereço A/AAAA é privado/reservado.
- * Chamada obrigatória antes de `fetch` na entrega; também nas rotas de criar/atualizar subscription.
+ * URL validada + endereços para `connect` sem nova resolução DNS do hostname (mitiga DNS rebinding).
+ * IPv4 primeiro, depois IPv6, para ordem estável entre tentativas.
  */
-export async function assertWebhookUrlResolvesSafely(urlStr: string): Promise<void> {
+export type WebhookConnectTargets = {
+  url: URL;
+  connectAddresses: string[];
+};
+
+/**
+ * Resolve DNS (quando aplicável), valida IPs públicos e devolve destinos fixos para a ligação HTTP(S).
+ */
+export async function getValidatedWebhookConnectTargets(urlStr: string): Promise<WebhookConnectTargets> {
   assertWebhookUrlAllowed(urlStr);
   const u = new URL(urlStr);
-  const hostname = u.hostname;
-  const hostNorm = normalizeHostname(hostname);
+  const hostNorm = normalizeHostname(u.hostname);
+  const rawIp = hostNorm.replace(/^\[|\]$/g, "");
+  const ipKind = net.isIP(rawIp);
 
-  if (isLoopbackHostname(hostNorm)) return;
-
-  const ipKind = net.isIP(hostNorm.replace(/^\[|\]$/g, ""));
   if (ipKind === 4 || ipKind === 6) {
-    return;
+    return { url: u, connectAddresses: [rawIp] };
+  }
+
+  if (isLoopbackHostname(hostNorm)) {
+    if (hostNorm === "::1") {
+      return { url: u, connectAddresses: ["::1"] };
+    }
+    if (hostNorm === "127.0.0.1") {
+      return { url: u, connectAddresses: ["127.0.0.1"] };
+    }
+    return { url: u, connectAddresses: ["127.0.0.1", "::1"] };
   }
 
   let results: { address: string; family: number }[];
   try {
-    results = await lookup(hostname, { all: true, verbatim: true });
+    results = await lookup(u.hostname, { all: true, verbatim: true });
   } catch {
     throw new WebhookUrlBlockedError("Não foi possível resolver o hostname do webhook.");
   }
@@ -133,11 +154,29 @@ export async function assertWebhookUrlResolvesSafely(urlStr: string): Promise<vo
     throw new WebhookUrlBlockedError("Hostname do webhook sem endereços DNS.");
   }
 
-  for (const { address } of results) {
+  const addrs = results.map((r) => r.address.replace(/^\[|\]$/g, ""));
+  for (const address of addrs) {
     if (isNonPublicAddress(address)) {
       throw new WebhookUrlBlockedError(
         "A URL do webhook não pode resolver para endereços privados ou reservados (SSRF)."
       );
     }
   }
+
+  addrs.sort((a, b) => {
+    const ka = net.isIP(a) === 4 ? 0 : 1;
+    const kb = net.isIP(b) === 4 ? 0 : 1;
+    if (ka !== kb) return ka - kb;
+    return a.localeCompare(b);
+  });
+
+  return { url: u, connectAddresses: addrs };
+}
+
+/**
+ * Resolve DNS e garante que nenhum endereço A/AAAA é privado/reservado.
+ * Usado na criação/edição da subscription; a entrega deve usar `getValidatedWebhookConnectTargets` + cliente fixado.
+ */
+export async function assertWebhookUrlResolvesSafely(urlStr: string): Promise<void> {
+  await getValidatedWebhookConnectTargets(urlStr);
 }

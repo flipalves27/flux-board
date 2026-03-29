@@ -33,7 +33,7 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 ### Tampering
 
 - **Ameaça:** Alterar boards/cards de outra org (IDOR) ou payloads de webhook.
-- **Controles:** `userCanAccessBoard` + `orgId` em `getBoard`/`updateBoard`; assinatura Stripe; HMAC em webhooks outbound ([`lib/webhook-delivery.ts`](../lib/webhook-delivery.ts)); validação anti-SSRF da URL antes do `fetch` e na criação/edição da subscription ([`lib/webhook-url.ts`](../lib/webhook-url.ts)).
+- **Controles:** `userCanAccessBoard` + `orgId` em `getBoard`/`updateBoard`; assinatura Stripe; HMAC em webhooks outbound ([`lib/webhook-delivery.ts`](../lib/webhook-delivery.ts)); validação anti-SSRF da URL e **ligação HTTP(S) com endereços fixados** após uma única resolução DNS (`getValidatedWebhookConnectTargets` + [`lib/webhook-pinned-http.ts`](../lib/webhook-pinned-http.ts)), também na criação/edição da subscription ([`lib/webhook-url.ts`](../lib/webhook-url.ts)). Isto fecha o TOCTOU em que `dns.lookup` aceitava IPs públicos e o `fetch` subsequente voltava a resolver o hostname (vetor de DNS rebinding).
 - **Risco residual:** Bug em rota nova sem checagem — exigir checklist em PR para rotas `app/api/**`.
 
 ### Repudiation
@@ -76,7 +76,8 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 - Rotas internas de segurança deixaram de reutilizar `JWT_SECRET` como fallback de autenticação.
 - `resolve-host` e `rate-limit-check` agora exigem segredos dedicados (`INTERNAL_HOST_RESOLVE_SECRET` e `RATE_LIMIT_INTERNAL_SECRET`).
 - CORS wildcard legado em `/api/boards` foi limitado a ambientes não produtivos.
-- Webhooks outbound: bloqueio de URLs com credenciais embutidas, IPs privados/reservados (literal e pós-DNS), hostnames de metadata conhecidos; falha imediata na entrega sem ciclo longo de retries quando a URL é rejeitada.
+- Webhooks outbound: bloqueio de URLs com credenciais embutidas, IPs privados/reservados (literal e pós-DNS), hostnames de metadata conhecidos; falha imediata na entrega sem ciclo longo de retries quando a URL é rejeitada; **pinning de destino** na entrega (sem segunda resolução DNS arbitrária no cliente HTTP).
+- **Decisão DNS rebinding (março/2026):** mitigação **em código** (pinning) como controlo principal; **filtragem de egresso** na infra (VPC/security groups) como defesa em profundidade onde o deploy permitir — ver runbook. Plataformas serverless sem VPC podem depender sobretudo do pinning em aplicação.
 
 ## Referências internas
 
