@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
   const planRaw = body?.plan as unknown;
   const seatsRaw = body?.seats as unknown;
   const intervalRaw = body?.interval as unknown;
+  const localeRaw = body?.locale as unknown;
+  const locale = typeof localeRaw === "string" ? localeRaw : undefined;
 
   const plan: BillingPlan = planRaw === "pro" || planRaw === "business" ? planRaw : "pro";
   const flags = catalogFlagsFromDoc(await getPlatformCommercialDocUncached());
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
   if (seats < 1) return NextResponse.json({ error: "seats deve ser >= 1" }, { status: 400 });
 
   try {
-    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats, interval });
+    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats, interval, locale });
     return NextResponse.json({ url: session.url, sessionId: session.sessionId });
   } catch (err) {
     return NextResponse.json(

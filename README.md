@@ -124,6 +124,45 @@ OAuth 2.0 + OIDC via rotas `/api/auth/oauth/google/*` e `/api/auth/oauth/microso
 
 **Boards legados `b_reborn_<orgId>`:** antes de publicar versões sem esse ID, rode `npm run migrate:reborn-boards` com `MONGODB_URI` definido (renomeia para `b_default_<orgId>` e atualiza referências). Ordem: migração → deploy.
 
+## Configuração: Billing / Stripe (Vercel)
+
+Checkout, portal de cobrança, faturas e webhook usam o SDK Stripe no servidor. Lista canônica de variáveis: [`.env.example`](.env.example).
+
+**Fluxo no app:** rota dedicada `/{locale}/billing/checkout` redireciona para o Checkout hospedado da Stripe; após pagamento ou cancelamento, o usuário volta para `/{locale}/billing/checkout/return?result=success|cancel` (padrão quando `STRIPE_CHECKOUT_*_URL` não está definido). Query útil: `?plan=pro|business&interval=month|year&seats=N` inicia o redirect automaticamente após carregar.
+
+### Variáveis na Vercel
+
+No [Vercel Dashboard](https://vercel.com/dashboard) → projeto → **Settings** → **Environment Variables**, defina (como **Encrypted** onde aplicável):
+
+| Variável | Descrição |
+|----------|-----------|
+| `STRIPE_SECRET_KEY` | Chave secreta (`sk_live_...` ou `sk_test_...`) |
+| `STRIPE_WEBHOOK_SECRET` | Segredo de assinatura do endpoint (`whsec_...`) |
+| `STRIPE_PRICE_ID_PRO` | ID do preço mensal Pro (`price_...`) |
+| `STRIPE_PRICE_ID_BUSINESS` | ID do preço mensal Business |
+| `STRIPE_PRICE_ID_PRO_ANNUAL` | Opcional — plano anual Pro |
+| `STRIPE_PRICE_ID_BUSINESS_ANNUAL` | Opcional — plano anual Business |
+| `STRIPE_PRODUCT_ID_PRO` / `STRIPE_PRODUCT_ID_BUSINESS` | Opcionais — admin “Publicar no Stripe” |
+| `STRIPE_CHECKOUT_SUCCESS_URL` / `STRIPE_CHECKOUT_CANCEL_URL` | Opcionais — sobrescrevem o retorno padrão (`/billing/checkout/return`) |
+| `STRIPE_PORTAL_RETURN_URL` | Opcional — retorno do Billing Portal |
+| `NEXT_PUBLIC_APP_URL` | Recomendado — domínio canônico (redirects e URLs derivadas) |
+
+Use pares consistentes: em **Production**, chaves e Price IDs **live**; em **Preview** ou local, **test** (`sk_test_`, preços de teste). Não misture secret live com IDs de teste.
+
+### Webhook no Stripe
+
+1. [Stripe Dashboard](https://dashboard.stripe.com) → **Developers** → **Webhooks** → **Add endpoint**.
+2. **URL:** `https://<seu-dominio>/api/billing/webhook` (domínio estável de produção ou staging; previews com URL mutável costumam usar só produção ou Stripe CLI em local).
+3. **Eventos** tratados pela aplicação: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` (ver `handleStripeWebhook` em [`lib/billing.ts`](lib/billing.ts)).
+4. Copie o **Signing secret** para `STRIPE_WEBHOOK_SECRET` na Vercel e faça um novo deploy se necessário.
+
+### Validação após deploy (smoke test)
+
+1. Logs de arranque: ausência de `STRIPE_SECRET_KEY` em produção gera aviso em [`lib/env-validate.ts`](lib/env-validate.ts).
+2. Fluxo: abrir **Billing**, iniciar checkout de teste (modo teste), concluir ou cancelar e confirmar redirects.
+3. Após assinatura de teste: conferir no MongoDB na organização `stripeCustomerId`, `stripeSubscriptionId` e `stripeStatus`.
+4. Webhook: no Stripe, “Send test webhook” para os eventos acima ou repetir checkout e verificar atualização da org.
+
 ## Deployment Protection na Vercel
 
 A aplicação suporta **Protection Bypass for Automation**, permitindo que login e API funcionem mesmo com Deployment Protection ativa (Standard, Vercel Authentication, etc.), sem precisar definir Protection para "None".

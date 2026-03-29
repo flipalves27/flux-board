@@ -186,6 +186,7 @@ export default function BillingPage() {
         plan: nextPlan,
         seats: seatsToSend,
         interval: billingInterval === "year" ? "year" : "month",
+        locale,
       }, getHeaders());
       if (!res?.url) throw new Error("Stripe não retornou URL.");
       window.location.href = res.url;
@@ -464,7 +465,11 @@ export default function BillingPage() {
                 </p>
               ) : (
                 <p className="mb-4 text-sm text-[var(--flux-text-muted)]">
-                  Primeira assinatura ou reativação: escolha o plano e conclua no Stripe.
+                  Primeira assinatura ou reativação: escolha o plano e conclua no Stripe. Página dedicada:{" "}
+                  <Link href={`${localeRoot}/billing/checkout`} className="text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
+                    checkout Stripe
+                  </Link>
+                  .
                 </p>
               )}
               {!isPlatformOperator ? (

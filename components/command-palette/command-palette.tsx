@@ -374,6 +374,7 @@ export function CommandPalette() {
       nav.push(
         { path: "/users", title: t("nav.users"), kw: "users members" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
+        { path: "/billing/checkout", title: "Checkout Stripe", kw: "stripe checkout pagamento assinatura billing" },
         { path: "/org-invites", title: t("nav.invites"), kw: "invites" }
       );
     }

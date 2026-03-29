@@ -11,6 +11,7 @@
 import Stripe from "stripe";
 import type { NextRequest } from "next/server";
 
+import { routing } from "@/i18n";
 import {
   getOrganizationById,
   updateOrganization,
@@ -50,6 +51,13 @@ function appBaseUrl(): string {
   return withProto.replace(/\/+$/, "");
 }
 
+/** Locale prefix para URLs de retorno do Checkout (pt-BR | en). */
+export function resolveCheckoutLocale(locale: string | undefined): string {
+  const allowed = new Set<string>(routing.locales as readonly string[]);
+  if (locale && allowed.has(locale)) return locale;
+  return routing.defaultLocale;
+}
+
 let stripeSingleton: Stripe | null = null;
 function stripe(): Stripe {
   if (stripeSingleton) return stripeSingleton;
@@ -65,6 +73,8 @@ export async function createCheckoutSession(input: {
   seats: number;
   /** Mensal (Stripe default) ou anual (`STRIPE_PRICE_ID_*_ANNUAL`). */
   interval?: CheckoutBillingInterval;
+  /** next-intl locale — usado nos defaults de success/cancel quando env não sobrescreve. */
+  locale?: string;
 }): Promise<{ url: string; sessionId: string }> {
   const ids = await getEffectiveStripePriceIds();
 
@@ -100,10 +110,13 @@ export async function createCheckoutSession(input: {
   const owner = await getUserById(org.ownerId, org._id).catch(() => null);
   const customerEmail = owner?.email || undefined;
 
+  const loc = resolveCheckoutLocale(input.locale);
   const successUrl =
-    process.env.STRIPE_CHECKOUT_SUCCESS_URL || `${appBaseUrl()}/boards?billing=success`;
+    process.env.STRIPE_CHECKOUT_SUCCESS_URL ||
+    `${appBaseUrl()}/${loc}/billing/checkout/return?result=success`;
   const cancelUrl =
-    process.env.STRIPE_CHECKOUT_CANCEL_URL || `${appBaseUrl()}/boards?billing=cancel`;
+    process.env.STRIPE_CHECKOUT_CANCEL_URL ||
+    `${appBaseUrl()}/${loc}/billing/checkout/return?result=cancel`;
 
   const metadata: Record<string, string> = {
     orgId: input.orgId,
