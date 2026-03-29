@@ -63,3 +63,7 @@ export function getOrganizationInvitesOnboardingDoneStorageKey(userId: string) {
   return `flux_org_invites_onboarding_done_v1_${userId}`;
 }
 
+export function getOnboardingFluxyHeroStorageKey(userId: string) {
+  return `flux_onboarding_fluxy_hero_v1_${userId}`;
+}
+

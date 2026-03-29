@@ -11,12 +11,14 @@ import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
+import { OnboardingFluxyHero } from "@/components/onboarding/onboarding-fluxy-hero";
 import {
   DEFAULT_TEMPLATE_ID,
   ONBOARDING_TEMPLATES,
   type BucketConfig,
   type TemplateId,
   getOnboardingDoneStorageKey,
+  getOnboardingFluxyHeroStorageKey,
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
 import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
@@ -144,9 +146,12 @@ export default function OnboardingPage() {
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
+  const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
+  const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
+  const heroStorageKey = useMemo(() => (user ? getOnboardingFluxyHeroStorageKey(user.id) : null), [user]);
 
   const persistState = useCallback(
     (next: Omit<PersistedWizardState, "step"> & { step: WizardStep }) => {
@@ -170,9 +175,13 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) return;
+    if (!isChecked || !user) {
+      setOnboardingInitSettled(false);
+      return;
+    }
 
     let cancelled = false;
+    setOnboardingInitSettled(false);
     (async () => {
       try {
         setInitError(null);
@@ -234,13 +243,36 @@ export default function OnboardingPage() {
         if (cancelled) return;
         const msg = e instanceof ApiError ? e.message : t("errors.init");
         setInitError(msg);
+      } finally {
+        if (!cancelled) setOnboardingInitSettled(true);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot, t]);
+
+  useEffect(() => {
+    if (!onboardingInitSettled || !heroStorageKey) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    if (step !== 1 || boardId !== null) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    try {
+      if (localStorage.getItem(heroStorageKey) === "1") {
+        setFluxyHeroOpen(false);
+        return;
+      }
+    } catch {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    setFluxyHeroOpen(true);
+  }, [onboardingInitSettled, heroStorageKey, step, boardId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -443,6 +475,13 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      {heroStorageKey ? (
+        <OnboardingFluxyHero
+          open={fluxyHeroOpen}
+          onDismiss={() => setFluxyHeroOpen(false)}
+          storageKey={heroStorageKey}
+        />
+      ) : null}
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="flex items-center gap-2">
           <StepPill index={1} current={step} label={t("steps.pill1")} />

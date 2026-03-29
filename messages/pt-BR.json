@@ -1196,6 +1196,13 @@
   },
   "onboarding": {
     "fluxyHint": "Sou a Fluxy — quando seu quadro estiver pronto, estarei no canto para tirar dúvidas sobre o board e sugerir atalhos.",
+    "fluxyHero": {
+      "kicker": "Bem-vindo",
+      "title": "Que bom te ver aqui!",
+      "body": "Sou a Fluxy, a assistente de IA do Flux-Board. Estou com você para organizar o trabalho, tirar dúvidas sobre o board e sugerir atalhos quando precisar.",
+      "intro": "Vamos criar seu primeiro quadro em poucos passos — pode personalizar tudo depois.",
+      "cta": "Começar"
+    },
     "dragReorderAria": "Arrastar para reordenar",
     "header": {
       "title": "Onboarding",

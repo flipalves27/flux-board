@@ -1195,6 +1195,13 @@
   },
   "onboarding": {
     "fluxyHint": "I’m Fluxy — once your board is ready, I’ll be there to answer questions and suggest shortcuts.",
+    "fluxyHero": {
+      "kicker": "Welcome",
+      "title": "Great to see you here!",
+      "body": "I’m Fluxy, Flux-Board’s AI assistant. I’m here to help you organize work, answer board questions, and suggest shortcuts when you need them.",
+      "intro": "Let’s set up your first board in a few steps — you can customize everything later.",
+      "cta": "Get started"
+    },
     "dragReorderAria": "Drag to reorder",
     "header": {
       "title": "Onboarding",
