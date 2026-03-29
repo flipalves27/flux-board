@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useShallow } from "zustand/shallow";
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
-import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
-import { useBoardActivityStore } from "@/stores/board-activity-store";
-import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useFluxyBoardDockStore } from "@/stores/fluxy-board-dock-store";
+import { useBoardActivityStore } from "@/stores/board-activity-store";
+import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
+import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 
 export function BoardFluxyDock() {
   const t = useTranslations("kanban.board.fluxyDock");
@@ -23,37 +21,7 @@ export function BoardFluxyDock() {
     hydrateFromStorage();
   }, [hydrateFromStorage]);
 
-  const {
-    open,
-    toggleOpen,
-    generating,
-    loadingHistory,
-    messages,
-  } = useCopilotStore(
-    useShallow((s) => ({
-      open: s.open,
-      toggleOpen: s.toggleOpen,
-      generating: s.generating,
-      loadingHistory: s.loadingHistory,
-      messages: s.messages,
-    }))
-  );
-
-  const lastAssistantContent = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i]?.role === "assistant") return messages[i]?.content ?? "";
-    }
-    return "";
-  }, [messages]);
-
-  const fluxyState = resolveFluxyCopilotState({
-    panelOpen: open,
-    loadingHistory,
-    generating,
-    lastAssistantContent,
-    waving: false,
-    celebrating: false,
-  });
+  const toggleOpen = useCopilotStore((s) => s.toggleOpen);
 
   const onOpenAssistant = () => {
     useBoardActivityStore.getState().setOpen(false);
@@ -63,14 +31,13 @@ export function BoardFluxyDock() {
 
   if (!hydrated) return null;
 
+  const bottom = "max(1rem, env(safe-area-inset-bottom, 0px))";
+
   if (!dockVisible) {
     return (
       <div
-        className="fixed z-[var(--flux-z-board-fluxy-dock)] motion-safe:transition-[bottom,left] motion-safe:duration-200"
-        style={{
-          bottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
-          left: "max(1rem, env(safe-area-inset-left, 0px))",
-        }}
+        className="fixed z-[var(--flux-z-board-fluxy-dock)] motion-safe:transition-[transform,bottom] motion-safe:duration-200 left-1/2 -translate-x-1/2 max-md:max-w-[calc(100vw-2rem)]"
+        style={{ bottom }}
       >
         <button
           type="button"
@@ -78,8 +45,8 @@ export function BoardFluxyDock() {
           className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-card)] px-3 py-2 text-[11px] font-semibold text-[var(--flux-primary-light)] shadow-[var(--flux-shadow-md)] backdrop-blur-md hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-12)]"
           aria-label={t("restoreAria")}
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-            <FluxyAvatar state="sleeping" size="fab" />
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
+            <AiAssistantIcon className="h-4 w-4" />
           </span>
           {t("restore")}
         </button>
@@ -89,11 +56,8 @@ export function BoardFluxyDock() {
 
   return (
     <div
-      className="fixed z-[var(--flux-z-board-fluxy-dock)] flex items-end gap-2 motion-safe:transition-[bottom,left] motion-safe:duration-200 max-w-[min(100vw-2rem,320px)]"
-      style={{
-        bottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
-        left: "max(1rem, env(safe-area-inset-left, 0px))",
-      }}
+      className="fixed z-[var(--flux-z-board-fluxy-dock)] flex items-end justify-center motion-safe:transition-[transform,bottom] motion-safe:duration-200 left-1/2 -translate-x-1/2 w-[min(100vw-2rem,320px)]"
+      style={{ bottom }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-[var(--flux-primary-alpha-28)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-18),var(--flux-secondary-alpha-10))] py-2 pl-2 pr-2 shadow-[var(--flux-shadow-primary-panel)] backdrop-blur-md">
         <button
@@ -102,8 +66,8 @@ export function BoardFluxyDock() {
           className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors"
           aria-label={t("openAssistant")}
         >
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-            <FluxyAvatar state={fluxyState} size="compact" className="scale-90" />
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
+            <AiAssistantIcon className="h-5 w-5" />
           </span>
           <span className="min-w-0">
             <span className="block font-display text-sm font-bold text-[var(--flux-text)] leading-tight">{tFluxy("title")}</span>

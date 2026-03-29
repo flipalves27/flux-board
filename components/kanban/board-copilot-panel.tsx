@@ -17,6 +17,7 @@ import { AiModelHint } from "@/components/ai-model-hint";
 import { AiFeedbackInline } from "@/components/ai/ai-feedback-inline";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
+import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -271,15 +272,6 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     generating,
     lastAssistantContent,
     waving: fluxyWaving,
-    celebrating: fluxyCelebrating,
-  });
-
-  const fabFluxyState = resolveFluxyCopilotState({
-    panelOpen: open,
-    loadingHistory: false,
-    generating,
-    lastAssistantContent,
-    waving: false,
     celebrating: fluxyCelebrating,
   });
 
@@ -741,8 +733,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
           aria-label={open ? tFluxy("fabClose") : tFluxy("fabOpen")}
         >
           <span className="relative inline-flex items-center gap-2 rounded-l-xl rounded-r-md border border-[var(--flux-border-default)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-22),var(--flux-secondary-alpha-14))] px-2.5 py-2 text-[var(--flux-text)] shadow-[var(--flux-shadow-copilot-bubble)] backdrop-blur-md hover:border-[var(--flux-primary)]">
-            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <FluxyAvatar state={fabFluxyState} size="fab" showConfetti={fluxyCelebrating} />
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
+              <AiAssistantIcon className="h-3.5 w-3.5" />
             </span>
             <span className="text-[11px] font-semibold whitespace-nowrap">{open ? tFluxy("fabClose") : tFluxy("fabOpen")}</span>
             {tier === "free" && freeDemoRemaining !== null ? (

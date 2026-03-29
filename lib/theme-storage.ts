@@ -42,5 +42,5 @@ export function writeThemePreferenceToStorage(preference: ThemePreference): void
 export function themeBootstrapInlineScript(): string {
   const P = THEME_PREFERENCE_KEY;
   const L = THEME_LEGACY_KEY;
-  return `(function(){try{var p=localStorage.getItem("${P}");if(p!=="light"&&p!=="dark"&&p!=="system")p=null;if(!p){var leg=localStorage.getItem("${L}");if(leg==="light"||leg==="dark")p=leg;}if(!p)p="system";var r=p==="light"?"light":p==="dark"?"dark":(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",r);}catch(e){}})();`;
+  return `(function(){try{var p=localStorage.getItem("${P}");if(p!=="light"&&p!=="dark"&&p!=="system")p=null;if(!p){var leg=localStorage.getItem("${L}");if(leg==="light"||leg==="dark")p=leg;}if(!p)p="dark";var r=p==="light"?"light":p==="dark"?"dark":(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",r);}catch(e){}})();`;
 }

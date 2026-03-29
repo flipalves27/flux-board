@@ -76,11 +76,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   getHeadersRef.current = getHeaders;
 
   /**
-   * Nunca ler localStorage no inicializador de useState: no SSR `window` não existe (null → "system"),
-   * no cliente o primeiro paint lê o storage e o tema resolvido pode divergir do HTML do servidor → hidratação #418.
-   * O script inline em `layout.tsx` já aplica `data-theme` antes do React; aqui alinhamos o estado após mount.
+   * Nunca ler localStorage no inicializador de useState: no SSR `window` não existe.
+   * O script inline em `layout.tsx` aplica `data-theme` antes do React (padrão escuro sem preferência salva).
+   * Após mount, alinhamos o estado com storage ou gravamos o padrão escuro.
    */
-  const [preference, setPreference] = useState<ThemePreference>("system");
+  const [preference, setPreference] = useState<ThemePreference>("dark");
   const [systemDark, setSystemDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -93,6 +93,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       const fromStorage = readThemePreferenceFromStorage();
       if (fromStorage) setPreference(fromStorage);
+      else {
+        setPreference("dark");
+        writeThemePreferenceToStorage("dark");
+      }
     } catch {
       /* ignore */
     }

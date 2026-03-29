@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
 import { useTranslations } from "next-intl";
-import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
-import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
 import { openBoardDesktopDaily } from "@/lib/board-desktop-daily-bridge";
+import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 
 const RAIL_LEAVE_MS = 320;
 const LS_PINNED_KEY = "flux:desktop-tools-rail-pinned";
@@ -31,25 +30,6 @@ export function BoardDesktopToolsRail() {
   const toggleCopilot = useCopilotStore((s) => s.toggleOpen);
   const tier = useCopilotStore((s) => s.tier);
   const freeDemoRemaining = useCopilotStore((s) => s.freeDemoRemaining);
-  const copilotGenerating = useCopilotStore((s) => s.generating);
-  const copilotMessages = useCopilotStore((s) => s.messages);
-
-  const railFluxyAssistantContent = useMemo(() => {
-    for (let i = copilotMessages.length - 1; i >= 0; i--) {
-      if (copilotMessages[i]?.role === "assistant") return copilotMessages[i]?.content ?? "";
-    }
-    return "";
-  }, [copilotMessages]);
-
-  const railFluxyState = resolveFluxyCopilotState({
-    panelOpen: copilotOpen,
-    loadingHistory: false,
-    generating: copilotGenerating,
-    lastAssistantContent: railFluxyAssistantContent,
-    waving: false,
-    celebrating: false,
-  });
-
   const activityOpen = useBoardActivityStore((s) => s.open);
   const toggleActivity = useBoardActivityStore((s) => s.toggleOpen);
   const setActivityOpen = useBoardActivityStore((s) => s.setOpen);
@@ -261,8 +241,8 @@ export function BoardDesktopToolsRail() {
           aria-label={copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}
         >
           <span className={toolButtonClass(copilotOpen)}>
-            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
-              <FluxyAvatar state={railFluxyState} size="fab" />
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
+              <AiAssistantIcon className="h-3.5 w-3.5" />
             </span>
             <span className="text-[11px] font-semibold whitespace-nowrap">
               {copilotOpen ? tRail("copilotClose") : tRail("copilotOpen")}

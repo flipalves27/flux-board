@@ -8,7 +8,6 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { useTheme } from "@/context/theme-context";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
-import { useNavigationVariant, useNavigationVariantActions } from "@/context/navigation-variant-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
@@ -263,14 +262,6 @@ function IconClose({ className }: { className?: string }) {
   );
 }
 
-function IconNavStyle({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
-    </svg>
-  );
-}
-
 const SIDEBAR_WIDTH_EXPANDED = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 72;
 const SIDEBAR_WIDTH_TABLET_RAIL = 60;
@@ -284,9 +275,7 @@ export function Sidebar() {
   const platformName = usePlatformDisplayName();
   const { themePreference, cycleThemePreference } = useTheme();
   const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
-  const navVariant = useNavigationVariant();
-  const navActions = useNavigationVariantActions();
-  const isMinimal = navVariant === "minimal";
+  const isMinimal = true;
   const [collapsed, setCollapsed] = useState(false);
   const [tabletHover, setTabletHover] = useState(false);
   const t = useTranslations("navigation");
@@ -296,8 +285,6 @@ export function Sidebar() {
       : themePreference === "light"
         ? t("theme.mode.light")
         : t("theme.mode.dark");
-  const variantLabel = navVariant === "aurora" ? t("variant.aurora") : t("variant.minimal");
-
   const { drawerProps } = useMobileDrawerPointer({
     enabled: layout === "mobile",
     drawerOpen: mobileOpen,
@@ -867,50 +854,6 @@ export function Sidebar() {
             isMinimal ? "border-[var(--flux-chrome-alpha-08)]" : "border-[var(--flux-primary-alpha-08)]"
           }`}
         >
-          {showExpandedNav ? (
-            <div
-              className={`flex rounded-[var(--flux-rad-sm)] border p-0.5 ${
-                isMinimal ? "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-04)]" : "border-[var(--flux-primary-alpha-12)] bg-[var(--flux-black-alpha-04)]"
-              }`}
-              role="group"
-              aria-label={t("variant.toggleTooltip")}
-            >
-              <button
-                type="button"
-                onClick={() => navActions?.setVariant("aurora")}
-                className={`flex-1 rounded-[calc(var(--flux-rad-sm)-2px)] px-2 py-1.5 text-[11px] font-semibold transition-all ${
-                  navVariant === "aurora"
-                    ? "bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
-                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                }`}
-              >
-                {t("variant.aurora")}
-              </button>
-              <button
-                type="button"
-                onClick={() => navActions?.setVariant("minimal")}
-                className={`flex-1 rounded-[calc(var(--flux-rad-sm)-2px)] px-2 py-1.5 text-[11px] font-semibold transition-all ${
-                  navVariant === "minimal"
-                    ? "bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
-                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                }`}
-              >
-                {t("variant.minimal")}
-              </button>
-            </div>
-          ) : (
-            <CustomTooltip content={t("variant.cycleTooltip", { current: variantLabel })} position="right">
-              <button
-                type="button"
-                onClick={() => navActions?.toggleVariant()}
-                aria-label={t("variant.cycleTooltip", { current: variantLabel })}
-                className={`flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-[var(--flux-rad-sm)] px-2.5 py-2 font-display text-sm font-semibold transition-all
-                  text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-06)] hover:text-[var(--flux-primary)]`}
-              >
-                <IconNavStyle className="h-4 w-4 shrink-0" />
-              </button>
-            </CustomTooltip>
-          )}
           <CustomTooltip
             content={t("theme.cycleTooltip", { current: themeModeLabel })}
             position="right"
