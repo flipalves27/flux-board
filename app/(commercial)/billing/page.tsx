@@ -12,7 +12,7 @@ import { useToast } from "@/context/toast-context";
 import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
 import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
-import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageOrgBilling } from "@/lib/rbac";
 
 type Plan = "free" | "trial" | "pro" | "business" | "enterprise";
 
@@ -67,7 +67,7 @@ export default function BillingPage() {
   const cancelTitleId = "billing-cancel-title";
   const cancelDescId = "billing-cancel-desc";
 
-  const canBilling = Boolean(user && sessionCanManageMembersAndBilling(user));
+  const canBilling = Boolean(user && sessionCanManageOrgBilling(user));
   const isPlatformOperator = Boolean(user && isPlatformAdminSession(user));
   const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
   const proCap = getProMaxUsers();
@@ -83,7 +83,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (!isChecked || !user) return;
-    if (!sessionCanManageMembersAndBilling(user)) router.replace(`${localeRoot}/boards`);
+    if (!sessionCanManageOrgBilling(user)) router.replace(`${localeRoot}/boards`);
   }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {

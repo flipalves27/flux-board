@@ -7,7 +7,7 @@ import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
-import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 
 type InviteRow = {
   _id: string;
@@ -58,7 +58,7 @@ export default function OrgInvitesPage() {
       router.replace(`${localeRoot}/login`);
       return;
     }
-    if (!sessionCanManageMembersAndBilling(user)) {
+    if (!sessionCanManageOrgBilling(user)) {
       router.replace(`${localeRoot}/boards`);
       return;
     }

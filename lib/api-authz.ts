@@ -3,14 +3,16 @@
  *
  * - Plano comercial: em `Organization` + `lib/plan-gates.ts` (`getEffectiveTier`, `assertFeatureAllowed`).
  *   Contexto `planGateCtxFromAuthPayload(payload)` — `platform_admin` bypassa plano; org admin/executivo só com `FLUX_ADMIN_SUPERPOWERS`.
- * - Membros + billing: `ensureOrgTeamManager` = `platform_admin` OU gestor ativo (Equipe, escopo org).
- * - Demais gestão (branding, webhooks, convites, etc.): `ensureOrgManager` = `platform_admin` OU `org_manager`.
+ * - Equipe (vínculos /api/team/members, leitura ampla de usuários): `ensureOrgTeamManager` = `platform_admin` OU gestor ativo.
+ * - Billing / Stripe / convites org / criar ou remover usuários / override de plano: `ensureOrgManager` (admin ou executivo da org, ou plataforma).
+ * - Demais gestão (branding, webhooks, etc.): `ensureOrgManager` = `platform_admin` OU `org_manager`.
  * - Operações globais / multi-tenant na URL: só `ensurePlatformAdmin` ou `isSameOrgOrPlatformAdmin` em
  *   `lib/tenant-route-guard.ts` — nunca `payload.isAdmin` (flag de admin **da org**).
  * - Acesso a boards: `userCanAccessBoard(..., isAdmin)` usa o mesmo boolean do JWT: “vê todos os boards da org”;
  *   não concede acesso a outra organização.
  *
- * Rotas com `ensureOrgTeamManager`: usuários, equipe (`/api/team/members`), convites, billing (checkout/portal/etc.).
+ * Rotas com `ensureOrgTeamManager`: leitura `GET /api/users`, equipe (`/api/team/members`).
+ * Billing e convites org: `ensureOrgManager`.
  * `ensureOrgManager`: org/webhooks*; organizations/verify-domain; boards export-template; `PUT /api/organizations/me`
  * (nome, slug, branding, IA) e demais gestão que não é só membros/billing.
  *

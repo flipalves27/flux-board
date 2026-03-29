@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { ensureOrgTeamManager } from "@/lib/api-authz";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { revokeOrganizationInvite } from "@/lib/kv-organization-invites";
 
 export async function DELETE(
@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
   const { code } = await params;

@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
-import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 
 interface UserRow {
   id: string;
@@ -38,7 +38,7 @@ export default function UsersPage() {
       router.replace("/login");
       return;
     }
-    if (!sessionCanManageMembersAndBilling(user)) {
+    if (!sessionCanManageOrgBilling(user)) {
       router.replace("/boards");
       return;
     }

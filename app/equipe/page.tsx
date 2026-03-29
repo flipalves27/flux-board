@@ -8,7 +8,7 @@ import { TeamWorkspacePanel } from "@/components/team/team-workspace-panel";
 import { useAuth } from "@/context/auth-context";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
-import { normalizeTeamRole, type TeamRole } from "@/lib/rbac";
+import { normalizeTeamRole, sessionCanManageMembersAndBilling, type TeamRole } from "@/lib/rbac";
 
 type TeamMember = {
   userId: string;
@@ -34,7 +34,7 @@ export default function TeamPage() {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
-  const { getHeaders } = useAuth();
+  const { getHeaders, user, isChecked } = useAuth();
   const hideInlineTabs = /^\/(pt-BR|en)\/equipe/.test(pathname);
   const { pushToast } = useToast();
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -101,8 +101,17 @@ export default function TeamPage() {
   }
 
   useEffect(() => {
+    if (!isChecked) return;
+    if (!user) {
+      router.replace(`${localeRoot}/login`);
+      return;
+    }
+    if (!sessionCanManageMembersAndBilling(user)) {
+      router.replace(`${localeRoot}/boards`);
+      return;
+    }
     void loadData();
-  }, [getHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getHeaders, isChecked, user, router, localeRoot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredUsers = useMemo(() => {
     const q = query.trim().toLowerCase();

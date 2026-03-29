@@ -12,7 +12,11 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
-import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import {
+  isPlatformAdminSession,
+  sessionCanManageMembersAndBilling,
+  sessionCanManageOrgBilling,
+} from "@/lib/rbac";
 
 function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -331,7 +335,7 @@ export function Sidebar() {
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      if (!isChecked || !user?.orgId || !sessionCanManageMembersAndBilling(user)) {
+      if (!isChecked || !user?.orgId || !sessionCanManageOrgBilling(user)) {
         setActiveInvites(null);
         return;
       }
@@ -351,7 +355,7 @@ export function Sidebar() {
     return () => {
       cancelled = true;
     };
-  }, [isChecked, user?.orgId, user?.isOrgTeamManager, user?.platformRole, getHeaders]);
+  }, [isChecked, user?.orgId, user?.isAdmin, user?.isExecutive, user?.platformRole, getHeaders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -773,41 +777,47 @@ export function Sidebar() {
             />
           ) : null}
 
-          {user && sessionCanManageMembersAndBilling(user) && (
+          {user && (sessionCanManageMembersAndBilling(user) || sessionCanManageOrgBilling(user)) ? (
             <>
               <NavSectionTitle>{t("section.org")}</NavSectionTitle>
-              <NavLink
-                path="/equipe"
-                hint={t("hints.users")}
-                icon={<IconTeam className="h-4 w-4 shrink-0" />}
-                label="Equipe"
-                sublabel={t("teamWorkspace")}
-              />
-              <NavLink
-                path="/users"
-                hint={t("hints.users")}
-                icon={<IconUsers className="h-4 w-4 shrink-0" />}
-                label={t("users")}
-                sublabel={t("userDirectory")}
-              />
-              <NavLink
-                path="/org-invites"
-                hint={
-                  activeInvites !== null && activeInvites > 0
-                    ? `${t("hints.invites")} (${activeInvites})`
-                    : t("hints.invites")
-                }
-                icon={<IconInvites className="h-4 w-4 shrink-0" />}
-                label={t("invites")}
-                sublabel={
-                  activeInvites !== null && activeInvites > 0
-                    ? String(activeInvites)
-                    : undefined
-                }
-              />
+              {sessionCanManageMembersAndBilling(user) ? (
+                <NavLink
+                  path="/equipe"
+                  hint={t("hints.users")}
+                  icon={<IconTeam className="h-4 w-4 shrink-0" />}
+                  label="Equipe"
+                  sublabel={t("teamWorkspace")}
+                />
+              ) : null}
+              {sessionCanManageOrgBilling(user) ? (
+                <>
+                  <NavLink
+                    path="/users"
+                    hint={t("hints.users")}
+                    icon={<IconUsers className="h-4 w-4 shrink-0" />}
+                    label={t("users")}
+                    sublabel={t("userDirectory")}
+                  />
+                  <NavLink
+                    path="/org-invites"
+                    hint={
+                      activeInvites !== null && activeInvites > 0
+                        ? `${t("hints.invites")} (${activeInvites})`
+                        : t("hints.invites")
+                    }
+                    icon={<IconInvites className="h-4 w-4 shrink-0" />}
+                    label={t("invites")}
+                    sublabel={
+                      activeInvites !== null && activeInvites > 0
+                        ? String(activeInvites)
+                        : undefined
+                    }
+                  />
+                </>
+              ) : null}
             </>
-          )}
-          {user && sessionCanManageMembersAndBilling(user) && (
+          ) : null}
+          {user && sessionCanManageOrgBilling(user) && (
             <>
               <div className="h-[6px]" />
               <NavSectionTitle>{t("section.commercial")}</NavSectionTitle>

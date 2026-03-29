@@ -24,7 +24,7 @@ import {
   planOverrideBlockedByStripe,
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
-import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { writeSecurityAudit } from "@/lib/security-audit";
 
 export async function GET(request: NextRequest) {
@@ -77,18 +77,18 @@ export async function PUT(request: NextRequest) {
   const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
   const hasPlan = body && typeof body === "object" && "plan" in body && body.plan !== undefined;
 
-  const needsTeamManager = dismissBillingNotice || hasPlan;
+  const needsBillingAdmin = dismissBillingNotice || hasPlan;
   const needsOrgManager =
     name !== undefined || slug !== undefined || hasBranding || hasAiSettings;
-  if (needsTeamManager) {
-    const deniedTm = ensureOrgTeamManager(payload);
-    if (deniedTm) return deniedTm;
+  if (needsBillingAdmin) {
+    const deniedBa = ensureOrgManager(payload);
+    if (deniedBa) return deniedBa;
   }
   if (needsOrgManager) {
     const deniedOm = ensureOrgManager(payload);
     if (deniedOm) return deniedOm;
   }
-  if (!needsTeamManager && !needsOrgManager) {
+  if (!needsBillingAdmin && !needsOrgManager) {
     return NextResponse.json(
       { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `plan` ou `dismissBillingNotice`." },
       { status: 400 }

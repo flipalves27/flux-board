@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { denyStripeCommercialForPlatformAdmin, ensureOrgTeamManager } from "@/lib/api-authz";
+import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { shouldAllowStripeCheckoutForOrg } from "@/lib/admin-plan-override";
 import { createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
   const platformStripe = denyStripeCommercialForPlatformAdmin(payload);
   if (platformStripe) return platformStripe;

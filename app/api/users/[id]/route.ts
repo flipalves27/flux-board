@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-users";
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
-import { ensureOrgTeamManager } from "@/lib/api-authz";
+import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(
@@ -61,7 +61,7 @@ export async function PUT(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
   const { id } = await params;
@@ -143,7 +143,7 @@ export async function DELETE(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
   const { id } = await params;

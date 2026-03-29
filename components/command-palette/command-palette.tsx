@@ -13,7 +13,7 @@ import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-his
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
 import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
 import type { BoardMethodology } from "@/lib/board-methodology";
-import { isPlatformAdminSession } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageMembersAndBilling, sessionCanManageOrgBilling } from "@/lib/rbac";
 
 type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
@@ -364,10 +364,15 @@ export function CommandPalette() {
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
       { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
     ];
-    if (user.isAdmin) {
+    if (user.isAdmin || user.isExecutive) {
+      nav.push({ path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" });
+    }
+    if (sessionCanManageMembersAndBilling(user)) {
+      nav.push({ path: "/equipe", title: t("nav.team"), kw: "equipe team membros roles" });
+    }
+    if (sessionCanManageOrgBilling(user)) {
       nav.push(
         { path: "/users", title: t("nav.users"), kw: "users members" },
-        { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
         { path: "/org-invites", title: t("nav.invites"), kw: "invites" }
       );

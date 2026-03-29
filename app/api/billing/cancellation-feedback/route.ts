@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { ensureOrgTeamManager } from "@/lib/api-authz";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { updateOrganization } from "@/lib/kv-organizations";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ const REASONS = [
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));

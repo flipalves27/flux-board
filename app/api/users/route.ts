@@ -5,7 +5,7 @@ import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
-import { ensureOrgTeamManager } from "@/lib/api-authz";
+import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgTeamManager(payload);
+  const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
   try {

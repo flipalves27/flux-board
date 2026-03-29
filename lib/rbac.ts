@@ -45,6 +45,20 @@ export function canManageOrganization(roles: EffectiveRoles): boolean {
   return isPlatformAdmin(roles) || roles.orgRole === "org_manager";
 }
 
+/**
+ * Billing, troca de plano, portal Stripe, convites org e diretório de usuários (admin/exec da org ou admin da plataforma).
+ * Mais restrito que `sessionCanManageMembersAndBilling` (gestores de Equipe não alteram plano nem convites globais).
+ */
+export function sessionCanManageOrgBilling(user: {
+  id: string;
+  isAdmin?: boolean;
+  isExecutive?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole;
+}): boolean {
+  return canManageOrganization(deriveEffectiveRoles(user));
+}
+
 /** Para gates de plano: distingue admin da plataforma (fora do Stripe) de admin da org. */
 export function isPlatformAdminFromAuthPayload(payload: {
   id: string;

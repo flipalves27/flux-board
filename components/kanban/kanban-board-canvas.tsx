@@ -184,12 +184,16 @@ export function KanbanBoardCanvas({
       onPointerMove={boardView === "kanban" ? onPanPointerMove : undefined}
       onPointerUp={boardView === "kanban" ? onPanPointerUp : undefined}
       onPointerCancel={boardView === "kanban" ? onPanPointerCancel : undefined}
-      className={`board-canvas w-full px-5 sm:px-6 lg:px-8 py-4 pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[var(--flux-z-board-canvas)] ${
+      className={`board-canvas w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-4 pb-4 sm:pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[var(--flux-z-board-canvas)] ${
         boardView === "kanban"
-          ? `flex gap-4 overflow-x-auto items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
+          ? `flex gap-3 sm:gap-4 overflow-x-auto overflow-y-hidden items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
           : "flex flex-col overflow-x-hidden"
-      } min-h-[calc(100vh-240px)]`}
-      style={{ touchAction: boardView === "kanban" ? (isPanning ? "none" : "pan-y") : undefined }}
+      } min-h-[min(85dvh,calc(100dvh-260px))] sm:min-h-[calc(100vh-240px)]`}
+      style={{
+        touchAction:
+          boardView === "kanban" ? (isPanning ? "none" : "pan-x pan-y") : undefined,
+        WebkitOverflowScrolling: boardView === "kanban" ? "touch" : undefined,
+      }}
     >
       {boardView === "timeline" ? (
         <BoardTimelineView
