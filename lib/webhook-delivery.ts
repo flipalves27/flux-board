@@ -12,6 +12,7 @@ import {
   updateOutboxDelivery,
   type WebhookOutboxDoc,
 } from "./kv-webhooks";
+import { assertWebhookUrlResolvesSafely, WebhookUrlBlockedError } from "./webhook-url";
 
 const RETRY_AFTER_MS = [10_000, 60_000, 300_000];
 const MAX_ATTEMPTS = 4;
@@ -110,6 +111,31 @@ async function runDeliveryAttempt(outboxId: ObjectId | string): Promise<void> {
   let httpStatus: number | null = null;
   let responseBody: string | null = null;
   let errorMessage: string | null = null;
+
+  try {
+    await assertWebhookUrlResolvesSafely(sub.url);
+  } catch (e) {
+    if (e instanceof WebhookUrlBlockedError) {
+      errorMessage = e.message;
+      await appendDeliveryLog(doc.orgId, {
+        orgId: doc.orgId,
+        subscriptionId: doc.subscriptionId,
+        eventId: doc.eventId,
+        eventType: doc.eventType,
+        payload: envelope as unknown as Record<string, unknown>,
+        status: "failed",
+        attempts: attemptCount,
+        httpStatus: null,
+        responseBody: null,
+        errorMessage,
+        createdAt: doc.createdAt,
+        completedAt: new Date().toISOString(),
+      });
+      await deleteOutboxDelivery(doc._id);
+      return;
+    }
+    throw e;
+  }
 
   try {
     const ac = new AbortController();

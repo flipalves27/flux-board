@@ -7,7 +7,7 @@ import {
   updateWebhookSubscription,
 } from "@/lib/kv-webhooks";
 import { WebhookSubscriptionUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
-import { assertWebhookUrlAllowed } from "@/lib/webhook-url";
+import { assertWebhookUrlResolvesSafely, WebhookUrlBlockedError } from "@/lib/webhook-url";
 
 function secretHint(secret: string): string {
   const s = String(secret || "");
@@ -52,9 +52,10 @@ export async function PATCH(
 
   if (parsed.data.url) {
     try {
-      assertWebhookUrlAllowed(parsed.data.url);
+      await assertWebhookUrlResolvesSafely(parsed.data.url);
     } catch (e) {
-      return NextResponse.json({ error: e instanceof Error ? e.message : "URL inválida" }, { status: 400 });
+      const msg = e instanceof WebhookUrlBlockedError ? e.message : "URL inválida.";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
   }
 

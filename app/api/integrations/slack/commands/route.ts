@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySlackRequestSignature } from "@/lib/slack-request-verify";
+import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 /**
  * Slash commands Slack (`application/x-www-form-urlencoded`).
@@ -9,6 +10,16 @@ export async function POST(request: NextRequest) {
   const secret = process.env.SLACK_SIGNING_SECRET?.trim();
   if (!secret) {
     return new NextResponse(null, { status: 404 });
+  }
+
+  const ip = getClientIpFromHeaders(request.headers);
+  const rl = await rateLimit({
+    key: `integrations:slack:commands:${ip}`,
+    limit: Number(process.env.FLUX_RL_SLACK_COMMANDS_PER_MIN || 120),
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return new NextResponse(null, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   }
 
   const rawBody = await request.text();

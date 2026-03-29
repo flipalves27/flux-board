@@ -33,7 +33,7 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 ### Tampering
 
 - **Ameaça:** Alterar boards/cards de outra org (IDOR) ou payloads de webhook.
-- **Controles:** `userCanAccessBoard` + `orgId` em `getBoard`/`updateBoard`; assinatura Stripe; HMAC em webhooks outbound ([`lib/webhook-delivery.ts`](../lib/webhook-delivery.ts)).
+- **Controles:** `userCanAccessBoard` + `orgId` em `getBoard`/`updateBoard`; assinatura Stripe; HMAC em webhooks outbound ([`lib/webhook-delivery.ts`](../lib/webhook-delivery.ts)); validação anti-SSRF da URL antes do `fetch` e na criação/edição da subscription ([`lib/webhook-url.ts`](../lib/webhook-url.ts)).
 - **Risco residual:** Bug em rota nova sem checagem — exigir checklist em PR para rotas `app/api/**`.
 
 ### Repudiation
@@ -51,7 +51,7 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 ### Denial of service
 
 - **Ameaça:** Abuso de rotas públicas ou LLM (custo).
-- **Controles:** [`lib/rate-limit.ts`](../lib/rate-limit.ts), [`lib/global-api-rate-limit.ts`](../lib/global-api-rate-limit.ts), caps diários por org ([`lib/ai-org-budget.ts`](../lib/ai-org-budget.ts)).
+- **Controles:** [`lib/rate-limit.ts`](../lib/rate-limit.ts), [`lib/global-api-rate-limit.ts`](../lib/global-api-rate-limit.ts), caps diários por org ([`lib/ai-org-budget.ts`](../lib/ai-org-budget.ts)); rate limit também em `GET /api/portal/[token]`, `GET /api/organizations/branding-public` e POSTs de integrações Slack/Teams (env `FLUX_RL_*` configuráveis).
 - **Risco residual:** Ataques distribuídos — escalar com WAF/Vercel conforme necessidade.
 
 ### Elevation of privilege
@@ -76,6 +76,7 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 - Rotas internas de segurança deixaram de reutilizar `JWT_SECRET` como fallback de autenticação.
 - `resolve-host` e `rate-limit-check` agora exigem segredos dedicados (`INTERNAL_HOST_RESOLVE_SECRET` e `RATE_LIMIT_INTERNAL_SECRET`).
 - CORS wildcard legado em `/api/boards` foi limitado a ambientes não produtivos.
+- Webhooks outbound: bloqueio de URLs com credenciais embutidas, IPs privados/reservados (literal e pós-DNS), hostnames de metadata conhecidos; falha imediata na entrega sem ciclo longo de retries quando a URL é rejeitada.
 
 ## Referências internas
 
