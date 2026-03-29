@@ -1,6 +1,6 @@
 # Checklist OWASP ASVS (reduzido) — Flux-Board
 
-Nível alvo conceitual: **V2 padrão** para aplicação SaaS B2B com dados de trabalho (não dados médicos/financeiros pesados no core). Itens marcados na implementação atual (março/2025).
+Nível alvo conceitual: **V2 padrão** para aplicação SaaS B2B com dados de trabalho (não dados médicos/financeiros pesados no core). Itens marcados na implementação atual (março/2026).
 
 Legenda: **Feito** | **Parcial** | **Falta**
 
@@ -99,3 +99,7 @@ Legenda: **Feito** | **Parcial** | **Falta**
 ---
 
 Revisar este checklist a cada release maior ou após incidente.
+
+---
+
+**Execução do plano OWASP (automatizado + estático):** 2026-03-29 — `npm run security:audit` (0 vulnerabilidades prod), `npm run pentest:inventory` (150 rotas, 0× `review_manually`). Itens **Parcial** (1.2, 2.3, 8.1) mantêm-se até validação em staging com dois inquilinos e DAST; detalhe em [pentest-execution-report.md](./pentest-execution-report.md).
