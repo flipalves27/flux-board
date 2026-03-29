@@ -463,7 +463,8 @@ export async function createUser(user: {
 
 export async function updateUser(id: string, orgId: string, updates: Partial<User>): Promise<User | null> {
   await ensureTenancyMigrationOnce();
-  const user = await getUserById(id, orgId);
+  /** Leitura sem `migrateUserCanonicalOrgRole` — evita recursão com `getUserById` → migrate → `updateUser`. */
+  const user = await loadUserByIdFromStore(id, orgId);
   if (!user) return null;
 
   if (isMongoConfigured()) {
@@ -551,7 +552,7 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
     await setKvOAuthMappingsForUser(id, user.oauthLinks);
   }
   await kv.set(USER_PREFIX + id, JSON.stringify(user));
-  return user;
+  return getUserById(id, orgId);
 }
 
 export async function listUsers(orgId: string): Promise<
