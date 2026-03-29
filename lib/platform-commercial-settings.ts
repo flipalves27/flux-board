@@ -258,9 +258,16 @@ export function collectBusinessPriceIdSet(doc: PlatformCommercialDoc | null, env
   return asSet(ids);
 }
 
-export async function resolveBillingPlanFromStripeSubscription(subscription: Stripe.Subscription): Promise<"pro" | "business" | null> {
+export async function resolveBillingPlanFromStripeSubscription(
+  subscription: Stripe.Subscription,
+  /** Metadados da Checkout Session quando a Subscription ainda não copiou plan/org (fallback). */
+  fallbackMetadata?: Stripe.Metadata | null
+): Promise<"pro" | "business" | null> {
   const metaPlan = subscription.metadata?.plan;
   if (metaPlan === "pro" || metaPlan === "business") return metaPlan;
+
+  const fbPlan = fallbackMetadata?.plan;
+  if (fbPlan === "pro" || fbPlan === "business") return fbPlan;
 
   const priceId = subscription.items.data?.[0]?.price?.id;
   if (!priceId) return null;

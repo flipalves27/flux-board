@@ -7,6 +7,7 @@ import {
   mergeDisplayPricingFromDoc,
   normalizeStripePriceIdInput,
   readEnvStripePriceIds,
+  resolveBillingPlanFromStripeSubscription,
   type PlatformCommercialDoc,
 } from "./platform-commercial-settings";
 import { PRICING_BRL, brlCentsEqual, formatBrl, roundBrl2 } from "./billing-pricing";
@@ -88,6 +89,18 @@ describe("explainInvalidStripePriceId", () => {
 
   it("detects BRL-like strings", () => {
     expect(explainInvalidStripePriceId("39,99")).toMatch(/monet[aá]rio|Price ID/i);
+  });
+});
+
+describe("resolveBillingPlanFromStripeSubscription", () => {
+  it("uses session metadata plan when subscription.metadata.plan is missing", async () => {
+    const sub = {
+      metadata: {},
+      items: { data: [{ price: { id: "price_would_need_mongo" } }] },
+    } as unknown as import("stripe").Stripe.Subscription;
+    await expect(
+      resolveBillingPlanFromStripeSubscription(sub, { plan: "pro", orgId: "org1" })
+    ).resolves.toBe("pro");
   });
 });
 

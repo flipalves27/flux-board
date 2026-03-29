@@ -153,7 +153,7 @@ Use pares consistentes: em **Production**, chaves e Price IDs **live**; em **Pre
 
 1. [Stripe Dashboard](https://dashboard.stripe.com) → **Developers** → **Webhooks** → **Add endpoint**.
 2. **URL:** `https://<seu-dominio>/api/billing/webhook` (domínio estável de produção ou staging; previews com URL mutável costumam usar só produção ou Stripe CLI em local).
-3. **Eventos** tratados pela aplicação: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` (ver `handleStripeWebhook` em [`lib/billing.ts`](lib/billing.ts)).
+3. **Eventos** tratados pela aplicação: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` e `checkout.session.completed` (modo subscription; redundância para ativar plano). Ver `handleStripeWebhook` em [`lib/billing.ts`](lib/billing.ts).
 4. Copie o **Signing secret** para `STRIPE_WEBHOOK_SECRET` na Vercel e faça um novo deploy se necessário.
 
 ### Validação após deploy (smoke test)

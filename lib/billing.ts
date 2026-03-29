@@ -1,7 +1,8 @@
 /**
  * Stripe — modelo de sincronização
  *
- * - Webhook (`handleStripeWebhook`): apenas `customer.subscription.created|updated|deleted`.
+ * - Webhook (`handleStripeWebhook`): `customer.subscription.created|updated|deleted` e `checkout.session.completed`
+ *   (redundância). Eventos `subscription.*` com status `incomplete` são ignorados até o pagamento confirmar (evita rebaixar o plano).
  *   Outros eventos (ex. `invoice.payment_failed`) retornam 200 com `ignored_event_type` — o estado do produto
  *   segue o objeto subscription em `updated` (ex. status `past_due` não é `active`/`trialing`, então tratamos como inativo).
  * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (`metadata.plan`, IDs ativos/legados em
@@ -273,6 +274,36 @@ export async function handleStripeWebhook(
   }
 
   const type = event.type;
+
+  if (type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode !== "subscription") {
+      return { handled: false, status: 200, reason: "ignored_event_type" };
+    }
+    const orgId = session.metadata?.orgId;
+    if (!orgId) return { handled: false, status: 400, reason: "missing_org_id_metadata" };
+    const subRef = session.subscription;
+    const subId = typeof subRef === "string" ? subRef : subRef && typeof subRef === "object" ? subRef.id : null;
+    if (!subId) return { handled: false, status: 400, reason: "missing_subscription_on_session" };
+
+    const subscription = await stripe().subscriptions.retrieve(subId);
+    if (subscription.status === "incomplete") {
+      return { handled: true, status: 200, reason: "ignored_subscription_incomplete" };
+    }
+
+    const isActive = subscription.status === "active" || subscription.status === "trialing";
+    const tier = await resolveBillingPlanFromStripeSubscription(subscription, session.metadata);
+    if (!tier) return { handled: false, status: 400, reason: "unmapped_tier" };
+
+    await applySubscriptionStateToOrganization({
+      orgId,
+      subscription,
+      tier,
+      isActive,
+    });
+    return { handled: true, status: 200 };
+  }
+
   if (!["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(type)) {
     return { handled: false, status: 200, reason: "ignored_event_type" };
   }
@@ -290,6 +321,10 @@ export async function handleStripeWebhook(
       isActive: false,
     });
     return { handled: true, status: 200 };
+  }
+
+  if (subscription.status === "incomplete") {
+    return { handled: true, status: 200, reason: "ignored_subscription_incomplete" };
   }
 
   const isActive = subscription.status === "active" || subscription.status === "trialing";
