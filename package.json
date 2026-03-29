@@ -13,6 +13,7 @@
     "security:audit": "node scripts/security-audit.mjs",
     "pentest:inventory": "node scripts/pentest-api-inventory.mjs",
     "migrate:reborn-boards": "node scripts/migrate-reborn-board-ids.mjs",
+    "mongo:clear-platform-stripe-price-ids": "node scripts/clear-platform-stripe-price-ids.mjs",
     "validate:deploy": "npm run lint && npm run test && npm run build",
     "test:watch": "vitest",
     "test:coverage:llm-utils": "vitest run lib/llm-utils.test.ts --coverage",

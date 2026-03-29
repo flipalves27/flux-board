@@ -4,6 +4,7 @@ import {
   collectProPriceIdSet,
   isValidStripePriceId,
   mergeDisplayPricingFromDoc,
+  normalizeStripePriceIdInput,
   readEnvStripePriceIds,
   type PlatformCommercialDoc,
 } from "./platform-commercial-settings";
@@ -75,6 +76,13 @@ describe("PlatformCommercialSettingsPatchSchema", () => {
       proSeatMonth: 49.999,
     });
     expect(p.success).toBe(false);
+  });
+});
+
+describe("normalizeStripePriceIdInput", () => {
+  it("strips BOM and surrounding quotes", () => {
+    expect(normalizeStripePriceIdInput('\uFEFF"price_1Ab"')).toBe("price_1Ab");
+    expect(normalizeStripePriceIdInput("'price_1X'")).toBe("price_1X");
   });
 });
 
