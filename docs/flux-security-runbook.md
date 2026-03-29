@@ -50,6 +50,7 @@ Integrar ao pipeline existente: `npm run validate:deploy` pode incluir `npm audi
 
 ```bash
 npm run security:audit
+npm run pentest:inventory
 ```
 
-Executa auditoria de dependências e varreduras estáticas documentadas no script.
+O primeiro comando executa auditoria de dependências e varreduras estáticas. O segundo regera o inventário classificado de rotas em `docs/pentest-api-inventory.md`. Relatório amplo: `docs/pentest-execution-report.md`.

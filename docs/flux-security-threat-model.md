@@ -81,3 +81,4 @@ Documento vivo para reavaliação periódica. **Última revisão:** março/2026.
 
 - Runbook: [`flux-security-runbook.md`](./flux-security-runbook.md)
 - ASVS reduzido: [`flux-security-asvs-checklist.md`](./flux-security-asvs-checklist.md)
+- Execução do plano de pentest (inventário, achados estáticos, E2E): [`pentest-execution-report.md`](./pentest-execution-report.md)
