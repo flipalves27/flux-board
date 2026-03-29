@@ -193,7 +193,7 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `/boards` | Lista de boards |
 | `/board/[id]` | Kanban do board |
 | `/forms/[slug]` | Formulário público para intake de demandas |
-| `/users` | Administração de usuários (admin) |
+| `/users` | Diretório de utilizadores (gestores da org) |
 
 ### API comercial / go-to-market
 
@@ -213,6 +213,12 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 ## Credenciais padrão
 
 - **Admin:** usuário `Admin`, senha `Admin` (case sensitive)
+
+## Papéis (RBAC)
+
+- **Administrador do domínio** (`platform_admin`): acesso a todas as organizações e às operações globais da plataforma (ex.: `/rate-limit-abuse`). A conta seed `Admin` usa este papel.
+- **Gestor** (`gestor` na organização): gere apenas a sua organização — billing, convites, utilizadores, Equipe e definições. Corresponde ao antigo “admin da org” e ao papel executivo para efeitos de permissão.
+- **Membro** (`membro`) e **Convidado** (`convidado`): sem gestão da org; convidados não podem criar boards na organização.
 
 ## Funcionalidades
 

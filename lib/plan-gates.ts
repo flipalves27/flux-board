@@ -2,7 +2,7 @@ import type { Organization } from "./kv-organizations";
 import { isProTenant } from "./commercial-plan";
 import { getFreeMaxBoards, getFreeMaxUsers } from "./billing-limits";
 import { writeSecurityAudit } from "./security-audit";
-import { isPlatformAdminFromAuthPayload, type OrgRole, type PlatformRole } from "./rbac";
+import { deriveEffectiveRoles, isOrgGestor, isPlatformAdmin, type OrgRole, type PlatformRole } from "./rbac";
 
 /**
  * Tier de produto é sempre por organização (`Organization.plan`, Stripe, trial).
@@ -35,8 +35,9 @@ export type PlanGateAuthPayload = {
 
 /** Contexto a partir do payload de `getAuthFromRequest` (ou JWT + mesmo shape no cliente). */
 export function planGateCtxFromAuthPayload(payload: PlanGateAuthPayload): PlanGateContext | undefined {
-  const platform = isPlatformAdminFromAuthPayload(payload);
-  const orgElevated = Boolean(payload.isAdmin || payload.isExecutive) && !platform;
+  const roles = deriveEffectiveRoles(payload);
+  const platform = isPlatformAdmin(roles);
+  const orgElevated = isOrgGestor(roles) && !platform;
   if (!platform && !orgElevated) return undefined;
   return {
     ...(platform ? { isPlatformAdmin: true as const } : {}),

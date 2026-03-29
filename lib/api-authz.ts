@@ -3,16 +3,13 @@
  *
  * - Plano comercial: em `Organization` + `lib/plan-gates.ts` (`getEffectiveTier`, `assertFeatureAllowed`).
  *   Contexto `planGateCtxFromAuthPayload(payload)` — `platform_admin` bypassa plano; org admin/executivo só com `FLUX_ADMIN_SUPERPOWERS`.
- * - Equipe (vínculos /api/team/members, leitura ampla de usuários): `ensureOrgTeamManager` = `platform_admin` OU gestor ativo.
- * - Billing / Stripe / convites org / criar ou remover usuários / override de plano: `ensureOrgManager` (admin ou executivo da org, ou plataforma).
- * - Demais gestão (branding, webhooks, etc.): `ensureOrgManager` = `platform_admin` OU `org_manager`.
+ * - Gestão da org (Equipe, utilizadores, billing, convites, branding, webhooks): `ensureOrgManager` = `platform_admin` OU papel **gestor** na org (`ensureOrgTeamManager` é alias).
  * - Operações globais / multi-tenant na URL: só `ensurePlatformAdmin` ou `isSameOrgOrPlatformAdmin` em
  *   `lib/tenant-route-guard.ts` — nunca `payload.isAdmin` (flag de admin **da org**).
  * - Acesso a boards: `userCanAccessBoard(..., isAdmin)` usa o mesmo boolean do JWT: “vê todos os boards da org”;
  *   não concede acesso a outra organização.
  *
- * Rotas com `ensureOrgTeamManager`: leitura `GET /api/users`, equipe (`/api/team/members`).
- * Billing e convites org: `ensureOrgManager`.
+ * Rotas que usavam `ensureOrgTeamManager` passam a usar o mesmo critério que `ensureOrgManager`.
  * `ensureOrgManager`: org/webhooks*; organizations/verify-domain; boards export-template; `PUT /api/organizations/me`
  * (nome, slug, branding, IA) e demais gestão que não é só membros/billing.
  *
@@ -21,7 +18,12 @@
  * Templates marketplace: bypass global → `isPlatformAdmin` (não org admin de outro tenant).
  */
 import { NextResponse } from "next/server";
-import { canManageOrganization, isPlatformAdmin, isPlatformAdminFromAuthPayload } from "./rbac";
+import {
+  canManageOrganization,
+  deriveEffectiveRoles,
+  isPlatformAdmin,
+  isPlatformAdminFromAuthPayload,
+} from "./rbac";
 import type { getAuthFromRequest } from "./auth";
 import type { FeatureKey, PlanGateError } from "./plan-gates";
 
@@ -56,19 +58,18 @@ export function denyUpgradeRequired(feature: FeatureKey, status = 402) {
 }
 
 export function ensurePlatformAdmin(payload: AuthPayload): NextResponse | null {
-  return isPlatformAdmin(payload) ? null : deny("Acesso negado. Apenas administrador da plataforma.");
+  return isPlatformAdmin(deriveEffectiveRoles(payload)) ? null : deny("Acesso negado. Apenas administrador da plataforma.");
 }
 
 export function ensureOrgManager(payload: AuthPayload): NextResponse | null {
-  return canManageOrganization(payload)
+  return canManageOrganization(deriveEffectiveRoles(payload))
     ? null
-    : deny("Acesso negado. Apenas administrador ou executivo da organização.");
+    : deny("Acesso negado. Apenas gestor da organização ou administrador da plataforma.");
 }
 
+/** @deprecated Use `ensureOrgManager`; mantido para chamadas existentes (mesmo critério). */
 export function ensureOrgTeamManager(payload: AuthPayload): NextResponse | null {
-  if (isPlatformAdmin(payload)) return null;
-  if (payload.isOrgTeamManager) return null;
-  return deny("Acesso negado. Apenas gestores (Equipe) podem gerenciar membros e billing.");
+  return ensureOrgManager(payload);
 }
 
 /** Checkout, portal e pausa Stripe são para contas cliente; admin da plataforma não dispara fluxo comercial aqui. */

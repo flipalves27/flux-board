@@ -4,7 +4,14 @@ import { NextRequest } from "next/server";
 import { getJwtSecret } from "./jwt-secret";
 import { ACCESS_COOKIE } from "./auth-cookie-names";
 import { accessTokenExpiresSeconds } from "./session-ttl";
-import { deriveEffectiveRoles, type OrgRole, type PlatformRole } from "./rbac";
+import {
+  canManageOrganization,
+  deriveEffectiveRoles,
+  seesAllBoardsInOrg,
+  type OrgMembershipRole,
+  type OrgRole,
+  type PlatformRole,
+} from "./rbac";
 
 const SALT_LEN = 16;
 
@@ -31,13 +38,15 @@ export function createToken(user: {
   orgRole?: OrgRole;
 }): string {
   const roles = deriveEffectiveRoles(user);
+  const seesAll = seesAllBoardsInOrg(roles);
   const secret = getJwtSecret();
   const expiresIn = accessTokenExpiresSeconds();
   return jwt.sign(
     {
       id: user.id,
       username: user.username,
-      isAdmin: !!user.isAdmin,
+      /** Compat: mesmo critério que `seesAllBoardsInOrg` (gestor ou admin do domínio). */
+      isAdmin: seesAll,
       isExecutive: !!user.isExecutive,
       orgId: user.orgId ? String(user.orgId) : "org_default",
       platformRole: roles.platformRole,
@@ -57,7 +66,7 @@ export function verifyToken(
   isExecutive: boolean;
   orgId: string;
   platformRole: PlatformRole;
-  orgRole: OrgRole;
+  orgRole: OrgMembershipRole;
 } | null {
   try {
     const secret = getJwtSecret();
@@ -71,10 +80,11 @@ export function verifyToken(
       orgRole?: OrgRole;
     };
     const roles = deriveEffectiveRoles(payload);
+    const seesAll = seesAllBoardsInOrg(roles);
     return {
       id: payload.id,
       username: payload.username,
-      isAdmin: !!payload.isAdmin,
+      isAdmin: seesAll,
       isExecutive: !!payload.isExecutive,
       orgId: payload.orgId ? String(payload.orgId) : "org_default",
       platformRole: roles.platformRole,
@@ -94,11 +104,14 @@ export async function getAuthFromRequest(
 ): Promise<{
   id: string;
   username: string;
+  /** @deprecated Preferir `seesAllBoardsInOrg` — vê todos os boards da org ou admin do domínio. */
   isAdmin: boolean;
   isExecutive: boolean;
   orgId: string;
   platformRole: PlatformRole;
-  orgRole: OrgRole;
+  orgRole: OrgMembershipRole;
+  seesAllBoardsInOrg: boolean;
+  /** @deprecated Alinhado a gestão da org (`gestor` ou `platform_admin`). */
   isOrgTeamManager: boolean;
 } | null> {
   const auth = req.headers.get("authorization") || req.headers.get("Authorization");
@@ -118,16 +131,17 @@ export async function getAuthFromRequest(
     platformRole: user.platformRole,
     orgRole: user.orgRole,
   });
-  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
-  const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
+  const sees = seesAllBoardsInOrg(roles);
+  const canManageOrg = canManageOrganization(roles);
   return {
     id: user.id,
     username: user.username,
-    isAdmin: user.id === "admin" || !!user.isAdmin,
+    isAdmin: sees,
     isExecutive: !!user.isExecutive,
     orgId: user.orgId,
     platformRole: roles.platformRole,
     orgRole: roles.orgRole,
-    isOrgTeamManager,
+    seesAllBoardsInOrg: sees,
+    isOrgTeamManager: canManageOrg,
   };
 }

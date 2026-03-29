@@ -355,7 +355,7 @@ export function Sidebar() {
     return () => {
       cancelled = true;
     };
-  }, [isChecked, user?.orgId, user?.isAdmin, user?.isExecutive, user?.platformRole, getHeaders]);
+  }, [isChecked, user?.orgId, user?.orgRole, user?.platformRole, getHeaders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -745,7 +745,7 @@ export function Sidebar() {
             sublabel={t("reportsProduct")}
             dataTour="board-reports"
           />
-          {(user?.isAdmin || user?.isExecutive) && (
+          {user && sessionCanManageOrgBilling(user) && (
             <NavLink
               path="/dashboard"
               hint={t("hints.dashboard")}
@@ -830,7 +830,7 @@ export function Sidebar() {
             </>
           )}
 
-          {(user?.isAdmin || user?.isExecutive) && (
+          {user && sessionCanManageOrgBilling(user) && (
             <NavLink
               path="/org-settings"
               hint={t("hints.organization")}

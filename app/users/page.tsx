@@ -15,6 +15,15 @@ interface UserRow {
   name: string;
   email: string;
   isAdmin: boolean;
+  orgRole?: "gestor" | "membro" | "convidado";
+}
+
+function roleLabel(u: UserRow): string {
+  if (u.orgRole === "gestor" || (u.isAdmin && u.orgRole !== "membro" && u.orgRole !== "convidado")) {
+    return "Gestor";
+  }
+  if (u.orgRole === "convidado") return "Convidado";
+  return "Membro";
 }
 
 export default function UsersPage() {
@@ -28,7 +37,7 @@ export default function UsersPage() {
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPwd, setFormPwd] = useState("");
-  const [formIsAdmin, setFormIsAdmin] = useState(false);
+  const [formOrgRole, setFormOrgRole] = useState<"gestor" | "membro" | "convidado">("membro");
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const { pushToast } = useToast();
@@ -66,7 +75,7 @@ export default function UsersPage() {
     setFormName("");
     setFormEmail("");
     setFormPwd("");
-    setFormIsAdmin(false);
+    setFormOrgRole("membro");
     setFormError("");
     setModalOpen(true);
   }
@@ -77,7 +86,13 @@ export default function UsersPage() {
     setFormName(u.name);
     setFormEmail(u.email);
     setFormPwd("");
-    setFormIsAdmin(u.isAdmin);
+    setFormOrgRole(
+      u.orgRole === "gestor" || u.orgRole === "convidado" || u.orgRole === "membro"
+        ? u.orgRole
+        : u.isAdmin
+          ? "gestor"
+          : "membro"
+    );
     setFormError("");
     setModalOpen(true);
   }
@@ -116,9 +131,9 @@ export default function UsersPage() {
       setFormError("Nome é obrigatório.");
       return;
     }
-    const body: { name: string; password?: string; isAdmin: boolean } = {
+    const body: { name: string; password?: string; orgRole: "gestor" | "membro" | "convidado" } = {
       name: formName.trim(),
-      isAdmin: formIsAdmin,
+      orgRole: formOrgRole,
     };
     if (formPwd.length >= 8) body.password = formPwd;
     try {
@@ -185,12 +200,16 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-[var(--flux-text)]">{u.name}</td>
                     <td className="px-4 py-3 text-[var(--flux-text-muted)]">{u.email}</td>
                     <td className="px-4 py-3">
-                      {u.isAdmin ? (
+                      {roleLabel(u) === "Gestor" ? (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[var(--flux-primary)] text-white">
-                          Admin
+                          Gestor
+                        </span>
+                      ) : roleLabel(u) === "Convidado" ? (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)]">
+                          Convidado
                         </span>
                       ) : (
-                        "Usuário"
+                        "Membro"
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -276,24 +295,29 @@ export default function UsersPage() {
               </div>
               {modalMode === "edit" ? (
                 <>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={formIsAdmin}
-                      onChange={(e) => setFormIsAdmin(e.target.checked)}
-                      className="rounded border-[var(--flux-chrome-alpha-12)]"
-                    />
-                    <span className="text-sm text-[var(--flux-text)]">
-                      Administrador da organização
-                    </span>
-                  </label>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                      Papel na organização
+                    </label>
+                    <select
+                      value={formOrgRole}
+                      onChange={(e) =>
+                        setFormOrgRole(e.target.value as "gestor" | "membro" | "convidado")
+                      }
+                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] outline-none"
+                    >
+                      <option value="gestor">Gestor</option>
+                      <option value="membro">Membro</option>
+                      <option value="convidado">Convidado</option>
+                    </select>
+                  </div>
                   <p className="text-[11px] text-[var(--flux-text-muted)]">
-                    Administradores da organização podem gerenciar membros, billing, convites e configurações. Não é obrigatório manter um administrador; a gestão da equipe usa o papel Gestor nos vínculos de equipe.
+                    Gestores gerem billing, convites e definições. Convidados têm as mesmas bases que membros, com limitações extra (ex.: não criar boards).
                   </p>
                 </>
               ) : (
                 <p className="text-[11px] text-[var(--flux-text-muted)]">
-                  Novos usuários são criados sem perfil de administrador da organização.
+                  Novos utilizadores são criados como membros (não gestores).
                 </p>
               )}
             </div>

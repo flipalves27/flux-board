@@ -7,6 +7,7 @@ import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-expor
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
+import { canManageOrganization, deriveEffectiveRoles } from "@/lib/rbac";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
 import {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     await ensureAdminUser();
     const actor = await getUserById(payload.id, payload.orgId);
     if (!actor) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-    if (!actor.isAdmin && !actor.isExecutive) {
+    if (!canManageOrganization(deriveEffectiveRoles(payload))) {
       return NextResponse.json({ error: "Acesso restrito a gestores." }, { status: 403 });
     }
 
@@ -100,11 +101,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Mensagem vazia após validação." }, { status: 400 });
     }
 
-    const boards = await listBoardsForUser(
-      payload.id,
-      payload.orgId,
-      payload.isAdmin || !!actor.isExecutive
-    );
+    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
     const quarter = currentQuarterLabel();

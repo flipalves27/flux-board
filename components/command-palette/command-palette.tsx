@@ -352,7 +352,7 @@ export function CommandPalette() {
     const nav: { path: string; title: string; kw: string }[] = [
       { path: "/boards", title: t("nav.boards"), kw: "boards lista" },
       { path: "/reports", title: t("nav.reports"), kw: "reports bi" },
-      ...(user.isAdmin || user.isExecutive
+      ...(sessionCanManageOrgBilling(user)
         ? [{ path: "/dashboard", title: t("nav.dashboard"), kw: "executive dashboard c-level portfolio health" }]
         : []),
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
@@ -364,7 +364,7 @@ export function CommandPalette() {
       { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
       { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
     ];
-    if (user.isAdmin || user.isExecutive) {
+    if (sessionCanManageOrgBilling(user)) {
       nav.push({ path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" });
     }
     if (sessionCanManageMembersAndBilling(user)) {

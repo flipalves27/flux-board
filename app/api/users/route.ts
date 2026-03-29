@@ -6,7 +6,7 @@ import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
-import { isPlatformAdmin } from "@/lib/rbac";
+import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await ensureAdminUser();
-    const targetOrgId = isPlatformAdmin(payload)
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
     const users = await listUsers(targetOrgId);
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
-    const targetOrgId = isPlatformAdmin(payload)
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
     const org = await getOrganizationById(targetOrgId);

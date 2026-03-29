@@ -3,7 +3,8 @@ import { getDb, isMongoConfigured } from "./mongo";
 import { hashPassword, verifyPassword } from "./auth";
 import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
 import type { ThemePreference } from "./theme-storage";
-import type { OrgRole, PlatformRole } from "./rbac";
+import type { OrgMembershipRole, OrgRole, PlatformRole } from "./rbac";
+import { normalizeOrgMembershipRole, resolveCanonicalOrgMembershipRole } from "./rbac";
 import type { Db } from "mongodb";
 
 const USERS_KEY = "flux_users";
@@ -23,6 +24,8 @@ const ADMIN_USER = {
   passwordHash: null as string | null,
   isAdmin: true,
   orgId: DEFAULT_ORG_ID,
+  platformRole: "platform_admin" as PlatformRole,
+  orgRole: "membro" as OrgMembershipRole,
 };
 
 export type { ThemePreference } from "./theme-storage";
@@ -51,7 +54,8 @@ export interface User {
   /** Quando true, o tour guiado do board não inicia mais automaticamente. */
   boardProductTourCompleted?: boolean;
   platformRole?: PlatformRole;
-  orgRole?: OrgRole;
+  /** Papel na org (`gestor` | `membro` | `convidado`); valores legados `org_manager`/`org_member` são migrados. */
+  orgRole?: OrgMembershipRole | OrgRole;
 }
 
 type UserDoc = {
@@ -68,7 +72,7 @@ type UserDoc = {
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;
   platformRole?: PlatformRole;
-  orgRole?: OrgRole;
+  orgRole?: string;
   oauthLinks?: { provider: string; subject: string }[];
 };
 
@@ -92,8 +96,8 @@ function toUser(doc: UserDoc): User {
     ...(doc.isExecutive ? { isExecutive: true } : {}),
     ...(tp === "light" || tp === "dark" || tp === "system" ? { themePreference: tp } : {}),
     ...(doc.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
-    ...(doc.platformRole ? { platformRole: doc.platformRole } : {}),
-    ...(doc.orgRole ? { orgRole: doc.orgRole } : {}),
+    ...(doc.platformRole ? { platformRole: doc.platformRole as PlatformRole } : {}),
+    ...(doc.orgRole ? { orgRole: doc.orgRole as User["orgRole"] } : {}),
     ...(doc.oauthLinks?.length
       ? {
           oauthLinks: doc.oauthLinks.filter(
@@ -145,6 +149,8 @@ async function persistAdminUserMongo(db: Db, admin: User): Promise<void> {
         usernameLower: admin.username.toLowerCase(),
         emailLower: admin.email.toLowerCase(),
         orgId: admin.orgId,
+        platformRole: "platform_admin",
+        orgRole: "membro",
       },
     },
     { upsert: true }
@@ -236,7 +242,8 @@ export async function ensureAdminUser(): Promise<User | null> {
   }
 }
 
-export async function getUserById(id: string, orgId: string): Promise<User | null> {
+/** Leitura direta do armazenamento, sem migração de `orgRole` (evita recursão com Equipe). */
+export async function loadUserByIdFromStore(id: string, orgId: string): Promise<User | null> {
   await ensureTenancyMigrationOnce();
   if (isMongoConfigured()) {
     const db = await getDb();
@@ -251,19 +258,45 @@ export async function getUserById(id: string, orgId: string): Promise<User | nul
   return user.orgId === orgId ? user : null;
 }
 
+async function migrateUserCanonicalOrgRole(user: User): Promise<User> {
+  if (user.id === "admin") return user;
+  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
+  const teamGestor = await userIsActiveOrgTeamManager(user.orgId, user.id);
+  const canonical = resolveCanonicalOrgMembershipRole(user, teamGestor);
+  const rawSlot = user.orgRole as string | undefined;
+  const needsPersist =
+    rawSlot === "org_manager" ||
+    rawSlot === "org_member" ||
+    ((rawSlot === undefined || rawSlot === null || rawSlot === "") && canonical === "gestor") ||
+    (rawSlot === "membro" && canonical === "gestor");
+  const withCanonical = { ...user, orgRole: canonical };
+  if (!needsPersist) return withCanonical;
+  const updated = await updateUser(user.id, user.orgId, { orgRole: canonical });
+  return updated ?? withCanonical;
+}
+
+export async function getUserById(id: string, orgId: string): Promise<User | null> {
+  const raw = await loadUserByIdFromStore(id, orgId);
+  if (!raw) return null;
+  return migrateUserCanonicalOrgRole(raw);
+}
+
 /** Carrega usuário por id sem filtrar por org (uso interno: OAuth, admin). */
 export async function getUserRecordById(id: string): Promise<User | null> {
   await ensureTenancyMigrationOnce();
+  let u: User | null = null;
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureUserIndexes(db);
     const doc = await db.collection<UserDoc>(COL_USERS).findOne({ _id: id });
-    return doc ? toUser(doc) : null;
+    u = doc ? toUser(doc) : null;
+  } else {
+    const kv = await getStore();
+    const raw = await kv.get<string>(USER_PREFIX + id);
+    u = raw ? ((typeof raw === "string" ? JSON.parse(raw) : raw) as User) : null;
   }
-  const kv = await getStore();
-  const raw = await kv.get<string>(USER_PREFIX + id);
-  if (!raw) return null;
-  return (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+  if (!u) return null;
+  return migrateUserCanonicalOrgRole(u);
 }
 
 function oauthLinkKey(provider: OAuthProviderId, subject: string): string {
@@ -379,12 +412,17 @@ export async function createUser(user: {
   passwordHash: string | null;
   orgId: string;
   isAdmin?: boolean;
+  isExecutive?: boolean;
   platformRole?: PlatformRole;
   orgRole?: OrgRole;
   oauthLinks?: OAuthLink[];
 }): Promise<User> {
   await ensureTenancyMigrationOnce();
   const id = "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
+  const initialOrgRole: OrgMembershipRole = normalizeOrgMembershipRole(
+    typeof user.orgRole === "string" ? user.orgRole : undefined,
+    { isAdmin: !!user.isAdmin, isExecutive: !!user.isExecutive }
+  );
   const doc: UserDoc = {
     _id: id,
     username: user.username,
@@ -396,7 +434,7 @@ export async function createUser(user: {
     usernameLower: user.username.toLowerCase(),
     emailLower: user.email.toLowerCase(),
     ...(user.platformRole ? { platformRole: user.platformRole } : {}),
-    ...(user.orgRole ? { orgRole: user.orgRole } : {}),
+    orgRole: initialOrgRole,
     ...(user.oauthLinks?.length
       ? {
           oauthLinks: user.oauthLinks.map((l) => ({ provider: l.provider, subject: l.subject })),
@@ -517,7 +555,14 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
 }
 
 export async function listUsers(orgId: string): Promise<
-  { id: string; username: string; name: string; email: string; isAdmin: boolean }[]
+  {
+    id: string;
+    username: string;
+    name: string;
+    email: string;
+    isAdmin: boolean;
+    orgRole?: OrgMembershipRole | OrgRole;
+  }[]
 > {
   await ensureTenancyMigrationOnce();
   await ensureAdminUser();
@@ -535,6 +580,7 @@ export async function listUsers(orgId: string): Promise<
       name: u.name,
       email: u.email,
       isAdmin: !!u.isAdmin,
+      ...(u.orgRole ? { orgRole: u.orgRole as User["orgRole"] } : {}),
     }));
   }
   const kv = await getStore();
@@ -545,7 +591,14 @@ export async function listUsers(orgId: string): Promise<
     if (!raw) continue;
     const u = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
     if (u?.orgId !== orgId) continue;
-    users.push({ id: u.id, username: u.username, name: u.name, email: u.email, isAdmin: !!u.isAdmin });
+    users.push({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      email: u.email,
+      isAdmin: !!u.isAdmin,
+      ...(u.orgRole ? { orgRole: u.orgRole } : {}),
+    });
   }
   return users;
 }

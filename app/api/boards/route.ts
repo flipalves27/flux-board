@@ -6,6 +6,7 @@ import {
   type PortfolioBoardLike,
 } from "@/lib/board-portfolio-metrics";
 import { ensureAdminUser } from "@/lib/kv-users";
+import { deriveEffectiveRoles, isOrgConvidado, isPlatformAdmin } from "@/lib/rbac";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getBoardCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
@@ -78,6 +79,11 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+
+    const roleCtx = deriveEffectiveRoles(payload);
+    if (isOrgConvidado(roleCtx) && !isPlatformAdmin(roleCtx)) {
+      return NextResponse.json({ error: "Convidados não podem criar boards." }, { status: 403 });
+    }
 
     const body = await request.json();
     const parsed = BoardCreateSchema.safeParse(body);

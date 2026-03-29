@@ -137,7 +137,7 @@ export async function completeOAuthSignIn(
       passwordHash: null,
       orgId: validated.orgId,
       isAdmin: false,
-      orgRole: "org_member",
+      orgRole: "membro",
       oauthLinks: [link],
     });
 
@@ -188,7 +188,7 @@ export async function completeOAuthSignIn(
     passwordHash: null,
     orgId: org._id,
     isAdmin: true,
-    orgRole: "org_manager",
+    orgRole: "gestor",
     oauthLinks: [link],
   });
 

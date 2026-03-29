@@ -12,6 +12,7 @@ import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
 import { useToast } from "@/context/toast-context";
 import { useAuth } from "@/context/auth-context";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import type { RagRetrievalDebug } from "@/lib/docs-rag";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { AiFeedbackInline } from "@/components/ai/ai-feedback-inline";
@@ -277,10 +278,10 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
   const canSend = useMemo(() => {
     if (generating) return false;
-    if (user?.isAdmin || user?.isExecutive) return true;
+    if (user && sessionCanManageOrgBilling(user)) return true;
     if (tier === "free" && freeDemoRemaining !== null && freeDemoRemaining <= 0) return false;
     return true;
-  }, [generating, tier, freeDemoRemaining, user?.isAdmin, user?.isExecutive]);
+  }, [generating, tier, freeDemoRemaining, user]);
 
   // setters do zustand são estáveis; omitir do array evita re-fetch desnecessário ao abrir o board.
   useEffect(() => {

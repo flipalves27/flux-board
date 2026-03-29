@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { ExecutiveDashboard } from "@/components/dashboard/executive-dashboard";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import { ReportsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 
 export default function ExecutiveDashboardPage() {
@@ -15,7 +16,7 @@ export default function ExecutiveDashboardPage() {
   const t = useTranslations("executiveDashboard");
   const localeRoot = `/${locale}`;
 
-  const canAccess = Boolean(user?.isAdmin || user?.isExecutive);
+  const canAccess = user ? sessionCanManageOrgBilling(user) : false;
 
   useEffect(() => {
     if (!isChecked) return;

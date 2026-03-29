@@ -1,4 +1,4 @@
-import { isPlatformAdmin, type OrgRole, type PlatformRole } from "./rbac";
+import { deriveEffectiveRoles, isPlatformAdmin, type OrgRole, type PlatformRole } from "./rbac";
 
 /** Shape returned by `getAuthFromRequest` for tenant checks. */
 export type TenantAuthPayload = {
@@ -13,5 +13,5 @@ export type TenantAuthPayload = {
  * só a própria org ou administrador da plataforma (nunca org admin de outro tenant).
  */
 export function isSameOrgOrPlatformAdmin(payload: TenantAuthPayload, routeOrgId: string): boolean {
-  return routeOrgId === payload.orgId || isPlatformAdmin(payload);
+  return routeOrgId === payload.orgId || isPlatformAdmin(deriveEffectiveRoles(payload));
 }

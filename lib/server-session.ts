@@ -11,21 +11,26 @@ import { getUserById } from "./kv-users";
 import type { ThemePreference } from "./theme-storage";
 import type { ValidateResult } from "./auth-types";
 import type { User } from "./kv-users";
-import { deriveEffectiveRoles, type OrgRole, type PlatformRole } from "./rbac";
+import {
+  canManageOrganization,
+  deriveEffectiveRoles,
+  seesAllBoardsInOrg,
+  type OrgRole,
+  type PlatformRole,
+} from "./rbac";
 
 async function userToValidate(user: User | null): Promise<ValidateResult> {
   if (!user) return { ok: false };
-  const isAdmin = user.id === "admin" || !!user.isAdmin;
   const isExecutive = !!user.isExecutive;
   const roles = deriveEffectiveRoles({
     id: user.id,
-    isAdmin,
+    isAdmin: user.id === "admin" || !!user.isAdmin,
     isExecutive,
     platformRole: user.platformRole,
     orgRole: user.orgRole,
   });
-  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
-  const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
+  const sees = seesAllBoardsInOrg(roles);
+  const canManage = canManageOrganization(roles);
   return {
     ok: true,
     user: {
@@ -33,12 +38,13 @@ async function userToValidate(user: User | null): Promise<ValidateResult> {
       username: user.username,
       name: user.name,
       email: user.email,
-      isAdmin,
+      isAdmin: sees,
+      seesAllBoardsInOrg: sees,
       ...(isExecutive ? { isExecutive: true } : {}),
       orgId: user.orgId,
       platformRole: roles.platformRole,
       orgRole: roles.orgRole,
-      ...(isOrgTeamManager ? { isOrgTeamManager: true } : {}),
+      ...(canManage ? { isOrgTeamManager: true } : {}),
       ...(user.themePreference ? { themePreference: user.themePreference as ThemePreference } : {}),
       ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
     },

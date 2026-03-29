@@ -1,4 +1,4 @@
-import { getUserById, listUsers } from "./kv-users";
+import { listUsers, loadUserByIdFromStore } from "./kv-users";
 import { listTeamMembers, upsertTeamMember } from "./kv-team-members";
 import { normalizeTeamRole } from "./rbac";
 
@@ -16,8 +16,14 @@ async function seedLegacyOrgManagersAsTeamGestors(orgId: string, actorUserId: st
   const now = new Date().toISOString();
   const lite = await listUsers(orgId);
   for (const row of lite) {
-    const full = await getUserById(row.id, orgId);
-    if (!full || (!full.isAdmin && !full.isExecutive)) continue;
+    const full = await loadUserByIdFromStore(row.id, orgId);
+    if (!full) continue;
+    const elevated =
+      full.isAdmin ||
+      !!full.isExecutive ||
+      full.orgRole === "gestor" ||
+      full.orgRole === "org_manager";
+    if (!elevated) continue;
     await upsertTeamMember({
       orgId,
       userId: full.id,
@@ -39,7 +45,7 @@ export async function userIsActiveOrgTeamManager(orgId: string, userId: string):
   if (members.some((m) => m.userId === userId && isOrgScopedGestorRow(m))) return true;
   if (members.some((m) => isOrgScopedGestorRow(m))) return false;
 
-  const user = await getUserById(userId, orgId);
+  const user = await loadUserByIdFromStore(userId, orgId);
   if (!user || (!user.isAdmin && !user.isExecutive)) return false;
 
   await seedLegacyOrgManagersAsTeamGestors(orgId, userId);

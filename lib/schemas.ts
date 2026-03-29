@@ -908,8 +908,13 @@ export const UserUpdateSchema = z
     name: z.string().trim().min(1).max(200).optional(),
     email: z.string().trim().email("E-mail invalido.").max(320).optional(),
     password: z.string().min(8).max(200).optional(),
+    /** @deprecated Preferir `orgRole`. Mantido para compatibilidade. */
     isAdmin: z.boolean().optional(),
+    /** @deprecated Tratado como gestor; preferir `orgRole: "gestor"`. */
     isExecutive: z.boolean().optional(),
+    orgRole: z.enum(["gestor", "membro", "convidado"]).optional(),
+    /** Só administrador da plataforma pode alterar. */
+    platformRole: z.enum(["platform_admin", "platform_user"]).optional(),
   })
   .passthrough();
 

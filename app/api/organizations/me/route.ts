@@ -25,6 +25,7 @@ import {
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
 import { ensureOrgManager } from "@/lib/api-authz";
+import { canManageOrganization, deriveEffectiveRoles } from "@/lib/rbac";
 import { writeSecurityAudit } from "@/lib/security-audit";
 
 export async function GET(request: NextRequest) {
@@ -99,13 +100,15 @@ export async function PUT(request: NextRequest) {
     const current = await getOrganizationById(payload.orgId);
     if (!current) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
 
+    const isOrgAdminForBranding = canManageOrganization(deriveEffectiveRoles(payload));
+
     let brandingPatch: OrgBranding | undefined;
     if (hasBranding) {
       const parsed = OrgBrandingUpdateSchema.safeParse(body?.branding ?? {});
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      if (!orgBrandingAllowsTheming(current, { isOrgAdmin: payload.isAdmin })) {
+      if (!orgBrandingAllowsTheming(current, { isOrgAdmin: isOrgAdminForBranding })) {
         return NextResponse.json({ error: "Branding disponível nos planos Pro e Business." }, { status: 403 });
       }
       const b = parsed.data;
@@ -162,7 +165,7 @@ export async function PUT(request: NextRequest) {
         }
       }
       if (b.customDomain !== undefined) {
-        if (!orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin })) {
+        if (!orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding })) {
           return NextResponse.json({ error: "Domínio customizado exige plano Business." }, { status: 403 });
         }
         const d = typeof b.customDomain === "string" ? b.customDomain.trim().toLowerCase() : "";
@@ -184,14 +187,14 @@ export async function PUT(request: NextRequest) {
           }
         }
       }
-      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin }) && next.customDomain) {
+      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding }) && next.customDomain) {
         next.domainVerificationToken = randomBytes(24).toString("hex");
         next.customDomainVerifiedAt = undefined;
       }
       brandingPatch = next;
       if (
         brandingPatch &&
-        orgBrandingAllowsCustomDomain(current, { isOrgAdmin: payload.isAdmin }) &&
+        orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding }) &&
         brandingPatch.customDomain &&
         !brandingPatch.domainVerificationToken
       ) {

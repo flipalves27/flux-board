@@ -22,10 +22,8 @@ import { getUserCap } from "@/lib/plan-gates";
 import type { ThemePreference } from "@/lib/theme-storage";
 import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
 import type { ValidateResult } from "@/lib/auth-types";
-import { deriveEffectiveRoles } from "@/lib/rbac";
+import { canManageOrganization, deriveEffectiveRoles, seesAllBoardsInOrg } from "@/lib/rbac";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
-import { userIsActiveOrgTeamManager } from "@/lib/org-team-gestor";
-
 export type { ValidateResult } from "@/lib/auth-types";
 
 export type AuthResult =
@@ -40,7 +38,8 @@ export type AuthResult =
         isExecutive?: boolean;
         orgId: string;
         platformRole: "platform_admin" | "platform_user";
-        orgRole: "org_manager" | "org_member";
+        orgRole: "gestor" | "membro" | "convidado";
+        seesAllBoardsInOrg?: boolean;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
         isOrgTeamManager?: boolean;
@@ -94,20 +93,21 @@ export async function loginAction(
       return { ok: false, error: "Usuário ou senha inválidos" };
     }
 
-    const isAdmin = user.id === "admin" || !!user.isAdmin;
     const isExecutive = !!user.isExecutive;
     const roles = deriveEffectiveRoles({
       id: user.id,
-      isAdmin,
+      isAdmin: user.id === "admin" || !!user.isAdmin,
       isExecutive,
       platformRole: user.platformRole,
       orgRole: user.orgRole,
     });
+    const sees = seesAllBoardsInOrg(roles);
+    const canManage = canManageOrganization(roles);
     await issueSessionForCredentials(
       {
         id: user.id,
         username: user.username,
-        isAdmin,
+        isAdmin: user.id === "admin" || !!user.isAdmin,
         ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
         platformRole: roles.platformRole,
@@ -115,7 +115,6 @@ export async function loginAction(
       },
       remember
     );
-    const isOrgTeamManager = await userIsActiveOrgTeamManager(user.orgId, user.id);
     return {
       ok: true,
       user: {
@@ -123,12 +122,13 @@ export async function loginAction(
         username: user.username,
         name: user.name,
         email: user.email,
-        isAdmin,
+        isAdmin: sees,
+        seesAllBoardsInOrg: sees,
         ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
         platformRole: roles.platformRole,
         orgRole: roles.orgRole,
-        ...(isOrgTeamManager ? { isOrgTeamManager: true } : {}),
+        ...(canManage ? { isOrgTeamManager: true } : {}),
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },
@@ -204,7 +204,7 @@ export async function registerAction(
         passwordHash: hashPassword(password),
         orgId: validated.orgId,
         isAdmin: false,
-        orgRole: "org_member",
+        orgRole: "membro",
       });
       const roles = deriveEffectiveRoles({
         id: user.id,
@@ -230,7 +230,8 @@ export async function registerAction(
         },
         remember
       );
-      const isOrgTeamManagerInvite = await userIsActiveOrgTeamManager(user.orgId, user.id);
+      const seesInv = seesAllBoardsInOrg(roles);
+      const canManageInv = canManageOrganization(roles);
       return {
         ok: true,
         user: {
@@ -238,11 +239,12 @@ export async function registerAction(
           username: user.username,
           name: user.name,
           email: user.email,
-          isAdmin: false,
+          isAdmin: seesInv,
+          seesAllBoardsInOrg: seesInv,
           orgId: user.orgId,
           platformRole: roles.platformRole,
           orgRole: roles.orgRole,
-          ...(isOrgTeamManagerInvite ? { isOrgTeamManager: true } : {}),
+          ...(canManageInv ? { isOrgTeamManager: true } : {}),
           ...(user.themePreference ? { themePreference: user.themePreference } : {}),
           ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
         },
@@ -265,7 +267,7 @@ export async function registerAction(
       passwordHash: hashPassword(password),
       orgId: org._id,
       isAdmin: true,
-      orgRole: "org_manager",
+      orgRole: "gestor",
     });
     const roles = deriveEffectiveRoles({
       id: user.id,
@@ -287,7 +289,8 @@ export async function registerAction(
       },
       remember
     );
-    const isOrgTeamManagerNewOrg = await userIsActiveOrgTeamManager(user.orgId, user.id);
+    const seesNew = seesAllBoardsInOrg(roles);
+    const canManageNew = canManageOrganization(roles);
     return {
       ok: true,
       user: {
@@ -295,11 +298,12 @@ export async function registerAction(
         username: user.username,
         name: user.name,
         email: user.email,
-        isAdmin: true,
+        isAdmin: seesNew,
+        seesAllBoardsInOrg: seesNew,
         orgId: user.orgId,
         platformRole: roles.platformRole,
         orgRole: roles.orgRole,
-        ...(isOrgTeamManagerNewOrg ? { isOrgTeamManager: true } : {}),
+        ...(canManageNew ? { isOrgTeamManager: true } : {}),
         ...(user.themePreference ? { themePreference: user.themePreference } : {}),
         ...(user.boardProductTourCompleted ? { boardProductTourCompleted: true } : {}),
       },

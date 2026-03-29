@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateSessionAction } from "@/app/actions/auth";
 import type { ThemePreference } from "@/lib/theme-storage";
-import type { OrgRole, PlatformRole } from "@/lib/rbac";
+import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
@@ -13,14 +13,16 @@ export interface AuthUser {
   username: string;
   name: string;
   email: string;
+  /** @deprecated Preferir `seesAllBoardsInOrg` ou `sessionCanManageOrgBilling`. */
   isAdmin: boolean;
+  seesAllBoardsInOrg?: boolean;
   isExecutive?: boolean;
   orgId: string;
   platformRole: PlatformRole;
-  orgRole: OrgRole;
+  orgRole: OrgMembershipRole;
   themePreference?: ThemePreference;
   boardProductTourCompleted?: boolean;
-  /** Gestor (Equipe, escopo org): gerencia membros e billing. */
+  /** @deprecated Usar `sessionCanManageOrgBilling(user)`. */
   isOrgTeamManager?: boolean;
 }
 

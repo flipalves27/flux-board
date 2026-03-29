@@ -4,7 +4,7 @@ import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-u
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
-import { isPlatformAdmin } from "@/lib/rbac";
+import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +29,7 @@ export async function GET(
 
   try {
     await ensureAdminUser();
-    const targetOrgId = isPlatformAdmin(payload)
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
     const user = await getUserById(id, targetOrgId);
@@ -42,6 +42,8 @@ export async function GET(
         username: user.username,
         name: user.name,
         email: user.email,
+        orgRole: user.orgRole,
+        platformRole: user.platformRole,
         isAdmin: !!user.isAdmin,
         ...(user.isExecutive ? { isExecutive: true } : {}),
       },
@@ -85,7 +87,8 @@ export async function PUT(
     }
 
     const clean = parsed.data;
-    const targetOrgId = isPlatformAdmin(payload)
+    const roles = deriveEffectiveRoles(payload);
+    const targetOrgId = isPlatformAdmin(roles)
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
     const existingUser = await getUserById(id, targetOrgId);
@@ -107,12 +110,27 @@ export async function PUT(
     if (clean.password !== undefined) {
       updates.passwordHash = hashPassword(clean.password);
     }
+    if (clean.platformRole !== undefined) {
+      if (!isPlatformAdmin(roles)) {
+        return NextResponse.json({ error: "Apenas administrador da plataforma pode alterar platformRole." }, { status: 403 });
+      }
+      updates.platformRole = clean.platformRole;
+    }
     if (id !== "admin") {
+      if (clean.orgRole !== undefined) {
+        updates.orgRole = clean.orgRole;
+      }
       if (clean.isAdmin !== undefined) {
         updates.isAdmin = clean.isAdmin;
+        if (clean.orgRole === undefined) {
+          updates.orgRole = clean.isAdmin ? "gestor" : "membro";
+        }
       }
       if (clean.isExecutive !== undefined) {
         updates.isExecutive = clean.isExecutive;
+        if (clean.orgRole === undefined && clean.isExecutive) {
+          updates.orgRole = "gestor";
+        }
       }
     }
 
@@ -126,6 +144,8 @@ export async function PUT(
         username: user.username,
         name: user.name,
         email: user.email,
+        orgRole: user.orgRole,
+        platformRole: user.platformRole,
         isAdmin: !!user.isAdmin,
         ...(user.isExecutive ? { isExecutive: true } : {}),
       },
@@ -162,7 +182,7 @@ export async function DELETE(
 
   try {
     await ensureAdminUser();
-    const targetOrgId = isPlatformAdmin(payload)
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
     const user = await getUserById(id, targetOrgId);

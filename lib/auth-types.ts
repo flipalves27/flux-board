@@ -1,5 +1,5 @@
 import type { ThemePreference } from "./theme-storage";
-import type { OrgRole, PlatformRole } from "./rbac";
+import type { OrgMembershipRole, PlatformRole } from "./rbac";
 
 export type ValidateResult =
   | {
@@ -9,14 +9,16 @@ export type ValidateResult =
         username: string;
         name: string;
         email: string;
+        /** @deprecated Igual a `seesAllBoardsInOrg`. */
         isAdmin: boolean;
+        seesAllBoardsInOrg: boolean;
         isExecutive?: boolean;
         orgId: string;
         platformRole: PlatformRole;
-        orgRole: OrgRole;
+        orgRole: OrgMembershipRole;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
-        /** Gestor (Equipe, escopo organização): membros e billing. */
+        /** @deprecated Alinhado a gestor ou admin da plataforma. */
         isOrgTeamManager?: boolean;
       };
     }
