@@ -763,7 +763,18 @@
       "linkDocs": "Documentos",
       "linkOrgSettings": "Organização",
       "close": "Fechar",
-      "closeBackdrop": "Fechar painel"
+      "closeBackdrop": "Fechar painel",
+      "loadingChat": "Carregando conversa…",
+      "emptyChatLead": "Pergunte sobre o Flux-Board, navegação ou boas práticas. Em um board aberto, a Fluxy usa o contexto dos seus cards.",
+      "chatPlaceholder": "Escreva sua mensagem…",
+      "send": "Enviar",
+      "generating": "Fluxy está pensando…",
+      "roleUser": "Você",
+      "roleAssistant": "Fluxy",
+      "demoTitle": "Demo: {count} mensagens restantes",
+      "demoBody": "No plano Free há um limite de mensagens com IA no workspace; abra um board para o assistente com contexto completo.",
+      "toastErrorTitle": "Fluxy",
+      "streamError": "Não foi possível concluir a resposta."
     }
   },
   "toasts": {

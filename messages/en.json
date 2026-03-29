@@ -763,7 +763,18 @@
       "linkDocs": "Docs",
       "linkOrgSettings": "Organization",
       "close": "Close",
-      "closeBackdrop": "Close panel"
+      "closeBackdrop": "Close panel",
+      "loadingChat": "Loading conversation…",
+      "emptyChatLead": "Ask about Flux-Board, navigation, or best practices. On an open board, Fluxy uses your cards as context.",
+      "chatPlaceholder": "Type your message…",
+      "send": "Send",
+      "generating": "Fluxy is thinking…",
+      "roleUser": "You",
+      "roleAssistant": "Fluxy",
+      "demoTitle": "Demo: {count} messages left",
+      "demoBody": "On the Free plan there is a limit on workspace AI messages; open a board for the full contextual assistant.",
+      "toastErrorTitle": "Fluxy",
+      "streamError": "Could not complete the response."
     }
   },
   "toasts": {
