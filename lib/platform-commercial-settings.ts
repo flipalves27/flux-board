@@ -63,6 +63,10 @@ export function isValidStripePriceId(value: string | null | undefined): boolean 
   return /^price_[A-Za-z0-9_-]+$/.test(s);
 }
 
+function isStripeProductId(value: string): boolean {
+  return /^prod_[A-Za-z0-9_-]+$/.test(normalizeStripePriceIdInput(value));
+}
+
 function pickEffectivePriceId(
   docField: string | null | undefined,
   envField: string,
@@ -71,18 +75,45 @@ function pickEffectivePriceId(
   const fromDoc = normalizeStripePriceIdInput(docField);
   if (fromDoc && isValidStripePriceId(fromDoc)) return fromDoc;
   if (fromDoc && !isValidStripePriceId(fromDoc)) {
-    console.warn(
-      `[platform-commercial] Ignorando Price ID inválido em ${fieldLabel}="${fromDoc}" (esperado price_... da Stripe). Usando variável de ambiente.`
-    );
+    if (isStripeProductId(fromDoc)) {
+      console.warn(
+        `[platform-commercial] Ignorando ${fieldLabel}: valor no MongoDB parece ID de Produto (prod_…), não Price ID (price_…). Usando variável de ambiente.`
+      );
+    } else {
+      console.warn(
+        `[platform-commercial] Ignorando Price ID inválido em ${fieldLabel} (esperado price_… da Stripe). Usando variável de ambiente.`
+      );
+    }
   }
   return normalizeStripePriceIdInput(envField);
 }
 
-function formatPriceIdHint(label: string, raw: string): string {
+/** Diagnóstico sem ecoar valores (evita vazar env / Mongo em APIs e logs ao cliente). */
+function effectiveStripePriceStatusHint(label: string, raw: string): string {
   const s = normalizeStripePriceIdInput(raw);
-  if (!s) return `${label}: (vazio — verifique Production + redeploy na Vercel)`;
-  const shown = s.length > 56 ? `${s.slice(0, 56)}…` : s;
-  return `${label}: ${JSON.stringify(shown)}`;
+  if (!s) {
+    return `${label}: ausente — defina as variáveis na Vercel no ambiente do deploy (ex.: Production) e faça redeploy.`;
+  }
+  const why = explainInvalidStripePriceId(s);
+  if (why) return `${label}: ${why}`;
+  return `${label}: formato inválido — use só o Price ID (price_…) copiado da Stripe.`;
+}
+
+/** Explicação curta para o operador (prod_ vs price_, valor em reais, etc.). */
+export function explainInvalidStripePriceId(value: string | null | undefined): string | null {
+  const s = normalizeStripePriceIdInput(value);
+  if (!s) return null;
+  if (isStripeProductId(s)) {
+    return "Você está usando ID de Produto (prod_…). Troque pelo Price ID (price_…): Dashboard Stripe → Products → abra o produto → na lista de preços, cada linha tem um API ID começando com price_.";
+  }
+  const looksLikeMoney = /^[\d\s.,]+$/.test(s.replace(/^[Rr]\$\s?/, "").trim());
+  if (looksLikeMoney) {
+    return "Parece valor monetário, não um ID. No Stripe, abra o preço de assinatura e copie o Price ID (price_…).";
+  }
+  if (s.startsWith("price_") && !isValidStripePriceId(s)) {
+    return "O id price_ parece truncado ou com caracteres inválidos; copie o valor inteiro da coluna Price ID.";
+  }
+  return null;
 }
 
 /** Lê Price IDs do env (checkout legado). Retorna null se Pro/Business obrigatórios faltarem. */
@@ -177,15 +208,14 @@ export async function getEffectiveStripePriceIds(): Promise<{
     businessAnnual: pickEffectivePriceId(doc?.stripePriceIdBusinessAnnual, env.businessAnnual, "MongoDB stripePriceIdBusinessAnnual"),
   };
   if (!isValidStripePriceId(merged.pro) || !isValidStripePriceId(merged.business)) {
-    const hint = [
-      formatPriceIdHint("PRO (efetivo após MongoDB)", merged.pro),
-      formatPriceIdHint("BUSINESS (efetivo após MongoDB)", merged.business),
-      "Esperado: id copiado da Stripe (Product → Pricing → Price ID), formato price_…",
-      "Na Vercel: marque as variáveis para o ambiente em que o deploy roda (ex.: Production), salve e faça Redeploy.",
-      "Se no MongoDB (platform_commercial_settings) existir stripePriceIdPro/Business inválido, apague o campo ou use um price_ válido.",
-    ].join(" ");
+    const lines = [
+      effectiveStripePriceStatusHint("PRO (config efetiva Mongo + env)", merged.pro),
+      effectiveStripePriceStatusHint("BUSINESS (config efetiva Mongo + env)", merged.business),
+      "Não use prod_… (produto) nem valor em reais: use Price ID price_… por preço de assinatura.",
+      "No MongoDB (platform_commercial_settings), corrija ou remova stripePriceId* inválidos; opcional: npm run mongo:clear-platform-stripe-price-ids",
+    ];
     throw new Error(
-      "STRIPE_PRICE_ID_PRO e STRIPE_PRICE_ID_BUSINESS devem ser IDs da Stripe (price_…), não preço em reais. " + hint
+      "STRIPE_PRICE_ID_PRO e STRIPE_PRICE_ID_BUSINESS devem ser Price IDs (price_…). " + lines.join(" ")
     );
   }
   if (merged.proAnnual && !isValidStripePriceId(merged.proAnnual)) {
@@ -305,7 +335,7 @@ async function tryDeactivatePrice(stripe: Stripe, priceId: string | null | undef
   try {
     await stripe.prices.update(id, { active: false });
   } catch (e) {
-    console.warn("[platform-commercial] não foi possível desativar preço Stripe", id, e);
+    console.warn("[platform-commercial] não foi possível desativar um preço Stripe no Dashboard (operação interna).", e);
   }
 }
 

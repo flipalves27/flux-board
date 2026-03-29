@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
-import { listStripeInvoicesForOrg } from "@/lib/billing";
+import { billingErrorMessageForClient, listStripeInvoicesForOrg } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -17,9 +17,6 @@ export async function GET(request: NextRequest) {
     const invoices = await listStripeInvoicesForOrg(payload.orgId);
     return NextResponse.json({ invoices });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: billingErrorMessageForClient(err) }, { status: 400 });
   }
 }

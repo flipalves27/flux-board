@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
-import { pauseSubscriptionForOrg } from "@/lib/billing";
+import { billingErrorMessageForClient, pauseSubscriptionForOrg } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -17,9 +17,6 @@ export async function POST(request: NextRequest) {
     await pauseSubscriptionForOrg(payload.orgId);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: billingErrorMessageForClient(err) }, { status: 400 });
   }
 }

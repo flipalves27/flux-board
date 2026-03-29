@@ -305,3 +305,18 @@ export async function handleStripeWebhook(
 
   return { handled: true, status: 200 };
 }
+
+/**
+ * Resposta JSON para o cliente em /api/billing/*: não repassa mensagens brutas da Stripe
+ * (podem conter IDs de preço / produto configurados no env).
+ */
+export function billingErrorMessageForClient(err: unknown): string {
+  if (!(err instanceof Error)) return "Erro ao processar cobrança.";
+  const m = err.message;
+  if (
+    /no such price|resource_missing|invalid_request|No such customer|No such subscription|No such coupon/i.test(m)
+  ) {
+    return "Operação indisponível. Revise a configuração Stripe no servidor (Price IDs e chaves) e tente novamente.";
+  }
+  return m;
+}

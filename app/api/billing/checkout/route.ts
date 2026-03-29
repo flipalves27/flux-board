@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { shouldAllowStripeCheckoutForOrg } from "@/lib/admin-plan-override";
-import { createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
+import { billingErrorMessageForClient, createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
 import { getPlatformCommercialDocUncached, catalogFlagsFromDoc } from "@/lib/platform-commercial-settings";
 
 type BillingPlan = "pro" | "business";
@@ -61,10 +61,8 @@ export async function POST(request: NextRequest) {
     const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats, interval, locale });
     return NextResponse.json({ url: session.url, sessionId: session.sessionId });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    console.error("[billing/checkout]", err);
+    return NextResponse.json({ error: billingErrorMessageForClient(err) }, { status: 400 });
   }
 }
 

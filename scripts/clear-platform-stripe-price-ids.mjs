@@ -77,15 +77,13 @@ async function main() {
       return;
     }
 
-    const preview = keys.map((k) => `${k}=${JSON.stringify(doc[k])}`);
     if (dryRun) {
-      console.log(`[dry-run] Seriam removidos (${keys.length}): ${preview.join("; ")}`);
+      console.log(`[dry-run] Seriam removidos ${keys.length} campo(s): ${keys.join(", ")} (valores não são exibidos).`);
       return;
     }
 
     await col.updateOne({ _id: DOC_ID }, { $unset: unset });
-    console.log(`Removidos: ${keys.join(", ")}`);
-    console.log("Valores anteriores:", preview.join("; "));
+    console.log(`Removidos os campos: ${keys.join(", ")}.`);
   } finally {
     await client.close();
   }

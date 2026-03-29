@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   collectBusinessPriceIdSet,
   collectProPriceIdSet,
+  explainInvalidStripePriceId,
   isValidStripePriceId,
   mergeDisplayPricingFromDoc,
   normalizeStripePriceIdInput,
@@ -76,6 +77,17 @@ describe("PlatformCommercialSettingsPatchSchema", () => {
       proSeatMonth: 49.999,
     });
     expect(p.success).toBe(false);
+  });
+});
+
+describe("explainInvalidStripePriceId", () => {
+  it("detects product id vs price id", () => {
+    expect(explainInvalidStripePriceId("prod_UEufQnvD0fjwBV")).toContain("Produto");
+    expect(explainInvalidStripePriceId("price_1Ab")).toBe(null);
+  });
+
+  it("detects BRL-like strings", () => {
+    expect(explainInvalidStripePriceId("39,99")).toMatch(/monet[aá]rio|Price ID/i);
   });
 });
 
