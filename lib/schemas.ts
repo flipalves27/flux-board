@@ -917,14 +917,23 @@ export const UserThemePreferenceSchema = z.object({
   themePreference: z.enum(["light", "dark", "system"]),
 });
 
-/** Configuração global de planos (admin da plataforma). Valores em BRL inteiros (vitrine / base Stripe). */
+const brlPlanMoneySchema = z
+  .number()
+  .finite()
+  .min(0)
+  .max(1_000_000)
+  .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, {
+    message: "Use no maximo duas casas decimais (centavos).",
+  });
+
+/** Configuração global de planos (admin da plataforma). Valores em BRL com centavos (vitrine / base Stripe). */
 export const PlatformCommercialSettingsPatchSchema = z.object({
   proEnabled: z.boolean(),
   businessEnabled: z.boolean(),
-  proSeatMonth: z.number().finite().min(0).max(1_000_000),
-  proSeatYear: z.number().finite().min(0).max(1_000_000),
-  businessSeatMonth: z.number().finite().min(0).max(1_000_000),
-  businessSeatYear: z.number().finite().min(0).max(1_000_000),
+  proSeatMonth: brlPlanMoneySchema,
+  proSeatYear: brlPlanMoneySchema,
+  businessSeatMonth: brlPlanMoneySchema,
+  businessSeatYear: brlPlanMoneySchema,
   /** Se true, cria novos Prices no Stripe quando valores mudam ou ainda não há ID persistido. */
   publishStripe: z.boolean().optional().default(false),
 });

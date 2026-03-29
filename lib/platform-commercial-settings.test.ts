@@ -6,7 +6,8 @@ import {
   readEnvStripePriceIds,
   type PlatformCommercialDoc,
 } from "./platform-commercial-settings";
-import { PRICING_BRL } from "./billing-pricing";
+import { PRICING_BRL, brlCentsEqual, formatBrl, roundBrl2 } from "./billing-pricing";
+import { PlatformCommercialSettingsPatchSchema } from "./schemas";
 
 describe("mergeDisplayPricingFromDoc", () => {
   it("uses PRICING_BRL when doc is null", () => {
@@ -23,6 +24,56 @@ describe("mergeDisplayPricingFromDoc", () => {
     expect(m.proSeatMonth).toBe(55);
     expect(m.proSeatYear).toBe(PRICING_BRL.proSeatYear);
     expect(m.businessSeatYear).toBe(70);
+  });
+
+  it("rounds doc values to centavos", () => {
+    const doc: PlatformCommercialDoc = {
+      _id: "default",
+      proSeatMonth: 49.996,
+    };
+    expect(mergeDisplayPricingFromDoc(doc).proSeatMonth).toBe(50);
+  });
+});
+
+describe("roundBrl2 / brlCentsEqual / formatBrl", () => {
+  it("roundBrl2 normalizes to centavos", () => {
+    expect(roundBrl2(49.999)).toBe(50);
+    expect(roundBrl2(49.991)).toBe(49.99);
+  });
+
+  it("brlCentsEqual compares in centavos", () => {
+    expect(brlCentsEqual(49.9, 49.9)).toBe(true);
+    expect(brlCentsEqual(49.9, 49.81)).toBe(false);
+  });
+
+  it("formatBrl shows centavos when needed", () => {
+    expect(formatBrl(49)).toMatch(/49/);
+    expect(formatBrl(49.9)).toMatch(/49[,.]90/);
+  });
+});
+
+describe("PlatformCommercialSettingsPatchSchema", () => {
+  const base = {
+    proEnabled: true,
+    businessEnabled: true,
+    proSeatMonth: 49.99,
+    proSeatYear: 39.5,
+    businessSeatMonth: 99,
+    businessSeatYear: 79.25,
+    publishStripe: false,
+  };
+
+  it("accepts up to two decimal places", () => {
+    const p = PlatformCommercialSettingsPatchSchema.safeParse(base);
+    expect(p.success).toBe(true);
+  });
+
+  it("rejects more than two decimal places", () => {
+    const p = PlatformCommercialSettingsPatchSchema.safeParse({
+      ...base,
+      proSeatMonth: 49.999,
+    });
+    expect(p.success).toBe(false);
   });
 });
 

@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type Stripe from "stripe";
-import { PRICING_BRL } from "./billing-pricing";
+import { PRICING_BRL, brlCentsEqual, roundBrl2 } from "./billing-pricing";
 import { getDb, isMongoConfigured } from "./mongo";
 
 export const COMMERCIAL_SETTINGS_CACHE_TAG = "platform-commercial-settings";
@@ -61,12 +61,17 @@ export function readEnvStripePriceIds(): {
 export function mergeDisplayPricingFromDoc(doc: PlatformCommercialDoc | null): CommercialDisplayPricing {
   const d = PRICING_BRL;
   return {
-    proSeatMonth: typeof doc?.proSeatMonth === "number" && Number.isFinite(doc.proSeatMonth) ? doc.proSeatMonth : d.proSeatMonth,
-    proSeatYear: typeof doc?.proSeatYear === "number" && Number.isFinite(doc.proSeatYear) ? doc.proSeatYear : d.proSeatYear,
+    proSeatMonth:
+      typeof doc?.proSeatMonth === "number" && Number.isFinite(doc.proSeatMonth) ? roundBrl2(doc.proSeatMonth) : d.proSeatMonth,
+    proSeatYear: typeof doc?.proSeatYear === "number" && Number.isFinite(doc.proSeatYear) ? roundBrl2(doc.proSeatYear) : d.proSeatYear,
     businessSeatMonth:
-      typeof doc?.businessSeatMonth === "number" && Number.isFinite(doc.businessSeatMonth) ? doc.businessSeatMonth : d.businessSeatMonth,
+      typeof doc?.businessSeatMonth === "number" && Number.isFinite(doc.businessSeatMonth)
+        ? roundBrl2(doc.businessSeatMonth)
+        : d.businessSeatMonth,
     businessSeatYear:
-      typeof doc?.businessSeatYear === "number" && Number.isFinite(doc.businessSeatYear) ? doc.businessSeatYear : d.businessSeatYear,
+      typeof doc?.businessSeatYear === "number" && Number.isFinite(doc.businessSeatYear)
+        ? roundBrl2(doc.businessSeatYear)
+        : d.businessSeatYear,
   };
 }
 
@@ -260,10 +265,10 @@ export async function updatePlatformCommercialSettings(input: CommercialSettings
     _id: DOC_ID,
     proEnabled: input.proEnabled,
     businessEnabled: input.businessEnabled,
-    proSeatMonth: input.proSeatMonth,
-    proSeatYear: input.proSeatYear,
-    businessSeatMonth: input.businessSeatMonth,
-    businessSeatYear: input.businessSeatYear,
+    proSeatMonth: roundBrl2(input.proSeatMonth),
+    proSeatYear: roundBrl2(input.proSeatYear),
+    businessSeatMonth: roundBrl2(input.businessSeatMonth),
+    businessSeatYear: roundBrl2(input.businessSeatYear),
     stripePriceIdPro: prev?.stripePriceIdPro ?? null,
     stripePriceIdBusiness: prev?.stripePriceIdBusiness ?? null,
     stripePriceIdProAnnual: prev?.stripePriceIdProAnnual ?? null,
@@ -337,7 +342,7 @@ export async function updatePlatformCommercialSettings(input: CommercialSettings
     ];
 
     for (const row of slots) {
-      const needNew = row.brl !== row.prevBrl || !row.prevId?.trim();
+      const needNew = !brlCentsEqual(row.brl, row.prevBrl) || !row.prevId?.trim();
       if (!needNew) continue;
 
       const newId = await createPriceForSlot(stripe, row.productId, row.plan, row.slot, row.brl);

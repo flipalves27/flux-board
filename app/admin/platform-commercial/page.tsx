@@ -168,8 +168,9 @@ export default function PlatformCommercialAdminPage() {
       <main className="mx-auto max-w-3xl px-4 py-8 md:px-6">
         <h1 className="font-display text-2xl font-bold text-[var(--flux-text)]">Planos e cobrança (plataforma)</h1>
         <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
-          Valores em BRL por assento. Marque &quot;Publicar no Stripe&quot; para criar novos preços na Stripe quando alterar
-          valores; assinaturas existentes não migram automaticamente.
+          Valores em BRL por assento, com até <strong>duas casas decimais</strong> (centavos). Use ponto no campo numérico
+          (ex.: <code className="text-xs">49.90</code>). Marque &quot;Publicar no Stripe&quot; para criar novos preços na
+          Stripe quando alterar valores; assinaturas existentes não migram automaticamente.
         </p>
 
         {loading ? (
@@ -193,9 +194,14 @@ export default function PlatformCommercialAdminPage() {
                 <input
                   type="number"
                   min={0}
+                  step={0.01}
+                  inputMode="decimal"
                   className="mt-1 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
                   value={proSeatMonth}
-                  onChange={(e) => setProSeatMonth(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number.parseFloat(e.target.value);
+                    setProSeatMonth(Number.isFinite(v) ? v : 0);
+                  }}
                 />
               </div>
               <div>
@@ -205,9 +211,14 @@ export default function PlatformCommercialAdminPage() {
                 <input
                   type="number"
                   min={0}
+                  step={0.01}
+                  inputMode="decimal"
                   className="mt-1 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
                   value={proSeatYear}
-                  onChange={(e) => setProSeatYear(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number.parseFloat(e.target.value);
+                    setProSeatYear(Number.isFinite(v) ? v : 0);
+                  }}
                 />
               </div>
               <div>
@@ -215,9 +226,14 @@ export default function PlatformCommercialAdminPage() {
                 <input
                   type="number"
                   min={0}
+                  step={0.01}
+                  inputMode="decimal"
                   className="mt-1 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
                   value={businessSeatMonth}
-                  onChange={(e) => setBusinessSeatMonth(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number.parseFloat(e.target.value);
+                    setBusinessSeatMonth(Number.isFinite(v) ? v : 0);
+                  }}
                 />
               </div>
               <div>
@@ -227,9 +243,14 @@ export default function PlatformCommercialAdminPage() {
                 <input
                   type="number"
                   min={0}
+                  step={0.01}
+                  inputMode="decimal"
                   className="mt-1 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm"
                   value={businessSeatYear}
-                  onChange={(e) => setBusinessSeatYear(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number.parseFloat(e.target.value);
+                    setBusinessSeatYear(Number.isFinite(v) ? v : 0);
+                  }}
                 />
               </div>
             </div>
