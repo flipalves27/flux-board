@@ -894,6 +894,7 @@ export const UserCreateSchema = z
     name: z.string().trim().min(1, "Nome e obrigatorio.").max(200),
     email: z.string().trim().email("E-mail invalido.").max(320),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres.").max(200),
+    orgRole: z.enum(["gestor", "membro", "convidado"]).optional(),
     /** Novos usuários não podem ser criados como administrador da organização. */
     isAdmin: z.boolean().optional(),
   })

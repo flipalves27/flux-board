@@ -69,12 +69,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const orgRole = parsed.data.orgRole ?? "membro";
+
     const user = await createUser({
       username: emailNorm,
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
       orgId: targetOrgId,
+      orgRole,
     });
 
     return NextResponse.json(
@@ -84,6 +87,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           name: user.name,
           email: user.email,
+          orgRole: user.orgRole,
           isAdmin: !!user.isAdmin,
         },
       },

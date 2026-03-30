@@ -114,6 +114,7 @@ export default function UsersPage() {
           name: formName.trim(),
           email: formEmail.trim(),
           password: formPwd,
+          orgRole: formOrgRole,
         },
         getHeaders()
       );
@@ -293,33 +294,25 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
-              {modalMode === "edit" ? (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                      Papel na organização
-                    </label>
-                    <select
-                      value={formOrgRole}
-                      onChange={(e) =>
-                        setFormOrgRole(e.target.value as "gestor" | "membro" | "convidado")
-                      }
-                      className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] outline-none"
-                    >
-                      <option value="gestor">Gestor</option>
-                      <option value="membro">Membro</option>
-                      <option value="convidado">Convidado</option>
-                    </select>
-                  </div>
-                  <p className="text-[11px] text-[var(--flux-text-muted)]">
-                    Gestores gerem billing, convites e definições. Convidados têm as mesmas bases que membros, com limitações extra (ex.: não criar boards).
-                  </p>
-                </>
-              ) : (
-                <p className="text-[11px] text-[var(--flux-text-muted)]">
-                  Novos utilizadores são criados como membros (não gestores).
-                </p>
-              )}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                  Papel na organização
+                </label>
+                <select
+                  value={formOrgRole}
+                  onChange={(e) =>
+                    setFormOrgRole(e.target.value as "gestor" | "membro" | "convidado")
+                  }
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] outline-none"
+                >
+                  <option value="gestor">Gestor</option>
+                  <option value="membro">Membro</option>
+                  <option value="convidado">Convidado</option>
+                </select>
+              </div>
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                Gestores gerem billing, convites e definições. Convidados têm as mesmas bases que membros, com limitações extra (ex.: não criar boards).
+              </p>
             </div>
             <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
               <button
