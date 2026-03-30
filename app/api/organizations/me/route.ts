@@ -26,7 +26,7 @@ import {
 } from "@/lib/admin-plan-override";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { canManageOrganization, deriveEffectiveRoles, isPlatformAdminFromAuthPayload } from "@/lib/rbac";
-import { writeSecurityAudit } from "@/lib/security-audit";
+import { insertAuditEvent } from "@/lib/audit-events";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -254,12 +254,14 @@ export async function PUT(request: NextRequest) {
       }
       planPatch = raw as Organization["plan"];
       if (planPatch !== current.plan) {
-        writeSecurityAudit({
-          event: "admin_plan_override",
+        await insertAuditEvent({
+          action: "admin_plan_override",
+          resourceType: "organization",
           actorUserId: payload.id,
+          resourceId: payload.orgId,
           orgId: payload.orgId,
           route: "/api/organizations/me",
-          details: {
+          metadata: {
             fromPlan: current.plan,
             toPlan: planPatch,
             viaEnv: "FLUX_ALLOW_ADMIN_PLAN_OVERRIDE",

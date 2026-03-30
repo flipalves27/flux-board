@@ -555,6 +555,148 @@ export async function updateUser(id: string, orgId: string, updates: Partial<Use
   return getUserById(id, orgId);
 }
 
+/** Linha para listagens globais (admin da plataforma). */
+export type PlatformUserListRow = {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  orgId: string;
+  isAdmin: boolean;
+  orgRole?: OrgMembershipRole | OrgRole;
+  platformRole?: PlatformRole;
+};
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Lista todos os utilizadores com paginação. Com MongoDB: cursor estável por `_id`.
+ * Sem Mongo: percorre o índice KV (capacidade limitada em dev).
+ */
+export async function listAllUsersPaginated(params: {
+  limit: number;
+  cursor?: string | null;
+  orgId?: string;
+  q?: string;
+}): Promise<{ users: PlatformUserListRow[]; nextCursor: string | null; storage: "mongo" | "kv" }> {
+  await ensureTenancyMigrationOnce();
+  await ensureAdminUser();
+  const limit = Math.min(Math.max(1, params.limit || 50), 200);
+  const q = (params.q || "").trim();
+  const orgFilter = params.orgId?.trim() || undefined;
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const col = db.collection<UserDoc>(COL_USERS);
+    const filter: Record<string, unknown> = {};
+    if (orgFilter) filter.orgId = orgFilter;
+    if (q) {
+      const rx = new RegExp(escapeRegex(q), "i");
+      filter.$or = [{ emailLower: rx }, { usernameLower: rx }, { name: rx }];
+    }
+    if (params.cursor) {
+      filter._id = { $gt: params.cursor };
+    }
+    const docs = await col.find(filter).sort({ _id: 1 }).limit(limit + 1).toArray();
+    const hasMore = docs.length > limit;
+    const slice = hasMore ? docs.slice(0, limit) : docs;
+    const nextCursor = hasMore && slice.length ? slice[slice.length - 1]._id : null;
+    return {
+      users: slice.map((u) => ({
+        id: u._id,
+        username: u.username,
+        name: u.name,
+        email: u.email,
+        orgId: u.orgId || DEFAULT_ORG_ID,
+        isAdmin: !!u.isAdmin,
+        ...(u.orgRole ? { orgRole: u.orgRole as User["orgRole"] } : {}),
+        ...(u.platformRole ? { platformRole: u.platformRole as PlatformRole } : {}),
+      })),
+      nextCursor,
+      storage: "mongo",
+    };
+  }
+
+  const kv = await getStore();
+  const ids = ((await kv.get<string[]>(USERS_KEY)) as string[]) || [];
+  const rows: PlatformUserListRow[] = [];
+  for (const id of ids) {
+    const raw = await kv.get<string>(USER_PREFIX + id);
+    if (!raw) continue;
+    const u = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+    if (orgFilter && u.orgId !== orgFilter) continue;
+    if (q) {
+      const n = q.toLowerCase();
+      const hay = `${u.name} ${u.email} ${u.username}`.toLowerCase();
+      if (!hay.includes(n)) continue;
+    }
+    rows.push({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      email: u.email,
+      orgId: u.orgId || DEFAULT_ORG_ID,
+      isAdmin: !!u.isAdmin,
+      ...(u.orgRole ? { orgRole: u.orgRole } : {}),
+      ...(u.platformRole ? { platformRole: u.platformRole } : {}),
+    });
+  }
+  rows.sort((a, b) => a.id.localeCompare(b.id));
+  let start = 0;
+  if (params.cursor) {
+    const idx = rows.findIndex((r) => r.id > params.cursor!);
+    start = idx === -1 ? rows.length : idx;
+  }
+  const page = rows.slice(start, start + limit);
+  const nextCursor =
+    start + limit < rows.length && page.length ? page[page.length - 1].id : null;
+  return { users: page, nextCursor, storage: "kv" };
+}
+
+export async function countUsersInOrg(orgId: string): Promise<number> {
+  await ensureTenancyMigrationOnce();
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    return db.collection<UserDoc>(COL_USERS).countDocuments({ orgId });
+  }
+  const all = await listAllUsersPaginated({ limit: 10_000, orgId });
+  return all.users.length;
+}
+
+/**
+ * Move utilizador para outra organização (apenas chamadas autorizadas a nível de API).
+ */
+export async function moveUserToOrganization(userId: string, newOrgId: string): Promise<User | null> {
+  await ensureTenancyMigrationOnce();
+  const { getOrganizationById } = await import("./kv-organizations");
+  const org = await getOrganizationById(newOrgId);
+  if (!org) return null;
+
+  const existing = await getUserRecordById(userId);
+  if (!existing) return null;
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureUserIndexes(db);
+    const col = db.collection<UserDoc>(COL_USERS);
+    const r = await col.updateOne({ _id: userId }, { $set: { orgId: newOrgId } });
+    if (r.matchedCount === 0) return null;
+    return getUserById(userId, newOrgId);
+  }
+
+  const kv = await getStore();
+  const raw = await kv.get<string>(USER_PREFIX + userId);
+  if (!raw) return null;
+  const user = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
+  user.orgId = newOrgId;
+  await kv.set(USER_PREFIX + userId, JSON.stringify(user));
+  return getUserById(userId, newOrgId);
+}
+
 export async function listUsers(orgId: string): Promise<
   {
     id: string;

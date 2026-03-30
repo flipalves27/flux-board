@@ -916,6 +916,8 @@ export const UserUpdateSchema = z
     orgRole: z.enum(["gestor", "membro", "convidado"]).optional(),
     /** Só administrador da plataforma pode alterar. */
     platformRole: z.enum(["platform_admin", "platform_user"]).optional(),
+    /** Só administrador da plataforma: mover utilizador para outra organização. */
+    orgId: z.string().trim().min(1).max(120).optional(),
   })
   .passthrough();
 

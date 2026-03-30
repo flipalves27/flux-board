@@ -147,6 +147,18 @@ function IconShield({ className }: { className?: string }) {
   );
 }
 
+function IconBuilding({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
+    </svg>
+  );
+}
+
 function IconTracer({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -843,6 +855,13 @@ export function Sidebar() {
             <>
               <div className="h-[6px]" />
               <NavSectionTitle>{t("section.platformOps")}</NavSectionTitle>
+              <NavLink
+                path="/admin/platform"
+                hint={t("hints.platformAdminConsole")}
+                icon={<IconBuilding className="h-4 w-4 shrink-0" />}
+                label={t("platformAdminConsole")}
+                sublabel={t("platformAdminConsoleProduct")}
+              />
               <NavLink
                 path="/rate-limit-abuse"
                 hint={t("hints.rateLimitAbuse")}

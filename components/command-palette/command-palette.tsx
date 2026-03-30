@@ -380,6 +380,11 @@ export function CommandPalette() {
     }
     if (isPlatformAdminSession(user)) {
       nav.push(
+        {
+          path: "/admin/platform",
+          title: t("nav.platformAdmin"),
+          kw: "platform admin organizations users audit tenants superuser",
+        },
         { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" },
         {
           path: "/admin/platform-commercial",

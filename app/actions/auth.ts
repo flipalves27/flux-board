@@ -23,6 +23,7 @@ import type { ThemePreference } from "@/lib/theme-storage";
 import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
 import type { ValidateResult } from "@/lib/auth-types";
 import { canManageOrganization, deriveEffectiveRoles, seesAllBoardsInOrg } from "@/lib/rbac";
+import { insertAuditEvent } from "@/lib/audit-events";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 export type { ValidateResult } from "@/lib/auth-types";
 
@@ -115,6 +116,14 @@ export async function loginAction(
       },
       remember
     );
+    await insertAuditEvent({
+      action: "auth.login_success",
+      resourceType: "auth",
+      actorUserId: user.id,
+      resourceId: user.id,
+      orgId: user.orgId,
+      ip: clientIp,
+    });
     return {
       ok: true,
       user: {

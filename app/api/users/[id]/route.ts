@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthFromRequest } from "@/lib/auth";
-import { getUserById, updateUser, ensureAdminUser, deleteUser } from "@/lib/kv-users";
-import { hashPassword } from "@/lib/auth";
+import {
+  getUserById,
+  updateUser,
+  ensureAdminUser,
+  deleteUser,
+  getUserRecordById,
+  getUserByEmail,
+  moveUserToOrganization,
+} from "@/lib/kv-users";
+import { getAuthFromRequest, hashPassword } from "@/lib/auth";
 import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
+import { insertAuditEvent } from "@/lib/audit-events";
 
 export async function GET(
   request: NextRequest,
@@ -20,19 +28,22 @@ export async function GET(
     return NextResponse.json({ error: "ID do usuário é obrigatório" }, { status: 400 });
   }
 
-  if (id === "admin" && payload.id !== "admin") {
+  const rolesGet = deriveEffectiveRoles(payload);
+  if (id === "admin" && payload.id !== "admin" && !isPlatformAdmin(rolesGet)) {
     return NextResponse.json(
-      { error: "O usuário Admin não pode ser alterado ou excluído" },
-      { status: 400 }
+      { error: "Apenas o administrador da plataforma pode consultar este utilizador." },
+      { status: 403 }
     );
   }
 
   try {
     await ensureAdminUser();
-    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
+    const targetOrgId = isPlatformAdmin(rolesGet)
       ? request.nextUrl.searchParams.get("orgId") || payload.orgId
       : payload.orgId;
-    const user = await getUserById(id, targetOrgId);
+    const user = isPlatformAdmin(rolesGet)
+      ? await getUserRecordById(id)
+      : await getUserById(id, targetOrgId);
     if (!user) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
@@ -71,10 +82,11 @@ export async function PUT(
     return NextResponse.json({ error: "ID do usuário é obrigatório" }, { status: 400 });
   }
 
-  if (id === "admin" && payload.id !== "admin") {
+  const roles = deriveEffectiveRoles(payload);
+  if (id === "admin" && payload.id !== "admin" && !isPlatformAdmin(roles)) {
     return NextResponse.json(
-      { error: "O usuário Admin não pode ser alterado ou excluído" },
-      { status: 400 }
+      { error: "Apenas o administrador da plataforma pode alterar este utilizador." },
+      { status: 403 }
     );
   }
 
@@ -87,13 +99,40 @@ export async function PUT(
     }
 
     const clean = parsed.data;
-    const roles = deriveEffectiveRoles(payload);
-    const targetOrgId = isPlatformAdmin(roles)
-      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
-      : payload.orgId;
-    const existingUser = await getUserById(id, targetOrgId);
+    let existingUser = isPlatformAdmin(roles)
+      ? await getUserRecordById(id)
+      : await getUserById(id, payload.orgId);
     if (!existingUser) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    let targetOrgId = existingUser.orgId;
+
+    if (clean.orgId !== undefined) {
+      if (!isPlatformAdmin(roles)) {
+        return NextResponse.json(
+          { error: "Apenas administrador da plataforma pode alterar a organização do utilizador." },
+          { status: 403 }
+        );
+      }
+      const nextOrg = clean.orgId.trim();
+      if (nextOrg && nextOrg !== existingUser.orgId) {
+        const previousOrgId = existingUser.orgId;
+        const moved = await moveUserToOrganization(id, nextOrg);
+        if (!moved) {
+          return NextResponse.json({ error: "Organização inválida ou falha ao mover utilizador." }, { status: 400 });
+        }
+        existingUser = moved;
+        targetOrgId = moved.orgId;
+        await insertAuditEvent({
+          action: "user.org_moved",
+          resourceType: "user",
+          actorUserId: payload.id,
+          resourceId: id,
+          orgId: targetOrgId,
+          metadata: { previousOrgId, newOrgId: moved.orgId },
+        });
+      }
     }
 
     const updates: Record<string, unknown> = {};
@@ -105,6 +144,10 @@ export async function PUT(
     if (clean.email !== undefined) {
       const email = sanitizeText(clean.email).trim().toLowerCase();
       if (!email) return NextResponse.json({ error: "E-mail invalido." }, { status: 400 });
+      const other = await getUserByEmail(email);
+      if (other && other.id !== id) {
+        return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
+      }
       updates.email = email;
     }
     if (clean.password !== undefined) {
@@ -182,14 +225,20 @@ export async function DELETE(
 
   try {
     await ensureAdminUser();
-    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
-      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
-      : payload.orgId;
-    const user = await getUserById(id, targetOrgId);
-    if (!user) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    const rolesDel = deriveEffectiveRoles(payload);
+    if (isPlatformAdmin(rolesDel)) {
+      const u = await getUserRecordById(id);
+      if (!u) {
+        return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      }
+      await deleteUser(id, u.orgId);
+    } else {
+      const user = await getUserById(id, payload.orgId);
+      if (!user) {
+        return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      }
+      await deleteUser(id, payload.orgId);
     }
-    await deleteUser(id, targetOrgId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("User API error:", err);

@@ -132,10 +132,18 @@ export default function UsersPage() {
       setFormError("Nome é obrigatório.");
       return;
     }
-    const body: { name: string; password?: string; orgRole: "gestor" | "membro" | "convidado" } = {
+    const body: {
+      name: string;
+      email?: string;
+      password?: string;
+      orgRole: "gestor" | "membro" | "convidado";
+    } = {
       name: formName.trim(),
       orgRole: formOrgRole,
     };
+    if (editingId === "admin" && user?.id === "admin" && formEmail.trim()) {
+      body.email = formEmail.trim().toLowerCase();
+    }
     if (formPwd.length >= 8) body.password = formPwd;
     try {
       await apiPut(`/api/users/${editingId}`, body, getHeaders());
@@ -214,7 +222,7 @@ export default function UsersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {u.id !== "admin" ? (
+                      {u.id !== "admin" || user?.id === "admin" ? (
                         <div className="flex gap-3">
                           <button
                             onClick={() => openEditModal(u)}
@@ -222,12 +230,14 @@ export default function UsersPage() {
                           >
                             Editar
                           </button>
-                          <button
-                            onClick={() => deleteUser(u.id, u.name)}
-                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-                          >
-                            Excluir
-                          </button>
+                          {u.id !== "admin" ? (
+                            <button
+                              onClick={() => deleteUser(u.id, u.name)}
+                              className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                            >
+                              Excluir
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         "-"
@@ -278,7 +288,7 @@ export default function UsersPage() {
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="email@exemplo.com"
-                  disabled={modalMode === "edit"}
+                  disabled={modalMode === "edit" && !(user?.id === "admin" && editingId === "admin")}
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] disabled:opacity-60 focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>

@@ -501,3 +501,88 @@ export async function updateOrganizationOwner(orgId: string, ownerId: string): P
   await col.updateOne({ _id: orgId }, { $set: { ownerId } });
 }
 
+const COL_USERS_REF = "users";
+
+function escapeOrgRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export type OrganizationListRow = Organization & { memberCount: number };
+
+/**
+ * Lista organizações com contagem de membros. Requer MongoDB para dados completos.
+ * Sem Mongo: devolve apenas a organização default com contagem via KV.
+ */
+export async function listAllOrganizationsPaginated(params: {
+  limit: number;
+  cursor?: string | null;
+  q?: string;
+}): Promise<{ organizations: OrganizationListRow[]; nextCursor: string | null; storage: "mongo" | "kv" }> {
+  const limit = Math.min(Math.max(1, params.limit || 50), 200);
+  const q = (params.q || "").trim();
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureOrgIndexes(db);
+    const col = db.collection<Organization>(COL_ORGS);
+    const parts: Record<string, unknown>[] = [];
+    if (params.cursor) parts.push({ _id: { $gt: params.cursor } });
+    if (q) {
+      const rx = new RegExp(escapeOrgRegex(q), "i");
+      parts.push({ $or: [{ name: rx }, { slug: rx }, { _id: rx }] });
+    }
+    const match = parts.length === 0 ? {} : parts.length === 1 ? parts[0] : { $and: parts };
+
+    const rows = await col
+      .aggregate([
+        { $match: match },
+        { $sort: { _id: 1 } },
+        { $limit: limit + 1 },
+        {
+          $lookup: {
+            from: COL_USERS_REF,
+            localField: "_id",
+            foreignField: "orgId",
+            as: "_m",
+          },
+        },
+        { $addFields: { memberCount: { $size: "$_m" } } },
+        { $project: { _m: 0 } },
+      ])
+      .toArray();
+
+    const hasMore = rows.length > limit;
+    const slice = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor =
+      hasMore && slice.length ? (slice[slice.length - 1] as Organization)._id : null;
+    return {
+      organizations: slice.map((doc) => {
+        const raw = doc as Organization & { memberCount: number };
+        return {
+          ...hydrateOrganization(raw),
+          memberCount: raw.memberCount ?? 0,
+        };
+      }),
+      nextCursor,
+      storage: "mongo",
+    };
+  }
+
+  const { listUsers } = await import("./kv-users");
+  const members = await listUsers(DEFAULT_ORG_ID);
+  const base = { _id: DEFAULT_ORG_ID, ...DEFAULT_ORG_DOC } as Organization;
+  const h = hydrateOrganization(base);
+  if (q) {
+    const n = q.toLowerCase();
+    const hay = `${h.name} ${h.slug} ${h._id}`.toLowerCase();
+    if (!hay.includes(n)) {
+      return { organizations: [], nextCursor: null, storage: "kv" };
+    }
+  }
+  return {
+    organizations: [{ ...h, memberCount: members.length }],
+    nextCursor: null,
+    storage: "kv",
+  };
+}
+
