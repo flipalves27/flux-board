@@ -1,6 +1,6 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
-import { hashPassword, verifyPassword } from "./auth";
+import { hashPassword } from "./auth";
 import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
 import type { ThemePreference } from "./theme-storage";
 import type { OrgMembershipRole, OrgRole, PlatformRole } from "./rbac";
@@ -185,10 +185,8 @@ export async function ensureAdminUser(): Promise<User | null> {
     const raw = await col.findOne({ _id: "admin" });
     if (raw) {
       const existing = toUser(raw);
-      const needsRecreate =
-        !existing.isAdmin ||
-        !existing.passwordHash ||
-        !verifyPassword("Admin", existing.passwordHash);
+      // Não exigir a senha seed "Admin": senão qualquer alteração de senha é revertida no próximo ensureAdminUser().
+      const needsRecreate = !existing.isAdmin || !existing.passwordHash;
       if (needsRecreate) {
         const admin = recreateAdminUser();
         await persistAdminUserMongo(db, admin);
@@ -210,10 +208,7 @@ export async function ensureAdminUser(): Promise<User | null> {
   const raw = await kv.get<string>(USER_PREFIX + "admin");
   if (raw) {
     const existing = (typeof raw === "string" ? JSON.parse(raw) : raw) as User;
-    const needsRecreate =
-      !existing.isAdmin ||
-      !existing.passwordHash ||
-      !verifyPassword("Admin", existing.passwordHash);
+    const needsRecreate = !existing.isAdmin || !existing.passwordHash;
 
     if (needsRecreate) {
       const admin = recreateAdminUser();
