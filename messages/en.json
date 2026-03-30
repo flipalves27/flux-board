@@ -657,6 +657,22 @@
     "badge": "Flux Reports",
     "title": "Self-service BI with AI narrative",
     "subtitle": "Live dashboard aggregating boards in your organization. Use Explain on each chart to generate an executive narrative.",
+    "hub": {
+      "tabs": {
+        "overview": "Overview",
+        "kanban": "Kanban flow",
+        "scrum": "Scrum",
+        "lss": "Lean Six Sigma"
+      },
+      "leadCycleNote": "Lead time approximates creation → completion. Cycle time prefers column entry (`columnEnteredAt`) → completion when cards record moves.",
+      "blockersTitle": "Blocker-related tags (open work)",
+      "dorReadyTitle": "Definition of Ready (Scrum)",
+      "dorReadyHint": "Non-done Scrum cards with all DoR checkboxes marked vs. cards that started filling DoR.",
+      "sprintVelocityTitle": "Closed sprints — story points delivered",
+      "sprintsLink": "Sprint hub",
+      "lssBlurb": "DMAIC load, aging, completions, Pareto tags, and process capability (heuristic).",
+      "lssCta": "Open LSS executive view"
+    },
     "lssExecutiveLink": "Lean Six Sigma executive (Business+)",
     "loading": "Loading metrics…",
     "loadError": "Could not load reports.",
@@ -672,6 +688,7 @@
       "boards": "Boards",
       "avgRisk": "Average risk (index)",
       "avgLead": "Avg. lead time (approx.)",
+      "avgCycleApprox": "Avg. cycle time (approx.)",
       "atRiskBoards": "Boards flagged (risk < 48)"
     },
     "cfdTabs": {
@@ -761,13 +778,26 @@
       "charts": {
         "dmaicOpen": "Open work by DMAIC phase",
         "weeklyDone": "Weekly completions (LSS boards)",
-        "agingOpen": "Aging of open WIP"
+        "agingOpen": "Aging of open WIP",
+        "tagPareto": "Pareto — tags on open LSS work",
+        "individualsSpc": "Individuals chart (cycle time, XmR-style)",
+        "capability": "Capability indices (heuristic)"
       },
       "hints": {
         "dmaicOpen": "Non-completed cards counted by current column (bucket key).",
         "weeklyDone": "Cards marked complete with a completion date in each rolling week.",
-        "agingOpen": "Days since card creation or column entry — distribution of all open items."
+        "agingOpen": "Days since card creation or column entry — distribution of all open items.",
+        "tagPareto": "How often each label appears on non-completed cards in LSS boards.",
+        "individualsSpc": "Last completed items: cycle days with control limits from moving range (educational view; not a full MSA/SPC program).",
+        "capability": "Cp/Cpk against a speculative USL = P95 × 1.25 of the same sample — for discussion, not contractual specs."
       },
+      "paretoEmpty": "No tags on open LSS items to rank.",
+      "spcEmpty": "Need a few more LSS completions with dates to draw limits.",
+      "tollgateTitle": "DMAIC tollgates",
+      "tollgateBody": "Between phases, align with your sponsor on outputs: VOC & charter (Define), baseline & measurement plan (Measure), verified causes (Analyze), pilot & benefits (Improve), control plan & reaction plan (Control).",
+      "sipocHint": "Use the LSS assistant in Define to draft SIPOC, or store a SIPOC draft on the board when that field is enabled.",
+      "capabilitySample": "Sample: {n} | Mean: {mean} d | USL*: {usl} d",
+      "capabilityCpk": "Cp {cp} · Cpk {cpk}",
       "series": {
         "openCards": "Open cards",
         "completed": "Completed"
@@ -2665,12 +2695,25 @@
         "backlogHint": "Cards in this column are ordered top-to-bottom as backlog priority (drag to rank).",
         "dodEnabled": "Enable Definition of Done checklist on cards",
         "dodEnforce": "Block moving to a “done” column or marking complete until all items are checked",
+        "dodEnforceHint": "Turn on to enforce the checklist on the server and in drag-and-drop — not only in the card editor.",
+        "wipEnforcementLabel": "WIP limits",
+        "wipEnforcementStrict": "Strict — moves that exceed a column limit require a one-time justification",
+        "wipEnforcementSoft": "Soft — limits are advisory; moves are never blocked by count",
         "dodItems": "DoD items (one per line)",
         "dodPlaceholder": "Tests passed\nDocumentation updated\nStakeholder sign-off",
         "doneColumns": "Columns that count as done",
         "doneColumnsHint": "Leave all unchecked to auto-detect from column names (e.g. Concluído, Done, Produção).",
         "cancel": "Cancel",
         "save": "Save"
+      },
+      "wipOverride": {
+        "title": "Over WIP limit",
+        "body": "This move exceeds the column WIP limit. Enter a short justification to continue — it is sent once with your next save.",
+        "reasonLabel": "Justification",
+        "reasonPlaceholder": "e.g. Incident bridge — temporary overflow",
+        "reasonHint": "Minimum 8 characters. Tip: set WIP to “soft” in Agile methodology settings if limits should stay advisory only.",
+        "cancel": "Cancel",
+        "confirm": "Move with justification"
       },
       "lss": {
         "dmaicFocus": "DMAIC focus",

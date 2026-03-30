@@ -40,6 +40,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
   const [doneKeys, setDoneKeys] = useState<string[]>([]);
   const [methodologyDraft, setMethodologyDraft] = useState<BoardMethodology>("scrum");
   const [requireAssignee, setRequireAssignee] = useState(false);
+  const [wipEnforcement, setWipEnforcement] = useState<"strict" | "soft">("strict");
 
   const buckets: BucketConfig[] = db?.config?.bucketOrder ?? [];
 
@@ -60,6 +61,8 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
     setDodLines((def?.items ?? []).map((i) => i.label).join("\n"));
     setDoneKeys([...(def?.doneBucketKeys ?? [])]);
     setRequireAssignee(Boolean(db.config.cardRules?.requireAssignee));
+    const w = (db.config as { wipEnforcement?: string }).wipEnforcement;
+    setWipEnforcement(w === "soft" ? "soft" : "strict");
   }, [open, db]);
 
   const toggleDoneKey = useCallback((key: string) => {
@@ -108,9 +111,28 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
         delete d.config.definitionOfDone;
       }
       d.config.cardRules = { ...(d.config.cardRules ?? {}), requireAssignee };
+
+      if (methodologyDraft === "kanban" || methodologyDraft === "lean_six_sigma") {
+        (d.config as { wipEnforcement?: string }).wipEnforcement = wipEnforcement;
+      } else {
+        delete (d.config as { wipEnforcement?: string }).wipEnforcement;
+      }
     });
     onClose();
-  }, [db, updateDb, methodologyDraft, productGoal, backlogKey, dodEnabled, dodEnforce, parsedItems, doneKeys, requireAssignee, onClose]);
+  }, [
+    db,
+    updateDb,
+    methodologyDraft,
+    productGoal,
+    backlogKey,
+    dodEnabled,
+    dodEnforce,
+    parsedItems,
+    doneKeys,
+    requireAssignee,
+    wipEnforcement,
+    onClose,
+  ]);
 
   if (!open) return null;
 
@@ -192,6 +214,34 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
             </p>
           </div>
 
+          {methodologyDraft === "kanban" || methodologyDraft === "lean_six_sigma" ? (
+            <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-06)] p-3 space-y-2">
+              <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">
+                {t("wipEnforcementLabel")}
+              </p>
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-[var(--flux-text)]">
+                <input
+                  type="radio"
+                  name="wip-enforcement"
+                  checked={wipEnforcement === "strict"}
+                  onChange={() => setWipEnforcement("strict")}
+                  className="mt-1"
+                />
+                <span>{t("wipEnforcementStrict")}</span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-[var(--flux-text)]">
+                <input
+                  type="radio"
+                  name="wip-enforcement"
+                  checked={wipEnforcement === "soft"}
+                  onChange={() => setWipEnforcement("soft")}
+                  className="mt-1"
+                />
+                <span>{t("wipEnforcementSoft")}</span>
+              </label>
+            </div>
+          ) : null}
+
           {methodologyDraft === "scrum" ? (
             <>
               <div>
@@ -260,6 +310,9 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
                 {t("dodEnforce")}
               </label>
             </div>
+            {dodEnabled && dodEnforce ? (
+              <p className="text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("dodEnforceHint")}</p>
+            ) : null}
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">
                 {t("dodItems")}

@@ -657,6 +657,22 @@
     "badge": "Flux Reports",
     "title": "BI self-service com narrativa IA",
     "subtitle": "Dashboard ao vivo com dados agregados dos boards da organização. Use Explicar em cada gráfico para gerar uma narrativa executiva.",
+    "hub": {
+      "tabs": {
+        "overview": "Visão geral",
+        "kanban": "Fluxo Kanban",
+        "scrum": "Scrum",
+        "lss": "Lean Six Sigma"
+      },
+      "leadCycleNote": "Lead time aproxima criação → conclusão. Cycle time prefere entrada na coluna (`columnEnteredAt`) → conclusão quando o card registra movimentação.",
+      "blockersTitle": "Tags de bloqueio (em aberto)",
+      "dorReadyTitle": "Definition of Ready (Scrum)",
+      "dorReadyHint": "Cards Scrum não concluídos com todos os itens DoR marcados vs. cards com DoR iniciado.",
+      "sprintVelocityTitle": "Sprints fechados — story points entregues",
+      "sprintsLink": "Hub de sprints",
+      "lssBlurb": "Carga DMAIC, aging, conclusões, Pareto por tags e capacidade de processo (heurística).",
+      "lssCta": "Abrir visão executiva LSS"
+    },
     "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
     "loadError": "Não foi possível carregar os relatórios.",
@@ -672,6 +688,7 @@
       "boards": "Boards",
       "avgRisk": "Risco médio (índice)",
       "avgLead": "Lead time médio (aprox.)",
+      "avgCycleApprox": "Cycle time médio (aprox.)",
       "atRiskBoards": "Boards em atenção (risco < 48)"
     },
     "cfdTabs": {
@@ -761,13 +778,26 @@
       "charts": {
         "dmaicOpen": "Em aberto por fase DMAIC",
         "weeklyDone": "Conclusões semanais (boards LSS)",
-        "agingOpen": "Aging do WIP em aberto"
+        "agingOpen": "Aging do WIP em aberto",
+        "tagPareto": "Pareto — tags no trabalho LSS aberto",
+        "individualsSpc": "Gráfico de indivíduos (cycle time, estilo XmR)",
+        "capability": "Índices de capacidade (heurística)"
       },
       "hints": {
         "dmaicOpen": "Cards não concluídos por coluna atual (chave do bucket).",
         "weeklyDone": "Cards marcados como concluídos com data de conclusão em cada semana móvel.",
-        "agingOpen": "Dias desde criação do card ou entrada na coluna — distribuição de todos os itens abertos."
+        "agingOpen": "Dias desde criação do card ou entrada na coluna — distribuição de todos os itens abertos.",
+        "tagPareto": "Frequência de cada label em cards não concluídos nos boards LSS.",
+        "individualsSpc": "Últimos concluídos: dias de ciclo com limites via amplitude móvel (visão didática; não substitui programa formal de SPC/MSA).",
+        "capability": "Cp/Cpk frente a um LSE especulativo = P95 × 1,25 da mesma amostra — para discussão, não como spec contratual."
       },
+      "paretoEmpty": "Sem tags em itens LSS abertos para ranquear.",
+      "spcEmpty": "Precisamos de mais conclusões LSS com datas para traçar limites.",
+      "tollgateTitle": "Tollgates DMAIC",
+      "tollgateBody": "Entre fases, alinhe com o sponsor: VOC & charter (Define), linha base & plano de medição (Measure), causas verificadas (Analyze), piloto & benefícios (Improve), plano de controle & plano de reação (Control).",
+      "sipocHint": "Use o assistente LSS na fase Define para rascunhar SIPOC, ou guarde um rascunho SIPOC no board quando o campo estiver disponível.",
+      "capabilitySample": "Amostra: {n} | Média: {mean} d | LSE*: {usl} d",
+      "capabilityCpk": "Cp {cp} · Cpk {cpk}",
       "series": {
         "openCards": "Cards em aberto",
         "completed": "Concluídos"
@@ -2670,12 +2700,25 @@
         "backlogHint": "Nesta coluna, a ordem dos cards (de cima para baixo) é a prioridade do backlog — arraste para ranquear.",
         "dodEnabled": "Ativar checklist Definition of Done nos cards",
         "dodEnforce": "Impedir mover para coluna “feito” ou marcar concluído sem marcar todos os itens",
+        "dodEnforceHint": "Ative para validar o checklist no servidor e no arrastar-soltar — não só no editor do card.",
+        "wipEnforcementLabel": "Limites WIP",
+        "wipEnforcementStrict": "Rigoroso — ultrapassar o limite exige justificativa pontual",
+        "wipEnforcementSoft": "Flexível — limites são orientativos; a contagem não bloqueia movimentação",
         "dodItems": "Itens do DoD (um por linha)",
         "dodPlaceholder": "Testes passando\nDocumentação atualizada\nAceite do stakeholder",
         "doneColumns": "Colunas que contam como concluído",
         "doneColumnsHint": "Deixe todas desmarcadas para detectar pelo nome (ex.: Concluído, Done, Produção).",
         "cancel": "Cancelar",
         "save": "Salvar"
+      },
+      "wipOverride": {
+        "title": "Acima do limite WIP",
+        "body": "Este movimento ultrapassa o limite WIP da coluna. Informe uma justificativa breve para continuar — ela é enviada uma vez no próximo salvamento.",
+        "reasonLabel": "Justificativa",
+        "reasonPlaceholder": "ex.: Bridge de incidente — excesso temporário",
+        "reasonHint": "Mínimo de 8 caracteres. Dica: use WIP “flexível” nas configurações de metodologia se os limites forem só orientativos.",
+        "cancel": "Cancelar",
+        "confirm": "Mover com justificativa"
       },
       "lss": {
         "dmaicFocus": "Foco DMAIC",

@@ -7,6 +7,7 @@ import {
   DailyInsightEntrySchema,
   isSafeLinkUrl,
   MapaProducaoItemSchema,
+  SipocDraftSchema,
   STORY_POINTS_FIBONACCI,
   SubtaskProgressSchema,
   SubtaskSchema,
@@ -280,6 +281,24 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     }
   }
 
+  const wipRaw = (db.config as { wipEnforcement?: unknown } | undefined)?.wipEnforcement;
+  const wipEnforcement = wipRaw === "soft" || wipRaw === "strict" ? wipRaw : undefined;
+
+  const sipRaw = (db.config as { sipocDraft?: unknown } | undefined)?.sipocDraft;
+  let sipocDraft: Record<string, string> | undefined;
+  if (sipRaw && typeof sipRaw === "object") {
+    const p = SipocDraftSchema.safeParse(sipRaw);
+    if (p.success) {
+      const o = p.data as Record<string, string | undefined>;
+      sipocDraft = {};
+      for (const k of ["suppliers", "inputs", "process", "outputs", "customers"] as const) {
+        const v = o[k];
+        if (typeof v === "string" && v.trim()) sipocDraft[k] = v.trim().slice(0, 2000);
+      }
+      if (Object.keys(sipocDraft).length === 0) sipocDraft = undefined;
+    }
+  }
+
   const bmRaw = (db as { boardMethodology?: unknown }).boardMethodology;
   const boardMethodology =
     bmRaw === "scrum" || bmRaw === "kanban" || bmRaw === "lean_six_sigma" ? bmRaw : undefined;
@@ -299,6 +318,8 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       ...(productGoal ? { productGoal } : {}),
       ...(backlogBucketKey ? { backlogBucketKey } : {}),
       ...(definitionOfDone ? { definitionOfDone } : {}),
+      ...(wipEnforcement ? { wipEnforcement } : {}),
+      ...(sipocDraft ? { sipocDraft } : {}),
     },
     ...(intakeForm !== undefined ? { intakeForm } : {}),
   } as BoardData;

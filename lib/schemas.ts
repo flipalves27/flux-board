@@ -656,11 +656,21 @@ export const BoardAnomalyNotificationsSchema = z.object({
   recipientEmails: z.array(z.string().trim().email("Email inválido.").max(320)).max(15).optional(),
 });
 
+export const SipocDraftSchema = z.object({
+  suppliers: z.string().trim().max(2000).optional(),
+  inputs: z.string().trim().max(2000).optional(),
+  process: z.string().trim().max(2000).optional(),
+  outputs: z.string().trim().max(2000).optional(),
+  customers: z.string().trim().max(2000).optional(),
+});
+
 export const BoardUpdateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
     boardMethodology: BoardMethodologySchema.optional(),
     clientLabel: z.string().trim().max(120).optional().nullable(),
+    /** Só para ultrapassar WIP com enforcement strict; não é persistido no documento do board. */
+    wipOverrideReason: z.string().trim().min(8).max(500).optional(),
     cards: z.array(CardDataSchema).optional(),
     config: z
       .object({
@@ -670,6 +680,9 @@ export const BoardUpdateSchema = z
         productGoal: z.string().trim().max(800).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
+        /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */
+        wipEnforcement: z.enum(["strict", "soft"]).optional(),
+        sipocDraft: SipocDraftSchema.optional().nullable(),
         cardRules: z
           .object({
             requireAssignee: z.boolean().optional(),

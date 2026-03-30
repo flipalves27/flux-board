@@ -38,6 +38,7 @@ import { BoardSummaryDock } from "./board-summary-dock";
 import { BoardExecutionInsightsPanel } from "./board-execution-insights-panel";
 import { BoardMobileToolHub } from "./board-mobile-tool-hub";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
+import { WipOverrideModal } from "./wip-override-modal";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 import { resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { isLeanSixSigmaMethodology, isScrumMethodology } from "@/lib/board-methodology";
@@ -1055,6 +1056,11 @@ function KanbanBoardLoaded({
         okrProjectionByKrId={board.okrProjectionByKrId}
         />
 
+        <WipOverrideModal
+          pending={board.wipOverridePending}
+          onConfirm={board.confirmWipOverride}
+          onClose={board.dismissWipOverride}
+        />
         <KanbanBoardOverlays {...overlayProps} />
       </BoardCardSelectionProvider>
 

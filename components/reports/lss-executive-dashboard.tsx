@@ -9,6 +9,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -72,6 +73,9 @@ export function LssExecutiveDashboard() {
   const dmaicChart = useMemo(() => data?.dmaicOpenDistribution ?? [], [data]);
   const weeklyChart = useMemo(() => data?.weeklyCompletions ?? [], [data]);
   const agingChart = useMemo(() => data?.agingOpenWork ?? [], [data]);
+  const pareto = useMemo(() => data?.tagPareto ?? [], [data]);
+  const spcRows = useMemo(() => data?.individualsSpc ?? [], [data]);
+  const spcMean = spcRows[0]?.centerLine ?? null;
 
   if (showSkeleton) {
     return (
@@ -216,6 +220,99 @@ export function LssExecutiveDashboard() {
             </ResponsiveContainer>
           </div>
         </ChartShell>
+
+        <ChartShell
+          chartId="lss_tag_pareto"
+          title={t("charts.tagPareto")}
+          hint={t("hints.tagPareto")}
+          explainApiPath="/api/flux-reports/lss/explain"
+          explainPayload={{ tagPareto: pareto }}
+        >
+          {!pareto.length ? (
+            <p className="text-sm text-[var(--flux-text-muted)]">{t("paretoEmpty")}</p>
+          ) : (
+            <div className="h-[300px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pareto} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--flux-chrome-alpha-12)" />
+                  <XAxis dataKey="label" angle={-18} textAnchor="end" interval={0} height={52} tick={{ fontSize: 9 }} />
+                  <YAxis tick={{ fontSize: 11, fill: "var(--flux-text-muted)" }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--flux-surface-card)",
+                      border: "1px solid var(--flux-border-default)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="count" name={t("series.openCards")} fill={CHART_COLORS[3]} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </ChartShell>
+
+        <ChartShell
+          chartId="lss_individuals_spc"
+          title={t("charts.individualsSpc")}
+          hint={t("hints.individualsSpc")}
+          explainApiPath="/api/flux-reports/lss/explain"
+          explainPayload={{ individualsSpc: spcRows, note: data.individualsSpcNote }}
+        >
+          {!spcRows.length ? (
+            <p className="text-sm text-[var(--flux-text-muted)]">{t("spcEmpty")}</p>
+          ) : (
+            <div className="h-[300px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={spcRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--flux-chrome-alpha-12)" />
+                  <XAxis dataKey="idx" tick={{ fontSize: 11, fill: "var(--flux-text-muted)" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "var(--flux-text-muted)" }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--flux-surface-card)",
+                      border: "1px solid var(--flux-border-default)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend />
+                  {spcMean != null ? (
+                    <ReferenceLine y={spcMean} stroke="var(--flux-secondary)" strokeDasharray="4 4" />
+                  ) : null}
+                  <Line type="monotone" dataKey="cycleDays" name="Cycle d" stroke={CHART_COLORS[0]} strokeWidth={2} dot />
+                  <Line type="stepAfter" dataKey="ucl" name="UCL" stroke="var(--flux-danger)" strokeWidth={1} dot={false} />
+                  <Line type="stepAfter" dataKey="lcl" name="LCL" stroke="var(--flux-danger)" strokeWidth={1} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </ChartShell>
+
+        {data.capability ? (
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
+            <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("charts.capability")}</h3>
+            <p className="mt-2 text-xs text-[var(--flux-text)]">
+              {t("capabilitySample", {
+                n: data.capability.sampleSize,
+                mean: data.capability.meanDays,
+                usl: data.capability.uslDays ?? "—",
+              })}
+            </p>
+            {data.capability.cp != null && data.capability.cpk != null ? (
+              <p className="mt-1 text-sm font-semibold text-[var(--flux-primary-light)]">
+                {t("capabilityCpk", { cp: data.capability.cp, cpk: data.capability.cpk })}
+              </p>
+            ) : null}
+            <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("hints.capability")}</p>
+          </div>
+        ) : null}
+
+        <section className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-04)] p-4 sm:p-5">
+          <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("tollgateTitle")}</h3>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--flux-text-muted)]">{t("tollgateBody")}</p>
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">{t("sipocHint")}</p>
+        </section>
 
         <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
           <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("portfolioTitle")}</h3>

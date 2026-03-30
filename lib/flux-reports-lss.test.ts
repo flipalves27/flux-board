@@ -50,6 +50,9 @@ describe("flux-reports-lss", () => {
       }),
     ];
     const payload = buildFluxReportsLssPayload(boards);
+    expect(Array.isArray(payload.tagPareto)).toBe(true);
+    expect(Array.isArray(payload.individualsSpc)).toBe(true);
+    expect(payload.individualsSpcNote).toBeDefined();
     const dist = payload.dmaicOpenDistribution;
     const def = dist.find((d) => d.key === "define");
     const an = dist.find((d) => d.key === "analyze");

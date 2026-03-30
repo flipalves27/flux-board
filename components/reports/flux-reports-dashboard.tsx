@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   Area,
@@ -16,7 +17,7 @@ import {
   YAxis,
   Cell,
 } from "recharts";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { ChartShell } from "@/components/reports/chart-shell";
@@ -44,6 +45,16 @@ const CHART_COLORS = [
   "var(--flux-info)",
 ];
 
+type SprintStoryPointsRow = {
+  boardId: string;
+  boardName: string;
+  sprintId: string;
+  sprintName: string;
+  endDate: string | null;
+  completedStoryPoints: number;
+  goal: string;
+};
+
 type FluxReportsPayload = {
   schema: string;
   generatedAt: string;
@@ -55,6 +66,7 @@ type FluxReportsPayload = {
     avgPrevisibilidade: number | null;
     atRiskCount: number;
     avgLeadTimeDays: number | null;
+    avgApproxCycleTimeDays?: number | null;
   };
   cfd: {
     keys: string[];
@@ -88,6 +100,9 @@ type FluxReportsPayload = {
     cardIdB: string;
     score: number;
   }>;
+  blockerTagDistribution?: Array<{ tag: string; count: number }>;
+  scrumDorReady?: { eligible: number; ready: number };
+  sprintStoryPointsHistory?: SprintStoryPointsRow[];
 };
 
 function riskHeatColor(risco: number | null): string {
@@ -98,14 +113,19 @@ function riskHeatColor(risco: number | null): string {
   return "var(--flux-reports-heat-low)";
 }
 
+type ReportsHubTab = "overview" | "kanban" | "scrum" | "lss";
+
 export function FluxReportsDashboard() {
   const t = useTranslations("reports");
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
   const appName = usePlatformDisplayName();
   const { getHeaders } = useAuth();
   const [data, setData] = useState<FluxReportsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cfdTab, setCfdTab] = useState<"accumulated" | "weekly">("accumulated");
+  const [hubTab, setHubTab] = useState<ReportsHubTab>("overview");
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +173,25 @@ export function FluxReportsDashboard() {
       : [{ name: t("noAssignee"), moves: 0 }];
   }, [data, t]);
 
+  const sprintSpChart = useMemo(() => {
+    if (!data?.sprintStoryPointsHistory?.length) return [];
+    return data.sprintStoryPointsHistory.slice(-16).map((r, i) => ({
+      key: `${r.sprintId}-${i}`,
+      label:
+        r.sprintName.length > 14
+          ? `${r.sprintName.slice(0, 12)}…`
+          : r.sprintName || r.sprintId.slice(0, 8),
+      sp: r.completedStoryPoints,
+    }));
+  }, [data]);
+
+  const hubTabs: { id: ReportsHubTab; label: string }[] = [
+    { id: "overview", label: t("hub.tabs.overview") },
+    { id: "kanban", label: t("hub.tabs.kanban") },
+    { id: "scrum", label: t("hub.tabs.scrum") },
+    { id: "lss", label: t("hub.tabs.lss") },
+  ];
+
   if (showSkeleton) {
     return <SkeletonTable rows={6} />;
   }
@@ -167,17 +206,48 @@ export function FluxReportsDashboard() {
 
   return (
     <DataFadeIn active key={data.generatedAt} className="space-y-6">
-      <ProactiveAiPanel />
+      <div className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-3">
+        {hubTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setHubTab(tab.id)}
+            className={`rounded-[var(--flux-rad-sm)] px-3 py-2 text-xs font-semibold transition-colors ${
+              hubTab === tab.id
+                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
+                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      <Suspense
-        fallback={
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] px-4 py-6 text-sm text-[var(--flux-text-muted)]">
-            {t("dependencies.loading")}
-          </div>
-        }
-      >
-        <CrossBoardDependenciesPanel />
-      </Suspense>
+      {hubTab === "lss" ? (
+        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-6">
+          <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed">{t("hub.lssBlurb")}</p>
+          <Link
+            href={`${localeRoot}/reports/lean-six-sigma`}
+            className="mt-4 inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
+          >
+            {t("hub.lssCta")}
+          </Link>
+        </div>
+      ) : null}
+
+      {hubTab === "overview" ? (
+        <>
+          <ProactiveAiPanel />
+
+          <Suspense
+            fallback={
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] px-4 py-6 text-sm text-[var(--flux-text-muted)]">
+                {t("dependencies.loading")}
+              </div>
+            }
+          >
+            <CrossBoardDependenciesPanel />
+          </Suspense>
 
       <SprintPredictionPanel prediction={data.sprintPrediction} />
 
@@ -516,6 +586,193 @@ export function FluxReportsDashboard() {
           </div>
         </ChartShell>
       </div>
+        </>
+      ) : null}
+
+      {hubTab === "kanban" ? (
+        <div className="space-y-6">
+          <p className="text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("hub.leadCycleNote")}</p>
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgLead")}</p>
+              <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
+                {data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
+              </p>
+            </div>
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                {t("kpi.avgCycleApprox")}
+              </p>
+              <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
+                {data.aggregates.avgApproxCycleTimeDays != null ? `${data.aggregates.avgApproxCycleTimeDays} d` : "—"}
+              </p>
+            </div>
+          </section>
+          <CycleTimeScatterPanel points={data.cycleTimeScatter} />
+          <ChartShell
+            title={t("charts.throughput")}
+            hint={t("hub.leadCycleNote")}
+            chartId="throughput_run"
+            explainPayload={{ weeklyThroughput: data.weeklyThroughput }}
+          >
+            <div className="h-[300px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--flux-surface-card)",
+                      border: "1px solid var(--flux-primary-alpha-25)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="concluded"
+                    name={t("series.concluded")}
+                    stroke="var(--flux-secondary)"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartShell>
+          <CfdAccumulatedPanel />
+          <ChartShell
+            title={t("charts.createdVsDone")}
+            chartId="createdVsDone_k"
+            explainPayload={{ merged: throughputMerged }}
+          >
+            <div className="h-[280px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--flux-surface-card)",
+                      border: "1px solid var(--flux-primary-alpha-25)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="created" name={t("series.created")} fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="concluded" name={t("series.concludedCopilot")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartShell>
+          <ChartShell title={t("hub.blockersTitle")} chartId="blockers" explainPayload={{ tags: data.blockerTagDistribution }}>
+            {!data.blockerTagDistribution?.length ? (
+              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+            ) : (
+              <div className="h-[260px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.blockerTagDistribution} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                    <YAxis type="category" dataKey="tag" width={140} tick={{ fill: "var(--flux-text-muted)", fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--flux-surface-card)",
+                        border: "1px solid var(--flux-primary-alpha-25)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar dataKey="count" fill="var(--flux-danger)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </ChartShell>
+        </div>
+      ) : null}
+
+      {hubTab === "scrum" ? (
+        <div className="space-y-6">
+          <SprintPredictionPanel prediction={data.sprintPrediction} />
+          <ChartShell
+            title={t("charts.velocity")}
+            hint={t("hints.velocity")}
+            chartId="velocity_scrum"
+            explainPayload={{ teamVelocity: data.teamVelocity }}
+          >
+            <div className="h-[280px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={120} tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--flux-surface-card)",
+                      border: "1px solid var(--flux-primary-alpha-25)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="moves" name={t("series.cards")} radius={[0, 4, 4, 0]}>
+                    {velocityData.map((_, i) => (
+                      <Cell key={`scrum-${i}-${velocityData[i]?.name ?? ""}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartShell>
+          <ChartShell
+            title={t("hub.sprintVelocityTitle")}
+            chartId="sprint_sp"
+            explainPayload={{ history: data.sprintStoryPointsHistory }}
+          >
+            {!sprintSpChart.length ? (
+              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+            ) : (
+              <div className="h-[280px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sprintSpChart} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
+                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <XAxis dataKey="label" angle={-20} textAnchor="end" interval={0} height={56} tick={{ fontSize: 9 }} />
+                    <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--flux-surface-card)",
+                        border: "1px solid var(--flux-primary-alpha-25)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar dataKey="sp" name="SP" fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </ChartShell>
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
+            <p className="text-xs font-semibold text-[var(--flux-text)]">{t("hub.dorReadyTitle")}</p>
+            <p className="mt-2 font-display text-2xl text-[var(--flux-primary-light)]">
+              {data.scrumDorReady && data.scrumDorReady.eligible > 0
+                ? `${Math.round((data.scrumDorReady.ready / data.scrumDorReady.eligible) * 100)}%`
+                : "—"}
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">{t("hub.dorReadyHint")}</p>
+          </div>
+          <Link
+            href={`${localeRoot}/sprints`}
+            className="inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
+          >
+            {t("hub.sprintsLink")}
+          </Link>
+        </div>
+      ) : null}
 
       <p className="text-[11px] text-[var(--flux-text-muted)]">
         {t("generatedAt")}{" "}

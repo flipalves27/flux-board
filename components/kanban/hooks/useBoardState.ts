@@ -6,7 +6,13 @@ import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDe
 import type { OkrKrProjection } from "@/lib/okr-projection";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
-import { useBoardStore, registerCsvExportHandler } from "@/stores/board-store";
+import {
+  useBoardStore,
+  registerCsvExportHandler,
+  armSkipWipValidationOnce,
+  setPendingWipOverrideReason,
+  consumeSkipWipValidationOnce,
+} from "@/stores/board-store";
 import {
   validateBoardWip,
   simulateMoveCardsBatch,
@@ -22,6 +28,14 @@ import { COLUMN_COLORS } from "../kanban-constants";
 import { daysUntilDueDate } from "../utils/days-until-due";
 
 const EMPTY_LABELS: string[] = [];
+
+function isWipSoftConfig(cfg: unknown): boolean {
+  return Boolean(cfg && typeof cfg === "object" && (cfg as { wipEnforcement?: string }).wipEnforcement === "soft");
+}
+
+export type WipOverridePending =
+  | { mode: "single"; cardId: string; newBucket: string; newIndex: number }
+  | { mode: "batch"; orderedIds: string[]; newBucket: string; insertIndex: number };
 
 type UseBoardStateArgs = {
   boardId: string;
@@ -117,6 +131,9 @@ export function useBoardState({
     moved: false,
   });
   const [isPanning, setIsPanning] = useState(false);
+  const [wipOverridePending, setWipOverridePending] = useState<WipOverridePending | null>(null);
+  const moveCardRef = useRef<(cardId: string, newBucket: string, newIndex: number) => void>(() => {});
+  const moveCardsBatchRef = useRef<(orderedIds: string[], newBucket: string, insertIndex: number) => void>(() => {});
 
   const currentQuarter = useMemo(() => {
     const now = new Date();
@@ -250,12 +267,16 @@ export function useBoardState({
         }
       }
       const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
-      const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
-      if (!wip.ok) {
-        pushToast({ kind: "error", title: wip.message });
-        return;
+      const skipWip = consumeSkipWipValidationOnce();
+      if (!skipWip && !isWipSoftConfig(snap.config)) {
+        const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+        if (!wip.ok) {
+          setWipOverridePending({ mode: "single", cardId, newBucket, newIndex });
+          return;
+        }
       }
       const oldBucket = db.cards.find((c) => c.id === cardId)?.bucket;
+      const enteredAt = new Date().toISOString();
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
         if (idx === -1) return;
@@ -264,7 +285,7 @@ export function useBoardState({
         const bucketCards = withoutCard
           .filter((c) => c.bucket === newBucket)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket });
+        bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket, columnEnteredAt: enteredAt });
         bucketCards.forEach((c, i) => {
           c.order = i;
         });
@@ -305,12 +326,16 @@ export function useBoardState({
         }
       }
       const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
-      const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
-      if (!wip.ok) {
-        pushToast({ kind: "error", title: wip.message });
-        return;
+      const skipWip = consumeSkipWipValidationOnce();
+      if (!skipWip && !isWipSoftConfig(snap.config)) {
+        const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+        if (!wip.ok) {
+          setWipOverridePending({ mode: "batch", orderedIds, newBucket, insertIndex });
+          return;
+        }
       }
       const idSet = new Set(orderedIds);
+      const enteredAt = new Date().toISOString();
       const fromBuckets = [
         ...new Set(
           orderedIds
@@ -327,7 +352,7 @@ export function useBoardState({
         const bucketCards = without
           .filter((c) => c.bucket === newBucket)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        const toInsert = moving.map((c) => ({ ...c, bucket: newBucket }));
+        const toInsert = moving.map((c) => ({ ...c, bucket: newBucket, columnEnteredAt: enteredAt }));
         const safeIdx = Math.max(0, Math.min(insertIndex, bucketCards.length));
         bucketCards.splice(safeIdx, 0, ...toInsert);
         bucketCards.forEach((c, i) => {
@@ -528,10 +553,19 @@ export function useBoardState({
             return;
           }
           const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
-          const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
-          if (!wip.ok) {
-            pushToast({ kind: "error", title: wip.message });
-            return;
+          const skipWip = consumeSkipWipValidationOnce();
+          if (!skipWip && !isWipSoftConfig(snap.config)) {
+            const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+            if (!wip.ok) {
+              const inTarget = nextCards.filter((c) => c.bucket === patch.bucket).length;
+              setWipOverridePending({
+                mode: "single",
+                cardId,
+                newBucket: patch.bucket,
+                newIndex: Math.max(0, inTarget - 1),
+              });
+              return;
+            }
           }
         }
       }
@@ -552,6 +586,7 @@ export function useBoardState({
           if (patch.dueDate !== undefined) merged.dueDate = patch.dueDate;
           if (patch.tags !== undefined) merged.tags = patch.tags;
           merged.bucket = targetBucket;
+          merged.columnEnteredAt = new Date().toISOString();
           const doneKeys = resolveDoneBucketKeys(
             d.config.bucketOrder,
             d.config.definitionOfDone?.doneBucketKeys ?? null
@@ -930,6 +965,27 @@ export function useBoardState({
     return () => registerCsvExportHandler(null);
   }, []);
 
+  moveCardRef.current = moveCard;
+  moveCardsBatchRef.current = moveCardsBatch;
+
+  const confirmWipOverride = useCallback(
+    (reason: string) => {
+      const p = wipOverridePending;
+      const trimmed = reason.trim();
+      if (!p || trimmed.length < 8) return;
+      setPendingWipOverrideReason(trimmed);
+      armSkipWipValidationOnce();
+      setWipOverridePending(null);
+      queueMicrotask(() => {
+        if (p.mode === "single") moveCardRef.current(p.cardId, p.newBucket, p.newIndex);
+        else moveCardsBatchRef.current(p.orderedIds, p.newBucket, p.insertIndex);
+      });
+    },
+    [wipOverridePending]
+  );
+
+  const dismissWipOverride = useCallback(() => setWipOverridePending(null), []);
+
   return {
     boardScrollRef,
     isPanning,
@@ -986,5 +1042,8 @@ export function useBoardState({
     executionInsights,
     handleExportCSV,
     handleImportCSV,
+    wipOverridePending,
+    confirmWipOverride,
+    dismissWipOverride,
   };
 }

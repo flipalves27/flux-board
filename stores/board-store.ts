@@ -10,6 +10,32 @@ export type BoardUpdateRecipe = (draft: BoardData) => void;
 /** Module-level ref to debounce-persist the board. */
 let persistBoard: (() => void) | null = null;
 
+/** Justificativa para ultrapassar WIP (strict) — enviada uma vez no próximo PUT. */
+let pendingWipOverrideReason: string | null = null;
+/** Próxima movimentação local ignora validação WIP (após confirmação do modal). */
+let skipWipValidationOnce = false;
+
+export function setPendingWipOverrideReason(reason: string | null) {
+  const t = reason?.trim() ?? "";
+  pendingWipOverrideReason = t.length >= 8 ? t.slice(0, 500) : null;
+}
+
+export function consumePendingWipOverrideReason(): string | null {
+  const r = pendingWipOverrideReason;
+  pendingWipOverrideReason = null;
+  return r;
+}
+
+export function armSkipWipValidationOnce() {
+  skipWipValidationOnce = true;
+}
+
+export function consumeSkipWipValidationOnce(): boolean {
+  const s = skipWipValidationOnce;
+  skipWipValidationOnce = false;
+  return s;
+}
+
 /** Registered by the board page to debounce-save after local mutations. */
 export function setBoardPersistenceHandler(fn: (() => void) | null) {
   persistBoard = fn;

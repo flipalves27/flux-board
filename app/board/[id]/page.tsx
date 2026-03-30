@@ -26,7 +26,13 @@ import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
 import { isScrumMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass, SubtaskData, SubtaskProgress } from "@/lib/schemas";
-import { setBoardPersistenceHandler, useBoardStore, triggerCsvExport, triggerCsvImport } from "@/stores/board-store";
+import {
+  setBoardPersistenceHandler,
+  useBoardStore,
+  triggerCsvExport,
+  triggerCsvImport,
+  consumePendingWipOverrideReason,
+} from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useFilterStore } from "@/stores/filter-store";
 import { useCopilotStore } from "@/stores/copilot-store";
@@ -542,9 +548,11 @@ export default function BoardPage() {
             try {
               const rawNow = data ?? useBoardStore.getState().db;
               if (!rawNow) return;
+              const wipOr = consumePendingWipOverrideReason();
               const payload = {
                 ...normalizeBoardForPersist(rawNow),
                 lastUpdated: new Date().toISOString(),
+                ...(wipOr ? { wipOverrideReason: wipOr } : {}),
               };
               const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
                 method: "PUT",

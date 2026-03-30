@@ -84,6 +84,11 @@ export async function PUT(
 
     // Sanitiza strings aninhadas vindas do cliente (ex.: titulo/desc em cards, tags, etc.)
     const clean = sanitizeDeep(parsed.data);
+    const wipOverrideReason =
+      typeof (clean as { wipOverrideReason?: string }).wipOverrideReason === "string"
+        ? (clean as { wipOverrideReason: string }).wipOverrideReason.trim()
+        : "";
+    delete (clean as { wipOverrideReason?: string }).wipOverrideReason;
 
     const updates: Record<string, unknown> = {};
     if (clean.name !== undefined) {
@@ -121,9 +126,17 @@ export async function PUT(
       });
       const mergedBuckets =
         clean.config?.bucketOrder ?? (prevBoard.config as { bucketOrder?: { key: string; wipLimit?: number | null }[] })?.bucketOrder ?? [];
-      const wipCheck = validateBoardWip(mergedBuckets, cards as WipCountCardLike[]);
-      if (!wipCheck.ok) {
-        return NextResponse.json({ error: wipCheck.message }, { status: 400 });
+      const mergedCfg = { ...(prevBoard.config as Record<string, unknown>), ...(clean.config as Record<string, unknown> | undefined) };
+      const wipMode = mergedCfg.wipEnforcement === "soft" ? "soft" : "strict";
+      if (wipMode === "strict") {
+        const wipCheck = validateBoardWip(mergedBuckets, cards as WipCountCardLike[]);
+        if (!wipCheck.ok) {
+          if (wipOverrideReason.length >= 8) {
+            // ultrapassagem explícita com justificativa — aceita o PUT
+          } else {
+            return NextResponse.json({ error: wipCheck.message }, { status: 400 });
+          }
+        }
       }
       const requireAssignee =
         Boolean((clean.config as { cardRules?: { requireAssignee?: boolean } } | undefined)?.cardRules?.requireAssignee) ||
@@ -140,7 +153,13 @@ export async function PUT(
     }
     if (clean.config !== undefined) {
       const prevForWip = await getBoard(boardId, payload.orgId);
-      if (prevForWip?.cards?.length && clean.config.bucketOrder?.length) {
+      const nextWipMode =
+        (clean.config as { wipEnforcement?: string }).wipEnforcement === "soft"
+          ? "soft"
+          : (prevForWip?.config as { wipEnforcement?: string } | undefined)?.wipEnforcement === "soft"
+            ? "soft"
+            : "strict";
+      if (prevForWip?.cards?.length && clean.config.bucketOrder?.length && nextWipMode !== "soft") {
         const wipOnlyConfig = validateBoardWip(clean.config.bucketOrder, prevForWip.cards as WipCountCardLike[]);
         if (!wipOnlyConfig.ok) {
           return NextResponse.json({ error: wipOnlyConfig.message }, { status: 400 });

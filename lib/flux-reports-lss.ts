@@ -1,5 +1,6 @@
 import type { BoardData } from "@/lib/kv-boards";
 import {
+  buildCycleTimeScatterPoints,
   buildRollingWeekRanges,
   parseCardFlowStartMs,
   type FluxWeekRange,
@@ -172,6 +173,97 @@ export function buildLssWeeklyCompletions(
   });
 }
 
+/** Pareto de tags em work items LSS ainda abertos. */
+export function buildLssTagPareto(boards: BoardData[], limit = 12): LssParetoRow[] {
+  const lss = filterLeanSixSigmaBoards(boards);
+  const counts = new Map<string, number>();
+  for (const board of lss) {
+    const cards = Array.isArray(board.cards) ? board.cards : [];
+    for (const card of cards) {
+      if (!card || typeof card !== "object") continue;
+      const rec = card as Record<string, unknown>;
+      if (String(rec.progress || "") === "Concluída") continue;
+      const tags = Array.isArray(rec.tags) ? (rec.tags as unknown[]).map((t) => String(t || "").trim()) : [];
+      for (const tag of tags) {
+        if (!tag) continue;
+        const key = tag.slice(0, 80);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const total = sorted.reduce((a, [, c]) => a + c, 0) || 1;
+  let cum = 0;
+  return sorted.map(([label, count]) => {
+    cum += count;
+    return { label, count, cumulativePct: Math.round((cum / total) * 1000) / 10 };
+  });
+}
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1));
+  return sorted[idx] ?? 0;
+}
+
+/** XmR simplificado sobre últimos N pontos de cycle time (boards LSS apenas). */
+export function buildLssIndividualsSpc(boards: BoardData[], maxPoints = 32): {
+  rows: LssIndividualsSpcRow[];
+  note: string;
+  capability: LssCapabilitySnapshot | null;
+} {
+  const lssIds = new Set(filterLeanSixSigmaBoards(boards).map((b) => b.id));
+  const scatter = buildCycleTimeScatterPoints(boards)
+    .filter((p) => lssIds.has(p.boardId))
+    .sort((a, b) => a.completedMs - b.completedMs)
+    .slice(-maxPoints);
+  if (scatter.length < 3) {
+    return {
+      rows: [],
+      note: "short_series",
+      capability: null,
+    };
+  }
+  const x = scatter.map((p) => p.cycleDays);
+  const mean = x.reduce((a, b) => a + b, 0) / x.length;
+  const mr: number[] = [];
+  for (let i = 1; i < x.length; i++) mr.push(Math.abs(x[i]! - x[i - 1]!));
+  const mrBar = mr.reduce((a, b) => a + b, 0) / mr.length;
+  const ucl = mean + 2.66 * mrBar;
+  const lcl = Math.max(0, mean - 2.66 * mrBar);
+  const rows: LssIndividualsSpcRow[] = x.map((cycleDays, idx) => ({
+    idx: idx + 1,
+    cycleDays,
+    centerLine: mean,
+    ucl,
+    lcl,
+  }));
+
+  const sortedX = [...x].sort((a, b) => a - b);
+  const p95 = percentile(sortedX, 95);
+  const uslDays = Math.max(p95 * 1.25, mean + 1);
+  const n = x.length;
+  const variance = x.reduce((acc, v) => acc + (v - mean) ** 2, 0) / Math.max(1, n - 1);
+  const sigma = Math.sqrt(Math.max(variance, 1e-9));
+  const lsl = 0;
+  const cp = (uslDays - lsl) / (6 * sigma);
+  const cpu = (uslDays - mean) / (3 * sigma);
+  const cpl = (mean - lsl) / (3 * sigma);
+  const cpk = Math.min(cpu, cpl);
+
+  return {
+    rows,
+    note: "xmr_proxy",
+    capability: {
+      sampleSize: n,
+      meanDays: Math.round(mean * 10) / 10,
+      uslDays: Math.round(uslDays * 10) / 10,
+      cp: Math.round(cp * 100) / 100,
+      cpk: Math.round(cpk * 100) / 100,
+    },
+  };
+}
+
 export function buildLssAgingHistogram(boards: BoardData[]): Array<{ label: string; count: number }> {
   const bins = [
     { max: 7, label: "0–7d" },
@@ -197,6 +289,25 @@ export function buildLssAgingHistogram(boards: BoardData[]): Array<{ label: stri
   return bins.map((b, i) => ({ label: b.label, count: counts[i] }));
 }
 
+export type LssParetoRow = { label: string; count: number; cumulativePct: number };
+
+export type LssIndividualsSpcRow = {
+  idx: number;
+  cycleDays: number;
+  centerLine: number;
+  ucl: number;
+  lcl: number;
+};
+
+export type LssCapabilitySnapshot = {
+  sampleSize: number;
+  meanDays: number;
+  /** Limite superior especulativo = P95 × 1.25 (heurística quando não há spec formal). */
+  uslDays: number | null;
+  cp: number | null;
+  cpk: number | null;
+};
+
 export type FluxReportsLssPayload = {
   schema: string;
   generatedAt: string;
@@ -212,6 +323,12 @@ export type FluxReportsLssPayload = {
     concludedLast8Weeks: number;
   };
   okrHints?: Array<{ objectiveId: string; objectiveTitle: string; krTitle: string; boardId: string }>;
+  /** Tags em cards LSS abertos (Pareto). */
+  tagPareto: LssParetoRow[];
+  /** Gráfico de indivíduos (cycle time concluídos, boards LSS) com limites XmR aproximados. */
+  individualsSpc: LssIndividualsSpcRow[];
+  individualsSpcNote: string;
+  capability: LssCapabilitySnapshot | null;
 };
 
 export function buildFluxReportsLssPayload(
@@ -234,6 +351,8 @@ export function buildFluxReportsLssPayload(
   }
   const boardsWithOpenWork = boardRows.filter((r) => r.openCount > 0).length;
   const concludedLast8Weeks = weeklyCompletions.reduce((acc, w) => acc + w.concluded, 0);
+  const tagPareto = buildLssTagPareto(boards);
+  const { rows: individualsSpc, note: individualsSpcNote, capability } = buildLssIndividualsSpc(boards);
 
   return {
     schema: "flux-board.flux_reports_lss.v1",
@@ -249,6 +368,10 @@ export function buildFluxReportsLssPayload(
       atRiskOpenItems,
       concludedLast8Weeks,
     },
+    tagPareto,
+    individualsSpc,
+    individualsSpcNote,
+    capability,
     ...(opts?.okrHints?.length ? { okrHints: opts.okrHints } : {}),
   };
 }

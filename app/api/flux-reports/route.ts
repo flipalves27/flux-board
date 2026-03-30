@@ -8,7 +8,9 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
+  averageApproxCycleTimeDays,
   averageLeadTimeDays,
+  buildBlockerTagDistribution,
   buildCfdPoints,
   buildColumnAndPriorityDistribution,
   buildCreatedVsDoneFromCopilot,
@@ -19,8 +21,10 @@ import {
   buildTeamVelocity,
   buildWeeklyThroughputFromCopilot,
   collectBucketLabels,
+  scrumDorReadySnapshot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { buildSprintStoryPointsHistory } from "@/lib/flux-reports-sprint-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
@@ -116,6 +120,15 @@ export async function GET(request: NextRequest) {
     const { byColumn, byPriority } = buildColumnAndPriorityDistribution(boards);
     const heatmap = buildPortfolioHeatmap(rows);
     const avgLeadDays = averageLeadTimeDays(boards);
+    const avgApproxCycleDays = averageApproxCycleTimeDays(boards);
+    const blockerTagDistribution = buildBlockerTagDistribution(boards);
+    const scrumDorReady = scrumDorReadySnapshot(boards);
+    let sprintStoryPointsHistory: Awaited<ReturnType<typeof buildSprintStoryPointsHistory>> = [];
+    try {
+      sprintStoryPointsHistory = await buildSprintStoryPointsHistory(payload.orgId, boards);
+    } catch {
+      sprintStoryPointsHistory = [];
+    }
 
     const generatedAt = new Date().toISOString();
 
@@ -142,6 +155,7 @@ export async function GET(request: NextRequest) {
       aggregates: {
         ...aggregates,
         avgLeadTimeDays: avgLeadDays,
+        avgApproxCycleTimeDays: avgApproxCycleDays,
       },
       weeks: weeks.map((w) => ({ label: w.label, startMs: w.startMs, endMs: w.endMs })),
       cfd: {
@@ -164,6 +178,9 @@ export async function GET(request: NextRequest) {
         copilotHistory: copilotChats.length > 0,
         boardCount: boards.length,
       },
+      blockerTagDistribution,
+      scrumDorReady,
+      sprintStoryPointsHistory,
     });
   } catch (err) {
     console.error("Flux reports API error:", err);
