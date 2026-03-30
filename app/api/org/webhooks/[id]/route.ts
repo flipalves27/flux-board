@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { ensureOrgManager } from "@/lib/api-authz";
+import { ensurePlatformAdmin } from "@/lib/api-authz";
 import {
   deleteWebhookSubscription,
   getWebhookSubscription,
@@ -20,7 +20,7 @@ export async function GET(
 ) {
   const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const deniedGet = ensureOrgManager(payload);
+  const deniedGet = ensurePlatformAdmin(payload);
   if (deniedGet) return deniedGet;
 
   const { id } = await params;
@@ -37,7 +37,7 @@ export async function PATCH(
 ) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const deniedPatch = ensureOrgManager(payload);
+  const deniedPatch = ensurePlatformAdmin(payload);
   if (deniedPatch) return deniedPatch;
 
   const { id } = await params;
@@ -81,7 +81,7 @@ export async function DELETE(
 ) {
   const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const deniedDel = ensureOrgManager(payload);
+  const deniedDel = ensurePlatformAdmin(payload);
   if (deniedDel) return deniedDel;
 
   const { id } = await params;

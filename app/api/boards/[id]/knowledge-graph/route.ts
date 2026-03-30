@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "knowledge_graph", gateCtx); } catch {
-    return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
+    return NextResponse.json({ error: "Disponível no plano Business." }, { status: 403 });
   }
 
   const board = await getBoard(boardId, payload.orgId);

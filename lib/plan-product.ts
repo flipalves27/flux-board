@@ -4,9 +4,9 @@
  * - **Persistência**: `Organization.plan` em `lib/kv-organizations.ts` + campos Stripe (`stripe*`).
  * - **Limites numéricos** (boards/usuários, carências): `lib/billing-limits.ts`.
  * - **Matriz feature ↔ tier**: `PLAN_FEATURE_MATRIX` / `FeatureKey` em `lib/plan-gates.ts`.
- * - **Checkout Stripe**: apenas Pro e Business (`lib/billing.ts`). Enterprise é contrato manual / fora do checkout.
+ * - **Checkout Stripe**: Pro e Business (`lib/billing.ts`).
  * - **Webhooks**: estado de assinatura sincronizado via `customer.subscription.*` em `handleStripeWebhook` (`lib/billing.ts`).
- * - **Bypass**: `platform_admin` sempre enterprise em gates; admin/executivo da org só com `FLUX_ADMIN_SUPERPOWERS=1`.
+ * - **Bypass**: `platform_admin` sempre tier Business em gates; gestor da org só com `FLUX_ADMIN_SUPERPOWERS=1`.
  *
  * **Contexto por tipo de usuário (UI)**:
  * - Plano efetivo para regras de produto: `getEffectiveTier(org, planGateCtxFromAuthPayload(jwt))` em `lib/plan-gates.ts`.
@@ -23,4 +23,4 @@
  * - `/api/boards/*` — workspace por board.
  */
 
-export const PLAN_TIERS_DOC = ["free", "trial", "pro", "business", "enterprise"] as const;
+export const PLAN_TIERS_DOC = ["free", "trial", "pro", "business"] as const;

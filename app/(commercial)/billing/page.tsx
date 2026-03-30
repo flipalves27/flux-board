@@ -15,16 +15,16 @@ import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
 import { isPlatformAdminSession, sessionCanManageOrgBilling } from "@/lib/rbac";
 
-type Plan = "free" | "trial" | "pro" | "business" | "enterprise";
+type Plan = "free" | "trial" | "pro" | "business";
 
-const MATRIX: { label: string; free: string; pro: string; business: string; enterprise: string }[] = [
-  { label: "Boards", free: "3", pro: "Ilimitado", business: "Ilimitado", enterprise: "Ilimitado" },
-  { label: "Usuários", free: "1", pro: "Até 10 (seats)", business: "Até 100", enterprise: "Ilimitado" },
-  { label: "IA (calls/dia)", free: "3", pro: "50", business: "Ilimitado", enterprise: "Ilimitado" },
-  { label: "Daily IA, Card Context, Brief", free: "—", pro: "Incluso", business: "Incluso", enterprise: "Incluso" },
-  { label: "Portfolio, OKRs, Copilot", free: "—", pro: "Incluso", business: "Incluso", enterprise: "Incluso" },
-  { label: "White-label / branding", free: "—", pro: "Logo", business: "Completo", enterprise: "Completo + domínio" },
-  { label: "SSO / SLA", free: "—", pro: "—", business: "—", enterprise: "Incluso" },
+const MATRIX: { label: string; free: string; pro: string; business: string }[] = [
+  { label: "Boards", free: "3", pro: "Ilimitado", business: "Ilimitado" },
+  { label: "Usuários", free: "1", pro: "Até 10 (seats)", business: "Até 100" },
+  { label: "IA (calls/dia)", free: "3", pro: "50", business: "Ilimitado" },
+  { label: "Daily IA, Card Context, Brief", free: "—", pro: "Incluso", business: "Incluso" },
+  { label: "Portfolio, OKRs, Copilot", free: "—", pro: "Incluso", business: "Incluso" },
+  { label: "White-label / branding / domínio", free: "—", pro: "Logo", business: "Completo + domínio" },
+  { label: "SSO, webhooks avançados, escala", free: "—", pro: "—", business: "Incluso" },
 ];
 
 export default function BillingPage() {
@@ -75,7 +75,7 @@ export default function BillingPage() {
 
   const canBilling = Boolean(user && sessionCanManageOrgBilling(user));
   const isPlatformOperator = Boolean(user && isPlatformAdminSession(user));
-  const isProOrBusiness = plan === "pro" || plan === "business" || plan === "enterprise";
+  const isProOrBusiness = plan === "pro" || plan === "business";
   const proCap = getProMaxUsers();
 
   const planBadge = useMemo(() => {
@@ -83,8 +83,7 @@ export default function BillingPage() {
     if (plan === "trial") return "Trial Pro";
     if (plan === "pro") return "Pro";
     if (plan === "business") return "Business";
-    if (plan === "enterprise") return "Enterprise";
-    return "Business";
+    return "Free";
   }, [plan]);
 
   useEffect(() => {
@@ -104,13 +103,11 @@ export default function BillingPage() {
         const org = orgData?.organization;
         const rawPlan = String(org?.plan ?? "free");
         const nextPlan: Plan =
-          rawPlan === "pro" ||
-          rawPlan === "business" ||
-          rawPlan === "enterprise" ||
-          rawPlan === "trial" ||
-          rawPlan === "free"
+          rawPlan === "pro" || rawPlan === "business" || rawPlan === "trial" || rawPlan === "free"
             ? (rawPlan as Plan)
-            : "free";
+            : rawPlan === "enterprise"
+              ? "business"
+              : "free";
         setPlan(nextPlan);
         setMaxUsers(typeof org?.maxUsers === "number" ? org.maxUsers : null);
         setMaxBoards(typeof org?.maxBoards === "number" ? org.maxBoards : null);
@@ -146,7 +143,7 @@ export default function BillingPage() {
           return prev;
         });
 
-        if (nextPlan === "pro" || nextPlan === "business" || nextPlan === "enterprise") {
+        if (nextPlan === "pro" || nextPlan === "business") {
           const imp = await apiGet<{
             impact: {
               lostFeatures: string[];
@@ -427,14 +424,13 @@ export default function BillingPage() {
 
             <section className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)] overflow-x-auto">
               <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-4">Comparativo</h3>
-              <table className="w-full min-w-[880px] text-sm border-collapse">
+              <table className="w-full min-w-[640px] text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--flux-chrome-alpha-12)]">
                     <th className="text-left py-2 pr-2 text-[var(--flux-text-muted)] font-semibold">Recurso</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-text)] font-semibold">Free</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-primary-light)] font-semibold">Pro</th>
                     <th className="text-left py-2 px-2 text-[var(--flux-secondary)] font-semibold">Business</th>
-                    <th className="text-left py-2 px-2 text-[var(--flux-text)] font-semibold">Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -444,7 +440,6 @@ export default function BillingPage() {
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.free}</td>
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.pro}</td>
                       <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.business}</td>
-                      <td className="py-2 px-2 text-[var(--flux-text-muted)]">{row.enterprise}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -504,7 +499,7 @@ export default function BillingPage() {
                 </div>
                 <span className="text-[11px] text-[var(--flux-text-muted)]">Cupons de desconto podem ser aplicados no checkout Stripe.</span>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div
                   className={`rounded-[var(--flux-rad)] border p-5 ${plan === "free" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
                 >
@@ -622,32 +617,6 @@ export default function BillingPage() {
                   </div>
                 </div>
                 ) : null}
-
-                <div
-                  className={`rounded-[var(--flux-rad)] border p-5 ${plan === "enterprise" ? "border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)]" : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"}`}
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Enterprise</p>
-                  <p className="mt-2 font-display text-2xl font-bold text-[var(--flux-text)]">Sob consulta</p>
-                  <ul className="mt-3 text-xs text-[var(--flux-text-muted)] space-y-1 list-disc pl-4">
-                    <li>SSO (SAML/OIDC), SLA dedicado</li>
-                    <li>Copilot com tools custom, domínio próprio</li>
-                    <li>Contrato e faturamento invoice (Stripe Invoicing)</li>
-                  </ul>
-                  <div className="mt-5">
-                    {plan === "enterprise" ? (
-                      <button disabled className="btn-secondary w-full">
-                        Enterprise ativo
-                      </button>
-                    ) : (
-                      <a
-                        href={`mailto:${process.env.NEXT_PUBLIC_SALES_EMAIL ?? "vendas@fluxboard.app"}?subject=${encodeURIComponent("Flux-Board Enterprise")}`}
-                        className="btn-secondary w-full inline-flex justify-center items-center"
-                      >
-                        Fale com vendas
-                      </a>
-                    )}
-                  </div>
-                </div>
               </div>
               {(plan === "trial" || plan === "free") && (
                 <p className="mt-4 text-xs text-[var(--flux-text-muted)]">

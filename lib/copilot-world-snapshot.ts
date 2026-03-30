@@ -100,7 +100,7 @@ export async function buildCopilotWorldSnapshot(params: {
   org: Organization | null;
   /** Se já buscou chunks no route, reutiliza (evita dupla chamada RAG). */
   ragChunks?: DocChunkRag[] | null;
-  /** Admin da org: tier enterprise nos gates (sem depender do Stripe). */
+  /** Admin da org: bypass de tier nos gates quando `FLUX_ADMIN_SUPERPOWERS` (sem depender do Stripe). */
   planGateCtx?: PlanGateContext;
 }): Promise<{ snapshot: string; ragChunksUsed: DocChunkRag[] }> {
   const { orgId, userId, isAdmin, boardId, board, userMessage, org, ragChunks: preChunks, planGateCtx } = params;

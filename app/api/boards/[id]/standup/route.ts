@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "ceremonies", gateCtx); } catch {
-    return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
+    return NextResponse.json({ error: "Disponível no plano Business." }, { status: 403 });
   }
 
   const url = new URL(request.url);
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const org = await getOrganizationById(payload.orgId);
   const gateCtxPost = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "ceremonies", gateCtxPost); } catch {
-    return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
+    return NextResponse.json({ error: "Disponível no plano Business." }, { status: 403 });
   }
 
   let body: Record<string, unknown>;

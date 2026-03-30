@@ -16,7 +16,7 @@ export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCta
   const t = useTranslations("landing");
 
   return (
-    <section className="tone-cta home-landing-reveal relative mt-20 overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] px-6 py-12 text-center md:mt-24 md:px-12 md:py-16">
+    <section className="tone-cta home-landing-reveal relative mt-12 overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] px-5 py-10 text-center md:mt-16 md:px-10 md:py-12">
       <div
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{ background: "radial-gradient(ellipse 70% 80% at 50% 120%, var(--flux-primary-alpha-35), transparent)" }}

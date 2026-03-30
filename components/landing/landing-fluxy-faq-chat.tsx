@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { matchLandingFaq } from "@/lib/landing-faq-match";
+import { LANDING_OPEN_FLUXY_CHAT_EVENT } from "@/lib/landing-open-fluxy-chat";
 
 type ChatLine = {
   id: string;
@@ -38,6 +39,12 @@ export function LandingFluxyFaqChat() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [panelOpen]);
+
+  useEffect(() => {
+    const onOpen = () => setPanelOpen(true);
+    window.addEventListener(LANDING_OPEN_FLUXY_CHAT_EVENT, onOpen);
+    return () => window.removeEventListener(LANDING_OPEN_FLUXY_CHAT_EVENT, onOpen);
+  }, []);
 
   const suggestionQuestions = useMemo(() => faqItems.slice(0, 3).map((x) => x.question), [faqItems]);
 

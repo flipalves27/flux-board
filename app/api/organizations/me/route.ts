@@ -210,7 +210,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
       const tier = getEffectiveTier(current, planGateCtxFromAuthPayload(payload));
-      if (tier !== "business" && tier !== "enterprise") {
+      if (tier !== "business") {
         return NextResponse.json(
           { error: "Configurações de IA avançadas disponíveis no plano Business." },
           { status: 403 }
@@ -248,9 +248,9 @@ export async function PUT(request: NextRequest) {
         );
       }
       const raw = typeof (body as { plan?: unknown }).plan === "string" ? (body as { plan: string }).plan.trim() : "";
-      const allowed: Organization["plan"][] = ["free", "trial", "pro", "business", "enterprise"];
+      const allowed: Organization["plan"][] = ["free", "trial", "pro", "business"];
       if (!allowed.includes(raw as Organization["plan"])) {
-        return NextResponse.json({ error: "Plano inválido. Use: free, trial, pro, business ou enterprise." }, { status: 400 });
+        return NextResponse.json({ error: "Plano inválido. Use: free, trial, pro ou business." }, { status: 400 });
       }
       planPatch = raw as Organization["plan"];
       if (planPatch !== current.plan) {

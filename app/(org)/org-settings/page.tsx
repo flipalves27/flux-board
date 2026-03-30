@@ -10,7 +10,7 @@ import { useToast } from "@/context/toast-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { readImageFileAsDataUrl } from "@/lib/branding-upload-client";
 import { OrgWebhooksSettings } from "@/components/org-webhooks-settings";
-import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 function slugifyLocal(input: string): string {
   return String(input || "")
@@ -41,7 +41,7 @@ export default function OrgSettingsPage() {
 
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
-  const [orgPlan, setOrgPlan] = useState<"free" | "trial" | "pro" | "business" | "enterprise">("free");
+  const [orgPlan, setOrgPlan] = useState<"free" | "trial" | "pro" | "business">("free");
   const [slugTouched, setSlugTouched] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
@@ -86,7 +86,7 @@ export default function OrgSettingsPage() {
     setOrgName(String(org.name ?? ""));
     setOrgSlug(String(org.slug ?? ""));
     setOrgPlan(
-      org.plan === "pro" || org.plan === "business" || org.plan === "enterprise"
+      org.plan === "pro" || org.plan === "business"
         ? org.plan
         : org.plan === "trial"
           ? "trial"
@@ -145,7 +145,7 @@ export default function OrgSettingsPage() {
       !isChecked ||
       !user ||
       !sessionCanManageMembersAndBilling(user) ||
-      (orgPlan !== "business" && orgPlan !== "enterprise")
+      orgPlan !== "business"
     ) {
       setOrgUsers([]);
       return;
@@ -207,7 +207,7 @@ export default function OrgSettingsPage() {
       if (!slug) throw new Error("Slug é obrigatório.");
 
       const branding =
-        orgPlan === "pro" || orgPlan === "business" || orgPlan === "enterprise"
+        orgPlan === "pro" || orgPlan === "business"
           ? {
               logoUrl: logoUrl.trim() || "",
               primaryColor: primaryColor.trim() || "",
@@ -216,13 +216,13 @@ export default function OrgSettingsPage() {
               platformName: platformName.trim() || "",
               faviconUrl: faviconUrl.trim() || "",
               emailFrom: emailFrom.trim() || "",
-              ...(orgPlan === "business" || orgPlan === "enterprise" ? { customDomain: customDomain.trim() || "" } : {}),
+              ...(orgPlan === "business" ? { customDomain: customDomain.trim() || "" } : {}),
               ...extraBranding,
             }
           : undefined;
 
       const aiSettings =
-        orgPlan === "business" || orgPlan === "enterprise"
+        orgPlan === "business"
           ? {
               anthropicModel: aiAnthropicModel.trim() || null,
               batchLlmProvider: aiBatchProvider || null,
@@ -359,14 +359,13 @@ export default function OrgSettingsPage() {
                     Override manual no banco só é permitido quando <strong className="text-[var(--flux-text)]">não há</strong>{" "}
                     assinatura Stripe nesta org. Exige <code className="font-mono">FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1</code> no
                     servidor. Recursos como Sprint, Copilot e OKRs exigem plano{" "}
-                    <strong className="text-[var(--flux-text)]">Pro</strong>, <strong className="text-[var(--flux-text)]">Business</strong>{" "}
-                    ou <strong className="text-[var(--flux-text)]">Enterprise</strong>.
+                    <strong className="text-[var(--flux-text)]">Pro</strong> ou <strong className="text-[var(--flux-text)]">Business</strong>.
                   </p>
                   <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Plano da organização</label>
                   <select
                     value={orgPlan}
                     onChange={(e) =>
-                      setOrgPlan(e.target.value as "free" | "trial" | "pro" | "business" | "enterprise")
+                      setOrgPlan(e.target.value as "free" | "trial" | "pro" | "business")
                     }
                     className="w-full max-w-md px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                     disabled={busy}
@@ -375,15 +374,14 @@ export default function OrgSettingsPage() {
                     <option value="trial">Trial (tratado como Pro enquanto vigente)</option>
                     <option value="pro">Pro</option>
                     <option value="business">Business</option>
-                    <option value="enterprise">Enterprise</option>
                   </select>
                 </div>
               )}
 
-              {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "enterprise" || orgPlan === "trial") && (
+              {(orgPlan === "pro" || orgPlan === "business" || orgPlan === "trial") && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-6">
                   <div>
-                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">White-label (Enterprise)</h3>
+                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">White-label</h3>
                     <p className="text-sm text-[var(--flux-text-muted)]">
                       Logo, cores, nome da plataforma e favicon em todo o app, portal e e-mails. Plano Business: domínio
                       próprio e remetente no Resend.
@@ -516,7 +514,7 @@ export default function OrgSettingsPage() {
                       </p>
                     </div>
 
-                    {(orgPlan === "business" || orgPlan === "enterprise") && (
+                    {orgPlan === "business" && (
                       <div className="md:col-span-2 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-surface-elevated)]/40 p-4">
                         <div>
                           <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">Domínio customizado</label>
@@ -571,10 +569,10 @@ export default function OrgSettingsPage() {
                 </div>
               )}
 
-              {(orgPlan === "business" || orgPlan === "enterprise") && (
+              {orgPlan === "business" && (
                 <div className="mt-8 pt-8 border-t border-[var(--flux-primary-alpha-15)] space-y-4">
                   <div>
-                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">IA (Business / Enterprise)</h3>
+                    <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">IA (Business)</h3>
                     <p className="text-sm text-[var(--flux-text-muted)]">
                       Modelo Claude para a org, digest semanal em lote e quem mais pode usar a rota Claude além dos
                       administradores.
@@ -700,7 +698,7 @@ export default function OrgSettingsPage() {
                 </div>
               ) : null}
 
-              <OrgWebhooksSettings />
+              {user && isPlatformAdminSession(user) ? <OrgWebhooksSettings /> : null}
             </>
           )}
         </div>

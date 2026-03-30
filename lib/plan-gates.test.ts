@@ -8,7 +8,7 @@ describe("plan-gates", () => {
     process.env = { ...prevEnv };
   });
 
-  it("returns enterprise for platform admin regardless of org plan and FLUX_ADMIN_SUPERPOWERS", () => {
+  it("returns business for platform admin regardless of org plan and FLUX_ADMIN_SUPERPOWERS", () => {
     process.env.FLUX_ADMIN_SUPERPOWERS = "false";
     const ctx = planGateCtxFromAuthPayload({
       id: "admin",
@@ -16,10 +16,10 @@ describe("plan-gates", () => {
       isExecutive: false,
     });
     const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, ctx);
-    expect(tier).toBe("enterprise");
+    expect(tier).toBe("business");
   });
 
-  it("does not give org admin enterprise tier when superpowers are disabled", () => {
+  it("does not give org admin business bypass tier when superpowers are disabled", () => {
     process.env.FLUX_ADMIN_SUPERPOWERS = "false";
     const ctx = planGateCtxFromAuthPayload({
       id: "u1",
@@ -30,7 +30,7 @@ describe("plan-gates", () => {
     expect(tier).toBe("free");
   });
 
-  it("gives org admin enterprise tier when superpowers are enabled", () => {
+  it("gives org admin business tier when superpowers are enabled", () => {
     process.env.FLUX_ADMIN_SUPERPOWERS = "true";
     const ctx = planGateCtxFromAuthPayload({
       id: "u1",
@@ -38,7 +38,7 @@ describe("plan-gates", () => {
       isExecutive: false,
     });
     const tier = getEffectiveTier({ _id: "o1", plan: "free" } as any, ctx);
-    expect(tier).toBe("enterprise");
+    expect(tier).toBe("business");
   });
 
   it("throws standardized gate error payload", () => {

@@ -33,8 +33,8 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
 
   return (
     <>
-      <section id="platform" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-platform-heading">
-        <div className="mb-8">
+      <section id="platform" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-platform-heading">
+        <div className="mb-5 md:mb-6">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 id="landing-platform-heading" className="font-display text-2xl font-bold md:text-3xl">
               {t("platform.heading", { appName })}
@@ -63,8 +63,8 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
         </div>
       </section>
 
-      <section className="home-landing-reveal mt-12 md:mt-14" aria-labelledby="landing-mid-cta-heading">
-        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/80 px-6 py-8 text-center backdrop-blur-sm md:px-10 md:py-10">
+      <section className="home-landing-reveal mt-8 md:mt-10" aria-labelledby="landing-mid-cta-heading">
+        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/80 px-5 py-6 text-center backdrop-blur-sm md:px-8 md:py-8">
           <h2 id="landing-mid-cta-heading" className="font-display text-xl font-bold md:text-2xl">
             {t("midCta.heading", { appName })}
           </h2>

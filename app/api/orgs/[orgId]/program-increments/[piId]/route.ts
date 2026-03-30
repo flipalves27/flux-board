@@ -33,7 +33,7 @@ async function checkAccess(request: NextRequest, orgId: string) {
   const org = await getOrganizationById(orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "portfolio_sprint", gateCtx); } catch {
-    return { error: "Disponível em planos Business ou Enterprise.", status: 403 as const, payload: null };
+    return { error: "Disponível no plano Business.", status: 403 as const, payload: null };
   }
   return { error: null, status: 200 as const, payload };
 }

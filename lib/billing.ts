@@ -7,7 +7,7 @@
  *   segue o objeto subscription em `updated` (ex. status `past_due` não é `active`/`trialing`, então tratamos como inativo).
  * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (`metadata.plan`, IDs ativos/legados em
  *   `lib/platform-commercial-settings.ts`, fallback `STRIPE_PRICE_ID_*` no env). Add-ons exigiriam iterar itens ou metadata adicional.
- * - Enterprise não passa por checkout; plano `enterprise` na org é operacional/manual.
+ * - Checkout cobre Pro e Business; plano manual na org (admin) só free/trial/pro/business.
  */
 import Stripe from "stripe";
 import type { NextRequest } from "next/server";
@@ -32,7 +32,7 @@ import {
 } from "./billing-limits";
 import { getEffectiveStripePriceIds, resolveBillingPlanFromStripeSubscription } from "./platform-commercial-settings";
 
-/** Planos cobrados via Stripe (Enterprise é contrato manual / fora do checkout). */
+/** Planos cobrados via Stripe: Pro e Business. */
 type BillingPlan = "pro" | "business";
 
 function readEnv(name: string): string {

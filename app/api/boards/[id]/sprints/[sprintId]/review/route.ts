@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try { assertFeatureAllowed(org, "ceremonies", gateCtx); } catch {
-    return NextResponse.json({ error: "Disponível em planos Business ou Enterprise." }, { status: 403 });
+    return NextResponse.json({ error: "Disponível no plano Business." }, { status: 403 });
   }
 
   const dailyCap = getDailyAiCallsCap(org, gateCtx);

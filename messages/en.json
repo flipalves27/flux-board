@@ -923,21 +923,21 @@
   },
   "landing": {
     "meta": {
-      "title": "Flux-Board — Commercial operations with clarity",
-      "description": "Professional Kanban, daily insights, context on cards, and portfolio visibility. Built for sales, operations, and leadership teams.",
+      "title": "Flux-Board — Your team's board, clear and in sync",
+      "description": "Own your workflow: professional Kanban, context on every card, daily insights, portfolio view, and Board Copilot on higher plans. Start free—14-day Pro/Business trial, no credit card.",
       "productName": "Flux-Board",
-      "jsonLdDescription": "Professional Kanban with AI-ready workflows for B2B commercial and operations teams."
+      "jsonLdDescription": "Professional Kanban with insights, portfolio visibility, and optional AI copilot for teams that need one source of truth for delivery."
     },
     "skipToContent": "Skip to main content",
     "header": {
-      "tagline": "Commercial operations with clarity."
+      "tagline": "Your flow. Your board. One place."
     },
     "nav": {
       "why": "Why {appName}",
       "platform": "Platform",
+      "spotlight": "AI on the board",
       "how": "How it works",
       "pricing": "Pricing",
-      "useCases": "Use cases",
       "trust": "Security",
       "openMenu": "Open navigation menu",
       "closeMenu": "Close menu",
@@ -949,20 +949,23 @@
       "getStarted": "Get started"
     },
     "hero": {
-      "chip": "Visual management · AI-ready · B2B",
+      "chip": "Your board · AI copilot · Built to deliver",
       "title": {
-        "before": "The board where",
-        "highlight": "sales and operations",
-        "after": "move at the same pace."
+        "before": "The board where you",
+        "highlight": "own the rhythm",
+        "after": "of delivery—from every card to portfolio."
       },
-      "description": "{appName} brings together professional Kanban, day-to-day insights, and portfolio visibility—for teams that need predictable delivery and speed in conversations with customers and leadership.",
+      "description": "{appName} keeps your Kanban, your context, and your metrics on one surface. Your team sees the same priorities; you move faster—with Fluxy and Board Copilot when you step up to Pro or Business.",
       "primary": {
         "loggedIn": "Go to my boards",
-        "loggedOut": "Sign up and try it"
+        "loggedOut": "Start free—create your board"
       },
-      "secondary": "See what the platform does",
+      "secondary": "See what's inside",
       "pricingLink": "See pricing",
-      "quickLine": "Quick team adoption · Responsive experience · Grows with discovery, deals, and routines built into the flow",
+      "quickLine": "First board in minutes · Trial without a card · Grows with OKRs, Copilot, and alerts",
+      "fluxyTagline": "Fluxy is your copilot here—plain-language answers on trials, plans, and features.",
+      "fluxyCta": "Chat with Fluxy",
+      "fluxyPeekLabel": "Fluxy on your board",
       "stats": {
         "priority": {
           "label": "Priority",
@@ -987,26 +990,26 @@
       }
     },
     "why": {
-      "heading": "Built for teams that live by delivery and outcomes",
-      "description": "More than a pretty Kanban: an operational layer that connects day-to-day work with how the business reads progress—from each card to portfolio view."
+      "heading": "For people who ship—and need everyone on the same truth",
+      "description": "Stop chasing updates in threads and files. One board carries priorities, context, and leadership-ready reads."
     },
     "pillars": {
       "commercialPace": {
-        "title": "Kanban that matches commercial pace",
-        "description": "Clear columns, visible priorities, and a workflow built for sales, operations, and product—without losing sight of what actually closes deals."
+        "title": "Kanban that matches how you sell and deliver",
+        "description": "Your columns and priorities—visible to the field and ops without losing what actually closes work."
       },
       "insights": {
-        "title": "Intelligence on the board, not in stray spreadsheets",
-        "description": "Daily insights, richer context on cards, and a foundation ready for prioritization and recommendations—fewer alignment meetings, more execution."
+        "title": "Signal stays on the board—not buried in files",
+        "description": "Daily insights and structured context per card so you prioritize without another status meeting."
       },
       "executiveView": {
-        "title": "Executive and portfolio view in one place",
-        "description": "Portfolio metrics on boards, exports when you need them, and paths to briefings—the same source of truth for the field and leadership."
+        "title": "Your portfolio, same source as the team",
+        "description": "Roll-ups and exports when you need to show progress—no second spreadsheet of truth."
       }
     },
     "platform": {
-      "heading": "Everything already in {appName}",
-      "description": "Capabilities that reflect today's product—insights, context, portfolio, discovery, and routines—in one cohesive experience.",
+      "heading": "What you get in {appName} today",
+      "description": "Insights, card context, portfolio, discovery, and routines—one experience, aligned with the plans below.",
       "actions": {
         "openPlatform": "Open the platform"
       }
@@ -1014,69 +1017,54 @@
     "capabilities": {
       "dailyInsights": {
         "name": "Daily insights",
-        "detail": "Read board progress to keep cadence and spot bottlenecks early."
+        "detail": "See how your board is moving—keep cadence and catch bottlenecks early."
       },
       "contextOnCards": {
         "name": "Context on cards",
-        "detail": "Structured information per card for faster, more consistent decisions."
+        "detail": "Structured fields on each card so your team decides the same way, faster."
       },
       "executiveBrief": {
         "name": "Executive brief",
-        "detail": "Support for distilling what matters for management and strategic follow-up."
+        "detail": "Distill what leadership needs without rebuilding the story elsewhere."
       },
       "portfolioAndMetrics": {
         "name": "Portfolio and metrics",
-        "detail": "Roll-up indicators and exports when you need to present results."
+        "detail": "Roll-ups and exports when you need to show how delivery is really going."
       },
       "discoveryAndDeals": {
         "name": "Discovery and deals",
-        "detail": "Room to explore hypotheses and track opportunities with live context."
+        "detail": "Track hypotheses and opportunities with live context on the cards you already use."
       },
       "routinesAndAlerts": {
         "name": "Routines and alerts",
-        "detail": "Routine reminders woven into the flow so nothing critical slips through."
+        "detail": "Reminders in the flow so critical work does not slip past your team."
       }
     },
     "how": {
-      "heading": "From chaos to cadence in three steps",
-      "description": "Lean onboarding, strong defaults. Your team adopts in hours—and keeps the rhythm for weeks."
+      "heading": "Three moves to your rhythm",
+      "description": "You can be live in minutes—defaults help your team keep the cadence week after week."
     },
     "steps": {
       "step1": {
-        "title": "Centralize the flow",
-        "text": "Create boards aligned to your funnel or ops model. Everyone sees the same priority picture."
+        "title": "Put your flow in one place",
+        "text": "Shape boards to your funnel or ops model—everyone sees the same priority picture."
       },
       "step2": {
-        "title": "Enrich with context",
-        "text": "Use descriptions, per-card context, and insights to turn tasks into informed decisions."
+        "title": "Give each card its context",
+        "text": "Descriptions, structured context, and insights turn tasks into decisions you trust."
       },
       "step3": {
-        "title": "Scale with clarity",
-        "text": "Metrics, exports, and an executive view support growth without losing execution standards."
-      }
-    },
-    "audiences": {
-      "heading": "Who gets the most from it",
-      "sales": {
-        "title": "Sales and customer success",
-        "text": "Visible pipeline, obvious next steps, and communication aligned with the customer."
-      },
-      "operations": {
-        "title": "Operations and projects",
-        "text": "Predictable delivery with explicit prioritization and less cross-team rework."
-      },
-      "leadership": {
-        "title": "Leadership and PMO",
-        "text": "Fast portfolio reads and briefing support without juggling a dozen tools."
+        "title": "Grow without losing clarity",
+        "text": "Metrics, exports, and executive views scale with you—standards stay visible."
       }
     },
     "cta": {
-      "heading": "Bring clarity to how your team works",
-      "description": "Try a solid commercial foundation: modern visuals, features aligned with sales and operations day-to-day, and room to grow with AI and integrations.",
+      "heading": "Make this board yours today",
+      "description": "Start free to explore; unlock Pro or Business with a 14-day trial and no card on file. Your workflows deserve a home that stays honest as you scale.",
       "actions": {
         "loggedIn": "Continue in {appName}",
         "loggedOutPrimary": "Start for free",
-        "loggedOutSecondary": "Explore the pillars"
+        "loggedOutSecondary": "See AI on the board"
       }
     },
     "footer": {
@@ -1092,16 +1080,11 @@
       "columnPlatform": "Platform"
     },
     "midCta": {
-      "heading": "Ready to try {appName}?",
-      "description": "Create a board in minutes, invite your team, and keep delivery and commercial rhythm on the same surface.",
+      "heading": "Feel it on your own board",
+      "description": "Create a board, invite who matters, and keep delivery rhythm where you can actually see it.",
       "primaryLoggedIn": "Open my boards",
       "primaryLoggedOut": "Start for free",
       "secondary": "Compare plans"
-    },
-    "useCases": {
-      "heading": "What you can do with it",
-      "description": "Pick a lens—same product, different outcomes for each part of the organization.",
-      "tablistLabel": "Use cases by audience"
     },
     "trust": {
       "heading": "Security and your data",
@@ -1137,7 +1120,7 @@
         },
         "custom_domain": {
           "title": "SSO and custom corporate domain",
-          "detail": "Enterprise governance with corporate authentication and dedicated branded environment."
+          "detail": "Custom domain, dedicated branding, and corporate authentication on the Business plan."
         }
       }
     },
@@ -1164,17 +1147,16 @@
     },
     "socialProof": {
       "ariaLabel": "Product highlights",
-      "stat1": { "value": "3 min", "label": "to create your first board" },
-      "stat2": { "value": "14 days", "label": "trial, no credit card" },
-      "stat3": { "value": "100%", "label": "visual — zero spreadsheets" },
-      "stat4": { "value": "∞", "label": "boards on Pro and above" }
+      "stat1": { "value": "3 min", "label": "to your first live board" },
+      "stat2": { "value": "14 days", "label": "Pro/Business trial, no card" },
+      "stat3": { "value": "One", "label": "source of truth on the board" },
+      "stat4": { "value": "∞", "label": "boards when you need room to grow" }
     },
     "pricing": {
       "tiers": {
         "free": "Free",
         "pro": "Pro",
-        "business": "Business",
-        "enterprise": "Enterprise"
+        "business": "Business"
       },
       "heading": "Plans for every stage of growth",
       "description": "Start free and scale as your team evolves. No surprise invoices.",
@@ -1207,11 +1189,6 @@
           "desc": "For scaled operations with unlimited AI, white-label, and integrations.",
           "cta": "Try Business for 14 days",
           "limits": "Unlimited boards · Up to 100 members · Unlimited AI"
-        },
-        "enterprise": {
-          "name": "Enterprise",
-          "desc": "For large organizations with SSO, custom domain, and dedicated SLA.",
-          "cta": "Talk to sales"
         }
       },
       "features": {
@@ -1267,7 +1244,7 @@
     },
     "fluxyChat": {
       "title": "Ask Fluxy",
-      "subtitle": "Answers from our FAQ",
+      "subtitle": "Straight answers from our FAQ",
       "placeholder": "e.g. trial, pricing, Copilot…",
       "send": "Send",
       "open": "Open Fluxy",

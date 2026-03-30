@@ -101,26 +101,6 @@ function buildPlans(
       ],
       inherit: t("pricing.allPro"),
     },
-    {
-      id: "enterprise",
-      name: t("pricing.plans.enterprise.name"),
-      price: t("pricing.customPrice"),
-      priceSub: t("pricing.customSub"),
-      desc: t("pricing.plans.enterprise.desc"),
-      limits: null,
-      cta: t("pricing.plans.enterprise.cta"),
-      ctaHref: `mailto:${process.env.NEXT_PUBLIC_SALES_EMAIL ?? "sales@fluxboard.app"}`,
-      highlighted: false,
-      badge: null,
-      features: [
-        { label: t("pricing.features.sso"), included: true },
-        { label: t("pricing.features.customDomain"), included: true },
-        { label: t("pricing.features.copilotTools"), included: true },
-        { label: t("pricing.features.anomalyWebhook"), included: true },
-        { label: t("pricing.features.dedicatedSupport"), included: true },
-      ],
-      inherit: t("pricing.allBusiness"),
-    },
   ];
   return all.filter((p) => {
     if (p.id === "pro") return proEnabled;
@@ -142,8 +122,8 @@ export function LandingPricing({
   const pricingPlans = buildPlans(t, billingYearly, localeRoot, pricing, proEnabled, businessEnabled);
 
   return (
-    <section id="pricing" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-pricing-heading">
-      <div className="mb-8 text-center">
+    <section id="pricing" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-pricing-heading">
+      <div className="mb-5 text-center md:mb-6">
         <h2 id="landing-pricing-heading" className="font-display text-2xl font-bold md:text-3xl">
           {t("pricing.heading")}
         </h2>
@@ -176,7 +156,7 @@ export function LandingPricing({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {pricingPlans.map((plan) => (
           <article
             key={plan.id}
@@ -218,11 +198,7 @@ export function LandingPricing({
               </ul>
             </div>
 
-            {plan.id === "enterprise" ? (
-              <a href={plan.ctaHref} className="btn-secondary w-full py-2.5 text-center text-sm">
-                {plan.cta}
-              </a>
-            ) : user ? (
+            {user ? (
               <Link href={`${localeRoot}/billing`} className={`w-full py-2.5 text-center text-sm ${plan.highlighted ? "btn-primary" : "btn-secondary"}`}>
                 {plan.cta}
               </Link>

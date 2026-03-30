@@ -7,8 +7,8 @@ import { deriveEffectiveRoles, isOrgGestor, isPlatformAdmin, type OrgRole, type 
 /**
  * Tier de produto é sempre por organização (`Organization.plan`, Stripe, trial).
  * Bypass de plano:
- * - `isPlatformAdmin`: usuário seed / platform_admin — fora do contexto comercial Stripe; sempre enterprise.
- * - `isOrgAdmin`: admin ou executivo da org — enterprise só se `FLUX_ADMIN_SUPERPOWERS=1` (default desligado).
+ * - `isPlatformAdmin`: usuário seed / platform_admin — fora do contexto comercial Stripe; tier máximo (Business).
+ * - `isOrgAdmin`: gestor da org — mesmo tier máximo só se `FLUX_ADMIN_SUPERPOWERS=1` (default desligado).
  * Ver `lib/plan-product.ts` para o mapa canônico de produto e prefixos de API.
  */
 
@@ -16,7 +16,7 @@ import { deriveEffectiveRoles, isOrgGestor, isPlatformAdmin, type OrgRole, type 
 const BOARD_ACTIVITY_FREE_RETENTION_DAYS = 90;
 
 /** Plano efetivo para gates (trial ativo conta como Pro; grace pós-downgrade mantém tier pago). */
-export type EffectiveGateTier = "free" | "pro" | "business" | "enterprise";
+export type EffectiveGateTier = "free" | "pro" | "business";
 
 export type PlanGateContext = {
   /** Administrador da plataforma; bypass total, independente de Stripe. */
@@ -49,9 +49,8 @@ export type Tier = Organization["plan"];
 
 export type PlanGateCode = "PLAN_UPGRADE_REQUIRED" | "PLAN_LIMIT_REACHED";
 
-const PAID: EffectiveGateTier[] = ["pro", "business", "enterprise"];
-const BIZ_UP: EffectiveGateTier[] = ["business", "enterprise"];
-const ENT_ONLY: EffectiveGateTier[] = ["enterprise"];
+const PAID: EffectiveGateTier[] = ["pro", "business"];
+const BIZ_UP: EffectiveGateTier[] = ["business"];
 
 export type FeatureKey =
   | "executive_brief"
@@ -100,18 +99,18 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   flux_docs: PAID,
   flux_docs_rag: PAID,
   anomaly_email: BIZ_UP,
-  anomaly_webhook: ENT_ONLY,
+  anomaly_webhook: BIZ_UP,
   org_chat: BIZ_UP,
   retro_facilitator: BIZ_UP,
   workload_balancer: BIZ_UP,
   risk_score: PAID,
   scope_creep_alert: PAID,
   knowledge_graph: BIZ_UP,
-  sso_saml: ENT_ONLY,
-  custom_domain: ENT_ONLY,
+  sso_saml: BIZ_UP,
+  custom_domain: BIZ_UP,
   white_label_full: BIZ_UP,
   api_webhook_unlimited: BIZ_UP,
-  copilot_tools_custom: ENT_ONLY,
+  copilot_tools_custom: BIZ_UP,
   // v5 roadmap features
   sprint_engine: PAID,
   ceremonies: BIZ_UP,
@@ -171,8 +170,8 @@ function getTierWithoutAdminBypass(org: Organization | null | undefined): Effect
 }
 
 export function getEffectiveTier(org: Organization | null | undefined, ctx?: PlanGateContext): EffectiveGateTier {
-  if (ctx?.isPlatformAdmin) return "enterprise";
-  if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) return "enterprise";
+  if (ctx?.isPlatformAdmin) return "business";
+  if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) return "business";
   if (isProTenant()) return "pro";
   const plan = org?.plan ?? "free";
 
@@ -184,12 +183,10 @@ export function getEffectiveTier(org: Organization | null | undefined, ctx?: Pla
   if (plan === "free" && org?.downgradeGraceEndsAt) {
     const g = new Date(org.downgradeGraceEndsAt).getTime();
     if (Number.isFinite(g) && g > Date.now()) {
-      if (org.downgradeFromTier === "enterprise") return "business";
       return org.downgradeFromTier === "business" ? "business" : "pro";
     }
   }
 
-  if (plan === "enterprise") return "enterprise";
   if (plan === "pro" || plan === "business") return plan;
 
   return "free";

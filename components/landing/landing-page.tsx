@@ -22,7 +22,6 @@ import { LandingRoadmap } from "./landing-roadmap";
 import { LandingSocialProof } from "./landing-social-proof";
 import { LandingSpotlight } from "./landing-spotlight";
 import { LandingTrust } from "./landing-trust";
-import { LandingUseCases } from "./landing-use-cases";
 
 type LandingPageProps = {
   /** Catálogo SSR (revalidado quando o admin da plataforma salva). */
@@ -54,7 +53,6 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
     business: businessEnabled
       ? `${t("pricing.plans.business.name")} · ${formatBrl(bizPrice)} ${priceSuffix}`
       : `${t("pricing.plans.business.name")} · ${t("pricing.tierUnavailable")}`,
-    enterprise: `${t("pricing.plans.enterprise.name")} · ${t("pricing.customPrice")}`,
   };
 
   return (
@@ -80,13 +78,14 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-16 pt-4 sm:px-8 md:pb-20 md:pt-5 lg:px-12 2xl:max-w-[90rem] 2xl:px-16">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-12 pt-3 sm:px-8 md:pb-16 md:pt-4 lg:px-12 2xl:max-w-[90rem] 2xl:px-16">
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
           <main id="landing-main">
             <LandingHero localeRoot={localeRoot} appName={appName} user={user} />
             <LandingSocialProof />
             <LandingPillars />
+            <LandingSpotlight />
             <LandingPlatform localeRoot={localeRoot} appName={appName} user={user} />
             <LandingRoadmap chargeLabelByTier={chargeLabelByTier} />
             <LandingHow />
@@ -99,8 +98,6 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
               proEnabled={proEnabled}
               businessEnabled={businessEnabled}
             />
-            <LandingSpotlight />
-            <LandingUseCases />
             <LandingTrust localeRoot={localeRoot} />
             <LandingFaqSection />
             <LandingFooterCta localeRoot={localeRoot} appName={appName} user={user} />

@@ -18,22 +18,24 @@ export type OrgAiSettings = {
   claudeUserIds?: string[];
 };
 
+export type OrganizationPlan = "free" | "trial" | "pro" | "business";
+
 export interface Organization {
   _id: string; // "org_xxxxx"
   name: string;
   slug: string; // URL-friendly
   ownerId: string; // quem criou
-  plan: "free" | "trial" | "pro" | "business" | "enterprise";
+  plan: OrganizationPlan;
   maxUsers: number;
   maxBoards: number;
   /** Fim do trial (signup); aplicado com downgrade lazy para Free. */
   trialEndsAt?: string;
   /** Após cancelamento Stripe: acesso Pro com limites antigos até esta data (export). */
   downgradeGraceEndsAt?: string;
-  downgradeFromTier?: "pro" | "business" | "enterprise";
+  downgradeFromTier?: "pro" | "business";
   /** Avisos in-app (ex.: trial encerrado). */
   billingNotice?: BillingNotice | null;
-  /** White-label (Enterprise): logo, cores, favicon; domínio customizado em plano Business. */
+  /** White-label: logo, cores, favicon; domínio customizado em plano Business. */
   branding?: OrgBranding;
   // Billing (Stripe)
   stripeCustomerId?: string;
@@ -51,6 +53,27 @@ export interface Organization {
 
 const COL_ORGS = "organizations";
 const DEFAULT_ORG_ID = "org_default";
+
+/**
+ * Documentos Mongo antigos podem ter `plan: "enterprise"` — tratamos como Business em memória.
+ */
+export function hydrateOrganization(doc: Organization): Organization {
+  const rawPlan = String(doc.plan ?? "");
+  const plan: OrganizationPlan =
+    rawPlan === "enterprise"
+      ? "business"
+      : rawPlan === "free" || rawPlan === "trial" || rawPlan === "pro" || rawPlan === "business"
+        ? rawPlan
+        : "free";
+  const rawDf = doc.downgradeFromTier as string | undefined;
+  let downgradeFromTier = doc.downgradeFromTier;
+  if (rawDf === "enterprise") downgradeFromTier = "business";
+  if (plan === doc.plan && downgradeFromTier === doc.downgradeFromTier) return doc;
+  const next: Organization = { ...doc, plan };
+  if (downgradeFromTier !== undefined) next.downgradeFromTier = downgradeFromTier;
+  else delete next.downgradeFromTier;
+  return next;
+}
 
 const DEFAULT_MAX_BOARDS = (() => {
   const cap = maxBoardsPerUser();
@@ -115,9 +138,9 @@ export async function ensureDefaultOrganization(ownerId: string): Promise<Organi
     if (Object.keys(patch).length > 0) {
       await col.updateOne({ _id: DEFAULT_ORG_ID }, { $set: patch });
       const updated = await col.findOne({ _id: DEFAULT_ORG_ID });
-      if (updated) return updated;
+      if (updated) return hydrateOrganization(updated as Organization);
     }
-    return doc;
+    return hydrateOrganization(doc as Organization);
   }
 
   const toInsert: Organization = {
@@ -189,6 +212,7 @@ function makeOrgId(): string {
 
 /** Downgrades lazy: trial expirado → Free; grace de downgrade pago → limites Free. */
 async function applyBillingTransitionIfNeeded(doc: Organization): Promise<Organization> {
+  doc = hydrateOrganization(doc);
   if (!isMongoConfigured()) return doc;
   const now = Date.now();
   let needsTrialExpiry = false;
@@ -236,7 +260,7 @@ async function applyBillingTransitionIfNeeded(doc: Organization): Promise<Organi
   }
 
   const next = await col.findOne({ _id: doc._id });
-  return next ?? doc;
+  return hydrateOrganization((next ?? doc) as Organization);
 }
 
 export async function createOrganization(params: {
@@ -352,7 +376,7 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ _id: orgId });
   if (!doc) return null;
-  return applyBillingTransitionIfNeeded(doc);
+  return applyBillingTransitionIfNeeded(doc as Organization);
 }
 
 /** Resolve organização pelo host white-label (CNAME → Vercel). Host sem porta, lower-case. */
@@ -367,7 +391,7 @@ export async function getOrganizationByCustomDomain(host: string): Promise<Organ
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ "branding.customDomain": h });
-  return doc || null;
+  return doc ? hydrateOrganization(doc as Organization) : null;
 }
 
 export async function findOtherOrgWithCustomDomain(domain: string, excludeOrgId: string): Promise<Organization | null> {
@@ -379,7 +403,8 @@ export async function findOtherOrgWithCustomDomain(domain: string, excludeOrgId:
   const db = await getDb();
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
-  return (await col.findOne({ _id: { $ne: excludeOrgId }, "branding.customDomain": d })) || null;
+  const o = await col.findOne({ _id: { $ne: excludeOrgId }, "branding.customDomain": d });
+  return o ? hydrateOrganization(o as Organization) : null;
 }
 
 export async function updateOrganization(

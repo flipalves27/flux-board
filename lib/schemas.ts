@@ -499,7 +499,7 @@ export const PortalBrandingSchema = z
   })
   .passthrough();
 
-/** Atualização parcial de branding da organização (Enterprise). */
+/** Atualização parcial de branding da organização (planos pagos). */
 export const PriorityMatrixGridSelectionSchema = z.object({
   cardId: z.string().trim().min(1).max(200),
   row: z.number().int().min(0).max(3),

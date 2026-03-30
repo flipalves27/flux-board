@@ -19,10 +19,10 @@ type OrgPayload = {
   _id: string;
   name: string;
   slug: string;
-  plan: "free" | "trial" | "pro" | "business" | "enterprise";
+  plan: "free" | "trial" | "pro" | "business";
   trialEndsAt?: string | null;
   downgradeGraceEndsAt?: string | null;
-  downgradeFromTier?: "pro" | "business" | "enterprise" | null;
+  downgradeFromTier?: "pro" | "business" | null;
   billingNotice?: { kind: "trial_ended" | "downgrade_grace_ended"; at: string } | null;
   branding?: OrgBranding | null;
 };

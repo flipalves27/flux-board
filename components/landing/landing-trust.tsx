@@ -12,7 +12,7 @@ export function LandingTrust({ localeRoot }: LandingTrustProps) {
   const bullets = [t("trust.bullet1"), t("trust.bullet2"), t("trust.bullet3")];
 
   return (
-    <section id="trust" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-trust-heading">
+    <section id="trust" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-trust-heading">
       <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-surface-card)]/90 p-6 backdrop-blur-sm md:p-8">
         <h2 id="landing-trust-heading" className="font-display text-2xl font-bold md:text-3xl">
           {t("trust.heading")}

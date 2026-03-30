@@ -23,8 +23,8 @@ export function LandingPillars() {
   ];
 
   return (
-    <section id="why" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-why-heading">
-      <div className="mb-8 max-w-2xl">
+    <section id="why" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-why-heading">
+      <div className="mb-5 max-w-2xl md:mb-6">
         <h2 id="landing-why-heading" className="font-display text-2xl font-bold md:text-3xl">
           {t("why.heading")}
         </h2>

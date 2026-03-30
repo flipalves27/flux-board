@@ -64,8 +64,8 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
           <a href="#platform" className={navClass}>
             {t("nav.platform")}
           </a>
-          <a href="#use-cases" className={navClass}>
-            {t("nav.useCases")}
+          <a href="#spotlight" className={navClass}>
+            {t("nav.spotlight")}
           </a>
           <a href="#pricing" className={navClass}>
             {t("nav.pricing")}
@@ -121,8 +121,8 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
           <a href="#platform" className={`${navClass} py-2`} onClick={closeMobile}>
             {t("nav.platform")}
           </a>
-          <a href="#use-cases" className={`${navClass} py-2`} onClick={closeMobile}>
-            {t("nav.useCases")}
+          <a href="#spotlight" className={`${navClass} py-2`} onClick={closeMobile}>
+            {t("nav.spotlight")}
           </a>
           <a href="#pricing" className={`${navClass} py-2`} onClick={closeMobile}>
             {t("nav.pricing")}

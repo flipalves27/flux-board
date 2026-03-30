@@ -14,8 +14,8 @@ export function LandingRoadmap({ chargeLabelByTier }: LandingRoadmapProps) {
   const t = useTranslations("landing");
 
   return (
-    <section className="home-landing-reveal mt-20 md:mt-24" aria-labelledby="landing-roadmap-heading">
-      <div className="mb-8 max-w-3xl">
+    <section className="home-landing-reveal mt-12 md:mt-16" aria-labelledby="landing-roadmap-heading">
+      <div className="mb-5 max-w-3xl md:mb-6">
         <h2 id="landing-roadmap-heading" className="font-display text-2xl font-bold md:text-3xl">
           {t("roadmap.heading")}
         </h2>

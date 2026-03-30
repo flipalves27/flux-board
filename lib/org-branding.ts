@@ -43,7 +43,7 @@ export function orgBrandingAllowsTheming(
 ): boolean {
   if (opts?.isOrgAdmin && adminSuperpowersEnabled()) return true;
   if (!org) return false;
-  return org.plan === "pro" || org.plan === "business" || org.plan === "enterprise" || org.plan === "trial";
+  return org.plan === "pro" || org.plan === "business" || org.plan === "trial";
 }
 
 export function orgBrandingAllowsCustomDomain(
@@ -52,7 +52,7 @@ export function orgBrandingAllowsCustomDomain(
 ): boolean {
   if (opts?.isOrgAdmin && adminSuperpowersEnabled()) return true;
   if (!org) return false;
-  return org.plan === "business" || org.plan === "enterprise";
+  return org.plan === "business";
 }
 
 export function resolvePlatformDisplayName(

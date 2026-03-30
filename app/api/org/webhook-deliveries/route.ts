@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { ensureOrgManager } from "@/lib/api-authz";
+import { ensurePlatformAdmin } from "@/lib/api-authz";
 import { listDeliveryLogs } from "@/lib/kv-webhooks";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  const denied = ensureOrgManager(payload);
+  const denied = ensurePlatformAdmin(payload);
   if (denied) return denied;
 
   const { searchParams } = new URL(request.url);

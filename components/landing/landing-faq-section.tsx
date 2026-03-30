@@ -13,7 +13,7 @@ export function LandingFaqSection() {
   }));
 
   return (
-    <section id="faq" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-faq-heading">
+    <section id="faq" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-faq-heading">
       <h2 id="landing-faq-heading" className="mb-6 font-display text-2xl font-bold md:text-3xl">
         {t("faq.heading")}
       </h2>

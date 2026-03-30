@@ -10,7 +10,8 @@
  *   não concede acesso a outra organização.
  *
  * Rotas que usavam `ensureOrgTeamManager` passam a usar o mesmo critério que `ensureOrgManager`.
- * `ensureOrgManager`: org/webhooks*; organizations/verify-domain; boards export-template; `PUT /api/organizations/me`
+ * `ensureOrgManager`: organizations/verify-domain; boards export-template; `PUT /api/organizations/me`
+ * `ensurePlatformAdmin`: `app/api/org/webhooks*`, `webhook-deliveries` (gestão Zapier / entregas).
  * (nome, slug, branding, IA) e demais gestão que não é só membros/billing.
  *
  * Plataforma: `/api/admin/rate-limit-abuse` → `ensurePlatformAdmin`.

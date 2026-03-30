@@ -11,12 +11,12 @@ export function LandingHow() {
   ];
 
   return (
-    <section id="how-it-works" className="home-landing-reveal mt-20 scroll-mt-28 md:mt-24" aria-labelledby="landing-how-heading">
+    <section id="how-it-works" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-how-heading">
       <h2 id="landing-how-heading" className="font-display text-2xl font-bold md:text-3xl">
         {t("how.heading")}
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-[var(--flux-text-muted)] md:text-base">{t("how.description")}</p>
-      <ol className="mt-8 grid gap-4 md:grid-cols-3">
+      <ol className="mt-6 grid gap-3 md:grid-cols-3 md:gap-4">
         {steps.map((s, i) => (
           <li
             key={s.step}

@@ -58,7 +58,7 @@ export function resolveBatchLlmRoute(
     return { route: "together", anthropicModel };
   }
   const tier = getEffectiveTier(org, ctx);
-  if ((tier === "business" || tier === "enterprise") && org?.aiSettings?.batchLlmProvider === "anthropic") {
+  if (tier === "business" && org?.aiSettings?.batchLlmProvider === "anthropic") {
     return { route: "anthropic", anthropicModel };
   }
   return { route: "together", anthropicModel };

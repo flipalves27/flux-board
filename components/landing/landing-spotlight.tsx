@@ -6,7 +6,11 @@ export function LandingSpotlight() {
   const t = useTranslations("landing");
 
   return (
-    <section className="home-landing-reveal mt-20 md:mt-24" aria-label={t("spotlight.sectionAria")}>
+    <section
+      id="spotlight"
+      className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16"
+      aria-label={t("spotlight.sectionAria")}
+    >
       <div className="grid gap-5 md:grid-cols-3">
         <article className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-6">
           <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-primary)]/20 blur-3xl" aria-hidden />

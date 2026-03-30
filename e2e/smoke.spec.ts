@@ -20,6 +20,7 @@ test.describe("smoke", () => {
     await expect(page.locator("#landing-hero-heading")).toBeVisible();
     await expect(page.locator("#landing-main")).toBeVisible();
     await expect(page.locator("#pricing")).toBeAttached();
+    await expect(page.locator("#spotlight")).toBeAttached();
     await expect(page.locator("#faq")).toBeAttached();
   });
 
@@ -27,7 +28,7 @@ test.describe("smoke", () => {
     const res = await page.goto("/en");
     expect(res?.ok()).toBeTruthy();
     await expect(page.locator("#landing-hero-heading")).toBeVisible();
-    await expect(page.locator("#use-cases")).toBeAttached();
+    await expect(page.locator("#spotlight")).toBeAttached();
     await expect(page.locator("#trust")).toBeAttached();
   });
 });
