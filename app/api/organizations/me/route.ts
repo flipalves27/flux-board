@@ -25,7 +25,7 @@ import {
   shouldAllowStripeCheckoutForOrg,
 } from "@/lib/admin-plan-override";
 import { ensureOrgManager } from "@/lib/api-authz";
-import { canManageOrganization, deriveEffectiveRoles } from "@/lib/rbac";
+import { canManageOrganization, deriveEffectiveRoles, isPlatformAdminFromAuthPayload } from "@/lib/rbac";
 import { writeSecurityAudit } from "@/lib/security-audit";
 
 export async function GET(request: NextRequest) {
@@ -41,10 +41,11 @@ export async function GET(request: NextRequest) {
       name: org.name,
       slug: org.slug,
       plan: org.plan,
-      /** Seletor de plano manual: env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE` (admin não depende do Stripe). */
-      canAdminOverridePlan: canAdminOverridePlan(org),
-      /** Mantido para compatibilidade com a UI; sempre false (admin pode alterar plano mesmo com Stripe). */
-      planOverrideBlockedByStripe: planOverrideBlockedByStripe(org),
+      /** Override manual: só administrador da plataforma + env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE`. */
+      canAdminOverridePlan: canAdminOverridePlan(org) && isPlatformAdminFromAuthPayload(payload),
+      /** Só relevante para quem pode override manual (admin da plataforma). */
+      planOverrideBlockedByStripe:
+        planOverrideBlockedByStripe(org) && isPlatformAdminFromAuthPayload(payload),
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
       trialEndsAt: org.trialEndsAt ?? null,
@@ -237,6 +238,12 @@ export async function PUT(request: NextRequest) {
       if (!allowAdminPlanOverrideFromEnv()) {
         return NextResponse.json(
           { error: "Alteração de plano pelo admin não está habilitada (defina FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1 no servidor)." },
+          { status: 403 }
+        );
+      }
+      if (!isPlatformAdminFromAuthPayload(payload)) {
+        return NextResponse.json(
+          { error: "Apenas administrador da plataforma pode alterar o plano manualmente." },
           { status: 403 }
         );
       }
