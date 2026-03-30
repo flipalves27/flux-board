@@ -259,6 +259,93 @@ async function applySubscriptionStateToOrganization(params: {
   }
 }
 
+type CheckoutSessionWebhookApplyResult =
+  | { tag: "applied" }
+  | { tag: "webhook_ignore"; reason: string }
+  | { tag: "webhook_error"; reason: string };
+
+/** Mesma lógica que `checkout.session.completed` no webhook (idempotente). */
+async function applyCheckoutSessionCompletedWebhook(
+  session: Stripe.Checkout.Session
+): Promise<CheckoutSessionWebhookApplyResult> {
+  if (session.mode !== "subscription") {
+    return { tag: "webhook_ignore", reason: "ignored_event_type" };
+  }
+  const orgId = session.metadata?.orgId;
+  if (!orgId) {
+    return { tag: "webhook_error", reason: "missing_org_id_metadata" };
+  }
+  const subRef = session.subscription;
+  const subId = typeof subRef === "string" ? subRef : subRef && typeof subRef === "object" ? subRef.id : null;
+  if (!subId) {
+    return { tag: "webhook_error", reason: "missing_subscription_on_session" };
+  }
+
+  const subscription = await stripe().subscriptions.retrieve(subId);
+  if (subscription.status === "incomplete") {
+    return { tag: "webhook_ignore", reason: "ignored_subscription_incomplete" };
+  }
+
+  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const tier = await resolveBillingPlanFromStripeSubscription(subscription, session.metadata);
+  if (!tier) {
+    return { tag: "webhook_error", reason: "unmapped_tier" };
+  }
+
+  await applySubscriptionStateToOrganization({
+    orgId,
+    subscription,
+    tier,
+    isActive,
+  });
+  return { tag: "applied" };
+}
+
+export type ReconcileCheckoutSessionResult =
+  | { status: "synced" }
+  | { status: "pending"; reason: "subscription_incomplete" }
+  | { status: "error"; httpStatus: number; reason: string };
+
+/**
+ * Após o redirect do Checkout, aplica o plano na org usando `session_id` da URL.
+ * Complementa o webhook (útil quando o webhook ainda não chegou ou falhou na configuração).
+ */
+export async function reconcileOrganizationFromStripeCheckoutSessionId(
+  checkoutSessionId: string,
+  expectedOrgId: string
+): Promise<ReconcileCheckoutSessionResult> {
+  if (!/^cs_[a-zA-Z0-9_]+$/.test(checkoutSessionId)) {
+    return { status: "error", httpStatus: 400, reason: "invalid_session_id" };
+  }
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe().checkout.sessions.retrieve(checkoutSessionId);
+  } catch {
+    return { status: "error", httpStatus: 404, reason: "session_not_found" };
+  }
+  if (session.metadata?.orgId !== expectedOrgId) {
+    return { status: "error", httpStatus: 403, reason: "session_org_mismatch" };
+  }
+  if (session.mode !== "subscription") {
+    return { status: "error", httpStatus: 400, reason: "not_subscription_checkout" };
+  }
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+    return { status: "error", httpStatus: 409, reason: "checkout_not_paid" };
+  }
+
+  const r = await applyCheckoutSessionCompletedWebhook(session);
+  if (r.tag === "applied") {
+    return { status: "synced" };
+  }
+  if (r.tag === "webhook_ignore" && r.reason === "ignored_subscription_incomplete") {
+    return { status: "pending", reason: "subscription_incomplete" };
+  }
+  if (r.tag === "webhook_error") {
+    return { status: "error", httpStatus: 400, reason: r.reason };
+  }
+  return { status: "error", httpStatus: 400, reason: r.reason };
+}
+
 export async function handleStripeWebhook(
   request: NextRequest
 ): Promise<{ handled: boolean; status: number; reason?: string }> {
@@ -277,31 +364,17 @@ export async function handleStripeWebhook(
 
   if (type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    if (session.mode !== "subscription") {
-      return { handled: false, status: 200, reason: "ignored_event_type" };
+    const r = await applyCheckoutSessionCompletedWebhook(session);
+    if (r.tag === "applied") {
+      return { handled: true, status: 200 };
     }
-    const orgId = session.metadata?.orgId;
-    if (!orgId) return { handled: false, status: 400, reason: "missing_org_id_metadata" };
-    const subRef = session.subscription;
-    const subId = typeof subRef === "string" ? subRef : subRef && typeof subRef === "object" ? subRef.id : null;
-    if (!subId) return { handled: false, status: 400, reason: "missing_subscription_on_session" };
-
-    const subscription = await stripe().subscriptions.retrieve(subId);
-    if (subscription.status === "incomplete") {
-      return { handled: true, status: 200, reason: "ignored_subscription_incomplete" };
+    if (r.tag === "webhook_error") {
+      return { handled: false, status: 400, reason: r.reason };
     }
-
-    const isActive = subscription.status === "active" || subscription.status === "trialing";
-    const tier = await resolveBillingPlanFromStripeSubscription(subscription, session.metadata);
-    if (!tier) return { handled: false, status: 400, reason: "unmapped_tier" };
-
-    await applySubscriptionStateToOrganization({
-      orgId,
-      subscription,
-      tier,
-      isActive,
-    });
-    return { handled: true, status: 200 };
+    if (r.reason === "ignored_subscription_incomplete") {
+      return { handled: true, status: 200, reason: r.reason };
+    }
+    return { handled: false, status: 200, reason: r.reason };
   }
 
   if (!["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(type)) {

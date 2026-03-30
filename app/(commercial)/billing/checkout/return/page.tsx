@@ -3,18 +3,63 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Header } from "@/components/header";
+import { useAuth } from "@/context/auth-context";
+import { useOrgBranding } from "@/context/org-branding-context";
+import { apiPost } from "@/lib/api-client";
 
 export default function CheckoutReturnPage() {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const searchParams = useSearchParams();
   const result = searchParams.get("result");
+  const sessionId = searchParams.get("session_id");
   const isEn = locale === "en";
+  const { getHeaders, user } = useAuth();
+  const orgCtx = useOrgBranding();
+  const syncStarted = useRef(false);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
 
   const success = result === "success";
   const cancel = result === "cancel";
+
+  const runCheckoutSync = useCallback(async () => {
+    if (!sessionId || !user) return;
+    try {
+      const data = await apiPost<{ synced?: boolean; pending?: boolean; reason?: string }>(
+        "/api/billing/checkout/sync",
+        { sessionId },
+        getHeaders()
+      );
+      if (data?.synced) {
+        await orgCtx?.refresh();
+        return;
+      }
+      if (data?.pending) {
+        setSyncNote(
+          isEn
+            ? "Stripe is still confirming the subscription. Limits should update within a few moments."
+            : "A Stripe ainda está confirmando a assinatura. Os limites devem atualizar em instantes."
+        );
+        return;
+      }
+    } catch {
+      setSyncNote(
+        isEn
+          ? "Could not sync billing immediately. If your plan does not update, check Stripe webhooks or refresh the page."
+          : "Não foi possível sincronizar o plano agora. Se não atualizar, verifique os webhooks no Stripe ou atualize a página."
+      );
+    }
+  }, [sessionId, user, getHeaders, orgCtx, isEn]);
+
+  useEffect(() => {
+    if (!success || !sessionId || !user) return;
+    if (syncStarted.current) return;
+    syncStarted.current = true;
+    void runCheckoutSync();
+  }, [success, sessionId, user, runCheckoutSync]);
 
   return (
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
@@ -31,9 +76,14 @@ export default function CheckoutReturnPage() {
             </h1>
             <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed">
               {isEn
-                ? "Thank you. Your subscription is being activated; Pro or Business limits may take a few moments to apply after Stripe confirms the webhook."
-                : "Obrigado. Sua assinatura está sendo ativada; os limites Pro ou Business podem levar alguns instantes após a confirmação no Stripe."}
+                ? "Thank you. We sync your plan from this page when possible; Stripe webhooks also update your organization in the background."
+                : "Obrigado. Sincronizamos seu plano nesta página quando possível; os webhooks da Stripe também atualizam sua organização em segundo plano."}
             </p>
+            {syncNote ? (
+              <p className="text-xs text-[var(--flux-text-muted)] border border-[var(--flux-primary-alpha-25)] rounded-lg px-3 py-2 bg-[var(--flux-primary-alpha-08)]">
+                {syncNote}
+              </p>
+            ) : null}
           </>
         ) : cancel ? (
           <>
