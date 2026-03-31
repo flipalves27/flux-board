@@ -3,8 +3,10 @@ import { COL_ANOMALY_ALERTS, COL_ANOMALY_NOTIFY_DEDUPE, COL_ANOMALY_RUNS, COL_AN
 import { deleteBoard } from "@/lib/kv-boards";
 import { COL_BOARD_ACTIVITY } from "@/lib/kv-board-activity";
 import { COL_CARD_CROSS_LINKS, COL_CARD_DEP_SUGGESTIONS, COL_CARD_TEXT_EMBEDDINGS } from "@/lib/kv-card-dependencies";
+import { COL_BOARD_WEEKLY_SENTIMENT } from "@/lib/board-weekly-sentiment";
 import { COL_DOC_CHUNKS } from "@/lib/kv-doc-chunks";
 import { getOrganizationById, DEFAULT_ORG_ID, type Organization } from "@/lib/kv-organizations";
+import { SPEC_PLAN_RUNS_COLLECTION } from "@/lib/spec-plan-runs";
 import { deleteUser } from "@/lib/kv-users";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 
@@ -36,6 +38,13 @@ const COL_KEY_RESULTS = "okrs_key_results";
 const COL_BOARD_AUTOMATIONS = "board_automations";
 const COL_DOCS = "docs";
 const COL_PORTAL_INDEX = "portal_links";
+/** Execuções de agente / digest / feedback / spec plan — escopo org (não removidos por `deleteBoard`). */
+const COL_AGENT_RUNS = "agent_runs";
+const COL_DIGEST_SEND_LOCK = "digest_daily_send_lock";
+const COL_AUDIT_EVENTS = "audit_events";
+const COL_WORKSPACE_FLUXY_CHATS = "workspace_fluxy_chats";
+const COL_TEAM_MEMBERS = "team_members";
+const COL_AI_FEEDBACK_EVENTS = "ai_feedback_events";
 
 async function deleteManyByOrgId(db: Db, collection: string, orgId: string): Promise<void> {
   try {
@@ -98,6 +107,14 @@ export async function deleteOrganizationCascade(orgId: string, actorUserId: stri
     COL_ANOMALY_ALERTS,
     COL_ANOMALY_NOTIFY_DEDUPE,
     COL_USER_BOARDS,
+    COL_AGENT_RUNS,
+    COL_DIGEST_SEND_LOCK,
+    COL_AUDIT_EVENTS,
+    COL_BOARD_WEEKLY_SENTIMENT,
+    COL_WORKSPACE_FLUXY_CHATS,
+    COL_TEAM_MEMBERS,
+    COL_AI_FEEDBACK_EVENTS,
+    SPEC_PLAN_RUNS_COLLECTION,
   ];
 
   for (const col of collectionsWithOrgId) {
