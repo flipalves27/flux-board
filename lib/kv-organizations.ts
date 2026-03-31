@@ -1,5 +1,6 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
+import { DEFAULT_ORG_ID } from "./org-constants";
 import { maxBoardsPerUser } from "./commercial-plan";
 import type { OrgBranding } from "./org-branding";
 import { addDaysIso, getFreeMaxBoards, getFreeMaxUsers, getPaidMaxBoards, getProMaxUsers, TRIAL_DAYS } from "./billing-limits";
@@ -52,7 +53,6 @@ export interface Organization {
 }
 
 const COL_ORGS = "organizations";
-const DEFAULT_ORG_ID = "org_default";
 
 /**
  * Documentos Mongo antigos podem ter `plan: "enterprise"` — tratamos como Business em memória.

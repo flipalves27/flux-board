@@ -8,7 +8,7 @@ import { Header } from "@/components/header";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
-import { DEFAULT_ORG_ID } from "@/lib/kv-organizations";
+import { DEFAULT_ORG_ID } from "@/lib/org-constants";
 import { isPlatformAdminSession } from "@/lib/rbac";
 
 type Tab = "organizations" | "users" | "audit" | "operations";
