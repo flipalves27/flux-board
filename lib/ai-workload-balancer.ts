@@ -35,7 +35,12 @@ export function computeWorkloadEntries(board: BoardData): WorkloadEntry[] {
 
   for (const card of cards) {
     const assignees = Array.isArray(card.assignees) ? (card.assignees as string[]) : [];
-    const assignee = typeof card.assignee === "string" ? card.assignee : assignees[0];
+    const assignee =
+      typeof card.assignee === "string" && card.assignee.trim()
+        ? card.assignee
+        : typeof (card as { assigneeId?: unknown }).assigneeId === "string" && String((card as { assigneeId: string }).assigneeId).trim()
+          ? String((card as { assigneeId: string }).assigneeId)
+          : assignees[0];
     if (!assignee) continue;
 
     const prog = String(card.progress ?? "");

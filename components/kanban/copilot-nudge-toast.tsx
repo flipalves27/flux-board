@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useShallow } from "zustand/shallow";
 import { useBoardStore } from "@/stores/board-store";
-import { generateProactiveNudges, type ProactiveNudge } from "@/lib/copilot-proactive-engine";
+import type { ProactiveNudge } from "@/lib/copilot-proactive-engine";
+import type { BoardData } from "@/lib/kv-boards";
+import { buildWipCoachPackage, type WipCoachAction } from "@/lib/wip-coach-suggestions";
 
 type CopilotNudgeToastProps = {
   boardId: string;
@@ -26,6 +28,7 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
   const t = useTranslations("board.copilotNudges");
   const db = useBoardStore(useShallow((s) => s.db));
   const [nudges, setNudges] = useState<ProactiveNudge[]>([]);
+  const [coachActions, setCoachActions] = useState<WipCoachAction[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(true);
 
@@ -44,20 +47,9 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
       wipLimit: c.wipLimit,
     }));
 
-    const cardData = cards.map((c) => ({
-      id: c.id,
-      title: c.title,
-      desc: c.desc || undefined,
-      bucket: c.bucket,
-      progress: c.progress,
-      columnEnteredAt: c.columnEnteredAt,
-      dueDate: c.dueDate ?? null,
-      blockedBy: c.blockedBy,
-      assignee: undefined as string | undefined,
-    }));
-
-    const result = generateProactiveNudges(cardData, columns, { maxNudges: 6 });
-    setNudges(result);
+    const pack = buildWipCoachPackage(db as BoardData, columns);
+    setNudges(pack.nudges.slice(0, 6));
+    setCoachActions(pack.actions.slice(0, 5));
   }, [db]);
 
   const dismiss = useCallback((id: string) => {
@@ -113,6 +105,20 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
                 )}
               </div>
             ))}
+            {coachActions.length > 0 ? (
+              <div className="rounded-xl border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)]/95 p-3 shadow-md backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">{t("coachTitle")}</p>
+                <p className="mt-0.5 text-[10px] text-[var(--flux-text-muted)]">{t("coachSubtitle")}</p>
+                <ul className="mt-2 space-y-2">
+                  {coachActions.map((a) => (
+                    <li key={a.id} className="text-xs leading-snug text-[var(--flux-text)]">
+                      <span className="font-semibold text-[var(--flux-text)]">{a.title}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--flux-text-muted)]">{a.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

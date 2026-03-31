@@ -3,6 +3,8 @@
     "boards": "Boards",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
+    "fluxAiHub": "Hub de IA",
+    "fluxAiHubProduct": "Fluxy e atalhos",
     "dashboard": "Executivo",
     "dashboardProduct": "Saúde do portfólio",
     "okrs": "Flux Goals",
@@ -41,6 +43,7 @@
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
+      "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",
       "dashboard": "Visão C-level: saúde do portfólio, OKRs, anomalias e tendência de throughput.",
       "okrs": "Objetivos e resultados-chave por trimestre.",
       "discovery": "Iniciativas e discoverys em formato de board.",
@@ -1691,7 +1694,9 @@
       "toggleLabel": "Sugestões ({count})",
       "expand": "Mostrar sugestões do quadro",
       "collapse": "Ocultar sugestões",
-      "dismiss": "Dispensar sugestão"
+      "dismiss": "Dispensar sugestão",
+      "coachTitle": "Coach de WIP — próximos passos",
+      "coachSubtitle": "Com base em limites, carga e bloqueios deste quadro."
     },
     "productTour": {
       "fluxyWelcome": {
@@ -1917,6 +1922,14 @@
         "dod": {
           "title": "Definition of Done",
           "description": "Checklist do board — obrigatória para concluir quando a regra estiver ativa."
+        },
+        "refinementReadiness": {
+          "title": "Prontidão para refinamento",
+          "description": "Score heurístico 0–100: descrição, aceite, estimativa, dependências e histórico. Complementa o refinamento por IA abaixo.",
+          "label": "Score de prontidão",
+          "hintHigh": "Bom candidato a sprint.",
+          "hintMid": "Bom caminho — ainda há lacunas.",
+          "hintLow": "Precisa de refinamento antes do commitment."
         },
         "refineAi": {
           "title": "Refinamento de backlog (IA)",
@@ -2284,6 +2297,14 @@
         "generateAndCardsButton": {
           "generating": "Gerando e criando cards…",
           "idle": "Gerar insights + criar cards"
+        },
+        "voiceToBoard": {
+          "title": "Voz → quadro (cards detectados)",
+          "hint": "Correspondência heurística entre transcrição e títulos dos cards. Abra o card para atualizar status ou bloqueios.",
+          "match": "Match ~{pct}%",
+          "hintBlocker": "Possível bloqueio mencionado perto do título",
+          "hintDone": "Possível conclusão mencionada",
+          "openCard": "Abrir card"
         }
       },
       "status": {
@@ -3069,6 +3090,7 @@
     "p50": "50% chance",
     "p85": "85% chance",
     "p95": "95% chance",
+    "monteNarrative": "Use p50 como mediana; p85 ≈ alta confiança para zerar o escopo aberto; p95 quando precisar de folga extra (datas fixas ou compliance).",
     "daysUnit": "dias",
     "riskCards": "Cards com maior risco",
     "riskScore": "Risco",
@@ -3092,7 +3114,11 @@
   },
   "fluxAiHub": {
     "title": "IA no Flux",
-    "subtitle": "Atalhos para recursos de inteligência: portfólio, documentação, previsão e Copiloto nos boards.",
+    "subtitle": "Atalhos para inteligência: portfólio, documentação, previsão, Copiloto, cockpit de sprint e OKRs.",
+    "governance": {
+      "title": "Governança e agentes",
+      "body": "Plano Business: níveis de autonomia, auditoria em `agent_runs` (Mongo) e hub MCP no roadmap. E-mails de resumo diário usam idempotência por usuário e dia."
+    },
     "cards": {
       "exec": {
         "badge": "Gestão",
@@ -3113,6 +3139,40 @@
         "badge": "Quadro",
         "title": "Copiloto",
         "desc": "Abra um board e use o Copiloto no painel lateral."
+      },
+      "sprintCockpit": {
+        "badge": "Scrum",
+        "title": "Cockpit de sprint",
+        "desc": "Checklist guiado: planejamento, daily, review e retro nos seus boards."
+      },
+      "okrs": {
+        "badge": "Estratégia",
+        "title": "Flux Goals (OKRs)",
+        "desc": "Ligue execução aos KRs; futura auto-priorização usa essa malha."
+      }
+    }
+  },
+  "sprintCockpit": {
+    "title": "Cockpit de sprint",
+    "subtitle": "Guia leve para rodar o ciclo Scrum com as ferramentas que você já tem no Flux-Board.",
+    "back": "Voltar aos sprints",
+    "footer": "Use o planejamento e as cerimônias em cada board; esta página mantém a sequência visível para o time.",
+    "steps": {
+      "planning": {
+        "title": "Sprint planning",
+        "desc": "Backlog do board + planning AI para dimensionar e puxar o escopo certo."
+      },
+      "daily": {
+        "title": "Daily",
+        "desc": "Daily IA, transcrição por voz e coach de WIP no quadro ao vivo."
+      },
+      "review": {
+        "title": "Review",
+        "desc": "Increment review e delivery forecast para demonstrar o que de fato entrou."
+      },
+      "retro": {
+        "title": "Retro",
+        "desc": "Insights de sentimento e fluxo; experimentos viram cards Kaizen."
       }
     }
   },

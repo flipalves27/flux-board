@@ -25,10 +25,12 @@ type CardLike = {
   desc?: string;
   bucket: string;
   progress: string;
+  priority?: string;
   columnEnteredAt?: string;
   dueDate?: string | null;
   blockedBy?: string[];
   assignee?: string;
+  assigneeId?: string;
 };
 
 type ColumnConfig = {
@@ -138,8 +140,9 @@ export function generateProactiveNudges(
 
   const assigneeCounts = new Map<string, number>();
   for (const card of activeCards) {
-    if (card.assignee) {
-      assigneeCounts.set(card.assignee, (assigneeCounts.get(card.assignee) || 0) + 1);
+    const who = card.assignee?.trim() || card.assigneeId?.trim();
+    if (who) {
+      assigneeCounts.set(who, (assigneeCounts.get(who) || 0) + 1);
     }
   }
   if (assigneeCounts.size >= 2) {

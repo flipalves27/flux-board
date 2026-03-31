@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import type { BoardData, BoardDefinitionOfDone } from "@/app/board/[id]/page";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import type { DailyInsightsPanelProps } from "./DailyInsightsPanel";
+import type { VoiceToBoardSuggestion } from "@/lib/daily-voice-extract";
 import type { KanbanBoardOverlaysProps } from "./kanban-board-overlays";
 
 type BoardState = {
@@ -73,6 +74,7 @@ type BoardState = {
     dailyDeleteConfirmId: string | null;
     cancelDeleteDailyHistoryEntry: () => void;
     confirmDeleteDailyHistoryEntry: () => void;
+    voiceToBoardSuggestions: VoiceToBoardSuggestion[];
   };
 };
 
@@ -90,6 +92,7 @@ export function buildKanbanOverlayModel(args: {
   boardMethodology: BoardMethodology;
   board: BoardState;
   dailyOpen: boolean;
+  openCardById: (cardId: string) => void;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
   addColumnInputRef: RefObject<HTMLInputElement | null>;
   confirmDeleteDialogRef: RefObject<HTMLDivElement | null>;
@@ -111,6 +114,7 @@ export function buildKanbanOverlayModel(args: {
     doneBucketKeys,
     boardMethodology,
     t,
+    openCardById,
   } = args;
   const d = board.dailySession;
 
@@ -159,6 +163,8 @@ export function buildKanbanOverlayModel(args: {
     onCreateCardsFromInsight: d.onCreateCardsFromInsight,
     onDeleteDailyHistoryEntry: d.requestDeleteDailyHistoryEntry,
     onExpandDailyHistoryCreatedCards: d.expandDailyHistoryCreatedCards,
+    voiceToBoardSuggestions: d.voiceToBoardSuggestions,
+    onOpenCardFromVoice: openCardById,
   };
 
   return {

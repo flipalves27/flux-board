@@ -8,6 +8,7 @@ import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
+import { extractVoiceToBoardSuggestions } from "@/lib/daily-voice-extract";
 import { nextBoardCardId } from "@/lib/card-id";
 import type {
   DailyLog,
@@ -76,6 +77,16 @@ export function useDailySession({
   const dailyRequestSeqRef = useRef(0);
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
   const dailyInFlightRef = useRef(false);
+
+  const voiceToBoardSuggestions = useMemo(() => {
+    const cards = Array.isArray(db?.cards) ? db.cards : [];
+    if (!dailyTranscript.trim()) return [];
+    return extractVoiceToBoardSuggestions(
+      dailyTranscript,
+      cards.map((c) => ({ id: c.id, title: c.title })),
+      { minScore: 0.28, limit: 8 }
+    );
+  }, [dailyTranscript, db?.cards]);
 
   const closeDailyModal = useCallback(() => {
     useKanbanUiStore.getState().setDailyOpen(false);
@@ -1051,6 +1062,8 @@ export function useDailySession({
     requestDeleteDailyHistoryEntry,
     cancelDeleteDailyHistoryEntry,
     confirmDeleteDailyHistoryEntry,
+
+    voiceToBoardSuggestions,
   };
 }
 

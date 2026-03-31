@@ -185,6 +185,7 @@ export function DeliveryForecastChart({ boardId }: Props) {
                   </p>
                 </div>
               </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">{t("monteNarrative")}</p>
             </div>
           )}
 

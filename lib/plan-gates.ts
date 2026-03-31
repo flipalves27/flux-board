@@ -87,7 +87,12 @@ export type FeatureKey =
   | "board_health_score"
   | "lss_executive_reports"
   | "lss_ai_premium"
-  | "spec_ai_scope_planner";
+  | "spec_ai_scope_planner"
+  | "ai_agent_autonomy"
+  | "org_digital_twin"
+  | "mcp_hub_gateway"
+  | "okr_auto_prioritization"
+  | "org_kaizen_engine";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: PAID,
@@ -125,6 +130,11 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   lss_executive_reports: BIZ_UP,
   lss_ai_premium: BIZ_UP,
   spec_ai_scope_planner: BIZ_UP,
+  ai_agent_autonomy: BIZ_UP,
+  org_digital_twin: BIZ_UP,
+  mcp_hub_gateway: BIZ_UP,
+  okr_auto_prioritization: BIZ_UP,
+  org_kaizen_engine: PAID,
 };
 
 /** Matriz canônica para UI/backend (fonte única da política de planos). */

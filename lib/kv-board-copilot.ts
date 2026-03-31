@@ -28,6 +28,22 @@ const COL_COPILOT_CHATS = "board_copilot_chats";
 const MAX_MESSAGES_PER_CHAT = 80;
 const MAX_MESSAGE_CONTENT_CHARS = 20_000;
 
+/** Quantas mensagens user/assistant enviar ao LLM (histórico maior permanece persistido até MAX_MESSAGES_PER_CHAT). */
+export function getCopilotLlmHistoryMessageLimit(): number {
+  const raw = Number(process.env.COPILOT_LLM_HISTORY_MESSAGES ?? "20");
+  if (!Number.isFinite(raw) || raw < 1) return 20;
+  return Math.min(Math.floor(raw), 60);
+}
+
+export function sliceCopilotMessagesForLlm(
+  messages: CopilotMessage[],
+  limit: number = getCopilotLlmHistoryMessageLimit()
+): CopilotMessage[] {
+  const cap = Math.max(1, Math.min(limit, 60));
+  const relevant = messages.filter((m) => m.role === "user" || m.role === "assistant");
+  return relevant.slice(-cap);
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function copilotRetentionMs(): number {

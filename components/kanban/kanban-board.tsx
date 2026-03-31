@@ -637,6 +637,7 @@ function KanbanBoardLoaded({
     boardMethodology: methodology,
     board,
     dailyOpen,
+    openCardById: onEditCardById,
     addColumnDialogRef,
     addColumnInputRef,
     confirmDeleteDialogRef,

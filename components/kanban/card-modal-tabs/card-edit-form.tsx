@@ -21,6 +21,7 @@ import {
 } from "@/lib/schemas";
 import { useSprintStore } from "@/stores/sprint-store";
 import { isKanbanMethodology, isLeanSixSigmaMethodology } from "@/lib/board-methodology";
+import { buildRefinementInputFromFields, computeRefinementReadinessScore } from "@/lib/card-refinement-readiness";
 
 const EMPTY_SPRINTS: SprintData[] = [];
 
@@ -228,6 +229,21 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
 
   const [refineBusy, setRefineBusy] = useState(false);
   const [refinePreview, setRefinePreview] = useState<string | null>(null);
+
+  const refinementReadiness = useMemo(() => {
+    const input = buildRefinementInputFromFields({
+      title,
+      descriptionText: descriptionForSave,
+      priority,
+      progress,
+      dueDate,
+      tags: Array.from(tags),
+      blockedBy,
+      storyPoints,
+      dorReady,
+    });
+    return computeRefinementReadinessScore(input);
+  }, [title, descriptionForSave, priority, progress, dueDate, tags, blockedBy, storyPoints, dorReady]);
 
   const runRefineAi = useCallback(async () => {
     const tit = title.trim();
@@ -1022,6 +1038,48 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
           </div>
         </CardModalSection>
       ) : null}
+
+      <CardModalSection
+        title={t("cardModal.sections.refinementReadiness.title")}
+        description={t("cardModal.sections.refinementReadiness.description")}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <div
+            className={`flex min-w-[120px] flex-col items-center justify-center rounded-[var(--flux-rad)] border px-4 py-3 ${
+              refinementReadiness.score >= 75
+                ? "border-[var(--flux-success)]/45 bg-[var(--flux-success)]/10"
+                : refinementReadiness.score >= 45
+                  ? "border-[var(--flux-warning)]/45 bg-[var(--flux-warning)]/10"
+                  : "border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-black-alpha-08)]"
+            }`}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)]">
+              {t("cardModal.sections.refinementReadiness.label")}
+            </span>
+            <span
+              className="mt-1 text-3xl font-bold tabular-nums text-[var(--flux-text)]"
+              data-testid="refinement-readiness-score"
+            >
+              {refinementReadiness.score}
+            </span>
+            <span className="mt-1 text-center text-[11px] text-[var(--flux-text-muted)] leading-snug">
+              {refinementReadiness.score >= 75
+                ? t("cardModal.sections.refinementReadiness.hintHigh")
+                : refinementReadiness.score >= 45
+                  ? t("cardModal.sections.refinementReadiness.hintMid")
+                  : t("cardModal.sections.refinementReadiness.hintLow")}
+            </span>
+          </div>
+          <ul className="flex-1 space-y-1.5 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] p-3 text-[12px] text-[var(--flux-text-muted)] max-h-36 overflow-y-auto scrollbar-kanban">
+            {refinementReadiness.reasons.map((r) => (
+              <li key={r.code + r.message} className="flex gap-2">
+                <span className="shrink-0 font-mono text-[10px] text-[var(--flux-text-muted)] opacity-70">{r.code}</span>
+                <span className="text-[var(--flux-text)]">{r.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardModalSection>
 
       <CardModalSection
         title={t("cardModal.sections.refineAi.title")}

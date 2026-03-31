@@ -11,6 +11,10 @@ import type { DocChunkRag } from "@/lib/docs-rag";
 import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
 import { isMongoConfigured } from "@/lib/mongo";
+import { getActiveSprint } from "@/lib/kv-sprints";
+import { listBoardActivity } from "@/lib/kv-board-activity";
+import { LSS_DMAIC_KEYS } from "@/lib/flux-reports-lss";
+import { isKanbanMethodology, isScrumMethodology } from "@/lib/board-methodology";
 
 /** ~4k tokens em contexto compacto PT-BR (heurística: ~4 chars/token). */
 const MAX_SNAPSHOT_CHARS = 14_000;
@@ -86,6 +90,48 @@ function countDailiesLastDays(board: BoardData, days: number): number {
   }).length;
 }
 
+function latestDailyTimestampMs(board: BoardData): number | null {
+  const daily = Array.isArray(board.dailyInsights) ? board.dailyInsights : [];
+  let best = 0;
+  for (const d of daily) {
+    const rec = d && typeof d === "object" ? (d as { createdAt?: string }) : null;
+    const t = rec?.createdAt ? new Date(rec.createdAt).getTime() : NaN;
+    if (Number.isFinite(t) && t > best) best = t;
+  }
+  return best > 0 ? best : null;
+}
+
+function inferCeremonyContextLabel(board: BoardData, hasActiveSprint: boolean): string {
+  const lastDaily = latestDailyTimestampMs(board);
+  const hoursSinceDaily = lastDaily != null ? (Date.now() - lastDaily) / 3600000 : null;
+  if (hoursSinceDaily != null && hoursSinceDaily <= 36) {
+    return hasActiveSprint
+      ? "Provável foco: Daily/acompanhamento de sprint (há registro de daily recente)."
+      : "Provável foco: sincronização do time (daily recente registrada).";
+  }
+  if (hasActiveSprint) {
+    return "Sprint ativo sem daily muito recente; útil para planning review, riscos do sprint ou refinamento.";
+  }
+  return "Sem sprint ativo explícito; fluxo contínuo Kanban/LSS — priorize WIP, gargalos e políticas de coluna.";
+}
+
+function dmaicOpenDistribution(board: BoardData): string {
+  const cards = Array.isArray(board.cards) ? (board.cards as Array<{ bucket?: string; progress?: string }>) : [];
+  const open = cards.filter((c) => !["Concluída", "Done", "Closed", "Cancelada"].includes(String(c.progress ?? "")));
+  const counts = new Map<string, number>();
+  for (const k of LSS_DMAIC_KEYS) counts.set(k, 0);
+  for (const c of open) {
+    const bk = String(c.bucket || "").toLowerCase();
+    for (const k of LSS_DMAIC_KEYS) {
+      if (bk === k || bk.includes(k)) {
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+        break;
+      }
+    }
+  }
+  return LSS_DMAIC_KEYS.map((k) => `${k}=${counts.get(k) ?? 0}`).join(", ");
+}
+
 /**
  * Monta o "world snapshot" org-wide para o Copilot: board atual (resumo), OKRs, automações, docs (RAG), métricas de portfólio/reports.
  * Comprime para caber em ~4k tokens.
@@ -118,14 +164,69 @@ export async function buildCopilotWorldSnapshot(params: {
   lines.push(`boardAtualNome=${clampText(String((board as BoardData).name || "Board"), 120)}`);
   lines.push("");
 
-  if ((board as BoardData).boardMethodology === "lean_six_sigma") {
-    lines.push("## Metodologia do board atual");
-    lines.push("tipo=Lean_Six_Sigma; ciclo=DMAIC (Define, Measure, Analyze, Improve, Control).");
+  const curBoard = board as BoardData;
+  const methodology = curBoard.boardMethodology;
+  let activeSprint: Awaited<ReturnType<typeof getActiveSprint>> = null;
+  try {
+    activeSprint = await getActiveSprint(orgId, boardId);
+  } catch {
+    activeSprint = null;
+  }
+  const hasActiveSprint = Boolean(activeSprint);
+
+  lines.push("## Contexto ágil (Fluxy context-aware)");
+  lines.push(`metodologiaDeclarada=${methodology ?? "inferir_por_board"}`);
+  if (methodology && isScrumMethodology(methodology)) {
+    lines.push("modoAssistencia=Scrum: priorize sprint goal, commitment, impedimentos e Definition of Done.");
+  } else if (methodology && isKanbanMethodology(methodology)) {
+    lines.push("modoAssistencia=Kanban: priorize fluxo, WIP, lead time e políticas explícitas de coluna.");
+  } else if (methodology === "lean_six_sigma") {
+    lines.push("modoAssistencia=Lean_Six_Sigma: priorize fase DMAIC, evidências e critérios de tollgate.");
+  } else {
+    lines.push("modoAssistencia=misto/legado: combine boas práticas de fluxo com cerimônias se houver sprint.");
+  }
+  lines.push(`cerimoniaHeuristica=${clampText(inferCeremonyContextLabel(curBoard, hasActiveSprint), 220)}`);
+  lines.push("");
+
+  lines.push("## Sprint (board atual)");
+  if (activeSprint) {
     lines.push(
-      "Orientação: não prescreva cerimônias Scrum obrigatórias. Sugira entregáveis, métricas e próximos passos alinhados à fase DMAIC e a ferramentas LSS (SIPOC, VOC/CTQ, causa raiz, plano de controle)."
+      `id=${activeSprint.id}; nome=${clampText(activeSprint.name, 80)}; status=${activeSprint.status}; inicio=${activeSprint.startDate ?? "—"}; fim=${activeSprint.endDate ?? "—"}`
     );
+    const cid = Array.isArray(activeSprint.cardIds) ? activeSprint.cardIds.length : 0;
+    lines.push(`cardsNoSprint~${cid}`);
+    if (activeSprint.goal) lines.push(`goal=${clampText(activeSprint.goal, 200)}`);
+  } else {
+    lines.push("(nenhum sprint com status active neste board)");
+  }
+  lines.push("");
+
+  if (methodology === "lean_six_sigma" || curBoard.boardMethodology === "lean_six_sigma") {
+    lines.push("## DMAIC — distribuição de cards abertos por fase (heurística por bucket key)");
+    lines.push(dmaicOpenDistribution(curBoard));
     lines.push("");
   }
+
+  lines.push("## Decisões recentes (activity log, últimas entradas)");
+  if (isMongoConfigured()) {
+    try {
+      const acts = await listBoardActivity({ boardId, orgId, limit: 10 });
+      if (!acts.length) {
+        lines.push("(sem entradas recentes)");
+      } else {
+        for (const a of acts) {
+          lines.push(
+            `- ${a.timestamp} | ${a.action} | ${clampText(a.userName, 40)} | ${clampText(a.target, 100)}`
+          );
+        }
+      }
+    } catch {
+      lines.push("(activity log indisponível)");
+    }
+  } else {
+    lines.push("(MongoDB não configurado — sem histórico persistido)");
+  }
+  lines.push("");
 
   // --- Outros boards (nomes + métricas para comparação) ---
   lines.push("## Portfólio / relatórios (agregado)");

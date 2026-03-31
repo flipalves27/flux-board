@@ -18,7 +18,13 @@ import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { computeBoardPortfolio } from "@/lib/board-portfolio-metrics";
-import { appendBoardCopilotMessages, getBoardCopilotChat, type CopilotMessageRole } from "@/lib/kv-board-copilot";
+import {
+  appendBoardCopilotMessages,
+  getBoardCopilotChat,
+  getCopilotLlmHistoryMessageLimit,
+  sliceCopilotMessagesForLlm,
+  type CopilotMessageRole,
+} from "@/lib/kv-board-copilot";
 import { retrieveRelevantDocChunksWithDebug } from "@/lib/docs-rag";
 import { buildCopilotWorldSnapshot } from "@/lib/copilot-world-snapshot";
 import { nextBoardCardId } from "@/lib/card-id";
@@ -651,13 +657,15 @@ async function callCopilotLlmModel(input: {
 
   const providerLabel = (p: string) => (p === "anthropic" ? "Anthropic" : "Together");
 
+  const llmHistLimit = getCopilotLlmHistoryMessageLimit();
   const ctx = buildCopilotContext(input.board);
   const cardsForPrompt = ctx.cards.slice(0, MAX_MODEL_CONTEXT_CARDS);
-  const histForPrompt = input.historyMessages.slice(-8);
+  const histForPrompt = input.historyMessages.slice(-llmHistLimit);
 
   const system = [
     "Você é a Fluxy, assistente de operações do Flux-Board: entende o board atual, OKRs da org, automações, documentos (RAG) e métricas de portfólio/relatórios.",
     "Use o `worldSnapshot` como visão agregada da organização; use o JSON do board abaixo para detalhes e IDs dos cards deste quadro.",
+    "O snapshot inclui `Contexto ágil`: adapte tom e sugestões à metodologia (Scrum vs Kanban vs Lean Six Sigma), ao sprint ativo quando existir, e à heurística de cerimônia (ex.: daily recente).",
     "Priorize coerência entre OKRs, boards e docs quando a pergunta for estratégica ou cross-funcional.",
     "",
     "Regras obrigatórias:",
@@ -1083,10 +1091,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       try {
         sendEvent("status", { phase: "started" });
 
-        const historyMessages = chat.messages
-          .slice(-12)
-          .filter((m) => m.role === "user" || m.role === "assistant")
-          .map((m) => ({ role: m.role as CopilotMessageRole, content: m.content }));
+        const historyMessages = sliceCopilotMessagesForLlm(chat.messages).map((m) => ({
+          role: m.role as CopilotMessageRole,
+          content: m.content,
+        }));
 
         const ragResult = await retrieveRelevantDocChunksWithDebug(payload.orgId, userMessage, 12);
         const ragChunks = ragResult.chunks;
