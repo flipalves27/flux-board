@@ -69,6 +69,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-display)", "Outfit", "sans-serif"],
         body: ["var(--font-body)", "DM Sans", "sans-serif"],
+        fluxy: ["var(--font-fluxy)", "Space Grotesk", "sans-serif"],
       },
     },
   },

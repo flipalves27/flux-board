@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DM_Sans, Outfit } from "next/font/google";
+import { DM_Sans, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
@@ -29,6 +29,12 @@ const outfit = Outfit({
   display: "swap",
 });
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-fluxy",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Flux-Board — Commercial operations with clarity",
@@ -48,7 +54,11 @@ export default async function RootLayout({
   const hdrs = await headers();
   const nonce = hdrs.get("x-nonce") ?? undefined;
   return (
-    <html lang={locale} suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${dmSans.variable} ${outfit.variable} ${spaceGrotesk.variable}`}
+    >
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#6c5ce7" />

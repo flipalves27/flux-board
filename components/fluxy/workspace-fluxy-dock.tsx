@@ -11,6 +11,9 @@ import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { useWorkspaceFluxyDockStore } from "@/stores/workspace-fluxy-dock-store";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { FluxyDock } from "@/components/fluxy/fluxy-dock";
+import { FluxySpeechBubble } from "@/components/fluxy/fluxy-speech-bubble";
+import { FluxyStatusPill } from "@/components/fluxy/fluxy-status-pill";
+import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
 import { trackFluxyEvent } from "@/lib/fluxy-telemetry";
 
 function normalizeAppPath(pathname: string): string {
@@ -316,8 +319,10 @@ export function WorkspaceFluxyDock() {
           label: t("restore"),
           ariaLabel: t("restoreAria"),
           avatarState: fluxy.visualState,
-          buttonClassName: "inline-flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)]/92 px-2.5 py-1.5 text-[10px] font-semibold text-[var(--flux-primary-light)] shadow-[var(--flux-shadow-md)] backdrop-blur-md hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-10)]",
-          iconWrapperClassName: "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+          buttonClassName:
+            "inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--flux-primary-alpha-28)] bg-[color-mix(in_srgb,var(--flux-surface-card)_92%,transparent)] px-2.5 py-1.5 text-[10px] font-semibold text-[var(--flux-primary-light)] shadow-[0_8px_32px_rgba(13,10,26,0.35)] backdrop-blur-[12px] font-fluxy hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-10)] motion-safe:transition-colors",
+          iconWrapperClassName:
+            "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
         }}
         launcher={{
           onOpen: openPanel,
@@ -326,13 +331,16 @@ export function WorkspaceFluxyDock() {
           hideAriaLabel: t("hideDock"),
           hideTitle: t("hideDock"),
           avatarState: fluxy.visualState,
-          containerClassName: "flex items-center gap-1.5 rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-14),var(--flux-secondary-alpha-08))] py-1.5 pl-1.5 pr-1.5 shadow-[var(--flux-shadow-primary-panel)] backdrop-blur-md",
-          openButtonClassName: "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
-          avatarWrapperClassName: "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+          containerClassName:
+            "flex items-center gap-1.5 rounded-[20px] border-[1.5px] border-[var(--flux-primary-alpha-22)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-14),var(--flux-secondary-alpha-08))] py-1.5 pl-1.5 pr-1.5 shadow-[0_8px_32px_rgba(108,92,231,0.2)] backdrop-blur-[12px] font-fluxy",
+          openButtonClassName:
+            "flex min-w-0 flex-1 items-center gap-2 rounded-[14px] px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
+          avatarWrapperClassName:
+            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
           title: t("fabLabel"),
           subtitle: t("fabHint"),
-          titleClassName: "block font-display text-xs font-bold leading-tight text-[var(--flux-text)]",
-          subtitleClassName: "block text-[9px] leading-snug text-[var(--flux-text-muted)]",
+          titleClassName: "block font-fluxy text-xs font-bold leading-tight text-[var(--flux-text)]",
+          subtitleClassName: "block font-fluxy text-[9px] leading-snug text-[var(--flux-text-muted)]",
         }}
         onRestoreDock={() => trackFluxyEvent({ event: "fluxy_dock_opened", mode: "workspace", origin: "restore" })}
       />
@@ -349,19 +357,31 @@ export function WorkspaceFluxyDock() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(5.5rem,env(safe-area-inset-top))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-200"
+            className="absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(5.5rem,env(safe-area-inset-top))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[20px] border-[1.5px] border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] backdrop-blur-[12px] font-fluxy motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-200"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--flux-chrome-alpha-08)] px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <FluxyAvatar state={fluxy.visualState} size="header" className="shrink-0 scale-90" title={t("panelTitle")} />
-                <div className="min-w-0">
-                  <h2 id={titleId} className="font-display text-sm font-bold leading-tight text-[var(--flux-primary-light)]">
-                    {t("panelTitle")}
-                  </h2>
-                  <p className="text-[10px] text-[var(--flux-text-muted)]">{t("panelSubtitle")}</p>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FluxyAvatar
+                    state={fluxy.visualState}
+                    size="header"
+                    className="shrink-0 scale-90"
+                    title={t("panelTitle")}
+                    interactive
+                  />
+                  <div className="min-w-0">
+                    <h2 id={titleId} className="font-fluxy text-sm font-bold leading-tight text-[var(--flux-primary-light)]">
+                      {t("panelTitle")}
+                    </h2>
+                    <p className="text-[10px] text-[var(--flux-text-muted)]">{t("panelSubtitle")}</p>
+                  </div>
                 </div>
+                <FluxyStatusPill
+                  className="w-full max-w-full justify-start px-3 py-2"
+                  {...fluxyVisualStateCopy(fluxy.visualState, t)}
+                />
               </div>
-              <button type="button" className="btn-secondary shrink-0 px-3 py-1.5 text-xs" onClick={closePanel}>
+              <button type="button" className="btn-secondary shrink-0 self-start px-3 py-1.5 text-xs" onClick={closePanel}>
                 {t("close")}
               </button>
             </div>
@@ -372,11 +392,16 @@ export function WorkspaceFluxyDock() {
               ) : (
                 <>
                   {freeBanner}
-                  <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">
-                    {sprintContext ? t("emptyChatLeadSprint") : t("emptyChatLead")}
-                  </p>
+                  {fluxy.message ? (
+                    <FluxySpeechBubble className="mb-3 text-left text-xs">{fluxy.message}</FluxySpeechBubble>
+                  ) : null}
+                  {messages.length === 0 ? (
+                    <FluxySpeechBubble className="mb-3 text-left text-xs">
+                      {sprintContext ? t("emptyChatLeadSprint") : t("emptyChatLead")}
+                    </FluxySpeechBubble>
+                  ) : null}
 
-                  <div className="mt-4 space-y-2">
+                  <div className={`space-y-2 ${messages.length === 0 ? "mt-4" : ""}`}>
                     {messages.map((m) => (
                       <div
                         key={m.id}

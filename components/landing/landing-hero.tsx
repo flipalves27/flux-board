@@ -122,7 +122,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           <div className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl" aria-hidden />
           <div className="relative">
             <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[rgba(0,210,211,0.3)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_rgba(0,210,211,0.2)] sm:h-12 sm:w-12">
-              <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} />
+              <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} interactive />
             </div>
             <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />

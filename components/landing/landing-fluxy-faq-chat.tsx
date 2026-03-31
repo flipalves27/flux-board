@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
+import { FluxySpeechBubble } from "@/components/fluxy/fluxy-speech-bubble";
+import { FluxyStatusPill } from "@/components/fluxy/fluxy-status-pill";
+import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
+import type { FluxyAvatarState } from "@/components/fluxy/fluxy-types";
 import { matchLandingFaq } from "@/lib/landing-faq-match";
 import { LANDING_OPEN_FLUXY_CHAT_EVENT } from "@/lib/landing-open-fluxy-chat";
 
@@ -28,7 +32,7 @@ export function LandingFluxyFaqChat() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [lines, setLines] = useState<ChatLine[]>([]);
-  const [fluxyState, setFluxyState] = useState<"idle" | "thinking" | "talking">("idle");
+  const [fluxyState, setFluxyState] = useState<Extract<FluxyAvatarState, "idle" | "thinking" | "talking">>("idle");
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -110,29 +114,39 @@ export function LandingFluxyFaqChat() {
     >
       {panelOpen ? (
         <div
-          className="flex w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] backdrop-blur-md"
+          className="flex w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-[20px] border-[1.5px] border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)] font-fluxy shadow-[var(--flux-shadow-modal-depth)] backdrop-blur-[12px]"
           role="dialog"
           aria-label={t("fluxyChat.title")}
         >
-          <div className="flex items-center gap-3 border-b border-[var(--flux-chrome-alpha-10)] px-4 py-3">
-            <FluxyAvatar state={fluxyState === "thinking" ? "thinking" : fluxyState === "talking" ? "talking" : "idle"} size="header" />
-            <div className="min-w-0 flex-1">
-              <div className="font-display text-sm font-bold text-[var(--flux-text)]">{t("fluxyChat.title")}</div>
-              <div className="text-[11px] text-[var(--flux-text-muted)]">{t("fluxyChat.subtitle")}</div>
+          <div className="flex flex-col gap-2 border-b border-[var(--flux-chrome-alpha-10)] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <FluxyAvatar
+                state={fluxyState === "thinking" ? "thinking" : fluxyState === "talking" ? "talking" : "idle"}
+                size="header"
+                interactive
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-fluxy text-sm font-bold text-[var(--flux-text)]">{t("fluxyChat.title")}</div>
+                <div className="text-[11px] text-[var(--flux-text-muted)]">{t("fluxyChat.subtitle")}</div>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary shrink-0 px-2 py-1.5 text-[10px]"
+                onClick={() => setPanelOpen(false)}
+                aria-label={t("fluxyChat.minimize")}
+              >
+                —
+              </button>
             </div>
-            <button
-              type="button"
-              className="btn-secondary px-2 py-1.5 text-[10px] shrink-0"
-              onClick={() => setPanelOpen(false)}
-              aria-label={t("fluxyChat.minimize")}
-            >
-              —
-            </button>
+            <FluxyStatusPill
+              className="w-full justify-start px-3 py-2"
+              {...fluxyVisualStateCopy(fluxyState, (key) => t(`fluxyChat.${key}`))}
+            />
           </div>
 
           <div className="max-h-[min(52vh,420px)] space-y-2 overflow-y-auto px-3 py-3 scrollbar-flux">
             {lines.length === 0 ? (
-              <p className="text-xs leading-relaxed text-[var(--flux-text-muted)]">{t("fluxyChat.emptyHint")}</p>
+              <FluxySpeechBubble className="text-left text-xs">{t("fluxyChat.emptyHint")}</FluxySpeechBubble>
             ) : (
               lines.map((line) => (
                 <div
@@ -187,15 +201,15 @@ export function LandingFluxyFaqChat() {
       <button
         type="button"
         onClick={() => setPanelOpen((o) => !o)}
-        className="group flex items-center gap-3 rounded-full border-2 border-[rgba(0,210,211,0.25)] bg-gradient-to-br from-[rgba(108,92,231,0.2)] to-[rgba(0,210,211,0.1)] py-2.5 pl-2.5 pr-6 shadow-[0_8px_32px_rgba(108,92,231,0.25)] backdrop-blur-md motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] hover:shadow-[0_12px_40px_rgba(108,92,231,0.35)] active:scale-[0.98]"
+        className="group flex items-center gap-3 rounded-[20px] border-[1.5px] border-[rgba(0,210,211,0.28)] bg-gradient-to-br from-[rgba(108,92,231,0.22)] to-[rgba(0,210,211,0.12)] py-2.5 pl-2.5 pr-6 font-fluxy shadow-[0_8px_32px_rgba(108,92,231,0.25)] backdrop-blur-[12px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] hover:shadow-[0_12px_40px_rgba(108,92,231,0.35)] active:scale-[0.98]"
         aria-expanded={panelOpen}
         aria-label={panelOpen ? t("fluxyChat.close") : t("fluxyChat.open")}
       >
         <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[rgba(0,210,211,0.2)] bg-[rgba(13,11,26,0.6)] shadow-[0_0_12px_rgba(108,92,231,0.4)] sm:h-12 sm:w-12">
-          <FluxyAvatar state={panelOpen ? "waving" : "idle"} size="header" className="scale-90" />
+          <FluxyAvatar state={panelOpen ? "waving" : "idle"} size="header" className="scale-90" interactive />
         </span>
         <span className="hidden text-left sm:block">
-          <span className="block font-display text-[13px] font-semibold text-[var(--flux-text)]">{t("fluxyChat.fabTitle")}</span>
+          <span className="block font-fluxy text-[13px] font-semibold text-[var(--flux-text)]">{t("fluxyChat.fabTitle")}</span>
           <span className="block text-[10px] text-[var(--flux-text-muted)]">{t("fluxyChat.fabSubtitle")}</span>
         </span>
       </button>

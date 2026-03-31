@@ -23,7 +23,7 @@ export function FluxyDockRestoreButton({
   return (
     <button type="button" onClick={onClick} className={buttonClassName} aria-label={ariaLabel}>
       <span className={iconWrapperClassName}>
-        <FluxyAvatar state={avatarState} size="fab" />
+        <FluxyAvatar state={avatarState} size="fab" interactive />
       </span>
       {label}
     </button>
@@ -75,7 +75,7 @@ export function FluxyDockLauncher({
         aria-expanded={openAriaExpanded}
       >
         <span className={avatarWrapperClassName}>
-          <FluxyAvatar state={avatarState} size={avatarSize} />
+          <FluxyAvatar state={avatarState} size={avatarSize} interactive />
         </span>
         <span className="min-w-0">
           <span className={titleClassName}>{title}</span>

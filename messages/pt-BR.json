@@ -976,7 +976,15 @@
       "demoTitle": "Demo: {count} mensagens restantes",
       "demoBody": "No plano Free há um limite de mensagens com IA no workspace; abra um board para o assistente com contexto completo.",
       "toastErrorTitle": "Fluxy",
-      "streamError": "Não foi possível concluir a resposta."
+      "streamError": "Não foi possível concluir a resposta.",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+        "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+        "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+        "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+        "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+      }
     }
   },
   "toasts": {
@@ -1366,7 +1374,15 @@
       "seeFaq": "Ver no FAQ",
       "suggestionsIntro": "Perguntas frequentes:",
       "you": "Você",
-      "fluxy": "Fluxy"
+      "fluxy": "Fluxy",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+        "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+        "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+        "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+        "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+      }
     }
   },
   "login": {
@@ -2867,7 +2883,15 @@
         "streamErrorFallback": "Erro na Fluxy.",
         "voiceNotSupported": "Seu navegador não suporta reconhecimento de voz (Web Speech API).",
         "voiceMicError": "Não foi possível capturar o áudio. Verifique o microfone e tente de novo.",
-        "voiceStartError": "Não foi possível iniciar o microfone."
+        "voiceStartError": "Não foi possível iniciar o microfone.",
+        "visualState": {
+          "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+          "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+          "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+          "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+          "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+          "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+        }
       },
       "fluxyDock": {
         "openAssistant": "Abrir a Fluxy — dúvidas sobre o quadro",

@@ -976,7 +976,15 @@
       "demoTitle": "Demo: {count} messages left",
       "demoBody": "On the Free plan there is a limit on workspace AI messages; open a board for the full contextual assistant.",
       "toastErrorTitle": "Fluxy",
-      "streamError": "Could not complete the response."
+      "streamError": "Could not complete the response.",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Waiting for you…" },
+        "thinking": { "emoji": "🧠", "label": "Thinking", "desc": "Processing your idea…" },
+        "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
+        "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
+        "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
+        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+      }
     }
   },
   "toasts": {
@@ -1366,7 +1374,15 @@
       "seeFaq": "View in FAQ",
       "suggestionsIntro": "Popular questions:",
       "you": "You",
-      "fluxy": "Fluxy"
+      "fluxy": "Fluxy",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Waiting for you…" },
+        "thinking": { "emoji": "🧠", "label": "Thinking", "desc": "Processing your idea…" },
+        "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
+        "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
+        "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
+        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+      }
     }
   },
   "login": {
@@ -2862,7 +2878,15 @@
         "streamErrorFallback": "Fluxy error.",
         "voiceNotSupported": "Your browser does not support speech recognition (Web Speech API).",
         "voiceMicError": "Could not capture audio. Check the microphone and try again.",
-        "voiceStartError": "Could not start the microphone."
+        "voiceStartError": "Could not start the microphone.",
+        "visualState": {
+          "idle": { "emoji": "✨", "label": "Idle", "desc": "Waiting for you…" },
+          "thinking": { "emoji": "🧠", "label": "Thinking", "desc": "Processing your idea…" },
+          "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
+          "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
+          "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
+          "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+        }
       },
       "fluxyDock": {
         "openAssistant": "Open Fluxy — questions about this board",

@@ -59,8 +59,10 @@ export function BoardFluxyDock() {
         label: t("restore"),
         ariaLabel: t("restoreAria"),
         avatarState: fluxy.visualState,
-        buttonClassName: "inline-flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-card)] px-3 py-2 text-[11px] font-semibold text-[var(--flux-primary-light)] shadow-[var(--flux-shadow-md)] backdrop-blur-md hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-12)]",
-        iconWrapperClassName: "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+        buttonClassName:
+          "inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--flux-primary-alpha-35)] bg-[color-mix(in_srgb,var(--flux-surface-card)_92%,transparent)] px-3 py-2 text-[11px] font-semibold text-[var(--flux-primary-light)] shadow-[0_8px_32px_rgba(13,10,26,0.35)] backdrop-blur-[12px] font-fluxy hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-12)] motion-safe:transition-colors",
+        iconWrapperClassName:
+          "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
       }}
       launcher={{
         onOpen: onOpenAssistant,
@@ -68,11 +70,16 @@ export function BoardFluxyDock() {
         hideAriaLabel: t("hideDock"),
         hideTitle: t("hideDock"),
         avatarState: fluxy.visualState,
-        containerClassName: "flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-[var(--flux-primary-alpha-28)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-18),var(--flux-secondary-alpha-10))] py-2 pl-2 pr-2 shadow-[var(--flux-shadow-primary-panel)] backdrop-blur-md",
-        openButtonClassName: "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
-        avatarWrapperClassName: "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+        containerClassName:
+          "flex min-w-0 flex-1 items-center gap-2 rounded-[20px] border-[1.5px] border-[var(--flux-primary-alpha-28)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-18),var(--flux-secondary-alpha-10))] py-2 pl-2 pr-2 shadow-[0_8px_32px_rgba(108,92,231,0.2)] backdrop-blur-[12px] font-fluxy",
+        openButtonClassName:
+          "flex min-w-0 flex-1 items-center gap-2 rounded-[14px] px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
+        avatarWrapperClassName:
+          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
         title: tFluxy("title"),
         subtitle: t("chipLabel"),
+        titleClassName: "block font-fluxy text-sm font-bold text-[var(--flux-text)] leading-tight",
+        subtitleClassName: "block font-fluxy text-[10px] text-[var(--flux-text-muted)] leading-snug",
       }}
       onRestoreDock={() => trackFluxyEvent({ event: "fluxy_dock_opened", mode: "board", origin: "restore" })}
     />

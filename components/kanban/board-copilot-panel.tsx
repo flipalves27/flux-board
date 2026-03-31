@@ -17,7 +17,10 @@ import type { RagRetrievalDebug } from "@/lib/docs-rag";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { AiFeedbackInline } from "@/components/ai/ai-feedback-inline";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
+import { FluxySpeechBubble } from "@/components/fluxy/fluxy-speech-bubble";
+import { FluxyStatusPill } from "@/components/fluxy/fluxy-status-pill";
 import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
+import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
 import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 
 type CopilotHistoryResponse = {
@@ -749,32 +752,39 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
       {open && (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-backdrop)] pointer-events-none">
-          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] pointer-events-auto flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--flux-chrome-alpha-08)] flex items-center justify-between gap-3">
-              <div className="min-w-0 flex items-center gap-2.5">
-                <FluxyAvatar
-                  state={fluxyVisualState}
-                  size="header"
-                  showConfetti={fluxyCelebrating}
-                  title={tFluxy("title")}
-                />
-                <div className="min-w-0">
-                  <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate leading-tight">
-                    {tFluxy("title")}
-                  </div>
-                  <div className="text-[10px] text-[var(--flux-text-muted)] truncate">{tFluxy("subtitle")}</div>
-                  <div className="text-[11px] text-[var(--flux-text-muted)] mt-0.5 truncate">
-                    {boardName || "Board"}
-                    {user?.username ? ` • ${user.username}` : ""}
+          <div className="absolute right-4 top-[92px] bottom-4 flex w-[min(440px,92vw)] flex-col overflow-hidden rounded-[20px] border-[1.5px] border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] font-fluxy shadow-[0_18px_60px_var(--flux-black-alpha-45)] backdrop-blur-[12px] pointer-events-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--flux-chrome-alpha-08)] px-4 py-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FluxyAvatar
+                    state={fluxyVisualState}
+                    size="header"
+                    showConfetti={fluxyCelebrating}
+                    title={tFluxy("title")}
+                    interactive
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate font-fluxy text-sm font-bold leading-tight text-[var(--flux-primary-light)]">
+                      {tFluxy("title")}
+                    </div>
+                    <div className="truncate text-[10px] text-[var(--flux-text-muted)]">{tFluxy("subtitle")}</div>
+                    <div className="mt-0.5 truncate text-[11px] text-[var(--flux-text-muted)]">
+                      {boardName || "Board"}
+                      {user?.username ? ` • ${user.username}` : ""}
+                    </div>
                   </div>
                 </div>
+                <FluxyStatusPill
+                  className="w-full max-w-full justify-start px-3 py-2"
+                  {...fluxyVisualStateCopy(fluxyVisualState, tFluxy)}
+                />
               </div>
-              <button type="button" className="btn-secondary px-3 py-1.5 shrink-0" onClick={() => setOpen(false)}>
+              <button type="button" className="btn-secondary shrink-0 px-3 py-1.5" onClick={() => setOpen(false)}>
                 {tFluxy("close")}
               </button>
             </div>
 
-            <div className="px-4 pt-3 pb-2 overflow-auto flex-1">
+            <div className="flex-1 overflow-auto px-4 pb-2 pt-3">
               {loadingHistory ? (
                 <p className="text-xs text-[var(--flux-text-muted)]">{tFluxy("loadingHistory")}</p>
               ) : (
@@ -800,7 +810,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                   <div className="space-y-2">
                     {messages.length === 0 ? (
                       <div className="space-y-2 text-xs text-[var(--flux-text-muted)]">
-                        <p className="text-[var(--flux-text)]">{tFluxy("emptyIntro")}</p>
+                        <FluxySpeechBubble className="text-left">{tFluxy("emptyIntro")}</FluxySpeechBubble>
                         {fluxyInsights.length > 0 ? (
                           <div className="rounded-[10px] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2">
                             <div className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-secondary)]">

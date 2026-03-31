@@ -9,6 +9,8 @@ const SIZE_PX: Record<FluxyAvatarSize, number> = {
   header: 80,
 };
 
+const HEART_X = [228, 252, 268, 290, 310] as const;
+
 function subscribeReducedMotion(cb: () => void) {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
   mq.addEventListener("change", cb);
@@ -23,24 +25,23 @@ function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
 }
 
-type ConfettiProps = { active: boolean };
+type ConfettiProps = { active: boolean; reducedMotion: boolean };
 
-function FluxyConfetti({ active }: ConfettiProps) {
+function FluxyConfetti({ active, reducedMotion }: ConfettiProps) {
   const pieces = useMemo(
     () =>
       Array.from({ length: 20 }, (_, i) => ({
         id: i,
-        x: 200 + Math.random() * 280,
-        delay: Math.random() * 1.2,
-        dur: 1.5 + Math.random() * 1,
-        colorVar: ["--flux-primary", "--flux-secondary", "--flux-accent", "--flux-primary-light", "--flux-text"][i % 5],
-        size: 4 + Math.random() * 6,
-        rot: Math.random() * 360,
+        x: 160 + ((i * 47) % 360),
+        delay: (i * 0.07) % 1.5,
+        dur: 2 + (i % 5) * 0.2,
+        colorVar: ["--flux-fluxy-fur", "--flux-secondary", "--flux-accent", "--flux-fluxy-fur-light", "--flux-fluxy-face"][i % 5],
+        size: 5 + (i % 4),
       })),
     []
   );
 
-  if (!active) return null;
+  if (!active || reducedMotion) return null;
 
   return (
     <g>
@@ -50,16 +51,70 @@ function FluxyConfetti({ active }: ConfettiProps) {
           x={p.x}
           y={-20}
           width={p.size}
-          height={p.size * 0.6}
-          rx={1}
+          height={p.size * 0.5}
+          rx={1.5}
           fill={`var(${p.colorVar})`}
-          opacity={0.9}
-          transform={`rotate(${p.rot} ${p.x} -20)`}
-          style={{
-            animation: `fluxy-confetti-fall ${p.dur}s ease-in ${p.delay}s infinite`,
-          }}
+          opacity={0.85}
+          style={{ animation: `fluxy-confetti-fall ${p.dur}s ease-in ${p.delay}s infinite` }}
         />
       ))}
+    </g>
+  );
+}
+
+type StarSparkleProps = { cx: number; cy: number; delay?: number; size?: number; reducedMotion: boolean };
+
+function StarSparkle({ cx, cy, delay = 0, size = 1, reducedMotion }: StarSparkleProps) {
+  if (reducedMotion) {
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={3 * size} fill="var(--flux-secondary)" opacity={0.6} />
+        <line
+          x1={cx - 5 * size}
+          y1={cy}
+          x2={cx + 5 * size}
+          y2={cy}
+          stroke="var(--flux-secondary)"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          opacity={0.5}
+        />
+        <line
+          x1={cx}
+          y1={cy - 5 * size}
+          x2={cx}
+          y2={cy + 5 * size}
+          stroke="var(--flux-secondary)"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          opacity={0.5}
+        />
+      </g>
+    );
+  }
+  return (
+    <g style={{ animation: `fluxy-sparkle 2s ease ${delay}s infinite` }}>
+      <circle cx={cx} cy={cy} r={3 * size} fill="var(--flux-secondary)" opacity={0.8} />
+      <line
+        x1={cx - 5 * size}
+        y1={cy}
+        x2={cx + 5 * size}
+        y2={cy}
+        stroke="var(--flux-secondary)"
+        strokeWidth={1.2}
+        strokeLinecap="round"
+        opacity={0.6}
+      />
+      <line
+        x1={cx}
+        y1={cy - 5 * size}
+        x2={cx}
+        y2={cy + 5 * size}
+        stroke="var(--flux-secondary)"
+        strokeWidth={1.2}
+        strokeLinecap="round"
+        opacity={0.6}
+      />
     </g>
   );
 }
@@ -71,13 +126,11 @@ export type FluxyAvatarProps = {
   /** When true with state celebrating, renders confetti (default false for performance). */
   showConfetti?: boolean;
   title?: string;
+  /** Hover scale + hearts (docks / hero); respects reduced motion. */
+  interactive?: boolean;
 };
 
-const mouthPaths = [
-  "M330 372 Q340 381, 354 371",
-  "M330 368 Q340 380, 354 368",
-  "M330 370 Q340 376, 354 370",
-];
+const mouthRyFrames = [0, 6, 10, 4];
 
 export function FluxyAvatar({
   state,
@@ -85,37 +138,37 @@ export function FluxyAvatar({
   className = "",
   showConfetti = false,
   title,
+  interactive = false,
 }: FluxyAvatarProps) {
   const reducedMotion = usePrefersReducedMotion();
   const [blinkOpen, setBlinkOpen] = useState(true);
   const [mouthFrame, setMouthFrame] = useState(0);
-  const talkInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const talkRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (reducedMotion || state === "sleeping") return;
-    const blink = window.setInterval(() => {
+    const id = window.setInterval(() => {
       setBlinkOpen(false);
-      window.setTimeout(() => setBlinkOpen(true), 150);
-    }, 3000 + Math.random() * 2000);
-    return () => window.clearInterval(blink);
+      window.setTimeout(() => setBlinkOpen(true), 130);
+    }, 2800 + Math.random() * 2000);
+    return () => window.clearInterval(id);
   }, [reducedMotion, state]);
 
   useEffect(() => {
     if (reducedMotion) {
-      if (talkInterval.current) clearInterval(talkInterval.current);
+      if (talkRef.current) clearInterval(talkRef.current);
       setMouthFrame(0);
       return;
     }
     if (state === "talking") {
-      talkInterval.current = setInterval(() => {
-        setMouthFrame((p) => (p + 1) % 3);
-      }, 180);
+      talkRef.current = setInterval(() => setMouthFrame((p) => (p + 1) % 4), 150);
     } else {
-      if (talkInterval.current) clearInterval(talkInterval.current);
+      if (talkRef.current) clearInterval(talkRef.current);
       setMouthFrame(0);
     }
     return () => {
-      if (talkInterval.current) clearInterval(talkInterval.current);
+      if (talkRef.current) clearInterval(talkRef.current);
     };
   }, [state, reducedMotion]);
 
@@ -128,7 +181,383 @@ export function FluxyAvatar({
   const w = SIZE_PX[size];
   const motionAttr = reducedMotion ? "reduced" : "ok";
 
-  const breatheAnim = reducedMotion ? "none" : isSleeping ? "fluxy-breathe 4s ease-in-out infinite" : "fluxy-breathe 3s ease-in-out infinite";
+  const breatheAnim = reducedMotion
+    ? "none"
+    : isSleeping
+      ? "fluxy-breathe-slow 5s ease-in-out infinite"
+      : "fluxy-breathe 3.2s ease-in-out infinite";
+
+  const mouthOpen = mouthRyFrames[mouthFrame];
+  const showHearts = interactive && hovered && !isSleeping && !reducedMotion;
+  const hoverScale = interactive && !isSleeping && hovered ? "scale(1.03)" : "scale(1)";
+
+  const svg = (
+    <svg
+      width={w}
+      viewBox="0 0 680 640"
+      className="max-w-full overflow-visible"
+      style={{
+        animation: breatheAnim,
+        filter: isSleeping ? "brightness(0.65) saturate(0.6)" : "none",
+        transition: "filter 0.8s ease",
+        display: "block",
+        height: "auto",
+      }}
+    >
+      <FluxyConfetti active={Boolean(showConfetti && isCelebrating)} reducedMotion={reducedMotion} />
+
+      {showHearts
+        ? HEART_X.map((x, i) => (
+            <text
+              key={i}
+              x={x}
+              y={580}
+              fontSize={16}
+              fill="var(--flux-accent)"
+              style={{ animation: `fluxy-heart-rise 2.5s ease-out ${i * 0.5}s infinite` }}
+            >
+              ♥
+            </text>
+          ))
+        : null}
+
+      <ellipse
+        cx="340"
+        cy="340"
+        rx="220"
+        ry="180"
+        fill="var(--flux-fluxy-fur)"
+        opacity={isThinking ? 0.08 : 0.03}
+        style={{ transition: "opacity 0.5s" }}
+      >
+        {isThinking && !reducedMotion ? (
+          <animate attributeName="opacity" values="0.03;0.1;0.03" dur="2.5s" repeatCount="indefinite" />
+        ) : null}
+      </ellipse>
+
+      <g
+        style={{
+          transformOrigin: "230px 490px",
+          animation: reducedMotion
+            ? "none"
+            : isCelebrating
+              ? "fluxy-tail-wag-fast 0.35s ease-in-out infinite"
+              : isSleeping
+                ? "none"
+                : "fluxy-tail-wag 2s ease-in-out infinite",
+        }}
+      >
+        <path
+          d="M230 490 Q155 400,165 310 Q170 270,205 295 Q240 330,235 400 Q232 450,230 485Z"
+          fill="var(--flux-fluxy-fur)"
+          stroke="var(--flux-fluxy-fur-dark)"
+          strokeWidth="1"
+        />
+        <path
+          d="M232 480 Q175 405,185 330 Q192 305,210 315 Q232 340,230 410Z"
+          fill="var(--flux-fluxy-fur-light)"
+          opacity="0.45"
+        />
+        <path d="M167 315 Q158 280,175 272 Q188 278,182 308Z" fill="var(--flux-fluxy-face)" />
+      </g>
+
+      <ellipse cx="340" cy="475" rx="82" ry="72" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+      <ellipse cx="340" cy="484" rx="55" ry="50" fill="var(--flux-fluxy-face)" />
+      <circle cx="325" cy="490" r="3" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+      <circle cx="355" cy="490" r="3" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+      <circle cx="340" cy="475" r="2.5" fill="var(--flux-fluxy-face-muted)" opacity="0.4" />
+
+      <path
+        d="M270 448 Q248 460,244 482 Q242 498,260 500"
+        fill="var(--flux-fluxy-fur)"
+        stroke="var(--flux-fluxy-fur-dark)"
+        strokeWidth="1"
+      />
+      <ellipse cx="260" cy="502" rx="13" ry="9" fill="var(--flux-fluxy-face)" stroke="var(--flux-fluxy-face-muted)" strokeWidth="0.5" />
+      <circle cx="255" cy="500" r="2" fill="var(--flux-fluxy-face-muted)" />
+      <circle cx="263" cy="499" r="2" fill="var(--flux-fluxy-face-muted)" />
+
+      <g
+        style={{
+          transformOrigin: "410px 440px",
+          animation: reducedMotion || !isWaving ? "none" : "fluxy-wave-arm 0.8s ease-in-out infinite",
+        }}
+      >
+        <path
+          d="M410 440 Q432 424,445 404 Q450 395,443 392"
+          fill="var(--flux-fluxy-fur)"
+          stroke="var(--flux-fluxy-fur-dark)"
+          strokeWidth="1"
+        />
+        <ellipse cx="443" cy="390" rx="12" ry="8" fill="var(--flux-fluxy-face)" stroke="var(--flux-fluxy-face-muted)" strokeWidth="0.5" />
+        <circle cx="438" cy="388" r="2" fill="var(--flux-fluxy-face-muted)" />
+        <circle cx="446" cy="387" r="2" fill="var(--flux-fluxy-face-muted)" />
+      </g>
+
+      {!isSleeping && !isWaving ? (
+        <g transform="translate(452,356)" style={{ animation: reducedMotion ? "none" : "fluxy-float-card 3.5s ease-in-out infinite" }}>
+          <rect x="0" y="0" width="48" height="36" rx="6" fill="var(--flux-fluxy-void)" stroke="var(--flux-secondary)" strokeWidth="1.2" />
+          <rect x="6" y="6" width="20" height="3.5" rx="1.5" fill="var(--flux-secondary)" opacity="0.8" />
+          <rect x="6" y="13" width="36" height="2.5" rx="1" fill="var(--flux-fluxy-fur)" opacity="0.4" />
+          <rect x="6" y="19" width="28" height="2.5" rx="1" fill="var(--flux-fluxy-fur)" opacity="0.3" />
+          <rect x="6" y="26" width="12" height="5" rx="2.5" fill="var(--flux-accent)" opacity="0.5" />
+          <path
+            d="M34 27 L37.5 30.5 L43 24"
+            fill="none"
+            stroke="var(--flux-secondary)"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+      ) : null}
+
+      {isThinking ? (
+        <g>
+          <circle
+            cx="430"
+            cy="248"
+            r="8"
+            fill="var(--flux-fluxy-void)"
+            stroke="var(--flux-secondary)"
+            strokeWidth="1"
+            style={{ animation: reducedMotion ? "none" : "fluxy-think-bubble 1.5s ease 0s infinite" }}
+          />
+          <circle
+            cx="452"
+            cy="224"
+            r="12"
+            fill="var(--flux-fluxy-void)"
+            stroke="var(--flux-secondary)"
+            strokeWidth="1"
+            style={{ animation: reducedMotion ? "none" : "fluxy-think-bubble 1.5s ease 0.3s infinite" }}
+          />
+          <circle
+            cx="478"
+            cy="204"
+            r="18"
+            fill="var(--flux-fluxy-void)"
+            stroke="var(--flux-secondary)"
+            strokeWidth="1.2"
+            style={{ animation: reducedMotion ? "none" : "fluxy-think-bubble 1.5s ease 0.6s infinite" }}
+          />
+          {[0, 1, 2].map((i) => (
+            <circle
+              key={i}
+              cx={470 + i * 10}
+              cy="204"
+              r="2.5"
+              fill="var(--flux-secondary)"
+              style={{ animation: reducedMotion ? "none" : `fluxy-think-bubble 1s ease ${i * 0.25}s infinite` }}
+            />
+          ))}
+        </g>
+      ) : null}
+
+      {isSleeping &&
+        [0, 1, 2].map((i) => (
+          <text
+            key={i}
+            x={410 + i * 22}
+            y={270 - i * 28}
+            fill="var(--flux-fluxy-fur-light)"
+            fontSize={16 - i * 3}
+            style={{
+              fontFamily: "var(--font-fluxy), Space Grotesk, sans-serif",
+              fontWeight: 700,
+              animation: reducedMotion ? "none" : `fluxy-z-float 3s ease ${i * 0.9}s infinite`,
+            }}
+          >
+            z
+          </text>
+        ))}
+
+      <ellipse cx="340" cy="310" rx="105" ry="100" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+      <path
+        d="M278 305 Q290 275,340 260 Q390 275,402 305 Q398 370,340 398 Q282 370,278 305Z"
+        fill="var(--flux-fluxy-face)"
+        stroke="var(--flux-fluxy-face-muted)"
+        strokeWidth="0.5"
+      />
+
+      <g
+        style={{
+          transformOrigin: "268px 265px",
+          animation: reducedMotion || (!isWaving && !hovered) ? "none" : "fluxy-ear-perk 1s ease infinite",
+        }}
+      >
+        <path d="M268 265 L240 148 L310 240Z" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+        <path d="M275 255 L252 172 L302 238Z" fill="var(--flux-fluxy-fur-light)" />
+        <path d="M244 158 L240 148 L254 168Z" fill="var(--flux-secondary)" />
+      </g>
+      <g
+        style={{
+          transformOrigin: "412px 265px",
+          animation: reducedMotion || (!isWaving && !hovered) ? "none" : "fluxy-ear-perk-r 1s ease 0.15s infinite",
+        }}
+      >
+        <path d="M412 265 L440 148 L370 240Z" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+        <path d="M405 255 L428 172 L378 238Z" fill="var(--flux-fluxy-fur-light)" />
+        <path d="M436 158 L440 148 L426 168Z" fill="var(--flux-secondary)" />
+      </g>
+
+      {isSleeping ? (
+        <>
+          <path d="M296 314 Q316 304,336 314" fill="none" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M344 314 Q364 304,384 314" fill="none" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="2.5" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          <ellipse
+            cx="316"
+            cy="312"
+            rx="20"
+            ry={blinkOpen ? 22 : 2}
+            fill="#fff"
+            stroke="var(--flux-fluxy-fur-dark)"
+            strokeWidth="0.8"
+            style={{ transition: "ry 0.1s" }}
+          />
+          {blinkOpen ? (
+            <>
+              <ellipse cx="320" cy="310" rx="11" ry="13" fill="var(--flux-fluxy-eye)" />
+              <circle cx="324" cy="305" r="5" fill="#fff" />
+              <circle cx="314" cy="316" r="2.5" fill="#fff" opacity="0.5" />
+              <circle cx="326" cy="302" r="1.2" fill="var(--flux-secondary)" opacity="0.7" />
+            </>
+          ) : null}
+          <ellipse
+            cx="364"
+            cy="312"
+            rx="20"
+            ry={blinkOpen ? 22 : 2}
+            fill="#fff"
+            stroke="var(--flux-fluxy-fur-dark)"
+            strokeWidth="0.8"
+            style={{ transition: "ry 0.1s" }}
+          />
+          {blinkOpen ? (
+            <>
+              <ellipse cx="368" cy="310" rx="11" ry="13" fill="var(--flux-fluxy-eye)" />
+              <circle cx="372" cy="305" r="5" fill="#fff" />
+              <circle cx="362" cy="316" r="2.5" fill="#fff" opacity="0.5" />
+              <circle cx="374" cy="302" r="1.2" fill="var(--flux-secondary)" opacity="0.7" />
+            </>
+          ) : null}
+        </>
+      )}
+
+      {!isSleeping ? (
+        <>
+          <path
+            d={isCelebrating ? "M296 286 Q310 276,332 282" : "M298 290 Q312 282,330 286"}
+            fill="none"
+            stroke="var(--flux-fluxy-fur-dark)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d={isCelebrating ? "M348 282 Q370 276,384 286" : "M350 286 Q368 282,382 290"}
+            fill="none"
+            stroke="var(--flux-fluxy-fur-dark)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </>
+      ) : null}
+
+      <circle
+        cx="280"
+        cy="340"
+        r="14"
+        fill="var(--flux-accent)"
+        opacity="0.35"
+        style={{
+          animation:
+            reducedMotion || (!hovered && !isCelebrating && !isWaving)
+              ? "none"
+              : "fluxy-cheek-blush 1.5s ease infinite",
+        }}
+      />
+      <circle
+        cx="400"
+        cy="340"
+        r="14"
+        fill="var(--flux-accent)"
+        opacity="0.35"
+        style={{
+          animation:
+            reducedMotion || (!hovered && !isCelebrating && !isWaving)
+              ? "none"
+              : "fluxy-cheek-blush 1.5s ease 0.3s infinite",
+        }}
+      />
+
+      <ellipse cx="340" cy="348" rx="7" ry="5" fill="var(--flux-fluxy-eye)" />
+      <circle cx="338" cy="346" r="1.5" fill="var(--flux-fluxy-fur-dark)" opacity="0.35" />
+
+      {isTalking ? (
+        <ellipse
+          cx="340"
+          cy="366"
+          rx="8"
+          ry={mouthOpen}
+          fill="var(--flux-fluxy-fur-dark)"
+          stroke="#3d2ba8"
+          strokeWidth="0.8"
+        />
+      ) : isCelebrating ? (
+        <path d="M322 360 Q340 382,358 360" fill="var(--flux-fluxy-fur-dark)" stroke="#3d2ba8" strokeWidth="0.8" />
+      ) : isSleeping ? (
+        <path d="M332 362 Q340 368,348 362" fill="none" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1.5" strokeLinecap="round" />
+      ) : (
+        <>
+          <path d="M328 362 Q340 374,352 362" fill="none" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M348 362 L350 368 L352 362" fill="var(--flux-fluxy-face)" stroke="var(--flux-fluxy-face-muted)" strokeWidth="0.5" />
+        </>
+      )}
+
+      <line x1="282" y1="345" x2="252" y2="338" stroke="var(--flux-fluxy-fur-light)" strokeWidth="0.8" opacity="0.35" />
+      <line x1="282" y1="353" x2="250" y2="355" stroke="var(--flux-fluxy-fur-light)" strokeWidth="0.8" opacity="0.3" />
+      <line x1="398" y1="345" x2="428" y2="338" stroke="var(--flux-fluxy-fur-light)" strokeWidth="0.8" opacity="0.35" />
+      <line x1="398" y1="353" x2="430" y2="355" stroke="var(--flux-fluxy-fur-light)" strokeWidth="0.8" opacity="0.3" />
+
+      <g style={{ animation: isThinking && !reducedMotion ? "fluxy-glasses-glow 2.5s ease infinite" : "none" }}>
+        <circle cx="316" cy="312" r="26" fill="none" stroke="var(--flux-secondary)" strokeWidth="1.8" />
+        <circle cx="364" cy="312" r="26" fill="none" stroke="var(--flux-secondary)" strokeWidth="1.8" />
+        <line x1="342" y1="312" x2="338" y2="312" stroke="var(--flux-secondary)" strokeWidth="1.8" />
+        <line x1="290" y1="308" x2="272" y2="296" stroke="var(--flux-secondary)" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="390" y1="308" x2="408" y2="296" stroke="var(--flux-secondary)" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {isCelebrating ? (
+        <>
+          <StarSparkle cx={210} cy={240} delay={0} size={1.2} reducedMotion={reducedMotion} />
+          <StarSparkle cx={470} cy={220} delay={0.5} size={1} reducedMotion={reducedMotion} />
+          <StarSparkle cx={250} cy={180} delay={1} size={0.8} reducedMotion={reducedMotion} />
+          <StarSparkle cx={440} cy={170} delay={1.5} size={1.1} reducedMotion={reducedMotion} />
+        </>
+      ) : null}
+
+      <ellipse cx="310" cy="546" rx="26" ry="14" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="0.8" />
+      <ellipse cx="312" cy="548" rx="15" ry="8" fill="var(--flux-fluxy-face)" />
+      <circle cx="305" cy="547" r="2.5" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+      <circle cx="318" cy="547" r="2.5" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+
+      <ellipse cx="370" cy="546" rx="26" ry="14" fill="var(--flux-fluxy-fur)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="0.8" />
+      <ellipse cx="368" cy="548" rx="15" ry="8" fill="var(--flux-fluxy-face)" />
+      <circle cx="362" cy="547" r="2.5" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+      <circle cx="375" cy="547" r="2.5" fill="var(--flux-fluxy-face-muted)" opacity="0.5" />
+
+      {!isSleeping ? (
+        <g opacity="0.35">
+          <line x1="155" y1="385" x2="200" y2="385" stroke="var(--flux-secondary)" strokeWidth="2" strokeLinecap="round" />
+          <line x1="145" y1="405" x2="195" y2="405" stroke="var(--flux-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="160" y1="425" x2="198" y2="425" stroke="var(--flux-secondary)" strokeWidth="1" strokeLinecap="round" />
+        </g>
+      ) : null}
+    </svg>
+  );
 
   return (
     <span
@@ -136,298 +565,11 @@ export function FluxyAvatar({
       data-fluxy-motion={motionAttr}
       title={title}
       aria-hidden={true}
+      onMouseEnter={interactive ? () => setHovered(true) : undefined}
+      onMouseLeave={interactive ? () => setHovered(false) : undefined}
+      style={interactive ? { cursor: "pointer", transition: "transform 0.3s ease", transform: hoverScale } : undefined}
     >
-      <svg
-        width={w}
-        viewBox="0 0 680 620"
-        className="max-w-full overflow-visible"
-        style={{
-          animation: breatheAnim,
-          filter: isSleeping
-            ? "brightness(0.7) saturate(0.7)"
-            : isCelebrating
-              ? "brightness(1.08) saturate(1.15)"
-              : "none",
-          transition: "filter 0.6s ease",
-        display: "block",
-        height: "auto",
-        }}
-      >
-        <FluxyConfetti active={Boolean(showConfetti && isCelebrating && !reducedMotion)} />
-
-        <circle
-          cx="340"
-          cy="300"
-          r="200"
-          fill="var(--flux-primary)"
-          opacity={isThinking ? 0.1 : 0.04}
-          style={{ transition: "opacity 0.5s" }}
-        >
-          {isThinking && !reducedMotion ? (
-            <animate attributeName="opacity" values="0.04;0.12;0.04" dur="2s" repeatCount="indefinite" />
-          ) : null}
-        </circle>
-
-        <g
-          style={{
-            transformOrigin: "220px 480px",
-            animation: reducedMotion
-              ? "none"
-              : isCelebrating
-                ? "fluxy-tail-wag-fast 0.4s ease-in-out infinite"
-                : isSleeping
-                  ? "none"
-                  : "fluxy-tail-wag 1.8s ease-in-out infinite",
-          }}
-        >
-          <path
-            d="M215 480 Q150 390, 170 320 Q180 290, 210 310 Q240 340, 230 400 Q225 440, 220 470 Z"
-            fill="var(--flux-primary)"
-            stroke="var(--flux-primary-dark)"
-            strokeWidth="1.2"
-          />
-          <path
-            d="M218 470 Q170 400, 190 340 Q200 315, 215 330 Q230 355, 225 410 Z"
-            fill="var(--flux-primary-light)"
-            opacity="0.5"
-          />
-          <path d="M172 325 Q165 300, 180 295 Q190 300, 185 315 Z" fill="var(--flux-secondary)" />
-        </g>
-
-        <ellipse cx="340" cy="470" rx="70" ry="62" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <ellipse cx="340" cy="478" rx="44" ry="40" fill="var(--flux-text)" opacity="0.92" />
-
-        <path
-          d="M280 438 Q258 448, 254 468 Q252 484, 268 486"
-          fill="var(--flux-primary)"
-          stroke="var(--flux-primary-dark)"
-          strokeWidth="1.2"
-        />
-        <ellipse
-          cx="268"
-          cy="488"
-          rx="11"
-          ry="7"
-          fill="var(--flux-text)"
-          opacity="0.9"
-          stroke="var(--flux-text-muted)"
-          strokeWidth="0.5"
-        />
-
-        <g
-          style={{
-            transformOrigin: "400px 428px",
-            animation: reducedMotion || !isWaving ? "none" : "fluxy-wave-arm 0.6s ease-in-out infinite",
-          }}
-        >
-          <path
-            d="M400 428 Q422 412, 436 394 Q440 388, 434 385"
-            fill="var(--flux-primary)"
-            stroke="var(--flux-primary-dark)"
-            strokeWidth="1.2"
-          />
-          <ellipse
-            cx="435"
-            cy="384"
-            rx="10"
-            ry="7"
-            fill="var(--flux-text)"
-            opacity="0.9"
-            stroke="var(--flux-text-muted)"
-            strokeWidth="0.5"
-          />
-        </g>
-
-        {!isSleeping && (
-          <g transform="translate(444, 352)" style={{ animation: reducedMotion ? "none" : "fluxy-float-card 3s ease-in-out infinite" }}>
-            <rect x="0" y="0" width="44" height="32" rx="4" fill="var(--flux-surface-mid)" stroke="var(--flux-secondary)" strokeWidth="1" />
-            <rect x="5" y="5" width="18" height="3" rx="1" fill="var(--flux-secondary)" opacity="0.8" />
-            <rect x="5" y="11" width="34" height="2" rx="1" fill="var(--flux-primary)" opacity="0.5" />
-            <rect x="5" y="16" width="28" height="2" rx="1" fill="var(--flux-primary)" opacity="0.4" />
-            <rect x="5" y="23" width="10" height="4" rx="2" fill="var(--flux-accent)" opacity="0.6" />
-            <path
-              d="M32 24 L35 27 L40 21"
-              fill="none"
-              stroke="var(--flux-accent)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
-        )}
-
-        {isThinking && (
-          <g transform="translate(420, 230)">
-            <g style={{ animation: reducedMotion ? "none" : "fluxy-gear-spin 3s linear infinite", transformOrigin: "0px 0px" }}>
-              <circle cx="0" cy="0" r="18" fill="none" stroke="var(--flux-secondary)" strokeWidth="2" strokeDasharray="8 4" opacity="0.7" />
-              <circle cx="0" cy="0" r="6" fill="var(--flux-secondary)" opacity="0.5" />
-            </g>
-            <g
-              style={{
-                animation: reducedMotion ? "none" : "fluxy-gear-spin 2s linear infinite reverse",
-                transformOrigin: "22px -14px",
-              }}
-            >
-              <circle cx="22" cy="-14" r="12" fill="none" stroke="var(--flux-accent)" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.6" />
-              <circle cx="22" cy="-14" r="4" fill="var(--flux-accent)" opacity="0.4" />
-            </g>
-            {[0, 1, 2].map((i) => (
-              <circle
-                key={i}
-                cx={-30 + i * 14}
-                cy={30}
-                r="3"
-                fill="var(--flux-secondary)"
-                opacity="0.5"
-                style={{
-                  animation: reducedMotion ? "none" : `fluxy-think-dots 1.2s ease ${i * 0.3}s infinite`,
-                }}
-              />
-            ))}
-          </g>
-        )}
-
-        {isSleeping &&
-          [0, 1, 2].map((i) => (
-            <text
-              key={i}
-              x={400 + i * 25}
-              y={280 - i * 25}
-              fill="var(--flux-primary-light)"
-              fontSize={14 - i * 2}
-              fontFamily="ui-monospace, monospace"
-              fontWeight="600"
-              opacity="0.7"
-              style={{
-                animation: reducedMotion ? "none" : `fluxy-z-float 2.5s ease ${i * 0.8}s infinite`,
-              }}
-            >
-              Z
-            </text>
-          ))}
-
-        <ellipse cx="340" cy="330" rx="88" ry="80" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <path
-          d="M290 322 Q302 298, 340 286 Q378 298, 390 322 Q386 376, 340 400 Q294 376, 290 322 Z"
-          fill="var(--flux-text)"
-          opacity="0.92"
-          stroke="var(--flux-text-muted)"
-          strokeWidth="0.5"
-        />
-
-        <path d="M264 278 L240 168 L298 258 Z" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <path d="M270 270 L250 188 L290 256 Z" fill="var(--flux-primary-light)" />
-        <path d="M416 278 L440 168 L382 258 Z" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <path d="M410 270 L430 188 L390 256 Z" fill="var(--flux-primary-light)" />
-        <path d="M242 175 L240 168 L248 178 Z" fill="var(--flux-secondary)" />
-        <path d="M438 175 L440 168 L432 178 Z" fill="var(--flux-secondary)" />
-
-        {isSleeping ? (
-          <>
-            <path d="M302 332 Q316 326, 330 332" fill="none" stroke="var(--flux-primary-dark)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M350 332 Q364 326, 378 332" fill="none" stroke="var(--flux-primary-dark)" strokeWidth="2" strokeLinecap="round" />
-          </>
-        ) : (
-          <g style={{ transition: "transform 0.15s" }}>
-            <ellipse
-              cx="316"
-              cy="330"
-              rx="13"
-              ry={blinkOpen ? 14 : 1.5}
-              fill="var(--flux-text-on-primary)"
-              stroke="var(--flux-primary-dark)"
-              strokeWidth="0.8"
-              style={{ transition: "ry 0.1s" }}
-            />
-            {blinkOpen ? (
-              <>
-                <ellipse cx="319" cy="328" rx="7.5" ry="8.5" fill="var(--flux-surface-mid)" />
-                <circle cx="321" cy="325" r="2.8" fill="var(--flux-text-on-primary)" />
-              </>
-            ) : null}
-            <ellipse
-              cx="364"
-              cy="330"
-              rx="13"
-              ry={blinkOpen ? 14 : 1.5}
-              fill="var(--flux-text-on-primary)"
-              stroke="var(--flux-primary-dark)"
-              strokeWidth="0.8"
-              style={{ transition: "ry 0.1s" }}
-            />
-            {blinkOpen ? (
-              <>
-                <ellipse cx="367" cy="328" rx="7.5" ry="8.5" fill="var(--flux-surface-mid)" />
-                <circle cx="369" cy="325" r="2.8" fill="var(--flux-text-on-primary)" />
-              </>
-            ) : null}
-          </g>
-        )}
-
-        {!isSleeping && (
-          <>
-            <path d="M300 312 Q314 305, 328 309" fill="none" stroke="var(--flux-primary-dark)" strokeWidth="2" strokeLinecap="round" />
-            <path d="M352 309 Q366 305, 380 312" fill="none" stroke="var(--flux-primary-dark)" strokeWidth="2" strokeLinecap="round" />
-          </>
-        )}
-
-        <ellipse cx="340" cy="360" rx="8" ry="5.5" fill="var(--flux-surface-mid)" />
-        <circle cx="337" cy="358" r="1.5" fill="var(--flux-primary-dark)" opacity="0.4" />
-
-        <path
-          d={isTalking ? mouthPaths[mouthFrame] : isCelebrating ? "M325 370 Q340 388, 355 370" : "M330 372 Q340 381, 354 371"}
-          fill={isTalking || isCelebrating ? "var(--flux-primary-dark)" : "none"}
-          stroke="var(--flux-primary-dark)"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-
-        <line x1="288" y1="358" x2="254" y2="350" stroke="var(--flux-primary-light)" strokeWidth="0.8" opacity="0.4" />
-        <line x1="288" y1="366" x2="252" y2="368" stroke="var(--flux-primary-light)" strokeWidth="0.8" opacity="0.35" />
-        <line x1="392" y1="358" x2="426" y2="350" stroke="var(--flux-primary-light)" strokeWidth="0.8" opacity="0.4" />
-        <line x1="392" y1="366" x2="428" y2="368" stroke="var(--flux-primary-light)" strokeWidth="0.8" opacity="0.35" />
-
-        <g style={{ animation: isThinking && !reducedMotion ? "fluxy-glasses-glow 2s ease infinite" : "none" }}>
-          <rect x="296" y="317" width="38" height="28" rx="5" fill="none" stroke="var(--flux-secondary)" strokeWidth="1.6" />
-          <rect x="346" y="317" width="38" height="28" rx="5" fill="none" stroke="var(--flux-secondary)" strokeWidth="1.6" />
-          <line x1="334" y1="331" x2="346" y2="331" stroke="var(--flux-secondary)" strokeWidth="1.6" />
-          <line x1="296" y1="326" x2="278" y2="316" stroke="var(--flux-secondary)" strokeWidth="1.6" strokeLinecap="round" />
-          <line x1="384" y1="326" x2="402" y2="316" stroke="var(--flux-secondary)" strokeWidth="1.6" strokeLinecap="round" />
-        </g>
-
-        {isCelebrating &&
-          [
-            { cx: 220, cy: 260, d: 0 },
-            { cx: 460, cy: 280, d: 0.4 },
-            { cx: 280, cy: 200, d: 0.8 },
-            { cx: 420, cy: 220, d: 1.2 },
-          ].map((s, i) => (
-            <g
-              key={i}
-              style={{
-                animation: reducedMotion ? "none" : `fluxy-sparkle 1.2s ease ${s.d}s infinite`,
-              }}
-            >
-              <line x1={s.cx - 6} y1={s.cy} x2={s.cx + 6} y2={s.cy} stroke="var(--flux-accent)" strokeWidth="2" strokeLinecap="round" />
-              <line x1={s.cx} y1={s.cy - 6} x2={s.cx} y2={s.cy + 6} stroke="var(--flux-accent)" strokeWidth="2" strokeLinecap="round" />
-            </g>
-          ))}
-
-        <path d="M312 528 Q307 552, 302 566 Q300 574, 307 576" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <ellipse cx="312" cy="578" rx="21" ry="9" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="0.8" />
-        <ellipse cx="314" cy="579" rx="11" ry="5" fill="var(--flux-text)" opacity="0.9" />
-        <path d="M368 528 Q373 552, 376 566 Q378 574, 372 576" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="1.2" />
-        <ellipse cx="372" cy="578" rx="21" ry="9" fill="var(--flux-primary)" stroke="var(--flux-primary-dark)" strokeWidth="0.8" />
-        <ellipse cx="370" cy="579" rx="11" ry="5" fill="var(--flux-text)" opacity="0.9" />
-
-        {!isSleeping && (
-          <g opacity={isCelebrating ? 0.7 : 0.4}>
-            <line x1="168" y1="395" x2="212" y2="395" stroke="var(--flux-secondary)" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
-            <line x1="158" y1="415" x2="206" y2="415" stroke="var(--flux-secondary)" strokeWidth="1.3" strokeLinecap="round" opacity="0.35" />
-            <line x1="173" y1="435" x2="210" y2="435" stroke="var(--flux-secondary)" strokeWidth="1" strokeLinecap="round" opacity="0.25" />
-          </g>
-        )}
-      </svg>
+      {svg}
     </span>
   );
 }
