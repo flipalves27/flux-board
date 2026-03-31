@@ -10,42 +10,40 @@ type LandingFooterCtaProps = {
 };
 
 const footerPricingLink =
-  "font-semibold text-[var(--flux-primary-light)] underline decoration-transparent underline-offset-4 transition-colors hover:text-[var(--flux-text)] hover:decoration-[var(--flux-primary-light)]";
+  "btn-ghost inline-flex items-center justify-center px-6 py-3 text-[15px] font-semibold";
 
 export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCtaProps) {
   const t = useTranslations("landing");
 
   return (
-    <section className="tone-cta home-landing-reveal relative mt-12 overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] px-5 py-10 text-center md:mt-16 md:px-10 md:py-12">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{ background: "radial-gradient(ellipse 70% 80% at 50% 120%, var(--flux-primary-alpha-35), transparent)" }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-0 top-0 h-64 w-64 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(circle, var(--flux-secondary), transparent)" }}
-        aria-hidden
-      />
-      <div className="relative">
-        <p className="hero-chip mx-auto mb-4 inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">{t("pricing.trialNote")}</p>
-        <h2 className="font-display text-2xl font-bold md:text-3xl">{t("cta.heading")}</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("cta.description")}</p>
-        <div className="mt-8 flex flex-col items-center gap-4">
-          {user ? (
-            <Link href={`${localeRoot}/boards`} className="btn-primary px-8 py-3 text-[15px]">
-              {t("cta.actions.loggedIn", { appName })}
-            </Link>
-          ) : (
-            <>
-              <Link href={`${localeRoot}/login`} className="btn-primary px-8 py-3 text-[15px]">
-                {t("cta.actions.loggedOutPrimary")}
+    <section className="home-landing-reveal relative py-12 md:py-14" aria-labelledby="landing-footer-cta-heading">
+      <div className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.6)] px-6 py-14 text-center backdrop-blur-sm md:px-10 md:py-14">
+        <div
+          className="pointer-events-none absolute bottom-[-40%] left-1/2 h-[200px] w-[80%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(108,92,231,0.25),transparent_70%)] blur-[60px]"
+          aria-hidden
+        />
+        <div className="relative">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">{t("cta.trialChip")}</p>
+          <h2 id="landing-footer-cta-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
+            {t("cta.heading")}
+          </h2>
+          <p className="mx-auto mt-4 max-w-[520px] text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("cta.description")}</p>
+          <div className="relative mt-7 flex flex-wrap items-center justify-center gap-3">
+            {user ? (
+              <Link href={`${localeRoot}/boards`} className="btn-primary px-9 py-3.5 text-[15px]">
+                {t("cta.actions.loggedIn", { appName })}
               </Link>
-              <a href="#pricing" className={`${footerPricingLink} text-[15px]`}>
-                {t("hero.pricingLink")}
-              </a>
-            </>
-          )}
+            ) : (
+              <>
+                <Link href={`${localeRoot}/login`} className="btn-primary px-9 py-3.5 text-[15px]">
+                  {t("cta.actions.loggedOutPrimary")}
+                </Link>
+                <a href="#pricing" className={footerPricingLink}>
+                  {t("cta.pricingAnchor")}
+                </a>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>

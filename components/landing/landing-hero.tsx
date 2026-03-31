@@ -3,127 +3,129 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
-import { LANDING_OPEN_FLUXY_CHAT_EVENT } from "@/lib/landing-open-fluxy-chat";
 import { KanbanMock } from "./landing-kanban-mock";
 
 type LandingHeroProps = {
   localeRoot: string;
-  appName: string;
   user: unknown;
 };
 
-export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
+function ArrowRightIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function LandingHero({ localeRoot, user }: LandingHeroProps) {
   const t = useTranslations("landing");
   const kanbanCols = [
-    { title: t("kanbanMock.columns.prospecting"), cards: [{ w: "78%" }, { w: "62%" }] },
-    { title: t("kanbanMock.columns.proposal"), cards: [{ w: "88%" }, { w: "55%" }, { w: "70%" }] },
-    { title: t("kanbanMock.columns.closing"), cards: [{ w: "92%" }, { w: "68%" }] },
+    {
+      title: t("kanbanMock.columns.prospecting"),
+      cards: [
+        {
+          w: "78%",
+          barClassName: "bg-[rgba(108,92,231,0.4)]",
+          tag: { label: t("kanbanMock.tags.high"), className: "bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)]" },
+        },
+        { w: "62%", barClassName: "bg-[rgba(0,210,211,0.35)]" },
+      ],
+    },
+    {
+      title: t("kanbanMock.columns.proposal"),
+      cards: [
+        {
+          w: "88%",
+          barClassName: "bg-[rgba(253,167,223,0.35)]",
+          tag: { label: t("kanbanMock.tags.review"), className: "bg-[rgba(255,217,61,0.12)] text-[var(--flux-warning)]" },
+        },
+        { w: "55%", barClassName: "bg-[rgba(108,92,231,0.3)]" },
+        { w: "70%", barClassName: "bg-[rgba(0,210,211,0.3)]" },
+      ],
+    },
+    {
+      title: t("kanbanMock.columns.closing"),
+      cards: [
+        {
+          w: "92%",
+          barClassName: "bg-[rgba(0,230,118,0.3)]",
+          tag: { label: t("kanbanMock.tags.won"), className: "bg-[rgba(0,230,118,0.12)] text-[var(--flux-success)]" },
+        },
+        { w: "68%", barClassName: "bg-[rgba(0,230,118,0.25)]" },
+      ],
+    },
   ];
-  const heroStats = [
-    { k: t("hero.stats.priority.label"), v: t("hero.stats.priority.value") },
-    { k: t("hero.stats.context.label"), v: t("hero.stats.context.value") },
-    { k: t("hero.stats.portfolio.label"), v: t("hero.stats.portfolio.value") },
+  const heroMetrics = [
+    { val: t("hero.metrics.m1.value"), label: t("hero.metrics.m1.label") },
+    { val: t("hero.metrics.m2.value"), label: t("hero.metrics.m2.label") },
+    { val: t("hero.metrics.m3.value"), label: t("hero.metrics.m3.label") },
   ];
 
-  const ctaSubtle =
-    "font-semibold text-[var(--flux-primary-light)] underline decoration-transparent underline-offset-4 transition-colors hover:text-[var(--flux-text)] hover:decoration-[var(--flux-primary-light)]";
-
-  const openFluxyChat = () => {
-    window.dispatchEvent(new CustomEvent(LANDING_OPEN_FLUXY_CHAT_EVENT));
-  };
+  const primaryClass =
+    "btn-primary landing-btn-shimmer relative inline-flex w-full items-center justify-center gap-2 px-8 py-3.5 text-center text-[15px] sm:w-auto";
 
   return (
-    <section className="home-landing-reveal mt-3 md:mt-6" aria-labelledby="landing-hero-heading">
-      <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+    <section className="home-landing-reveal pt-8 md:pt-12 lg:pt-14" aria-labelledby="landing-hero-heading">
+      <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <div className="min-w-0">
-          <p className="hero-chip inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">{t("hero.chip")}</p>
+          <div className="hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(0,210,211,0.25)] bg-[rgba(0,210,211,0.06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--flux-secondary)] sm:text-xs">
+            <span className="home-landing-chip-dot h-2 w-2 shrink-0 rounded-full bg-[var(--flux-secondary)]" aria-hidden />
+            {t("hero.chip")}
+          </div>
           <h1
             id="landing-hero-heading"
-            className="mt-3 font-display text-[1.85rem] font-bold leading-[1.1] tracking-[-0.02em] sm:text-3xl md:mt-4 md:text-4xl lg:text-[2.85rem] lg:leading-[1.06]"
+            className="font-display text-[clamp(2rem,5vw,3.4rem)] font-extrabold leading-[1.08] tracking-[-0.03em]"
           >
-            {t("hero.title.before")}{" "}
-            <span className="bg-gradient-to-r from-[var(--flux-secondary-light)] via-[var(--flux-primary-light)] to-[var(--flux-accent)] bg-clip-text text-transparent">
+            {t("hero.title.line1")}
+            <br />
+            <span className="bg-gradient-to-br from-[var(--flux-secondary-light)] via-[var(--flux-primary-light)] to-[var(--flux-accent)] bg-clip-text text-transparent">
               {t("hero.title.highlight")}
-            </span>{" "}
-            {t("hero.title.after")}
+            </span>
           </h1>
-          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("hero.description", { appName })}</p>
-          <div className="mt-5 flex flex-col gap-3 rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-surface-card)]/55 px-4 py-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="shrink-0 rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-void-nested-36)] p-0.5 shadow-[var(--flux-shadow-primary-dot-sm)]" aria-hidden>
-                <FluxyAvatar state="waving" size="compact" className="scale-90" />
-              </div>
-              <p className="text-sm leading-snug text-[var(--flux-text-muted)]">{t("hero.fluxyTagline")}</p>
-            </div>
-            <button type="button" className="btn-secondary w-full shrink-0 px-4 py-2 text-sm sm:w-auto" onClick={openFluxyChat}>
-              {t("hero.fluxyCta")}
-            </button>
-          </div>
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+          <p className="mt-5 max-w-[520px] text-base leading-[1.7] text-[var(--flux-text-muted)]">{t("hero.description")}</p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             {user ? (
-              <Link
-                href={`${localeRoot}/boards`}
-                className="btn-primary landing-btn-shimmer relative w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
-              >
+              <Link href={`${localeRoot}/boards`} className={primaryClass}>
                 {t("hero.primary.loggedIn")}
+                <ArrowRightIcon className="shrink-0" />
               </Link>
             ) : (
-              <Link
-                href={`${localeRoot}/login`}
-                className="btn-primary landing-btn-shimmer relative w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
-              >
+              <Link href={`${localeRoot}/login`} className={primaryClass}>
                 {t("hero.primary.loggedOut")}
+                <ArrowRightIcon className="shrink-0" />
               </Link>
             )}
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm sm:justify-start sm:text-[15px]">
-              <a href="#platform" className={ctaSubtle}>
-                {t("hero.secondary")}
-              </a>
-              <span className="text-[var(--flux-text-muted)]" aria-hidden>
-                ·
-              </span>
-              <a href="#pricing" className={ctaSubtle}>
-                {t("hero.pricingLink")}
-              </a>
-            </div>
+            <a href="#platform" className="btn-ghost inline-flex w-full justify-center px-6 py-3 text-[15px] sm:w-auto">
+              {t("hero.secondaryPlatform")}
+            </a>
           </div>
-          <p className="mt-4 text-xs leading-relaxed text-[var(--flux-text-muted)] md:text-sm">{t("hero.quickLine")}</p>
+          <div className="mt-8 flex flex-wrap gap-6 md:gap-8">
+            {heroMetrics.map((m) => (
+              <div key={m.label} className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-display text-xl font-bold text-[var(--flux-primary-light)]">{m.val}</span>
+                <span className="text-[11px] tracking-[0.03em] text-[var(--flux-text-muted)]">{m.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
           <div
-            className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl"
+            className="pointer-events-none absolute inset-[-40px] rounded-full opacity-90 blur-[40px]"
             style={{
               background:
-                "radial-gradient(ellipse at 30% 30%, var(--flux-primary-alpha-35), transparent 55%), radial-gradient(ellipse at 70% 60%, var(--flux-secondary-alpha-25), transparent 50%)",
+                "radial-gradient(ellipse at 40% 40%, rgba(108,92,231,0.2), transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(0,210,211,0.12), transparent 55%)",
             }}
             aria-hidden
           />
-          <div
-            className="pointer-events-none absolute -inset-1 rounded-[calc(var(--flux-rad-xl)+6px)] opacity-75 blur-2xl"
-            style={{ background: "var(--flux-gradient-landing-cta)" }}
-            aria-hidden
-          />
+          <div className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl" aria-hidden />
           <div className="relative">
-            <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
-              <div
-                className="absolute -right-1 -top-2 z-10 flex items-center rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-surface-card)]/92 px-1.5 py-1 shadow-md backdrop-blur-sm sm:-right-2 sm:-top-3 sm:px-2"
-                title={t("hero.fluxyPeekLabel")}
-              >
-                <FluxyAvatar state="idle" size="fab" className="scale-90 sm:scale-110" />
-              </div>
-              <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
+            <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[rgba(0,210,211,0.3)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_rgba(0,210,211,0.2)] sm:h-12 sm:w-12">
+              <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-1.5 text-center sm:gap-2">
-              {heroStats.map((row) => (
-                <div
-                  key={row.k}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/85 px-1 py-1.5 backdrop-blur-sm sm:px-1.5 md:px-2 md:py-2"
-                >
-                  <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)] md:text-[10px]">{row.k}</p>
-                  <p className="mt-0.5 font-display text-[11px] font-bold leading-tight text-[var(--flux-text)] md:text-sm">{row.v}</p>
-                </div>
-              ))}
+            <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
+              <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
             </div>
           </div>
         </div>

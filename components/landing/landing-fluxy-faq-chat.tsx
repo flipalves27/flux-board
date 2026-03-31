@@ -187,16 +187,16 @@ export function LandingFluxyFaqChat() {
       <button
         type="button"
         onClick={() => setPanelOpen((o) => !o)}
-        className="group flex items-center gap-3 rounded-full border-2 border-[var(--flux-secondary-alpha-38)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-28),var(--flux-secondary-alpha-18))] py-2 pl-2 pr-5 shadow-[var(--flux-shadow-primary-medium)] backdrop-blur-md motion-safe:transition-transform motion-safe:duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        className="group flex items-center gap-3 rounded-full border-2 border-[rgba(0,210,211,0.25)] bg-gradient-to-br from-[rgba(108,92,231,0.2)] to-[rgba(0,210,211,0.1)] py-2.5 pl-2.5 pr-6 shadow-[0_8px_32px_rgba(108,92,231,0.25)] backdrop-blur-md motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] hover:shadow-[0_12px_40px_rgba(108,92,231,0.35)] active:scale-[0.98]"
         aria-expanded={panelOpen}
         aria-label={panelOpen ? t("fluxyChat.close") : t("fluxyChat.open")}
       >
-        <span className="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] shadow-[var(--flux-shadow-primary-dot-sm)]">
-          <FluxyAvatar state={panelOpen ? "waving" : "idle"} size="header" className="scale-95" />
+        <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[rgba(0,210,211,0.2)] bg-[rgba(13,11,26,0.6)] shadow-[0_0_12px_rgba(108,92,231,0.4)] sm:h-12 sm:w-12">
+          <FluxyAvatar state={panelOpen ? "waving" : "idle"} size="header" className="scale-90" />
         </span>
         <span className="hidden text-left sm:block">
-          <span className="block font-display text-sm font-bold text-[var(--flux-text)]">{t("fluxyChat.title")}</span>
-          <span className="block text-[11px] text-[var(--flux-text-muted)]">{t("fluxyChat.subtitle")}</span>
+          <span className="block font-display text-[13px] font-semibold text-[var(--flux-text)]">{t("fluxyChat.fabTitle")}</span>
+          <span className="block text-[10px] text-[var(--flux-text-muted)]">{t("fluxyChat.fabSubtitle")}</span>
         </span>
       </button>
     </div>

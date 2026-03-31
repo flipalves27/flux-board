@@ -1006,7 +1006,7 @@
   },
   "landing": {
     "meta": {
-      "title": "Flux-Board — Kanban, IA e metas no mesmo fluxo",
+      "title": "Flux Board — Organize o fluxo. Entregue o que importa.",
       "description": "Entregue com clareza: Kanban profissional, Fluxy IA, Flux Goals, Flux Reports, Flux Forms públicos e Board Copilot nos planos superiores. Comece grátis—trial de 14 dias no Pro/Business, sem cartão.",
       "productName": "Flux-Board",
       "jsonLdDescription": "Plataforma Kanban com copiloto IA, OKRs, relatórios, formulários e visão de portfólio para times que querem um ritmo só do pedido à entrega."
@@ -1029,52 +1029,53 @@
     "actions": {
       "openDashboardLoggedIn": "Abrir painel",
       "signIn": "Entrar",
-      "getStarted": "Começar"
+      "getStarted": "Começar grátis"
     },
     "hero": {
-      "chip": "Kanban · Fluxy IA · Metas · Relatórios · Forms",
+      "chip": "Kanban · IA · Metas · Relatórios · Forms",
       "title": {
-        "before": "O board para times que querem",
-        "highlight": "velocidade com sinal",
-        "after": "—dos cards e forms às metas e ao portfólio."
+        "line1": "O board para times que querem",
+        "highlight": "velocidade com clareza"
       },
-      "description": "{appName} junta Kanban, Flux Goals, Flux Reports e Flux Forms com a Fluxy na mesma superfície. Prioridades iguais para todo mundo; decisões mais inteligentes—com Board Copilot quando você vai para Pro ou Business.",
+      "description": "Kanban, Flux Goals, Flux Reports e Flux Forms com a Fluxy IA na mesma superfície. Prioridades visíveis para todo mundo — decisões mais rápidas e inteligentes.",
       "primary": {
         "loggedIn": "Ir para meus boards",
-        "loggedOut": "Começar grátis—crie seu board"
+        "loggedOut": "Criar board grátis"
       },
-      "secondary": "Ver o que tem dentro",
-      "pricingLink": "Ver preços",
-      "quickLine": "Primeiro board em minutos · Trial sem cartão · Forms, OKRs, relatórios, Copilot e alertas no mesmo stack",
-      "fluxyTagline": "A Fluxy é sua copilota aqui—respostas diretas sobre trial, planos e recursos.",
-      "fluxyCta": "Falar com a Fluxy",
+      "secondaryPlatform": "Ver plataforma",
       "fluxyPeekLabel": "Fluxy no seu board",
-      "stats": {
-        "priority": {
-          "label": "Prioridade",
-          "value": "Explícito"
+      "metrics": {
+        "m1": {
+          "value": "3 min",
+          "label": "Board no ar"
         },
-        "context": {
-          "label": "Contexto",
-          "value": "Por card"
+        "m2": {
+          "value": "14 dias",
+          "label": "Trial sem cartão"
         },
-        "portfolio": {
-          "label": "Portfólio",
-          "value": "Visível"
+        "m3": {
+          "value": "∞",
+          "label": "Boards para escalar"
         }
       }
     },
     "kanbanMock": {
-      "liveView": "Visão ao vivo",
+      "liveView": "Live View",
       "columns": {
         "prospecting": "Prospecção",
         "proposal": "Proposta",
         "closing": "Fechamento"
+      },
+      "tags": {
+        "high": "Alta",
+        "review": "Em análise",
+        "won": "Ganho"
       }
     },
     "why": {
-      "heading": "Para quem entrega—e não aceita perder o fio",
-      "description": "Chega de caçar status em threads e anexos. Um board carrega prioridades, contexto estruturado e leituras prontas para liderança."
+      "sectionBadge": "Por que Flux Board",
+      "heading": "Para quem entrega — e não aceita perder o fio",
+      "description": "Chega de caçar status em threads e anexos. Um board com prioridades, contexto e leituras prontas para liderança."
     },
     "pillars": {
       "commercialPace": {
@@ -1091,8 +1092,9 @@
       }
     },
     "platform": {
-      "heading": "O que você já tem hoje na {appName}",
-      "description": "Insights, metas, relatórios, forms, contexto nos cards, portfólio, discovery e rotinas—encaixados aos planos abaixo.",
+      "sectionBadge": "Plataforma",
+      "heading": "Tudo o que você já tem hoje no {appName}",
+      "description": "Insights, metas, relatórios, forms, contexto nos cards, portfólio, discovery e rotinas — tudo encaixado.",
       "actions": {
         "openPlatform": "Abrir a plataforma"
       }
@@ -1136,8 +1138,9 @@
       }
     },
     "how": {
+      "sectionBadge": "Como funciona",
       "heading": "Três passos para o seu ritmo",
-      "description": "Você fica no ar em minutos—os padrões ajudam o time a manter a cadência semana após semana."
+      "description": "No ar em minutos — os padrões ajudam o time a manter a cadência semana após semana."
     },
     "steps": {
       "step1": {
@@ -1154,8 +1157,10 @@
       }
     },
     "cta": {
+      "trialChip": "Trial de 14 dias · Sem cartão",
       "heading": "Faça deste board o seu hoje",
       "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 14 dias e sem cartão. Seus fluxos merecem um lugar que acompanha você de verdade.",
+      "pricingAnchor": "Ver preços",
       "actions": {
         "loggedIn": "Continuar no {appName}",
         "loggedOutPrimary": "Começar grátis",
@@ -1182,12 +1187,13 @@
       "secondary": "Comparar planos"
     },
     "trust": {
-      "heading": "Segurança e seus dados",
-      "intro": "O Flux-Board é pensado para equipes que lidam com informações de clientes e pipeline. A conexão é criptografada em trânsito; o acesso segue sua organização e plano.",
-      "bullet1": "HTTPS no app web e fluxos de autenticação modernos.",
-      "bullet2": "Modelo multi-tenant para isolar os boards da sua organização.",
-      "bullet3": "A documentação do produto cobre recursos, limites e como aproveitar cada plano.",
-      "docsCta": "Ver documentação do produto"
+      "sectionBadge": "Segurança",
+      "heading": "Seus dados, sua tranquilidade",
+      "intro": "Pensado para equipes que lidam com pipeline e dados de clientes.",
+      "bullet1": "HTTPS em todo o app web com autenticação moderna via OAuth 2.0 + JWT.",
+      "bullet2": "Multi-tenant por design: boards isolados por organização.",
+      "bullet3": "Documentação do produto cobre recursos, limites e como usar cada plano.",
+      "docsCta": "Ver documentação"
     },
     "roadmap": {
       "heading": "O que vem aí—e como encaixa no seu plano",
@@ -1221,6 +1227,9 @@
     },
     "spotlight": {
       "sectionAria": "Destaques do produto",
+      "sectionBadge": "Destaques",
+      "heading": "Inteligência integrada ao seu fluxo",
+      "description": "IA, metas e alertas proativos que trabalham enquanto você foca no que importa.",
       "copilot": {
         "title": "Board Copilot",
         "body": "Chat com IA direto no board. Perguntas em linguagem natural, resumos automáticos, identificação de gargalos e execução de ações sem trocar de tela.",
@@ -1235,9 +1244,9 @@
       },
       "anomaly": {
         "title": "Detecção de anomalias",
-        "body": "Sinais proativos em throughput, WIP e lead time — com e-mail e webhooks antes que o problema escale.",
-        "alert1": "WIP acima da média móvel (σ 2.4)",
-        "alert2": "Lead time +38% vs. semana anterior"
+        "body": "Sinais proativos em throughput, WIP e lead time — e-mail e webhooks antes que o problema escale.",
+        "alert1": "WIP excedeu o limite em \"Proposta\"",
+        "alert2": "Lead time subiu 40% esta semana"
       }
     },
     "socialProof": {
@@ -1248,6 +1257,7 @@
       "stat4": { "value": "∞", "label": "boards quando você precisar escalar" }
     },
     "pricing": {
+      "sectionBadge": "Preços",
       "tiers": {
         "free": "Free",
         "pro": "Pro",
@@ -1280,7 +1290,7 @@
         },
         "business": {
           "name": "Business",
-          "badge": "Mais popular",
+          "badge": "Recomendado",
           "desc": "Para operações em escala com IA irrestrita, white-label e integrações.",
           "cta": "Testar Business por 14 dias",
           "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"
@@ -1321,6 +1331,7 @@
       "allBusiness": "Tudo do Business, mais:"
     },
     "faq": {
+      "sectionBadge": "Perguntas",
       "heading": "Perguntas frequentes",
       "q1": "O que está incluído no plano Grátis?",
       "a1": "O plano Grátis dá acesso a até 3 boards Kanban, 1 usuário, 3 chamadas de IA por dia, templates públicos e log de atividade por 90 dias. Ideal para explorar o fluxo antes de escalar.",
@@ -1338,6 +1349,8 @@
       "a7": "Sim. O Enterprise suporta SSO com SAML 2.0 e OIDC, permitindo login com credenciais corporativas e gerenciamento centralizado no seu Identity Provider."
     },
     "fluxyChat": {
+      "fabTitle": "Falar com a Fluxy",
+      "fabSubtitle": "IA assistente do board",
       "title": "Pergunte à Fluxy",
       "subtitle": "Respostas diretas do nosso FAQ",
       "placeholder": "Ex.: trial, preços, Copilot…",

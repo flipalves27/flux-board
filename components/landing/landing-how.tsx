@@ -11,23 +11,37 @@ export function LandingHow() {
   ];
 
   return (
-    <section id="how-it-works" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-how-heading">
-      <h2 id="landing-how-heading" className="font-display text-2xl font-bold md:text-3xl">
+    <section id="how-it-works" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-how-heading">
+      <p className="landing-section-badge mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
+        <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
+        {t("how.sectionBadge")}
+      </p>
+      <h2 id="landing-how-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
         {t("how.heading")}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm text-[var(--flux-text-muted)] md:text-base">{t("how.description")}</p>
-      <ol className="mt-6 grid gap-3 md:grid-cols-3 md:gap-4">
+      <p className="mt-3 max-w-[560px] text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("how.description")}</p>
+      <ol className="mt-9 grid gap-5 md:grid-cols-3 md:gap-6">
         {steps.map((s, i) => (
           <li
             key={s.step}
-            className="relative rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/90 p-6 backdrop-blur-sm"
+            className="relative rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-12)] bg-[rgba(34,31,58,0.4)] px-7 py-8"
           >
-            <span className="font-display text-3xl font-bold tabular-nums text-[var(--flux-primary)]/40">{s.step}</span>
-            <h3 className="mt-2 font-display text-lg font-semibold">{s.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--flux-text-muted)]">{s.text}</p>
+            <span
+              className="font-display text-5xl font-extrabold leading-none text-transparent"
+              style={{
+                background: "linear-gradient(180deg, rgba(108,92,231,0.3), rgba(108,92,231,0.05))",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
+              aria-hidden
+            >
+              {s.step}
+            </span>
+            <h3 className="mt-3 font-display text-[17px] font-semibold">{s.title}</h3>
+            <p className="mt-2 text-[13px] leading-[1.7] text-[var(--flux-text-muted)]">{s.text}</p>
             {i < steps.length - 1 && (
               <span
-                className="absolute right-0 top-1/2 hidden h-px w-4 -translate-y-1/2 translate-x-full bg-gradient-to-r from-[var(--flux-primary)]/50 to-transparent md:block"
+                className="absolute right-[-12px] top-1/2 hidden h-0.5 w-6 -translate-y-1/2 bg-gradient-to-r from-[rgba(108,92,231,0.4)] to-transparent md:block"
                 aria-hidden
               />
             )}

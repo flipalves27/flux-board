@@ -36,10 +36,14 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
 
   return (
     <>
-      <section id="platform" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-platform-heading">
-        <div className="mb-5 md:mb-6">
+      <section id="platform" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-platform-heading">
+        <p className="landing-section-badge mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
+          <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
+          {t("platform.sectionBadge")}
+        </p>
+        <div className="mb-8 md:mb-9">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 id="landing-platform-heading" className="font-display text-2xl font-bold md:text-3xl">
+            <h2 id="landing-platform-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
               {t("platform.heading", { appName })}
             </h2>
             {!user && (
@@ -48,26 +52,26 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
               </Link>
             )}
           </div>
-          <p className="mt-2 max-w-xl text-sm text-[var(--flux-text-muted)] md:text-base">{t("platform.description")}</p>
+          <p className="mt-3 max-w-[560px] text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("platform.description")}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {capabilities.map((cap) => (
             <article
               key={cap.key}
-              className="tone-card landing-feature-card flex flex-col rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-5 shadow-[var(--shadow-md)] hover:border-[var(--flux-secondary-alpha-35)]"
+              className="tone-card landing-feature-card flex gap-3.5 rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(34,31,58,0.35)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(0,210,211,0.25)] hover:bg-[rgba(34,31,58,0.55)]"
             >
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--flux-surface-elevated)]">{cap.icon}</div>
-                <h3 className="font-display text-base font-semibold">{cap.name}</h3>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(108,92,231,0.08)]">{cap.icon}</div>
+              <div className="min-w-0">
+                <h3 className="font-display text-sm font-semibold">{cap.name}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--flux-text-muted)]">{cap.detail}</p>
               </div>
-              <p className="flex-1 text-sm leading-relaxed text-[var(--flux-text-muted)]">{cap.detail}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="home-landing-reveal mt-8 md:mt-10" aria-labelledby="landing-mid-cta-heading">
-        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/80 px-5 py-6 text-center backdrop-blur-sm md:px-8 md:py-8">
+      <section className="home-landing-reveal mt-10 md:mt-12" aria-labelledby="landing-mid-cta-heading">
+        <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.5)] px-5 py-8 text-center backdrop-blur-sm md:px-8 md:py-10">
           <h2 id="landing-mid-cta-heading" className="font-display text-xl font-bold md:text-2xl">
             {t("midCta.heading", { appName })}
           </h2>

@@ -67,8 +67,9 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
         lang={locale}
         className="home-variant-vibrant home-landing-mesh relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
       >
+        <div className="home-landing-page-bg" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 opacity-40"
+          className="pointer-events-none absolute inset-0 z-[1] opacity-[0.28]"
           style={{
             backgroundImage: "var(--flux-home-hero-bg)",
             backgroundSize: "cover",
@@ -77,13 +78,13 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
           }}
           aria-hidden
         />
-        <div className="home-landing-grid-overlay pointer-events-none absolute inset-0" aria-hidden />
+        <div className="home-landing-grid-overlay pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-12 pt-3 sm:px-8 md:pb-16 md:pt-4 lg:px-12 2xl:max-w-[90rem] 2xl:px-16">
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 pb-12 pt-3 sm:px-6 md:pb-16 md:pt-4 md:px-8 lg:px-12 2xl:max-w-[90rem] 2xl:px-16">
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
           <main id="landing-main" className="home-landing-stagger">
-            <LandingHero localeRoot={localeRoot} appName={appName} user={user} />
+            <LandingHero localeRoot={localeRoot} user={user} />
             <LandingSocialProof />
             <LandingPillars />
             <LandingSpotlight />

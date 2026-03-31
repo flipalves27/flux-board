@@ -122,20 +122,24 @@ export function LandingPricing({
   const pricingPlans = buildPlans(t, billingYearly, localeRoot, pricing, proEnabled, businessEnabled);
 
   return (
-    <section id="pricing" className="home-landing-reveal mt-12 scroll-mt-24 md:mt-16" aria-labelledby="landing-pricing-heading">
-      <div className="mb-5 text-center md:mb-6">
-        <h2 id="landing-pricing-heading" className="font-display text-2xl font-bold md:text-3xl">
+    <section id="pricing" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-pricing-heading">
+      <div className="mb-8 text-center md:mb-10">
+        <p className="landing-section-badge mb-3 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
+          <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
+          {t("pricing.sectionBadge")}
+        </p>
+        <h2 id="landing-pricing-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
           {t("pricing.heading")}
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("pricing.description")}</p>
+        <p className="mx-auto mt-3 max-w-xl text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("pricing.description")}</p>
 
-        <div className="mt-6 inline-flex items-center gap-1 rounded-full border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-1">
+        <div className="mt-6 inline-flex items-center gap-0.5 rounded-full border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.6)] p-[3px]">
           <button
             type="button"
             onClick={() => onBillingYearlyChange(false)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 ${
+            className={`rounded-full px-6 py-2.5 font-display text-[13px] font-semibold transition-all duration-300 ${
               !billingYearly
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_12px_rgba(108,92,231,0.4)]"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
             }`}
           >
@@ -144,14 +148,14 @@ export function LandingPricing({
           <button
             type="button"
             onClick={() => onBillingYearlyChange(true)}
-            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 rounded-full px-6 py-2.5 font-display text-[13px] font-semibold transition-all duration-300 ${
               billingYearly
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_12px_rgba(108,92,231,0.4)]"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
             }`}
           >
             {t("pricing.yearly")}
-            <span className="rounded-full bg-[var(--flux-success)]/20 px-1.5 py-0.5 text-[10px] font-bold text-[var(--flux-success)]">{t("pricing.yearlyTag")}</span>
+            <span className="rounded-full bg-[rgba(0,230,118,0.15)] px-[7px] py-0.5 text-[9px] font-bold text-[var(--flux-success)]">{t("pricing.yearlyTag")}</span>
           </button>
         </div>
       </div>
@@ -160,15 +164,15 @@ export function LandingPricing({
         {pricingPlans.map((plan) => (
           <article
             key={plan.id}
-            className={`relative flex flex-col rounded-[var(--flux-rad-xl)] border p-5 transition-transform duration-300 hover:-translate-y-0.5 ${
+            className={`relative flex flex-col rounded-[var(--flux-rad-xl)] border p-7 transition-all duration-300 hover:-translate-y-0.5 ${
               plan.highlighted
-                ? "border-[var(--flux-primary-alpha-45)] bg-gradient-to-b from-[var(--flux-primary-alpha-12)] to-[var(--flux-surface-card)] shadow-[0_0_0_1px_var(--flux-primary-alpha-20),0_20px_40px_-12px_rgba(108,92,231,0.25)]"
-                : "border-[var(--flux-primary-alpha-18)] bg-[var(--flux-surface-card)]"
+                ? "border-[var(--flux-primary-alpha-40)] bg-gradient-to-b from-[rgba(108,92,231,0.1)] to-[rgba(34,31,58,0.6)] shadow-[0_0_0_1px_rgba(108,92,231,0.15),0_24px_50px_rgba(108,92,231,0.15)]"
+                : "border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)]"
             }`}
           >
             {plan.badge && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary-dark)] px-3 py-1 text-[11px] font-bold text-white shadow-lg">
+                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary-dark)] px-4 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-white shadow-[0_4px_12px_rgba(108,92,231,0.3)]">
                   {plan.badge}
                 </span>
               </div>
@@ -179,17 +183,17 @@ export function LandingPricing({
               <p className="mt-1 text-xs leading-snug text-[var(--flux-text-muted)]">{plan.desc}</p>
             </div>
 
-            <div className="mb-4 border-b border-[var(--flux-primary-alpha-12)] pb-4">
+            <div className="mb-4 border-b border-[var(--flux-primary-alpha-10)] pb-4">
               <div className="flex items-end gap-1">
-                <span className="font-display text-3xl font-bold">{plan.price}</span>
+                <span className="font-display text-4xl font-extrabold leading-none">{plan.price}</span>
               </div>
               <p className="mt-0.5 text-[11px] text-[var(--flux-text-muted)]">{plan.priceSub}</p>
               {plan.limits && <p className="mt-2 text-[11px] leading-relaxed text-[var(--flux-text-muted)]/70">{plan.limits}</p>}
             </div>
 
-            <div className="mb-5 flex-1">
+            <div className="mb-6 flex-1">
               {plan.inherit && (
-                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--flux-primary-light)]/70">{plan.inherit}</p>
+                <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[rgba(162,155,254,0.6)]">{plan.inherit}</p>
               )}
               <ul className="space-y-2">
                 {plan.features.map((f) => (

@@ -30,7 +30,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="hero-shell home-landing-reveal sticky top-4 z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3 backdrop-blur-md md:px-5 md:py-3.5">
+    <header className="hero-shell home-landing-reveal sticky top-4 z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3.5 md:px-6">
       <div className="flex w-full flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4">
         <Link href={`${localeRoot}/`} className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3" onClick={closeMobile}>
           <div
@@ -56,23 +56,20 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
         </Link>
 
         <nav
-          className="mx-1 hidden min-w-0 flex-1 items-center justify-center gap-x-2 gap-y-1 text-[13px] font-semibold text-[var(--flux-text-muted)] md:flex lg:gap-x-3 lg:text-sm"
+          className="mx-1 hidden min-w-0 flex-1 items-center justify-center gap-x-1 text-[13px] font-medium text-[var(--flux-text-muted)] min-[900px]:flex lg:gap-x-2 lg:text-[13px]"
           aria-label={t("nav.mainLabel")}
         >
           <a href="#why" className={navClass}>
             {t("nav.why", { appName })}
           </a>
-          <a href="#platform" className={navClass}>
-            {t("nav.platform")}
-          </a>
           <a href="#spotlight" className={navClass}>
             {t("nav.spotlight")}
           </a>
+          <a href="#platform" className={navClass}>
+            {t("nav.platform")}
+          </a>
           <a href="#pricing" className={navClass}>
             {t("nav.pricing")}
-          </a>
-          <a href="#how-it-works" className={navClass}>
-            {t("nav.how")}
           </a>
           <a href="#trust" className={navClass}>
             {t("nav.trust")}

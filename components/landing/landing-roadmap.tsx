@@ -14,16 +14,19 @@ export function LandingRoadmap({ chargeLabelByTier }: LandingRoadmapProps) {
   const t = useTranslations("landing");
 
   return (
-    <section className="home-landing-reveal mt-12 md:mt-16" aria-labelledby="landing-roadmap-heading">
-      <div className="mb-5 max-w-3xl md:mb-6">
-        <h2 id="landing-roadmap-heading" className="font-display text-2xl font-bold md:text-3xl">
+    <section className="home-landing-reveal py-12 md:py-14" aria-labelledby="landing-roadmap-heading">
+      <div className="mb-8 max-w-3xl md:mb-9">
+        <h2 id="landing-roadmap-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
           {t("roadmap.heading")}
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("roadmap.description")}</p>
+        <p className="mt-3 text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("roadmap.description")}</p>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {ROADMAP_ITEMS.map((item) => (
-          <article key={item.id} className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-5">
+          <article
+            key={item.id}
+            className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] p-6 backdrop-blur-sm transition-all duration-300 hover:border-[var(--flux-primary-alpha-25)]"
+          >
             <div className="mb-2 flex items-center justify-between gap-2">
               <h3 className="font-display text-base font-semibold">{t(`roadmap.items.${item.id}.title`)}</h3>
               <PlanChip label={t(`pricing.tiers.${item.tier}`)} />

@@ -1,31 +1,58 @@
+export type KanbanMockCard = {
+  w: string;
+  /** Tailwind/bg classes for the progress bar */
+  barClassName?: string;
+  tag?: { label: string; className: string };
+};
+
 export type KanbanMockProps = {
   liveViewLabel: string;
-  cols: Array<{ title: string; cards: Array<{ w: string }> }>;
+  cols: Array<{ title: string; cards: KanbanMockCard[] }>;
 };
+
+const defaultBar = "bg-[var(--flux-primary)]/40";
 
 export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
   return (
-    <div className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border p-3 sm:p-4 md:p-5" aria-hidden>
+    <div
+      className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.85)] p-3 shadow-[0_24px_64px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:p-4 md:p-5"
+      aria-hidden
+    >
       <div className="pointer-events-none absolute -right-8 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[var(--flux-primary)]/15 blur-3xl" />
       <div className="pointer-events-none absolute -left-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/12 blur-3xl" />
-      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[var(--flux-primary-alpha-15)] pb-3">
+      <div className="mb-0 flex items-center gap-2 border-b border-[var(--flux-primary-alpha-10)] px-0 pb-3 pt-0.5">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[var(--flux-danger)]/80" />
-          <span className="h-2 w-2 rounded-full bg-[var(--flux-warning)]/80" />
-          <span className="h-2 w-2 rounded-full bg-[var(--flux-success)]/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(255,107,107,0.7)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(255,217,61,0.7)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(0,230,118,0.7)]" />
         </div>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--flux-text-muted)]">{liveViewLabel}</span>
+        <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">{liveViewLabel}</span>
       </div>
-      <div className="grid grid-cols-3 gap-2 md:gap-3">
+      <div className="grid grid-cols-3 gap-2.5 pt-4 md:gap-3">
         {cols.map((col) => (
-          <div key={col.title} className="home-kanban-col rounded-[var(--flux-rad)] border p-2 md:p-2.5">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)] md:text-[11px]">{col.title}</p>
+          <div key={col.title} className="home-kanban-col rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(13,11,26,0.4)] p-2.5 md:p-3">
+            <p className="mb-2.5 border-b border-[var(--flux-primary-alpha-08)] pb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]">
+              {col.title}
+            </p>
             <div className="flex flex-col gap-2">
               {col.cards.map((c, i) => (
-                <div key={i} className="home-kanban-card rounded-md border px-2 py-2.5 md:py-3">
-                  <div className="mb-2 h-1.5 rounded-full bg-[var(--flux-primary-alpha-25)]" style={{ width: c.w }} />
-                  <div className="home-kanban-line h-1 rounded" />
-                  <div className="home-kanban-line-muted mt-1.5 h-1 w-4/5 rounded" />
+                <div
+                  key={i}
+                  className="home-kanban-card group rounded-md border border-[var(--flux-primary-alpha-12)] bg-[rgba(34,31,58,0.6)] px-2.5 py-2.5 transition-all duration-300 hover:-translate-y-px hover:border-[var(--flux-primary-alpha-30)] md:py-3"
+                >
+                  <div
+                    className={`mb-2 h-[3px] rounded-sm ${c.barClassName ?? defaultBar}`}
+                    style={{ width: c.w }}
+                  />
+                  <div className="home-kanban-line h-0.5 rounded-sm" />
+                  <div className="home-kanban-line-muted mt-1.5 h-0.5 w-4/5 rounded-sm" />
+                  {c.tag ? (
+                    <span
+                      className={`mt-1.5 inline-block rounded px-1.5 py-0.5 text-[8px] font-bold ${c.tag.className}`}
+                    >
+                      {c.tag.label}
+                    </span>
+                  ) : null}
                 </div>
               ))}
             </div>
