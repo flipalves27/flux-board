@@ -23,7 +23,6 @@
     "platformAdminConsoleProduct": "Organizations, users & audit",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
-    "programIncrements": "Increments",
     "docs": "Flux Docs",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
@@ -59,7 +58,6 @@
       "platformCommercial": "Display pricing, catalog availability, and Stripe sync.",
       "platformAdminConsole": "Organizations, all users, and audit log (platform admins only).",
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
-      "programIncrements": "Increment planning and PIs across boards.",
       "docs": "Documents, RAG and AI generation.",
       "specScopePlanner": "Import a technical spec and generate board cards with AI (Scrum, Kanban, or LSS).",
       "copilot": "Board chat: summaries, search, and actions. On a board it opens the panel; elsewhere it goes to your boards list."

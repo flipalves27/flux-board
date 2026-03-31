@@ -23,7 +23,6 @@
     "platformAdminConsoleProduct": "Organizações, utilizadores e auditoria",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
-    "programIncrements": "Incrementos",
     "docs": "Flux Docs",
     "specScopePlanner": "Escopo por documento",
     "specScopePlannerProduct": "Business+ · IA",
@@ -59,7 +58,6 @@
       "platformCommercial": "Preços de vitrine, planos no catálogo e sincronização Stripe.",
       "platformAdminConsole": "Organizações, todos os utilizadores e auditoria (só administrador da plataforma).",
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
-      "programIncrements": "Planejamento de incrementos e PIs entre boards.",
       "docs": "Documentos, RAG e geração com IA.",
       "specScopePlanner": "Importe uma especificação técnica e gere cards no board com IA (Scrum, Kanban ou LSS).",
       "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."

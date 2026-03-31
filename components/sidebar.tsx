@@ -217,15 +217,6 @@ function IconSpecScope({ className }: { className?: string }) {
   );
 }
 
-function IconProgramIncrements({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 16l2 2 4-4" />
-    </svg>
-  );
-}
-
 function IconLogout({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -500,7 +491,6 @@ export function Sidebar() {
     if (href === "/tasks") return normalizedPath.startsWith("/tasks");
     if (href === "/my-work") return normalizedPath.startsWith("/my-work");
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
-    if (href === "/program-increments") return normalizedPath.startsWith("/program-increments");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
     if (href === "/spec-plan") return normalizedPath.startsWith("/spec-plan");
     if (href === "/users") return normalizedPath === "/users";
@@ -754,13 +744,6 @@ export function Sidebar() {
                 : undefined
             }
           />
-          <NavLink
-            path="/program-increments"
-            hint={t("hints.programIncrements")}
-            icon={<IconProgramIncrements className="h-4 w-4 shrink-0" />}
-            label={t("programIncrements")}
-          />
-
           <NavSectionTitle>{t("section.intelligence")}</NavSectionTitle>
           <NavLink
             path="/reports"

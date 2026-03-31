@@ -361,7 +361,6 @@ export function CommandPalette() {
       { path: "/my-work", title: t("nav.myWork"), kw: "my work meu trabalho workload pessoal" },
       { path: "/template-marketplace", title: t("nav.marketplace"), kw: "marketplace templates galeria" },
       { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
-      { path: "/program-increments", title: "Program Increments (PI)", kw: "program increment pi safe agile multi-board sprint" },
       { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
     ];
     if (sessionCanManageOrgBilling(user)) {
