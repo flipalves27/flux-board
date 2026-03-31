@@ -569,13 +569,13 @@ function KanbanCardInner({
       data-tour={tourFirstCard ? "board-card" : undefined}
       aria-label={ariaLabel}
       data-selected={selected ? "true" : undefined}
-      className={`relative touch-manipulation bg-[var(--flux-surface-elevated)] border rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] ${
+      className={`relative touch-manipulation bg-[var(--flux-surface-elevated)] border rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.01] shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] ${
         selected
           ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
           : sprintEmphasis
             ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50"
             : "border-[var(--flux-border-default)] hover:border-[var(--flux-primary)]/50"
-      } ${dragVisual ? "opacity-40 scale-[0.98]" : ""}`}
+      } ${isBlocked && card.progress !== "Concluída" ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""}`}
     >
       {selected && selectionCount > 1 ? (
         <span

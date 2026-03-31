@@ -671,6 +671,7 @@
       "dorReadyHint": "Cards Scrum não concluídos com todos os itens DoR marcados vs. cards com DoR iniciado.",
       "sprintVelocityTitle": "Sprints fechados — story points entregues",
       "sprintsLink": "Hub de sprints",
+      "forecastUnavailable": "Forecast indisponível: sem board base no heatmap.",
       "lssBlurb": "Carga DMAIC, aging, conclusões, Pareto por tags e capacidade de processo (heurística).",
       "lssCta": "Abrir visão executiva LSS"
     },

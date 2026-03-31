@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/context/theme-context";
 import { NavigationVariantProvider } from "@/context/navigation-variant-context";
 import { RoutineTasksProvider } from "@/context/routine-tasks-context";
 import { ToastProvider } from "@/context/toast-context";
+import { FluxyPresenceProvider } from "@/context/fluxy-presence-context";
 import { AppShell } from "@/components/app-shell";
 import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnostics-root";
 import { PwaRegister } from "@/components/pwa-register";
@@ -65,10 +66,12 @@ export default async function RootLayout({
                   <ToastProvider>
                     <ThemeProvider>
                       <NavigationVariantProvider>
-                        <RoutineTasksProvider>
-                          <PwaRegister />
-                          <AppShell>{children}</AppShell>
-                        </RoutineTasksProvider>
+                        <FluxyPresenceProvider>
+                          <RoutineTasksProvider>
+                            <PwaRegister />
+                            <AppShell>{children}</AppShell>
+                          </RoutineTasksProvider>
+                        </FluxyPresenceProvider>
                       </NavigationVariantProvider>
                     </ThemeProvider>
                   </ToastProvider>

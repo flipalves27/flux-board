@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet } from "@/lib/api-client";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 
 type CardItem = {
   id: string;
@@ -158,13 +159,13 @@ export default function MyWorkPage() {
                   );
                 })}
                 {sortedCards.length === 0 && (
-                  <p className="py-8 text-center text-sm text-[var(--flux-text-muted)]">{t("empty")}</p>
+                  <FluxEmptyState title={t("prioritized")} description={t("empty")} className="py-8" />
                 )}
               </div>
             </section>
           </DataFadeIn>
         ) : (
-          <p className="py-8 text-center text-sm text-[var(--flux-text-muted)]">{t("error")}</p>
+          <FluxEmptyState title={t("title")} description={t("error")} className="py-8" />
         )}
       </main>
     </>

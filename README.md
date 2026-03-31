@@ -204,6 +204,59 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
 | `PUT /api/boards/[id]/forms` | Configura Flux Forms no board (JWT) |
 | `POST /api/forms/[slug]` | Intake público: cria card automaticamente no board |
 
+### Public API v1 (beta)
+
+- OpenAPI: `GET /api/public/v1/openapi`
+- Boards: `GET /api/public/v1/boards`
+- Cards: `GET /api/public/v1/cards`
+- Sprints: `GET /api/public/v1/sprints`
+- Comments: `GET /api/public/v1/comments`
+- Token lifecycle (platform admin):
+  - `GET/POST /api/admin/public-api-tokens`
+  - `POST/DELETE /api/admin/public-api-tokens/{id}`
+- Rate-limit (v1):
+  - `PUBLIC_API_V1_RATE_LIMIT_WINDOW_MS`
+  - `PUBLIC_API_V1_RATE_LIMIT_READ`
+  - `PUBLIC_API_V1_RATE_LIMIT_WRITE`
+- Guia rápido: [`docs/public-api-v1.md`](docs/public-api-v1.md)
+
+### Git integrations v1 (scaffold)
+
+- Org connection routes:
+  - `GET/POST /api/integrations/github`
+  - `GET/POST /api/integrations/gitlab`
+- Inbound webhooks:
+  - `POST /api/integrations/github/webhook`
+  - `POST /api/integrations/gitlab/webhook`
+- Includes replay-protection by delivery id.
+- Guia técnico: [`docs/integrations-git-v1.md`](docs/integrations-git-v1.md)
+
+### Push notifications v1 (scaffold)
+
+- API de subscriptions:
+  - `GET/POST/DELETE /api/users/me/push-subscriptions`
+- API de enqueue/disparo:
+  - `POST /api/push/notify`
+  - `GET /api/cron/push-dispatch`
+- UI de ativação em `Org Settings`
+- Guia técnico: [`docs/push-notifications-v1.md`](docs/push-notifications-v1.md)
+
+### Governança e quality gates
+
+- Gate técnico geral: `npm run quality:gates:report` → `docs/reports/quality-gate-latest.md`
+- Gate UI/performance/a11y: `npm run quality:gates:ui` → `docs/reports/ui-quality-gate-latest.md`
+- Dashboard semanal de métricas: `npm run governance:weekly` → `docs/reports/governance-weekly-latest.md`
+- Fechamento consolidado das ondas: [`docs/reports/waves-closure-summary.md`](docs/reports/waves-closure-summary.md)
+  - Acesso operacional no produto: **somente Admin da plataforma**.
+
+### Automation Builder v1 (scaffold)
+
+- Regras por board:
+  - `GET/PUT /api/boards/[id]/automations`
+- Logs de execução:
+  - `GET/POST /api/boards/[id]/automations/logs`
+- Guia técnico: [`docs/automation-builder-v1.md`](docs/automation-builder-v1.md)
+
 **Freemium (opcional):** defina `FLUX_MAX_BOARDS_PER_USER` (inteiro ≥ 1) para limitar boards por usuário não-admin. `FLUX_PRO_TENANT=true` (ou `1`) remove o teto. Também é aceito o prefixo público `NEXT_PUBLIC_FLUX_MAX_BOARDS_PER_USER` para o mesmo limite (útil em builds client-side).
 
 **Quota calls/dia (opcional, Free):** defina `FLUX_FREE_CALLS_PER_DAY` (inteiro ≥ 1). Padrão: `3`. Quando exceder, o backend bloqueia chamadas que disparam IA (card context/daily insights) até o próximo dia.

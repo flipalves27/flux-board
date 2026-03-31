@@ -655,7 +655,7 @@ function KanbanBoardLoaded({
       {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
 
       {!focusMode && (
-      <div className="sticky top-[min(6.5rem,calc(env(safe-area-inset-top,0px)+5.25rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col bg-[var(--flux-surface-dark)]/95 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none">
+      <div className="sticky top-[min(6.5rem,calc(env(safe-area-inset-top,0px)+5.25rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col bg-[var(--flux-surface-dark)]/95 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
         <BoardAutomationSuggestions
           variant="topStrip"
           boardId={boardId}

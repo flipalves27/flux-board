@@ -114,7 +114,7 @@ export const DocsRichEditor = forwardRef<DocsRichEditorHandle, Props>(function D
     <div ref={wrapRef} className="rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
       {editable ? <DocsEditorToolbar editor={editor} labels={toolbarLabels} /> : null}
       {!editor ? (
-        <div className={`${skeletonH} w-full animate-pulse bg-[var(--flux-surface-card)]`} aria-hidden />
+        <div className={`${skeletonH} w-full rounded-[var(--flux-rad)] bg-[var(--flux-surface-card)] flux-animate-skeleton-pulse`} aria-hidden />
       ) : (
         <EditorContent editor={editor} />
       )}

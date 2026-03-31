@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
 import { isPlatformAdminSession } from "@/lib/rbac";
 
-type Tab = "organizations" | "users" | "audit";
+type Tab = "organizations" | "users" | "audit" | "operations";
 
 type OrgRow = {
   _id: string;
@@ -45,6 +45,25 @@ type AuditRow = {
   ip?: string;
 };
 
+type OpsPayload = {
+  pushOutbox: {
+    total: number;
+    dueNow: number;
+    items: Array<{ _id: string; orgId: string; userId: string; endpoint: string; attemptCount: number; nextAttemptAt: string }>;
+  };
+  integrationLogs: {
+    total: number;
+    synced: number;
+    failed: number;
+    items: Array<{ _id: string; orgId: string; provider: string; eventType: string; status?: string; message?: string | null; receivedAt: string }>;
+  };
+  publicApiTokens: {
+    total: number;
+    active: number;
+    items: Array<{ id: string; name: string; orgId: string; keyPrefix: string; scopes: string[]; active: boolean; updatedAt: string }>;
+  };
+};
+
 export default function PlatformAdminConsolePage() {
   const router = useRouter();
   const t = useTranslations("platformAdmin");
@@ -60,10 +79,15 @@ export default function PlatformAdminConsolePage() {
   const [userCursor, setUserCursor] = useState<string | null>(null);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditCursor, setAuditCursor] = useState<string | null>(null);
+  const [ops, setOps] = useState<OpsPayload | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [userFilter, setUserFilter] = useState("");
   const [orgFilter, setOrgFilter] = useState("");
+  const [opsOrgFilter, setOpsOrgFilter] = useState("");
+  const [opsProviderFilter, setOpsProviderFilter] = useState<"all" | "github" | "gitlab">("all");
+  const [opsStatusFilter, setOpsStatusFilter] = useState<"all" | "received" | "synced" | "ignored" | "failed">("all");
+  const [opsTokenFilter, setOpsTokenFilter] = useState<"all" | "active" | "revoked">("all");
 
   const [editOrg, setEditOrg] = useState<OrgRow | null>(null);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
@@ -182,6 +206,43 @@ export default function PlatformAdminConsolePage() {
     [auditCursor, getHeaders, pushToast, router, t]
   );
 
+  const loadOps = useCallback(async () => {
+    try {
+      const url = new URL("/api/admin/operations", window.location.origin);
+      url.searchParams.set("limit", "80");
+      if (opsOrgFilter.trim()) url.searchParams.set("orgId", opsOrgFilter.trim());
+      if (opsProviderFilter !== "all") url.searchParams.set("provider", opsProviderFilter);
+      if (opsStatusFilter !== "all") url.searchParams.set("status", opsStatusFilter);
+      if (opsTokenFilter !== "all") url.searchParams.set("tokenState", opsTokenFilter);
+      const data = await apiGet<OpsPayload>(url.pathname + url.search, getHeaders());
+      setOps(data);
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        router.replace("/boards");
+        return;
+      }
+      pushToast({
+        kind: "error",
+        title: t("loadError"),
+        description: e instanceof Error ? e.message : "—",
+      });
+    }
+  }, [getHeaders, opsOrgFilter, opsProviderFilter, opsStatusFilter, opsTokenFilter, pushToast, router, t]);
+
+  const downloadCsv = useCallback((filename: string, columns: string[], rows: string[][]) => {
+    const esc = (value: string) => `"${value.replace(/"/g, '""')}"`;
+    const csv = [columns.map(esc).join(","), ...rows.map((row) => row.map(esc).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  }, []);
+
   useEffect(() => {
     if (!isChecked || !user) {
       router.replace("/login");
@@ -201,6 +262,9 @@ export default function PlatformAdminConsolePage() {
         setUserCursor(null);
         setUsers([]);
         await loadUsers(true);
+      } else if (tab === "operations") {
+        setOps(null);
+        await loadOps();
       } else {
         setAuditCursor(null);
         setAudit([]);
@@ -348,7 +412,7 @@ export default function PlatformAdminConsolePage() {
         )}
 
         <div className="mb-6 flex flex-wrap gap-2">
-          {(["users", "organizations", "audit"] as const).map((k) => (
+          {(["users", "organizations", "audit", "operations"] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -359,7 +423,13 @@ export default function PlatformAdminConsolePage() {
                   : "bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-10)]"
               }`}
             >
-              {k === "users" ? t("tabUsers") : k === "organizations" ? t("tabOrgs") : t("tabAudit")}
+              {k === "users"
+                ? t("tabUsers")
+                : k === "organizations"
+                  ? t("tabOrgs")
+                  : k === "audit"
+                    ? t("tabAudit")
+                    : "Operations"}
             </button>
           ))}
         </div>
@@ -516,7 +586,7 @@ export default function PlatformAdminConsolePage() {
               </button>
             ) : null}
           </div>
-        ) : (
+        ) : tab === "audit" ? (
           <div className="overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] shadow-[var(--shadow-md)]">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
@@ -552,6 +622,179 @@ export default function PlatformAdminConsolePage() {
                 {t("loadMore")}
               </button>
             ) : null}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={opsOrgFilter}
+                onChange={(e) => setOpsOrgFilter(e.target.value)}
+                placeholder="orgId"
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-xs text-[var(--flux-text)]"
+              />
+              <select
+                value={opsProviderFilter}
+                onChange={(e) => setOpsProviderFilter(e.target.value as "all" | "github" | "gitlab")}
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-xs text-[var(--flux-text)]"
+              >
+                <option value="all">provider: all</option>
+                <option value="github">provider: github</option>
+                <option value="gitlab">provider: gitlab</option>
+              </select>
+              <select
+                value={opsStatusFilter}
+                onChange={(e) =>
+                  setOpsStatusFilter(e.target.value as "all" | "received" | "synced" | "ignored" | "failed")
+                }
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-xs text-[var(--flux-text)]"
+              >
+                <option value="all">status: all</option>
+                <option value="received">status: received</option>
+                <option value="synced">status: synced</option>
+                <option value="ignored">status: ignored</option>
+                <option value="failed">status: failed</option>
+              </select>
+              <select
+                value={opsTokenFilter}
+                onChange={(e) => setOpsTokenFilter(e.target.value as "all" | "active" | "revoked")}
+                className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-xs text-[var(--flux-text)]"
+              >
+                <option value="all">token: all</option>
+                <option value="active">token: active</option>
+                <option value="revoked">token: revoked</option>
+              </select>
+              <button
+                type="button"
+                className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
+                onClick={() => void loadOps()}
+              >
+                Atualizar
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs text-[var(--flux-text-muted)]">Push outbox</p>
+                <p className="mt-1 text-lg font-semibold text-[var(--flux-text)]">
+                  {ops?.pushOutbox.total ?? 0} · due {ops?.pushOutbox.dueNow ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs text-[var(--flux-text-muted)]">Integration logs</p>
+                <p className="mt-1 text-lg font-semibold text-[var(--flux-text)]">
+                  {ops?.integrationLogs.total ?? 0} · synced {ops?.integrationLogs.synced ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
+                <p className="text-xs text-[var(--flux-text-muted)]">Public API tokens</p>
+                <p className="mt-1 text-lg font-semibold text-[var(--flux-text)]">
+                  {ops?.publicApiTokens.active ?? 0}/{ops?.publicApiTokens.total ?? 0} ativos
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
+                <div className="flex items-center justify-between border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
+                  <span className="text-xs font-semibold uppercase text-[var(--flux-text-muted)]">Push outbox</span>
+                  <button
+                    type="button"
+                    className="text-[10px] font-semibold text-[var(--flux-primary)]"
+                    onClick={() =>
+                      downloadCsv(
+                        "push-outbox.csv",
+                        ["id", "orgId", "userId", "endpoint", "attemptCount", "nextAttemptAt"],
+                        (ops?.pushOutbox.items ?? []).map((x) => [
+                          x._id,
+                          x.orgId,
+                          x.userId,
+                          x.endpoint,
+                          String(x.attemptCount),
+                          x.nextAttemptAt,
+                        ])
+                      )
+                    }
+                  >
+                    export CSV
+                  </button>
+                </div>
+                <div className="max-h-72 overflow-auto">
+                  {(ops?.pushOutbox.items ?? []).map((x) => (
+                    <div key={x._id} className="border-b border-[var(--flux-chrome-alpha-06)] px-3 py-2 text-xs">
+                      <div className="font-mono text-[var(--flux-text)]">{x.userId}</div>
+                      <div className="text-[var(--flux-text-muted)]">attempt {x.attemptCount} · {x.nextAttemptAt}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
+                <div className="flex items-center justify-between border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
+                  <span className="text-xs font-semibold uppercase text-[var(--flux-text-muted)]">Integration logs</span>
+                  <button
+                    type="button"
+                    className="text-[10px] font-semibold text-[var(--flux-primary)]"
+                    onClick={() =>
+                      downloadCsv(
+                        "integration-logs.csv",
+                        ["id", "orgId", "provider", "eventType", "status", "message", "receivedAt"],
+                        (ops?.integrationLogs.items ?? []).map((x) => [
+                          x._id,
+                          x.orgId,
+                          x.provider,
+                          x.eventType,
+                          x.status ?? "received",
+                          x.message ?? "",
+                          x.receivedAt,
+                        ])
+                      )
+                    }
+                  >
+                    export CSV
+                  </button>
+                </div>
+                <div className="max-h-72 overflow-auto">
+                  {(ops?.integrationLogs.items ?? []).map((x) => (
+                    <div key={x._id} className="border-b border-[var(--flux-chrome-alpha-06)] px-3 py-2 text-xs">
+                      <div className="font-semibold text-[var(--flux-text)]">{x.provider} · {x.eventType}</div>
+                      <div className="text-[var(--flux-text-muted)]">{x.status ?? "received"} · {x.receivedAt}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)]">
+              <div className="flex items-center justify-between border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
+                <span className="text-xs font-semibold uppercase text-[var(--flux-text-muted)]">Public API tokens</span>
+                <button
+                  type="button"
+                  className="text-[10px] font-semibold text-[var(--flux-primary)]"
+                  onClick={() =>
+                    downloadCsv(
+                      "public-api-tokens.csv",
+                      ["id", "name", "orgId", "keyPrefix", "active", "scopes", "updatedAt"],
+                      (ops?.publicApiTokens.items ?? []).map((x) => [
+                        x.id,
+                        x.name,
+                        x.orgId,
+                        x.keyPrefix,
+                        x.active ? "true" : "false",
+                        x.scopes.join("|"),
+                        x.updatedAt,
+                      ])
+                    )
+                  }
+                >
+                  export CSV
+                </button>
+              </div>
+              <div className="max-h-72 overflow-auto">
+                {(ops?.publicApiTokens.items ?? []).map((x) => (
+                  <div key={x.id} className="border-b border-[var(--flux-chrome-alpha-06)] px-3 py-2 text-xs">
+                    <div className="font-semibold text-[var(--flux-text)]">{x.name} · {x.keyPrefix}***</div>
+                    <div className="text-[var(--flux-text-muted)]">{x.orgId} · {x.active ? "active" : "revoked"} · {x.scopes.join(", ")}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </main>

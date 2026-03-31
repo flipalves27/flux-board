@@ -305,14 +305,14 @@ export function BoardKnowledgeGraphPanel({
 
   return (
     <div
-      className="fixed inset-0 z-[var(--flux-z-modal-feature)] flex justify-end bg-black/45 backdrop-blur-[1px]"
+      className="fixed inset-0 z-[var(--flux-z-modal-feature)] flex justify-end bg-black/45 backdrop-blur-[1px] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
       onClick={onClose}
       onKeyDown={onKeyDown}
       role="presentation"
     >
       <aside
         ref={panelRef}
-        className="h-full w-[min(600px,50vw)] min-w-[320px] border-l border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-2xl flex flex-col"
+        className="h-full w-[min(600px,50vw)] min-w-[320px] border-l border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-200"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

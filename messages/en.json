@@ -671,6 +671,7 @@
       "dorReadyHint": "Non-done Scrum cards with all DoR checkboxes marked vs. cards that started filling DoR.",
       "sprintVelocityTitle": "Closed sprints — story points delivered",
       "sprintsLink": "Sprint hub",
+      "forecastUnavailable": "Forecast unavailable: no base board in heatmap.",
       "lssBlurb": "DMAIC load, aging, completions, Pareto tags, and process capability (heuristic).",
       "lssCta": "Open LSS executive view"
     },

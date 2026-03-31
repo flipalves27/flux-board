@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   Area,
   AreaChart,
@@ -12,7 +13,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
   Cell,
@@ -33,6 +33,18 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { usePlatformDisplayName } from "@/context/org-branding-context";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
+import { ReportsEmptyState } from "@/components/reports/reports-empty-state";
+import { ReportsErrorState } from "@/components/reports/reports-error-state";
+import { ReportsKpiCard } from "@/components/reports/reports-kpi-card";
+import { ReportsSectionPlaceholder } from "@/components/reports/reports-section-placeholder";
+import { REPORTS_TOOLTIP_LABEL_STYLE } from "@/components/reports/reports-chart-theme";
+import { ReportsChartFrame } from "@/components/reports/reports-chart-frame";
+import { ReportsTabBar } from "@/components/reports/reports-tab-bar";
+import { ReportsInfoCard } from "@/components/reports/reports-info-card";
+import { ReportsLssPanel } from "@/components/reports/reports-lss-panel";
+import { ReportsTooltip } from "@/components/reports/reports-tooltip";
+import { ReportsHeatmapCell } from "@/components/reports/reports-heatmap-cell";
+import { ReportsGeneratedAt } from "@/components/reports/reports-generated-at";
 
 const CHART_COLORS = [
   "var(--flux-primary)",
@@ -114,6 +126,56 @@ function riskHeatColor(risco: number | null): string {
 }
 
 type ReportsHubTab = "overview" | "kanban" | "scrum" | "lss";
+
+function buildSparklinePath(values: number[], width: number, height: number): string {
+  if (!values.length) return "";
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+  const step = values.length > 1 ? width / (values.length - 1) : width;
+  return values
+    .map((value, index) => {
+      const x = Number((index * step).toFixed(2));
+      const y = Number((height - ((value - min) / range) * height).toFixed(2));
+      return `${index === 0 ? "M" : "L"}${x},${y}`;
+    })
+    .join(" ");
+}
+
+function MiniSparkline({
+  values,
+  stroke,
+}: {
+  values: number[];
+  stroke: string;
+}) {
+  const d = useMemo(() => buildSparklinePath(values, 100, 24), [values]);
+  if (!d) return <div className="h-6 w-full rounded bg-[var(--flux-chrome-alpha-06)]" aria-hidden />;
+  return (
+    <svg viewBox="0 0 100 24" className="h-6 w-full" role="img" aria-label="trend">
+      <path d={d} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BentoTile({
+  children,
+  delayMs,
+  className = "",
+}: {
+  children: ReactNode;
+  delayMs: number;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 ${className}`}
+      style={{ animationDelay: `${delayMs}ms` }}
+    >
+      {children}
+    </section>
+  );
+}
 
 export function FluxReportsDashboard() {
   const t = useTranslations("reports");
@@ -198,64 +260,109 @@ export function FluxReportsDashboard() {
 
   if (error || !data) {
     return (
-      <div className="rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
-        {error ?? t("empty")}
-      </div>
+      <ReportsErrorState title={error ? t("loadError") : t("empty")} description={error ? error : t("emptyChart")} />
     );
   }
 
   return (
     <DataFadeIn active key={data.generatedAt} className="space-y-6">
-      <div className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-3">
-        {hubTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setHubTab(tab.id)}
-            className={`rounded-[var(--flux-rad-sm)] px-3 py-2 text-xs font-semibold transition-colors ${
-              hubTab === tab.id
-                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
-                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <ReportsTabBar
+        items={hubTabs}
+        value={hubTab}
+        onChange={setHubTab}
+        className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-3"
+      />
 
       {hubTab === "lss" ? (
-        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-6">
-          <p className="text-sm text-[var(--flux-text-muted)] leading-relaxed">{t("hub.lssBlurb")}</p>
-          <Link
-            href={`${localeRoot}/reports/lean-six-sigma`}
-            className="mt-4 inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
-          >
-            {t("hub.lssCta")}
-          </Link>
-        </div>
+        <ReportsLssPanel
+          blurb={t("hub.lssBlurb")}
+          cta={t("hub.lssCta")}
+          href={`${localeRoot}/reports/lean-six-sigma`}
+        />
       ) : null}
 
       {hubTab === "overview" ? (
         <>
-          <ProactiveAiPanel />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <BentoTile delayMs={0} className="lg:col-span-8">
+              <ProactiveAiPanel />
+            </BentoTile>
+            <BentoTile delayMs={50} className="lg:col-span-4">
+              <ReportsInfoCard
+                title={t("kpi.atRiskBoards")}
+                value={data.aggregates.atRiskCount}
+                hint={t("hints.heatmap", { appName })}
+                valueClassName="text-[var(--flux-warning-foreground)]"
+              />
+            </BentoTile>
+          </div>
 
-          <Suspense
-            fallback={
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] px-4 py-6 text-sm text-[var(--flux-text-muted)]">
-                {t("dependencies.loading")}
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <BentoTile delayMs={70}>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+                <ReportsKpiCard label={t("kpi.boards")} value={data.aggregates.boardCount} tone="primary" hover />
+                <MiniSparkline
+                  values={data.weeklyThroughput.map((x) => x.concluded)}
+                  stroke="var(--flux-primary)"
+                />
               </div>
-            }
-          >
-            <CrossBoardDependenciesPanel />
-          </Suspense>
+            </BentoTile>
+            <BentoTile delayMs={100}>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+                <ReportsKpiCard label={t("kpi.avgRisk")} value={data.aggregates.avgRisco ?? "—"} tone="secondary" hover />
+                <MiniSparkline
+                  values={data.portfolioHeatmap.map((x) => x.risco ?? 0)}
+                  stroke="var(--flux-secondary)"
+                />
+              </div>
+            </BentoTile>
+            <BentoTile delayMs={130}>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+                <ReportsKpiCard
+                  label={t("kpi.avgLead")}
+                  value={data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
+                  tone="neutral"
+                  hover
+                />
+                <MiniSparkline
+                  values={data.leadTimeHistogram.map((x) => x.count)}
+                  stroke="var(--flux-info)"
+                />
+              </div>
+            </BentoTile>
+            <BentoTile delayMs={160}>
+              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+                <ReportsKpiCard label={t("kpi.atRiskBoards")} value={data.aggregates.atRiskCount} tone="amber" hover />
+                <MiniSparkline
+                  values={data.createdVsDone.map((x) => x.created - x.concluded)}
+                  stroke="var(--flux-warning-foreground)"
+                />
+              </div>
+            </BentoTile>
+          </section>
 
-      <SprintPredictionPanel prediction={data.sprintPrediction} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <BentoTile delayMs={190} className="lg:col-span-7">
+              <SprintPredictionPanel prediction={data.sprintPrediction} />
+            </BentoTile>
+            <BentoTile delayMs={220} className="lg:col-span-5">
+              {data.portfolioHeatmap[0]?.boardId ? (
+                <DeliveryForecastChart boardId={data.portfolioHeatmap[0].boardId} />
+              ) : (
+                <ReportsSectionPlaceholder message={t("hub.forecastUnavailable")} />
+              )}
+            </BentoTile>
+          </div>
 
-      {data.portfolioHeatmap[0]?.boardId ? (
-        <DeliveryForecastChart boardId={data.portfolioHeatmap[0].boardId} />
-      ) : null}
+          <BentoTile delayMs={250}>
+            <Suspense fallback={<ReportsSectionPlaceholder message={t("dependencies.loading")} />}>
+              <CrossBoardDependenciesPanel />
+            </Suspense>
+          </BentoTile>
 
-      <CycleTimeScatterPanel points={data.cycleTimeScatter} />
+          <BentoTile delayMs={280}>
+            <CycleTimeScatterPanel points={data.cycleTimeScatter} />
+          </BentoTile>
 
       <ChartShell
         title={t("charts.sentiment")}
@@ -264,9 +371,9 @@ export function FluxReportsDashboard() {
         explainPayload={{ sentimentHistory: data.sentimentHistory }}
       >
         {!data.sentimentHistory.length ? (
-          <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+          <ReportsEmptyState message={t("emptyChart")} />
         ) : (
-          <div className="h-[260px] w-full min-w-0">
+          <ReportsChartFrame heightClassName="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.sentimentHistory} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
@@ -276,15 +383,7 @@ export function FluxReportsDashboard() {
                   tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--flux-surface-card)",
-                    border: "1px solid var(--flux-primary-alpha-25)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(value: number) => [`${value}/100`, t("series.sentimentScore")]}
-                />
+                <ReportsTooltip formatter={(value: number) => [`${value}/100`, t("series.sentimentScore")]} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line
                   type="monotone"
@@ -297,60 +396,24 @@ export function FluxReportsDashboard() {
                 />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </ReportsChartFrame>
         )}
       </ChartShell>
-
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.boards")}</p>
-          <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.boardCount}</p>
-        </div>
-        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgRisk")}</p>
-          <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.avgRisco ?? "—"}</p>
-        </div>
-        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgLead")}</p>
-          <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-            {data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
-          </p>
-        </div>
-        <div className="rounded-[var(--flux-rad)] border border-[var(--flux-amber-alpha-28)] bg-[var(--flux-surface-card)] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.atRiskBoards")}</p>
-          <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">{data.aggregates.atRiskCount}</p>
-        </div>
-      </section>
 
       {!data.meta.copilotHistory ? (
         <p className="text-xs text-[var(--flux-text-muted)]">{t("copilotHint")}</p>
       ) : null}
 
       <div className="space-y-3">
-        <div className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-2">
-          <button
-            type="button"
-            onClick={() => setCfdTab("accumulated")}
-            className={`rounded-[var(--flux-rad-sm)] px-3 py-1.5 text-xs font-semibold transition-colors ${
-              cfdTab === "accumulated"
-                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
-                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
-            }`}
-          >
-            {t("cfdTabs.accumulated")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setCfdTab("weekly")}
-            className={`rounded-[var(--flux-rad-sm)] px-3 py-1.5 text-xs font-semibold transition-colors ${
-              cfdTab === "weekly"
-                ? "border border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-18)] text-[var(--flux-primary-light)]"
-                : "border border-transparent text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
-            }`}
-          >
-            {t("cfdTabs.weekly")}
-          </button>
-        </div>
+        <ReportsTabBar
+          items={[
+            { id: "accumulated", label: t("cfdTabs.accumulated") },
+            { id: "weekly", label: t("cfdTabs.weekly") },
+          ]}
+          value={cfdTab}
+          onChange={setCfdTab}
+          compact
+        />
 
         {cfdTab === "accumulated" ? (
           <CfdAccumulatedPanel />
@@ -362,23 +425,15 @@ export function FluxReportsDashboard() {
             explainPayload={{ cfd: data.cfd, aggregates: data.aggregates }}
           >
             {data.cfd.keys.length === 0 ? (
-              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+              <ReportsEmptyState message={t("emptyChart")} />
             ) : (
-              <div className="h-[320px] w-full min-w-0">
+              <ReportsChartFrame heightClassName="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={cfdChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                     <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                     <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--flux-surface-card)",
-                        border: "1px solid var(--flux-primary-alpha-25)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ color: "var(--flux-text)" }}
-                    />
+                    <ReportsTooltip labelStyle={REPORTS_TOOLTIP_LABEL_STYLE} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     {data.cfd.keys.map((k, idx) => (
                       <Area
@@ -394,7 +449,7 @@ export function FluxReportsDashboard() {
                     ))}
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
+              </ReportsChartFrame>
             )}
           </ChartShell>
         )}
@@ -405,24 +460,17 @@ export function FluxReportsDashboard() {
         chartId="throughput"
         explainPayload={{ weeklyThroughput: data.weeklyThroughput, createdVsDone: data.createdVsDone }}
       >
-        <div className="h-[280px] w-full min-w-0">
+        <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--flux-surface-card)",
-                  border: "1px solid var(--flux-primary-alpha-25)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <ReportsTooltip />
               <Bar dataKey="concluded" name={t("series.concluded")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ReportsChartFrame>
       </ChartShell>
 
       <ChartShell
@@ -430,26 +478,19 @@ export function FluxReportsDashboard() {
         chartId="createdVsDone"
         explainPayload={{ merged: throughputMerged }}
       >
-        <div className="h-[280px] w-full min-w-0">
+        <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--flux-surface-card)",
-                  border: "1px solid var(--flux-primary-alpha-25)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <ReportsTooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="created" name={t("series.created")} fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="concluded" name={t("series.concludedCopilot")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ReportsChartFrame>
       </ChartShell>
 
       <ChartShell
@@ -458,24 +499,17 @@ export function FluxReportsDashboard() {
         chartId="leadTime"
         explainPayload={{ leadTimeHistogram: data.leadTimeHistogram }}
       >
-        <div className="h-[260px] w-full min-w-0">
+        <ReportsChartFrame heightClassName="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.leadTimeHistogram} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
               <XAxis dataKey="label" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--flux-surface-card)",
-                  border: "1px solid var(--flux-primary-alpha-25)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <ReportsTooltip />
               <Bar dataKey="count" name={t("series.cards")} fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ReportsChartFrame>
       </ChartShell>
 
       <ChartShell
@@ -486,16 +520,13 @@ export function FluxReportsDashboard() {
       >
         <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
           {data.portfolioHeatmap.map((cell) => (
-            <div
+            <ReportsHeatmapCell
               key={cell.boardId}
-              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-08)] px-3 py-2.5 text-left transition-transform hover:scale-[1.02]"
-              style={{ background: riskHeatColor(cell.risco) }}
-            >
-              <p className="truncate text-xs font-bold text-[var(--flux-text)]">{cell.name}</p>
-              <p className="mt-1 font-mono text-[10px] text-[var(--flux-text-muted)]">
-                risco {cell.risco ?? "—"} · {cell.cardCount} cards
-              </p>
-            </div>
+              name={cell.name}
+              risk={cell.risco}
+              cardCount={cell.cardCount}
+              background={riskHeatColor(cell.risco)}
+            />
           ))}
         </div>
       </ChartShell>
@@ -506,7 +537,7 @@ export function FluxReportsDashboard() {
         chartId="velocity"
         explainPayload={{ teamVelocity: data.teamVelocity }}
       >
-        <div className="h-[280px] w-full min-w-0">
+        <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
@@ -517,14 +548,7 @@ export function FluxReportsDashboard() {
                 width={120}
                 tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }}
               />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--flux-surface-card)",
-                  border: "1px solid var(--flux-primary-alpha-25)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <ReportsTooltip />
               <Bar dataKey="moves" name={t("series.cards")} radius={[0, 4, 4, 0]}>
                 {velocityData.map((_, i) => (
                   <Cell key={`${i}-${velocityData[i]?.name ?? ""}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -532,7 +556,7 @@ export function FluxReportsDashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ReportsChartFrame>
       </ChartShell>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -541,24 +565,17 @@ export function FluxReportsDashboard() {
           chartId="byColumn"
           explainPayload={{ byColumn: data.distribution.byColumn }}
         >
-          <div className="h-[240px] w-full min-w-0">
+          <ReportsChartFrame heightClassName="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byColumn} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
                 <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                 <XAxis dataKey="label" angle={-25} textAnchor="end" interval={0} height={48} tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--flux-surface-card)",
-                    border: "1px solid var(--flux-primary-alpha-25)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
+                <ReportsTooltip />
                 <Bar dataKey="count" fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ReportsChartFrame>
         </ChartShell>
 
         <ChartShell
@@ -566,24 +583,17 @@ export function FluxReportsDashboard() {
           chartId="byPriority"
           explainPayload={{ byPriority: data.distribution.byPriority }}
         >
-          <div className="h-[240px] w-full min-w-0">
+          <ReportsChartFrame heightClassName="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byPriority} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                 <XAxis dataKey="priority" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--flux-surface-card)",
-                    border: "1px solid var(--flux-primary-alpha-25)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
+                <ReportsTooltip />
                 <Bar dataKey="count" fill="var(--flux-warning-foreground)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ReportsChartFrame>
         </ChartShell>
       </div>
         </>
@@ -593,20 +603,16 @@ export function FluxReportsDashboard() {
         <div className="space-y-6">
           <p className="text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("hub.leadCycleNote")}</p>
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("kpi.avgLead")}</p>
-              <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-                {data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
-              </p>
-            </div>
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                {t("kpi.avgCycleApprox")}
-              </p>
-              <p className="mt-1 font-display text-2xl text-[var(--flux-text)]">
-                {data.aggregates.avgApproxCycleTimeDays != null ? `${data.aggregates.avgApproxCycleTimeDays} d` : "—"}
-              </p>
-            </div>
+            <ReportsKpiCard
+              label={t("kpi.avgLead")}
+              value={data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
+              tone="neutral"
+            />
+            <ReportsKpiCard
+              label={t("kpi.avgCycleApprox")}
+              value={data.aggregates.avgApproxCycleTimeDays != null ? `${data.aggregates.avgApproxCycleTimeDays} d` : "—"}
+              tone="secondary"
+            />
           </section>
           <CycleTimeScatterPanel points={data.cycleTimeScatter} />
           <ChartShell
@@ -615,20 +621,13 @@ export function FluxReportsDashboard() {
             chartId="throughput_run"
             explainPayload={{ weeklyThroughput: data.weeklyThroughput }}
           >
-            <div className="h-[300px] w-full min-w-0">
+            <ReportsChartFrame heightClassName="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                   <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--flux-surface-card)",
-                      border: "1px solid var(--flux-primary-alpha-25)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
+                  <ReportsTooltip />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Line
                     type="monotone"
@@ -640,7 +639,7 @@ export function FluxReportsDashboard() {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </ReportsChartFrame>
           </ChartShell>
           <CfdAccumulatedPanel />
           <ChartShell
@@ -648,49 +647,35 @@ export function FluxReportsDashboard() {
             chartId="createdVsDone_k"
             explainPayload={{ merged: throughputMerged }}
           >
-            <div className="h-[280px] w-full min-w-0">
+            <ReportsChartFrame heightClassName="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                   <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--flux-surface-card)",
-                      border: "1px solid var(--flux-primary-alpha-25)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
+                  <ReportsTooltip />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="created" name={t("series.created")} fill="var(--flux-primary)" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="concluded" name={t("series.concludedCopilot")} fill="var(--flux-secondary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </ReportsChartFrame>
           </ChartShell>
           <ChartShell title={t("hub.blockersTitle")} chartId="blockers" explainPayload={{ tags: data.blockerTagDistribution }}>
             {!data.blockerTagDistribution?.length ? (
-              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+              <ReportsEmptyState message={t("emptyChart")} />
             ) : (
-              <div className="h-[260px] w-full min-w-0">
+              <ReportsChartFrame heightClassName="h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.blockerTagDistribution} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                     <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                     <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                     <YAxis type="category" dataKey="tag" width={140} tick={{ fill: "var(--flux-text-muted)", fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--flux-surface-card)",
-                        border: "1px solid var(--flux-primary-alpha-25)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    />
+                    <ReportsTooltip />
                     <Bar dataKey="count" fill="var(--flux-danger)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ReportsChartFrame>
             )}
           </ChartShell>
         </div>
@@ -705,20 +690,13 @@ export function FluxReportsDashboard() {
             chartId="velocity_scrum"
             explainPayload={{ teamVelocity: data.teamVelocity }}
           >
-            <div className="h-[280px] w-full min-w-0">
+            <ReportsChartFrame heightClassName="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                   <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                   <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                   <YAxis type="category" dataKey="name" width={120} tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--flux-surface-card)",
-                      border: "1px solid var(--flux-primary-alpha-25)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
+                  <ReportsTooltip />
                   <Bar dataKey="moves" name={t("series.cards")} radius={[0, 4, 4, 0]}>
                     {velocityData.map((_, i) => (
                       <Cell key={`scrum-${i}-${velocityData[i]?.name ?? ""}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -726,7 +704,7 @@ export function FluxReportsDashboard() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </ReportsChartFrame>
           </ChartShell>
           <ChartShell
             title={t("hub.sprintVelocityTitle")}
@@ -734,37 +712,31 @@ export function FluxReportsDashboard() {
             explainPayload={{ history: data.sprintStoryPointsHistory }}
           >
             {!sprintSpChart.length ? (
-              <p className="text-sm text-[var(--flux-text-muted)]">{t("emptyChart")}</p>
+              <ReportsEmptyState message={t("emptyChart")} />
             ) : (
-              <div className="h-[280px] w-full min-w-0">
+              <ReportsChartFrame heightClassName="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sprintSpChart} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
                     <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
                     <XAxis dataKey="label" angle={-20} textAnchor="end" interval={0} height={56} tick={{ fontSize: 9 }} />
                     <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--flux-surface-card)",
-                        border: "1px solid var(--flux-primary-alpha-25)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    />
+                    <ReportsTooltip />
                     <Bar dataKey="sp" name="SP" fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ReportsChartFrame>
             )}
           </ChartShell>
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4">
-            <p className="text-xs font-semibold text-[var(--flux-text)]">{t("hub.dorReadyTitle")}</p>
-            <p className="mt-2 font-display text-2xl text-[var(--flux-primary-light)]">
-              {data.scrumDorReady && data.scrumDorReady.eligible > 0
+          <ReportsInfoCard
+            title={t("hub.dorReadyTitle")}
+            value={
+              data.scrumDorReady && data.scrumDorReady.eligible > 0
                 ? `${Math.round((data.scrumDorReady.ready / data.scrumDorReady.eligible) * 100)}%`
-                : "—"}
-            </p>
-            <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">{t("hub.dorReadyHint")}</p>
-          </div>
+                : "—"
+            }
+            valueClassName="text-[var(--flux-primary-light)]"
+            hint={t("hub.dorReadyHint")}
+          />
           <Link
             href={`${localeRoot}/sprints`}
             className="inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
@@ -774,10 +746,10 @@ export function FluxReportsDashboard() {
         </div>
       ) : null}
 
-      <p className="text-[11px] text-[var(--flux-text-muted)]">
-        {t("generatedAt")}{" "}
-        {new Date(data.generatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
-      </p>
+      <ReportsGeneratedAt
+        label={t("generatedAt")}
+        value={new Date(data.generatedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+      />
     </DataFadeIn>
   );
 }

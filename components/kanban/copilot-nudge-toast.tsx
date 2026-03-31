@@ -70,7 +70,7 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
           aria-label={collapsed ? t("expand") : t("collapse")}
-          className="mb-2 inline-flex max-w-full items-center gap-2 self-end rounded-full border border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)] shadow-lg backdrop-blur-sm"
+          className="flux-glass-surface flux-motion-standard mb-2 inline-flex max-w-full items-center gap-2 self-end rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--flux-text)]"
         >
           <svg className="h-3.5 w-3.5 shrink-0 text-[var(--flux-primary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -85,7 +85,7 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
             {visible.map((nudge) => (
               <div
                 key={nudge.id}
-                className={`flex items-start gap-2 rounded-xl border p-3 shadow-md backdrop-blur-sm ${SEVERITY_STYLES[nudge.severity]}`}
+                className={`flux-glass-surface flux-motion-standard flex items-start gap-2 rounded-xl p-3 ${SEVERITY_STYLES[nudge.severity]}`}
               >
                 <svg className={`mt-0.5 h-4 w-4 shrink-0 ${SEVERITY_ICON_COLOR[nudge.severity]}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -106,7 +106,7 @@ export function CopilotNudgeToast({ boardId }: CopilotNudgeToastProps) {
               </div>
             ))}
             {coachActions.length > 0 ? (
-              <div className="rounded-xl border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)]/95 p-3 shadow-md backdrop-blur-sm">
+              <div className="flux-glass-surface rounded-xl border-[var(--flux-secondary-alpha-28)] p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">{t("coachTitle")}</p>
                 <p className="mt-0.5 text-[10px] text-[var(--flux-text-muted)]">{t("coachSubtitle")}</p>
                 <ul className="mt-2 space-y-2">

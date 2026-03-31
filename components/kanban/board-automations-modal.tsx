@@ -48,6 +48,17 @@ export function BoardAutomationsModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [rules, setRules] = useState<AutomationRule[]>([]);
+  const [logs, setLogs] = useState<
+    Array<{
+      _id: string;
+      ruleId: string;
+      triggerType: string;
+      actionType: string;
+      status: "success" | "simulated" | "failed";
+      executedAt: string;
+      message?: string | null;
+    }>
+  >([]);
 
   const [nlText, setNlText] = useState("");
   const [nlLoading, setNlLoading] = useState(false);
@@ -64,6 +75,11 @@ export function BoardAutomationsModal({
       const data = (await res.json()) as { rules?: AutomationRule[]; error?: string };
       if (!res.ok) throw new Error(data.error || "load");
       setRules(Array.isArray(data.rules) ? data.rules : []);
+      const logsRes = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/automations/logs`, {
+        headers: getApiHeaders(getHeaders()),
+      });
+      const logsData = (await logsRes.json()) as { logs?: typeof logs };
+      setLogs(Array.isArray(logsData.logs) ? logsData.logs : []);
     } catch {
       pushToast({ kind: "error", title: t("loadError") });
       setRules([]);
@@ -186,6 +202,21 @@ export function BoardAutomationsModal({
     setNlRule(null);
     setNlInterpretLlm(null);
     pushToast({ kind: "success", title: t("nlApplied") });
+  };
+
+  const runRuleTest = async (rule: AutomationRule) => {
+    try {
+      const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/automations/logs`, {
+        method: "POST",
+        headers: getApiHeaders(getHeaders()),
+        body: JSON.stringify({ ruleId: rule.id }),
+      });
+      if (!res.ok) throw new Error("test");
+      pushToast({ kind: "success", title: "Teste de regra executado." });
+      await load();
+    } catch {
+      pushToast({ kind: "error", title: "Falha ao testar regra." });
+    }
   };
 
   const setActionType = (index: number, type: AutomationAction["type"]) => {
@@ -334,6 +365,13 @@ export function BoardAutomationsModal({
                     >
                       {t("remove")}
                     </button>
+                    <button
+                      type="button"
+                      className="text-xs text-[var(--flux-primary-light)] hover:underline"
+                      onClick={() => void runRuleTest(rule)}
+                    >
+                      Testar
+                    </button>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -402,6 +440,29 @@ export function BoardAutomationsModal({
               >
                 {t("addRule")}
               </button>
+
+              <div className="rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]/30 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                  Logs de execução
+                </p>
+                {logs.length === 0 ? (
+                  <p className="mt-2 text-xs text-[var(--flux-text-muted)]">Nenhum log ainda.</p>
+                ) : (
+                  <ul className="mt-2 space-y-2">
+                    {logs.slice(0, 8).map((log) => (
+                      <li key={log._id} className="rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] px-2.5 py-2 text-[11px]">
+                        <div className="font-semibold text-[var(--flux-text)]">
+                          {log.ruleId} · {log.status}
+                        </div>
+                        <div className="text-[var(--flux-text-muted)]">
+                          {log.triggerType} → {log.actionType}
+                        </div>
+                        <div className="text-[var(--flux-text-muted)]">{new Date(log.executedAt).toLocaleString()}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
         </div>

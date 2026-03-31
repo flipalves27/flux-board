@@ -80,20 +80,17 @@ export function BoardWorkloadPanel({ boardId, open, onClose, getHeaders }: Props
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[var(--flux-z-overlay,900)] bg-black/30 transition-opacity"
+        className="fixed inset-0 z-[var(--flux-z-overlay,900)] bg-black/30 transition-opacity motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
         onClick={onClose}
         aria-hidden
       />
 
       {/* Slide-over panel */}
       <aside
-        className="fixed right-0 top-0 z-[var(--flux-z-overlay,900)] flex h-full w-full max-w-md flex-col bg-[var(--flux-surface-elevated)] shadow-2xl animate-slide-in-right"
+        className="fixed right-0 top-0 z-[var(--flux-z-overlay,900)] flex h-full w-full max-w-md flex-col bg-[var(--flux-surface-elevated)] shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-200"
         role="dialog"
         aria-modal
         aria-label={t("board.intelligence.workloadTitle")}
-        style={{
-          animation: "slideInRight 0.25s ease-out",
-        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--flux-border-muted)] px-5 py-4">
@@ -185,9 +182,14 @@ export function BoardWorkloadPanel({ boardId, open, onClose, getHeaders }: Props
                   );
                 })}
                 {result.members.length === 0 && (
-                  <p className="text-[11px] text-[var(--flux-text-muted)] italic">
-                    {t("board.intelligence.workloadEmpty")}
-                  </p>
+                  <div className="rounded-lg border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-3 py-3 text-center">
+                    <div className="mx-auto mb-1.5 h-8 w-8 rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-hover)] flex items-center justify-center text-[var(--flux-text-muted)]">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <p className="text-[11px] text-[var(--flux-text-muted)] italic">{t("board.intelligence.workloadEmpty")}</p>
+                  </div>
                 )}
               </div>
 
@@ -233,12 +235,6 @@ export function BoardWorkloadPanel({ boardId, open, onClose, getHeaders }: Props
         </div>
       </aside>
 
-      <style jsx>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
     </>
   );
 }

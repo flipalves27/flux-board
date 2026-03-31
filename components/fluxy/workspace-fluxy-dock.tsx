@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/context/toast-context";
+import { useFluxyState } from "@/context/fluxy-presence-context";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
-import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 import { useWorkspaceFluxyDockStore } from "@/stores/workspace-fluxy-dock-store";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { FluxyDock } from "@/components/fluxy/fluxy-dock";
+import { trackFluxyEvent } from "@/lib/fluxy-telemetry";
 
 function normalizeAppPath(pathname: string): string {
   return pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
@@ -95,7 +97,7 @@ export function WorkspaceFluxyDock() {
   }, [hydrateFromStorage]);
 
   const normalizedPath = normalizeAppPath(pathname);
-  const show = isChecked && user && shouldRenderWorkspaceFluxy(normalizedPath);
+  const show = Boolean(isChecked && user && shouldRenderWorkspaceFluxy(normalizedPath));
 
   const closePanel = useCallback(() => {
     abortRef.current?.abort();
@@ -148,7 +150,26 @@ export function WorkspaceFluxyDock() {
     };
   }, [panelOpen, show, getHeaders]);
 
-  const fluxyVisualState = generating ? "thinking" : "waving";
+  const fluxy = useFluxyState({ isOpen: panelOpen, isGenerating: generating, source: "workspace" });
+
+  useEffect(() => {
+    trackFluxyEvent({
+      event: "fluxy_state_changed",
+      mode: "workspace",
+      state: fluxy.visualState,
+      origin: "workspace_dock",
+    });
+  }, [fluxy.visualState]);
+
+  useEffect(() => {
+    if (!panelOpen || !fluxy.message) return;
+    trackFluxyEvent({
+      event: "fluxy_proactive_message_viewed",
+      mode: "workspace",
+      state: fluxy.visualState,
+      origin: "workspace_panel",
+    });
+  }, [panelOpen, fluxy.message, fluxy.visualState]);
 
   const demoBlocked = tier === "free" && typeof freeDemoRemaining === "number" && freeDemoRemaining <= 0;
   const canSend = !generating && draft.trim().length > 0 && !demoBlocked;
@@ -264,12 +285,14 @@ export function WorkspaceFluxyDock() {
     }
   }, [canSend, draft, getHeaders, pushToast, sprintContext, t]);
 
-  if (!show || !hydrated) return null;
-
   const bottom = "max(1rem, env(safe-area-inset-bottom, 0px))";
   const right = "max(1rem, env(safe-area-inset-right, 0px))";
 
-  const openPanel = () => setPanelOpen(true);
+  const openPanel = () => {
+    trackFluxyEvent({ event: "fluxy_dock_opened", mode: "workspace", origin: "launcher_open" });
+    trackFluxyEvent({ event: "fluxy_cta_clicked", mode: "workspace", origin: "panel_open" });
+    setPanelOpen(true);
+  };
 
   const freeBanner =
     tier === "free" && freeDemoRemaining !== null ? (
@@ -279,69 +302,42 @@ export function WorkspaceFluxyDock() {
       </div>
     ) : null;
 
-  if (!dockVisible) {
-    return (
-      <div
-        className="fixed z-[var(--flux-z-board-fluxy-dock)] motion-safe:transition-[transform,bottom] motion-safe:duration-200 max-md:max-w-[calc(100vw-2rem)]"
-        style={{ bottom, right }}
-      >
-        <button
-          type="button"
-          onClick={() => setDockVisible(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)]/92 px-2.5 py-1.5 text-[10px] font-semibold text-[var(--flux-primary-light)] shadow-[var(--flux-shadow-md)] backdrop-blur-md hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-10)]"
-          aria-label={t("restoreAria")}
-        >
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
-            <AiAssistantIcon className="h-3.5 w-3.5" />
-          </span>
-          {t("restore")}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div
-        className="fixed z-[var(--flux-z-board-fluxy-dock)] flex max-w-[min(100vw-2rem,280px)] flex-col gap-1.5 motion-safe:transition-[transform,bottom] motion-safe:duration-200"
-        style={{ bottom, right }}
-      >
-        <div className="flex items-center gap-1.5 rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-14),var(--flux-secondary-alpha-08))] py-1.5 pl-1.5 pr-1.5 shadow-[var(--flux-shadow-primary-panel)] backdrop-blur-md">
-          <button
-            type="button"
-            onClick={openPanel}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors"
-            aria-expanded={panelOpen}
-            aria-haspopup="dialog"
-            aria-label={t("fabAria")}
-          >
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]">
-              <AiAssistantIcon className="h-[18px] w-[18px]" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-display text-xs font-bold leading-tight text-[var(--flux-text)]">{t("fabLabel")}</span>
-              <span className="block text-[9px] leading-snug text-[var(--flux-text-muted)]">{t("fabHint")}</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setDockVisible(false)}
-            className="btn-secondary shrink-0 px-2 py-1.5 text-[9px]"
-            aria-label={t("hideDock")}
-            title={t("hideDock")}
-          >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <FluxyDock
+        show={show}
+        hydrated={hydrated}
+        dockVisible={dockVisible}
+        setDockVisible={setDockVisible}
+        restoreContainerClassName="fixed z-[var(--flux-z-board-fluxy-dock)] motion-safe:transition-[transform,bottom] motion-safe:duration-200 max-md:max-w-[calc(100vw-2rem)]"
+        launcherContainerClassName="fixed z-[var(--flux-z-board-fluxy-dock)] flex max-w-[min(100vw-2rem,280px)] flex-col gap-1.5 motion-safe:transition-[transform,bottom] motion-safe:duration-200"
+        positionStyle={{ bottom, right }}
+        restore={{
+          label: t("restore"),
+          ariaLabel: t("restoreAria"),
+          avatarState: fluxy.visualState,
+          buttonClassName: "inline-flex items-center gap-2 rounded-full border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-surface-card)]/92 px-2.5 py-1.5 text-[10px] font-semibold text-[var(--flux-primary-light)] shadow-[var(--flux-shadow-md)] backdrop-blur-md hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-10)]",
+          iconWrapperClassName: "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+        }}
+        launcher={{
+          onOpen: openPanel,
+          openAriaLabel: t("fabAria"),
+          openAriaExpanded: panelOpen,
+          hideAriaLabel: t("hideDock"),
+          hideTitle: t("hideDock"),
+          avatarState: fluxy.visualState,
+          containerClassName: "flex items-center gap-1.5 rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-14),var(--flux-secondary-alpha-08))] py-1.5 pl-1.5 pr-1.5 shadow-[var(--flux-shadow-primary-panel)] backdrop-blur-md",
+          openButtonClassName: "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
+          avatarWrapperClassName: "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+          title: t("fabLabel"),
+          subtitle: t("fabHint"),
+          titleClassName: "block font-display text-xs font-bold leading-tight text-[var(--flux-text)]",
+          subtitleClassName: "block text-[9px] leading-snug text-[var(--flux-text-muted)]",
+        }}
+        onRestoreDock={() => trackFluxyEvent({ event: "fluxy_dock_opened", mode: "workspace", origin: "restore" })}
+      />
 
-      {panelOpen ? (
+      {panelOpen && show ? (
         <div className="fixed inset-0 z-[var(--flux-z-fab-panel-backdrop)]">
           <button
             type="button"
@@ -357,7 +353,7 @@ export function WorkspaceFluxyDock() {
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--flux-chrome-alpha-08)] px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
-                <FluxyAvatar state={fluxyVisualState} size="header" className="shrink-0 scale-90" title={t("panelTitle")} />
+                <FluxyAvatar state={fluxy.visualState} size="header" className="shrink-0 scale-90" title={t("panelTitle")} />
                 <div className="min-w-0">
                   <h2 id={titleId} className="font-display text-sm font-bold leading-tight text-[var(--flux-primary-light)]">
                     {t("panelTitle")}

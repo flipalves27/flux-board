@@ -30,6 +30,7 @@ import { FluxCapabilityStrip } from "@/components/boards/flux-capability-strip";
 import { FluxAiHub } from "@/components/boards/flux-ai-hub";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import type { BoardMethodology } from "@/lib/board-methodology";
@@ -706,14 +707,18 @@ export default function BoardsPage() {
                   })}
                 </div>
                 {empty && boards.length === 0 && (
-                  <p className="text-center py-12 text-[var(--flux-text-muted)]">
-                    {t("empty.noBoards", { newBoardName: t("defaults.newBoardName") })}
-                  </p>
+                  <FluxEmptyState
+                    className="py-10"
+                    title={t("sections.yourBoards")}
+                    description={t("empty.noBoards", { newBoardName: t("defaults.newBoardName") })}
+                  />
                 )}
                 {!empty && boards.length > 0 && visibleBoards.length === 0 && (
-                  <p className="text-center py-12 text-[var(--flux-text-muted)]">
-                    {t("empty.noResults")}
-                  </p>
+                  <FluxEmptyState
+                    className="py-10"
+                    title={t("sections.search")}
+                    description={t("empty.noResults")}
+                  />
                 )}
                 </section>
 

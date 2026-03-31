@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import type { TemplateCategory } from "@/lib/template-types";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
 
@@ -261,7 +262,7 @@ export default function TemplatesShowcasePage() {
         {loading ? (
           <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
         ) : rows.length === 0 ? (
-          <p className="text-[var(--flux-text-muted)]">{t("empty")}</p>
+          <FluxEmptyState title={t("title")} description={t("empty")} />
         ) : (
           <ul className="space-y-3">
             {rows.map((r) => (

@@ -11,6 +11,7 @@ import { useCeremonyStore } from "@/stores/ceremony-store";
 import { useWorkspaceFluxyDockStore } from "@/stores/workspace-fluxy-dock-store";
 import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
 import { Header } from "@/components/header";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { SprintFormDrawer } from "@/components/sprints/sprint-form-drawer";
 
@@ -145,7 +146,7 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
       <>
         <Header />
         <div className="mx-auto max-w-5xl px-4 py-10 space-y-4">
-          <p className="text-sm text-[var(--flux-text-muted)]">{t("loadError")}</p>
+          <FluxEmptyState title={t("tabs.overview")} description={t("loadError")} />
           <button type="button" className="text-sm font-semibold text-[var(--flux-primary-light)] hover:underline" onClick={() => void load()}>
             {t("retry")}
           </button>
@@ -159,7 +160,7 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
       <>
         <Header />
         <div className="mx-auto max-w-5xl px-4 py-10 space-y-4">
-          <p className="text-sm text-[var(--flux-text-muted)]">{t("notFound")}</p>
+          <FluxEmptyState title={t("tabs.overview")} description={t("notFound")} />
           <Link href={`${localeRoot}/sprints`} className="text-sm font-semibold text-[var(--flux-primary-light)] hover:underline">
             {t("backHub")}
           </Link>
@@ -316,7 +317,7 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
         {tab === "metrics" ? (
           <section className="space-y-4">
             {!chartData.length ? (
-              <p className="text-sm text-[var(--flux-text-muted)]">{t("noBurndown")}</p>
+              <FluxEmptyState title={t("tabs.metrics")} description={t("noBurndown")} />
             ) : (
               <div className="h-64 w-full rounded-xl border border-[var(--flux-chrome-alpha-08)] p-3">
                 <ResponsiveContainer width="100%" height="100%">

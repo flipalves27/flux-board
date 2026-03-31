@@ -10,6 +10,26 @@ export function computeDoneCardIdsForSprintCards(
   });
 }
 
+export function computeVelocityFromDoneCards(
+  doneCardIds: readonly string[],
+  cards: Array<Record<string, unknown>>
+): number {
+  if (!doneCardIds.length) return 0;
+  const doneSet = new Set(doneCardIds);
+  let hasStoryPoints = false;
+  let storyPointsTotal = 0;
+  for (const card of cards) {
+    const id = String(card.id ?? "");
+    if (!id || !doneSet.has(id)) continue;
+    const raw = card.storyPoints;
+    if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0) {
+      hasStoryPoints = true;
+      storyPointsTotal += raw;
+    }
+  }
+  return hasStoryPoints ? storyPointsTotal : doneCardIds.length;
+}
+
 export function computeCarryoverCardIds(sprintCardIds: string[], doneCardIds: string[]): string[] {
   const done = new Set(doneCardIds);
   return sprintCardIds.filter((id) => !done.has(id));
@@ -40,5 +60,19 @@ export function buildClosingBurndownSnapshot(params: {
     completedToday: 0,
     addedToday: 0,
     idealRemaining: 0,
+  };
+}
+
+/** First row when sprint starts (baseline t0). */
+export function buildStartBurndownSnapshot(params: {
+  date: string;
+  remainingCards: number;
+}): BurndownSnapshot {
+  return {
+    date: params.date,
+    remainingCards: params.remainingCards,
+    completedToday: 0,
+    addedToday: 0,
+    idealRemaining: params.remainingCards,
   };
 }

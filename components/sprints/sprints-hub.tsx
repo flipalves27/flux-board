@@ -11,6 +11,7 @@ import { KanbanCadencePanel } from "@/components/ceremonies/kanban-cadence-panel
 import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { SprintFormDrawer } from "@/components/sprints/sprint-form-drawer";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -359,6 +360,12 @@ export function SprintsHub({ getHeaders }: Props) {
       {!loading && !error ? (
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("allSprints")}</h2>
+          {filteredRows.length === 0 ? (
+            <FluxEmptyState
+              title={t("allSprints")}
+              description={rows.length === 0 ? t("empty") : t("emptyFiltered")}
+            />
+          ) : null}
           <div className="overflow-hidden rounded-xl border border-[var(--flux-chrome-alpha-08)]">
             <table className="w-full text-left text-sm">
               <thead className="bg-[var(--flux-surface-elevated)] text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
@@ -371,13 +378,7 @@ export function SprintsHub({ getHeaders }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-[var(--flux-text-muted)]">
-                      {rows.length === 0 ? t("empty") : t("emptyFiltered")}
-                    </td>
-                  </tr>
-                ) : (
+                {filteredRows.length === 0 ? null : (
                   filteredRows.map((s) => (
                     <tr key={s.id} className="border-t border-[var(--flux-chrome-alpha-06)]">
                       <td className="px-4 py-3 font-medium text-[var(--flux-text)]">{s.name}</td>

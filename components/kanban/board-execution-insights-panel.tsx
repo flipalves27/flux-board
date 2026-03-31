@@ -66,8 +66,8 @@ export function BoardExecutionInsightsPanel({
       ) : null}
 
       {open && (
-        <div className="fixed inset-0 z-[var(--flux-z-fab-panel-high)] pointer-events-none">
-          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] pointer-events-auto flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[var(--flux-z-fab-panel-high)] pointer-events-none motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+          <div className="absolute right-4 top-[92px] bottom-4 w-[min(440px,92vw)] bg-[var(--flux-surface-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad)] shadow-[0_18px_60px_var(--flux-black-alpha-45)] pointer-events-auto flex flex-col overflow-hidden motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-4 motion-safe:duration-200">
             <div className="px-4 py-3 border-b border-[var(--flux-chrome-alpha-08)] flex items-start justify-between gap-3 shrink-0">
               <div className="min-w-0">
                 <div className="text-sm font-bold font-display text-[var(--flux-primary-light)] truncate">{tFab("title")}</div>
@@ -85,7 +85,9 @@ export function BoardExecutionInsightsPanel({
                 </div>
                 <div className="space-y-1.5">
                   {executionInsights.nextActions.length === 0 ? (
-                    <p className="text-xs text-[var(--flux-text-muted)]">{tFab("emptyNextActions")}</p>
+                    <div className="rounded-md border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] px-2.5 py-2 text-center">
+                      <p className="text-xs text-[var(--flux-text-muted)]">{tFab("emptyNextActions")}</p>
+                    </div>
                   ) : (
                     executionInsights.nextActions.map((entry) => (
                       <button

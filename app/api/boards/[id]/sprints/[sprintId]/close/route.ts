@@ -9,8 +9,10 @@ import {
   applyCarryoverTagToBoardCards,
   buildClosingBurndownSnapshot,
   computeCarryoverCardIds,
+  computeVelocityFromDoneCards,
 } from "@/lib/sprint-lifecycle";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
+import { logSprintLifecycleEvent } from "@/lib/sprint-lifecycle-observability";
 
 export const runtime = "nodejs";
 
@@ -62,7 +64,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   });
   const burndownSnapshots = mergeBurndownSnapshotRow(sprint.burndownSnapshots, closingRow);
 
-  const velocity = sprint.doneCardIds.length;
+  const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
+  const velocity = computeVelocityFromDoneCards(sprint.doneCardIds, cards);
 
   const updated = await updateSprint(payload.orgId, sprintId, {
     status: "closed",
@@ -79,6 +82,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     velocity,
     carryoverCardIds: carryoverIds,
   });
+  logSprintLifecycleEvent({
+    event: "sprint_close_with_carryover",
+    orgId: payload.orgId,
+    boardId,
+    sprintId,
+    velocity,
+    doneCount: sprint.doneCardIds.length,
+    carryoverCount: carryoverIds.length,
+  });
 
-  return NextResponse.json({ sprint: updated, carryoverCardIds: carryoverIds });
+  const carryoverAssist = carryoverIds.length
+    ? {
+        recommended: true,
+        preselectedCardIds: carryoverIds,
+        suggestedSprintName: `${sprint.name} (Carryover)`,
+      }
+    : { recommended: false as const, preselectedCardIds: [] as string[] };
+
+  return NextResponse.json({ sprint: updated, carryoverCardIds: carryoverIds, carryoverAssist });
 }

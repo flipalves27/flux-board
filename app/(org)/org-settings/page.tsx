@@ -10,6 +10,7 @@ import { useToast } from "@/context/toast-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { readImageFileAsDataUrl } from "@/lib/branding-upload-client";
 import { OrgWebhooksSettings } from "@/components/org-webhooks-settings";
+import { PushNotificationsSettings } from "@/components/push-notifications-settings";
 import { isPlatformAdminSession, sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
 function slugifyLocal(input: string): string {
@@ -699,6 +700,7 @@ export default function OrgSettingsPage() {
               ) : null}
 
               {user && isPlatformAdminSession(user) ? <OrgWebhooksSettings /> : null}
+              <PushNotificationsSettings />
             </>
           )}
         </div>

@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   applyCarryoverTagToBoardCards,
   buildClosingBurndownSnapshot,
+  buildStartBurndownSnapshot,
   computeCarryoverCardIds,
   computeDoneCardIdsForSprintCards,
+  computeVelocityFromDoneCards,
 } from "./sprint-lifecycle";
 
 describe("computeDoneCardIdsForSprintCards", () => {
@@ -20,6 +22,22 @@ describe("computeDoneCardIdsForSprintCards", () => {
 describe("computeCarryoverCardIds", () => {
   it("returns cards in sprint but not done", () => {
     expect(computeCarryoverCardIds(["a", "b", "c"], ["a"])).toEqual(["b", "c"]);
+  });
+});
+
+describe("computeVelocityFromDoneCards", () => {
+  it("uses story points when available", () => {
+    const cards = [
+      { id: "a", storyPoints: 3 },
+      { id: "b", storyPoints: 5 },
+      { id: "c", storyPoints: null },
+    ] as Array<Record<string, unknown>>;
+    expect(computeVelocityFromDoneCards(["a", "b", "c"], cards)).toBe(8);
+  });
+
+  it("falls back to done count when no story points", () => {
+    const cards = [{ id: "a" }, { id: "b" }] as Array<Record<string, unknown>>;
+    expect(computeVelocityFromDoneCards(["a", "b"], cards)).toBe(2);
   });
 });
 
@@ -46,6 +64,19 @@ describe("buildClosingBurndownSnapshot", () => {
       date: "2026-03-22",
       remainingCards: 3,
       idealRemaining: 0,
+      completedToday: 0,
+      addedToday: 0,
+    });
+  });
+});
+
+describe("buildStartBurndownSnapshot", () => {
+  it("sets baseline ideal to remaining at t0", () => {
+    const s = buildStartBurndownSnapshot({ date: "2026-03-22", remainingCards: 7 });
+    expect(s).toMatchObject({
+      date: "2026-03-22",
+      remainingCards: 7,
+      idealRemaining: 7,
       completedToday: 0,
       addedToday: 0,
     });

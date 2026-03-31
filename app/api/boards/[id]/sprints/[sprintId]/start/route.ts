@@ -4,6 +4,9 @@ import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { getSprint, updateSprint, getActiveSprint } from "@/lib/kv-sprints";
+import { mergeBurndownSnapshotRow } from "@/lib/sprint-burndown-snapshot";
+import { buildStartBurndownSnapshot } from "@/lib/sprint-lifecycle";
+import { logSprintLifecycleEvent } from "@/lib/sprint-lifecycle-observability";
 
 export const runtime = "nodejs";
 
@@ -33,9 +36,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+  const startRow = buildStartBurndownSnapshot({
+    date: today,
+    remainingCards: sprint.cardIds.length,
+  });
+  const burndownSnapshots = mergeBurndownSnapshotRow(sprint.burndownSnapshots, startRow);
   const updated = await updateSprint(payload.orgId, sprintId, {
     status: "active",
-    startDate: sprint.startDate ?? now.slice(0, 10),
+    startDate: sprint.startDate ?? today,
+    burndownSnapshots,
+  });
+  logSprintLifecycleEvent({
+    event: "sprint_start",
+    orgId: payload.orgId,
+    boardId,
+    sprintId,
+    doneCount: 0,
   });
   return NextResponse.json({ sprint: updated });
 }

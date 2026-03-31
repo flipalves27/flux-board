@@ -7,6 +7,7 @@ import { TeamWorkspacePanel } from "@/components/team/team-workspace-panel";
 import { DocsRichEditor, type DocsRichEditorHandle } from "@/components/docs/docs-rich-editor";
 import { DocsMarkdownPreview } from "@/components/docs/docs-markdown-preview";
 import { DocsAiBanner, DocsEditorHint } from "@/components/docs/docs-editor-hint";
+import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -122,10 +123,9 @@ export function DocsEditor({ doc, getHeaders, onSaved, onDelete }: Props) {
     return (
       <div className="flex-1 overflow-y-auto p-4">
         <TeamWorkspacePanel>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-[var(--flux-text)]">{t("empty.title")}</h2>
-            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">{t("empty.subtitle")}</p>
-            <ol className="mx-auto mt-6 max-w-md list-decimal space-y-3 pl-5 text-left text-sm text-[var(--flux-text-muted)]">
+          <div className="space-y-4">
+            <FluxEmptyState title={t("empty.title")} description={t("empty.subtitle")} />
+            <ol className="mx-auto max-w-md list-decimal space-y-3 pl-5 text-left text-sm text-[var(--flux-text-muted)]">
               <li>{t("empty.step1")}</li>
               <li>{t("empty.step2")}</li>
               <li>{t("empty.step3")}</li>

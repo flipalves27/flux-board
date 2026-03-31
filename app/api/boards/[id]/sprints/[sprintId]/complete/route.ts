@@ -3,8 +3,9 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
-import { computeDoneCardIdsForSprintCards } from "@/lib/sprint-lifecycle";
+import { computeDoneCardIdsForSprintCards, computeVelocityFromDoneCards } from "@/lib/sprint-lifecycle";
 import { getSprint, updateSprint } from "@/lib/kv-sprints";
+import { logSprintLifecycleEvent } from "@/lib/sprint-lifecycle-observability";
 
 export const runtime = "nodejs";
 
@@ -31,13 +32,21 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const board = await getBoard(boardId, payload.orgId);
   const cards = Array.isArray(board?.cards) ? (board!.cards as Array<Record<string, unknown>>) : [];
   const doneCardIds = computeDoneCardIdsForSprintCards(sprint.cardIds, cards);
-  const velocity = doneCardIds.length;
+  const velocity = computeVelocityFromDoneCards(doneCardIds, cards);
 
   const updated = await updateSprint(payload.orgId, sprintId, {
     status: "review",
     doneCardIds,
     velocity,
     endDate: sprint.endDate ?? new Date().toISOString().slice(0, 10),
+  });
+  logSprintLifecycleEvent({
+    event: "sprint_complete_to_review",
+    orgId: payload.orgId,
+    boardId,
+    sprintId,
+    velocity,
+    doneCount: doneCardIds.length,
   });
   return NextResponse.json({ sprint: updated });
 }
