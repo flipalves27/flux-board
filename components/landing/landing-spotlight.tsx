@@ -12,8 +12,11 @@ export function LandingSpotlight() {
       aria-label={t("spotlight.sectionAria")}
     >
       <div className="grid gap-5 md:grid-cols-3">
-        <article className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-6">
-          <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-primary)]/20 blur-3xl" aria-hidden />
+        <article className="landing-spotlight-card relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--shadow-md)] transition-transform duration-300 hover:-translate-y-0.5">
+          <div
+            className="landing-spotlight-card-glow pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-primary)]/20 blur-3xl"
+            aria-hidden
+          />
           <div className="relative mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-primary-dark)]">
             <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
               <path d="M4 10h3l2-5 2 9 2-4h3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -27,8 +30,11 @@ export function LandingSpotlight() {
           </div>
         </article>
 
-        <article className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-secondary-alpha-20)] bg-[var(--flux-surface-card)] p-6">
-          <div className="pointer-events-none absolute -left-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/15 blur-3xl" aria-hidden />
+        <article className="landing-spotlight-card relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-secondary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--shadow-md)] transition-transform duration-300 hover:-translate-y-0.5">
+          <div
+            className="landing-spotlight-card-glow pointer-events-none absolute -left-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/15 blur-3xl"
+            aria-hidden
+          />
           <div className="relative mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--flux-secondary-dark)] to-[var(--flux-secondary)]">
             <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
               <circle cx="10" cy="10" r="7" stroke="white" strokeWidth="1.4" strokeOpacity="0.6" />
@@ -54,8 +60,11 @@ export function LandingSpotlight() {
           </div>
         </article>
 
-        <article className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-danger)]/20 bg-[var(--flux-surface-card)] p-6">
-          <div className="pointer-events-none absolute -right-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-danger)]/10 blur-3xl" aria-hidden />
+        <article className="landing-spotlight-card relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-danger)]/20 bg-[var(--flux-surface-card)] p-6 shadow-[var(--shadow-md)] transition-transform duration-300 hover:-translate-y-0.5">
+          <div
+            className="landing-spotlight-card-glow pointer-events-none absolute -right-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-danger)]/10 blur-3xl"
+            aria-hidden
+          />
           <div className="relative mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--flux-danger)] to-[var(--flux-warning)]">
             <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
               <path d="M10 3l7 12H3L10 3z" stroke="white" strokeWidth="1.4" strokeLinejoin="round" />

@@ -5,7 +5,7 @@ export type KanbanMockProps = {
 
 export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
   return (
-    <div className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border p-4 md:p-5" aria-hidden>
+    <div className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border p-3 sm:p-4 md:p-5" aria-hidden>
       <div className="pointer-events-none absolute -right-8 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[var(--flux-primary)]/15 blur-3xl" />
       <div className="pointer-events-none absolute -left-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/12 blur-3xl" />
       <div className="mb-3 flex items-center justify-between gap-2 border-b border-[var(--flux-primary-alpha-15)] pb-3">

@@ -33,13 +33,13 @@ export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
   };
 
   return (
-    <section className="home-landing-reveal mt-4 md:mt-6" style={{ animationDelay: "80ms" }} aria-labelledby="landing-hero-heading">
-      <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-        <div>
+    <section className="home-landing-reveal mt-3 md:mt-6" aria-labelledby="landing-hero-heading">
+      <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+        <div className="min-w-0">
           <p className="hero-chip inline-flex rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]">{t("hero.chip")}</p>
           <h1
             id="landing-hero-heading"
-            className="mt-4 font-display text-[1.65rem] font-bold leading-[1.12] tracking-tight md:text-4xl lg:text-[2.65rem] lg:leading-[1.08]"
+            className="mt-3 font-display text-[1.85rem] font-bold leading-[1.1] tracking-[-0.02em] sm:text-3xl md:mt-4 md:text-4xl lg:text-[2.85rem] lg:leading-[1.06]"
           >
             {t("hero.title.before")}{" "}
             <span className="bg-gradient-to-r from-[var(--flux-secondary-light)] via-[var(--flux-primary-light)] to-[var(--flux-accent)] bg-clip-text text-transparent">
@@ -63,14 +63,14 @@ export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
             {user ? (
               <Link
                 href={`${localeRoot}/boards`}
-                className="btn-primary w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
+                className="btn-primary landing-btn-shimmer relative w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
               >
                 {t("hero.primary.loggedIn")}
               </Link>
             ) : (
               <Link
                 href={`${localeRoot}/login`}
-                className="btn-primary w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
+                className="btn-primary landing-btn-shimmer relative w-full justify-center px-6 py-3 text-center text-[15px] sm:w-auto sm:justify-start"
               >
                 {t("hero.primary.loggedOut")}
               </Link>
@@ -90,30 +90,38 @@ export function LandingHero({ localeRoot, appName, user }: LandingHeroProps) {
           <p className="mt-4 text-xs leading-relaxed text-[var(--flux-text-muted)] md:text-sm">{t("hero.quickLine")}</p>
         </div>
 
-        <div className="relative">
+        <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
           <div
-            className="absolute -inset-1 rounded-[calc(var(--flux-rad-xl)+4px)] opacity-70 blur-xl"
+            className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl"
+            style={{
+              background:
+                "radial-gradient(ellipse at 30% 30%, var(--flux-primary-alpha-35), transparent 55%), radial-gradient(ellipse at 70% 60%, var(--flux-secondary-alpha-25), transparent 50%)",
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -inset-1 rounded-[calc(var(--flux-rad-xl)+6px)] opacity-75 blur-2xl"
             style={{ background: "var(--flux-gradient-landing-cta)" }}
             aria-hidden
           />
           <div className="relative">
-            <div className="relative">
+            <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <div
-                className="absolute -right-2 -top-3 z-10 hidden sm:flex sm:items-center sm:rounded-full sm:border sm:border-[var(--flux-secondary-alpha-35)] sm:bg-[var(--flux-surface-card)]/90 sm:px-2 sm:py-1 sm:shadow-md sm:backdrop-blur-sm"
+                className="absolute -right-1 -top-2 z-10 flex items-center rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-surface-card)]/92 px-1.5 py-1 shadow-md backdrop-blur-sm sm:-right-2 sm:-top-3 sm:px-2"
                 title={t("hero.fluxyPeekLabel")}
               >
-                <FluxyAvatar state="idle" size="fab" className="scale-110" />
+                <FluxyAvatar state="idle" size="fab" className="scale-90 sm:scale-110" />
               </div>
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="mt-3 grid grid-cols-3 gap-1.5 text-center sm:gap-2">
               {heroStats.map((row) => (
                 <div
                   key={row.k}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/80 px-1.5 py-1.5 backdrop-blur-sm md:px-2 md:py-2"
+                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)]/85 px-1 py-1.5 backdrop-blur-sm sm:px-1.5 md:px-2 md:py-2"
                 >
                   <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--flux-secondary)] md:text-[10px]">{row.k}</p>
-                  <p className="mt-0.5 font-display text-xs font-bold text-[var(--flux-text)] md:text-sm">{row.v}</p>
+                  <p className="mt-0.5 font-display text-[11px] font-bold leading-tight text-[var(--flux-text)] md:text-sm">{row.v}</p>
                 </div>
               ))}
             </div>

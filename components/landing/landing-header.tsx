@@ -25,7 +25,8 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
-  const navClass = "rounded-md px-2 py-1 transition-colors hover:text-[var(--flux-text)]";
+  const navClass =
+    "rounded-md px-2 py-2.5 transition-colors hover:text-[var(--flux-text)] md:py-1.5 min-h-[44px] md:min-h-0 flex items-center";
   const closeMobile = () => setMobileOpen(false);
 
   return (
@@ -81,7 +82,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] text-[var(--flux-text-muted)] md:hidden"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] text-[var(--flux-text-muted)] md:hidden"
             aria-expanded={mobileOpen}
             aria-controls="landing-mobile-nav"
             onClick={() => setMobileOpen((o) => !o)}

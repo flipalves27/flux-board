@@ -40,4 +40,24 @@ export const CAP_ICONS: Record<string, React.ReactNode> = {
       <path d="M10 6v4l2.5 2.5" stroke="var(--flux-danger)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  fluxGoals: (
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
+      <circle cx="10" cy="10" r="7" stroke="var(--flux-secondary)" strokeWidth="1.3" strokeOpacity="0.5" />
+      <circle cx="10" cy="10" r="4" stroke="var(--flux-secondary)" strokeWidth="1.4" />
+      <path d="M10 6v2.5l2 1.2" stroke="var(--flux-secondary)" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  ),
+  fluxForms: (
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
+      <rect x="3" y="4" width="14" height="12" rx="2" stroke="var(--flux-accent)" strokeWidth="1.2" strokeOpacity="0.7" />
+      <path d="M6 9h8M6 12h5" stroke="var(--flux-accent)" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M14 14l2 2" stroke="var(--flux-accent)" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  ),
+  fluxReports: (
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden>
+      <path d="M4 14l3-3 2.5 2.5L14 8l2 2" stroke="var(--flux-primary-light)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="3" y="4" width="14" height="12" rx="1.5" stroke="var(--flux-primary)" strokeOpacity="0.35" strokeWidth="1" />
+    </svg>
+  ),
 };

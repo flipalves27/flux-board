@@ -9,6 +9,9 @@ const CAPABILITY_KEYS = [
   "contextOnCards",
   "executiveBrief",
   "portfolioAndMetrics",
+  "fluxGoals",
+  "fluxForms",
+  "fluxReports",
   "discoveryAndDeals",
   "routinesAndAlerts",
 ] as const;
@@ -51,7 +54,7 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
           {capabilities.map((cap) => (
             <article
               key={cap.key}
-              className="tone-card flex flex-col rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-5 shadow-[var(--shadow-md)] transition-colors hover:border-[var(--flux-secondary-alpha-35)]"
+              className="tone-card landing-feature-card flex flex-col rounded-[var(--flux-rad-lg)] border bg-[var(--flux-surface-card)] p-5 shadow-[var(--shadow-md)] hover:border-[var(--flux-secondary-alpha-35)]"
             >
               <div className="mb-3 flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--flux-surface-elevated)]">{cap.icon}</div>
@@ -71,11 +74,11 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("midCta.description")}</p>
           <div className="mt-6 flex flex-col items-center gap-3">
             {user ? (
-              <Link href={`${localeRoot}/boards`} className="btn-primary px-6 py-2.5 text-sm">
+              <Link href={`${localeRoot}/boards`} className="btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
                 {t("midCta.primaryLoggedIn")}
               </Link>
             ) : (
-              <Link href={`${localeRoot}/login`} className="btn-primary px-6 py-2.5 text-sm">
+              <Link href={`${localeRoot}/login`} className="btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
                 {t("midCta.primaryLoggedOut")}
               </Link>
             )}

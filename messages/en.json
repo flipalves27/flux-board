@@ -1006,14 +1006,14 @@
   },
   "landing": {
     "meta": {
-      "title": "Flux-Board — Your team's board, clear and in sync",
-      "description": "Own your workflow: professional Kanban, context on every card, daily insights, portfolio view, and Board Copilot on higher plans. Start free—14-day Pro/Business trial, no credit card.",
+      "title": "Flux-Board — Kanban, AI, and goals in one flow",
+      "description": "Ship with clarity: professional Kanban, Fluxy AI, Flux Goals, Flux Reports, public Flux Forms, and Board Copilot on higher plans. Start free—14-day Pro/Business trial, no credit card.",
       "productName": "Flux-Board",
-      "jsonLdDescription": "Professional Kanban with insights, portfolio visibility, and optional AI copilot for teams that need one source of truth for delivery."
+      "jsonLdDescription": "Kanban platform with AI copilot, OKRs, reporting, forms, and portfolio visibility for teams that want one operating rhythm from intake to delivery."
     },
     "skipToContent": "Skip to main content",
     "header": {
-      "tagline": "Your flow. Your board. One place."
+      "tagline": "Flow that feels fast. Delivery that stays clear."
     },
     "nav": {
       "why": "Why {appName}",
@@ -1032,20 +1032,20 @@
       "getStarted": "Get started"
     },
     "hero": {
-      "chip": "Your board · AI copilot · Built to deliver",
+      "chip": "Kanban · Fluxy AI · Goals · Reports · Forms",
       "title": {
-        "before": "The board where you",
-        "highlight": "own the rhythm",
-        "after": "of delivery—from every card to portfolio."
+        "before": "The board built for teams who want",
+        "highlight": "speed with signal",
+        "after": "—from cards and forms to goals and portfolio."
       },
-      "description": "{appName} keeps your Kanban, your context, and your metrics on one surface. Your team sees the same priorities; you move faster—with Fluxy and Board Copilot when you step up to Pro or Business.",
+      "description": "{appName} unites Kanban, Flux Goals, Flux Reports, and Flux Forms with Fluxy on the surface your team already uses. Same priorities everywhere; smarter moves—with Board Copilot when you move up to Pro or Business.",
       "primary": {
         "loggedIn": "Go to my boards",
         "loggedOut": "Start free—create your board"
       },
       "secondary": "See what's inside",
       "pricingLink": "See pricing",
-      "quickLine": "First board in minutes · Trial without a card · Grows with OKRs, Copilot, and alerts",
+      "quickLine": "First board in minutes · Trial without a card · Forms, OKRs, reports, Copilot, and alerts in one stack",
       "fluxyTagline": "Fluxy is your copilot here—plain-language answers on trials, plans, and features.",
       "fluxyCta": "Chat with Fluxy",
       "fluxyPeekLabel": "Fluxy on your board",
@@ -1073,26 +1073,26 @@
       }
     },
     "why": {
-      "heading": "For people who ship—and need everyone on the same truth",
-      "description": "Stop chasing updates in threads and files. One board carries priorities, context, and leadership-ready reads."
+      "heading": "Built for teams that ship—and refuse to lose the plot",
+      "description": "Ditch status scavenger hunts across threads and files. One board carries priorities, structured context, and reads that are ready for leadership."
     },
     "pillars": {
       "commercialPace": {
-        "title": "Kanban that matches how you sell and deliver",
-        "description": "Your columns and priorities—visible to the field and ops without losing what actually closes work."
+        "title": "Kanban tuned to how you sell, build, and deliver",
+        "description": "Columns and priorities the whole team sees—field, ops, and leadership aligned on what actually moves work."
       },
       "insights": {
-        "title": "Signal stays on the board—not buried in files",
-        "description": "Daily insights and structured context per card so you prioritize without another status meeting."
+        "title": "Signal lives on the board—not lost in attachments",
+        "description": "Daily insights and structured fields per card so you steer the week without another status theater."
       },
       "executiveView": {
-        "title": "Your portfolio, same source as the team",
-        "description": "Roll-ups and exports when you need to show progress—no second spreadsheet of truth."
+        "title": "Portfolio and reports from the same source",
+        "description": "Dashboards, roll-ups, and exports when you need to prove progress—no shadow spreadsheet of truth."
       }
     },
     "platform": {
       "heading": "What you get in {appName} today",
-      "description": "Insights, card context, portfolio, discovery, and routines—one experience, aligned with the plans below.",
+      "description": "Insights, goals, reports, forms, card context, portfolio, discovery, and routines—mapped to the plans below.",
       "actions": {
         "openPlatform": "Open the platform"
       }
@@ -1113,6 +1113,18 @@
       "portfolioAndMetrics": {
         "name": "Portfolio and metrics",
         "detail": "Roll-ups and exports when you need to show how delivery is really going."
+      },
+      "fluxGoals": {
+        "name": "Flux Goals (OKRs)",
+        "detail": "Objectives and key results tied to the work on your boards—strategy and execution in one loop."
+      },
+      "fluxForms": {
+        "name": "Flux Forms",
+        "detail": "Public intake links that land structured requests straight on the right board—less inbox, fewer lost asks."
+      },
+      "fluxReports": {
+        "name": "Flux Reports",
+        "detail": "Executive dashboards and trends so leadership reads health and flow without rebuilding the story elsewhere."
       },
       "discoveryAndDeals": {
         "name": "Discovery and deals",
@@ -1163,8 +1175,8 @@
       "columnPlatform": "Platform"
     },
     "midCta": {
-      "heading": "Feel it on your own board",
-      "description": "Create a board, invite who matters, and keep delivery rhythm where you can actually see it.",
+      "heading": "Feel the flow on a real board",
+      "description": "Spin up a board, pull in your team, and keep delivery where signal—not noise—wins the week.",
       "primaryLoggedIn": "Open my boards",
       "primaryLoggedOut": "Start for free",
       "secondary": "Compare plans"
@@ -1178,8 +1190,8 @@
       "docsCta": "Browse product docs"
     },
     "roadmap": {
-      "heading": "New capabilities and plan fit",
-      "description": "Recent capabilities already in the product, with the plan that unlocks each item.",
+      "heading": "What's landing next—and how it maps to your plan",
+      "description": "A living view of capabilities rolling out in the product, with the tier that unlocks each one.",
       "items": {
         "sprint_engine": {
           "title": "Sprint Engine and unified panel",
