@@ -134,7 +134,10 @@
     "userCreated": "Utilizador criado",
     "userDeleted": "Utilizador removido",
     "deleteUserTitle": "Excluir utilizador",
-    "deleteUserConfirm": "Excluir {name} permanentemente?"
+    "deleteUserConfirm": "Excluir {name} permanentemente?",
+    "deleteOrgTitle": "Excluir organização",
+    "deleteOrgConfirm": "Excluir {name} e todos os dados associados (utilizadores, boards, convites, etc.)? Esta ação não pode ser desfeita.",
+    "orgDeleted": "Organização excluída"
   },
   "sprints": {
     "title": "Sprints",

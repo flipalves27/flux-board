@@ -7,8 +7,39 @@ import {
   updateOrganization,
   type OrganizationPlan,
 } from "@/lib/kv-organizations";
+import { deleteOrganizationCascade } from "@/lib/org-delete-cascade";
 import { zodErrorToMessage } from "@/lib/schemas";
 import { insertAuditEvent } from "@/lib/audit-events";
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const payload = await getAuthFromRequest(request);
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensurePlatformAdmin(payload);
+  if (denied) return denied;
+
+  const { id } = await params;
+  if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+
+  try {
+    await deleteOrganizationCascade(id, payload.id);
+    await insertAuditEvent({
+      action: "organization.deleted_by_platform_admin",
+      resourceType: "organization",
+      actorUserId: payload.id,
+      resourceId: id,
+      orgId: id,
+      metadata: { cascade: true },
+    });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro interno";
+    const status = msg.includes("não encontrada") ? 404 : msg.includes("padrão") || msg.includes("MongoDB") ? 400 : 500;
+    return NextResponse.json({ error: msg }, { status });
+  }
+}
 
 const OrgPatchSchema = z
   .object({

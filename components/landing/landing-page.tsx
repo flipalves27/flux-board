@@ -4,8 +4,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
+import { useOrgBranding } from "@/context/org-branding-context";
 import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
+import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import type { LandingLocale } from "@/lib/landing-models";
 import { LandingFaqSection } from "./landing-faq-section";
@@ -35,7 +36,8 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
   const locale: LandingLocale = localeSegment === "en" ? "en" : "pt-BR";
   const localeRoot = `/${locale}`;
   const t = useTranslations("landing");
-  const appName = usePlatformDisplayName();
+  /** Nome de produto na landing pública: sempre o identificador da plataforma, não o nome da org (ex.: white-label). */
+  const appName = DEFAULT_PLATFORM_NAME;
   const orgBranding = useOrgBranding();
   const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
 

@@ -8,6 +8,7 @@ import { Header } from "@/components/header";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { DEFAULT_ORG_ID } from "@/lib/kv-organizations";
 import { isPlatformAdminSession } from "@/lib/rbac";
 
 type Tab = "organizations" | "users" | "audit" | "operations";
@@ -116,6 +117,7 @@ export default function PlatformAdminConsolePage() {
   });
   const [formError, setFormError] = useState("");
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<UserRow | null>(null);
+  const [confirmDeleteOrg, setConfirmDeleteOrg] = useState<OrgRow | null>(null);
 
   const loadOrgs = useCallback(
     async (reset: boolean) => {
@@ -380,6 +382,23 @@ export default function PlatformAdminConsolePage() {
     }
   }
 
+  async function deleteOrgConfirmed(row: OrgRow) {
+    try {
+      await apiDelete(`/api/admin/platform-organizations/${encodeURIComponent(row._id)}`, getHeaders());
+      setConfirmDeleteOrg(null);
+      setOrgCursor(null);
+      setOrgs([]);
+      await loadOrgs(true);
+      pushToast({ kind: "success", title: t("orgDeleted") });
+    } catch (e) {
+      pushToast({
+        kind: "error",
+        title: t("error"),
+        description: e instanceof ApiError ? (e.data as { error?: string })?.error ?? e.message : "—",
+      });
+    }
+  }
+
   async function deleteUserConfirmed(row: UserRow) {
     try {
       await apiDelete(`/api/users/${row.id}`, getHeaders());
@@ -563,13 +582,24 @@ export default function PlatformAdminConsolePage() {
                       <td className="px-3 py-2">{o.plan}</td>
                       <td className="px-3 py-2">{o.memberCount}</td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-                          onClick={() => openEditOrg(o)}
-                        >
-                          {t("edit")}
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
+                            onClick={() => openEditOrg(o)}
+                          >
+                            {t("edit")}
+                          </button>
+                          {o._id !== DEFAULT_ORG_ID ? (
+                            <button
+                              type="button"
+                              className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-danger)] hover:border-[var(--flux-danger)]"
+                              onClick={() => setConfirmDeleteOrg(o)}
+                            >
+                              {t("delete")}
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1031,6 +1061,19 @@ export default function PlatformAdminConsolePage() {
         onCancel={() => setConfirmDeleteUser(null)}
         onConfirm={() => {
           if (confirmDeleteUser) void deleteUserConfirmed(confirmDeleteUser);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDeleteOrg}
+        title={t("deleteOrgTitle")}
+        description={confirmDeleteOrg ? t("deleteOrgConfirm", { name: confirmDeleteOrg.name }) : undefined}
+        confirmText={t("delete")}
+        cancelText={t("cancel")}
+        intent="danger"
+        onCancel={() => setConfirmDeleteOrg(null)}
+        onConfirm={() => {
+          if (confirmDeleteOrg) void deleteOrgConfirmed(confirmDeleteOrg);
         }}
       />
     </div>

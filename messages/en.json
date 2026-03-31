@@ -134,7 +134,10 @@
     "userCreated": "User created",
     "userDeleted": "User removed",
     "deleteUserTitle": "Delete user",
-    "deleteUserConfirm": "Permanently delete {name}?"
+    "deleteUserConfirm": "Permanently delete {name}?",
+    "deleteOrgTitle": "Delete organization",
+    "deleteOrgConfirm": "Delete {name} and all related data (users, boards, invites, etc.)? This cannot be undone.",
+    "orgDeleted": "Organization deleted"
   },
   "sprints": {
     "title": "Sprints",
