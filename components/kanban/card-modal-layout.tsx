@@ -339,7 +339,7 @@ export function CardModalLayout() {
         onClick={onClose}
       />
       <div
-        className="relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-chrome-alpha-06)] max-h-[min(92vh,900px)] card-modal-content"
+        className="relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-chrome-alpha-06)] max-h-[min(92vh,900px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"

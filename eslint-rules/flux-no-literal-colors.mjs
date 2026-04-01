@@ -3,7 +3,8 @@ const noLiteralColors = {
   meta: {
     type: "problem",
     docs: {
-      description: "Disallow raw hex/rgb/rgba in strings; use var(--flux-*) tokens (see TOKENS.md).",
+      description:
+        "Disallow raw hex/rgb/rgba in strings; use var(--flux-*) tokens (see TOKENS.md). Alpha tints belong in app/globals.css via color-mix(in srgb, var(--flux-*) …%, transparent).",
     },
     schema: [],
     messages: {

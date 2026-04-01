@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -39,7 +39,8 @@ export default function SprintCockpitPage() {
           {steps.map((k, i) => (
             <li
               key={k}
-              className="flex gap-4 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-4"
+              className="flux-list-item flex gap-4 rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4"
+              style={{ "--item-index": i } as CSSProperties}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--flux-primary-alpha-18)] text-sm font-bold text-[var(--flux-primary-light)]">
                 {i + 1}

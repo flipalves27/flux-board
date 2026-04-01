@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import {
   CartesianGrid,
@@ -155,6 +155,16 @@ function OkrRing({ title, pct, color }: { title: string; pct: number; color: str
 export function ExecutiveDashboard() {
   const t = useTranslations("executiveDashboard");
   const { getHeaders, user } = useAuth();
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduceMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   const fetcher = useCallback(async () => {
     return apiGet<ExecutiveDashboardPayload>("/api/executive-dashboard", getHeaders());
@@ -216,7 +226,7 @@ export function ExecutiveDashboard() {
 
         <DataFadeIn active key={data.generatedAt} className="space-y-6">
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] p-6 lg:col-span-1">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-6 lg:col-span-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                 {t("health.title")}
               </p>
@@ -255,7 +265,7 @@ export function ExecutiveDashboard() {
               </ul>
             </div>
 
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)] p-4 lg:col-span-2">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4 lg:col-span-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                 {t("kpis.title")}
               </p>
@@ -276,7 +286,7 @@ export function ExecutiveDashboard() {
             </div>
           </section>
 
-          <section className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-4">
+          <section className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("okr.title")}</h3>
               {!data.okrs.enabled ? (
@@ -302,7 +312,7 @@ export function ExecutiveDashboard() {
           <PortfolioAiPanel data={data} />
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-4">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4">
               <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("anomalies.title")}</h3>
               {data.anomalies.length === 0 ? (
                 <p className="mt-3 text-sm text-[var(--flux-text-muted)]">{t("anomalies.empty")}</p>
@@ -341,7 +351,7 @@ export function ExecutiveDashboard() {
               )}
             </div>
 
-            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-4">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4">
               <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("throughput.title")}</h3>
               {!data.meta.copilotHistory && lineData.every((d) => d.concluded === 0) ? (
                 <p className="mt-3 text-xs text-[var(--flux-text-muted)]">{t("throughput.hint")}</p>
@@ -367,6 +377,7 @@ export function ExecutiveDashboard() {
                       stroke="var(--flux-secondary)"
                       strokeWidth={2}
                       dot={{ r: 3 }}
+                      isAnimationActive={!reduceMotion}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -374,7 +385,7 @@ export function ExecutiveDashboard() {
             </div>
           </section>
 
-          <section className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-4">
+          <section className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4">
             <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("risk.title")}</h3>
             {data.topRiskBoards.length === 0 ? (
               <p className="mt-3 text-sm text-[var(--flux-text-muted)]">{t("risk.empty")}</p>

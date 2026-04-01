@@ -25,7 +25,7 @@ export function BoardPriorityButtons({ boardId }: { boardId: string }) {
           key={p.key}
           type="button"
           onClick={() => patchFilters(boardId, { activePrio: p.key })}
-          className={`shrink-0 h-7 min-w-[72px] rounded-md px-2 text-[11px] font-semibold leading-none transition-colors ${
+          className={`shrink-0 h-7 min-w-[72px] rounded-md px-2 text-[11px] font-semibold leading-none transition-colors motion-safe:transition-transform motion-safe:active:scale-[0.96] ${
             activePrio === p.key
               ? "bg-[var(--flux-primary-alpha-20)] text-[var(--flux-primary-light)]"
               : "bg-[var(--flux-chrome-alpha-06)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-12)] hover:text-[var(--flux-text)]"
@@ -58,7 +58,7 @@ export function BoardFilterBar({ boardId, hidePriorities = false }: { boardId: s
   const hasActiveFilter = activePrio !== "all" || activeLabels.size > 0;
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 sm:px-5 lg:px-6 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 sm:px-5 lg:px-6 border-t border-[var(--flux-border-muted)] flux-glass-surface rounded-none border-x-0 border-b-0 scrollbar-none">
       {!hidePriorities ? <BoardPriorityButtons boardId={boardId} /> : null}
 
       {!hidePriorities && allLabels.length > 0 && (

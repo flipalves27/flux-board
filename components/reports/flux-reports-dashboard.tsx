@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -162,18 +162,52 @@ function BentoTile({
   children,
   delayMs,
   className = "",
+  id,
 }: {
   children: ReactNode;
   delayMs: number;
   className?: string;
+  id?: string;
 }) {
   return (
     <section
-      className={`motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 ${className}`}
+      id={id}
+      className={`motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 scroll-mt-24 ${className}`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
       {children}
     </section>
+  );
+}
+
+function ReportsChapterNav({
+  chapters,
+  label,
+}: {
+  chapters: { id: string; label: string }[];
+  label: string;
+}) {
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  return (
+    <nav
+      className="flex flex-wrap items-center gap-1.5 border-b border-[var(--flux-chrome-alpha-08)] pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]"
+      aria-label={label}
+    >
+      <span className="mr-1 shrink-0 opacity-70">{label}</span>
+      {chapters.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => scrollTo(c.id)}
+          className="rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-1 text-[10px] font-semibold normal-case tracking-normal text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)] flux-motion-standard"
+        >
+          {c.label}
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -254,6 +288,19 @@ export function FluxReportsDashboard() {
     { id: "lss", label: t("hub.tabs.lss") },
   ];
 
+  const overviewChapters = useMemo(
+    () => [
+      { id: "flux-reports-chapter-insights", label: t("hub.chapters.insights") },
+      { id: "flux-reports-chapter-kpis", label: t("hub.chapters.kpis") },
+      { id: "flux-reports-chapter-outlook", label: t("hub.chapters.outlook") },
+      { id: "flux-reports-chapter-deps", label: t("hub.chapters.deps") },
+      { id: "flux-reports-chapter-cycle", label: t("hub.chapters.cycle") },
+      { id: "flux-reports-chapter-sentiment", label: t("hub.chapters.sentiment") },
+      { id: "flux-reports-chapter-cfd", label: t("hub.chapters.cfd") },
+    ],
+    [t]
+  );
+
   if (showSkeleton) {
     return <SkeletonTable rows={6} />;
   }
@@ -266,12 +313,17 @@ export function FluxReportsDashboard() {
 
   return (
     <DataFadeIn active key={data.generatedAt} className="space-y-6">
-      <ReportsTabBar
-        items={hubTabs}
-        value={hubTab}
-        onChange={setHubTab}
-        className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-08)] pb-3"
-      />
+      <div className="sticky top-[min(3.5rem,env(safe-area-inset-top,0px)+2.5rem)] z-[var(--flux-z-board-sticky-chrome)] -mx-1 space-y-2 rounded-b-[var(--flux-rad)] flux-glass-surface border-x-0 border-t-0 px-1 pb-2 pt-1 flux-depth-1">
+        <ReportsTabBar
+          items={hubTabs}
+          value={hubTab}
+          onChange={setHubTab}
+          className="flex flex-wrap gap-2 border-0 pb-0"
+        />
+        {hubTab === "overview" ? (
+          <ReportsChapterNav chapters={overviewChapters} label={t("hub.chapters.label")} />
+        ) : null}
+      </div>
 
       {hubTab === "lss" ? (
         <ReportsLssPanel
@@ -283,7 +335,7 @@ export function FluxReportsDashboard() {
 
       {hubTab === "overview" ? (
         <>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div id="flux-reports-chapter-insights" className="grid grid-cols-1 gap-4 lg:grid-cols-12 scroll-mt-24">
             <BentoTile delayMs={0} className="lg:col-span-8">
               <ProactiveAiPanel />
             </BentoTile>
@@ -297,9 +349,9 @@ export function FluxReportsDashboard() {
             </BentoTile>
           </div>
 
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <section id="flux-reports-chapter-kpis" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 scroll-mt-24">
             <BentoTile delayMs={70}>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+              <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-3">
                 <ReportsKpiCard label={t("kpi.boards")} value={data.aggregates.boardCount} tone="primary" hover />
                 <MiniSparkline
                   values={data.weeklyThroughput.map((x) => x.concluded)}
@@ -308,7 +360,7 @@ export function FluxReportsDashboard() {
               </div>
             </BentoTile>
             <BentoTile delayMs={100}>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+              <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-3">
                 <ReportsKpiCard label={t("kpi.avgRisk")} value={data.aggregates.avgRisco ?? "—"} tone="secondary" hover />
                 <MiniSparkline
                   values={data.portfolioHeatmap.map((x) => x.risco ?? 0)}
@@ -317,7 +369,7 @@ export function FluxReportsDashboard() {
               </div>
             </BentoTile>
             <BentoTile delayMs={130}>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+              <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-3">
                 <ReportsKpiCard
                   label={t("kpi.avgLead")}
                   value={data.aggregates.avgLeadTimeDays !== null ? `${data.aggregates.avgLeadTimeDays} d` : "—"}
@@ -331,7 +383,7 @@ export function FluxReportsDashboard() {
               </div>
             </BentoTile>
             <BentoTile delayMs={160}>
-              <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-3">
+              <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-3">
                 <ReportsKpiCard label={t("kpi.atRiskBoards")} value={data.aggregates.atRiskCount} tone="amber" hover />
                 <MiniSparkline
                   values={data.createdVsDone.map((x) => x.created - x.concluded)}
@@ -341,7 +393,7 @@ export function FluxReportsDashboard() {
             </BentoTile>
           </section>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div id="flux-reports-chapter-outlook" className="grid grid-cols-1 gap-4 lg:grid-cols-12 scroll-mt-24">
             <BentoTile delayMs={190} className="lg:col-span-7">
               <SprintPredictionPanel prediction={data.sprintPrediction} />
             </BentoTile>
@@ -354,16 +406,17 @@ export function FluxReportsDashboard() {
             </BentoTile>
           </div>
 
-          <BentoTile delayMs={250}>
+          <BentoTile delayMs={250} id="flux-reports-chapter-deps">
             <Suspense fallback={<ReportsSectionPlaceholder message={t("dependencies.loading")} />}>
               <CrossBoardDependenciesPanel />
             </Suspense>
           </BentoTile>
 
-          <BentoTile delayMs={280}>
+          <BentoTile delayMs={280} id="flux-reports-chapter-cycle">
             <CycleTimeScatterPanel points={data.cycleTimeScatter} />
           </BentoTile>
 
+      <div id="flux-reports-chapter-sentiment" className="scroll-mt-24">
       <ChartShell
         title={t("charts.sentiment")}
         hint={t("hints.sentiment")}
@@ -399,12 +452,13 @@ export function FluxReportsDashboard() {
           </ReportsChartFrame>
         )}
       </ChartShell>
+      </div>
 
       {!data.meta.copilotHistory ? (
         <p className="text-xs text-[var(--flux-text-muted)]">{t("copilotHint")}</p>
       ) : null}
 
-      <div className="space-y-3">
+      <div id="flux-reports-chapter-cfd" className="scroll-mt-24 space-y-3">
         <ReportsTabBar
           items={[
             { id: "accumulated", label: t("cfdTabs.accumulated") },

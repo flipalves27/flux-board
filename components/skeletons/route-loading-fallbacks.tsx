@@ -46,10 +46,15 @@ export function ReportsRouteLoadingFallback() {
     <div className="min-h-screen bg-[var(--flux-surface-dark)]">
       <Header />
       <main className="mx-auto max-w-[1200px] px-6 py-8">
-        <div className="mb-6 space-y-2">
+        <div className="mb-6 space-y-2 rounded-[var(--flux-rad-lg)] flux-glass-surface flux-depth-1 p-5">
           <div className="h-3 w-28 rounded bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           <div className="h-7 w-64 max-w-full rounded bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           <div className="h-4 max-w-3xl rounded bg-[var(--flux-chrome-alpha-10)] flux-animate-skeleton-pulse" />
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+          </div>
         </div>
         <SkeletonTable rows={5} />
       </main>

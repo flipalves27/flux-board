@@ -232,7 +232,7 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
 
   return (
     <div
-      className={`w-full px-4 sm:px-5 lg:px-6 border-b border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-06)] ${
+      className={`w-full px-4 sm:px-5 lg:px-6 border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 ${
         panelExpanded ? "pt-2 pb-1" : "py-1.5"
       }`}
     >

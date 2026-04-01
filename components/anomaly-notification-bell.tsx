@@ -100,7 +100,7 @@ export function AnomalyNotificationBell() {
           setOpen((v) => !v);
           if (!open) load();
         }}
-        className="relative flex h-9 w-9 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-05)] text-[var(--flux-text)] transition-colors hover:bg-[var(--flux-chrome-alpha-10)]"
+        className="relative flex h-9 w-9 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-05)] text-[var(--flux-text)] flux-motion-standard transition-colors hover:bg-[var(--flux-chrome-alpha-10)] motion-safe:active:scale-[0.94]"
         aria-expanded={open}
         aria-label={t("ariaLabel")}
       >
@@ -115,7 +115,7 @@ export function AnomalyNotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-[var(--flux-z-anomaly-bell-popover)] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[var(--flux-z-anomaly-bell-popover)] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-2">
           <div className="flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-10)] px-3 py-2">
             <span className="text-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("title")}</span>
             <Link

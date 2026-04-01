@@ -41,6 +41,7 @@ import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { WipOverrideModal } from "./wip-override-modal";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 import { resolveDoneBucketKeys } from "@/lib/board-scrum";
+import { buildHistoricalCycleDaysFromCards } from "@/lib/board-historical-cycle-days";
 import { isLeanSixSigmaMethodology, isScrumMethodology } from "@/lib/board-methodology";
 import { BoardProductGoalStrip } from "./board-product-goal-strip";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
@@ -326,6 +327,20 @@ function KanbanBoardLoaded({
   const flowChips = useMemo(
     () => buildFlowInsightChips({ cards: board.cards, buckets: board.buckets, lastUpdated: db.lastUpdated }),
     [board.cards, board.buckets, db.lastUpdated]
+  );
+
+  const doneBucketKeys = useMemo(
+    () =>
+      resolveDoneBucketKeys(
+        db.config.bucketOrder,
+        db.config.definitionOfDone?.doneBucketKeys ?? null
+      ),
+    [db.config.bucketOrder, db.config.definitionOfDone?.doneBucketKeys]
+  );
+
+  const historicalCycleDays = useMemo(
+    () => buildHistoricalCycleDaysFromCards(board.cards),
+    [board.cards]
   );
 
   const hotkeyPatterns = useMemo(() => resolveHotkeyPatterns(), []);
@@ -655,7 +670,7 @@ function KanbanBoardLoaded({
       {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
 
       {!focusMode && (
-      <div className="sticky top-[min(6.5rem,calc(env(safe-area-inset-top,0px)+5.25rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col bg-[var(--flux-surface-dark)]/95 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
+      <div className="sticky top-[min(6.5rem,calc(env(safe-area-inset-top,0px)+5.25rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col flux-glass-surface rounded-none border-x-0 border-t-0 border-b-[var(--flux-glass-surface-border)] flux-depth-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
         <BoardAutomationSuggestions
           variant="topStrip"
           boardId={boardId}
@@ -684,7 +699,7 @@ function KanbanBoardLoaded({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 border-b border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-06)] px-4 py-1.5 sm:px-5 lg:px-6">
+          <div className="flex items-center gap-2 border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 px-4 py-1.5 sm:px-5 lg:px-6">
             <div
               className="board-segment flex items-center gap-0.5 p-1 shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]"
               role="group"
@@ -1027,6 +1042,8 @@ function KanbanBoardLoaded({
             });
             board.setModalMode("new");
           }}
+          doneBucketKeys={doneBucketKeys}
+          historicalCycleDays={historicalCycleDays}
         />
 
         <BoardExecutionInsightsPanel

@@ -65,6 +65,8 @@ type KanbanBoardCanvasProps = {
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
   onAddCardFromTemplate?: (bucketKey: string, template: CardTemplate) => void;
   getHeaders?: () => Record<string, string>;
+  doneBucketKeys?: string[];
+  historicalCycleDays?: number[];
 };
 
 function bucketToEisenhowerKey(bucket: string): "do_first" | "schedule" | "delegate" | "eliminate" | null {
@@ -119,6 +121,8 @@ export function KanbanBoardCanvas({
   sprintBoardQuickActions,
   onAddCardFromTemplate,
   getHeaders,
+  doneBucketKeys = [],
+  historicalCycleDays,
 }: KanbanBoardCanvasProps) {
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
   const bucketKeysSig = buckets.map((b) => b.key).join("|");
@@ -346,6 +350,8 @@ export function KanbanBoardCanvas({
                 sprintBoardQuickActions={sprintBoardQuickActions}
                 onAddCardFromTemplate={onAddCardFromTemplate ? (tpl) => onAddCardFromTemplate(b.key, tpl) : undefined}
                 getHeaders={getHeaders}
+                doneBucketKeys={doneBucketKeys}
+                historicalCycleDays={historicalCycleDays}
               />
             ))}
           </SortableContext>

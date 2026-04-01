@@ -57,8 +57,8 @@ export function Header({
 
   return (
     <header
-      className={`sticky top-0 z-[var(--flux-z-header-sticky)] border-b bg-[var(--flux-surface-mid)] ${
-        isMinimalNav ? "border-[var(--flux-chrome-alpha-10)]" : "border-[var(--flux-primary-alpha-12)]"
+      className={`sticky top-0 z-[var(--flux-z-header-sticky)] flux-glass-surface rounded-none border-x-0 border-t-0 flux-depth-2 ${
+        isMinimalNav ? "border-b-[var(--flux-glass-surface-border)]" : "border-b-[var(--flux-glass-elevated-border)]"
       }`}
     >
       <div className="w-full px-5 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3 flex-wrap">

@@ -31,6 +31,7 @@
     "copilot": "Copiloto",
     "copilotSublabelOnBoard": "Assistente deste quadro",
     "copilotSublabelPickBoard": "Abra um quadro para usar",
+    "intelligenceBadgeLabel": "{count, plural, one {# execução ativa do spec-plan} other {# execuções ativas do spec-plan}}",
     "section": {
       "work": "Trabalho",
       "intelligence": "Inteligência",
@@ -676,7 +677,17 @@
       "sprintsLink": "Hub de sprints",
       "forecastUnavailable": "Forecast indisponível: sem board base no heatmap.",
       "lssBlurb": "Carga DMAIC, aging, conclusões, Pareto por tags e capacidade de processo (heurística).",
-      "lssCta": "Abrir visão executiva LSS"
+      "lssCta": "Abrir visão executiva LSS",
+      "chapters": {
+        "label": "Ir para",
+        "insights": "Insights",
+        "kpis": "KPIs",
+        "outlook": "Previsão da sprint",
+        "cfd": "Fluxo",
+        "deps": "Dependências",
+        "cycle": "Cycle time",
+        "sentiment": "Clima"
+      }
     },
     "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
@@ -2622,6 +2633,12 @@
       "tourEmptyCardHint": "Nenhum card ainda — use + acima para criar o primeiro.",
       "emptyHint": "Sem cards — solte cards aqui ou adicione um novo",
       "addCardButton": "Adicionar card",
+      "flowInsights": {
+        "blockedChip": "{count} bloqueado(s)",
+        "overdueChip": "{count} atrasado(s)",
+        "blockedTooltip": "Cards abertos com dependência bloqueada nesta coluna: {count}.",
+        "overdueTooltip": "Cards abertos com data de conclusão vencida nesta coluna: {count}."
+      },
       "tooltips": {
         "newCard": "Novo card",
         "renameColumn": "Renomear coluna",

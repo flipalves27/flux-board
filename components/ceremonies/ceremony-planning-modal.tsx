@@ -162,7 +162,7 @@ export default function CeremonyPlanningModal({ getHeaders }: { getHeaders: () =
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        className="relative z-10 flex max-h-[90vh] w-full max-w-lg sm:max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)]"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg sm:max-w-2xl flex-col overflow-hidden rounded-2xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--flux-chrome-alpha-08)] px-5 py-4">

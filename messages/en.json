@@ -31,6 +31,7 @@
     "copilot": "Copilot",
     "copilotSublabelOnBoard": "This board’s assistant",
     "copilotSublabelPickBoard": "Open a board to use it",
+    "intelligenceBadgeLabel": "{count, plural, one {# active spec-plan run} other {# active spec-plan runs}}",
     "section": {
       "work": "Work",
       "intelligence": "Intelligence",
@@ -676,7 +677,17 @@
       "sprintsLink": "Sprint hub",
       "forecastUnavailable": "Forecast unavailable: no base board in heatmap.",
       "lssBlurb": "DMAIC load, aging, completions, Pareto tags, and process capability (heuristic).",
-      "lssCta": "Open LSS executive view"
+      "lssCta": "Open LSS executive view",
+      "chapters": {
+        "label": "Jump to",
+        "insights": "Insights",
+        "kpis": "KPIs",
+        "outlook": "Sprint outlook",
+        "cfd": "Flow",
+        "deps": "Dependencies",
+        "cycle": "Cycle time",
+        "sentiment": "Sentiment"
+      }
     },
     "lssExecutiveLink": "Lean Six Sigma executive (Business+)",
     "loading": "Loading metrics…",
@@ -2257,6 +2268,12 @@
       "tourEmptyCardHint": "No cards yet — use + above to create the first one.",
       "emptyHint": "No cards — drop cards here or add a new one",
       "addCardButton": "Add card",
+      "flowInsights": {
+        "blockedChip": "{count} blocked",
+        "overdueChip": "{count} overdue",
+        "blockedTooltip": "Open cards with a blocking dependency in this column: {count}.",
+        "overdueTooltip": "Open cards past their due date in this column: {count}."
+      },
       "tooltips": {
         "newCard": "New card",
         "renameColumn": "Rename column",

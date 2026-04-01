@@ -76,6 +76,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const [creating, setCreating] = useState(false);
   const [aiPlanLoading, setAiPlanLoading] = useState(false);
   const [aiPlan, setAiPlan] = useState<{ summary: string; recommendedCardIds: string[]; reasoning: string } | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const selectedSprint = sprints.find((s) => s.id === selectedSprintId) ?? activeSprint ?? sprints[0] ?? null;
 
@@ -123,6 +124,15 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     setAiPlan(null);
     setAiPlanTargetSprintId(null);
   }, [selectedSprint?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduceMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   const patchSprintCardIds = useCallback(
     async (sprintId: string, cardIds: string[]) => {
@@ -246,13 +256,13 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
       )}
       {/* Panel — bottom-sheet on mobile, side-drawer on sm+ */}
       <div
-        className={`fixed z-[var(--flux-z-sprint-panel)] flex flex-col bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-modal-depth)] transition-transform duration-300 ease-[var(--flux-ease-standard)]
-          bottom-0 left-0 right-0 h-[90dvh] rounded-t-2xl border-t border-[var(--flux-chrome-alpha-08)]
-          sm:top-0 sm:bottom-auto sm:right-0 sm:left-auto sm:h-full sm:w-[420px] sm:rounded-t-none sm:border-t-0 sm:border-l
+        className={`fixed z-[var(--flux-z-sprint-panel)] flex flex-col flux-glass-elevated shadow-[var(--flux-shadow-modal-depth)] transition-transform duration-300 ease-[var(--flux-ease-standard)]
+          bottom-0 left-0 right-0 h-[90dvh] rounded-t-2xl border-x-0 border-b-0 border-t border-[var(--flux-chrome-alpha-08)]
+          sm:top-0 sm:bottom-auto sm:right-0 sm:left-auto sm:h-full sm:w-[420px] sm:rounded-t-none sm:border-t-0 sm:border-l sm:border-r-0 sm:border-y-0
           ${panelOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}`}
       >
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-06)] px-5 py-4">
+        <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-04)] px-5 py-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0 text-[var(--flux-primary)]" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -384,8 +394,25 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                             <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                             <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
-                            <Line type="monotone" dataKey="ideal" stroke="var(--flux-text-muted)" strokeDasharray="4 2" strokeWidth={1.5} dot={false} name="Ideal" />
-                            <Line type="monotone" dataKey="actual" stroke="var(--flux-primary)" strokeWidth={2} dot={false} name="Real" />
+                            <Line
+                              type="monotone"
+                              dataKey="ideal"
+                              stroke="var(--flux-text-muted)"
+                              strokeDasharray="4 2"
+                              strokeWidth={1.5}
+                              dot={false}
+                              name="Ideal"
+                              isAnimationActive={!reduceMotion}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="actual"
+                              stroke="var(--flux-primary)"
+                              strokeWidth={2}
+                              dot={false}
+                              name="Real"
+                              isAnimationActive={!reduceMotion}
+                            />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>

@@ -12,6 +12,13 @@ export const DIR_COLORS: Record<string, string> = {
   reavaliar: "var(--flux-text-muted)",
 };
 
+/**
+ * Columns with at least this many **visible** cards wrap each card row with
+ * `content-visibility: auto` so large boards skip off-screen paint work.
+ * All nodes stay mounted so @dnd-kit droppables keep working.
+ */
+export const KANBAN_COLUMN_CARD_CV_THRESHOLD = 36;
+
 export const COLUMN_COLORS = [
   "var(--flux-text-muted)",
   "var(--flux-primary)",

@@ -627,8 +627,8 @@ export function CommandPalette() {
       onOpenChange={onOpenChange}
       shouldFilter={false}
       label={t("ariaLabel")}
-      overlayClassName="fixed inset-0 z-[var(--flux-z-command-backdrop)] bg-black/55 backdrop-blur-[2px]"
-      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]"
+      overlayClassName="fixed inset-0 z-[var(--flux-z-command-backdrop)] bg-black/50 backdrop-blur-[var(--flux-glass-backdrop-blur)]"
+      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-3 flux-motion-standard"
     >
       <div className="border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
         <div className="flex items-center gap-2">
@@ -680,7 +680,7 @@ export function CommandPalette() {
                     value={item.id}
                     keywords={[item.keywords]}
                     onSelect={() => execute(item)}
-                    className="flex cursor-pointer items-center gap-2 rounded-[var(--flux-rad-sm)] px-2 py-2 text-left text-sm aria-selected:bg-[var(--flux-primary-alpha-14)] aria-selected:text-[var(--flux-text)]"
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--flux-rad-sm)] px-2 py-2 text-left text-sm flux-motion-standard motion-safe:active:scale-[0.99] aria-selected:bg-[var(--flux-primary-alpha-14)] aria-selected:text-[var(--flux-text)]"
                   >
                     <CategoryIcon kind={item.icon ?? "navigation"} />
                     <div className="min-w-0 flex-1">
