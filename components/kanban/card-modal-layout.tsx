@@ -19,12 +19,13 @@ const CardHistoryTab = lazy(() => import("@/components/kanban/card-modal-tabs/ca
 const CardDependenciesTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-dependencies-tab"));
 const CardSubtasksTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-subtasks-tab"));
 const CardCommentsTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-comments-tab"));
+const CardFluxyMessagesTab = lazy(() => import("@/components/kanban/card-modal-tabs/card-fluxy-messages-tab"));
 
 const TAB_STORAGE_PREFIX = "flux-card-modal-tab:";
 
-export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history" | "deps" | "subtasks" | "comments";
+export type CardModalTabId = "edit" | "ai" | "links" | "docs" | "history" | "deps" | "subtasks" | "comments" | "fluxyMessages";
 
-const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history", "deps", "subtasks", "comments"]);
+const VALID_TABS = new Set<CardModalTabId>(["edit", "ai", "links", "docs", "history", "deps", "subtasks", "comments", "fluxyMessages"]);
 
 function readStoredTab(cardId: string): CardModalTabId {
   if (typeof window === "undefined") return "edit";
@@ -61,6 +62,11 @@ const TAB_ICONS: Record<CardModalTabId, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
+  fluxyMessages: (
+    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h7m-7 4h4M5 21l2.2-3.3a2 2 0 011.66-.88H19a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  ),
   ai: (
     <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -88,7 +94,7 @@ const TAB_ICONS: Record<CardModalTabId, ReactNode> = {
   ),
 };
 
-type TabDef = { id: CardModalTabId; labelKey: "edit" | "subtasks" | "comments" | "ai" | "links" | "docs" | "history" | "deps" };
+type TabDef = { id: CardModalTabId; labelKey: "edit" | "subtasks" | "comments" | "fluxyMessages" | "ai" | "links" | "docs" | "history" | "deps" };
 
 function CardModalTabs({
   primaryItems,
@@ -322,6 +328,7 @@ export function CardModalLayout() {
     { id: "edit", labelKey: "edit" },
     { id: "subtasks", labelKey: "subtasks" },
     { id: "comments", labelKey: "comments" },
+    { id: "fluxyMessages", labelKey: "fluxyMessages" },
   ];
   const secondaryTabItems: TabDef[] = [
     { id: "ai", labelKey: "ai" },
@@ -445,6 +452,11 @@ export function CardModalLayout() {
             {activeTab === "comments" && (
               <Suspense fallback={<TabSkeleton />}>
                 <CardCommentsTab cardId={card.id} />
+              </Suspense>
+            )}
+            {activeTab === "fluxyMessages" && (
+              <Suspense fallback={<TabSkeleton />}>
+                <CardFluxyMessagesTab cardId={card.id} />
               </Suspense>
             )}
             {activeTab === "ai" && (

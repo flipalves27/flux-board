@@ -22,6 +22,7 @@ import { FluxyStatusPill } from "@/components/fluxy/fluxy-status-pill";
 import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copilot-state";
 import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
 import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
+import { BoardFluxyMessagesPanel } from "@/components/kanban/board-fluxy-messages-panel";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -789,6 +790,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                 <p className="text-xs text-[var(--flux-text-muted)]">{tFluxy("loadingHistory")}</p>
               ) : (
                 <>
+                  <BoardFluxyMessagesPanel boardId={boardId} getHeaders={getHeaders} />
                   {freeBanner}
 
                   {copilotDebug && ragDebug ? (

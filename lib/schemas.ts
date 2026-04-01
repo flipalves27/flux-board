@@ -1137,6 +1137,56 @@ export const CommentCreateSchema = z.object({
 });
 
 // -----------------------
+// Fluxy Internal Messages
+// -----------------------
+
+export const FluxyConversationScopeSchema = z.enum(["board", "card", "direct"]);
+
+export const FluxyParticipantSchema = z.object({
+  userId: z.string().trim().min(1).max(200),
+  role: z.enum(["gestor", "membro", "convidado"]),
+});
+
+export const FluxyMentionSchema = z.object({
+  token: z.string().trim().min(1).max(80),
+  userId: z.string().trim().max(200).nullable().default(null),
+  kind: z.enum(["explicit", "implicit"]).default("explicit"),
+});
+
+export const FluxyMessageSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  orgId: z.string().trim().min(1).max(200),
+  boardId: z.string().trim().min(1).max(200),
+  conversationScope: FluxyConversationScopeSchema,
+  relatedCardId: z.string().trim().max(200).nullable().default(null),
+  /** Contexto de card na sala do board (thread continua indexada como `relatedCardId: null`). */
+  contextCardId: z.string().trim().max(200).nullable().default(null),
+  body: z.string().trim().min(1).max(4000),
+  participants: z.array(FluxyParticipantSchema).max(100).default([]),
+  mentions: z.array(FluxyMentionSchema).max(100).default([]),
+  targetUserIds: z.array(z.string().trim().max(200)).max(100).default([]),
+  createdBy: z.object({
+    userId: z.string().trim().min(1).max(200),
+    role: z.enum(["gestor", "membro", "convidado"]),
+  }),
+  mediatedByFluxy: z.boolean().default(false),
+  createdAt: z.string().trim().max(80),
+});
+
+export const FluxyMessageCreateSchema = z.object({
+  body: z.string().trim().min(1).max(4000),
+  conversationScope: FluxyConversationScopeSchema,
+  relatedCardId: z.string().trim().max(200).nullable().optional(),
+  contextCardId: z.string().trim().max(200).nullable().optional(),
+  participants: z.array(FluxyParticipantSchema).max(100).optional(),
+  mentions: z.array(FluxyMentionSchema).max(100).optional(),
+  targetUserIds: z.array(z.string().trim().max(200)).max(100).optional(),
+  mediatedByFluxy: z.boolean().optional(),
+});
+
+export type FluxyMessageData = z.infer<typeof FluxyMessageSchema>;
+
+// -----------------------
 // Time Tracking (v5 roadmap)
 // -----------------------
 

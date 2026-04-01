@@ -2155,6 +2155,7 @@
         "edit": "Detalhes",
         "subtasks": "Subtasks",
         "comments": "Comentários",
+        "fluxyMessages": "Mensagens Fluxy",
         "ai": "IA",
         "links": "Links",
         "docs": "Docs",
@@ -2681,7 +2682,12 @@
         "card_deleted": "Card excluído",
         "column_added": "Coluna adicionada",
         "column_removed": "Coluna removida",
-        "board_settings_changed": "Configurações do board"
+        "board_settings_changed": "Configurações do board",
+        "message_sent": "Mensagem Fluxy enviada",
+        "message_mentioned": "Menção em mensagem Fluxy",
+        "message_replied": "Resposta em mensagem Fluxy",
+        "message_fluxy_interpreted": "Fluxy interpretou a mensagem",
+        "message_fluxy_action_applied": "Fluxy aplicou ação no card"
       }
     },
     "executionInsights": {
