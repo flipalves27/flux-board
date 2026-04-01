@@ -1,4 +1,5 @@
 import { updateBoardFromExisting } from "@/lib/kv-boards";
+import { deriveEffectiveRoles } from "@/lib/rbac";
 import {
   appendBoardCopilotMessages,
   sliceCopilotMessagesForLlm,
@@ -14,7 +15,7 @@ import type { CopilotAuthPayload, CopilotChatHistory } from "./types";
 import { SSE_CHUNK_DELAY_MS, SSE_CHUNK_SIZE } from "./config";
 
 export function createCopilotSseStream(params: {
-  payload: CopilotAuthPayload & { username: string };
+  payload: CopilotAuthPayload & { username: string; orgRole?: string };
   boardId: string;
   board: Record<string, unknown>;
   chat: CopilotChatHistory;
@@ -79,11 +80,25 @@ export function createCopilotSseStream(params: {
 
         const actions = Array.isArray(modelOutput.actions) ? modelOutput.actions : [];
         let updatedCards: Record<string, unknown>[] | undefined = undefined;
+        const orgRole = deriveEffectiveRoles({
+          id: payload.id,
+          isAdmin: payload.isAdmin,
+          orgRole: payload.orgRole,
+        }).orgRole;
+
         const exec = await executeCopilotActions({
           board,
+          boardId,
           actions,
           userMessage,
           generateBrief: () => heuristicWeeklyBrief(board),
+          notifyContext: {
+            orgId: payload.orgId,
+            userId: payload.id,
+            username: payload.username,
+            isAdmin: payload.isAdmin,
+            orgRole,
+          },
         });
         updatedCards = exec.updatedCards;
         const toolResults = exec.toolResults;

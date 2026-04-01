@@ -56,6 +56,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       username: payload.username,
       orgId: payload.orgId,
       isAdmin: payload.isAdmin,
+      orgRole: payload.orgRole,
     },
     boardId: boardIdParsed.boardId,
     board,

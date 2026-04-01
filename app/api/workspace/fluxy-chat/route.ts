@@ -176,6 +176,38 @@ export async function POST(request: NextRequest) {
 
         const orgLabel = typeof org.name === "string" && org.name.trim() ? org.name.trim() : "sua organização";
 
+        let boardSummaryBlock = "";
+        if (boardIdCtx && !sprintIdCtx) {
+          try {
+            const canB = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardIdCtx);
+            if (canB) {
+              const b = await getBoard(boardIdCtx, payload.orgId);
+              if (b) {
+                const cards = Array.isArray(b.cards) ? b.cards : [];
+                const order = Array.isArray(b.config?.bucketOrder) ? b.config!.bucketOrder! : [];
+                const counts = new Map<string, number>();
+                for (const c of cards) {
+                  const bk = String((c as { bucket?: string }).bucket || "");
+                  counts.set(bk, (counts.get(bk) ?? 0) + 1);
+                }
+                const perCol = order
+                  .slice(0, 12)
+                  .map((col) => {
+                    const k = String((col as { key?: string }).key || "");
+                    return `${k}=${counts.get(k) ?? 0}`;
+                  })
+                  .join("; ");
+                boardSummaryBlock =
+                  "\n\n### Board em foco (resumo compacto)\n" +
+                  `nome=${String(b.name || boardIdCtx).slice(0, 120)}; totalCards=${cards.length}; porColuna=${perCol || "—"}\n` +
+                  "Limitação: só este quadro; para detalhe de cards usa o board no produto.";
+              }
+            }
+          } catch {
+            boardSummaryBlock = "";
+          }
+        }
+
         let sprintContextBlock = "";
         if (boardIdCtx && sprintIdCtx) {
           try {
@@ -205,12 +237,19 @@ export async function POST(request: NextRequest) {
               "Seja concisa.",
               sprintContextBlock,
             ]
-          : [
-              `Contexto: o utilizador está na área geral do workspace do Flux-Board (fora de um quadro aberto), na organização «${orgLabel}».`,
-              "Ajude com navegação, conceitos do produto (boards, cards, colunas, relatórios, documentos) e boas práticas.",
-              "Não invente dados de quadros, cards ou clientes que não apareçam nos trechos de documentação fornecidos.",
-              "Seja concisa. Se a pergunta exigir dados de um board específico sem contexto anexado, oriente a abrir esse board e usar a Fluxy lá.",
-            ];
+          : boardSummaryBlock
+            ? [
+                `Contexto: workspace Flux-Board, organização «${orgLabel}». Segue um **resumo de um board** que o utilizador indicou (sem lista de cards).`,
+                "Use apenas estes agregados; não invente títulos de cards ou donos.",
+                "Seja concisa. Para operações nos cards, oriente a abrir o quadro e usar a Fluxy no board.",
+                boardSummaryBlock.trimStart(),
+              ]
+            : [
+                `Contexto: o utilizador está na área geral do workspace do Flux-Board (fora de um quadro aberto), na organização «${orgLabel}».`,
+                "Ajude com navegação, conceitos do produto (boards, cards, colunas, relatórios, documentos) e boas práticas.",
+                "Não invente dados de quadros, cards ou clientes que não apareçam nos trechos de documentação fornecidos.",
+                "Seja concisa. Se a pergunta exigir dados de um board específico sem contexto anexado, oriente a abrir esse board e usar a Fluxy lá.",
+              ];
 
         const systemContent = fluxyPromptPrefix(systemLines.join("\n")) + ragBlock;
 

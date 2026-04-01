@@ -7,6 +7,7 @@ import {
   notifyFluxyMessagePushRecipients,
   prioritizeAssigneeInTargets,
   resolveFluxyMentionsForOrg,
+  type FluxyPushDeepLinkOpts,
   type OrgMemberForMention,
 } from "./fluxy-mention-routing";
 
@@ -64,6 +65,12 @@ export async function finalizeFluxyMessageSideEffects(input: {
     null;
 
   if (mentionRecipients.length > 0) {
+    const deepLink: FluxyPushDeepLinkOpts = {
+      messageId: input.message.id,
+      conversationScope: input.message.conversationScope,
+      relatedCardId: input.message.relatedCardId,
+      contextCardId: input.message.contextCardId,
+    };
     await notifyFluxyMessagePushRecipients({
       orgId: input.orgId,
       boardId: input.boardId,
@@ -72,6 +79,7 @@ export async function finalizeFluxyMessageSideEffects(input: {
       senderLabel,
       targetUserIds: mentionRecipients,
       messagePreview: input.message.body,
+      deepLink,
     });
   }
 

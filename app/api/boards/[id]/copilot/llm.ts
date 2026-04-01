@@ -109,6 +109,7 @@ export async function callCopilotLlmModel(input: {
     "- updatePriority: { tool: 'updatePriority', args: { cardId: string, priority: 'Urgente'|'Importante'|'Média' } }",
     "- createCard: { tool: 'createCard', args: { bucketKey?: string, bucketLabel?: string, bucket?: string, column?: string, title: string, desc?: string, tags?: string[], priority: 'Urgente'|'Importante'|'Média', progress: 'Não iniciado'|'Em andamento'|'Concluída', direction?: string|null, dueDate?: string|null } } — se não informar coluna, use bucketKey/bucketLabel da primeira coluna em `bucketOrder`.",
     "- generateBrief: { tool: 'generateBrief', args: { scope?: string } }",
+    "- notifyStakeholders: { tool: 'notifyStakeholders', args: { message: string, userIds: string[], cardId?: string } } — envia mensagem na Sala Fluxy do board e dispara notificações push aos IDs listados (membros da org). Use cardId opcional para contexto do card na sala.",
     "",
     "Valores válidos (use exatamente):",
     `prioridades=${JSON.stringify(PRIORITIES)}`,

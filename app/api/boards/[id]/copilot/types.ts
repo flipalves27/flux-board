@@ -1,4 +1,4 @@
-export type CopilotToolName = "moveCard" | "updatePriority" | "createCard" | "generateBrief";
+export type CopilotToolName = "moveCard" | "updatePriority" | "createCard" | "generateBrief" | "notifyStakeholders";
 
 export type CopilotAction = {
   tool: CopilotToolName;
@@ -23,6 +23,7 @@ export type CopilotAuthPayload = {
   username?: string;
   orgId: string;
   isAdmin: boolean;
+  orgRole?: string;
 };
 
 export type CopilotChatHistory = {

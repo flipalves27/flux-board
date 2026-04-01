@@ -484,11 +484,21 @@ function KanbanBoardLoaded({
     const incrementReview = q.get("incrementReview");
     const kanbanCadence = q.get("kanbanCadence");
     const lssAssist = q.get("lssAssist");
+    const fluxyOpen = q.get("fluxyOpen") === "1";
+    const fluxySala = q.get("fluxySala") === "1";
+    const fluxyCardThread = q.get("fluxyCardThread") === "1";
+    const fluxyMsg = q.get("fluxyMsg");
+    const fluxyCtx = q.get("fluxyCtx");
 
     const hasDeepLink =
       Boolean(cardId) ||
       newCard === "1" ||
       copilot === "1" ||
+      fluxyOpen ||
+      fluxySala ||
+      fluxyCardThread ||
+      Boolean(fluxyCtx) ||
+      Boolean(fluxyMsg) ||
       flowHealth === "1" ||
       sprintPanel === "1" ||
       sprintCoach === "1" ||
@@ -522,15 +532,57 @@ function KanbanBoardLoaded({
       return;
     }
 
+    if (cardId && fluxyCardThread) {
+      const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
+      if (c) {
+        setModalCardRef.current(c);
+        setModalModeRef.current("edit");
+      }
+      try {
+        sessionStorage.setItem(
+          "flux-board.fluxyCardThread",
+          JSON.stringify({ focusComposer: true, messageId: fluxyMsg || null })
+        );
+      } catch {
+        /* ignore */
+      }
+      if (fluxyOpen || fluxySala) useCopilotStore.getState().setOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+
     if (cardId) {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === cardId);
       if (c) {
         setModalCardRef.current(c);
         setModalModeRef.current("edit");
       }
+      const wantsDock = fluxySala || Boolean(fluxyCtx) || Boolean(fluxyMsg);
+      if (wantsDock) {
+        useCopilotStore.getState().setFluxyBoardDock({
+          expandSala: fluxySala || Boolean(fluxyCtx || fluxyMsg),
+          contextCardId: fluxyCtx || cardId,
+          highlightMessageId: fluxyMsg || null,
+          focusComposer: true,
+        });
+      }
+      if (fluxyOpen || fluxySala || copilot === "1") useCopilotStore.getState().setOpen(true);
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
     }
+
+    if (fluxyOpen || fluxySala || fluxyCtx || fluxyMsg) {
+      useCopilotStore.getState().setFluxyBoardDock({
+        expandSala: fluxySala || Boolean(fluxyCtx || fluxyMsg),
+        contextCardId: fluxyCtx,
+        highlightMessageId: fluxyMsg || null,
+        focusComposer: true,
+      });
+      if (fluxyOpen || fluxySala) useCopilotStore.getState().setOpen(true);
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
+    }
+
     if (newCard === "1") {
       const buckets = bucketsRef.current;
       const cards = cardsRef.current;

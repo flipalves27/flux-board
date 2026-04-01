@@ -1182,6 +1182,8 @@ export const FluxyMessageCreateSchema = z.object({
   mentions: z.array(FluxyMentionSchema).max(100).optional(),
   targetUserIds: z.array(z.string().trim().max(200)).max(100).optional(),
   mediatedByFluxy: z.boolean().optional(),
+  /** Quando a API pedir confirmação para notificações inferidas, reenviar com true. */
+  confirmFluxyNotify: z.boolean().optional(),
 });
 
 export type FluxyMessageData = z.infer<typeof FluxyMessageSchema>;

@@ -353,6 +353,30 @@ export async function buildCopilotWorldSnapshot(params: {
   lines.push(`progresso: abertos~${open} concluidos~${done}`);
 
   lines.push("");
+  lines.push("## Configuração do board atual (metadados — sem segredos)");
+  {
+    const cfg = (cur.config ?? {}) as Record<string, unknown>;
+    const bucketOrder = Array.isArray(cfg.bucketOrder) ? cfg.bucketOrder : [];
+    const colSample = bucketOrder
+      .slice(0, 14)
+      .map((b) => {
+        const row = (b ?? {}) as { key?: string; label?: string };
+        const k = String(row.key || "").trim();
+        const lb = String(row.label || "").trim().slice(0, 40);
+        return k ? `${k}:${lb || k}` : "";
+      })
+      .filter(Boolean);
+    const portal = cfg.portal && typeof cfg.portal === "object" ? Boolean((cfg.portal as { enabled?: boolean }).enabled) : false;
+    const intake = Boolean((cfg as { intakeForm?: { enabled?: boolean } }).intakeForm?.enabled);
+    const hasAnomaly = Boolean(cfg.anomalyNotifications && typeof cfg.anomalyNotifications === "object");
+    lines.push(`portal=${portal}; intakeForm=${intake}; anomalyNotifications=${hasAnomaly ? "configurado" : "off"}`);
+    lines.push(`colunas(amostra)=${colSample.length ? colSample.join(" || ") : "—"}`);
+    lines.push(
+      "Nota: a Fluxy só vê boards e dados a que o utilizador tem acesso; não inventes quadros ou cards fora deste contexto."
+    );
+  }
+
+  lines.push("");
   lines.push("## Possíveis dependências cross-board (embeddings, score≥0.85)");
   if (isMongoConfigured() && canUseFeature(org, "portfolio_export", planGateCtx)) {
     try {

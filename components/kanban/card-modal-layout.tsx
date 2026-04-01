@@ -264,7 +264,19 @@ export function CardModalLayout() {
 
   useEffect(() => {
     setActiveTabState(readStoredTab(card.id));
-  }, [card.id]);
+    if (mode !== "edit" || !card.id?.trim()) return;
+    try {
+      const raw = sessionStorage.getItem("flux-board.fluxyCardThread");
+      if (!raw) return;
+      const o = JSON.parse(raw) as { focusComposer?: boolean };
+      sessionStorage.removeItem("flux-board.fluxyCardThread");
+      setActiveTabState("fluxyMessages");
+      writeStoredTab(card.id, "fluxyMessages");
+      if (o?.focusComposer) sessionStorage.setItem("flux-board.fluxyCardComposerFocus", "1");
+    } catch {
+      /* ignore */
+    }
+  }, [card.id, mode]);
 
   const setActiveTab = useCallback(
     (tab: CardModalTabId) => {

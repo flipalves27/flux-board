@@ -5,7 +5,19 @@ import { userCanAccessBoard } from "@/lib/kv-boards";
 import { FluxyMessageCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { createFluxyMessage, listFluxyMessages } from "@/lib/kv-fluxy-messages";
 import { publishFluxyMessageCreated, subscribeFluxyCardMessages } from "@/lib/fluxy-message-stream";
-import { finalizeFluxyMessageSideEffects, prepareFluxyMessageMentions } from "@/lib/fluxy-message-post";
+import { finalizeFluxyMessageSideEffects } from "@/lib/fluxy-message-post";
+import { buildFluxyMessageTargets } from "@/lib/fluxy-message-targets";
+import { shouldRunFluxyCommandLlm } from "@/lib/fluxy-command-llm";
+import { getOrganizationById } from "@/lib/kv-organizations";
+import { rateLimit } from "@/lib/rate-limit";
+import {
+  getDailyAiCallsCap,
+  getDailyAiCallsWindowMs,
+  getEffectiveTier,
+  makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
+} from "@/lib/plan-gates";
+import { isTogetherApiConfigured } from "@/lib/org-ai-routing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,13 +116,71 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const role = deriveEffectiveRoles(payload).orgRole;
-  const enriched = await prepareFluxyMessageMentions({
+  const mediatedByFluxy = parsed.data.mediatedByFluxy ?? false;
+  const confirmFluxyNotify = parsed.data.confirmFluxyNotify === true;
+
+  if (shouldRunFluxyCommandLlm(mediatedByFluxy, parsed.data.body)) {
+    const rl = await rateLimit({
+      key: `fluxy:cmd-llm:user:${payload.id}`,
+      limit: 45,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Muitas mensagens com interpretação Fluxy. Tente novamente mais tarde." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
+    }
+
+    const orgProbe = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
+    const tier = getEffectiveTier(orgProbe, gateCtx);
+    const llmCloudEnabled =
+      (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) || Boolean(process.env.ANTHROPIC_API_KEY);
+    if (tier === "free" && llmCloudEnabled) {
+      const cap = getDailyAiCallsCap(orgProbe, gateCtx);
+      if (cap !== null) {
+        const rlDaily = await rateLimit({
+          key: makeDailyAiCallsRateLimitKey(payload.orgId),
+          limit: cap,
+          windowMs: getDailyAiCallsWindowMs(),
+        });
+        if (!rlDaily.allowed) {
+          return NextResponse.json(
+            { error: "Limite diário de chamadas de IA atingido para a organização." },
+            { status: 403 }
+          );
+        }
+      }
+    }
+  }
+
+  const org = await getOrganizationById(payload.orgId);
+  const enriched = await buildFluxyMessageTargets({
+    org,
     orgId: payload.orgId,
+    userId: payload.id,
+    isAdmin: payload.isAdmin,
     boardId,
     body: parsed.data.body,
     relatedCardId: cardId,
+    contextCardId: null,
     clientMentions: parsed.data.mentions,
+    mediatedByFluxy,
+    confirmFluxyNotify,
   });
+
+  if (enriched.needsNotifyConfirmation && enriched.notifyPreview) {
+    return NextResponse.json(
+      {
+        error: "Confirmação necessária para notificar os destinatários inferidos pela Fluxy.",
+        code: "FLUXY_NOTIFY_CONFIRM",
+        notifyPreview: enriched.notifyPreview,
+      },
+      { status: 409 }
+    );
+  }
+
   const message = await createFluxyMessage({
     orgId: payload.orgId,
     boardId,
@@ -121,7 +191,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     mentions: enriched.mentions,
     targetUserIds: enriched.targetUserIds,
     createdBy: { userId: payload.id, role },
-    mediatedByFluxy: parsed.data.mediatedByFluxy ?? false,
+    mediatedByFluxy,
   });
 
   publishFluxyMessageCreated({
@@ -138,5 +208,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     message,
   });
 
-  return NextResponse.json({ message, mentionMeta: { unresolvedTokens: enriched.unresolvedTokens } }, { status: 201 });
+  return NextResponse.json(
+    {
+      message,
+      mentionMeta: { unresolvedTokens: enriched.unresolvedTokens },
+      fluxyMeta: enriched.interpretationSource
+        ? { interpretationSource: enriched.interpretationSource, intent: enriched.interpretation?.intent ?? null }
+        : undefined,
+    },
+    { status: 201 }
+  );
 }

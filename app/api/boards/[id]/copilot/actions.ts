@@ -1,4 +1,5 @@
 import { nextBoardCardId } from "@/lib/card-id";
+import { postFluxyNotifyStakeholdersFromCopilot } from "@/lib/fluxy-notify-from-copilot";
 import type { CopilotAction, CopilotToolName, CopilotToolResult } from "./types";
 
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
@@ -153,13 +154,25 @@ function shouldUseActionsFromUserMessage(userMessage: string): boolean {
   return /(mover|mova|ajustar|ajuste|prioridade|criar|novo card|crie|atualizar card)/i.test(String(userMessage || ""));
 }
 
+function allowNotifyStakeholdersTool(userMessage: string): boolean {
+  return /(notific|avisa|alerta|cobre|ping|respons[aá]vel|equipa|equipe)/i.test(String(userMessage || ""));
+}
+
 export async function executeCopilotActions(params: {
   board: Record<string, unknown>;
+  boardId: string;
   actions: CopilotAction[];
   userMessage: string;
   generateBrief: () => string;
+  notifyContext?: {
+    orgId: string;
+    userId: string;
+    username: string;
+    isAdmin: boolean;
+    orgRole: string;
+  };
 }): Promise<{ updatedCards?: Array<Record<string, unknown>>; toolResults: CopilotToolResult[] }> {
-  const { board, actions, userMessage, generateBrief } = params;
+  const { board, actions, userMessage, generateBrief, boardId, notifyContext } = params;
   let cards = Array.isArray(board.cards) ? ([...board.cards] as Array<Record<string, unknown>>) : [];
   const boardConfig = (board.config ?? {}) as Record<string, unknown>;
   const bucketOrder = Array.isArray(boardConfig.bucketOrder) ? boardConfig.bucketOrder : [];
@@ -286,6 +299,48 @@ export async function executeCopilotActions(params: {
         continue;
       }
 
+      if (tool === "notifyStakeholders") {
+        if (!notifyContext) {
+          toolResults.push({ tool, ok: false, message: "Contexto do Copilot em falta para notificar." });
+          continue;
+        }
+        if (!allowNotifyStakeholdersTool(userMessage)) {
+          toolResults.push({ tool, ok: false, message: "Peça explicitamente para notificar pessoas (ex.: avisar o responsável)." });
+          continue;
+        }
+        const body = String(args.message ?? args.body ?? "").trim();
+        if (!body) throw new Error("message (texto da notificação) é obrigatório.");
+        const ids = Array.isArray(args.userIds) ? args.userIds.map((x) => String(x || "").trim()).filter(Boolean) : [];
+        if (!ids.length) throw new Error("userIds deve listar pelo menos um ID de membro da organização.");
+        let cardKey: string | null = args.cardId != null ? String(args.cardId).trim() : "";
+        if (cardKey) {
+          cardKey = resolveCardId(cards, cardKey);
+        } else {
+          cardKey = null;
+        }
+        const res = await postFluxyNotifyStakeholdersFromCopilot({
+          orgId: notifyContext.orgId,
+          boardId,
+          senderId: notifyContext.userId,
+          senderOrgRole: notifyContext.orgRole,
+          isAdmin: notifyContext.isAdmin,
+          cardId: cardKey,
+          body,
+          targetUserIds: ids,
+        });
+        if (!res.ok) {
+          toolResults.push({ tool, ok: false, message: res.message });
+          continue;
+        }
+        toolResults.push({
+          tool,
+          ok: true,
+          message: `Notificação enviada pela Sala Fluxy (${res.notified} destinatário(s)).`,
+          data: { notified: res.notified },
+        });
+        continue;
+      }
+
       toolResults.push({ tool, ok: false, message: "Tool desconhecida." });
     } catch (err) {
       toolResults.push({
@@ -313,6 +368,11 @@ export function formatAssistantReply(params: { reply: string; toolResults: Copil
   if (appliedMutations.length) {
     parts.push("", "## Ações aplicadas");
     for (const r of appliedMutations) parts.push(`- ${r.message}`);
+  }
+  const notifyOk = toolResults.filter((r) => r.ok && r.tool === "notifyStakeholders");
+  if (notifyOk.length) {
+    parts.push("", "## Notificações");
+    for (const r of notifyOk) parts.push(`- ${r.message}`);
   }
   return parts.join("\n");
 }

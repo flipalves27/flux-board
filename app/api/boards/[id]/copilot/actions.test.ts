@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { executeCopilotActions, formatAssistantReply, type CopilotAction } from "./actions";
+import { executeCopilotActions, formatAssistantReply } from "./actions";
+import type { CopilotAction } from "./types";
 
 describe("executeCopilotActions", () => {
   const board = {
@@ -11,6 +12,7 @@ describe("executeCopilotActions", () => {
     const actions: CopilotAction[] = [{ tool: "moveCard", args: { cardId: "c1", bucketKey: "doing" } }];
     const out = await executeCopilotActions({
       board,
+      boardId: "b1",
       actions,
       userMessage: "resuma a semana",
       generateBrief: () => "brief",
@@ -22,6 +24,7 @@ describe("executeCopilotActions", () => {
     const actions: CopilotAction[] = [{ tool: "generateBrief", args: {} }];
     const out = await executeCopilotActions({
       board,
+      boardId: "b1",
       actions,
       userMessage: "resuma a semana",
       generateBrief: () => "brief semanal",

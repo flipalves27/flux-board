@@ -53,7 +53,20 @@ export default function CardFluxyMessagesTab({ cardId }: { cardId: string }) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const [pendingNotify, setPendingNotify] = useState<{ text: string; mediatedByFluxy: boolean } | null>(null);
   const baseUrl = `/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/messages`;
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("flux-board.fluxyCardComposerFocus") === "1") {
+        sessionStorage.removeItem("flux-board.fluxyCardComposerFocus");
+        requestAnimationFrame(() => composerRef.current?.focus());
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [cardId]);
 
   const loadMessages = useCallback(async () => {
     setLoading(true);
@@ -88,27 +101,37 @@ export default function CardFluxyMessagesTab({ cardId }: { cardId: string }) {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
 
-  const send = useCallback(async (payload: { text: string; mediatedByFluxy: boolean }) => {
-    const text = payload.text.trim();
-    if (!text) return;
-    setSending(true);
-    try {
-      const res = await apiFetch(baseUrl, {
-        method: "POST",
-        headers: getApiHeaders(getHeaders()),
-        body: JSON.stringify({
-          body: text,
-          conversationScope: "card",
-          mediatedByFluxy: payload.mediatedByFluxy,
-        }),
-      });
-      if (!res.ok) return;
-      setBody("");
-      void loadMessages();
-    } finally {
-      setSending(false);
-    }
-  }, [baseUrl, getHeaders, loadMessages]);
+  const send = useCallback(
+    async (payload: { text: string; mediatedByFluxy: boolean; confirmFluxyNotify?: boolean }) => {
+      const text = payload.text.trim();
+      if (!text) return;
+      setSending(true);
+      try {
+        const res = await apiFetch(baseUrl, {
+          method: "POST",
+          headers: getApiHeaders(getHeaders()),
+          body: JSON.stringify({
+            body: text,
+            conversationScope: "card",
+            mediatedByFluxy: payload.mediatedByFluxy,
+            confirmFluxyNotify: payload.confirmFluxyNotify === true,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { code?: string };
+        if (res.status === 409 && data?.code === "FLUXY_NOTIFY_CONFIRM") {
+          setPendingNotify({ text, mediatedByFluxy: payload.mediatedByFluxy });
+          return;
+        }
+        if (!res.ok) return;
+        setPendingNotify(null);
+        setBody("");
+        void loadMessages();
+      } finally {
+        setSending(false);
+      }
+    },
+    [baseUrl, getHeaders, loadMessages]
+  );
 
   const fluxySummary = useMemo(() => {
     const scoped = messages.slice(-8);
@@ -193,7 +216,27 @@ export default function CardFluxyMessagesTab({ cardId }: { cardId: string }) {
       )}
 
       <div className="rounded-xl border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)] p-3">
+        {pendingNotify ? (
+          <div className="mb-3 rounded-lg border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] px-2 py-2 text-[11px] text-[var(--flux-text)]">
+            <p className="font-semibold text-[var(--flux-warning)]">Confirmar notificações</p>
+            <p className="mt-1 text-[var(--flux-text-muted)]">A Fluxy vai notificar os destinatários inferidos. Enviar?</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" disabled={sending} onClick={() => setPendingNotify(null)} className="rounded-full border px-2 py-1 text-[11px]">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => void send({ ...pendingNotify, confirmFluxyNotify: true })}
+                className="rounded-full bg-[var(--flux-primary)] px-2 py-1 text-[11px] font-semibold text-white"
+              >
+                Enviar
+              </button>
+            </div>
+          </div>
+        ) : null}
         <textarea
+          ref={composerRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={3}

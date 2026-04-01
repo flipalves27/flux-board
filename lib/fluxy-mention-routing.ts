@@ -148,9 +148,36 @@ export function prioritizeAssigneeInTargets(targetUserIds: string[], assigneeId:
   return [a, ...unique.filter((id) => id !== a)];
 }
 
-export function buildFluxyPushDeepLink(boardId: string, cardId: string | null): string {
-  if (cardId) return `/board/${encodeURIComponent(boardId)}?card=${encodeURIComponent(cardId)}`;
-  return `/board/${encodeURIComponent(boardId)}`;
+export type FluxyPushDeepLinkOpts = {
+  messageId: string;
+  conversationScope: "board" | "card" | "direct";
+  relatedCardId: string | null;
+  contextCardId: string | null;
+};
+
+/**
+ * Deep-link for web push: opens Fluxy, Sala or thread do card, e opcionalmente destaca a mensagem.
+ * Usa `fluxyCtx` (não `card`) para contexto na sala do board sem abrir o modal do card.
+ */
+export function buildFluxyPushDeepLink(boardId: string, cardId: string | null, rich?: FluxyPushDeepLinkOpts | null): string {
+  const params = new URLSearchParams();
+  params.set("fluxyOpen", "1");
+  if (rich?.messageId) params.set("fluxyMsg", rich.messageId);
+
+  if (rich?.conversationScope === "card") {
+    const cid = String(rich.relatedCardId || cardId || "").trim();
+    if (cid) params.set("card", cid);
+    params.set("fluxyCardThread", "1");
+  } else if (rich?.conversationScope === "board") {
+    params.set("fluxySala", "1");
+    const ctx = String(rich.contextCardId || "").trim();
+    if (ctx) params.set("fluxyCtx", ctx);
+  } else if (cardId) {
+    params.set("card", cardId);
+  }
+
+  const q = params.toString();
+  return `/board/${encodeURIComponent(boardId)}?${q}`;
 }
 
 /**
@@ -164,13 +191,14 @@ export async function notifyFluxyMessagePushRecipients(input: {
   senderLabel: string;
   targetUserIds: string[];
   messagePreview: string;
+  deepLink?: FluxyPushDeepLinkOpts | null;
 }): Promise<void> {
   const preview = input.messagePreview.trim().slice(0, 120);
   const title =
     input.cardId != null
       ? `${input.senderLabel} mencionou você no card`
       : `${input.senderLabel} na Sala Fluxy`;
-  const url = buildFluxyPushDeepLink(input.boardId, input.cardId);
+  const url = buildFluxyPushDeepLink(input.boardId, input.cardId, input.deepLink ?? null);
   const body = preview.length >= 120 ? `${preview.slice(0, 119)}…` : preview;
 
   for (const uid of input.targetUserIds) {
