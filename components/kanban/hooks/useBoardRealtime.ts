@@ -13,6 +13,11 @@ import type {
   PresencePeer,
 } from "@/lib/board-realtime-hub";
 
+/** Sincronização por `lastUpdated` enquanto SSE está ativa (multi-instância / eventos perdidos). */
+const BOARD_POLL_MS_WITH_SSE = 5000;
+/** Após falha ou fim da stream SSE. */
+const BOARD_POLL_MS_FALLBACK = 4000;
+
 function parseSseBlocks(buffer: string): { events: Array<{ event: string; data: string }>; rest: string } {
   const events: Array<{ event: string; data: string }> = [];
   let rest = buffer;
@@ -181,6 +186,15 @@ export function useBoardRealtime({
     const ac = new AbortController();
     abortRef.current = ac;
 
+    function startBoardPollInterval(ms: number) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      void pollBoard();
+      pollRef.current = setInterval(() => void pollBoard(), ms);
+    }
+
     let buf = "";
 
     function dispatchEvent(eventName: string, raw: string) {
@@ -264,31 +278,35 @@ export function useBoardRealtime({
         }
         setSseConnected(true);
         setPollingFallback(false);
-        if (pollRef.current) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
+        startBoardPollInterval(BOARD_POLL_MS_WITH_SSE);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const { events, rest } = parseSseBlocks(buf);
-          buf = rest;
-          for (const ev of events) {
-            dispatchEvent(ev.event, ev.data);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const { events, rest } = parseSseBlocks(buf);
+            buf = rest;
+            for (const ev of events) {
+              dispatchEvent(ev.event, ev.data);
+            }
+          }
+        } catch {
+          /* rede / abort */
+        } finally {
+          if (!ac.signal.aborted) {
+            setSseConnected(false);
+            setPollingFallback(true);
+            startBoardPollInterval(BOARD_POLL_MS_FALLBACK);
           }
         }
       } catch {
         setSseConnected(false);
         setPollingFallback(true);
         setPresence([]);
-        if (!pollRef.current) {
-          void pollBoard();
-          pollRef.current = setInterval(() => void pollBoard(), 45_000);
-        }
+        startBoardPollInterval(BOARD_POLL_MS_FALLBACK);
       }
     })();
 
@@ -339,7 +357,6 @@ export function useBoardRealtime({
   const notifyBucketsChanged = useCallback(
     (bucketKeys: string[]) => {
       const conn = connectionIdRef.current;
-      if (!conn) return;
       const uniq = [...new Set(bucketKeys)];
       const db = useBoardStore.getState().db;
       if (!uniq.length || !db) return;
@@ -354,7 +371,7 @@ export function useBoardRealtime({
         method: "POST",
         body: JSON.stringify({
           clientId: clientIdRef.current,
-          connectionId: conn,
+          ...(conn ? { connectionId: conn } : {}),
           action: "card_move",
           buckets,
         }),
@@ -366,7 +383,6 @@ export function useBoardRealtime({
 
   const notifyColumnReorder = useCallback(() => {
     const conn = connectionIdRef.current;
-    if (!conn) return;
     const db = useBoardStore.getState().db;
     if (!db) return;
     const bucketKeys = db.config.bucketOrder.map((b) => b.key);
@@ -374,7 +390,7 @@ export function useBoardRealtime({
       method: "POST",
       body: JSON.stringify({
         clientId: clientIdRef.current,
-        connectionId: conn,
+        ...(conn ? { connectionId: conn } : {}),
         action: "column_reorder",
         bucketKeys,
       }),

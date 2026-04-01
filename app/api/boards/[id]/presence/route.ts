@@ -171,9 +171,7 @@ export async function POST(
     return NextResponse.json({ ok: true });
   }
 
-  if (!connectionId) {
-    return NextResponse.json({ error: "connectionId é obrigatório para esta ação" }, { status: 400 });
-  }
+  const excludeConnectionId = connectionId.trim() ? connectionId : undefined;
 
   const displayName =
     (request.headers.get("x-flux-display-name") || "").trim() || payload.username;
@@ -191,7 +189,7 @@ export async function POST(
     if (normalized.length === 0) {
       return NextResponse.json({ error: "buckets inválido" }, { status: 400 });
     }
-    boardRealtimeHub.broadcastCardMove(boardId, connectionId, {
+    boardRealtimeHub.broadcastCardMove(boardId, excludeConnectionId, {
       fromUserId: payload.id,
       buckets: normalized,
     });
@@ -203,11 +201,15 @@ export async function POST(
     if (bucketKeys.length === 0) {
       return NextResponse.json({ error: "bucketKeys inválido" }, { status: 400 });
     }
-    boardRealtimeHub.broadcastColumnReorder(boardId, connectionId, {
+    boardRealtimeHub.broadcastColumnReorder(boardId, excludeConnectionId, {
       fromUserId: payload.id,
       bucketKeys,
     });
     return NextResponse.json({ ok: true });
+  }
+
+  if (!connectionId.trim()) {
+    return NextResponse.json({ error: "connectionId é obrigatório para lock/unlock" }, { status: 400 });
   }
 
   if (action === "lock" || action === "unlock") {

@@ -20,13 +20,14 @@ export type BucketMovePayload = { bucketKey: string; orderedCardIds: string[] };
 
 export type CardMoveEventPayload = {
   fromUserId: string;
-  fromConnectionId: string;
+  /** Presente quando o emissor tinha SSE ligado — só para diagnóstico; clientes usam `fromUserId`. */
+  fromConnectionId?: string;
   buckets: BucketMovePayload[];
 };
 
 export type ColumnReorderPayload = {
   fromUserId: string;
-  fromConnectionId: string;
+  fromConnectionId?: string;
   bucketKeys: string[];
 };
 
@@ -217,22 +218,32 @@ export const boardRealtimeHub = {
     return false;
   },
 
+  /**
+   * @param excludeConnectionId Se definido, não envia o evento a essa conexão (evita eco no mesmo tab).
+   *   Omitir quando o movimento veio antes do SSE `ready` ou sem `connectionId`.
+   */
   broadcastCardMove(
     boardId: string,
-    fromConnectionId: string,
+    excludeConnectionId: string | undefined,
     payload: { fromUserId: string; buckets: BucketMovePayload[] }
   ) {
-    const data: CardMoveEventPayload = { ...payload, fromConnectionId };
-    broadcast(boardId, "card_move", data, fromConnectionId);
+    const data: CardMoveEventPayload = {
+      ...payload,
+      ...(excludeConnectionId ? { fromConnectionId: excludeConnectionId } : {}),
+    };
+    broadcast(boardId, "card_move", data, excludeConnectionId);
   },
 
   broadcastColumnReorder(
     boardId: string,
-    fromConnectionId: string,
+    excludeConnectionId: string | undefined,
     payload: { fromUserId: string; bucketKeys: string[] }
   ) {
-    const data: ColumnReorderPayload = { ...payload, fromConnectionId };
-    broadcast(boardId, "column_reorder", data, fromConnectionId);
+    const data: ColumnReorderPayload = {
+      ...payload,
+      ...(excludeConnectionId ? { fromConnectionId: excludeConnectionId } : {}),
+    };
+    broadcast(boardId, "column_reorder", data, excludeConnectionId);
   },
 
   setCardLock(boardId: string, args: CardLockPayload): { ok: boolean } {
