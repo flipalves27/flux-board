@@ -52,6 +52,7 @@ type OrgBrandingContextValue = {
 const OrgBrandingContext = createContext<OrgBrandingContextValue | null>(null);
 
 const DEFAULT_DOC_TITLE = `${DEFAULT_PLATFORM_NAME} — Commercial operations with clarity`;
+const DEFAULT_FAVICON_HREF = "/favicon.svg";
 
 function isVercelPreviewHost(host: string): boolean {
   const normalized = host.trim().toLowerCase();
@@ -73,6 +74,10 @@ function applyBrandingToDocument(
     root.style.removeProperty("--flux-org-accent-dark");
     root.style.removeProperty("--org-branding-active");
     document.title = DEFAULT_DOC_TITLE;
+    const defaultIcon = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+    if (defaultIcon) defaultIcon.href = DEFAULT_FAVICON_HREF;
+    const defaultApple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
+    if (defaultApple) defaultApple.href = DEFAULT_FAVICON_HREF;
     return;
   }
   const primary = sanitizeHexColor(branding.primaryColor);

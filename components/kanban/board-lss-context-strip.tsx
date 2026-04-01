@@ -51,15 +51,18 @@ export type BoardLssContextStripProps = {
   buckets: BucketConfig[];
   cards: CardData[];
   onOpenAssist: () => void;
+  className?: string;
 };
 
-export function BoardLssContextStrip({ buckets, cards, onOpenAssist }: BoardLssContextStripProps) {
+export function BoardLssContextStrip({ buckets, cards, onOpenAssist, className = "" }: BoardLssContextStripProps) {
   const t = useTranslations("kanban.board.lss");
   const phase = useMemo(() => inferActiveDmaicPhase(buckets, cards), [buckets, cards]);
   const checklistKey = phase ?? "define";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+    <div
+      className={`flex flex-wrap items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6 ${className}`.trim()}
+    >
       <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("dmaicFocus")}</span>
       <span className="rounded-lg border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[var(--flux-secondary)]">
         {phase ? t(`phases.${phase}`) : t("phases.unknown")}

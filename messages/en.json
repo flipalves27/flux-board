@@ -3002,6 +3002,12 @@
         "expand": "Expand intelligence row",
         "collapse": "Collapse intelligence row"
       },
+      "detailChrome": {
+        "expand": "Goal, sprint & matrix",
+        "expandAria": "Show product goal, sprint bar and matrix weight filters",
+        "collapse": "Collapse product context and matrix filters",
+        "activeMatrixBadge": "Matrix: {filter}"
+      },
       "nlqCompact": {
         "expand": "Open NLQ search",
         "collapse": "Collapse NLQ dock"

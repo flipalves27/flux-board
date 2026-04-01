@@ -3007,6 +3007,12 @@
         "expand": "Expandir linha de inteligência",
         "collapse": "Recolher linha de inteligência"
       },
+      "detailChrome": {
+        "expand": "Meta, sprint e matriz",
+        "expandAria": "Mostrar meta do produto, barra de sprint e filtros de peso da matriz",
+        "collapse": "Recolher meta, sprint e peso da matriz",
+        "activeMatrixBadge": "Matriz: {filter}"
+      },
       "nlqCompact": {
         "expand": "Abrir busca NLQ",
         "collapse": "Recolher dock NLQ"

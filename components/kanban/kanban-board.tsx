@@ -212,9 +212,42 @@ function KanbanBoardLoaded({
     });
   }, []);
 
+  const [detailChromeExpanded, setDetailChromeExpanded] = useState(true);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("flux-board.board-detail-chrome.expanded");
+      if (v === "false") setDetailChromeExpanded(false);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const toggleDetailChromeExpanded = useCallback(() => {
+    setDetailChromeExpanded((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("flux-board.board-detail-chrome.expanded", String(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
   const [nlqExpanded, setNlqExpanded] = useState(false);
 
   const methodology = db.boardMethodology ?? "scrum";
+
+  const matrixWeightOptions = useMemo(
+    () =>
+      [
+        { key: "all" as const, label: t("board.filters.matrixWeightAll") },
+        { key: "critical_high" as const, label: t("board.filters.matrixWeightCriticalHigh") },
+        { key: "high_plus" as const, label: t("board.filters.matrixWeightHighPlus") },
+        { key: "medium_plus" as const, label: t("board.filters.matrixWeightMediumPlus") },
+        { key: "critical" as const, label: t("board.filters.matrixWeightCriticalOnly") },
+      ],
+    [t]
+  );
 
   const nlqIdsArr = useBoardNlqUiStore((s) => s.allowedIdsByBoard[boardId]);
   const nlqAllowedIds = useMemo(() => {
@@ -665,6 +698,11 @@ function KanbanBoardLoaded({
     onCardsBatchDeleted: () => clearSelectionRef.current?.(),
   };
 
+  const activeMatrixWeightFilterLabel =
+    matrixWeightOptions.find((o) => o.key === matrixWeightFilter)?.label ?? "";
+  const detailCollapseOnMatrixOnly =
+    !isScrumMethodology(methodology) && !isLeanSixSigmaMethodology(methodology);
+
   return (
     <>
       {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
@@ -845,89 +883,149 @@ function KanbanBoardLoaded({
           </div>
         )}
 
-        {isScrumMethodology(methodology) ? (
-          <BoardProductGoalStrip
-            boardId={boardId}
-            getHeaders={getHeaders}
-            onOpenScrumSettings={() => setScrumSettingsOpen(true)}
-            onOpenIncrementReview={() => setIncrementReviewOpen(true)}
-          />
-        ) : null}
-
-        {isLeanSixSigmaMethodology(methodology) ? (
-          <BoardLssContextStrip
-            buckets={board.buckets}
-            cards={board.cards}
-            onOpenAssist={() => setLssAssistOpen(true)}
-          />
-        ) : null}
-
-        {/* Sprint bar: only shows as full row when NLQ dock is expanded (compact badge handles it otherwise) */}
-        {nlqExpanded && isScrumMethodology(methodology) && activeSprintBoard?.status === "active" ? (
-          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
-            {sprintProgress && sprintProgress.total > 0 ? (
-              <div
-                className="relative h-9 w-9 shrink-0"
-                title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
+        {!detailChromeExpanded ? (
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1 sm:px-5 lg:px-6">
+            <button
+              type="button"
+              onClick={toggleDetailChromeExpanded}
+              className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
+              aria-expanded={false}
+              aria-label={t("board.detailChrome.expandAria")}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+              <span>{t("board.detailChrome.expand")}</span>
+            </button>
+            {matrixWeightFilter !== "all" ? (
+              <span
+                className="max-w-[min(100%,220px)] truncate rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-primary-light)]"
+                title={activeMatrixWeightFilterLabel}
               >
-                <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
-                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--flux-chrome-alpha-12)" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.5" fill="none"
-                    stroke={sprintProgress.pct === 100 ? "var(--flux-success)" : "var(--flux-primary)"}
-                    strokeWidth="3"
-                    strokeDasharray={`${(sprintProgress.pct / 100) * 97.4} 97.4`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums text-[var(--flux-text-muted)]">
-                  {sprintProgress.pct}%
-                </span>
+                {t("board.detailChrome.activeMatrixBadge", { filter: activeMatrixWeightFilterLabel })}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            {isScrumMethodology(methodology) ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={toggleDetailChromeExpanded}
+                  className="absolute left-2 top-2 z-[1] rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
+                  aria-label={t("board.detailChrome.collapse")}
+                  aria-expanded
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </button>
+                <BoardProductGoalStrip
+                  boardId={boardId}
+                  getHeaders={getHeaders}
+                  onOpenScrumSettings={() => setScrumSettingsOpen(true)}
+                  onOpenIncrementReview={() => setIncrementReviewOpen(true)}
+                  className="pl-10 sm:pl-11"
+                />
               </div>
             ) : null}
-            <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] truncate max-w-[min(100%,220px)]">
-              {activeSprintBoard.name}
-            </span>
-            <button
-              type="button"
-              onClick={toggleSprintScopeOnly}
-              className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                sprintScopeOnly
-                  ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                  : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-              }`}
-            >
-              {sprintScopeOnly ? t("board.filters.sprintAll") : t("board.filters.sprintOnly")}
-            </button>
-            <span className="text-[10px] text-[var(--flux-text-muted)] hidden sm:inline">{t("board.filters.sprintFilterHint")}</span>
-          </div>
-        ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
-          <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("board.filters.matrixWeightLabel")}</span>
-          {(
-            [
-              { key: "all", label: t("board.filters.matrixWeightAll") },
-              { key: "critical_high", label: t("board.filters.matrixWeightCriticalHigh") },
-              { key: "high_plus", label: t("board.filters.matrixWeightHighPlus") },
-              { key: "medium_plus", label: t("board.filters.matrixWeightMediumPlus") },
-              { key: "critical", label: t("board.filters.matrixWeightCriticalOnly") },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setMatrixWeightFilter(opt.key)}
-              className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                matrixWeightFilter === opt.key
-                  ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                  : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+            {isLeanSixSigmaMethodology(methodology) ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={toggleDetailChromeExpanded}
+                  className="absolute left-2 top-2 z-[1] rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
+                  aria-label={t("board.detailChrome.collapse")}
+                  aria-expanded
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </button>
+                <BoardLssContextStrip
+                  buckets={board.buckets}
+                  cards={board.cards}
+                  onOpenAssist={() => setLssAssistOpen(true)}
+                  className="pl-10 sm:pl-11"
+                />
+              </div>
+            ) : null}
+
+            {/* Sprint bar: only shows as full row when NLQ dock is expanded (compact badge handles it otherwise) */}
+            {nlqExpanded && isScrumMethodology(methodology) && activeSprintBoard?.status === "active" ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+                {sprintProgress && sprintProgress.total > 0 ? (
+                  <div
+                    className="relative h-9 w-9 shrink-0"
+                    title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
+                  >
+                    <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--flux-chrome-alpha-12)" strokeWidth="3" />
+                      <circle
+                        cx="18" cy="18" r="15.5" fill="none"
+                        stroke={sprintProgress.pct === 100 ? "var(--flux-success)" : "var(--flux-primary)"}
+                        strokeWidth="3"
+                        strokeDasharray={`${(sprintProgress.pct / 100) * 97.4} 97.4`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums text-[var(--flux-text-muted)]">
+                      {sprintProgress.pct}%
+                    </span>
+                  </div>
+                ) : null}
+                <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] truncate max-w-[min(100%,220px)]">
+                  {activeSprintBoard.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleSprintScopeOnly}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    sprintScopeOnly
+                      ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                      : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+                  }`}
+                >
+                  {sprintScopeOnly ? t("board.filters.sprintAll") : t("board.filters.sprintOnly")}
+                </button>
+                <span className="text-[10px] text-[var(--flux-text-muted)] hidden sm:inline">{t("board.filters.sprintFilterHint")}</span>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+              {detailCollapseOnMatrixOnly ? (
+                <button
+                  type="button"
+                  onClick={toggleDetailChromeExpanded}
+                  className="shrink-0 rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
+                  aria-label={t("board.detailChrome.collapse")}
+                  aria-expanded
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </button>
+              ) : null}
+              <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("board.filters.matrixWeightLabel")}</span>
+              {matrixWeightOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setMatrixWeightFilter(opt.key)}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    matrixWeightFilter === opt.key
+                      ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                      : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
       )}
 

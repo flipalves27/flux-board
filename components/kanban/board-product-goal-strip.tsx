@@ -11,6 +11,8 @@ type BoardProductGoalStripProps = {
   getHeaders: () => Record<string, string>;
   onOpenScrumSettings: () => void;
   onOpenIncrementReview: () => void;
+  /** Classes extras no container (ex.: padding à esquerda para botão de recolher). */
+  className?: string;
 };
 
 export function BoardProductGoalStrip({
@@ -18,6 +20,7 @@ export function BoardProductGoalStrip({
   getHeaders,
   onOpenScrumSettings,
   onOpenIncrementReview,
+  className = "",
 }: BoardProductGoalStripProps) {
   const t = useTranslations("kanban.board.productGoalStrip");
   const db = useBoardStore((s) => s.db);
@@ -29,7 +32,9 @@ export function BoardProductGoalStrip({
 
   return (
     <>
-    <div className="flex flex-col sm:flex-row sm:items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
+    <div
+      className={`flex flex-col sm:flex-row sm:items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6 ${className}`.trim()}
+    >
       <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
         <span className="font-bold uppercase tracking-wide text-[var(--flux-primary-light)] shrink-0">{t("label")}</span>
         {goal ? (
