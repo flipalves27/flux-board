@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
-import type { DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -40,6 +40,7 @@ import { BoardMobileToolHub } from "./board-mobile-tool-hub";
 import { KanbanBoardOverlays } from "./kanban-board-overlays";
 import { WipOverrideModal } from "./wip-override-modal";
 import { buildKanbanOverlayModel } from "./kanban-overlay-model";
+import { buildDragMoveFieldsFromOverId } from "./kanban-dnd-utils";
 import { resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { buildHistoricalCycleDaysFromCards } from "@/lib/board-historical-cycle-days";
 import { isLeanSixSigmaMethodology, isScrumMethodology } from "@/lib/board-methodology";
@@ -412,14 +413,43 @@ function KanbanBoardLoaded({
 
   const clearSelectionRef = useRef<(() => void) | null>(null);
 
+  const handleKanbanDragStart = useCallback(
+    (e: DragStartEvent) => {
+      dnd.handleDragStart(e);
+      const idStr = String(e.active.id);
+      if (!idStr.startsWith("card-")) return;
+      const raw = e.active.data.current as { dragIds?: string[] } | undefined;
+      const cardId = idStr.replace("card-", "");
+      const ids = raw?.dragIds?.length ? raw.dragIds : [cardId];
+      collab.notifyDragStart(ids);
+    },
+    [dnd, collab]
+  );
+
+  const handleKanbanDragMove = useCallback(
+    (e: DragMoveEvent) => {
+      if (!String(e.active.id).startsWith("card-")) return;
+      const overId = e.over ? String(e.over.id) : null;
+      const fields = buildDragMoveFieldsFromOverId(overId);
+      if (fields) collab.notifyDragMove(fields);
+    },
+    [collab]
+  );
+
+  const handleKanbanDragCancel = useCallback(() => {
+    collab.notifyDragEnd();
+  }, [collab]);
+
   const handleKanbanDragEnd = useCallback(
     (e: DragEndEvent) => {
       const raw = e.active.data.current as { dragIds?: string[] } | undefined;
       const batch = (raw?.dragIds?.length ?? 0) > 1;
+      const wasCard = String(e.active.id).startsWith("card-");
       dnd.handleDragEnd(e);
+      if (wasCard) collab.notifyDragEnd();
       if (e.over && batch) clearSelectionRef.current?.();
     },
-    [dnd]
+    [dnd, collab]
   );
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
@@ -1072,8 +1102,11 @@ function KanbanBoardLoaded({
           onTableOpenCard={board.handleTimelineOpenCard}
           sensors={dnd.sensors}
           collisionDetection={dnd.collisionDetection}
-          onDragStart={dnd.handleDragStart}
+          onDragStart={handleKanbanDragStart}
+          onDragMove={handleKanbanDragMove}
+          onDragCancel={handleKanbanDragCancel}
           onDragEnd={handleKanbanDragEnd}
+          selfUserId={user?.id ?? ""}
           activeCard={dnd.activeCard}
           activeDragCount={dnd.activeDragCount}
           activeDragIds={dnd.activeDragIds}

@@ -3120,6 +3120,9 @@
           },
           "dragCancel": "Drag cancelled."
         }
+      },
+      "remoteDrag": {
+        "multiCardHint": "Moving {count} cards"
       }
     },
     "cardTemplates": {

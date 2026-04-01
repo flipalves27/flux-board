@@ -70,6 +70,12 @@ npm run validate:deploy
 
 Para deploy na Vercel: `vercel` ou push para o repositório conectado.
 
+### Colaboração em tempo real e Redis (opcional)
+
+- **`REDIS_URL`**: URL TCP (`redis://` ou `rediss://`), por exemplo Upstash. Pub/Sub entre instâncias Node exige cliente TCP; a API REST do Upstash não oferece `SUBSCRIBE`. Detalhes e limitações estão comentados em [`.env.example`](.env.example).
+- **Serverless**: se não existir um processo Node de longa duração com o subscritor Redis ativo (por exemplo em certos modelos de deploy), o fan-out entre instâncias pode não funcionar; o cliente mantém SSE na instância que serve a ligação e usa **polling** de reserva pelo `lastUpdated` do board.
+- **Sem `REDIS_URL`**: o hub SSE fica **apenas em memória** no processo atual (adequado a desenvolvimento ou deploy de instância única).
+
 ### Diagnóstico em produção (erros / React #185)
 
 - Documentação: [`docs/flux-diagnostics.md`](docs/flux-diagnostics.md)

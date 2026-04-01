@@ -3125,6 +3125,9 @@
           },
           "dragCancel": "Arrasto cancelado."
         }
+      },
+      "remoteDrag": {
+        "multiCardHint": "A mover {count} cards"
       }
     },
     "cardTemplates": {

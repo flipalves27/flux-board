@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useRef, type ComponentProps, type RefObject } from "react";
-import { DndContext, DragOverlay, type CollisionDetection, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
+import { useEffect, useMemo, useRef, type ComponentProps, type RefObject } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { CardTemplate } from "@/lib/kv-card-templates";
@@ -13,6 +20,19 @@ import { BoardTableView } from "./board-table-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
+import { useBoardCollabStore } from "@/stores/board-collab-store";
+import type { RemoteDragState } from "@/stores/board-collab-store";
+
+function resolveRemoteDragTargetBucket(st: RemoteDragState, cardList: CardData[]): string | null {
+  const k = st.overKind;
+  if (!k) return null;
+  if (k === "bucket" || k === "slot") return st.bucketKey ?? null;
+  if (k === "card" && st.overCardId) {
+    const c = cardList.find((x) => x.id === st.overCardId);
+    return c?.bucket ?? null;
+  }
+  return null;
+}
 
 type KanbanBoardCanvasProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
@@ -40,7 +60,11 @@ type KanbanBoardCanvasProps = {
   sensors: NonNullable<ComponentProps<typeof DndContext>["sensors"]>;
   collisionDetection: CollisionDetection;
   onDragStart: (e: DragStartEvent) => void;
+  onDragMove?: (e: DragMoveEvent) => void;
+  onDragCancel?: () => void;
   onDragEnd: (e: DragEndEvent) => void;
+  /** Para ignorar arrastos remotos do próprio utilizador na UI colaborativa. */
+  selfUserId?: string;
   activeCard: CardData | null | undefined;
   activeDragCount: number;
   activeDragIds: string[] | null;
@@ -101,7 +125,10 @@ export function KanbanBoardCanvas({
   sensors,
   collisionDetection,
   onDragStart,
+  onDragMove,
+  onDragCancel,
   onDragEnd,
+  selfUserId = "",
   activeCard,
   activeDragCount,
   activeDragIds,
@@ -124,6 +151,30 @@ export function KanbanBoardCanvas({
   doneBucketKeys = [],
   historicalCycleDays,
 }: KanbanBoardCanvasProps) {
+  const remoteDragByUser = useBoardCollabStore((s) => s.remoteDragByUser);
+  const pruneStaleRemoteDrags = useBoardCollabStore((s) => s.pruneStaleRemoteDrags);
+
+  useEffect(() => {
+    const id = window.setInterval(() => pruneStaleRemoteDrags(3500), 1000);
+    return () => clearInterval(id);
+  }, [pruneStaleRemoteDrags]);
+
+  const remoteHighlightBuckets = useMemo(() => {
+    const set = new Set<string>();
+    if (!selfUserId) return set;
+    for (const [uid, st] of Object.entries(remoteDragByUser)) {
+      if (uid === selfUserId) continue;
+      const b = resolveRemoteDragTargetBucket(st, cards);
+      if (b) set.add(b);
+    }
+    return set;
+  }, [remoteDragByUser, cards, selfUserId]);
+
+  const remoteDragEntries = useMemo(() => {
+    if (!selfUserId) return [];
+    return Object.entries(remoteDragByUser).filter(([uid]) => uid !== selfUserId);
+  }, [remoteDragByUser, selfUserId]);
+
   /** Assinatura estável — evita re-montar o observer quando `buckets` só muda de referência. */
   const bucketKeysSig = buckets.map((b) => b.key).join("|");
   const lastReportedVisibleKeyRef = useRef<string | null>(null);
@@ -264,6 +315,8 @@ export function KanbanBoardCanvas({
           sensors={sensors}
           collisionDetection={collisionDetection}
           onDragStart={onDragStart}
+          onDragMove={onDragMove}
+          onDragCancel={onDragCancel}
           onDragEnd={onDragEnd}
           accessibility={{
             screenReaderInstructions: {
@@ -329,6 +382,7 @@ export function KanbanBoardCanvas({
               <KanbanColumn
                 key={b.key}
                 bucket={b}
+                remoteCollabHighlight={remoteHighlightBuckets.has(b.key)}
                 cards={visibleCardsByBucket(b.key)}
                 collapsed={collapsed.has(b.key)}
                 onToggleCollapse={() => onToggleCollapse(b.key)}
@@ -395,6 +449,35 @@ export function KanbanBoardCanvas({
               </div>
             ) : null}
           </DragOverlay>
+
+          {remoteDragEntries.length > 0 ? (
+            <div className="pointer-events-none fixed bottom-4 left-4 z-[60] flex flex-col gap-2 max-w-[min(100vw-2rem,280px)]">
+              {remoteDragEntries.map(([uid, st]) => {
+                  const n = st.cardIds.length;
+                  const oneId = n === 1 ? st.cardIds[0] : null;
+                  const title = oneId ? cards.find((c) => c.id === oneId)?.title : null;
+                  return (
+                    <div
+                      key={uid}
+                      className="rounded-xl border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-surface-card)]/95 backdrop-blur-sm shadow-[var(--flux-shadow-kanban-card-lift)] px-3 py-2.5"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="text-[11px] font-semibold text-[var(--flux-primary-light)] truncate mb-1">
+                        {st.displayName}
+                      </div>
+                      <div className="relative rounded-lg border border-dashed border-[var(--flux-primary-alpha-40)] bg-[var(--flux-primary-alpha-08)] px-2 py-2 min-h-[52px] flex items-center">
+                        <div className="text-xs text-[var(--flux-text)] line-clamp-2">
+                          {title
+                            ? title
+                            : t("board.remoteDrag.multiCardHint", { count: n })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : null}
         </DndContext>
       ) : null}
     </div>

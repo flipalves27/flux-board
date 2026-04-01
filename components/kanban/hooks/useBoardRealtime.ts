@@ -12,9 +12,13 @@ import type {
   ColumnReorderPayload,
   PresencePeer,
 } from "@/lib/board-realtime-hub";
+import type { DragEndSsePayload, DragMoveSsePayload, DragStartSsePayload } from "@/lib/board-realtime-envelope";
+import type { DragMovePostFields } from "@/components/kanban/kanban-dnd-utils";
 
 /** Sincronização por `lastUpdated` enquanto SSE está ativa (multi-instância / eventos perdidos). */
 const BOARD_POLL_MS_WITH_SSE = 5000;
+/** Throttle de `drag_move` para o servidor (ms). */
+const DRAG_MOVE_THROTTLE_MS = 80;
 /** Após falha ou fim da stream SSE. */
 const BOARD_POLL_MS_FALLBACK = 4000;
 
@@ -103,6 +107,9 @@ export function useBoardRealtime({
   const connectionIdRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastDragMoveSentAt = useRef(0);
+  const pendingDragMoveFields = useRef<DragMovePostFields | null>(null);
+  const dragMoveThrottleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setPresence = useBoardCollabStore((s) => s.setPresence);
   const setSseConnected = useBoardCollabStore((s) => s.setSseConnected);
@@ -110,6 +117,9 @@ export function useBoardRealtime({
   const setConnectionMeta = useBoardCollabStore((s) => s.setConnectionMeta);
   const setLocksFromServer = useBoardCollabStore((s) => s.setLocksFromServer);
   const applyLockEvent = useBoardCollabStore((s) => s.applyLockEvent);
+  const applyRemoteDragStart = useBoardCollabStore((s) => s.applyRemoteDragStart);
+  const applyRemoteDragMove = useBoardCollabStore((s) => s.applyRemoteDragMove);
+  const applyRemoteDragEnd = useBoardCollabStore((s) => s.applyRemoteDragEnd);
   const resetCollab = useBoardCollabStore((s) => s.reset);
 
   const userIdRef = useRef(userId);
@@ -262,6 +272,40 @@ export function useBoardRealtime({
         } catch {
           /* ignore */
         }
+        return;
+      }
+      if (eventName === "drag_start") {
+        try {
+          const p = JSON.parse(raw) as DragStartSsePayload;
+          if (p.fromUserId === userIdRef.current) return;
+          const peers = useBoardCollabStore.getState().presencePeers;
+          const peer = peers.find((x) => x.userId === p.fromUserId);
+          const displayName = peer?.displayName?.trim() || peer?.username?.trim() || "—";
+          const ids = Array.isArray(p.cardIds) ? p.cardIds : [];
+          applyRemoteDragStart(p.fromUserId, displayName, ids);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      if (eventName === "drag_move") {
+        try {
+          const p = JSON.parse(raw) as DragMoveSsePayload;
+          if (p.fromUserId === userIdRef.current) return;
+          applyRemoteDragMove(p.fromUserId, p);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      if (eventName === "drag_end") {
+        try {
+          const p = JSON.parse(raw) as DragEndSsePayload;
+          if (p.fromUserId === userIdRef.current) return;
+          applyRemoteDragEnd(p.fromUserId);
+        } catch {
+          /* ignore */
+        }
       }
     }
 
@@ -317,6 +361,11 @@ export function useBoardRealtime({
         clearInterval(pollRef.current);
         pollRef.current = null;
       }
+      if (dragMoveThrottleTimer.current) {
+        clearTimeout(dragMoveThrottleTimer.current);
+        dragMoveThrottleTimer.current = null;
+      }
+      pendingDragMoveFields.current = null;
       resetCollab();
       setSseConnected(false);
       setPollingFallback(false);
@@ -333,6 +382,9 @@ export function useBoardRealtime({
     setConnectionMeta,
     setLocksFromServer,
     applyLockEvent,
+    applyRemoteDragStart,
+    applyRemoteDragMove,
+    applyRemoteDragEnd,
     userId,
   ]);
 
@@ -398,9 +450,118 @@ export function useBoardRealtime({
     }).catch(() => {});
   }, [boardId, getHeaders]);
 
+  const notifyDragMove = useCallback(
+    (fields: DragMovePostFields) => {
+      pendingDragMoveFields.current = fields;
+      const now = Date.now();
+      const elapsed = now - lastDragMoveSentAt.current;
+      const send = () => {
+        const pending = pendingDragMoveFields.current;
+        pendingDragMoveFields.current = null;
+        if (dragMoveThrottleTimer.current) {
+          clearTimeout(dragMoveThrottleTimer.current);
+          dragMoveThrottleTimer.current = null;
+        }
+        if (!pending) return;
+        lastDragMoveSentAt.current = Date.now();
+        const conn = connectionIdRef.current;
+        void apiFetch(`/api/boards/${encodeURIComponent(boardId)}/presence`, {
+          method: "POST",
+          body: JSON.stringify({
+            clientId: clientIdRef.current,
+            ...(conn ? { connectionId: conn } : {}),
+            action: "drag_move",
+            overKind: pending.overKind,
+            ...(pending.bucketKey !== undefined ? { bucketKey: pending.bucketKey } : {}),
+            ...(pending.slotIndex !== undefined ? { slotIndex: pending.slotIndex } : {}),
+            ...(pending.overCardId !== undefined ? { overCardId: pending.overCardId } : {}),
+          }),
+          headers: getApiHeaders(getHeaders()),
+        }).catch(() => {});
+      };
+      if (elapsed >= DRAG_MOVE_THROTTLE_MS) {
+        send();
+      } else if (!dragMoveThrottleTimer.current) {
+        dragMoveThrottleTimer.current = setTimeout(send, DRAG_MOVE_THROTTLE_MS - elapsed);
+      }
+    },
+    [boardId, getHeaders]
+  );
+
+  const notifyDragStart = useCallback(
+    (cardIds: string[]) => {
+      if (!cardIds.length) return;
+      if (dragMoveThrottleTimer.current) {
+        clearTimeout(dragMoveThrottleTimer.current);
+        dragMoveThrottleTimer.current = null;
+      }
+      pendingDragMoveFields.current = null;
+      lastDragMoveSentAt.current = 0;
+      const conn = connectionIdRef.current;
+      void apiFetch(`/api/boards/${encodeURIComponent(boardId)}/presence`, {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: clientIdRef.current,
+          ...(conn ? { connectionId: conn } : {}),
+          action: "drag_start",
+          cardIds,
+        }),
+        headers: getApiHeaders(getHeaders()),
+      }).catch(() => {});
+    },
+    [boardId, getHeaders]
+  );
+
+  const notifyDragEnd = useCallback(() => {
+    if (dragMoveThrottleTimer.current) {
+      clearTimeout(dragMoveThrottleTimer.current);
+      dragMoveThrottleTimer.current = null;
+    }
+    const pending = pendingDragMoveFields.current;
+    pendingDragMoveFields.current = null;
+    const conn = connectionIdRef.current;
+    const base = {
+      clientId: clientIdRef.current,
+      ...(conn ? { connectionId: conn } : {}),
+    } as Record<string, unknown>;
+    const headers = getApiHeaders(getHeaders());
+    const url = `/api/boards/${encodeURIComponent(boardId)}/presence`;
+    if (pending) {
+      void apiFetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+          ...base,
+          action: "drag_move",
+          overKind: pending.overKind,
+          ...(pending.bucketKey !== undefined ? { bucketKey: pending.bucketKey } : {}),
+          ...(pending.slotIndex !== undefined ? { slotIndex: pending.slotIndex } : {}),
+          ...(pending.overCardId !== undefined ? { overCardId: pending.overCardId } : {}),
+        }),
+        headers,
+      })
+        .catch(() => {})
+        .finally(() => {
+          void apiFetch(url, {
+            method: "POST",
+            body: JSON.stringify({ ...base, action: "drag_end" }),
+            headers,
+          }).catch(() => {});
+        });
+    } else {
+      void apiFetch(url, {
+        method: "POST",
+        body: JSON.stringify({ ...base, action: "drag_end" }),
+        headers,
+      }).catch(() => {});
+    }
+  }, [boardId, getHeaders]);
+
   return {
     clientId: clientIdRef.current,
     notifyBucketsChanged,
     notifyColumnReorder,
+    notifyDragStart,
+    notifyDragMove,
+    notifyDragEnd,
   };
 }
