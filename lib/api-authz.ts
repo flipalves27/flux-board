@@ -6,8 +6,8 @@
  * - Gestão da org (Equipe, utilizadores, billing, convites, branding, webhooks): `ensureOrgManager` = `platform_admin` OU papel **gestor** na org (`ensureOrgTeamManager` é alias).
  * - Operações globais / multi-tenant na URL: só `ensurePlatformAdmin` ou `isSameOrgOrPlatformAdmin` em
  *   `lib/tenant-route-guard.ts` — nunca `payload.isAdmin` (flag de admin **da org**).
- * - Acesso a boards: `userCanAccessBoard(..., isAdmin)` usa o mesmo boolean do JWT: “vê todos os boards da org”;
- *   não concede acesso a outra organização.
+ * - Acesso a boards: `userCanAccessBoard(..., seesAllBoardsFromAuth)` usa o boolean do JWT (“gestor” / plataforma)
+ *   **ou** vínculo ativo em Equipe com escopo organização (sem `boardId`); não concede acesso a outra organização.
  *
  * Rotas que usavam `ensureOrgTeamManager` passam a usar o mesmo critério que `ensureOrgManager`.
  * `ensureOrgManager`: organizations/verify-domain; boards export-template; `PUT /api/organizations/me`

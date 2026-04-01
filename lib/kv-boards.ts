@@ -1,6 +1,7 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
+import { getOrgWideTeamBoardAccess } from "./kv-team-members";
 import type { BoardPortalSettings } from "./portal-types";
 import type { BoardAnomalyNotifications } from "./anomaly-board-settings";
 import type { Db } from "mongodb";
@@ -122,12 +123,15 @@ async function ensureBoardIndexes(db: Db): Promise<void> {
   boardIndexesEnsured = true;
 }
 
-export async function getBoardIds(userId: string, orgId: string, isAdmin: boolean): Promise<string[]> {
+export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFromAuth: boolean): Promise<string[]> {
+  const seesAllBoards =
+    seesAllBoardsFromAuth || (await getOrgWideTeamBoardAccess(orgId, userId)) !== null;
+
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureBoardIndexes(db);
     const ids = new Set<string>();
-    if (isAdmin) {
+    if (seesAllBoards) {
       const { listUsers } = await import("./kv-users");
       const users = await listUsers(orgId);
       const ub = db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS);
@@ -150,7 +154,7 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
 
   const kv = await getStore();
   const ids = new Set<string>();
-  if (isAdmin) {
+  if (seesAllBoards) {
     const { listUsers } = await import("./kv-users");
     const users = await listUsers(orgId);
     const boardsPerUser = await Promise.all(
@@ -166,8 +170,8 @@ export async function getBoardIds(userId: string, orgId: string, isAdmin: boolea
   return [...ids];
 }
 
-export async function listBoardsForUser(userId: string, orgId: string, isAdmin: boolean): Promise<BoardData[]> {
-  const boardIds = await getBoardIds(userId, orgId, isAdmin);
+export async function listBoardsForUser(userId: string, orgId: string, seesAllBoardsFromAuth: boolean): Promise<BoardData[]> {
+  const boardIds = await getBoardIds(userId, orgId, seesAllBoardsFromAuth);
   return getBoardsByIds(boardIds, orgId);
 }
 
@@ -372,10 +376,16 @@ export async function deleteBoard(boardId: string, orgId: string, userId: string
   return true;
 }
 
-export async function userCanAccessBoard(userId: string, orgId: string, isAdmin: boolean, boardId: string): Promise<boolean> {
+export async function userCanAccessBoard(
+  userId: string,
+  orgId: string,
+  seesAllBoardsFromAuth: boolean,
+  boardId: string
+): Promise<boolean> {
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
-  if (board.ownerId === userId || isAdmin) return true;
+  if (board.ownerId === userId || seesAllBoardsFromAuth) return true;
+  if ((await getOrgWideTeamBoardAccess(orgId, userId)) !== null) return true;
   // Board-level RBAC: check membership
   const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
   const role = await getBoardEffectiveRole(orgId, boardId, userId, false, false);

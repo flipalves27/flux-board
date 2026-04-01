@@ -55,6 +55,23 @@ export async function upsertTeamMember(input: TeamMember): Promise<TeamMember> {
   return row;
 }
 
+/**
+ * Papel do vínculo ativo em Equipe com escopo **organização inteira** (`boardId` vazio), ou `null`.
+ * Alinha listagem/acesso a boards com “Organização inteira” (`team_manager` | `member` | `guest`).
+ */
+export async function getOrgWideTeamBoardAccess(
+  orgId: string,
+  userId: string
+): Promise<TeamRole | null> {
+  const members = await listTeamMembers(orgId);
+  for (const m of members) {
+    if (m.userId !== userId || !m.active) continue;
+    if (String(m.boardId ?? "").trim()) continue;
+    return normalizeTeamRole(m.role);
+  }
+  return null;
+}
+
 export async function removeTeamMember(orgId: string, userId: string, boardId?: string): Promise<boolean> {
   if (isMongoConfigured()) {
     const db = await getDb();
