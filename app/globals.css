@@ -4,7 +4,7 @@
 
 @layer base {
   :where(a, button, input, select, textarea, summary):focus-visible {
-    outline: 2px solid var(--flux-primary-light);
+    outline: 2px solid var(--flux-focus-ring);
     outline-offset: 2px;
   }
 }
@@ -12,17 +12,21 @@
 /* Flux-Board design system — dark theme */
 :root {
   --flux-primary: #6C5CE7;
-  --flux-primary-light: #A29BFE;
   --flux-primary-dark: #4834D4;
+  /* Tints derived from --flux-primary so org branding stays coherent (hover, links, charts). */
+  --flux-primary-light: color-mix(in srgb, var(--flux-primary) 40%, white);
+  --flux-focus-ring: color-mix(in srgb, var(--flux-primary) 46%, white);
+  --flux-primary-on-surface: var(--flux-primary-light);
   --flux-secondary: #00D2D3;
   --flux-secondary-light: #7EFCF6;
   --flux-secondary-dark: #01A3A4;
   --flux-accent: #FDA7DF;
   --flux-accent-dark: #E056A0;
-  --flux-surface-dark: #0D0B1A;
-  --flux-surface-mid: #1A1730;
-  --flux-surface-card: #221F3A;
-  --flux-surface-elevated: #2D2952;
+  /* Surfaces: indigo-violet family, aligned with primary hue */
+  --flux-surface-dark: #0c0b19;
+  --flux-surface-mid: #19172e;
+  --flux-surface-card: #211e38;
+  --flux-surface-elevated: #2b274c;
   --flux-text: #F0EEFF;
   --flux-text-on-primary: #ffffff;
   --flux-text-muted: #9B97C2;
@@ -39,7 +43,7 @@
   --flux-fluxy-face-muted: #d4ccf5;
   --flux-fluxy-void: #1e1548;
   --flux-fluxy-eye: #1e1548;
-  --flux-fluxy-glow-alpha: rgba(88, 64, 221, 0.27);
+  --flux-fluxy-glow-alpha: color-mix(in srgb, var(--flux-primary) 27%, transparent);
 
   /* Spacing scale (~geometric), px for stable UI chrome */
   --flux-space-1: 4px;
@@ -86,46 +90,58 @@
   --flux-transition-normal: var(--flux-motion-duration-base) var(--flux-ease-standard);
   --flux-transition-slow: var(--flux-motion-duration-slow) var(--flux-ease-standard);
 
-  /* Elevation */
-  --flux-shadow-sm: 0 1px 3px rgba(13, 11, 26, 0.28);
-  --flux-shadow-md: 0 4px 16px rgba(13, 11, 26, 0.4);
-  --flux-shadow-lg: 0 12px 40px -8px rgba(13, 11, 26, 0.45);
-  --flux-shadow-xl: 0 24px 64px -12px rgba(13, 11, 26, 0.55);
-  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
-  --flux-shadow-elevated-card: 0 10px 30px rgba(0, 0, 0, 0.2);
-  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.18);
-  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.35);
-  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.35);
-  --flux-shadow-secondary-outline: 0 0 0 1px rgba(0, 210, 211, 0.12);
-  --flux-shadow-primary-dot: 0 0 10px rgba(108, 92, 231, 0.6);
-  --flux-shadow-primary-dot-sm: 0 0 8px rgba(108, 92, 231, 0.6);
-  --flux-shadow-inset-hairline: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 16px 48px -20px rgba(0, 0, 0, 0.5);
-  --flux-shadow-modal-depth: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 96px -24px rgba(0, 0, 0, 0.65),
-    0 0 120px -40px rgba(108, 92, 231, 0.35);
-  --flux-shadow-logo-underlay: 0 2px 8px rgba(108, 92, 231, 0.25);
+  /* Elevation — depth tinted with surface; brand glows from semantic colors */
+  --flux-shadow-sm: 0 1px 3px color-mix(in srgb, var(--flux-surface-dark) 78%, transparent);
+  --flux-shadow-md: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 72%, transparent);
+  --flux-shadow-lg: 0 12px 40px -8px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
+  --flux-shadow-xl: 0 24px 64px -12px color-mix(in srgb, var(--flux-surface-dark) 65%, transparent);
+  --flux-shadow-drag: 0 12px 36px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  --flux-shadow-elevated-card: 0 10px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
+  --flux-shadow-primary-panel: 0 12px 32px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-shadow-primary-medium: 0 8px 20px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-primary-soft: 0 1px 6px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-secondary-outline: 0 0 0 1px color-mix(in srgb, var(--flux-secondary) 12%, transparent);
+  --flux-shadow-primary-dot: 0 0 10px color-mix(in srgb, var(--flux-primary) 60%, transparent);
+  --flux-shadow-primary-dot-sm: 0 0 8px color-mix(in srgb, var(--flux-primary) 60%, transparent);
+  --flux-shadow-inset-hairline: 0 0 0 1px color-mix(in srgb, white 4%, transparent) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 color-mix(in srgb, white 6%, transparent);
+  --flux-shadow-panel-hover:
+    inset 0 1px 0 0 color-mix(in srgb, white 8%, transparent),
+    0 16px 48px -20px color-mix(in srgb, var(--flux-surface-dark) 82%, transparent);
+  --flux-shadow-modal-depth:
+    0 0 0 1px color-mix(in srgb, white 4%, transparent) inset,
+    0 32px 96px -24px color-mix(in srgb, black 65%, transparent),
+    0 0 120px -40px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 25%, transparent);
 
   /* Gradients & panels */
   --flux-gradient-panel-sheen: linear-gradient(
     148deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.02) 45%,
-    rgba(0, 0, 0, 0.08) 100%
+    color-mix(in srgb, white 5%, transparent) 0%,
+    color-mix(in srgb, white 2%, transparent) 45%,
+    color-mix(in srgb, var(--flux-surface-dark) 35%, transparent) 100%
   );
   --flux-gradient-landing-cta: linear-gradient(
     135deg,
-    rgba(108, 92, 231, 0.35),
-    rgba(0, 210, 211, 0.2),
-    rgba(253, 167, 223, 0.25)
+    color-mix(in srgb, var(--flux-primary) 35%, transparent),
+    color-mix(in srgb, var(--flux-secondary) 20%, transparent),
+    color-mix(in srgb, var(--flux-accent) 25%, transparent)
   );
-  --flux-glass-surface-bg: linear-gradient(165deg, rgba(34, 31, 58, 0.86), rgba(13, 11, 26, 0.72));
-  --flux-glass-surface-border: rgba(255, 255, 255, 0.16);
-  --flux-glass-surface-shadow: 0 14px 42px -18px rgba(0, 0, 0, 0.55);
-  --flux-glass-elevated-bg: linear-gradient(160deg, rgba(108, 92, 231, 0.2), rgba(26, 23, 48, 0.88));
-  --flux-glass-elevated-border: rgba(108, 92, 231, 0.32);
-  --flux-glass-elevated-shadow: 0 18px 48px -20px rgba(108, 92, 231, 0.4);
-  --flux-glass-focus-ring: 0 0 0 2px rgba(162, 155, 254, 0.38);
+  --flux-glass-surface-bg: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--flux-surface-card) 86%, transparent),
+    color-mix(in srgb, var(--flux-surface-dark) 78%, transparent)
+  );
+  --flux-glass-surface-border: color-mix(in srgb, white 16%, transparent);
+  --flux-glass-surface-shadow: 0 14px 42px -18px color-mix(in srgb, var(--flux-surface-dark) 78%, transparent);
+  --flux-glass-elevated-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--flux-primary) 20%, transparent),
+    color-mix(in srgb, var(--flux-surface-mid) 90%, transparent)
+  );
+  --flux-glass-elevated-border: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+  --flux-glass-elevated-shadow: 0 18px 48px -20px color-mix(in srgb, var(--flux-primary) 40%, transparent);
+  --flux-glass-focus-ring: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 38%, transparent);
   --flux-glass-backdrop-blur: 14px;
 
   /* Brand alpha ramps (color-mix → hue from semantic tokens; TSX still uses var(--flux-*-alpha-*)) */
@@ -385,29 +401,52 @@
   --flux-surface-hover: color-mix(in srgb, white 5%, transparent);
   --flux-primary-glow: color-mix(in srgb, var(--flux-primary) 14%, transparent);
   --flux-board-mesh:
-    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.16), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 210, 211, 0.07), transparent 50%),
-    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(253, 167, 223, 0.06), transparent 50%);
+    radial-gradient(ellipse 90% 55% at 50% -25%, color-mix(in srgb, var(--flux-primary) 16%, transparent), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, color-mix(in srgb, var(--flux-secondary) 7%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 38% at 0% 100%, color-mix(in srgb, var(--flux-accent) 6%, transparent), transparent 50%);
   --flux-rad: 10px;
   --flux-rad-sm: 6px;
   --flux-rad-lg: 16px;
   --flux-rad-xl: 20px;
   --shadow-md: var(--flux-shadow-md);
   --shadow-drag: var(--flux-shadow-drag);
-  --flux-home-hero-bg: linear-gradient(180deg, rgba(13, 11, 26, 0.55) 0%, rgba(13, 11, 26, 0.82) 100%), url("/flux-background.svg");
+  --flux-home-hero-bg: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-surface-dark) 55%, transparent) 0%,
+      color-mix(in srgb, var(--flux-surface-dark) 82%, transparent) 100%
+    ),
+    url("/flux-background.svg");
 }
 
 /* Flux-Board — light theme */
 [data-theme="light"] {
-  --flux-surface-dark: #F5F4FF;
-  --flux-surface-mid: #EDEBFC;
-  --flux-surface-card: #FFFFFF;
-  --flux-surface-elevated: #E8E6F9;
-  --flux-text: #1A1730;
+  --flux-surface-dark: #f5f4ff;
+  --flux-surface-mid: #edeafc;
+  --flux-surface-card: #ffffff;
+  --flux-surface-elevated: #e8e6f9;
+  --flux-text: #1a1730;
   --flux-text-on-primary: #ffffff;
-  --flux-text-muted: #47427A;
-  --flux-primary-light: #5A49DA;
-  --flux-secondary: #008E97;
+  --flux-text-muted: #47427a;
+  /* Full brand ramp on light surfaces (contrast + saturation tuned for WCAG comfort). */
+  --flux-primary: #6c5ce7;
+  --flux-primary-dark: #4834d4;
+  --flux-primary-light: color-mix(in srgb, var(--flux-primary) 62%, var(--flux-text));
+  --flux-focus-ring: color-mix(in srgb, var(--flux-primary) 70%, var(--flux-text));
+  --flux-primary-on-surface: var(--flux-primary-light);
+  --flux-secondary: #008e97;
+  --flux-accent: #e056a0;
+  --flux-accent-dark: #c94490;
+  --flux-success: #00c853;
+  --flux-warning: #f5a623;
+  --flux-danger: #e53935;
+  --flux-info: #1e88e5;
+  --flux-fluxy-fur: color-mix(in srgb, var(--flux-primary) 78%, var(--flux-text));
+  --flux-fluxy-fur-dark: color-mix(in srgb, var(--flux-primary) 88%, var(--flux-text));
+  --flux-fluxy-fur-light: color-mix(in srgb, var(--flux-primary) 58%, white);
+  --flux-fluxy-face: color-mix(in srgb, var(--flux-surface-card) 92%, var(--flux-primary) 8%);
+  --flux-fluxy-face-muted: color-mix(in srgb, var(--flux-surface-elevated) 88%, var(--flux-primary) 12%);
+  --flux-fluxy-void: color-mix(in srgb, var(--flux-text) 88%, var(--flux-primary) 12%);
+  --flux-fluxy-eye: var(--flux-fluxy-void);
   --flux-border-muted: color-mix(in srgb, var(--flux-text) 6%, transparent);
   --flux-border-subtle: color-mix(in srgb, var(--flux-text) 10%, transparent);
   --flux-border-default: color-mix(in srgb, var(--flux-primary) 24%, transparent);
@@ -416,42 +455,58 @@
   --flux-surface-hover: color-mix(in srgb, var(--flux-primary) 7%, transparent);
   --flux-primary-glow: color-mix(in srgb, var(--flux-primary) 10%, transparent);
   --flux-board-mesh:
-    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.1), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 142, 151, 0.06), transparent 50%),
-    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(224, 86, 160, 0.05), transparent 50%);
-  --flux-shadow-sm: 0 1px 3px rgba(96, 79, 214, 0.12);
-  --flux-shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
-  --flux-shadow-lg: 0 12px 40px -8px rgba(96, 79, 214, 0.14);
-  --flux-shadow-xl: 0 24px 64px -12px rgba(96, 79, 214, 0.16);
-  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
-  --flux-shadow-elevated-card: 0 10px 30px rgba(96, 79, 214, 0.12);
-  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.12);
-  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.22);
-  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.22);
-  --flux-shadow-modal-depth: 0 0 0 1px rgba(26, 23, 48, 0.06) inset, 0 32px 96px -24px rgba(26, 23, 48, 0.12),
-    0 0 120px -40px rgba(108, 92, 231, 0.2);
-  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.65), 0 16px 48px -20px rgba(96, 79, 214, 0.12);
-  --flux-shadow-inset-hairline: 0 0 0 1px rgba(26, 23, 48, 0.06) inset;
-  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.75);
+    radial-gradient(ellipse 90% 55% at 50% -25%, color-mix(in srgb, var(--flux-primary) 10%, transparent), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, color-mix(in srgb, var(--flux-secondary) 6%, transparent), transparent 50%),
+    radial-gradient(ellipse 45% 38% at 0% 100%, color-mix(in srgb, var(--flux-accent) 5%, transparent), transparent 50%);
+  --flux-shadow-sm: 0 1px 3px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-md: 0 4px 16px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-lg: 0 12px 40px -8px color-mix(in srgb, var(--flux-primary) 14%, transparent);
+  --flux-shadow-xl: 0 24px 64px -12px color-mix(in srgb, var(--flux-primary) 16%, transparent);
+  --flux-shadow-drag: 0 12px 36px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-shadow-elevated-card: 0 10px 30px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-primary-panel: 0 12px 32px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-primary-medium: 0 8px 20px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-shadow-primary-soft: 0 1px 6px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-shadow-secondary-outline: 0 0 0 1px color-mix(in srgb, var(--flux-secondary) 14%, transparent);
+  --flux-shadow-primary-dot: 0 0 10px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+  --flux-shadow-primary-dot-sm: 0 0 8px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+  --flux-shadow-modal-depth:
+    0 0 0 1px color-mix(in srgb, var(--flux-text) 6%, transparent) inset,
+    0 32px 96px -24px color-mix(in srgb, var(--flux-text) 12%, transparent),
+    0 0 120px -40px color-mix(in srgb, var(--flux-primary) 20%, transparent);
+  --flux-shadow-panel-hover:
+    inset 0 1px 0 0 color-mix(in srgb, white 65%, transparent),
+    0 16px 48px -20px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-inset-hairline: 0 0 0 1px color-mix(in srgb, var(--flux-text) 6%, transparent) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 color-mix(in srgb, white 75%, transparent);
+  --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 18%, transparent);
   --flux-gradient-panel-sheen: linear-gradient(
     148deg,
-    rgba(26, 23, 48, 0.04) 0%,
-    rgba(26, 23, 48, 0.02) 45%,
-    rgba(255, 255, 255, 0.65) 100%
+    color-mix(in srgb, var(--flux-text) 4%, transparent) 0%,
+    color-mix(in srgb, var(--flux-text) 2%, transparent) 45%,
+    color-mix(in srgb, white 65%, transparent) 100%
   );
   --flux-gradient-landing-cta: linear-gradient(
     135deg,
-    rgba(108, 92, 231, 0.22),
-    rgba(0, 142, 151, 0.14),
-    rgba(224, 86, 160, 0.16)
+    color-mix(in srgb, var(--flux-primary) 22%, transparent),
+    color-mix(in srgb, var(--flux-secondary) 14%, transparent),
+    color-mix(in srgb, var(--flux-accent) 16%, transparent)
   );
-  --flux-glass-surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.94), rgba(245, 244, 255, 0.86));
-  --flux-glass-surface-border: rgba(108, 92, 231, 0.24);
-  --flux-glass-surface-shadow: 0 14px 42px -20px rgba(96, 79, 214, 0.22);
-  --flux-glass-elevated-bg: linear-gradient(150deg, rgba(108, 92, 231, 0.16), rgba(255, 255, 255, 0.92));
-  --flux-glass-elevated-border: rgba(108, 92, 231, 0.28);
-  --flux-glass-elevated-shadow: 0 18px 48px -22px rgba(96, 79, 214, 0.25);
-  --flux-glass-focus-ring: 0 0 0 2px rgba(108, 92, 231, 0.25);
+  --flux-glass-surface-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, white 94%, transparent),
+    color-mix(in srgb, var(--flux-surface-dark) 88%, transparent)
+  );
+  --flux-glass-surface-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+  --flux-glass-surface-shadow: 0 14px 42px -20px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-glass-elevated-bg: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--flux-primary) 16%, transparent),
+    color-mix(in srgb, white 92%, transparent)
+  );
+  --flux-glass-elevated-border: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+  --flux-glass-elevated-shadow: 0 18px 48px -22px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  --flux-glass-focus-ring: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 35%, transparent);
   --flux-chrome-alpha-03: color-mix(in srgb, var(--flux-text) 3%, transparent);
   --flux-chrome-alpha-04: color-mix(in srgb, var(--flux-text) 4%, transparent);
   --flux-chrome-alpha-05: color-mix(in srgb, var(--flux-text) 5%, transparent);
@@ -478,14 +533,20 @@
   --flux-black-alpha-65: color-mix(in srgb, var(--flux-text) 18%, transparent);
   --flux-backdrop-scrim: color-mix(in srgb, var(--flux-text) 35%, transparent);
   --flux-backdrop-scrim-strong: color-mix(in srgb, var(--flux-text) 50%, transparent);
-  --flux-shadow-embed-widget: 0 8px 28px rgba(26, 23, 48, 0.12);
-  --flux-shadow-login-panel: 0 8px 32px rgba(26, 23, 48, 0.14);
-  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px rgba(96, 79, 214, 0.1);
-  --flux-shadow-kanban-card-lift: 0 12px 32px rgba(108, 92, 231, 0.18);
-  --flux-tooltip-surface: rgba(255, 255, 255, 0.96);
+  --flux-shadow-embed-widget: 0 8px 28px color-mix(in srgb, var(--flux-text) 12%, transparent);
+  --flux-shadow-login-panel: 0 8px 32px color-mix(in srgb, var(--flux-text) 14%, transparent);
+  --flux-shadow-kanban-column:
+    inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
+  --flux-shadow-kanban-card-lift: 0 12px 32px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-tooltip-surface: color-mix(in srgb, var(--flux-surface-card) 96%, transparent);
   --shadow-md: var(--flux-shadow-md);
   --shadow-drag: var(--flux-shadow-drag);
-  --flux-home-hero-bg: linear-gradient(180deg, rgba(245, 244, 255, 0.45) 0%, rgba(245, 244, 255, 0.82) 100%), url("/flux-background-light.svg");
+  --flux-home-hero-bg: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-surface-dark) 45%, transparent) 0%,
+      color-mix(in srgb, var(--flux-surface-dark) 82%, transparent) 100%
+    ),
+    url("/flux-background-light.svg");
 }
 
 [data-theme="light"] body {
@@ -508,139 +569,170 @@
 @layer components {
   /* Home aesthetics variants */
   .home-variant-sober {
-    --home-shell-border: rgba(140, 145, 186, 0.2);
-    --home-shell-bg: rgba(23, 24, 42, 0.72);
-    --home-panel-border: rgba(126, 132, 176, 0.2);
-    --home-panel-bg: linear-gradient(155deg, rgba(89, 94, 134, 0.16), rgba(29, 31, 50, 0.95));
-    --home-panel-glow-cyan: rgba(111, 153, 172, 0.13);
-    --home-panel-glow-pink: rgba(178, 140, 170, 0.1);
-    --home-chip-border: rgba(196, 205, 242, 0.24);
-    --home-chip-bg: rgba(16, 17, 32, 0.5);
-    --home-chip-text: #c7d1ff;
-    --home-spotlight-border: rgba(172, 180, 224, 0.16);
-    --home-spotlight-bg: rgba(32, 34, 53, 0.8);
-    --home-list-border: rgba(154, 164, 214, 0.2);
-    --home-list-bg: rgba(35, 37, 58, 0.78);
-    --home-card-border: rgba(152, 160, 211, 0.2);
-    --home-accent-cyan-border: rgba(145, 183, 196, 0.24);
-    --home-accent-pink-border: rgba(188, 149, 178, 0.24);
-    --home-cta-border: rgba(139, 147, 196, 0.24);
-    --home-btn-shadow: 0 4px 16px rgba(82, 87, 136, 0.3);
-    --home-btn-hover-shadow: 0 6px 24px rgba(82, 87, 136, 0.38);
-    --home-shell-shadow: 0 12px 26px rgba(10, 12, 22, 0.34);
-    --home-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 34px rgba(10, 12, 22, 0.32);
-    --home-spotlight-shadow: 0 16px 28px rgba(10, 12, 22, 0.3);
+    --home-shell-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-shell-bg: color-mix(in srgb, var(--flux-surface-mid) 72%, transparent);
+    --home-panel-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-panel-bg: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--flux-text-muted) 16%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 95%, transparent)
+    );
+    --home-panel-glow-cyan: color-mix(in srgb, var(--flux-secondary) 13%, transparent);
+    --home-panel-glow-pink: color-mix(in srgb, var(--flux-accent) 10%, transparent);
+    --home-chip-border: color-mix(in srgb, var(--flux-text) 24%, transparent);
+    --home-chip-bg: color-mix(in srgb, var(--flux-surface-dark) 50%, transparent);
+    --home-chip-text: color-mix(in srgb, var(--flux-primary-light) 85%, white);
+    --home-spotlight-border: color-mix(in srgb, var(--flux-text-muted) 16%, transparent);
+    --home-spotlight-bg: color-mix(in srgb, var(--flux-surface-mid) 80%, transparent);
+    --home-list-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-list-bg: color-mix(in srgb, var(--flux-surface-card) 78%, transparent);
+    --home-card-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-accent-cyan-border: color-mix(in srgb, var(--flux-secondary) 24%, transparent);
+    --home-accent-pink-border: color-mix(in srgb, var(--flux-accent) 24%, transparent);
+    --home-cta-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-btn-shadow: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent);
+    --home-btn-hover-shadow: 0 6px 24px color-mix(in srgb, var(--flux-surface-dark) 62%, transparent);
+    --home-shell-shadow: 0 12px 26px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
+    --home-panel-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+      0 18px 34px color-mix(in srgb, var(--flux-surface-dark) 65%, transparent);
+    --home-spotlight-shadow: 0 16px 28px color-mix(in srgb, var(--flux-surface-dark) 62%, transparent);
   }
 
   .home-variant-vibrant {
-    --home-shell-border: rgba(108, 92, 231, 0.26);
-    --home-shell-bg: rgba(34, 31, 58, 0.78);
-    --home-panel-border: rgba(108, 92, 231, 0.24);
-    --home-panel-bg: linear-gradient(160deg, rgba(108, 92, 231, 0.24), rgba(45, 41, 82, 0.95));
-    --home-panel-glow-cyan: rgba(0, 210, 211, 0.21);
-    --home-panel-glow-pink: rgba(253, 167, 223, 0.18);
-    --home-chip-border: rgba(255, 255, 255, 0.2);
-    --home-chip-bg: rgba(13, 11, 26, 0.5);
+    --home-shell-border: color-mix(in srgb, var(--flux-primary) 26%, transparent);
+    --home-shell-bg: color-mix(in srgb, var(--flux-surface-card) 78%, transparent);
+    --home-panel-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-panel-bg: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--flux-primary) 24%, transparent),
+      color-mix(in srgb, var(--flux-surface-elevated) 95%, transparent)
+    );
+    --home-panel-glow-cyan: color-mix(in srgb, var(--flux-secondary) 21%, transparent);
+    --home-panel-glow-pink: color-mix(in srgb, var(--flux-accent) 18%, transparent);
+    --home-chip-border: color-mix(in srgb, white 20%, transparent);
+    --home-chip-bg: color-mix(in srgb, var(--flux-surface-dark) 50%, transparent);
     --home-chip-text: var(--flux-secondary-light);
-    --home-spotlight-border: rgba(255, 255, 255, 0.14);
-    --home-spotlight-bg: rgba(26, 23, 48, 0.82);
-    --home-list-border: rgba(108, 92, 231, 0.34);
+    --home-spotlight-border: color-mix(in srgb, white 14%, transparent);
+    --home-spotlight-bg: color-mix(in srgb, var(--flux-surface-mid) 82%, transparent);
+    --home-list-border: color-mix(in srgb, var(--flux-primary) 34%, transparent);
     --home-list-bg: var(--flux-surface-card);
-    --home-card-border: rgba(108, 92, 231, 0.24);
-    --home-accent-cyan-border: rgba(0, 210, 211, 0.32);
-    --home-accent-pink-border: rgba(253, 167, 223, 0.32);
-    --home-cta-border: rgba(108, 92, 231, 0.34);
-    --home-btn-shadow: 0 4px 16px rgba(108, 92, 231, 0.35);
-    --home-btn-hover-shadow: 0 6px 24px rgba(108, 92, 231, 0.45);
-    --home-shell-shadow: 0 12px 28px rgba(13, 11, 26, 0.28);
-    --home-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(13, 11, 26, 0.32);
-    --home-spotlight-shadow: 0 18px 30px rgba(13, 11, 26, 0.32);
+    --home-card-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-accent-cyan-border: color-mix(in srgb, var(--flux-secondary) 32%, transparent);
+    --home-accent-pink-border: color-mix(in srgb, var(--flux-accent) 32%, transparent);
+    --home-cta-border: color-mix(in srgb, var(--flux-primary) 34%, transparent);
+    --home-btn-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+    --home-btn-hover-shadow: 0 6px 24px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+    --home-shell-shadow: 0 12px 28px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent);
+    --home-panel-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+      0 18px 36px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
+    --home-spotlight-shadow: 0 18px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
   }
 
   .hero-shell {
-    border-color: var(--home-shell-border, rgba(108, 92, 231, 0.15));
-    background: var(--home-shell-bg, rgba(13, 11, 26, 0.72));
+    border-color: var(--home-shell-border, color-mix(in srgb, var(--flux-primary) 15%, transparent));
+    background: var(--home-shell-bg, color-mix(in srgb, var(--flux-surface-dark) 72%, transparent));
     box-shadow:
-      var(--home-shell-shadow, 0 8px 32px rgba(0, 0, 0, 0.3)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      var(--home-shell-shadow, 0 8px 32px color-mix(in srgb, var(--flux-surface-dark) 70%, transparent)),
+      inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
     backdrop-filter: blur(20px) saturate(1.4);
     -webkit-backdrop-filter: blur(20px) saturate(1.4);
   }
 
   .hero-panel {
-    border-color: var(--home-panel-border, rgba(108, 92, 231, 0.2));
-    background: var(--home-panel-bg, linear-gradient(160deg, rgba(108, 92, 231, 0.2), rgba(45, 41, 82, 0.95)));
-    box-shadow: var(--home-panel-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(13, 11, 26, 0.32));
+    border-color: var(--home-panel-border, color-mix(in srgb, var(--flux-primary) 20%, transparent));
+    background: var(
+      --home-panel-bg,
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--flux-primary) 20%, transparent),
+        color-mix(in srgb, var(--flux-surface-elevated) 95%, transparent)
+      )
+    );
+    box-shadow: var(
+      --home-panel-shadow,
+      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+      0 18px 36px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent)
+    );
   }
 
   .hero-chip {
-    border-color: var(--home-chip-border, rgba(255, 255, 255, 0.18));
-    background: var(--home-chip-bg, rgba(13, 11, 26, 0.45));
+    border-color: var(--home-chip-border, color-mix(in srgb, white 18%, transparent));
+    background: var(--home-chip-bg, color-mix(in srgb, var(--flux-surface-dark) 45%, transparent));
     color: var(--home-chip-text, var(--flux-secondary-light));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
   }
 
   .hero-spotlight {
-    border-color: var(--home-spotlight-border, rgba(255, 255, 255, 0.12));
-    background: var(--home-spotlight-bg, rgba(26, 23, 48, 0.8));
-    box-shadow: var(--home-spotlight-shadow, 0 18px 30px rgba(13, 11, 26, 0.32));
+    border-color: var(--home-spotlight-border, color-mix(in srgb, white 12%, transparent));
+    background: var(--home-spotlight-bg, color-mix(in srgb, var(--flux-surface-mid) 80%, transparent));
+    box-shadow: var(--home-spotlight-shadow, 0 18px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent));
   }
 
   .hero-list-card {
-    border-color: var(--home-list-border, rgba(108, 92, 231, 0.3));
+    border-color: var(--home-list-border, color-mix(in srgb, var(--flux-primary) 30%, transparent));
     background: var(--home-list-bg, var(--flux-surface-card));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
   }
 
   .hero-glow-cyan {
-    background: var(--home-panel-glow-cyan, rgba(0, 210, 211, 0.18));
+    background: var(--home-panel-glow-cyan, color-mix(in srgb, var(--flux-secondary) 18%, transparent));
   }
 
   .hero-glow-pink {
-    background: var(--home-panel-glow-pink, rgba(253, 167, 223, 0.14));
+    background: var(--home-panel-glow-pink, color-mix(in srgb, var(--flux-accent) 14%, transparent));
   }
 
   [data-theme="light"] .hero-shell {
-    border-color: rgba(108, 92, 231, 0.22);
-    background: rgba(255, 255, 255, 0.82);
-    box-shadow: 0 8px 28px rgba(96, 79, 214, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 82%, transparent);
+    box-shadow:
+      0 8px 28px color-mix(in srgb, var(--flux-primary) 12%, transparent),
+      inset 0 1px 0 color-mix(in srgb, white 90%, transparent);
     backdrop-filter: blur(20px) saturate(1.2);
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
   }
 
   [data-theme="light"] .hero-panel {
-    border-color: rgba(108, 92, 231, 0.3);
-    background: linear-gradient(160deg, rgba(108, 92, 231, 0.19), rgba(255, 255, 255, 0.94));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 20px 40px rgba(96, 79, 214, 0.12);
+    border-color: color-mix(in srgb, var(--flux-primary) 30%, transparent);
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--flux-primary) 19%, transparent),
+      color-mix(in srgb, var(--flux-surface-card) 94%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 80%, transparent),
+      0 20px 40px color-mix(in srgb, var(--flux-primary) 12%, transparent);
   }
 
   [data-theme="light"] .hero-chip {
-    border-color: rgba(108, 92, 231, 0.32);
-    background: rgba(255, 255, 255, 0.74);
+    border-color: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 74%, transparent);
     color: var(--flux-primary-dark);
   }
 
   [data-theme="light"] .hero-spotlight {
-    border-color: rgba(108, 92, 231, 0.28);
-    background: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 18px 34px rgba(96, 79, 214, 0.14);
+    border-color: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 72%, transparent);
+    box-shadow: 0 18px 34px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   [data-theme="light"] .hero-list-card {
-    border-color: rgba(108, 92, 231, 0.26);
-    background: rgba(248, 247, 255, 0.92);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: color-mix(in srgb, var(--flux-primary) 26%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-dark) 92%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 90%, transparent);
   }
 
   .btn-primary {
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
     background: var(--flux-primary);
     color: white;
-    box-shadow: var(--home-btn-shadow, 0 4px 16px rgba(108, 92, 231, 0.35));
+    box-shadow: var(--home-btn-shadow, 0 4px 16px color-mix(in srgb, var(--flux-primary) 35%, transparent));
   }
   .btn-primary:hover:not(:disabled) {
     background: var(--flux-primary-light);
-    box-shadow: var(--home-btn-hover-shadow, 0 6px 24px rgba(108, 92, 231, 0.45));
+    box-shadow: var(--home-btn-hover-shadow, 0 6px 24px color-mix(in srgb, var(--flux-primary) 45%, transparent));
     transform: translateY(-1px);
   }
   .btn-primary:active:not(:disabled) {
@@ -707,15 +799,15 @@
 
   .btn-danger {
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
-    background: rgba(255, 107, 107, 0.12);
+    background: var(--flux-danger-alpha-12);
     color: var(--flux-danger);
-    border: 1px solid rgba(255, 107, 107, 0.35);
+    border: 1px solid var(--flux-danger-alpha-35);
   }
   .btn-danger:hover:not(:disabled) {
     background: var(--flux-danger);
     color: white;
     border-color: var(--flux-danger);
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--flux-danger) 30%, transparent);
   }
 
   .btn-danger-solid {
@@ -726,24 +818,24 @@
   }
   .btn-danger-solid:hover:not(:disabled) {
     background: #e05555;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--flux-danger) 40%, transparent);
     transform: translateY(-1px);
   }
 
   .tone-card {
-    border-color: var(--home-card-border, rgba(108, 92, 231, 0.22));
+    border-color: var(--home-card-border, color-mix(in srgb, var(--flux-primary) 22%, transparent));
   }
 
   .tone-cyan {
-    border-color: var(--home-accent-cyan-border, rgba(0, 210, 211, 0.28));
+    border-color: var(--home-accent-cyan-border, color-mix(in srgb, var(--flux-secondary) 28%, transparent));
   }
 
   .tone-pink {
-    border-color: var(--home-accent-pink-border, rgba(253, 167, 223, 0.28));
+    border-color: var(--home-accent-pink-border, color-mix(in srgb, var(--flux-accent) 28%, transparent));
   }
 
   .tone-cta {
-    border-color: var(--home-cta-border, rgba(108, 92, 231, 0.3));
+    border-color: var(--home-cta-border, color-mix(in srgb, var(--flux-primary) 30%, transparent));
   }
 
   /* Landing — fundo fixo em camadas (referência redesign: radiais + grade) */
@@ -759,9 +851,9 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108, 92, 231, 0.12), transparent 50%),
-      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(0, 210, 211, 0.08), transparent 50%),
-      radial-gradient(ellipse 70% 40% at 50% 90%, rgba(253, 167, 223, 0.06), transparent 50%);
+      radial-gradient(ellipse 80% 60% at 20% 10%, color-mix(in srgb, var(--flux-primary) 12%, transparent), transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 8%, transparent), transparent 50%),
+      radial-gradient(ellipse 70% 40% at 50% 90%, color-mix(in srgb, var(--flux-accent) 6%, transparent), transparent 50%);
   }
 
   .home-landing-page-bg::after {
@@ -769,22 +861,22 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(108, 92, 231, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(108, 92, 231, 0.03) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--flux-primary) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 3%, transparent) 1px, transparent 1px);
     background-size: 64px 64px;
   }
 
   [data-theme="light"] .home-landing-page-bg::before {
     background:
-      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108, 92, 231, 0.08), transparent 50%),
-      radial-gradient(ellipse 60% 50% at 80% 30%, rgba(0, 210, 211, 0.06), transparent 50%),
-      radial-gradient(ellipse 70% 40% at 50% 90%, rgba(253, 167, 223, 0.05), transparent 50%);
+      radial-gradient(ellipse 80% 60% at 20% 10%, color-mix(in srgb, var(--flux-primary) 8%, transparent), transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 6%, transparent), transparent 50%),
+      radial-gradient(ellipse 70% 40% at 50% 90%, color-mix(in srgb, var(--flux-accent) 5%, transparent), transparent 50%);
   }
 
   [data-theme="light"] .home-landing-page-bg::after {
     background-image:
-      linear-gradient(rgba(108, 92, 231, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(108, 92, 231, 0.045) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--flux-primary) 4.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 4.5%, transparent) 1px, transparent 1px);
   }
 
   @keyframes homeLandingPulseGlow {
@@ -869,25 +961,25 @@
   /* Landing — malha sutil e mock Kanban */
   .home-landing-mesh {
     background-image:
-      radial-gradient(ellipse 85% 55% at 50% -25%, rgba(108, 92, 231, 0.28), transparent),
-      radial-gradient(ellipse 70% 45% at 100% 5%, rgba(0, 210, 211, 0.16), transparent),
-      radial-gradient(ellipse 55% 40% at 0% 95%, rgba(253, 167, 223, 0.14), transparent),
-      radial-gradient(ellipse 50% 30% at 80% 85%, rgba(108, 92, 231, 0.1), transparent);
+      radial-gradient(ellipse 85% 55% at 50% -25%, color-mix(in srgb, var(--flux-primary) 28%, transparent), transparent),
+      radial-gradient(ellipse 70% 45% at 100% 5%, color-mix(in srgb, var(--flux-secondary) 16%, transparent), transparent),
+      radial-gradient(ellipse 55% 40% at 0% 95%, color-mix(in srgb, var(--flux-accent) 14%, transparent), transparent),
+      radial-gradient(ellipse 50% 30% at 80% 85%, color-mix(in srgb, var(--flux-primary) 10%, transparent), transparent);
   }
 
   [data-theme="light"] .home-landing-mesh {
     background-image:
-      radial-gradient(ellipse 85% 55% at 50% -25%, rgba(108, 92, 231, 0.16), transparent),
-      radial-gradient(ellipse 70% 45% at 100% 5%, rgba(0, 210, 211, 0.1), transparent),
-      radial-gradient(ellipse 55% 40% at 0% 95%, rgba(253, 167, 223, 0.09), transparent),
-      radial-gradient(ellipse 50% 30% at 80% 85%, rgba(108, 92, 231, 0.06), transparent);
+      radial-gradient(ellipse 85% 55% at 50% -25%, color-mix(in srgb, var(--flux-primary) 16%, transparent), transparent),
+      radial-gradient(ellipse 70% 45% at 100% 5%, color-mix(in srgb, var(--flux-secondary) 10%, transparent), transparent),
+      radial-gradient(ellipse 55% 40% at 0% 95%, color-mix(in srgb, var(--flux-accent) 9%, transparent), transparent),
+      radial-gradient(ellipse 50% 30% at 80% 85%, color-mix(in srgb, var(--flux-primary) 6%, transparent), transparent);
   }
 
   /* Grade + ruído muito leve (camada sobre a malha) */
   .home-landing-grid-overlay {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, white 3%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, white 3%, transparent) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(ellipse 75% 60% at 50% 30%, black 15%, transparent 70%);
     opacity: 0.45;
@@ -895,8 +987,8 @@
 
   [data-theme="light"] .home-landing-grid-overlay {
     background-image:
-      linear-gradient(rgba(108, 92, 231, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(108, 92, 231, 0.06) 1px, transparent 1px);
+      linear-gradient(color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px);
     opacity: 0.35;
   }
 
@@ -1032,64 +1124,72 @@
 
   .landing-feature-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), 0 12px 40px rgba(108, 92, 231, 0.12);
+    box-shadow: var(--shadow-md), 0 12px 40px color-mix(in srgb, var(--flux-primary) 12%, transparent);
   }
 
   [data-theme="light"] .landing-feature-card:hover {
-    box-shadow: var(--shadow-md), 0 12px 36px rgba(96, 79, 214, 0.1);
+    box-shadow: var(--shadow-md), 0 12px 36px color-mix(in srgb, var(--flux-primary) 10%, transparent);
   }
 
   .home-kanban-mock {
-    border-color: rgba(108, 92, 231, 0.28);
-    background: linear-gradient(165deg, rgba(34, 31, 58, 0.92), rgba(13, 11, 26, 0.65));
+    border-color: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-surface-card) 92%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 65%, transparent)
+    );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 24px 48px rgba(13, 11, 26, 0.45);
+      inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+      0 24px 48px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
   }
 
   [data-theme="light"] .home-kanban-mock {
-    border-color: rgba(108, 92, 231, 0.22);
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.95), rgba(248, 247, 255, 0.88));
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-surface-card) 95%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 88%, transparent)
+    );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 24px 48px rgba(96, 79, 214, 0.12);
+      inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
+      0 24px 48px color-mix(in srgb, var(--flux-primary) 12%, transparent);
   }
 
   .home-kanban-card {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(45, 41, 82, 0.55);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-color: color-mix(in srgb, white 8%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 55%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
   }
 
   [data-theme="light"] .home-kanban-card {
-    border-color: rgba(108, 92, 231, 0.15);
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1);
+    border-color: color-mix(in srgb, var(--flux-primary) 15%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 85%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 100%, transparent);
   }
 
   .home-kanban-col {
-    border-color: rgba(108, 92, 231, 0.12);
-    background: rgba(0, 0, 0, 0.12);
+    border-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+    background: color-mix(in srgb, black 12%, transparent);
   }
 
   [data-theme="light"] .home-kanban-col {
-    background: rgba(108, 92, 231, 0.04);
+    background: color-mix(in srgb, var(--flux-primary) 4%, transparent);
   }
 
   .home-kanban-line {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, white 6%, transparent);
   }
 
   [data-theme="light"] .home-kanban-line {
-    background: rgba(108, 92, 231, 0.08);
+    background: color-mix(in srgb, var(--flux-primary) 8%, transparent);
   }
 
   .home-kanban-line-muted {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, white 4%, transparent);
   }
 
   [data-theme="light"] .home-kanban-line-muted {
-    background: rgba(108, 92, 231, 0.06);
+    background: color-mix(in srgb, var(--flux-primary) 6%, transparent);
   }
 
   @keyframes homeLandingFadeUp {
@@ -1123,13 +1223,13 @@
     border-bottom: 1px solid var(--flux-border-default);
     box-shadow:
       inset 0 1px 0 var(--flux-border-muted),
-      0 10px 36px -16px rgba(0, 0, 0, 0.45);
+      0 10px 36px -16px color-mix(in srgb, var(--flux-surface-dark) 72%, transparent);
   }
 
   [data-theme="light"] .board-toolbar {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.78),
-      0 12px 40px -18px rgba(96, 79, 214, 0.14);
+      inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+      0 12px 40px -18px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   .board-canvas {
@@ -1149,15 +1249,15 @@
     background: var(--flux-surface-mid);
     box-shadow:
       inset 0 1px 0 var(--flux-border-muted),
-      0 -8px 32px -12px rgba(0, 0, 0, 0.4);
+      0 -8px 32px -12px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
   [data-theme="light"] .board-summary-dock {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.82),
-      0 -10px 36px -14px rgba(96, 79, 214, 0.14);
+      inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
+      0 -10px 36px -14px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   .board-stat-tile {
@@ -1222,7 +1322,7 @@
   .scrollbar-kanban {
     scrollbar-width: thin;
     scrollbar-gutter: stable;
-    scrollbar-color: rgba(108, 92, 231, 0.6) transparent;
+    scrollbar-color: color-mix(in srgb, var(--flux-primary) 60%, transparent) transparent;
   }
   .scrollbar-flux::-webkit-scrollbar,
   .scrollbar-kanban::-webkit-scrollbar {
@@ -1231,22 +1331,32 @@
   }
   .scrollbar-flux::-webkit-scrollbar-track,
   .scrollbar-kanban::-webkit-scrollbar-track {
-    background: radial-gradient(circle at 50% 0, rgba(255, 255, 255, 0.04), transparent);
+    background: radial-gradient(circle at 50% 0, var(--flux-chrome-alpha-04), transparent);
     border-radius: 999px;
   }
   .scrollbar-flux::-webkit-scrollbar-thumb,
   .scrollbar-kanban::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(162, 155, 254, 0.9), rgba(108, 92, 231, 0.9));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-primary-light) 90%, transparent),
+      color-mix(in srgb, var(--flux-primary) 90%, transparent)
+    );
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: padding-box;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 1px color-mix(in srgb, black 35%, transparent);
     transition: background 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out;
   }
   .scrollbar-flux::-webkit-scrollbar-thumb:hover,
   .scrollbar-kanban::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(162, 155, 254, 1), rgba(0, 210, 211, 1));
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 10px rgba(162, 155, 254, 0.7);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-primary-light) 100%, transparent),
+      color-mix(in srgb, var(--flux-secondary) 100%, transparent)
+    );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, black 55%, transparent),
+      0 0 10px color-mix(in srgb, var(--flux-primary-light) 70%, transparent);
     transform: translateY(-1px);
   }
   .scrollbar-flux::-webkit-scrollbar-corner,
@@ -1295,7 +1405,7 @@
 /* Scrollbars globais (body e overflow) alinhados ao tema */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(108, 92, 231, 0.4) transparent;
+  scrollbar-color: color-mix(in srgb, var(--flux-primary) 40%, transparent) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
@@ -1306,13 +1416,13 @@
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(108, 92, 231, 0.4);
+  background: color-mix(in srgb, var(--flux-primary) 40%, transparent);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(108, 92, 231, 0.6);
+  background: color-mix(in srgb, var(--flux-primary) 60%, transparent);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -1321,7 +1431,7 @@
 }
 
 [data-theme="light"] * {
-  scrollbar-color: rgba(108, 92, 231, 0.35) var(--flux-surface-dark);
+  scrollbar-color: color-mix(in srgb, var(--flux-primary) 35%, transparent) var(--flux-surface-dark);
 }
 [data-theme="light"] *::-webkit-scrollbar-track,
 [data-theme="light"] *::-webkit-scrollbar-corner {
@@ -1630,9 +1740,9 @@
 .flux-tour-highlight {
   position: relative !important;
   z-index: 475 !important;
-  box-shadow: 0 0 0 9999px rgba(6, 4, 12, 0.72);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--flux-surface-dark) 72%, black);
   border-radius: var(--flux-rad, 0.75rem);
-  outline: 2px solid var(--flux-primary);
+  outline: 2px solid var(--flux-focus-ring);
   outline-offset: 3px;
 }
 
@@ -1642,12 +1752,12 @@
    ─────────────────────────────────────────────────────────────────────────── */
 .bpmn-workspace {
   /* ── BPMN toolbar ── */
-  --bpmn-toolbar-bg:    linear-gradient(135deg, #1A1730 0%, #2D2952 100%);
-  --bpmn-toolbar-text:  #F0EEFF;
-  --bpmn-toolbar-muted: rgba(240, 238, 255, 0.65);
+  --bpmn-toolbar-bg: linear-gradient(135deg, var(--flux-surface-mid) 0%, var(--flux-surface-elevated) 100%);
+  --bpmn-toolbar-text: var(--flux-text);
+  --bpmn-toolbar-muted: color-mix(in srgb, var(--flux-text) 65%, transparent);
 
   /* ── Canvas dots ── */
-  --bpmn-dots-color: rgba(108,92,231,0.18);
+  --bpmn-dots-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
 
   /* ── Lane gradients (index-ordered) ── */
   --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);
@@ -1679,8 +1789,8 @@
   --amberL: #FFE082;
   --purple: #7E57C2;
   --purpleBg: #EDE7F6;
-  --sh: 0 3px 12px rgba(26,39,68,0.10);
-  --shH: 0 8px 28px rgba(26,39,68,0.18);
+  --sh: 0 3px 12px color-mix(in srgb, black 12%, transparent);
+  --shH: 0 8px 28px color-mix(in srgb, black 22%, transparent);
 }
 
 /* ─── React Flow overrides — Flux Board identity ───────────────────────── */
@@ -1694,12 +1804,12 @@
 }
 
 .bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]):hover {
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.18));
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--flux-surface-dark) 45%, transparent));
 }
 
 .bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).dragging {
   opacity: 0.92;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.22));
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--flux-surface-dark) 52%, transparent));
   cursor: grabbing;
 }
 
@@ -1721,7 +1831,7 @@
 }
 
 .bpmn-react-flow .react-flow__connection-line {
-  stroke: rgba(56,189,248,0.95);
+  stroke: color-mix(in srgb, var(--flux-secondary) 95%, white);
   stroke-width: 2;
   stroke-dasharray: 6 4;
 }
@@ -1743,11 +1853,11 @@
 }
 
 .react-flow__node:hover .bpmn-task-card {
-  box-shadow: 0 8px 28px rgba(26,39,68,0.18) !important;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--flux-text) 18%, transparent) !important;
 }
 
 .react-flow__node.selected .bpmn-task-card {
-  box-shadow: 0 4px 16px rgba(108,92,231,0.30) !important;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 30%, transparent) !important;
 }
 
 /* ─── BPMN Handles (connection ports) ──────────────────────────────────── */
@@ -1775,24 +1885,24 @@
 /* ─── BPMN Toolbar button styles ───────────────────────────────────────── */
 .bpmn-toolbar-btn {
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--flux-chrome-alpha-18);
+  background: var(--flux-chrome-alpha-08);
   padding: 6px 13px;
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--bpmn-toolbar-text);
   transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
   cursor: pointer;
 }
 
 .bpmn-toolbar-btn:hover {
-  background: rgba(255,255,255,0.20);
+  background: var(--flux-chrome-alpha-20);
 }
 
 .bpmn-toolbar-btn-active {
   background: var(--flux-primary) !important;
   border-color: var(--flux-primary) !important;
-  box-shadow: 0 0 12px rgba(108,92,231,0.4);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--flux-primary) 40%, transparent);
 }
 
 /* ─── BPMN Properties inputs ───────────────────────────────────────────── */
@@ -1809,7 +1919,7 @@
 .bpmn-prop-input:focus {
   border-color: var(--flux-primary);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(108,92,231,0.15);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 40%, transparent);
 }
 
 /* ─── BPMN Legend inputs ──────────────────────────────────────────────── */
@@ -1829,27 +1939,29 @@
 }
 
 .bpmn-legend-input:focus {
-  border-color: rgba(0,137,123,0.5);
+  border-color: color-mix(in srgb, var(--flux-secondary) 50%, transparent);
   outline: none;
 }
 
 /* ─── BPMN Swim Lane Styles ───────────────────────────────────────────── */
 .bpmn-swim-lane-body {
   border-radius: 8px;
-  border: 2px solid rgba(0,137,123,0.15);
-  background: rgba(0,137,123,0.03);
+  border: 2px solid color-mix(in srgb, var(--flux-secondary) 15%, transparent);
+  background: color-mix(in srgb, var(--flux-secondary) 3%, transparent);
   transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
   overflow: visible;
 }
 
 .bpmn-swim-lane-body[data-selected="true"] {
-  border-color: rgba(108,92,231,0.4);
-  background: rgba(108,92,231,0.04);
-  box-shadow: 0 0 0 2px rgba(108,92,231,0.12), 0 8px 32px rgba(26,39,68,0.12);
+  border-color: color-mix(in srgb, var(--flux-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 4%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--flux-primary) 12%, transparent),
+    0 8px 32px color-mix(in srgb, var(--flux-text) 12%, transparent);
 }
 
 .bpmn-swim-lane-body:hover {
-  border-color: rgba(0,137,123,0.3);
+  border-color: color-mix(in srgb, var(--flux-secondary) 30%, transparent);
 }
 
 .bpmn-swim-lane-bar {
@@ -1910,7 +2022,7 @@
   border-radius: 10px;
   background: var(--flux-surface-card);
   border: 1px solid var(--flux-border-default);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 45%, transparent);
   z-index: 50;
   animation: bpmn-lane-toolbar-in 150ms cubic-bezier(0.22,1,0.36,1);
 }
@@ -1947,7 +2059,7 @@
 
 /* Swim lane resize handles */
 .bpmn-lane-resize-line {
-  border-color: rgba(108,92,231,0.35) !important;
+  border-color: color-mix(in srgb, var(--flux-primary) 35%, transparent) !important;
 }
 
 .bpmn-lane-resize-handle {
@@ -1955,8 +2067,8 @@
   height: 10px !important;
   border-radius: 50% !important;
   background: var(--flux-primary) !important;
-  border: 2px solid white !important;
-  box-shadow: 0 2px 8px rgba(108,92,231,0.35) !important;
+  border: 2px solid var(--flux-surface-card) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--flux-primary) 35%, transparent) !important;
   pointer-events: auto !important;
 }
 
@@ -2004,46 +2116,48 @@
 
 /* ─── BPMN Light Theme ─────────────────────────────────────────────────── */
 [data-theme="light"] .bpmn-workspace {
-  --bpmn-toolbar-bg: linear-gradient(135deg, #F5F4FF 0%, #E8E6F9 100%);
-  --bpmn-toolbar-text: #1A1730;
-  --bpmn-toolbar-muted: rgba(26, 23, 48, 0.55);
-  --bpmn-dots-color: rgba(108,92,231,0.12);
+  --bpmn-toolbar-bg: linear-gradient(135deg, var(--flux-surface-dark) 0%, var(--flux-surface-elevated) 100%);
+  --bpmn-toolbar-text: var(--flux-text);
+  --bpmn-toolbar-muted: color-mix(in srgb, var(--flux-text) 55%, transparent);
+  --bpmn-dots-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --sh: 0 3px 12px color-mix(in srgb, var(--flux-text) 8%, transparent);
+  --shH: 0 8px 28px color-mix(in srgb, var(--flux-text) 14%, transparent);
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__background {
-  background-color: #F8F7FF;
+  background-color: color-mix(in srgb, var(--flux-surface-dark) 96%, white);
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__node:hover {
-  filter: drop-shadow(0 6px 16px rgba(108,92,231,0.12));
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--flux-primary) 12%, transparent));
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__node.dragging {
-  filter: drop-shadow(0 8px 24px rgba(108,92,231,0.16));
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--flux-primary) 16%, transparent));
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__connection-line {
-  stroke: rgba(108,92,231,0.7);
+  stroke: color-mix(in srgb, var(--flux-primary) 70%, transparent);
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__controls button {
-  background: #fff;
-  border-color: rgba(108,92,231,0.18);
-  color: #1A1730;
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  color: var(--flux-text);
 }
 
 [data-theme="light"] .bpmn-react-flow .react-flow__minimap {
-  box-shadow: 0 4px 16px rgba(108,92,231,0.10);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
 }
 
 [data-theme="light"] .bpmn-toolbar-btn {
-  border-color: rgba(108,92,231,0.22);
-  background: rgba(108,92,231,0.06);
-  color: #1A1730;
+  border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 6%, transparent);
+  color: var(--flux-text);
 }
 
 [data-theme="light"] .bpmn-toolbar-btn:hover {
-  background: rgba(108,92,231,0.14);
+  background: color-mix(in srgb, var(--flux-primary) 14%, transparent);
 }
 
 [data-theme="light"] .bpmn-toolbar-btn-active {
@@ -2062,54 +2176,56 @@
 }
 
 [data-theme="light"] .bpmn-task-card {
-  border-top-color: rgba(108,92,231,0.10) !important;
-  border-right-color: rgba(108,92,231,0.10) !important;
-  border-bottom-color: rgba(108,92,231,0.10) !important;
+  border-top-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
 }
 
 [data-theme="light"] .react-flow__node:hover .bpmn-task-card {
-  box-shadow: 0 8px 28px rgba(108,92,231,0.14) !important;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--flux-primary) 14%, transparent) !important;
 }
 
 [data-theme="light"] .react-flow__node.selected .bpmn-task-card {
-  box-shadow: 0 4px 16px rgba(108,92,231,0.22) !important;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 22%, transparent) !important;
 }
 
 [data-theme="light"] .bpmn-prop-input {
-  background: #fff;
-  border-color: rgba(108,92,231,0.18);
-  color: #1A1730;
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  color: var(--flux-text);
 }
 
 [data-theme="light"] .bpmn-prop-input:focus {
   border-color: var(--flux-primary);
-  box-shadow: 0 0 0 2px rgba(108,92,231,0.12);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 35%, transparent);
 }
 
 [data-theme="light"] .bpmn-swim-lane-body {
-  border-color: rgba(108,92,231,0.12);
-  background: rgba(108,92,231,0.02);
+  border-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 2%, transparent);
 }
 
 [data-theme="light"] .bpmn-swim-lane-body[data-selected="true"] {
-  border-color: rgba(108,92,231,0.32);
-  background: rgba(108,92,231,0.03);
-  box-shadow: 0 0 0 2px rgba(108,92,231,0.10), 0 8px 32px rgba(108,92,231,0.08);
+  border-color: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 3%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--flux-primary) 10%, transparent),
+    0 8px 32px color-mix(in srgb, var(--flux-primary) 8%, transparent);
 }
 
 [data-theme="light"] .bpmn-swim-lane-body:hover {
-  border-color: rgba(108,92,231,0.22);
+  border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
 }
 
 [data-theme="light"] .bpmn-swim-lane-toolbar {
-  background: #fff;
-  border-color: rgba(108,92,231,0.18);
-  box-shadow: 0 4px 16px rgba(108,92,231,0.10);
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
 }
 
 [data-theme="light"] .bpmn-lane-tool-btn {
-  background: #F8F7FF;
-  border-color: rgba(108,92,231,0.18);
+  background: color-mix(in srgb, var(--flux-surface-dark) 96%, white);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
 }
 
 [data-theme="light"] .bpmn-lane-tool-btn:hover {
@@ -2119,11 +2235,11 @@
 }
 
 [data-theme="light"] .bpmn-lane-resize-handle {
-  border-color: #F5F4FF !important;
+  border-color: var(--flux-surface-dark) !important;
 }
 
 [data-theme="light"] .bpmn-lane-resize-line {
-  border-color: rgba(108,92,231,0.25) !important;
+  border-color: color-mix(in srgb, var(--flux-primary) 25%, transparent) !important;
 }
 
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
@@ -2376,10 +2492,10 @@
 @keyframes fluxy-glasses-glow {
   0%,
   100% {
-    filter: drop-shadow(0 0 6px rgba(88, 64, 221, 0.27));
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flux-primary) 27%, transparent));
   }
   50% {
-    filter: drop-shadow(0 0 18px rgba(88, 64, 221, 0.67));
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--flux-primary) 67%, transparent));
   }
 }
 @keyframes fluxy-sparkle {

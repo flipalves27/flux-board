@@ -26,10 +26,13 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
       cards: [
         {
           w: "78%",
-          barClassName: "bg-[rgba(108,92,231,0.4)]",
-          tag: { label: t("kanbanMock.tags.high"), className: "bg-[rgba(108,92,231,0.12)] text-[var(--flux-primary-light)]" },
+          barClassName: "bg-[var(--flux-primary-alpha-40)]",
+          tag: {
+            label: t("kanbanMock.tags.high"),
+            className: "bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-on-surface)]",
+          },
         },
-        { w: "62%", barClassName: "bg-[rgba(0,210,211,0.35)]" },
+        { w: "62%", barClassName: "bg-[var(--flux-secondary-alpha-35)]" },
       ],
     },
     {
@@ -37,11 +40,11 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
       cards: [
         {
           w: "88%",
-          barClassName: "bg-[rgba(253,167,223,0.35)]",
-          tag: { label: t("kanbanMock.tags.review"), className: "bg-[rgba(255,217,61,0.12)] text-[var(--flux-warning)]" },
+          barClassName: "bg-[var(--flux-accent-alpha-35)]",
+          tag: { label: t("kanbanMock.tags.review"), className: "bg-[var(--flux-warning-alpha-12)] text-[var(--flux-warning)]" },
         },
-        { w: "55%", barClassName: "bg-[rgba(108,92,231,0.3)]" },
-        { w: "70%", barClassName: "bg-[rgba(0,210,211,0.3)]" },
+        { w: "55%", barClassName: "bg-[var(--flux-primary-alpha-30)]" },
+        { w: "70%", barClassName: "bg-[var(--flux-secondary-alpha-32)]" },
       ],
     },
     {
@@ -49,10 +52,10 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
       cards: [
         {
           w: "92%",
-          barClassName: "bg-[rgba(0,230,118,0.3)]",
-          tag: { label: t("kanbanMock.tags.won"), className: "bg-[rgba(0,230,118,0.12)] text-[var(--flux-success)]" },
+          barClassName: "bg-[var(--flux-success-alpha-30)]",
+          tag: { label: t("kanbanMock.tags.won"), className: "bg-[var(--flux-success-alpha-12)] text-[var(--flux-success)]" },
         },
-        { w: "68%", barClassName: "bg-[rgba(0,230,118,0.25)]" },
+        { w: "68%", barClassName: "bg-[var(--flux-success-alpha-28)]" },
       ],
     },
   ];
@@ -69,7 +72,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
     <section className="home-landing-reveal pt-8 md:pt-12 lg:pt-14" aria-labelledby="landing-hero-heading">
       <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <div className="min-w-0">
-          <div className="hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(0,210,211,0.25)] bg-[rgba(0,210,211,0.06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--flux-secondary)] sm:text-xs">
+          <div className="hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--flux-secondary)] sm:text-xs">
             <span className="home-landing-chip-dot h-2 w-2 shrink-0 rounded-full bg-[var(--flux-secondary)]" aria-hidden />
             {t("hero.chip")}
           </div>
@@ -103,7 +106,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           <div className="mt-8 flex flex-wrap gap-6 md:gap-8">
             {heroMetrics.map((m) => (
               <div key={m.label} className="flex min-w-0 flex-col gap-0.5">
-                <span className="font-display text-xl font-bold text-[var(--flux-primary-light)]">{m.val}</span>
+                <span className="font-display text-xl font-bold text-[var(--flux-primary-on-surface)]">{m.val}</span>
                 <span className="text-[11px] tracking-[0.03em] text-[var(--flux-text-muted)]">{m.label}</span>
               </div>
             ))}
@@ -114,14 +117,16 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           <div
             className="pointer-events-none absolute inset-[-40px] rounded-full opacity-90 blur-[40px]"
             style={{
-              background:
-                "radial-gradient(ellipse at 40% 40%, rgba(108,92,231,0.2), transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(0,210,211,0.12), transparent 55%)",
+              background: [
+                "radial-gradient(ellipse at 40% 40%, color-mix(in srgb, var(--flux-primary) 20%, transparent), transparent 60%)",
+                "radial-gradient(ellipse at 70% 60%, color-mix(in srgb, var(--flux-secondary) 12%, transparent), transparent 55%)",
+              ].join(", "),
             }}
             aria-hidden
           />
           <div className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl" aria-hidden />
           <div className="relative">
-            <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[rgba(0,210,211,0.3)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_rgba(0,210,211,0.2)] sm:h-12 sm:w-12">
+            <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--flux-secondary-alpha-32)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_var(--flux-secondary-alpha-22)] sm:h-12 sm:w-12">
               <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} interactive />
             </div>
             <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">

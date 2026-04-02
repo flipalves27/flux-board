@@ -37,7 +37,11 @@ import { ReportsEmptyState } from "@/components/reports/reports-empty-state";
 import { ReportsErrorState } from "@/components/reports/reports-error-state";
 import { ReportsKpiCard } from "@/components/reports/reports-kpi-card";
 import { ReportsSectionPlaceholder } from "@/components/reports/reports-section-placeholder";
-import { REPORTS_TOOLTIP_LABEL_STYLE } from "@/components/reports/reports-chart-theme";
+import {
+  REPORTS_CARTESIAN_GRID_STROKE,
+  REPORTS_CHART_SERIES_COLORS,
+  REPORTS_TOOLTIP_LABEL_STYLE,
+} from "@/components/reports/reports-chart-theme";
 import { ReportsChartFrame } from "@/components/reports/reports-chart-frame";
 import { ReportsTabBar } from "@/components/reports/reports-tab-bar";
 import { ReportsInfoCard } from "@/components/reports/reports-info-card";
@@ -46,16 +50,7 @@ import { ReportsTooltip } from "@/components/reports/reports-tooltip";
 import { ReportsHeatmapCell } from "@/components/reports/reports-heatmap-cell";
 import { ReportsGeneratedAt } from "@/components/reports/reports-generated-at";
 
-const CHART_COLORS = [
-  "var(--flux-primary)",
-  "var(--flux-secondary)",
-  "var(--flux-warning-foreground)",
-  "var(--flux-danger)",
-  "var(--flux-primary-light)",
-  "var(--flux-success)",
-  "var(--flux-accent-dark)",
-  "var(--flux-info)",
-];
+const CHART_COLORS = REPORTS_CHART_SERIES_COLORS;
 
 type SprintStoryPointsRow = {
   boardId: string;
@@ -202,7 +197,7 @@ function ReportsChapterNav({
           key={c.id}
           type="button"
           onClick={() => scrollTo(c.id)}
-          className="rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-1 text-[10px] font-semibold normal-case tracking-normal text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)] flux-motion-standard"
+          className="rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-1 text-[10px] font-semibold normal-case tracking-normal text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-on-surface)] flux-motion-standard"
         >
           {c.label}
         </button>
@@ -429,7 +424,7 @@ export function FluxReportsDashboard() {
           <ReportsChartFrame heightClassName="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.sentimentHistory} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                 <YAxis
                   domain={[0, 100]}
@@ -484,7 +479,7 @@ export function FluxReportsDashboard() {
               <ReportsChartFrame heightClassName="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={cfdChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                     <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                     <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                     <ReportsTooltip labelStyle={REPORTS_TOOLTIP_LABEL_STYLE} />
@@ -517,7 +512,7 @@ export function FluxReportsDashboard() {
         <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <ReportsTooltip />
@@ -535,7 +530,7 @@ export function FluxReportsDashboard() {
         <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
               <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <ReportsTooltip />
@@ -556,11 +551,11 @@ export function FluxReportsDashboard() {
         <ReportsChartFrame heightClassName="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.leadTimeHistogram} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
               <XAxis dataKey="label" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
               <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <ReportsTooltip />
-              <Bar dataKey="count" name={t("series.cards")} fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" name={t("series.cards")} fill="var(--flux-primary-on-surface)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ReportsChartFrame>
@@ -594,7 +589,7 @@ export function FluxReportsDashboard() {
         <ReportsChartFrame heightClassName="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+              <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
               <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
               <YAxis
                 type="category"
@@ -622,7 +617,7 @@ export function FluxReportsDashboard() {
           <ReportsChartFrame heightClassName="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byColumn} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
-                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                 <XAxis dataKey="label" angle={-25} textAnchor="end" interval={0} height={48} tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                 <ReportsTooltip />
@@ -640,7 +635,7 @@ export function FluxReportsDashboard() {
           <ReportsChartFrame heightClassName="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.distribution.byPriority} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                 <XAxis dataKey="priority" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                 <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                 <ReportsTooltip />
@@ -678,7 +673,7 @@ export function FluxReportsDashboard() {
             <ReportsChartFrame heightClassName="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.weeklyThroughput} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                   <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                   <ReportsTooltip />
@@ -704,7 +699,7 @@ export function FluxReportsDashboard() {
             <ReportsChartFrame heightClassName="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={throughputMerged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                   <XAxis dataKey="weekLabel" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                   <ReportsTooltip />
@@ -722,7 +717,7 @@ export function FluxReportsDashboard() {
               <ReportsChartFrame heightClassName="h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.blockerTagDistribution} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                     <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                     <YAxis type="category" dataKey="tag" width={140} tick={{ fill: "var(--flux-text-muted)", fontSize: 10 }} />
                     <ReportsTooltip />
@@ -747,7 +742,7 @@ export function FluxReportsDashboard() {
             <ReportsChartFrame heightClassName="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={velocityData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                  <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                   <XAxis type="number" tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                   <YAxis type="category" dataKey="name" width={120} tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} />
                   <ReportsTooltip />
@@ -771,11 +766,11 @@ export function FluxReportsDashboard() {
               <ReportsChartFrame heightClassName="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sprintSpChart} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
-                    <CartesianGrid stroke="var(--flux-chrome-alpha-06)" strokeDasharray="3 3" />
+                    <CartesianGrid stroke={REPORTS_CARTESIAN_GRID_STROKE} strokeDasharray="3 3" />
                     <XAxis dataKey="label" angle={-20} textAnchor="end" interval={0} height={56} tick={{ fontSize: 9 }} />
                     <YAxis tick={{ fill: "var(--flux-text-muted)", fontSize: 11 }} allowDecimals={false} />
                     <ReportsTooltip />
-                    <Bar dataKey="sp" name="SP" fill="var(--flux-primary-light)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sp" name="SP" fill="var(--flux-primary-on-surface)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ReportsChartFrame>
@@ -788,12 +783,12 @@ export function FluxReportsDashboard() {
                 ? `${Math.round((data.scrumDorReady.ready / data.scrumDorReady.eligible) * 100)}%`
                 : "—"
             }
-            valueClassName="text-[var(--flux-primary-light)]"
+            valueClassName="text-[var(--flux-primary-on-surface)]"
             hint={t("hub.dorReadyHint")}
           />
           <Link
             href={`${localeRoot}/sprints`}
-            className="inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
+            className="inline-flex rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-4 py-2 text-xs font-semibold text-[var(--flux-primary-on-surface)] hover:border-[var(--flux-primary)]"
           >
             {t("hub.sprintsLink")}
           </Link>

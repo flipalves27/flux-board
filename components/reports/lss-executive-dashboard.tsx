@@ -24,14 +24,9 @@ import type { FluxReportsLssPayload } from "@/lib/flux-reports-lss";
 import { LSS_AGING_AT_RISK_DAYS } from "@/lib/flux-reports-lss";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonTable } from "@/components/skeletons/flux-skeletons";
+import { REPORTS_LSS_CHART_COLORS } from "@/components/reports/reports-chart-theme";
 
-const CHART_COLORS = [
-  "var(--flux-primary)",
-  "var(--flux-secondary)",
-  "var(--flux-warning-foreground)",
-  "var(--flux-accent-dark)",
-  "var(--flux-success)",
-];
+const CHART_COLORS = REPORTS_LSS_CHART_COLORS;
 
 export function LssExecutiveDashboard() {
   const t = useTranslations("reports.lss");
