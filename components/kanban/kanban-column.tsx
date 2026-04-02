@@ -133,7 +133,7 @@ export function KanbanColumn({
       style={style}
       data-flux-column-key={bucket.key}
       {...(isFirstColumn ? { "data-tour": "board-column" as const } : {})}
-      className={`min-w-[min(260px,85vw)] sm:min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] bg-[var(--flux-surface-card)] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] flex flex-col max-h-[min(72dvh,calc(100dvh-220px))] md:max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
+      className={`min-w-[min(260px,85vw)] sm:min-w-[260px] max-w-[380px] flex-1 flex-[1_1_260px] rounded-[12px] border border-[var(--flux-border-subtle)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_58%,var(--flux-surface-card)_42%)] backdrop-blur-[10px] flex flex-col max-h-[min(72dvh,calc(100dvh-220px))] md:max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
         collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
       } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""} ${
         remoteCollabHighlight ? "ring-2 ring-[var(--flux-primary)]/55 ring-offset-2 ring-offset-[var(--flux-surface-card)]" : ""

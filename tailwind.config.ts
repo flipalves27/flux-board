@@ -67,8 +67,9 @@ const config: Config = {
         "flux-xs": "400px",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Outfit", "sans-serif"],
-        body: ["var(--font-body)", "DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Sora", "sans-serif"],
+        body: ["var(--font-body)", "Instrument Sans", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
         fluxy: ["var(--font-fluxy)", "Space Grotesk", "sans-serif"],
       },
     },

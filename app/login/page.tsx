@@ -127,22 +127,38 @@ export default function LoginPage() {
 
   if (!isChecked) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
-        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
+      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
+        <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+          <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
+            <span className="flux-aurora-blob flux-aurora-blob--a" />
+            <span className="flux-aurora-blob flux-aurora-blob--b" />
+            <span className="flux-aurora-blob flux-aurora-blob--c" />
+          </div>
+          <div className="flux-grid-overlay absolute inset-0 opacity-[0.26]" />
+        </div>
+        <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
 
   const inputClass =
-    "min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-colors focus:border-[var(--flux-primary)]";
+    "flux-input min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
   const btnClass =
     "min-h-11 w-full rounded-[var(--flux-rad)] bg-[var(--flux-primary)] py-2.5 font-display font-semibold text-white transition-all hover:bg-[var(--flux-primary-light)] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
-      <div className="w-full max-w-[400px] rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-login-panel)] sm:p-8">
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
+          <span className="flux-aurora-blob flux-aurora-blob--a" />
+          <span className="flux-aurora-blob flux-aurora-blob--b" />
+          <span className="flux-aurora-blob flux-aurora-blob--c" />
+        </div>
+        <div className="flux-grid-overlay absolute inset-0 opacity-[0.26]" />
+      </div>
+      <div className="flux-glass-card relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div
             className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"

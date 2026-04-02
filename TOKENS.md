@@ -43,6 +43,19 @@ Tailwind: `p-flux-6`, `gap-flux-4`, etc.
 
 Base `html` font size remains **14px** (`--flux-text-base`). Tailwind: `text-flux-sm`, `text-flux-lg`, …
 
+Root `body` sets **`line-height: 1.6`** for readable body copy.
+
+### Font families (Next.js + Tailwind)
+
+| Role    | CSS variable      | Tailwind      | Google font      |
+|---------|-------------------|---------------|------------------|
+| Display | `--font-display`  | `font-display`| Sora             |
+| Body    | `--font-body`     | `font-body`   | Instrument Sans  |
+| Mono    | `--font-mono`     | `font-mono`   | JetBrains Mono   |
+| Fluxy   | `--font-fluxy`    | `font-fluxy`  | Space Grotesk    |
+
+Wired in [`app/layout.tsx`](app/layout.tsx) (`next/font/google`) and [`tailwind.config.ts`](tailwind.config.ts) (`theme.extend.fontFamily`).
+
 ---
 
 ## Elevation (`--flux-shadow-*`)
@@ -112,6 +125,37 @@ Theme-aware **chrome** tints (white mist on dark, ink mist on light): `--flux-ch
 **Neutrals**: `--flux-black-alpha-*`, `--flux-backdrop-scrim`, `--flux-tooltip-surface`, `--flux-surface-card-deep-85`, etc.
 
 **Third-party / map accents**: `--flux-mapa-*`, `--flux-indigo-500-alpha-12`, `--flux-red-500-alpha-08`.
+
+---
+
+## Visual identity v2 (shared classes in `globals.css`)
+
+Marketing, authenticated shell, login, onboarding, embed, and the board share the same design tokens. Reusable **`@layer components`** classes:
+
+| Class | Role |
+|-------|------|
+| `.flux-aurora-bg` | Static radial underlay; add three `.flux-aurora-blob` spans (`--a`, `--b`, `--c`) for `fluxAuroraFloat` (16s, staggered delays). Use `.flux-aurora-bg--subtle` in dense UI (sidebar shell, login). |
+| `.flux-grid-overlay` | 56px grid, primary ~3.5% `color-mix`, radial mask, ~0.4 opacity; light theme overrides in `[data-theme="light"]`. Optional `.flux-grid-overlay--dense` for the app shell. |
+| `.flux-glass-card` / `.flux-glass-card--elevated` | Glass panels: **blur 16px**, **saturate 1.3**, hover lift + primary glow; reduced-motion drops transform / softens blur. |
+| `.flux-btn-shimmer` | CTA sheen (alias of `.landing-btn-shimmer`). |
+| `.btn-accent` | Gradient **primary → accent-dark** with shadow. |
+| `.flux-input` | Focus ring: `border-color: var(--flux-primary)` and `box-shadow: var(--flux-input-focus-shadow)` (see `:root`). |
+| `.flux-sidebar-nav-stack` | Sidebar nav pill: blurred, bordered stack. |
+| `.flux-mobile-header-bar` | Mobile header: **blur 16px**, **saturate 1.3**. |
+| `.flux-kanban-card` | Base Kanban card surface; combine with `.flux-kanban-card--done` / `--overdue` / `--blocked` / `--ai`. |
+
+**Z-index:** `--flux-z-app-shell-bg` and `--flux-z-app-shell-content` layer aurora + grid under scroll content in the authenticated shell.
+
+**`--flux-board-mesh`:** Radial spots aligned to ~**20% / 80% / 50%** (horizontal) for continuity with the landing aurora.
+
+**`--flux-glass-backdrop-blur`:** **16px** (glass utilities and cards).
+
+### QA checklist (themes & motion)
+
+- Toggle **`[data-theme="light"]`** on: landing, board, login, settings-style pages, reports.
+- **Org branding:** with a custom `--flux-primary`, check aurora/grid contrast and sidebar readability.
+- **`prefers-reduced-motion: reduce`:** aurora blobs and hero aurora should not run heavy motion; glass may use lighter blur.
+- **Focus:** visible focus on `.flux-input` and global `:focus-visible` chrome.
 
 ---
 

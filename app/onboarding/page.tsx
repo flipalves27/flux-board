@@ -474,7 +474,16 @@ export default function OnboardingPage() {
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   return (
-    <div className="min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)]">
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)]">
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
+          <span className="flux-aurora-blob flux-aurora-blob--a" />
+          <span className="flux-aurora-blob flux-aurora-blob--b" />
+          <span className="flux-aurora-blob flux-aurora-blob--c" />
+        </div>
+        <div className="flux-grid-overlay absolute inset-0 opacity-[0.22]" />
+      </div>
+      <div className="relative z-[1]">
       {heroStorageKey ? (
         <OnboardingFluxyHero
           open={fluxyHeroOpen}
@@ -525,7 +534,7 @@ export default function OnboardingPage() {
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
                     placeholder={t("placeholders.boardName")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
@@ -727,7 +736,7 @@ export default function OnboardingPage() {
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
                   placeholder={t("placeholders.cardTitle")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
@@ -740,7 +749,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardBucketKey}
                   onChange={(e) => setCardBucketKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {bucketOrder.map((b) => (
@@ -758,7 +767,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardPriority}
                   onChange={(e) => setCardPriority(e.target.value as (typeof PRIORITIES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PRIORITIES.map((p) => (
@@ -776,7 +785,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardProgress}
                   onChange={(e) => setCardProgress(e.target.value as (typeof PROGRESSES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PROGRESSES.map((p) => (
@@ -796,7 +805,7 @@ export default function OnboardingPage() {
                   onChange={(e) => setCardDesc(e.target.value)}
                   placeholder={t("placeholders.cardDescriptionOptional")}
                   rows={4}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                 />
               </div>
@@ -824,6 +833,7 @@ export default function OnboardingPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

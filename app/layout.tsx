@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { DM_Sans, Outfit, Space_Grotesk } from "next/font/google";
+import { Instrument_Sans, JetBrains_Mono, Sora, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
@@ -17,15 +17,21 @@ import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnost
 import { PwaRegister } from "@/components/pwa-register";
 import { headers } from "next/headers";
 
-const dmSans = DM_Sans({
+const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
 });
 
-const outfit = Outfit({
+const sora = Sora({
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -66,7 +72,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${dmSans.variable} ${outfit.variable} ${spaceGrotesk.variable}`}
+      className={`${instrumentSans.variable} ${sora.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />

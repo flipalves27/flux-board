@@ -394,7 +394,7 @@ function KanbanCardInner({
   });
   const variantClass = kanbanCardVariantClass(surfaceVariant);
 
-  const rootClassName = `relative touch-manipulation bg-[var(--flux-surface-elevated)] border rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-[1.01] shadow-[inset_0_1px_0_var(--flux-border-muted)] hover:shadow-[0_6px_24px_var(--flux-primary-alpha-18)] ${
+  const rootClassName = `relative touch-manipulation flux-kanban-card border p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200 ease-out hover:shadow-[0_8px_28px_var(--flux-primary-alpha-22)] ${
     selected
       ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
       : sprintEmphasis

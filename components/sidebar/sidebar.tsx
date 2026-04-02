@@ -311,7 +311,7 @@ export function Sidebar() {
         />
 
         <SidebarNavProvider value={navContextValue}>
-          <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2.5 py-3">
+          <nav className="flux-sidebar-nav-stack mx-1.5 mb-1 flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2.5">
             <SidebarQuickAccess />
             <SidebarAgileRhythm activeSprintCount={activeSprintCount} />
             <SidebarIntelligence
