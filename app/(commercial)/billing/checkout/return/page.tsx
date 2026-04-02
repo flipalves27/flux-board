@@ -62,7 +62,7 @@ export default function CheckoutReturnPage() {
   }, [success, sessionId, user, runCheckoutSync]);
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header
         title={isEn ? "Payment status" : "Status do pagamento"}
         backHref={`${localeRoot}/billing`}

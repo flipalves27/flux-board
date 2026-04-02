@@ -852,12 +852,12 @@ export default function SpecPlanPage() {
   }, [analysisPhases]);
 
   if (!isChecked || !user) {
-    return <div className="min-h-screen bg-[var(--flux-surface-dark)]" />;
+    return <div className="min-h-screen" />;
   }
 
   if (featureOk === null) {
     return (
-      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <div className="min-h-screen">
         <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
         <div className="mx-auto max-w-lg px-4 py-16 text-center text-[var(--flux-text-muted)]">…</div>
       </div>
@@ -866,7 +866,7 @@ export default function SpecPlanPage() {
 
   if (!featureOk) {
     return (
-      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <div className="min-h-screen">
         <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <h2 className="font-display text-xl font-bold text-[var(--flux-text)]">{t("upgradeTitle")}</h2>
@@ -883,7 +883,7 @@ export default function SpecPlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-24">
         <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-dark)]/92 px-4 py-3 backdrop-blur-md">

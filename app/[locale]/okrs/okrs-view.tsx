@@ -368,7 +368,7 @@ export default function OkrsView() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Flux Goals (OKRs)" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
 
       {showDataSkeleton ? (

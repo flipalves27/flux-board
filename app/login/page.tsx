@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 const OAUTH_ERROR_KEYS = new Set([
   "oauth_denied",
@@ -127,15 +128,8 @@ export default function LoginPage() {
 
   if (!isChecked) {
     return (
-      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
-        <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
-          <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
-            <span className="flux-aurora-blob flux-aurora-blob--a" />
-            <span className="flux-aurora-blob flux-aurora-blob--b" />
-            <span className="flux-aurora-blob flux-aurora-blob--c" />
-          </div>
-          <div className="flux-grid-overlay absolute inset-0 opacity-[0.26]" />
-        </div>
+      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden">
+        <FluxAppBackdrop />
         <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
@@ -149,15 +143,8 @@ export default function LoginPage() {
     "min-h-11 w-full rounded-[var(--flux-rad)] bg-[var(--flux-primary)] py-2.5 font-display font-semibold text-white transition-all hover:bg-[var(--flux-primary-light)] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
-      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
-        <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
-          <span className="flux-aurora-blob flux-aurora-blob--a" />
-          <span className="flux-aurora-blob flux-aurora-blob--b" />
-          <span className="flux-aurora-blob flux-aurora-blob--c" />
-        </div>
-        <div className="flux-grid-overlay absolute inset-0 opacity-[0.26]" />
-      </div>
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <FluxAppBackdrop />
       <div className="flux-glass-card relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div

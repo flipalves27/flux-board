@@ -163,7 +163,7 @@ export default function PlatformCommercialAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
+    <div className="min-h-screen text-[var(--flux-text)]">
       <Header />
       <main className="mx-auto max-w-3xl px-4 py-8 md:px-6">
         <h1 className="font-display text-2xl font-bold text-[var(--flux-text)]">Planos e cobrança (plataforma)</h1>

@@ -1,13 +1,10 @@
 import { Suspense } from "react";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 export default function EmbedTokenLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative isolate min-h-0 min-w-0 bg-[var(--flux-surface-dark)]">
-      <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.55]"
-        style={{ backgroundImage: "var(--flux-board-mesh)" }}
-        aria-hidden
-      />
+    <div className="relative isolate min-h-0 min-w-0">
+      <FluxAppBackdrop />
       <div className="relative z-[1] min-h-0 min-w-0">
         <Suspense
           fallback={

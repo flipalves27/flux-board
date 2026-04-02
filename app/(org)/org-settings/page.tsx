@@ -294,7 +294,7 @@ export default function OrgSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={tNav("organization")} backHref={`${localeRoot}/boards`} backLabel="← Boards">
         <div className="text-xs text-[var(--flux-text-muted)]">{t("steps.pill1")}</div>
       </Header>

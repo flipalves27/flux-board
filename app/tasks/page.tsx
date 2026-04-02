@@ -161,7 +161,7 @@ export default function TasksPage() {
 
   if (!loadingTier && tier === "free") {
     return (
-      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <div className="min-h-screen">
         <Header title="Minhas tarefas" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
         <main className="max-w-[780px] mx-auto px-6 py-10">
           <FeatureGateNotice
@@ -176,7 +176,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Minhas tarefas" />
       <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[410px,1fr] gap-6">
         <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">

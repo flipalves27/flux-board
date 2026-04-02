@@ -201,7 +201,7 @@ export default function BillingCheckoutPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header
         title={isEn ? "Stripe checkout" : "Checkout Stripe"}
         backHref={`${localeRoot}/billing`}

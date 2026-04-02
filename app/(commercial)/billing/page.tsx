@@ -303,7 +303,7 @@ export default function BillingPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Billing" backHref={`${localeRoot}/boards`} backLabel="← Boards">
         <span className="text-xs text-[var(--flux-text-muted)]">{planBadge}</span>
       </Header>

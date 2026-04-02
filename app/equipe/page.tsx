@@ -251,9 +251,7 @@ export default function TeamPage() {
     }
   }
 
-  const rootClass = hideInlineTabs
-    ? "flex min-h-0 flex-1 flex-col bg-[var(--flux-surface-dark)]"
-    : "flex min-h-screen flex-col bg-[var(--flux-surface-dark)]";
+  const rootClass = hideInlineTabs ? "flex min-h-0 flex-1 flex-col" : "flex min-h-screen flex-col";
 
   return (
     <div className={rootClass}>

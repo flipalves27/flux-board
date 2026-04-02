@@ -17,6 +17,7 @@ import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 import { WorkspaceFluxyDock } from "@/components/fluxy/workspace-fluxy-dock";
 import { MobileAppHeader } from "@/components/mobile-app-header";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,17 +41,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         className={`relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
-        <div
-          className="pointer-events-none absolute inset-0 z-[var(--flux-z-app-shell-bg)] overflow-hidden"
-          aria-hidden
-        >
-          <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
-            <span className="flux-aurora-blob flux-aurora-blob--a" />
-            <span className="flux-aurora-blob flux-aurora-blob--b" />
-            <span className="flux-aurora-blob flux-aurora-blob--c" />
-          </div>
-          <div className="flux-grid-overlay flux-grid-overlay--dense absolute inset-0 opacity-[0.22]" />
-        </div>
+        <FluxAppBackdrop className="z-[var(--flux-z-app-shell-bg)]" />
         <div className="relative z-[var(--flux-z-app-shell-content)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <TrialBillingBanner />
           <MobileAppHeader />

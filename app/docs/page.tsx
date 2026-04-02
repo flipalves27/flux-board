@@ -77,7 +77,7 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
       <div className="flex min-h-[calc(100vh-56px)]">
         <DocsSidebarTree docs={docsTree} selectedId={selectedId} onSelect={setSelectedId} onCreate={createDoc} />

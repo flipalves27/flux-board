@@ -92,7 +92,7 @@ export default function OrganizationInvitesOnboardingPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="text-xs text-[var(--flux-text-muted)]">
           Configure convites para sua equipe.

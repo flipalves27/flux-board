@@ -34,7 +34,7 @@ export default function FluxAiHubPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header />
       <main className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6">
         <div className="mb-8">

@@ -139,7 +139,7 @@ export default function OrgInvitesPage() {
   }, [invites, filter]);
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={tNav("invites")} backHref={`${localeRoot}/boards`} backLabel="← Boards">
         <div className="text-xs text-[var(--flux-text-muted)]">Gerencie convites da sua organização.</div>
       </Header>

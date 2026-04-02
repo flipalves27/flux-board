@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PublicPortalPayload } from "@/lib/portal-public";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 type ApiLocked = {
   locked: true;
@@ -113,18 +114,20 @@ export default function PublicPortalPage() {
   if (loading) {
     return (
       <div
-        className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+        className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
         style={cssVars}
       >
-        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
+        <FluxAppBackdrop />
+        <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-8">
-        <p className="text-[var(--flux-danger)] text-center max-w-md">{error}</p>
+      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-8">
+        <FluxAppBackdrop />
+        <p className="relative z-[1] text-[var(--flux-danger)] text-center max-w-md">{error}</p>
       </div>
     );
   }
@@ -134,10 +137,11 @@ export default function PublicPortalPage() {
     const logo = preview.branding.logoUrl;
     return (
       <div
-        className="flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] px-[max(1rem,env(safe-area-inset-left,0px))] py-12 pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] py-12 pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
         style={cssVars}
       >
-        <div className="w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
+        <FluxAppBackdrop />
+        <div className="relative z-[1] w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
           <div className="flex flex-col items-center gap-3 text-center mb-6">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -187,9 +191,11 @@ export default function PublicPortalPage() {
 
   return (
     <div
-      className="min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)] pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))]"
+      className="relative min-h-[100dvh] overflow-x-hidden pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))]"
       style={cssVars}
     >
+      <FluxAppBackdrop />
+      <div className="relative z-[1]">
       <header className="border-b border-[var(--flux-portal-chrome-15)] bg-[var(--flux-surface-mid)]/80 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-[max(1rem,env(safe-area-inset-left,0px))] py-6 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
@@ -276,9 +282,10 @@ export default function PublicPortalPage() {
         )}
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-[var(--flux-portal-chrome-10)] bg-[var(--flux-surface-dark)]/90 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] text-center text-[10px] text-[var(--flux-text-muted)]">
+      <footer className="fixed bottom-0 left-0 right-0 z-[2] border-t border-[var(--flux-portal-chrome-10)] bg-[var(--flux-surface-dark)]/90 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] text-center text-[10px] text-[var(--flux-text-muted)]">
         {t("readOnly")} · {footerBrand}
       </footer>
+      </div>
     </div>
   );
 }

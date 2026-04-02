@@ -9,7 +9,7 @@ export default function Page() {
   const localeRoot = `/${locale}`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[var(--flux-surface-dark)]">
+    <div className="flex min-h-0 flex-1 flex-col">
       <Header title="Equipe — Funções" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
       <TeamWorkspacePanel>
         <h1 className="font-display text-lg font-semibold text-[var(--flux-text)]">Funções da equipe</h1>

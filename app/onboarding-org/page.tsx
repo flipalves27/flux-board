@@ -99,7 +99,7 @@ export default function OrganizationOnboardingPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="text-xs text-[var(--flux-text-muted)]">
           {t("steps.pill1")} / {t("steps.pill2")} / {t("steps.pill3")}

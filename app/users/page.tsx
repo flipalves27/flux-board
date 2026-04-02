@@ -164,7 +164,7 @@ export default function UsersPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Usuários" backHref="/boards" />
       <main className="max-w-[900px] mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">

@@ -654,7 +654,7 @@ export default function BoardPage() {
   }
   if (showBoardSkeleton || !db) {
     return (
-      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <div className="min-h-screen">
         <Header title={boardName}>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
@@ -669,7 +669,7 @@ export default function BoardPage() {
   const formLink = formSlug && formOrigin ? `${formOrigin}/${locale}/forms/${encodeURIComponent(formSlug)}` : "";
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <DataFadeIn active animate={false} key={boardId}>
         <div>
           <Header

@@ -396,7 +396,7 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header />
       <main className="max-w-[1200px] mx-auto px-6 py-8">
         <header className="mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">

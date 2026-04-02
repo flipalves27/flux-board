@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 type PublicFormData = {
   enabled: boolean;
@@ -149,8 +150,9 @@ export default function PublicIntakeFormPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(2.5rem,env(safe-area-inset-top,0px))]">
-      <div className="mx-auto max-w-[760px] rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-5 sm:p-6 md:p-8">
+    <main className="relative min-h-[100dvh] overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(2.5rem,env(safe-area-inset-top,0px))]">
+      <FluxAppBackdrop />
+      <div className="relative z-[1] mx-auto max-w-[760px] rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-5 sm:p-6 md:p-8">
         {loading && <p className="text-[var(--flux-text-muted)]">Carregando formulário...</p>}
         {!loading && error && <p className="text-[var(--flux-danger)]">{error}</p>}
         {!loading && !error && form && (

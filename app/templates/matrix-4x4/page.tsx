@@ -22,7 +22,7 @@ export default function Matrix4x4Page() {
   if (!isChecked || !user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("matrixExclusive.title")} backHref={`${localeRoot}/templates`} backLabel={t("matrixExclusive.back")} />
       <main className="max-w-[1240px] mx-auto px-6 py-10 space-y-6">
         <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6">

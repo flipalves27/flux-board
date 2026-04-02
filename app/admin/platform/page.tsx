@@ -419,7 +419,7 @@ export default function PlatformAdminConsolePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("title")} backHref="/boards" />
       <main className="mx-auto max-w-[1100px] px-6 py-8">
         <p className="mb-6 text-sm text-[var(--flux-text-muted)]">{t("subtitle")}</p>

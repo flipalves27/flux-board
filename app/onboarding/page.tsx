@@ -11,6 +11,7 @@ import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { OnboardingFluxyHero } from "@/components/onboarding/onboarding-fluxy-hero";
 import {
   DEFAULT_TEMPLATE_ID,
@@ -474,15 +475,8 @@ export default function OnboardingPage() {
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)]">
-      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
-        <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
-          <span className="flux-aurora-blob flux-aurora-blob--a" />
-          <span className="flux-aurora-blob flux-aurora-blob--b" />
-          <span className="flux-aurora-blob flux-aurora-blob--c" />
-        </div>
-        <div className="flux-grid-overlay absolute inset-0 opacity-[0.22]" />
-      </div>
+    <div className="relative min-h-[100dvh] overflow-x-hidden">
+      <FluxAppBackdrop />
       <div className="relative z-[1]">
       {heroStorageKey ? (
         <OnboardingFluxyHero
