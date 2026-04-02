@@ -22,6 +22,7 @@ const AI_PATH_TESTS: RegExp[] = [
   /^\/api\/boards\/[^/]+\/copilot$/,
   /^\/api\/boards\/[^/]+\/nlq$/,
   /^\/api\/boards\/[^/]+\/card-context$/,
+  /^\/api\/boards\/[^/]+\/card-voice-draft$/,
   /^\/api\/boards\/[^/]+\/daily-insights$/,
   /^\/api\/boards\/[^/]+\/automations\/interpret$/,
   /^\/api\/boards\/[^/]+\/transcribe$/,

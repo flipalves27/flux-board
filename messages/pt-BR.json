@@ -1866,6 +1866,27 @@
         "apply": "Aplicar ao card",
         "error": "Não foi possível analisar a imagem."
       },
+      "intakeVoice": {
+        "badge": "Fluxy · voz",
+        "hint": "Fale, cole texto ou envie um áudio; a Fluxy monta título e descrição (mesmo recurso de contexto do card).",
+        "listening": "Ouvindo…",
+        "speakPrompt": "Fale perto do microfone…",
+        "micStart": "Falar",
+        "micStop": "Parar",
+        "pastePlaceholder": "Transcrição ou notas (até 4000 caracteres)…",
+        "generate": "Gerar card",
+        "busy": "Gerando…",
+        "transcribeBusy": "Transcrevendo…",
+        "pickAudio": "Áudio",
+        "success": "Rascunho aplicado — revise antes de salvar.",
+        "error": "Não foi possível gerar o card agora.",
+        "transcribeError": "Não foi possível transcrever o áudio.",
+        "transcribeEmpty": "A transcrição do áudio veio vazia.",
+        "transcribeSuccess": "Áudio transcrito — revise e clique em Gerar card se quiser.",
+        "voiceNotSupported": "Reconhecimento de voz não suportado neste navegador.",
+        "voiceMicError": "Erro no microfone. Verifique permissões e tente de novo.",
+        "voiceStartError": "Não foi possível iniciar o microfone."
+      },
       "smartEnrich": {
         "badge": "Sugestão IA",
         "accept": "Aceitar",

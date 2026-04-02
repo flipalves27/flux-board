@@ -23,6 +23,7 @@ import { resolveFluxyCopilotState } from "@/components/fluxy/resolve-fluxy-copil
 import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
 import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 import { BoardFluxyMessagesPanel } from "@/components/kanban/board-fluxy-messages-panel";
+import { useWebSpeechRecognition } from "@/hooks/use-web-speech-recognition";
 
 type CopilotHistoryResponse = {
   tier: CopilotTier;
@@ -79,24 +80,6 @@ function nlqToClient(data: NlqApiBody): NlqClientResponse {
     explanation: data.explanation,
   };
 }
-
-type WebSpeechRecognitionInstance = {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  start: () => void;
-  stop: () => void;
-  onerror: ((ev: Event) => void) | null;
-  onend: (() => void) | null;
-  onresult:
-    | ((
-        ev: {
-          resultIndex: number;
-          results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
-        }
-      ) => void)
-    | null;
-};
 
 /** NLQ no copiloto: `/query …` ou verbos em PT (ex.: «pesquisar atividades urgentes»). */
 function extractNlqQueryFromCopilotInput(trimmed: string): { mode: "nlq"; query: string } | { mode: "none" } {
@@ -192,7 +175,6 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
   const endRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const recognitionRef = useRef<WebSpeechRecognitionInstance | null>(null);
   const copilotOpenPrevRef = useRef(false);
   const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -658,96 +640,30 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     ]
   );
 
-  const stopVoice = useCallback(() => {
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      // ignore
-    }
-    recognitionRef.current = null;
-    setVoiceListening(false);
-    setVoiceInterim("");
-  }, [setVoiceInterim, setVoiceListening]);
+  const { start: startVoiceRecognition, stop: stopVoice } = useWebSpeechRecognition({
+    lang: "pt-BR",
+    continuous: false,
+    getMessages: () => ({
+      notSupported: tFluxy("voiceNotSupported"),
+      micError: tFluxy("voiceMicError"),
+      startError: tFluxy("voiceStartError"),
+    }),
+    onFinal: (text) => {
+      void streamCopilot(text);
+    },
+    onListeningChange: setVoiceListening,
+    onInterimChange: setVoiceInterim,
+    onErrorChange: setVoiceError,
+  });
+
+  const startVoice = useCallback(() => {
+    if (generating || !canSend) return;
+    startVoiceRecognition();
+  }, [canSend, generating, startVoiceRecognition]);
 
   useEffect(() => {
     if (!open) stopVoice();
   }, [open, stopVoice]);
-
-  useEffect(() => {
-    return () => {
-      stopVoice();
-    };
-  }, [stopVoice]);
-
-  const startVoice = useCallback(() => {
-    if (generating || !canSend) return;
-    if (typeof window === "undefined") return;
-    const W = window as unknown as {
-      SpeechRecognition?: new () => WebSpeechRecognitionInstance;
-      webkitSpeechRecognition?: new () => WebSpeechRecognitionInstance;
-    };
-    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
-    if (!Ctor) {
-      setVoiceError(tFluxy("voiceNotSupported"));
-      return;
-    }
-    setVoiceError(null);
-    stopVoice();
-    const rec = new Ctor();
-    rec.lang = "pt-BR";
-    rec.interimResults = true;
-    rec.continuous = false;
-    recognitionRef.current = rec as WebSpeechRecognitionInstance;
-    setVoiceListening(true);
-    setVoiceInterim("");
-
-    rec.onerror = () => {
-      setVoiceError(tFluxy("voiceMicError"));
-      stopVoice();
-    };
-
-    rec.onend = () => {
-      setVoiceListening(false);
-      setVoiceInterim("");
-      recognitionRef.current = null;
-    };
-
-    rec.onresult = (event: {
-      resultIndex: number;
-      results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
-    }) => {
-      let finalText = "";
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const line = event.results[i];
-        const chunk = line[0]?.transcript ?? "";
-        if (line.isFinal) finalText += chunk;
-        else interim += chunk;
-      }
-      setVoiceInterim(interim.trim());
-      const merged = (finalText || "").trim();
-      if (merged) {
-        stopVoice();
-        void streamCopilot(merged);
-      }
-    };
-
-    try {
-      rec.start();
-    } catch {
-      setVoiceError(tFluxy("voiceStartError"));
-      stopVoice();
-    }
-  }, [
-    canSend,
-    generating,
-    setVoiceError,
-    setVoiceInterim,
-    setVoiceListening,
-    stopVoice,
-    streamCopilot,
-    tFluxy,
-  ]);
 
   const freeBanner =
     tier === "free" && freeDemoRemaining !== null ? (

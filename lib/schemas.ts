@@ -895,6 +895,16 @@ export const CardContextInputSchema = z
   })
   .passthrough();
 
+export const CardVoiceDraftInputSchema = z
+  .object({
+    transcript: z
+      .string()
+      .trim()
+      .min(1, "Transcricao e obrigatoria.")
+      .max(4000, "Transcricao excede o limite."),
+  })
+  .passthrough();
+
 export const SmartCardEnrichInputSchema = z
   .object({
     title: z.string().trim().min(1, "Titulo e obrigatorio.").max(180),

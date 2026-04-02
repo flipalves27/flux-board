@@ -9,6 +9,7 @@ import { CardModalSection, inputBase } from "@/components/kanban/card-modal-sect
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
 import { CardIntakeVisionBlock } from "@/components/kanban/card-intake-vision-block";
+import { CardIntakeVoiceBlock } from "@/components/kanban/card-intake-voice-block";
 import { CardAssigneeCombobox, type CardAssigneeOption } from "@/components/kanban/card-form/card-assignee-combobox";
 import { CardDescriptionBlockEditor } from "@/components/kanban/card-form/card-description-block-editor";
 import { AiModelHint } from "@/components/ai-model-hint";
@@ -483,6 +484,14 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
       >
         <div>
           <CardIntakeVisionBlock
+            boardId={boardId}
+            getHeaders={getHeaders}
+            mode={mode}
+            setTitle={setTitle}
+            setDescBlocks={setDescBlocks}
+            onApplied={() => setAiContextApplied(null)}
+          />
+          <CardIntakeVoiceBlock
             boardId={boardId}
             getHeaders={getHeaders}
             mode={mode}

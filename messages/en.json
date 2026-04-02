@@ -1861,6 +1861,27 @@
         "apply": "Apply to card",
         "error": "Could not analyze the image."
       },
+      "intakeVoice": {
+        "badge": "Fluxy · voice",
+        "hint": "Speak, paste text, or upload audio; Fluxy drafts title and description (same card-context feature).",
+        "listening": "Listening…",
+        "speakPrompt": "Speak near the microphone…",
+        "micStart": "Speak",
+        "micStop": "Stop",
+        "pastePlaceholder": "Transcript or notes (up to 4000 characters)…",
+        "generate": "Generate card",
+        "busy": "Generating…",
+        "transcribeBusy": "Transcribing…",
+        "pickAudio": "Audio",
+        "success": "Draft applied — review before saving.",
+        "error": "Could not generate the card right now.",
+        "transcribeError": "Could not transcribe the audio.",
+        "transcribeEmpty": "The audio transcription was empty.",
+        "transcribeSuccess": "Audio transcribed — review and tap Generate card if you want.",
+        "voiceNotSupported": "Speech recognition is not supported in this browser.",
+        "voiceMicError": "Microphone error. Check permissions and try again.",
+        "voiceStartError": "Could not start the microphone."
+      },
       "smartEnrich": {
         "badge": "AI suggestion",
         "accept": "Accept",
