@@ -790,7 +790,7 @@ function KanbanBoardLoaded({
       {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
 
       {!focusMode && (
-      <div className="sticky top-[min(6.5rem,calc(env(safe-area-inset-top,0px)+5.25rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col flux-glass-surface rounded-none border-x-0 border-t-0 border-b-[var(--flux-glass-surface-border)] flux-depth-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
+      <div className="sticky top-[min(8rem,calc(env(safe-area-inset-top,0px)+6.75rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col flux-glass-surface rounded-none border-x-0 border-t-0 border-b-[var(--flux-glass-surface-border)] flux-depth-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
         <BoardAutomationSuggestions
           variant="topStrip"
           boardId={boardId}
@@ -819,7 +819,7 @@ function KanbanBoardLoaded({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 px-4 py-1.5 sm:px-5 lg:px-6">
+          <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 px-4 py-1.5 scrollbar-flux touch-pan-x sm:px-5 lg:px-6">
             <div
               className="board-segment flex items-center gap-0.5 p-1 shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]"
               role="group"

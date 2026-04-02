@@ -25,7 +25,7 @@ export function MobileAppHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-[var(--flux-z-mobile-header)] flex h-12 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md md:hidden ${
+      className={`sticky top-0 z-[var(--flux-z-mobile-header)] flex min-h-12 shrink-0 items-center gap-2 border-b px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md md:hidden ${
         isMinimal
           ? "border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-dark)]/95"
           : "border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))]"

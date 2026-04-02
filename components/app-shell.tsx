@@ -16,6 +16,7 @@ import { useRoutineTasks } from "@/context/routine-tasks-context";
 import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 import { WorkspaceFluxyDock } from "@/components/fluxy/workspace-fluxy-dock";
+import { MobileAppHeader } from "@/components/mobile-app-header";
 
 function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,13 +34,14 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const t = useTranslations("appShell");
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden">
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
       <Sidebar />
       <div
         className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
         <TrialBillingBanner />
+        <MobileAppHeader />
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
       </div>
       <WorkspaceFluxyDock />
@@ -48,7 +50,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
       <CeremonyRetroModal getHeaders={getHeaders} />
       <CeremonyPlanningModal getHeaders={getHeaders} />
       <StandupModal getHeaders={getHeaders} />
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[var(--flux-z-app-routine-toasts)] flex w-[min(360px,92vw)] flex-col gap-2">
+      <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-[var(--flux-z-app-routine-toasts)] flex w-[min(360px,92vw)] flex-col gap-2">
         {alerts.map((alert) => (
           <button
             key={alert.id}

@@ -149,8 +149,8 @@ export default function PublicIntakeFormPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--flux-surface-dark)] px-4 py-10">
-      <div className="max-w-[760px] mx-auto rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-6 md:p-8">
+    <main className="min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[max(2.5rem,env(safe-area-inset-top,0px))]">
+      <div className="mx-auto max-w-[760px] rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-24)] bg-[var(--flux-surface-card)] p-5 sm:p-6 md:p-8">
         {loading && <p className="text-[var(--flux-text-muted)]">Carregando formulário...</p>}
         {!loading && error && <p className="text-[var(--flux-danger)]">{error}</p>}
         {!loading && !error && form && (
@@ -211,7 +211,7 @@ export default function PublicIntakeFormPage() {
                   required
                   value={requesterName}
                   onChange={(e) => setRequesterName(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="min-h-11 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -220,7 +220,7 @@ export default function PublicIntakeFormPage() {
                   type="email"
                   value={requesterEmail}
                   onChange={(e) => setRequesterEmail(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="min-h-11 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -230,7 +230,7 @@ export default function PublicIntakeFormPage() {
                   minLength={3}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="min-h-11 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
                 {(similarLoading || similarMatches.length > 0) && (
                   <div
@@ -270,7 +270,7 @@ export default function PublicIntakeFormPage() {
                   rows={6}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="min-h-[8rem] rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
               <label className="grid gap-1 text-sm text-[var(--flux-text)]">
@@ -279,10 +279,10 @@ export default function PublicIntakeFormPage() {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="Comercial, Tomador"
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="min-h-11 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>
-              <button type="submit" disabled={submitting} className="btn-primary mt-1 disabled:opacity-60">
+              <button type="submit" disabled={submitting} className="btn-primary mt-1 min-h-11 w-full sm:w-auto disabled:opacity-60">
                 {submitting ? "Enviando..." : "Enviar demanda"}
               </button>
             </form>

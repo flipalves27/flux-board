@@ -127,22 +127,22 @@ export default function LoginPage() {
 
   if (!isChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
+      <div className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
         <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
 
   const inputClass =
-    "w-full px-3 py-2.5 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none transition-colors";
+    "min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-colors focus:border-[var(--flux-primary)]";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
   const btnClass =
-    "w-full py-2.5 rounded-[var(--flux-rad)] font-semibold bg-[var(--flux-primary)] text-white hover:bg-[var(--flux-primary-light)] disabled:opacity-60 disabled:cursor-not-allowed transition-all font-display";
+    "min-h-11 w-full rounded-[var(--flux-rad)] bg-[var(--flux-primary)] py-2.5 font-display font-semibold text-white transition-all hover:bg-[var(--flux-primary-light)] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--flux-surface-dark)]">
-      <div className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-xl)] shadow-[var(--flux-shadow-login-panel)] w-full max-w-[400px] p-8">
+    <div className="flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <div className="w-full max-w-[400px] rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-login-panel)] sm:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div
             className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"
@@ -170,11 +170,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex gap-1 mb-6 bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-1">
+        <div className="mb-6 flex gap-1 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] p-1">
           <button
             type="button"
             onClick={() => switchTab("login")}
-            className={`flex-1 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display ${
+            className={`min-h-11 flex-1 rounded-[var(--flux-rad-sm)] py-2 font-display text-sm font-semibold transition-all ${
               activeTab === "login"
                 ? "bg-[var(--flux-primary)] text-white shadow-sm"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
@@ -185,7 +185,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => switchTab("register")}
-            className={`flex-1 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display ${
+            className={`min-h-11 flex-1 rounded-[var(--flux-rad-sm)] py-2 font-display text-sm font-semibold transition-all ${
               activeTab === "register"
                 ? "bg-[var(--flux-primary)] text-white shadow-sm"
                 : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"

@@ -56,7 +56,7 @@ export function BoardMobileToolHub({ onOpenDaily }: BoardMobileToolHubProps) {
   }, [open]);
 
   return (
-    <div className="md:hidden fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-4 z-[var(--flux-z-mobile-tool-hub)] flex flex-col items-end gap-2">
+    <div className="md:hidden fixed bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-[var(--flux-z-mobile-tool-hub)] flex flex-col items-end gap-2">
       {open && (
         <div
           ref={panelRef}

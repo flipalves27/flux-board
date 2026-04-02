@@ -351,14 +351,14 @@ export function CardModalLayout() {
   ];
 
   return (
-    <div className="fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
+    <div className="card-modal-backdrop fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-[var(--flux-backdrop-scrim)] backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
         aria-hidden
         onClick={onClose}
       />
       <div
-        className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-muted)] max-h-[min(92vh,900px)] card-modal-content"
+        className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-muted)] max-h-[min(92dvh,900px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -503,7 +503,7 @@ export function CardModalLayout() {
         </div>
 
         {/* Sticky footer — always visible outside the scroll area */}
-        <footer className="card-modal-footer shrink-0 border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-card)] px-6 py-4 sm:px-8 card-modal-footer-enter">
+        <footer className="card-modal-footer shrink-0 border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-card)] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-8 sm:pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] card-modal-footer-enter">
           <div className="flex flex-wrap items-center gap-3">
             {mode === "edit" && onDelete && (
               <button

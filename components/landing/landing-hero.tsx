@@ -70,7 +70,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
 
   return (
     <section className="home-landing-reveal pt-8 md:pt-12 lg:pt-14" aria-labelledby="landing-hero-heading">
-      <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+      <div className="grid items-center gap-8 max-[400px]:gap-7 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <div className="min-w-0">
           <div className="hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--flux-secondary)] sm:text-xs">
             <span className="home-landing-chip-dot h-2 w-2 shrink-0 rounded-full bg-[var(--flux-secondary)]" aria-hidden />
@@ -129,7 +129,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--flux-secondary-alpha-32)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_var(--flux-secondary-alpha-22)] sm:h-12 sm:w-12">
               <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} interactive />
             </div>
-            <div className="relative max-h-[min(52vh,420px)] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
+            <div className="relative max-h-[min(52vh,min(420px,100dvh-12rem))] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { DM_Sans, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
@@ -34,6 +34,12 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-fluxy",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: {

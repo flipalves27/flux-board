@@ -30,7 +30,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="hero-shell home-landing-reveal sticky top-4 z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3.5 md:px-6">
+    <header className="hero-shell home-landing-reveal sticky top-[max(1rem,calc(env(safe-area-inset-top,0px)+0.75rem))] z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3.5 md:top-4 md:px-6">
       <div className="flex w-full flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4">
         <Link href={`${localeRoot}/`} className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3" onClick={closeMobile}>
           <div

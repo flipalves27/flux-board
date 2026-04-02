@@ -82,7 +82,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
         />
         <div className="home-landing-grid-overlay pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 pb-12 pt-3 sm:px-6 md:pb-16 md:pt-4 md:px-8 lg:px-12 2xl:max-w-[90rem] 2xl:px-16">
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-[max(1rem,env(safe-area-inset-left,0px))] pb-12 pt-3 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pl-6 sm:pr-6 md:pb-16 md:pt-4 md:pl-8 md:pr-8 lg:pl-12 lg:pr-12 2xl:max-w-[90rem] 2xl:pl-16 2xl:pr-16">
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
           <main id="landing-main" className="home-landing-stagger">

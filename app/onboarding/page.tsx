@@ -474,7 +474,7 @@ export default function OnboardingPage() {
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-[100dvh] overflow-x-hidden bg-[var(--flux-surface-dark)]">
       {heroStorageKey ? (
         <OnboardingFluxyHero
           open={fluxyHeroOpen}
@@ -490,7 +490,7 @@ export default function OnboardingPage() {
         </div>
       </Header>
 
-      <main className="max-w-[980px] mx-auto px-6 py-10">
+      <main className="mx-auto max-w-[980px] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-6 sm:py-10 md:px-8">
         <div className="mb-6 flex items-center gap-3 rounded-[var(--flux-rad-lg)] border border-[var(--flux-secondary-alpha-28)] bg-[linear-gradient(90deg,var(--flux-primary-alpha-10),var(--flux-secondary-alpha-08))] px-4 py-3">
           <FluxyAvatar state="waving" size="compact" className="shrink-0" />
           <p className="text-sm leading-snug text-[var(--flux-text)]">{t("fluxyHint")}</p>

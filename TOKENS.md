@@ -93,6 +93,8 @@ Media queries cannot use CSS variables. Align with Tailwind (see `tailwind.confi
 
 Optional narrow utility: `flux-xs` → **400px** (`max-[400px]:…` / custom `screens.flux-xs`).
 
+**Mobile layout vs. Tailwind `md`:** `SidebarLayoutProvider` treats **≤767px** as mobile and **≥1024px** as desktop, with tablet between. In CSS, mirror that split with **`max-md:`** (below 768px) for drawer/hamburger behavior so it stays aligned with JS. The interval 768–1023px is tablet-only in both.
+
 ---
 
 ## Core brand & surfaces

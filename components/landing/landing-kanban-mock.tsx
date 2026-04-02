@@ -28,10 +28,13 @@ export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
         </div>
         <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">{liveViewLabel}</span>
       </div>
-      <div className="grid grid-cols-3 gap-2.5 pt-4 md:gap-3">
+      <div className="grid min-w-0 grid-cols-3 gap-1.5 pt-4 max-[400px]:gap-1.5 sm:gap-2.5 md:gap-3">
         {cols.map((col) => (
-          <div key={col.title} className="home-kanban-col rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(13,11,26,0.4)] p-2.5 md:p-3">
-            <p className="mb-2.5 border-b border-[var(--flux-primary-alpha-08)] pb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]">
+          <div
+            key={col.title}
+            className="home-kanban-col min-w-0 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(13,11,26,0.4)] p-2 max-[400px]:p-1.5 sm:p-2.5 md:p-3"
+          >
+            <p className="mb-2 max-[400px]:mb-1.5 max-[400px]:pb-1.5 max-[400px]:text-[9px] border-b border-[var(--flux-primary-alpha-08)] pb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]">
               {col.title}
             </p>
             <div className="flex flex-col gap-2">

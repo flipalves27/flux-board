@@ -1131,6 +1131,18 @@
     box-shadow: var(--shadow-md), 0 12px 36px color-mix(in srgb, var(--flux-primary) 10%, transparent);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .landing-feature-card {
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .landing-feature-card:hover {
+      transform: none;
+    }
+  }
+
   .home-kanban-mock {
     border-color: color-mix(in srgb, var(--flux-primary) 28%, transparent);
     background: linear-gradient(
@@ -1441,6 +1453,19 @@
 @layer components {
   .card-modal-backdrop {
     animation: cardModalBackdropIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .card-modal-backdrop {
+      padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    }
   }
   .card-modal-content {
     animation: cardModalPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -1705,6 +1730,41 @@
 
   .flux-intelligence-badge-pulse {
     animation: flux-ai-pulse 2.8s var(--flux-ease-standard) infinite;
+  }
+
+  /*
+   * Safe area — pair with root viewport `viewportFit: cover` (see app/layout.tsx).
+   * Use on fixed chrome, modals, and optional horizontal inset on narrow viewports.
+   */
+  .flux-safe-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .flux-safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .flux-safe-pl {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .flux-safe-pr {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .flux-safe-px {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .flux-safe-py {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .flux-safe-p {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+      env(safe-area-inset-left, 0px);
   }
 }
 
