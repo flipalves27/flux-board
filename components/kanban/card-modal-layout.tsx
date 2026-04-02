@@ -165,10 +165,10 @@ function CardModalTabs({
   };
 
   return (
-    <nav className="mt-5 min-w-0" role="tablist" aria-label={ariaLabel}>
+    <nav className="mt-5 min-w-0 w-full max-w-full overflow-x-auto" role="tablist" aria-label={ariaLabel}>
       <div
         ref={stripRef}
-        className="card-modal-tab-strip -mx-1 flex flex-nowrap items-stretch gap-2 overflow-x-auto px-1 py-0.5 sm:flex-wrap sm:overflow-x-visible sm:px-0 sm:py-0"
+        className="card-modal-tab-strip flex min-w-max flex-nowrap items-stretch gap-2 py-0.5 sm:flex-wrap sm:min-w-0 sm:py-0"
       >
         {primaryItems.map(renderTab)}
         <div
@@ -353,12 +353,12 @@ export function CardModalLayout() {
   return (
     <div className="fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center p-4 sm:p-6 card-modal-backdrop">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
+        className="absolute inset-0 bg-[var(--flux-backdrop-scrim)] backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
         aria-hidden
         onClick={onClose}
       />
       <div
-        className="relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-chrome-alpha-06)] max-h-[min(92vh,900px)] card-modal-content"
+        className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-muted)] max-h-[min(92vh,900px)] card-modal-content"
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
@@ -386,24 +386,24 @@ export function CardModalLayout() {
           </div>
         ) : null}
 
-        {/* Header */}
-        <header className="relative shrink-0 overflow-hidden border-b border-[var(--flux-chrome-alpha-06)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
+        {/* Header — sem overflow-hidden no bloco inteiro: evita cortar título quando o flex encolhe (min-w-0) */}
+        <header className="relative z-[1] shrink-0 border-b border-[var(--flux-border-muted)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
           {/* Ambient glow blobs */}
           <div
-            className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
+            className="pointer-events-none absolute -right-20 -top-24 z-0 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
             style={{
               background: "radial-gradient(circle at center, var(--flux-primary) 0%, transparent 68%)",
             }}
           />
           <div
-            className="pointer-events-none absolute -left-16 bottom-0 h-40 w-40 rounded-full opacity-[0.08] blur-3xl"
+            className="pointer-events-none absolute -left-16 bottom-0 z-0 h-40 w-40 rounded-full opacity-[0.08] blur-3xl"
             style={{
               background: "radial-gradient(circle at center, var(--flux-secondary) 0%, transparent 70%)",
             }}
           />
 
-          <div className="relative flex items-start justify-between gap-4">
-            <div className="min-w-0">
+          <div className="relative z-[1] flex min-w-0 items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 pr-2">
               {/* Mode pill + card ID badge */}
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-full border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
@@ -415,10 +415,13 @@ export function CardModalLayout() {
                   </span>
                 )}
               </div>
-              <h2 id="card-modal-title" className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
+              <h2
+                id="card-modal-title"
+                className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)] break-words"
+              >
                 {mode === "edit" ? t("cardModal.header.title.edit") : t("cardModal.header.title.new")}
               </h2>
-              <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-[var(--flux-text-muted)]">
+              <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-[var(--flux-text-muted)] break-words">
                 {mode === "edit" ? t("cardModal.header.description.edit") : t("cardModal.header.description.new")}
               </p>
             </div>
@@ -500,7 +503,7 @@ export function CardModalLayout() {
         </div>
 
         {/* Sticky footer — always visible outside the scroll area */}
-        <footer className="shrink-0 border-t border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)]/98 px-6 py-4 sm:px-8 card-modal-footer-enter">
+        <footer className="card-modal-footer shrink-0 border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-card)] px-6 py-4 sm:px-8 card-modal-footer-enter">
           <div className="flex flex-wrap items-center gap-3">
             {mode === "edit" && onDelete && (
               <button
