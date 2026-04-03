@@ -15,6 +15,7 @@ import {
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap } from "@/lib/plan-gates";
+import { auditOrganizationInviteAccepted } from "@/lib/invite-audit";
 import type { OrgMembershipRole } from "@/lib/rbac";
 
 export type AcceptOrgInviteErrorCode =
@@ -81,6 +82,12 @@ export async function acceptOrganizationInviteForExistingUser(params: {
     if (!updated) return { ok: false, error: "invite_invalid" };
     const consumed = await consumeOrganizationInvite({ code, email: emailNorm, userId: user.id });
     if (!consumed) return { ok: false, error: "invite_consume_failed" };
+    await auditOrganizationInviteAccepted({
+      orgId: targetOrgId,
+      joiningUserId: user.id,
+      inviteCode: code,
+      emailLower: emailNorm,
+    });
     const scoped = await getUserById(user.id, targetOrgId);
     return scoped ? { ok: true, user: scoped } : { ok: false, error: "invite_invalid" };
   }
@@ -98,6 +105,12 @@ export async function acceptOrganizationInviteForExistingUser(params: {
     await removeExtraOrgMembership(user.id, targetOrgId);
     return { ok: false, error: "invite_consume_failed" };
   }
+  await auditOrganizationInviteAccepted({
+    orgId: targetOrgId,
+    joiningUserId: user.id,
+    inviteCode: code,
+    emailLower: emailNorm,
+  });
 
   const scoped = await getUserById(user.id, targetOrgId);
   return scoped ? { ok: true, user: scoped } : { ok: false, error: "invite_invalid" };

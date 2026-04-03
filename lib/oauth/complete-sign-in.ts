@@ -26,6 +26,8 @@ import {
 } from "@/lib/kv-organizations";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import { getUserCap } from "@/lib/plan-gates";
+import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
+import { auditOrganizationInviteAccepted } from "@/lib/invite-audit";
 
 export type OAuthSignInProfile = {
   provider: OAuthProviderId;
@@ -134,7 +136,7 @@ export async function completeOAuthSignIn(
       await issueSessionForUser(accepted.user);
       return {
         ok: true,
-        path: postAuthPath(profile.locale, profile.redirect, false),
+        path: appendJoinedViaInviteQuery(postAuthPath(profile.locale, profile.redirect, false)),
       };
     }
 
@@ -170,6 +172,13 @@ export async function completeOAuthSignIn(
       return { ok: false, error: "oauth_consume_failed" };
     }
 
+    await auditOrganizationInviteAccepted({
+      orgId: validated.orgId,
+      joiningUserId: user.id,
+      inviteCode,
+      emailLower: emailNorm,
+    });
+
     await issueSessionForCredentials(
       {
         id: user.id,
@@ -184,7 +193,7 @@ export async function completeOAuthSignIn(
 
     return {
       ok: true,
-      path: postAuthPath(profile.locale, profile.redirect, true),
+      path: appendJoinedViaInviteQuery(postAuthPath(profile.locale, profile.redirect, true)),
     };
   }
 

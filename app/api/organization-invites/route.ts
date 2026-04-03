@@ -7,6 +7,7 @@ import {
 } from "@/lib/kv-organization-invites";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { assignableInviteOrgRoles, deriveEffectiveRoles, isAssignableInviteOrgRole } from "@/lib/rbac";
+import { getUserById } from "@/lib/kv-users";
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -54,11 +55,27 @@ export async function GET(request: NextRequest) {
 
   const invites = await listOrganizationInvites(payload.orgId);
   const assignableRoles = assignableInviteOrgRoles(deriveEffectiveRoles(payload));
+  const enriched = await Promise.all(
+    invites.map(async (i) => {
+      let usedByName: string | null = null;
+      let usedByEmail: string | null = null;
+      if (i.usedByUserId) {
+        const u = await getUserById(i.usedByUserId, payload.orgId);
+        if (u) {
+          usedByName = u.name;
+          usedByEmail = u.email;
+        }
+      }
+      return {
+        ...i,
+        assignedOrgRole: normalizeInviteAssignedOrgRole(i.assignedOrgRole),
+        usedByName,
+        usedByEmail,
+      };
+    })
+  );
   return NextResponse.json({
-    invites: invites.map((i) => ({
-      ...i,
-      assignedOrgRole: normalizeInviteAssignedOrgRole(i.assignedOrgRole),
-    })),
+    invites: enriched,
     assignableRoles,
   });
 }

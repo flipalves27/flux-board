@@ -78,6 +78,8 @@ export async function listAuditEventsPaginated(params: {
   actorUserId?: string;
   orgId?: string;
   resourceType?: AuditResourceType;
+  /** Filtro exato por campo `action` (ex.: org.invite_accepted). */
+  action?: string;
   from?: string;
   to?: string;
 }): Promise<{ events: AuditEventDoc[]; nextCursor: string | null }> {
@@ -93,6 +95,7 @@ export async function listAuditEventsPaginated(params: {
   if (params.actorUserId) filter.actorUserId = params.actorUserId;
   if (params.orgId) filter.orgId = params.orgId;
   if (params.resourceType) filter.resourceType = params.resourceType;
+  if (params.action) filter.action = params.action;
   if (params.from || params.to) {
     const at: Record<string, Date> = {};
     if (params.from) at.$gte = new Date(params.from);

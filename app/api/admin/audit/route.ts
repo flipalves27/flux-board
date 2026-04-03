@@ -19,12 +19,16 @@ export async function GET(request: NextRequest) {
     const resourceType = searchParams.get("resourceType") as AuditResourceType | undefined;
     const from = searchParams.get("from") || undefined;
     const to = searchParams.get("to") || undefined;
+    const actionRaw = searchParams.get("action")?.trim();
+    const action =
+      actionRaw && /^[\w.]+$/.test(actionRaw) ? actionRaw : undefined;
 
     const r = await listAuditEventsPaginated({
       limit: Number.isFinite(limit) ? limit : 50,
       cursor: cursor || null,
       actorUserId,
       orgId,
+      action,
       resourceType:
         resourceType === "user" ||
         resourceType === "organization" ||

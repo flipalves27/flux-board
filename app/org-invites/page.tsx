@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
@@ -8,6 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
+import { ORG_INVITES_POLL_INTERVAL_MS } from "@/lib/org-invites-poll-ms";
 
 type OrgInviteRole = "gestor" | "membro" | "convidado";
 
@@ -20,16 +22,12 @@ type InviteRow = {
   expiresAt: string;
   usedAt?: string;
   usedByUserId?: string;
+  usedByName?: string | null;
+  usedByEmail?: string | null;
 };
 
-function orgRoleLabel(role: OrgInviteRole): string {
-  if (role === "gestor") return "Gestor";
-  if (role === "convidado") return "Convidado";
-  return "Membro";
-}
-
 function formatDateShort(iso?: string): string {
-  if (!iso) return "-";
+  if (!iso) return "—";
   try {
     const d = new Date(iso);
     return d.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
@@ -43,6 +41,7 @@ export default function OrgInvitesPage() {
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const tNav = useTranslations("navigation");
+  const t = useTranslations("orgInvites");
   const localeRoot = `/${locale}`;
   const { pushToast } = useToast();
 
@@ -64,18 +63,18 @@ export default function OrgInvitesPage() {
     return `${window.location.origin}${localeRoot}/login?invite=${encodeURIComponent(lastInviteCode)}`;
   }, [lastInviteCode, localeRoot]);
 
-  useEffect(() => {
-    if (!isChecked || !user) {
-      router.replace(`${localeRoot}/login`);
-      return;
-    }
-    if (!sessionCanManageOrgBilling(user)) {
-      router.replace(`${localeRoot}/boards`);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    (async () => {
+  const roleLabel = useCallback(
+    (r: OrgInviteRole) =>
+      r === "gestor" ? t("roleGestor") : r === "convidado" ? t("roleConvidado") : t("roleMembro"),
+    [t]
+  );
+
+  const fetchInvites = useCallback(
+    async (mode: "normal" | "silent") => {
+      if (mode === "normal") {
+        setLoading(true);
+        setError(null);
+      }
       try {
         const data = await apiGet<{ invites: InviteRow[]; assignableRoles?: OrgInviteRole[] }>(
           "/api/organization-invites",
@@ -89,40 +88,45 @@ export default function OrgInvitesPage() {
           setAssignableRoles(ar);
           setInviteOrgRole((prev) => (ar.includes(prev) ? prev : ar[0]!));
         }
+        if (mode === "normal") setError(null);
       } catch (e) {
+        if (mode === "silent") return;
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
           router.replace(`${localeRoot}/login`);
           return;
         }
-        setError(e instanceof ApiError ? e.message : "Erro ao carregar convites.");
+        setError(e instanceof ApiError ? e.message : t("loadError"));
       } finally {
-        setLoading(false);
+        if (mode === "normal") setLoading(false);
       }
-    })();
-  }, [isChecked, user, router, localeRoot, getHeaders]);
+    },
+    [getHeaders, router, localeRoot, t]
+  );
 
-  async function refresh() {
-    try {
-      const data = await apiGet<{ invites: InviteRow[]; assignableRoles?: OrgInviteRole[] }>(
-        "/api/organization-invites",
-        getHeaders()
-      );
-      setInvites(data.invites ?? []);
-      const ar = data.assignableRoles?.filter((r): r is OrgInviteRole =>
-        r === "gestor" || r === "membro" || r === "convidado"
-      );
-      if (ar?.length) {
-        setAssignableRoles(ar);
-        setInviteOrgRole((prev) => (ar.includes(prev) ? prev : ar[0]!));
-      }
-    } catch {
-      // ignore
+  useEffect(() => {
+    if (!isChecked || !user) {
+      router.replace(`${localeRoot}/login`);
+      return;
     }
-  }
+    if (!sessionCanManageOrgBilling(user)) {
+      router.replace(`${localeRoot}/boards`);
+      return;
+    }
+    void fetchInvites("normal");
+  }, [isChecked, user, router, localeRoot, fetchInvites]);
+
+  useEffect(() => {
+    if (!isChecked || !user || !sessionCanManageOrgBilling(user)) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      void fetchInvites("silent");
+    }, ORG_INVITES_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [isChecked, user, fetchInvites]);
 
   async function createInvite() {
     if (!email.trim() || !email.includes("@")) {
-      setError("Informe um e-mail válido.");
+      setError(t("invalidEmail"));
       return;
     }
     setError(null);
@@ -133,13 +137,13 @@ export default function OrgInvitesPage() {
         { email, orgRole: inviteOrgRole },
         getHeaders()
       );
-      const code = (data as any)?.invite?.code;
-      if (!code) throw new Error("Não foi possível gerar o convite.");
+      const code = (data as { invite?: { code: string } })?.invite?.code;
+      if (!code) throw new Error(t("createFailed"));
       setLastInviteCode(code);
-      pushToast({ kind: "success", title: "Convite gerado." });
-      await refresh();
+      pushToast({ kind: "success", title: t("inviteCreated") });
+      await fetchInvites("silent");
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Erro ao gerar convite.");
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : t("createFailed"));
     } finally {
       setBusy(false);
     }
@@ -150,15 +154,30 @@ export default function OrgInvitesPage() {
     setError(null);
     try {
       await apiPost(`/api/organization-invites/${encodeURIComponent(code)}/expire`, {}, getHeaders());
-      pushToast({ kind: "info", title: "Convite expirado." });
+      pushToast({ kind: "info", title: t("inviteExpired") });
       if (lastInviteCode === code) setLastInviteCode(null);
-      await refresh();
+      await fetchInvites("silent");
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Erro ao expirar convite.");
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : t("expireFailed"));
     } finally {
       setBusy(false);
     }
   }
+
+  const filterCounts = useMemo(() => {
+    const now = Date.now();
+    let active = 0;
+    let used = 0;
+    let expired = 0;
+    for (const inv of invites) {
+      const isExpired = new Date(inv.expiresAt).getTime() <= now;
+      const isUsed = Boolean(inv.usedAt);
+      if (isUsed) used++;
+      else if (isExpired) expired++;
+      else active++;
+    }
+    return { active, used, expired, all: invites.length };
+  }, [invites]);
 
   const filteredInvites = useMemo(() => {
     const now = Date.now();
@@ -168,19 +187,34 @@ export default function OrgInvitesPage() {
       const used = Boolean(inv.usedAt);
       if (filter === "used") return used;
       if (filter === "expired") return !used && expired;
-      // active
       return !used && !expired;
     });
   }, [invites, filter]);
 
+  function memberSummary(inv: InviteRow): string {
+    if (!inv.usedAt) return "—";
+    if (inv.usedByName?.trim() && inv.usedByEmail?.trim()) {
+      return t("memberLine", { name: inv.usedByName.trim(), email: inv.usedByEmail.trim() });
+    }
+    return t("memberUnknown", { id: inv.usedByUserId ?? "—" });
+  }
+
   return (
     <div className="min-h-screen">
       <Header title={tNav("invites")} backHref={`${localeRoot}/boards`} backLabel="← Boards">
-        <div className="text-xs text-[var(--flux-text-muted)]">Gerencie convites da sua organização.</div>
+        <div className="space-y-1">
+          <div className="text-xs text-[var(--flux-text-muted)]">{t("subtitle")}</div>
+          <Link
+            href={`${localeRoot}/org-audit`}
+            className="inline-block text-xs text-[var(--flux-primary-light)] underline hover:opacity-90"
+          >
+            {t("auditLogLink")}
+          </Link>
+        </div>
       </Header>
       <main className="max-w-[980px] mx-auto px-6 py-10">
         <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-6 shadow-[var(--flux-shadow-elevated-card)]">
-          <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">Convites</h2>
+          <h2 className="font-display font-bold text-xl text-[var(--flux-text)] mb-1">{tNav("invites")}</h2>
 
           {error && (
             <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
@@ -191,7 +225,7 @@ export default function OrgInvitesPage() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                E-mail do convidado
+                {t("guestEmail")}
               </label>
               <input
                 value={email}
@@ -202,7 +236,7 @@ export default function OrgInvitesPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
-                Nível na org
+                {t("orgLevel")}
               </label>
               <select
                 value={inviteOrgRole}
@@ -212,19 +246,21 @@ export default function OrgInvitesPage() {
               >
                 {assignableRoles.map((r) => (
                   <option key={r} value={r}>
-                    {orgRoleLabel(r)}
+                    {roleLabel(r)}
                   </option>
                 ))}
               </select>
             </div>
             <button className="btn-primary" type="button" disabled={busy} onClick={createInvite}>
-              {busy ? "Aguarde..." : "Gerar convite"}
+              {busy ? t("generating") : t("generate")}
             </button>
           </div>
 
           {inviteUrl && (
             <div className="mt-6 p-4 rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-secondary-alpha-08)]">
-              <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">Link de convite</p>
+              <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">
+                {t("inviteLink")}
+              </p>
               <div className="mt-2 flex flex-col gap-2">
                 <code className="break-all text-[12px] text-[var(--flux-text)]">{inviteUrl}</code>
                 <button
@@ -234,13 +270,13 @@ export default function OrgInvitesPage() {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(inviteUrl);
-                      pushToast({ kind: "success", title: "Link copiado." });
+                      pushToast({ kind: "success", title: t("linkCopied") });
                     } catch {
                       // ignore
                     }
                   }}
                 >
-                  Copiar
+                  {t("copy")}
                 </button>
               </div>
             </div>
@@ -248,9 +284,9 @@ export default function OrgInvitesPage() {
 
           <div className="mt-8">
             {loading ? (
-              <p className="text-[var(--flux-text-muted)]">Carregando...</p>
+              <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
             ) : filteredInvites.length === 0 ? (
-              <p className="text-[var(--flux-text-muted)]">Nenhum convite encontrado.</p>
+              <p className="text-[var(--flux-text-muted)]">{t("empty")}</p>
             ) : (
               <div className="overflow-x-auto">
                 <div className="mb-4 flex flex-wrap gap-2">
@@ -259,47 +295,53 @@ export default function OrgInvitesPage() {
                     onClick={() => setFilter("active")}
                     className={`btn-sm ${filter === "active" ? "btn-primary" : "btn-secondary"}`}
                   >
-                    Ativos
+                    {t("filterActive", { count: filterCounts.active })}
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilter("used")}
                     className={`btn-sm ${filter === "used" ? "btn-primary" : "btn-secondary"}`}
                   >
-                    Usados
+                    {t("filterUsed", { count: filterCounts.used })}
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilter("expired")}
                     className={`btn-sm ${filter === "expired" ? "btn-primary" : "btn-secondary"}`}
                   >
-                    Expirados
+                    {t("filterExpired", { count: filterCounts.expired })}
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilter("all")}
                     className={`btn-sm ${filter === "all" ? "btn-primary" : "btn-secondary"}`}
                   >
-                    Todos
+                    {t("filterAll", { count: filterCounts.all })}
                   </button>
                 </div>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
-                        E-mail
+                        {t("colEmail")}
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
-                        Nível
+                        {t("colLevel")}
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
-                        Expira
+                        {t("colExpires")}
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
-                        Status
+                        {t("colActivated")}
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
-                        Ações
+                        {t("colMember")}
+                      </th>
+                      <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
+                        {t("colStatus")}
+                      </th>
+                      <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
+                        {t("colActions")}
                       </th>
                     </tr>
                   </thead>
@@ -307,15 +349,25 @@ export default function OrgInvitesPage() {
                     {filteredInvites.map((inv) => {
                       const expired = new Date(inv.expiresAt).getTime() <= Date.now();
                       const used = Boolean(inv.usedAt);
-                      const status = used ? "Usado" : expired ? "Expirado" : "Ativo";
+                      const statusLabel = used
+                        ? t("statusUsed")
+                        : expired
+                          ? t("statusExpired")
+                          : t("statusActive");
                       const canExpire = !used && !expired;
                       return (
                         <tr key={inv._id} className="border-b border-[var(--flux-chrome-alpha-06)]">
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{inv.emailLower}</td>
                           <td className="px-4 py-3 text-[var(--flux-text-muted)] text-sm">
-                            {orgRoleLabel(inv.assignedOrgRole ?? "membro")}
+                            {roleLabel(inv.assignedOrgRole ?? "membro")}
                           </td>
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{formatDateShort(inv.expiresAt)}</td>
+                          <td className="px-4 py-3 text-[var(--flux-text-muted)] text-sm">
+                            {used ? formatDateShort(inv.usedAt) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-[var(--flux-text-muted)] text-sm max-w-[220px]">
+                            <span className="break-words">{memberSummary(inv)}</span>
+                          </td>
                           <td className="px-4 py-3">
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-md ${
@@ -326,13 +378,8 @@ export default function OrgInvitesPage() {
                                     : "bg-[var(--flux-primary-alpha-14)] text-[var(--flux-primary-light)]"
                               }`}
                             >
-                              {status}
+                              {statusLabel}
                             </span>
-                            {used && (
-                              <div className="mt-2 text-[11px] text-[var(--flux-text-muted)]">
-                                Usado por: <span className="font-mono">{inv.usedByUserId ?? "—"}</span>
-                              </div>
-                            )}
                           </td>
                           <td className="px-4 py-3">
                             {canExpire ? (
@@ -342,7 +389,7 @@ export default function OrgInvitesPage() {
                                 onClick={() => expireInvite(inv._id)}
                                 disabled={busy}
                               >
-                                Expirar
+                                {t("expire")}
                               </button>
                             ) : (
                               <span className="text-xs text-[var(--flux-text-muted)]">—</span>
@@ -361,4 +408,3 @@ export default function OrgInvitesPage() {
     </div>
   );
 }
-

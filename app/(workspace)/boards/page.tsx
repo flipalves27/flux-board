@@ -35,6 +35,7 @@ import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
+import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
 interface Board {
   id: string;
@@ -82,6 +83,7 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 export default function BoardsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  useInviteJoinAcknowledgement();
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("boards");

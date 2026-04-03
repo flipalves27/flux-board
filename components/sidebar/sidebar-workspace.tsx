@@ -5,6 +5,7 @@ import {
   IconBilling,
   IconBuilding,
   IconInvites,
+  IconMonitor,
   IconSettings,
   IconShield,
   IconTeam,
@@ -60,6 +61,12 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
                 icon={<IconInvites className="h-4 w-4 shrink-0" />}
                 label={t("invites")}
                 sublabel={activeInvites !== null && activeInvites > 0 ? String(activeInvites) : undefined}
+              />
+              <SidebarNavLink
+                path="/org-audit"
+                hint={t("hints.orgAudit")}
+                icon={<IconMonitor className="h-4 w-4 shrink-0" />}
+                label={t("orgAudit")}
               />
             </>
           ) : null}

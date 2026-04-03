@@ -10,6 +10,7 @@ import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
+import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
 
 const OAUTH_ERROR_KEYS = new Set([
   "oauth_denied",
@@ -95,7 +96,9 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
-        router.replace(postLoginPath);
+        const next =
+          inviteCode?.trim() ? appendJoinedViaInviteQuery(postLoginPath) : postLoginPath;
+        router.replace(next);
       } else {
         setError(result.error);
       }
@@ -128,7 +131,10 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
-        router.replace(`${localeRoot}/onboarding`);
+        const onboardingPath = `${localeRoot}/onboarding`;
+        const next =
+          inviteCode?.trim() ? appendJoinedViaInviteQuery(onboardingPath) : onboardingPath;
+        router.replace(next);
       } else {
         setError(result.error);
       }

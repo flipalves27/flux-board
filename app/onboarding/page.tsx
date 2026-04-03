@@ -24,6 +24,7 @@ import {
 } from "@/lib/onboarding";
 import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
 import { nextBoardCardId } from "@/lib/card-id";
+import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -125,6 +126,7 @@ function safeParseJson<T>(value: string | null): T | null {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  useInviteJoinAcknowledgement();
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");

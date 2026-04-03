@@ -33,6 +33,7 @@ import {
 import type { ValidateResult } from "@/lib/auth-types";
 import { canManageOrganization, deriveEffectiveRoles, seesAllBoardsInOrg } from "@/lib/rbac";
 import { insertAuditEvent } from "@/lib/audit-events";
+import { auditOrganizationInviteAccepted } from "@/lib/invite-audit";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 export type { ValidateResult } from "@/lib/auth-types";
 
@@ -275,6 +276,13 @@ export async function registerAction(
         await deleteUser(user.id, validated.orgId);
         return { ok: false, error: "Convite já foi utilizado." };
       }
+
+      await auditOrganizationInviteAccepted({
+        orgId: validated.orgId,
+        joiningUserId: user.id,
+        inviteCode,
+        emailLower: emailNorm,
+      });
 
       await issueSessionForCredentials(
         {

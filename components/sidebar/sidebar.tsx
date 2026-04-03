@@ -231,6 +231,7 @@ export function Sidebar() {
     if (href === "/billing") return normalizedPath === "/billing";
     if (href === "/org-settings") return normalizedPath === "/org-settings";
     if (href === "/org-invites") return normalizedPath === "/org-invites";
+    if (href === "/org-audit") return normalizedPath === "/org-audit";
     if (href === "/rate-limit-abuse") return normalizedPath === "/rate-limit-abuse";
     if (href === "/admin/tracer") return normalizedPath.startsWith("/admin/tracer");
     return normalizedPath === href;
