@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
+import { useAuth, type AuthUser } from "@/context/auth-context";
 import { useLocale, useTranslations } from "next-intl";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
@@ -54,6 +54,50 @@ interface PlanInfo {
   atLimit: boolean;
 }
 
+/**
+ * `useSearchParams()` suspende até o URL estar pronto; fora de um Suspense com fallback leve,
+ * isso mantém o skeleton dos boards indefinidamente. Este bloco isola o suspend.
+ */
+function BoardsQueryParamsEffects({
+  isChecked,
+  user,
+  pushToast,
+  onNewBoardFromUrl,
+}: {
+  isChecked: boolean;
+  user: AuthUser;
+  pushToast: ReturnType<typeof useToast>["pushToast"];
+  onNewBoardFromUrl: () => void;
+}) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    const billing = searchParams.get("billing");
+    if (billing === "success") {
+      pushToast({
+        kind: "success",
+        title: "Assinatura ativa!",
+        description: "Seus recursos Pro/Business já devem estar disponíveis.",
+      });
+    } else if (billing === "cancel") {
+      pushToast({
+        kind: "warning",
+        title: "Checkout cancelado",
+        description: "Nenhuma assinatura foi criada.",
+      });
+    }
+  }, [searchParams, isChecked, user, pushToast]);
+
+  useEffect(() => {
+    if (!isChecked || !user) return;
+    if (searchParams.get("newBoard") !== "1") return;
+    onNewBoardFromUrl();
+  }, [searchParams, isChecked, user, onNewBoardFromUrl]);
+
+  return null;
+}
+
 function PortfolioMetricBar({ label, value }: { label: string; value: number | null }) {
   const fillClass =
     value === null
@@ -82,7 +126,6 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 
 export default function BoardsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   useInviteJoinAcknowledgement();
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
@@ -121,16 +164,6 @@ export default function BoardsPage() {
     }
     loadBoards();
   }, [isChecked, user, router]);
-
-  useEffect(() => {
-    if (!isChecked || !user) return;
-    const billing = searchParams.get("billing");
-    if (billing === "success") {
-      pushToast({ kind: "success", title: "Assinatura ativa!", description: "Seus recursos Pro/Business já devem estar disponíveis." });
-    } else if (billing === "cancel") {
-      pushToast({ kind: "warning", title: "Checkout cancelado", description: "Nenhuma assinatura foi criada." });
-    }
-  }, [searchParams, isChecked, user, pushToast]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
@@ -206,16 +239,14 @@ export default function BoardsPage() {
     setModalOpen(true);
   }
 
-  useEffect(() => {
-    if (!isChecked || !user) return;
-    if (searchParams.get("newBoard") !== "1") return;
+  const openNewBoardFromUrl = useCallback(() => {
     setModalMode("new");
     setEditingId(null);
     setBoardName("");
     setCreateMethodology("scrum");
     setModalOpen(true);
     router.replace(`${localeRoot}/boards`, { scroll: false });
-  }, [searchParams, isChecked, user, router, localeRoot]);
+  }, [router, localeRoot]);
 
   function openEditModal(id: string, name: string) {
     setModalMode("edit");
@@ -399,6 +430,16 @@ export default function BoardsPage() {
 
   return (
     <div className="min-h-screen">
+      <Suspense fallback={null}>
+        {user ? (
+          <BoardsQueryParamsEffects
+            isChecked={isChecked}
+            user={user}
+            pushToast={pushToast}
+            onNewBoardFromUrl={openNewBoardFromUrl}
+          />
+        ) : null}
+      </Suspense>
       <Header />
       <main className="max-w-[1200px] mx-auto px-6 py-8">
         <header className="mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">

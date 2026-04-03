@@ -62,9 +62,10 @@ function applyNonCspSecurityHeaders(res: NextResponse) {
   return res;
 }
 
-/** Arquivos em `public/` — não passar pelo next-intl (evita 404 tipo `/pt-BR/flux-background.svg`). */
+/** Arquivos em `public/` — não passar pelo next-intl (evita 404 tipo `/pt-BR/flux-background.svg` ou `/pt-BR/manifest.json`). */
 function isLikelyPublicStaticAsset(pathname: string): boolean {
-  return /\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|txt|html)$/i.test(pathname);
+  if (pathname === "/manifest.json" || pathname === "/sw.js") return true;
+  return /\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|txt|html|json)$/i.test(pathname);
 }
 
 /** Apply security headers to all API responses and pass through to the function. */
@@ -134,5 +135,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.svg|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.svg|favicon\\.ico|robots\\.txt|sitemap\\.xml|manifest\\.json|sw\\.js).*)",
+  ],
 };
