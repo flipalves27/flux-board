@@ -43,6 +43,10 @@ export function SidebarOrgSwitcher({
 
   if (!user || orgs.length < 2) return null;
 
+  const orgIds = new Set(orgs.map((o) => o.orgId));
+  /** Evita `<select value>` sem opção correspondente (React #130 / DOM inválido em alguns casos). */
+  if (!orgIds.has(user.orgId)) return null;
+
   if (layout === "desktop" && !showExpandedNav) return null;
 
   async function onSelect(nextOrgId: string) {

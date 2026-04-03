@@ -28,6 +28,30 @@ const ROLE_OPTIONS: Array<{ value: TeamMember["role"]; label: string }> = [
 const PAGE_SIZES = [10, 25, 50] as const;
 type TeamTab = "membros" | "funcoes" | "acessos";
 
+const VALID_TABS = new Set<TeamTab>(["membros", "funcoes", "acessos"]);
+const VALID_TEAM_ROLES = new Set<TeamMember["role"]>(["team_manager", "member", "guest"]);
+
+function parseTeamTab(raw: string | null): TeamTab {
+  return raw && VALID_TABS.has(raw as TeamTab) ? (raw as TeamTab) : "membros";
+}
+
+function parseRoleFilter(raw: string | null): "all" | TeamMember["role"] {
+  if (!raw || raw === "all") return "all";
+  return VALID_TEAM_ROLES.has(raw as TeamMember["role"]) ? (raw as TeamMember["role"]) : "all";
+}
+
+function parseStatusFilter(raw: string | null): "all" | "active" | "inactive" {
+  if (raw === "active" || raw === "inactive") return raw;
+  return "all";
+}
+
+function parseScopeFilter(raw: string | null): "all" | "org" | "board" {
+  if (raw === "org" || raw === "board") return raw;
+  return "all";
+}
+
+const VALID_SORTS = new Set(["updatedAt_desc", "updatedAt_asc", "role_asc", "role_desc"]);
+
 export default function TeamPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,14 +76,15 @@ export default function TeamPage() {
   const [editBoardId, setEditBoardId] = useState<string>("org");
   const [editActive, setEditActive] = useState(true);
 
-  const tab = (searchParams.get("tab") as TeamTab) || "membros";
-  const roleFilter = searchParams.get("role") || "all";
-  const statusFilter = searchParams.get("status") || "all";
-  const scopeFilter = searchParams.get("scope") || "all";
+  const tab = parseTeamTab(searchParams.get("tab"));
+  const roleFilter = parseRoleFilter(searchParams.get("role"));
+  const statusFilter = parseStatusFilter(searchParams.get("status"));
+  const scopeFilter = parseScopeFilter(searchParams.get("scope"));
   const membersQuery = searchParams.get("q") || "";
   const pageSizeRaw = Number.parseInt(searchParams.get("pageSize") || "10", 10);
   const pageSize = PAGE_SIZES.includes(pageSizeRaw as (typeof PAGE_SIZES)[number]) ? pageSizeRaw : 10;
-  const sort = searchParams.get("sort") || "updatedAt_desc";
+  const sortRaw = searchParams.get("sort") || "updatedAt_desc";
+  const sort = VALID_SORTS.has(sortRaw) ? sortRaw : "updatedAt_desc";
   const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
   const isDirtyFilters =
     membersQuery.trim().length > 0 ||
@@ -91,7 +116,11 @@ export default function TeamPage() {
         (membersData.members ?? []).map((m) => ({ ...m, role: normalizeTeamRole(m.role) }))
       );
       setUsers(usersData.users ?? []);
-      setBoards((boardsData.boards ?? []).map((b) => ({ id: b.id, name: b.name })));
+      setBoards(
+        (boardsData.boards ?? [])
+          .filter((b) => typeof b.id === "string" && b.id.length > 0 && typeof b.name === "string")
+          .map((b) => ({ id: b.id, name: b.name }))
+      );
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Erro ao carregar dados de equipe.";
       pushToast({ kind: "error", title: msg });
@@ -308,11 +337,13 @@ export default function TeamPage() {
                 className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
               >
                 <option value="">Selecione um usuário...</option>
-                {filteredUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} - {u.email}
-                  </option>
-                ))}
+                {filteredUsers
+                  .filter((u) => typeof u.id === "string" && u.id.length > 0)
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {[u.name, u.email].filter(Boolean).join(" — ") || u.id}
+                    </option>
+                  ))}
               </select>
             </div>
 
