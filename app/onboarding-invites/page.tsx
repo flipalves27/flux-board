@@ -12,6 +12,14 @@ import {
 } from "@/lib/onboarding";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 
+type OrgInviteRole = "gestor" | "membro" | "convidado";
+
+function orgRoleLabel(role: OrgInviteRole): string {
+  if (role === "gestor") return "Gestor";
+  if (role === "convidado") return "Convidado";
+  return "Membro";
+}
+
 export default function OrganizationInvitesOnboardingPage() {
   const router = useRouter();
   const { user, getHeaders, isChecked } = useAuth();
@@ -29,6 +37,8 @@ export default function OrganizationInvitesOnboardingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
+  const [inviteOrgRole, setInviteOrgRole] = useState<OrgInviteRole>("membro");
+  const [assignableRoles, setAssignableRoles] = useState<OrgInviteRole[]>(["membro", "convidado"]);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
@@ -54,8 +64,26 @@ export default function OrganizationInvitesOnboardingPage() {
       }
     }
 
+    (async () => {
+      try {
+        const data = await apiGet<{ assignableRoles?: OrgInviteRole[] }>(
+          "/api/organization-invites",
+          getHeaders()
+        );
+        const ar = data.assignableRoles?.filter((r): r is OrgInviteRole =>
+          r === "gestor" || r === "membro" || r === "convidado"
+        );
+        if (ar?.length) {
+          setAssignableRoles(ar);
+          setInviteOrgRole((prev) => (ar.includes(prev) ? prev : ar[0]!));
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
     setLoading(false);
-  }, [isChecked, user, router, localeRoot, invitesDoneKey]);
+  }, [isChecked, user, router, localeRoot, invitesDoneKey, getHeaders]);
 
   async function createInvite() {
     if (!user) return;
@@ -64,7 +92,11 @@ export default function OrganizationInvitesOnboardingPage() {
     try {
       if (!email.trim() || !email.includes("@")) throw new Error("Informe um e-mail válido.");
 
-      const data = await apiPost<{ invite: { code: string } }>("/api/organization-invites", { email }, getHeaders());
+      const data = await apiPost<{ invite: { code: string } }>(
+        "/api/organization-invites",
+        { email, orgRole: inviteOrgRole },
+        getHeaders()
+      );
       const code = (data as any)?.invite?.code;
       if (!code) throw new Error("Convite não gerado.");
 
@@ -112,7 +144,7 @@ export default function OrganizationInvitesOnboardingPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-4 items-end">
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">E-mail do convidado</label>
               <input
@@ -121,6 +153,21 @@ export default function OrganizationInvitesOnboardingPage() {
                 className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 disabled={busy}
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">Nível na org</label>
+              <select
+                value={inviteOrgRole}
+                onChange={(e) => setInviteOrgRole(e.target.value as OrgInviteRole)}
+                className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                disabled={busy || assignableRoles.length === 0}
+              >
+                {assignableRoles.map((r) => (
+                  <option key={r} value={r}>
+                    {orgRoleLabel(r)}
+                  </option>
+                ))}
+              </select>
             </div>
             <button className="btn-primary" disabled={busy} type="button" onClick={createInvite}>
               {busy ? "Gerando..." : "Gerar convite"}

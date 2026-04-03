@@ -14,6 +14,7 @@
     "myWork": "My Work",
     "users": "Users",
     "organization": "Organization",
+    "activeOrganization": "Active organization",
     "billing": "Billing",
     "invites": "Invites",
     "rateLimitAbuse": "Rate limit",
@@ -1463,12 +1464,20 @@
       "login": "Sign in",
       "register": "Register"
     },
+    "inviteBanner": "You’re signing in with an invite. If you already have an account, use Sign in or Google/Microsoft — the invite applies to the matching email.",
     "errors": {
       "missingCredentials": "Enter username and password.",
       "connection": "Connection error. Please try again.",
       "missingAllFields": "Please fill in all fields.",
       "passwordTooShort": "Password must be at least 8 characters.",
-      "oauthPasswordOnly": "This account uses social sign-in. Use Google or Microsoft."
+      "oauthPasswordOnly": "This account uses social sign-in. Use Google or Microsoft.",
+      "inviteInvalid": "Invalid or expired invite, or it doesn’t match this account’s email.",
+      "invitePlanLimit": "This organization’s plan user limit has been reached.",
+      "inviteConsumeFailed": "The invite could not be applied. Try again.",
+      "inviteOwnerConflict": "Your account owns another organization. To accept the invite, use a different email or transfer ownership first.",
+      "invitePlatformAdmin": "This account cannot be linked via invite.",
+      "inviteOAuthConflict": "Could not link social sign-in. Try another provider or contact support.",
+      "registerUseLoginForInvite": "An account with this email already exists. Use Sign in (or Google/Microsoft) with the same email to accept the invite."
     },
     "fields": {
       "userOrEmail": "Username or Email",
@@ -1509,6 +1518,8 @@
         "oauth_no_email": "No email was returned for this account.",
         "oauth_account_conflict": "This email is already linked to another account for this provider.",
         "oauth_invite_invalid": "Invalid or expired invite.",
+        "oauth_invite_owner_conflict": "Your account owns another organization. Use a different email or transfer ownership to accept the invite.",
+        "oauth_invite_platform_admin": "This account cannot be linked via invite.",
         "oauth_plan_limit": "Organization user limit reached for this plan.",
         "oauth_consume_failed": "The invite could not be applied. Try again.",
         "oauth_not_configured": "Social sign-in is not configured on the server.",

@@ -21,6 +21,8 @@ const OAUTH_ERROR_KEYS = new Set([
   "oauth_no_email",
   "oauth_account_conflict",
   "oauth_invite_invalid",
+  "oauth_invite_owner_conflict",
+  "oauth_invite_platform_admin",
   "oauth_plan_limit",
   "oauth_consume_failed",
   "oauth_not_configured",
@@ -46,6 +48,33 @@ export default function LoginPage() {
   const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
 
   useEffect(() => {
+    if (inviteCode) setActiveTab("login");
+  }, [inviteCode]);
+
+  useEffect(() => {
+    const oauthErr = searchParams.get("error");
+    if (oauthErr && OAUTH_ERROR_KEYS.has(oauthErr)) {
+      const key = `oauth.errors.${oauthErr}` as
+        | "oauth.errors.oauth_denied"
+        | "oauth.errors.oauth_invalid"
+        | "oauth.errors.oauth_state"
+        | "oauth.errors.oauth_profile"
+        | "oauth.errors.oauth_exchange"
+        | "oauth.errors.oauth_email_unverified"
+        | "oauth.errors.oauth_no_email"
+        | "oauth.errors.oauth_account_conflict"
+        | "oauth.errors.oauth_invite_invalid"
+        | "oauth.errors.oauth_invite_owner_conflict"
+        | "oauth.errors.oauth_invite_platform_admin"
+        | "oauth.errors.oauth_plan_limit"
+        | "oauth.errors.oauth_consume_failed"
+        | "oauth.errors.oauth_not_configured"
+        | "oauth.errors.rate_limited";
+      setError(t(key));
+    }
+  }, [searchParams, t]);
+
+  useEffect(() => {
     if (isChecked && user && !suppressAutoRedirect) router.replace(postLoginPath);
   }, [isChecked, user, router, suppressAutoRedirect, postLoginPath]);
 
@@ -62,7 +91,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await loginAction(userInput, pwd, remember);
+      const result = await loginAction(userInput, pwd, remember, inviteCode);
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
@@ -166,6 +195,12 @@ export default function LoginPage() {
         {error && (
           <div className="bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
             {error}
+          </div>
+        )}
+
+        {inviteCode && (
+          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
+            {t("inviteBanner")}
           </div>
         )}
 

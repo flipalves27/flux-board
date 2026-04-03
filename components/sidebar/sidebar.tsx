@@ -25,10 +25,11 @@ import { SidebarHeader } from "./sidebar-header";
 import { SidebarIntelligence } from "./sidebar-intelligence";
 import { SidebarQuickAccess } from "./sidebar-quick-access";
 import { SidebarWorkspace } from "./sidebar-workspace";
+import { SidebarOrgSwitcher } from "./sidebar-org-switcher";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout, isChecked, getHeaders } = useAuth();
+  const { user, logout, isChecked, getHeaders, switchOrganization } = useAuth();
   const orgBrandingCtx = useOrgBranding();
   const orgLogoUrl = orgBrandingCtx?.effectiveBranding?.logoUrl?.trim();
   const platformName = usePlatformDisplayName();
@@ -311,6 +312,13 @@ export function Sidebar() {
         />
 
         <SidebarNavProvider value={navContextValue}>
+          <SidebarOrgSwitcher
+            user={user}
+            layout={layout as SidebarLayoutMode}
+            showExpandedNav={showExpandedNav}
+            closeMobile={closeMobile}
+            switchOrganization={switchOrganization}
+          />
           <nav className="flux-sidebar-nav-stack mx-1.5 mb-1 flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2.5">
             <SidebarQuickAccess />
             <SidebarAgileRhythm activeSprintCount={activeSprintCount} />

@@ -9,15 +9,24 @@ import { Header } from "@/components/header";
 import { useToast } from "@/context/toast-context";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
 
+type OrgInviteRole = "gestor" | "membro" | "convidado";
+
 type InviteRow = {
   _id: string;
   orgId: string;
   emailLower: string;
+  assignedOrgRole: OrgInviteRole;
   createdAt: string;
   expiresAt: string;
   usedAt?: string;
   usedByUserId?: string;
 };
+
+function orgRoleLabel(role: OrgInviteRole): string {
+  if (role === "gestor") return "Gestor";
+  if (role === "convidado") return "Convidado";
+  return "Membro";
+}
 
 function formatDateShort(iso?: string): string {
   if (!iso) return "-";
@@ -42,6 +51,8 @@ export default function OrgInvitesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
+  const [inviteOrgRole, setInviteOrgRole] = useState<OrgInviteRole>("membro");
+  const [assignableRoles, setAssignableRoles] = useState<OrgInviteRole[]>(["membro", "convidado"]);
   const [invites, setInvites] = useState<InviteRow[]>([]);
 
   const [filter, setFilter] = useState<"active" | "used" | "expired" | "all">("active");
@@ -66,8 +77,18 @@ export default function OrgInvitesPage() {
     setError(null);
     (async () => {
       try {
-        const data = await apiGet<{ invites: InviteRow[] }>("/api/organization-invites", getHeaders());
+        const data = await apiGet<{ invites: InviteRow[]; assignableRoles?: OrgInviteRole[] }>(
+          "/api/organization-invites",
+          getHeaders()
+        );
         setInvites(data.invites ?? []);
+        const ar = data.assignableRoles?.filter((r): r is OrgInviteRole =>
+          r === "gestor" || r === "membro" || r === "convidado"
+        );
+        if (ar?.length) {
+          setAssignableRoles(ar);
+          setInviteOrgRole((prev) => (ar.includes(prev) ? prev : ar[0]!));
+        }
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
           router.replace(`${localeRoot}/login`);
@@ -82,8 +103,18 @@ export default function OrgInvitesPage() {
 
   async function refresh() {
     try {
-      const data = await apiGet<{ invites: InviteRow[] }>("/api/organization-invites", getHeaders());
+      const data = await apiGet<{ invites: InviteRow[]; assignableRoles?: OrgInviteRole[] }>(
+        "/api/organization-invites",
+        getHeaders()
+      );
       setInvites(data.invites ?? []);
+      const ar = data.assignableRoles?.filter((r): r is OrgInviteRole =>
+        r === "gestor" || r === "membro" || r === "convidado"
+      );
+      if (ar?.length) {
+        setAssignableRoles(ar);
+        setInviteOrgRole((prev) => (ar.includes(prev) ? prev : ar[0]!));
+      }
     } catch {
       // ignore
     }
@@ -97,7 +128,11 @@ export default function OrgInvitesPage() {
     setError(null);
     setBusy(true);
     try {
-      const data = await apiPost<{ invite: { code: string } }>("/api/organization-invites", { email }, getHeaders());
+      const data = await apiPost<{ invite: { code: string } }>(
+        "/api/organization-invites",
+        { email, orgRole: inviteOrgRole },
+        getHeaders()
+      );
       const code = (data as any)?.invite?.code;
       if (!code) throw new Error("Não foi possível gerar o convite.");
       setLastInviteCode(code);
@@ -153,7 +188,7 @@ export default function OrgInvitesPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
                 E-mail do convidado
@@ -164,6 +199,23 @@ export default function OrgInvitesPage() {
                 className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 disabled={busy}
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                Nível na org
+              </label>
+              <select
+                value={inviteOrgRole}
+                onChange={(e) => setInviteOrgRole(e.target.value as OrgInviteRole)}
+                className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                disabled={busy || assignableRoles.length === 0}
+              >
+                {assignableRoles.map((r) => (
+                  <option key={r} value={r}>
+                    {orgRoleLabel(r)}
+                  </option>
+                ))}
+              </select>
             </div>
             <button className="btn-primary" type="button" disabled={busy} onClick={createInvite}>
               {busy ? "Aguarde..." : "Gerar convite"}
@@ -238,6 +290,9 @@ export default function OrgInvitesPage() {
                         E-mail
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
+                        Nível
+                      </th>
+                      <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
                         Expira
                       </th>
                       <th className="px-4 py-3 bg-[var(--flux-surface-elevated)] font-display text-xs font-bold text-[var(--flux-text-muted)] uppercase tracking-wide text-left">
@@ -257,6 +312,9 @@ export default function OrgInvitesPage() {
                       return (
                         <tr key={inv._id} className="border-b border-[var(--flux-chrome-alpha-06)]">
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{inv.emailLower}</td>
+                          <td className="px-4 py-3 text-[var(--flux-text-muted)] text-sm">
+                            {orgRoleLabel(inv.assignedOrgRole ?? "membro")}
+                          </td>
                           <td className="px-4 py-3 text-[var(--flux-text-muted)]">{formatDateShort(inv.expiresAt)}</td>
                           <td className="px-4 py-3">
                             <span

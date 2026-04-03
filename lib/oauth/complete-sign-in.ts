@@ -14,6 +14,10 @@ import {
   type OAuthProviderId,
   type User,
 } from "@/lib/kv-users";
+import {
+  acceptOrganizationInviteForExistingUser,
+  type AcceptOrgInviteErrorCode,
+} from "@/lib/accept-organization-invite";
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import {
   createOrganization,
@@ -49,6 +53,23 @@ function postAuthPath(locale: string, redirect: string | undefined, isNewUser: b
     return `${root}/onboarding`;
   }
   return `${root}/boards`;
+}
+
+function mapAcceptOrgInviteErrorToOAuth(code: AcceptOrgInviteErrorCode): string {
+  switch (code) {
+    case "invite_invalid":
+      return "oauth_invite_invalid";
+    case "invite_plan_limit":
+      return "oauth_plan_limit";
+    case "invite_consume_failed":
+      return "oauth_consume_failed";
+    case "invite_platform_admin":
+      return "oauth_invite_platform_admin";
+    case "oauth_account_conflict":
+      return "oauth_account_conflict";
+    default:
+      return "oauth_invite_invalid";
+  }
 }
 
 async function issueSessionForUser(user: User): Promise<void> {
@@ -90,39 +111,33 @@ export async function completeOAuthSignIn(
 
   await ensureAdminUser();
 
-  const byOAuth = await findUserByOAuthProviderSubject(profile.provider, profile.subject);
-  if (byOAuth) {
-    await issueSessionForUser(byOAuth);
-    return {
-      ok: true,
-      path: postAuthPath(profile.locale, profile.redirect, false),
-    };
-  }
-
-  const byEmail = await getUserByEmail(emailNorm);
-  if (byEmail) {
-    const existing = byEmail.oauthLinks?.find((l) => l.provider === profile.provider);
-    if (existing && existing.subject !== profile.subject) {
-      return { ok: false, error: "oauth_account_conflict" };
-    }
-    const merged = await appendOAuthLink(byEmail.id, byEmail.orgId, link);
-    if (!merged) {
-      return { ok: false, error: "oauth_account_conflict" };
-    }
-    await issueSessionForUser(merged);
-    return {
-      ok: true,
-      path: postAuthPath(profile.locale, profile.redirect, false),
-    };
-  }
-
   const inviteCode = profile.invite?.trim();
+  const byOAuth = await findUserByOAuthProviderSubject(profile.provider, profile.subject);
+  const byEmail = byOAuth ? null : await getUserByEmail(emailNorm);
+  const existingUser = byOAuth ?? byEmail;
 
   if (inviteCode) {
     const validated = await validateOrganizationInvite({ code: inviteCode, email: emailNorm });
     if (!validated) {
       return { ok: false, error: "oauth_invite_invalid" };
     }
+
+    if (existingUser) {
+      const accepted = await acceptOrganizationInviteForExistingUser({
+        user: existingUser,
+        inviteCode,
+        oauthLink: byOAuth ? undefined : link,
+      });
+      if (!accepted.ok) {
+        return { ok: false, error: mapAcceptOrgInviteErrorToOAuth(accepted.error) };
+      }
+      await issueSessionForUser(accepted.user);
+      return {
+        ok: true,
+        path: postAuthPath(profile.locale, profile.redirect, false),
+      };
+    }
+
     const org = await getOrganizationById(validated.orgId);
     const members = await listUsers(validated.orgId);
     const cap = org ? getUserCap(org) : null;
@@ -130,20 +145,21 @@ export async function completeOAuthSignIn(
       return { ok: false, error: "oauth_plan_limit" };
     }
 
+    const invitedRole = validated.assignedOrgRole;
     const user = await createUser({
       username: emailNorm,
       name: displayName,
       email: emailNorm,
       passwordHash: null,
       orgId: validated.orgId,
-      isAdmin: false,
-      orgRole: "membro",
+      isAdmin: invitedRole === "gestor",
+      orgRole: invitedRole,
       oauthLinks: [link],
     });
 
     const roles = deriveEffectiveRoles({
       id: user.id,
-      isAdmin: false,
+      isAdmin: user.id === "admin" || !!user.isAdmin,
       platformRole: user.platformRole,
       orgRole: user.orgRole,
     });
@@ -158,7 +174,7 @@ export async function completeOAuthSignIn(
       {
         id: user.id,
         username: user.username,
-        isAdmin: false,
+        isAdmin: user.id === "admin" || !!user.isAdmin,
         orgId: user.orgId,
         platformRole: roles.platformRole,
         orgRole: roles.orgRole,
@@ -169,6 +185,30 @@ export async function completeOAuthSignIn(
     return {
       ok: true,
       path: postAuthPath(profile.locale, profile.redirect, true),
+    };
+  }
+
+  if (byOAuth) {
+    await issueSessionForUser(byOAuth);
+    return {
+      ok: true,
+      path: postAuthPath(profile.locale, profile.redirect, false),
+    };
+  }
+
+  if (byEmail) {
+    const existing = byEmail.oauthLinks?.find((l) => l.provider === profile.provider);
+    if (existing && existing.subject !== profile.subject) {
+      return { ok: false, error: "oauth_account_conflict" };
+    }
+    const merged = await appendOAuthLink(byEmail.id, byEmail.orgId, link);
+    if (!merged) {
+      return { ok: false, error: "oauth_account_conflict" };
+    }
+    await issueSessionForUser(merged);
+    return {
+      ok: true,
+      path: postAuthPath(profile.locale, profile.redirect, false),
     };
   }
 

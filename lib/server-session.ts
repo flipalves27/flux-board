@@ -141,3 +141,35 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   const user = await getUserById(payload.id, payload.orgId);
   return userToValidate(user);
 }
+
+/**
+ * Emite nova sessão (access + refresh) para outra organização em que o utilizador já participa.
+ */
+export async function switchSessionToOrg(
+  userId: string,
+  targetOrgId: string,
+  remember = true
+): Promise<ValidateResult> {
+  const user = await getUserById(userId, targetOrgId.trim());
+  if (!user) return { ok: false };
+  const roles = deriveEffectiveRoles({
+    id: user.id,
+    isAdmin: user.id === "admin" || !!user.isAdmin,
+    isExecutive: !!user.isExecutive,
+    platformRole: user.platformRole,
+    orgRole: user.orgRole,
+  });
+  await issueSessionForCredentials(
+    {
+      id: user.id,
+      username: user.username,
+      isAdmin: user.id === "admin" || !!user.isAdmin,
+      ...(user.isExecutive ? { isExecutive: true } : {}),
+      orgId: user.orgId,
+      platformRole: roles.platformRole,
+      orgRole: roles.orgRole,
+    },
+    remember
+  );
+  return userToValidate(user);
+}

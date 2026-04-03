@@ -92,6 +92,27 @@ export function canManageOrganization(roles: EffectiveRoles): boolean {
 }
 
 /**
+ * Papéis org que o convidador pode atribuir num convite: estritamente abaixo do próprio nível na org.
+ * - Gestor ou admin da plataforma: membro ou convidado.
+ * - Membro (se autorizado a convidar no futuro): apenas convidado.
+ */
+export function assignableInviteOrgRoles(roles: EffectiveRoles): OrgMembershipRole[] {
+  if (!canManageOrganization(roles)) return [];
+  if (isPlatformAdmin(roles) || isOrgGestor(roles)) {
+    return ["membro", "convidado"];
+  }
+  if (roles.orgRole === "membro") return ["convidado"];
+  return [];
+}
+
+export function isAssignableInviteOrgRole(
+  inviter: EffectiveRoles,
+  role: OrgMembershipRole
+): boolean {
+  return assignableInviteOrgRoles(inviter).includes(role);
+}
+
+/**
  * Billing, convites org, diretório de utilizadores, Equipe, definições da org.
  * Unificado: não depende de `isOrgTeamManager` no cliente.
  */

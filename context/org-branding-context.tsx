@@ -181,7 +181,7 @@ export function OrgBrandingProvider({ children }: { children: React.ReactNode })
       return;
     }
     void refresh();
-  }, [isChecked, user?.id, refresh]);
+  }, [isChecked, user?.id, user?.orgId, refresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

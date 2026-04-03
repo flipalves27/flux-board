@@ -14,6 +14,7 @@
     "myWork": "My Work",
     "users": "Usuários",
     "organization": "Organização",
+    "activeOrganization": "Organização ativa",
     "billing": "Billing",
     "invites": "Convites",
     "rateLimitAbuse": "Rate limit",
@@ -1463,12 +1464,20 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
+    "inviteBanner": "Você está entrando com um convite. Se já tiver conta, use a aba Entrar ou Google/Microsoft — o convite será aplicado ao e-mail certo.",
     "errors": {
       "missingCredentials": "Preencha usuário e senha.",
       "connection": "Erro de conexão. Tente novamente.",
       "missingAllFields": "Preencha todos os campos.",
       "passwordTooShort": "Senha deve ter pelo menos 8 caracteres.",
-      "oauthPasswordOnly": "Esta conta usa login social. Use Google ou Microsoft."
+      "oauthPasswordOnly": "Esta conta usa login social. Use Google ou Microsoft.",
+      "inviteInvalid": "Convite inválido, expirado ou não corresponde ao e-mail desta conta.",
+      "invitePlanLimit": "Limite de usuários do plano da organização atingido.",
+      "inviteConsumeFailed": "Não foi possível aplicar o convite. Tente novamente.",
+      "inviteOwnerConflict": "Sua conta é titular de outra organização. Para aceitar o convite, use outro e-mail ou transfira a titularidade antes.",
+      "invitePlatformAdmin": "Esta conta não pode ser associada por convite.",
+      "inviteOAuthConflict": "Conflito ao vincular o login social. Tente outro provedor ou fale com o suporte.",
+      "registerUseLoginForInvite": "Já existe conta com este e-mail. Use a aba Entrar (ou Google/Microsoft) com o mesmo e-mail para aceitar o convite."
     },
     "fields": {
       "userOrEmail": "Usuário ou E-mail",
@@ -1510,6 +1519,8 @@
         "oauth_no_email": "Nenhum e-mail foi retornado para esta conta.",
         "oauth_account_conflict": "Este e-mail já está vinculado a outra conta neste provedor.",
         "oauth_invite_invalid": "Convite inválido ou expirado.",
+        "oauth_invite_owner_conflict": "Sua conta é titular de outra organização. Use outro e-mail ou transfira a titularidade para aceitar o convite.",
+        "oauth_invite_platform_admin": "Esta conta não pode ser associada por convite.",
         "oauth_plan_limit": "Limite de usuários do plano da organização atingido.",
         "oauth_consume_failed": "Não foi possível aplicar o convite. Tente novamente.",
         "oauth_not_configured": "Login social não está configurado no servidor.",

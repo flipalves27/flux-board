@@ -10,6 +10,7 @@ import {
   createUser,
   listUsers,
   deleteUser,
+  listMembershipOrgIdsForUser,
 } from "@/lib/kv-users";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import {
@@ -17,15 +18,41 @@ import {
   updateOrganizationOwner,
   getOrganizationById,
 } from "@/lib/kv-organizations";
+import {
+  acceptOrganizationInviteForExistingUser,
+  type AcceptOrgInviteErrorCode,
+} from "@/lib/accept-organization-invite";
 import { consumeOrganizationInvite, validateOrganizationInvite } from "@/lib/kv-organization-invites";
 import { getUserCap } from "@/lib/plan-gates";
 import type { ThemePreference } from "@/lib/theme-storage";
-import { issueSessionForCredentials, validateSessionFromCookies } from "@/lib/server-session";
+import {
+  issueSessionForCredentials,
+  switchSessionToOrg,
+  validateSessionFromCookies,
+} from "@/lib/server-session";
 import type { ValidateResult } from "@/lib/auth-types";
 import { canManageOrganization, deriveEffectiveRoles, seesAllBoardsInOrg } from "@/lib/rbac";
 import { insertAuditEvent } from "@/lib/audit-events";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 export type { ValidateResult } from "@/lib/auth-types";
+
+async function loginInviteErrorMessage(code: AcceptOrgInviteErrorCode): Promise<string> {
+  const t = await getTranslations("login.errors");
+  switch (code) {
+    case "invite_invalid":
+      return t("inviteInvalid");
+    case "invite_plan_limit":
+      return t("invitePlanLimit");
+    case "invite_consume_failed":
+      return t("inviteConsumeFailed");
+    case "invite_platform_admin":
+      return t("invitePlatformAdmin");
+    case "oauth_account_conflict":
+      return t("inviteOAuthConflict");
+    default:
+      return t("inviteInvalid");
+  }
+}
 
 export type AuthResult =
   | {
@@ -56,7 +83,8 @@ export type AuthResult =
 export async function loginAction(
   username: string,
   password: string,
-  remember = true
+  remember = true,
+  inviteCode?: string
 ): Promise<AuthResult> {
   try {
     const clientIp = getClientIpFromHeaders(await headers());
@@ -79,7 +107,7 @@ export async function loginAction(
 
     await ensureAdminUser();
     const ident = (username || "").trim();
-    const user = ident.includes("@")
+    let user = ident.includes("@")
       ? await getUserByEmail(ident)
       : await getUserByUsername(ident);
 
@@ -92,6 +120,18 @@ export async function loginAction(
     }
     if (!verifyPassword(password, user.passwordHash)) {
       return { ok: false, error: "Usuário ou senha inválidos" };
+    }
+
+    const inviteTrim = inviteCode?.trim();
+    if (inviteTrim) {
+      const accepted = await acceptOrganizationInviteForExistingUser({
+        user,
+        inviteCode: inviteTrim,
+      });
+      if (!accepted.ok) {
+        return { ok: false, error: await loginInviteErrorMessage(accepted.error) };
+      }
+      user = accepted.user;
     }
 
     const isExecutive = !!user.isExecutive;
@@ -192,6 +232,13 @@ export async function registerAction(
 
     const existing = await getUserByEmail(emailNorm);
     if (existing) {
+      if (inviteCode?.trim()) {
+        const forInvite = await validateOrganizationInvite({ code: inviteCode.trim(), email: emailNorm });
+        if (forInvite) {
+          const tReg = await getTranslations("login.errors");
+          return { ok: false, error: tReg("registerUseLoginForInvite") };
+        }
+      }
       return { ok: false, error: "E-mail já cadastrado." };
     }
 
@@ -206,18 +253,19 @@ export async function registerAction(
         return { ok: false, error: `Limite do plano: no máximo ${cap} usuário(s).` };
       }
 
+      const invitedRole = validated.assignedOrgRole;
       const user = await createUser({
         username: emailNorm,
         name: nameTrim || emailNorm,
         email: emailNorm,
         passwordHash: hashPassword(password),
         orgId: validated.orgId,
-        isAdmin: false,
-        orgRole: "membro",
+        isAdmin: invitedRole === "gestor",
+        orgRole: invitedRole,
       });
       const roles = deriveEffectiveRoles({
         id: user.id,
-        isAdmin: false,
+        isAdmin: user.id === "admin" || !!user.isAdmin,
         platformRole: user.platformRole,
         orgRole: user.orgRole,
       });
@@ -232,7 +280,7 @@ export async function registerAction(
         {
           id: user.id,
           username: user.username,
-          isAdmin: false,
+          isAdmin: user.id === "admin" || !!user.isAdmin,
           orgId: user.orgId,
           platformRole: roles.platformRole,
           orgRole: roles.orgRole,
@@ -332,6 +380,39 @@ export async function registerAction(
 export async function validateSessionAction(): Promise<ValidateResult> {
   try {
     return await validateSessionFromCookies();
+  } catch {
+    return { ok: false };
+  }
+}
+
+export type MyOrganizationRow = { orgId: string; name: string };
+
+export async function listMyOrganizationsAction(): Promise<
+  { ok: true; orgs: MyOrganizationRow[] } | { ok: false }
+> {
+  try {
+    const session = await validateSessionFromCookies();
+    if (!session.ok) return { ok: false };
+    const ids = await listMembershipOrgIdsForUser(session.user.id);
+    const rows: MyOrganizationRow[] = await Promise.all(
+      ids.map(async (orgId) => {
+        const o = await getOrganizationById(orgId);
+        const name = (o?.name ?? orgId).trim() || orgId;
+        return { orgId, name };
+      })
+    );
+    rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    return { ok: true, orgs: rows };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function switchOrganizationAction(orgId: string): Promise<ValidateResult> {
+  try {
+    const session = await validateSessionFromCookies();
+    if (!session.ok) return { ok: false };
+    return await switchSessionToOrg(session.user.id, orgId, true);
   } catch {
     return { ok: false };
   }
