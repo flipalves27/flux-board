@@ -3615,6 +3615,7 @@
       "analyzingBackground": "Background analysis — you can leave this page."
     },
     "cancelBackground": "Request cancel",
+    "cancelBackgroundError": "Could not request cancellation. Try again.",
     "startBackground": "Analyze in background",
     "backgroundRequiresMongo": "Background runs and history need MongoDB (MONGODB_URI).",
     "previewTableView": "Table view",

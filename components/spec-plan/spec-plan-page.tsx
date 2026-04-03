@@ -148,6 +148,9 @@ export default function SpecPlanPage() {
   const [previewTableView, setPreviewTableView] = useState(false);
   const [persistence, setPersistence] = useState<boolean | null>(null);
   const [backgroundRunId, setBackgroundRunId] = useState<string | null>(null);
+  /** Board a que a execução em segundo plano pertence (pode diferir do seletor se o utilizador mudar de board). */
+  const [backgroundRunBoardId, setBackgroundRunBoardId] = useState<string | null>(null);
+  const [cancelBgErr, setCancelBgErr] = useState<string | null>(null);
   const [historyRuns, setHistoryRuns] = useState<RunSummary[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
@@ -338,6 +341,7 @@ export default function SpecPlanPage() {
     const qRun = searchParams.get("run")?.trim();
     if (qRun) {
       setBackgroundRunId(qRun);
+      setBackgroundRunBoardId(boardId);
       setTab("progress");
       setAnalysisDrawerOpen(true);
       return;
@@ -356,6 +360,7 @@ export default function SpecPlanPage() {
         const pick = forBoard[0];
         if (pick) {
           setBackgroundRunId(pick.runId);
+          setBackgroundRunBoardId(pick.boardId);
           setTab("progress");
           setAnalysisDrawerOpen(true);
           try {
@@ -375,6 +380,7 @@ export default function SpecPlanPage() {
         const o = JSON.parse(raw) as { boardId?: string; runId?: string };
         if (o.boardId === boardId && o.runId) {
           setBackgroundRunId(o.runId);
+          setBackgroundRunBoardId(String(o.boardId));
           setTab("progress");
         }
       } catch {
@@ -413,13 +419,15 @@ export default function SpecPlanPage() {
   }, [featureOk, user?.orgId, boardId, getHeaders]);
 
   useEffect(() => {
-    if (!backgroundRunId?.trim() || !boardId) return;
+    const rid = backgroundRunId?.trim();
+    const runBoard =
+      (backgroundRunBoardId?.trim() || boardId).trim();
+    if (!rid || !runBoard) return;
     let cancelled = false;
-    const rid = backgroundRunId.trim();
     const poll = async () => {
       try {
         const data = await apiGet<{ run?: RunFull }>(
-          `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(rid)}`,
+          `/api/boards/${encodeURIComponent(runBoard)}/spec-plan/runs/${encodeURIComponent(rid)}`,
           getHeaders()
         );
         if (cancelled || !data.run) return;
@@ -427,6 +435,7 @@ export default function SpecPlanPage() {
         const st = data.run.status;
         if (st === "completed" || st === "failed" || st === "cancelled") {
           setBackgroundRunId(null);
+          setBackgroundRunBoardId(null);
           try {
             sessionStorage.removeItem("flux_spec_plan_bg");
           } catch {
@@ -446,7 +455,7 @@ export default function SpecPlanPage() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [backgroundRunId, boardId, getHeaders, hydrateFromRunFull, loadHistory]);
+  }, [backgroundRunId, backgroundRunBoardId, boardId, getHeaders, hydrateFromRunFull, loadHistory]);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -810,6 +819,7 @@ export default function SpecPlanPage() {
       }
       if (data.runId) {
         setBackgroundRunId(data.runId);
+        setBackgroundRunBoardId(boardId);
         try {
           sessionStorage.setItem("flux_spec_plan_bg", JSON.stringify({ boardId, runId: data.runId }));
         } catch {
@@ -885,17 +895,24 @@ export default function SpecPlanPage() {
   }, [boardId, persistence, requestStart, workItemsPayload]);
 
   const cancelBackgroundRun = useCallback(async () => {
-    if (!backgroundRunId?.trim() || !boardId) return;
+    const rid = backgroundRunId?.trim();
+    const runBoard = (backgroundRunBoardId?.trim() || boardId).trim();
+    if (!rid || !runBoard) return;
+    setCancelBgErr(null);
     try {
       await apiPost(
-        `/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs/${encodeURIComponent(backgroundRunId.trim())}/cancel`,
+        `/api/boards/${encodeURIComponent(runBoard)}/spec-plan/runs/${encodeURIComponent(rid)}/cancel`,
         {},
         getHeaders()
       );
-    } catch {
-      /* ignore */
+    } catch (e) {
+      setCancelBgErr(e instanceof ApiError ? e.message : t("cancelBackgroundError"));
     }
-  }, [backgroundRunId, boardId, getHeaders]);
+  }, [backgroundRunId, backgroundRunBoardId, boardId, getHeaders, t]);
+
+  useEffect(() => {
+    if (!backgroundRunId) setCancelBgErr(null);
+  }, [backgroundRunId]);
 
   const restoreFromHistory = useCallback(
     async (runId: string) => {
@@ -1074,29 +1091,36 @@ export default function SpecPlanPage() {
               </button>
             ))}
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[var(--flux-text-muted)]">
-            <span>
-              {analyzing
-                ? t("sticky.analyzingSync")
-                : backgroundRunId
-                  ? t("sticky.analyzingBackground")
-                  : t("sticky.idle")}
-            </span>
-            <button
-              type="button"
-              onClick={() => setAnalysisDrawerOpen(true)}
-              className="font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
-            >
-              {t("openAnalysisPanel")}
-            </button>
-            {backgroundRunId ? (
+          <div className="mt-2 flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[var(--flux-text-muted)]">
+              <span>
+                {analyzing
+                  ? t("sticky.analyzingSync")
+                  : backgroundRunId
+                    ? t("sticky.analyzingBackground")
+                    : t("sticky.idle")}
+              </span>
               <button
                 type="button"
-                onClick={() => void cancelBackgroundRun()}
-                className="font-semibold text-[var(--flux-danger)]"
+                onClick={() => setAnalysisDrawerOpen(true)}
+                className="font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
               >
-                {t("cancelBackground")}
+                {t("openAnalysisPanel")}
               </button>
+              {backgroundRunId ? (
+                <button
+                  type="button"
+                  onClick={() => void cancelBackgroundRun()}
+                  className="cursor-pointer font-semibold text-[var(--flux-danger)] underline-offset-2 hover:underline"
+                >
+                  {t("cancelBackground")}
+                </button>
+              ) : null}
+            </div>
+            {cancelBgErr ? (
+              <p className="text-[11px] font-medium text-[var(--flux-danger)]" role="alert">
+                {cancelBgErr}
+              </p>
             ) : null}
           </div>
         </div>

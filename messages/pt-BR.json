@@ -3620,6 +3620,7 @@
       "analyzingBackground": "Análise em segundo plano — pode sair desta página."
     },
     "cancelBackground": "Pedir cancelamento",
+    "cancelBackgroundError": "Não foi possível pedir o cancelamento. Tente de novo.",
     "startBackground": "Analisar em segundo plano",
     "backgroundRequiresMongo": "Segundo plano e histórico precisam de MongoDB (MONGODB_URI).",
     "previewTableView": "Vista em tabela",
