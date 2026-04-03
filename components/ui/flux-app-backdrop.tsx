@@ -1,9 +1,4 @@
-import dynamic from "next/dynamic";
-
-const LandingPublicBackdrop = dynamic(
-  () => import("@/components/landing/landing-public-backdrop").then((mod) => mod.LandingPublicBackdrop),
-  { ssr: false }
-);
+import { LandingPublicBackdrop } from "@/components/landing/landing-public-backdrop";
 
 /**
  * Decorative layers shared with {@link AppShell}: aurora blobs + grid.
