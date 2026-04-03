@@ -1,12 +1,15 @@
-import { CheckIcon, ChevronDownIcon, DashIcon } from "./landing-icons";
+import { ChevronDownIcon, DashIcon } from "./landing-icons";
 
 export function FeatureRow({ label, included, dim = false }: { label: string; included: boolean; dim?: boolean }) {
   return (
     <li
-      className={`flex items-start gap-2 text-[13px] leading-snug ${dim ? "text-[var(--flux-text-muted)]/55" : included ? "text-[var(--flux-text-muted)]" : "text-[var(--flux-text-muted)]/50"}`}
+      className={`flex items-start gap-2 border-b border-[color-mix(in_srgb,white_3%,transparent)] py-1.5 text-[13px] leading-snug last:border-b-0 ${dim ? "text-[var(--flux-text-muted)]/55" : included ? "text-[var(--flux-text-muted)]" : "text-[var(--flux-text-muted)]/50"}`}
     >
-      <span className={`mt-0.5 shrink-0 ${included ? "text-[var(--flux-success)]" : "text-[var(--flux-text-muted)]/30"}`}>
-        {included ? <CheckIcon className="h-4 w-4" /> : <DashIcon className="h-4 w-4" />}
+      <span
+        className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-[12px] font-bold ${included ? "text-[var(--flux-primary-light)]" : "text-[var(--flux-text-muted)]/30"}`}
+        aria-hidden
+      >
+        {included ? "✓" : <DashIcon className="h-4 w-4" />}
       </span>
       <span className={!included ? "opacity-80" : undefined}>{label}</span>
     </li>

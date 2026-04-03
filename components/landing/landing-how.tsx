@@ -12,10 +12,7 @@ export function LandingHow() {
 
   return (
     <section id="how-it-works" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-how-heading">
-      <p className="landing-section-badge mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
-        <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
-        {t("how.sectionBadge")}
-      </p>
+      <p className="landing-section-badge">{t("how.sectionBadge")}</p>
       <h2 id="landing-how-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
         {t("how.heading")}
       </h2>
@@ -26,10 +23,7 @@ export function LandingHow() {
             key={s.step}
             className="relative rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_45%,transparent)] px-7 py-8"
           >
-            <span
-              className="bg-gradient-to-b from-[var(--flux-primary-alpha-30)] to-[var(--flux-primary-alpha-05)] bg-clip-text font-display text-5xl font-extrabold leading-none text-transparent"
-              aria-hidden
-            >
+            <span className="font-display text-[2.2rem] font-extrabold leading-none text-[color-mix(in_srgb,var(--flux-primary)_10%,transparent)]" aria-hidden>
               {s.step}
             </span>
             <h3 className="mt-3 font-display text-[17px] font-semibold">{s.title}</h3>

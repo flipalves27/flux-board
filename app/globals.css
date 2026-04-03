@@ -12,7 +12,8 @@
 /* Flux-Board design system — dark theme */
 :root {
   --flux-primary: #6C5CE7;
-  --flux-primary-dark: #4834D4;
+  /* Alinhado ao redesign v3 (gradiente primário → escuro) */
+  --flux-primary-dark: #5840dd;
   /* Tints derived from --flux-primary so org branding stays coherent (hover, links, charts). */
   --flux-primary-light: color-mix(in srgb, var(--flux-primary) 40%, white);
   --flux-focus-ring: color-mix(in srgb, var(--flux-primary) 46%, white);
@@ -1365,6 +1366,31 @@
     }
   }
 
+  /** Rótulos de seção — redesign v3 (JetBrains Mono, caixa alta, tracking largo) */
+  .landing-section-badge {
+    @apply mb-3 block font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--flux-secondary)];
+  }
+
+  @keyframes landing-float-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .landing-fluxy-emoji-float {
+    animation: landing-float-bob 3s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-fluxy-emoji-float {
+      animation: none;
+    }
+  }
+
   .landing-btn-shimmer,
   .flux-btn-shimmer {
     position: relative;
@@ -1389,10 +1415,10 @@
     pointer-events: none;
   }
 
-  /* Marketing / public auth — CTAs (landing + login shell) */
+  /* Marketing / public auth — CTAs (landing + login shell) — pílulas como redesign v3 */
   .flux-marketing-btn-primary {
     @apply inline-flex items-center justify-center gap-2 font-display font-semibold transition-all duration-200 ease-out;
-    border-radius: var(--flux-rad-lg);
+    border-radius: 9999px;
     color: white;
     background: linear-gradient(
       165deg,
@@ -1425,7 +1451,7 @@
 
   .flux-marketing-btn-ghost {
     @apply inline-flex items-center justify-center font-display font-semibold transition-all duration-200 ease-out;
-    border-radius: var(--flux-rad-lg);
+    border-radius: 9999px;
     color: var(--flux-text-muted);
     background: transparent;
     border: 1px solid var(--flux-control-border);
@@ -1440,6 +1466,36 @@
   .flux-marketing-btn-ghost:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
     outline-offset: 2px;
+  }
+
+  .flux-marketing-btn-accent {
+    @apply inline-flex items-center justify-center gap-2 font-display font-bold transition-all duration-300 ease-out;
+    border-radius: 9999px;
+    color: var(--flux-surface-dark);
+    background: linear-gradient(135deg, var(--flux-secondary), #00b8b9);
+    border: none;
+    box-shadow: 0 0 28px color-mix(in srgb, var(--flux-secondary) 30%, transparent);
+  }
+
+  .flux-marketing-btn-accent:hover:not(:disabled) {
+    box-shadow: 0 0 36px color-mix(in srgb, var(--flux-secondary) 38%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .flux-marketing-btn-accent:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .flux-marketing-btn-accent:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-marketing-btn-accent:hover:not(:disabled),
+    .flux-marketing-btn-accent:active:not(:disabled) {
+      transform: none;
+    }
   }
 
   .flux-marketing-segmented {

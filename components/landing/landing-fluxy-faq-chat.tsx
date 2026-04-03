@@ -36,16 +36,16 @@ export function LandingFluxyFab({
     <button
       type="button"
       onClick={onToggle}
-      className="group flex items-center gap-3 rounded-[var(--rad-xl)] border border-[var(--flux-secondary-alpha-28)] bg-gradient-to-br from-[var(--flux-primary-alpha-22)] to-[var(--flux-secondary-alpha-12)] py-2.5 pl-2.5 pr-4 font-fluxy shadow-[var(--flux-shadow-primary-medium)] backdrop-blur-[12px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] hover:shadow-[var(--flux-shadow-primary-panel)] active:scale-[0.98] md:pr-6"
+      className="group flex items-center gap-2.5 rounded-full border-2 border-[var(--flux-secondary-alpha-28)] bg-gradient-to-br from-[var(--flux-primary-alpha-20)] to-[var(--flux-secondary-alpha-10)] py-2.5 pl-2.5 pr-5 shadow-[0_8px_32px_var(--flux-primary-alpha-25)] backdrop-blur-[20px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_44px_var(--flux-primary-alpha-40)] hover:border-[var(--flux-secondary-alpha-40)] active:translate-y-0 md:pr-6"
       aria-expanded={panelOpen}
       aria-label={ariaLabel}
     >
-      <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[var(--flux-secondary-alpha-20)] bg-[var(--flux-surface-dark)] shadow-[var(--flux-shadow-primary-dot-sm)] md:h-12 md:w-12">
-        <FluxyAvatar state={panelOpen ? "waving" : "idle"} size="header" className="scale-90" interactive />
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1.15rem] leading-none shadow-[var(--flux-shadow-primary-dot-sm)] md:h-[38px] md:w-[38px]">
+        <span aria-hidden>🦊</span>
       </span>
-      <span className="hidden text-left md:block">
-        <span className="block font-fluxy text-[13px] font-semibold text-[var(--flux-text)]">{fabTitle}</span>
-        <span className="block text-[10px] text-[var(--text-dim)]">{fabSubtitle}</span>
+      <span className="hidden min-w-0 text-left md:block">
+        <span className="block font-display text-[0.78rem] font-semibold tracking-wide text-[var(--flux-text)]">{fabTitle}</span>
+        <span className="block text-[0.62rem] font-normal text-[var(--flux-text-muted)]">{fabSubtitle}</span>
       </span>
     </button>
   );
@@ -95,7 +95,7 @@ export function LandingFluxyChatDrawer({
 
   return (
     <div
-      className="flex w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-[var(--rad-xl)] border-[1.5px] border-[var(--primary-dim)] bg-[var(--bg-card)] font-fluxy shadow-[var(--flux-shadow-modal-depth)] backdrop-blur-[14px]"
+      className="flex w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-[var(--rad-xl)] border-[1.5px] border-[var(--primary-dim)] bg-[var(--bg-card)] font-body shadow-[var(--flux-shadow-modal-depth)] backdrop-blur-[14px]"
       role="dialog"
       aria-label={title}
     >
@@ -107,7 +107,7 @@ export function LandingFluxyChatDrawer({
             interactive
           />
           <div className="min-w-0 flex-1">
-            <div className="font-fluxy text-sm font-bold text-[var(--flux-text)]">{title}</div>
+            <div className="font-display text-sm font-bold text-[var(--flux-text)]">{title}</div>
             <div className="text-[11px] text-[var(--text-dim)]">{subtitle}</div>
           </div>
           <button

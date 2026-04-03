@@ -37,10 +37,7 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
   return (
     <>
       <section id="platform" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-platform-heading">
-        <p className="landing-section-badge mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
-          <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
-          {t("platform.sectionBadge")}
-        </p>
+        <p className="landing-section-badge">{t("platform.sectionBadge")}</p>
         <div className="mb-8 md:mb-9">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 id="landing-platform-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">

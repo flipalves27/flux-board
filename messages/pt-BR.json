@@ -1298,15 +1298,20 @@
       "description": "Copilot, metas e alertas atuam sobre o contexto do board para resumir, projetar e chamar atenção onde importa.",
       "copilot": {
         "title": "Board Copilot",
-        "body": "Pergunte em linguagem natural, peça resumos e identifique gargalos sem sair do quadro — a IA usa o contexto dos cards para sugerir próximos passos.",
-        "sampleLabel": "Copilot › ",
-        "sampleQuestion": "Quais cards estão bloqueados há mais de 3 dias?"
+        "body": "Pergunte em linguagem natural, peça resumos e identifique gargalos sem sair do quadro — a Fluxy usa o contexto dos cards para sugerir próximos passos.",
+        "sampleLabel": "Copilot ›",
+        "sampleQuestion": "Quais cards estão bloqueados há mais de 3 dias?",
+        "fluxyBadge": "Fluxy IA",
+        "answerBadge": "Fluxy responde",
+        "sampleAnswer": "3 cards bloqueados: \"API Gateway\" (5d), \"Deploy Pipeline\" (4d), \"Schema Migration\" (3d). Sugiro escalar com o tech lead."
       },
       "okr": {
         "title": "OKR Engine",
         "body": "Objetivos e Key Results conectados aos cards do board. Acompanhe o progresso em tempo real, com projeção de entrega e alertas de desvio.",
         "demoObjective": "Objetivo Q1",
-        "demoKr": "Key Result 1"
+        "demoKr": "Key Result 1",
+        "barObjLabel": "OBJ",
+        "barKrLabel": "KR1"
       },
       "anomaly": {
         "title": "Detecção de anomalias",
@@ -1350,13 +1355,13 @@
         },
         "pro": {
           "name": "Pro",
+          "badge": "Recomendado",
           "desc": "Para times pequenos que precisam de IA, OKRs e portfólio.",
           "cta": "Testar Pro por 14 dias",
           "limits": "Boards ilimitados · Até 10 membros · 50 chamadas IA/dia"
         },
         "business": {
           "name": "Business",
-          "badge": "Recomendado",
           "desc": "Para operações em escala: IA ilimitada, white-label completo, alertas proativos e governança avançada.",
           "cta": "Testar Business por 14 dias",
           "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"

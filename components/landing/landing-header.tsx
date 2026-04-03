@@ -4,7 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
-import { FluxLogoIcon } from "./landing-icons";
+
+function brandMarkInitials(name: string): string {
+  const words = name.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  if (words.length >= 2) {
+    return `${words[0]![0] ?? ""}${words[1]![0] ?? ""}`.toUpperCase().slice(0, 2) || "FB";
+  }
+  const compact = name.replace(/[^a-zA-Z0-9]/g, "");
+  if (compact.length >= 2) return compact.slice(0, 2).toUpperCase();
+  if (compact.length === 1) return (compact + compact).toUpperCase();
+  return "FB";
+}
 
 type LandingHeaderProps = {
   localeRoot: string;
@@ -27,37 +37,39 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
   }, [mobileOpen]);
 
   const navClass =
-    "rounded-md px-2 py-2.5 transition-colors hover:text-[var(--flux-text)] md:py-1.5 min-h-[44px] md:min-h-0 flex items-center";
+    "rounded-md px-2 py-2.5 transition-colors hover:text-[var(--flux-secondary)] md:py-1.5 min-h-[44px] md:min-h-0 flex items-center text-[13px] font-medium text-[var(--flux-text-muted)]";
   const closeMobile = () => setMobileOpen(false);
+  const initials = brandMarkInitials(appName);
 
   return (
-    <header className="hero-shell home-landing-reveal sticky top-[max(1rem,calc(env(safe-area-inset-top,0px)+0.75rem))] z-20 rounded-[var(--flux-rad-xl)] border px-4 py-3.5 md:top-4 md:px-6">
-      <div className="flex w-full flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4">
+    <header className="fixed left-0 right-0 top-0 z-[100] border-b border-[var(--flux-primary-alpha-10)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_72%,transparent)] px-4 py-3.5 backdrop-blur-[28px] backdrop-saturate-150 md:px-6">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4 2xl:max-w-[90rem]">
         <Link href={`${localeRoot}/`} className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3" onClick={closeMobile}>
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] overflow-hidden"
+            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] sm:h-9 sm:w-9 sm:rounded-[10px]"
             style={{
               background: logoUrl
                 ? "var(--flux-surface-elevated)"
-                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
+                : "linear-gradient(135deg, var(--flux-primary), var(--flux-secondary))",
               boxShadow: logoUrl ? "none" : "0 8px 20px var(--flux-primary-alpha-35)",
             }}
           >
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="max-h-9 max-w-[36px] object-contain" />
+              <img src={logoUrl} alt="" className="max-h-8 max-w-[32px] object-contain" />
             ) : (
-              <FluxLogoIcon className="h-5 w-5" />
+              <span className="font-display text-[11px] font-extrabold leading-none tracking-tight text-[var(--flux-surface-dark)] sm:text-xs">
+                {initials}
+              </span>
             )}
           </div>
-          <div className="min-w-0 text-left">
-            <p className="font-display text-base font-bold tracking-tight">{appName}</p>
-            <p className="truncate text-xs text-[var(--flux-text-muted)]">{t("header.tagline")}</p>
-          </div>
+          <p className="min-w-0 truncate font-display text-[1.05rem] font-bold tracking-tight text-[var(--flux-text)] sm:text-base md:text-[1.15rem]">
+            {appName}
+          </p>
         </Link>
 
         <nav
-          className="mx-1 hidden min-w-0 flex-1 items-center justify-center gap-x-1 text-[13px] font-medium text-[var(--flux-text-muted)] min-[900px]:flex lg:gap-x-2 lg:text-[13px]"
+          className="mx-1 hidden min-w-0 flex-1 items-center justify-center gap-x-1 min-[900px]:flex lg:gap-x-2"
           aria-label={t("nav.mainLabel")}
         >
           <a href="#why" className={navClass}>
@@ -117,7 +129,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
       {mobileOpen && (
         <nav
           id="landing-mobile-nav"
-          className="mt-4 flex flex-col gap-1 border-t border-[var(--flux-primary-alpha-15)] pt-4 text-sm font-semibold text-[var(--flux-text-muted)] md:hidden"
+          className="mx-auto mt-4 flex max-w-[1200px] flex-col gap-1 border-t border-[var(--flux-primary-alpha-15)] pt-4 text-sm font-semibold text-[var(--flux-text-muted)] md:hidden"
           aria-label={t("nav.mainLabel")}
         >
           <a href="#why" className={`${navClass} py-2`} onClick={closeMobile}>

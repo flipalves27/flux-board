@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { KanbanMock } from "./landing-kanban-mock";
 
 type LandingHeroProps = {
@@ -84,12 +82,10 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             {user ? (
               <Link href={`${localeRoot}/boards`} className={primaryClass}>
                 {t("hero.primary.loggedIn")}
-                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             ) : (
               <Link href={`${localeRoot}/login`} className={primaryClass}>
                 {t("hero.primary.loggedOut")}
-                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             )}
             <a href="#platform" className="flux-marketing-btn-ghost w-full justify-center px-6 py-3 text-[15px] sm:w-auto">
@@ -99,8 +95,8 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           <div className="mt-8 flex flex-wrap gap-6 md:gap-8">
             {heroMetrics.map((m) => (
               <div key={m.label} className="flex min-w-0 flex-col gap-0.5">
-                <span className="font-display text-xl font-bold text-[var(--flux-primary-on-surface)]">{m.val}</span>
-                <span className="text-[11px] tracking-[0.03em] text-[var(--flux-text-muted)]">{m.label}</span>
+                <span className="font-display text-[1.4rem] font-bold text-[var(--flux-primary-light)]">{m.val}</span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--flux-text-muted)]/80">{m.label}</span>
               </div>
             ))}
           </div>
@@ -119,8 +115,12 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           />
           <div className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl" aria-hidden />
           <div className="relative">
-            <div className="home-fluxy-peek-float absolute -right-2.5 -top-3.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--flux-secondary-alpha-32)] bg-[var(--flux-surface-card)] shadow-[0_4px_20px_var(--flux-secondary-alpha-22)] sm:h-12 sm:w-12">
-              <FluxyAvatar state="idle" size="fab" className="scale-90" title={t("hero.fluxyPeekLabel")} interactive />
+            <div
+              className="landing-fluxy-emoji-float absolute -bottom-5 -right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1.6rem] shadow-[0_8px_28px_var(--flux-primary-alpha-35)] sm:-bottom-4 sm:-right-3.5"
+              title={t("hero.fluxyPeekLabel")}
+              aria-hidden
+            >
+              🦊
             </div>
             <div className="relative max-h-[min(52vh,min(420px,100dvh-12rem))] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />

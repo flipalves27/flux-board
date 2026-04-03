@@ -63,8 +63,8 @@ function buildPlans(
       limits: t("pricing.plans.pro.limits"),
       cta: t("pricing.plans.pro.cta"),
       ctaHref: `${localeRoot}/login`,
-      highlighted: false,
-      badge: null,
+      highlighted: true,
+      badge: t("pricing.plans.pro.badge"),
       features: [
         { label: t("pricing.features.executiveBrief"), included: true },
         { label: t("pricing.features.cardContext"), included: true },
@@ -87,8 +87,8 @@ function buildPlans(
       limits: t("pricing.plans.business.limits"),
       cta: t("pricing.plans.business.cta"),
       ctaHref: `${localeRoot}/login`,
-      highlighted: true,
-      badge: t("pricing.plans.business.badge"),
+      highlighted: false,
+      badge: null,
       features: [
         { label: t("pricing.features.anomalyEmail"), included: true },
         { label: t("pricing.features.whiteLabelFull"), included: true },
@@ -124,10 +124,7 @@ export function LandingPricing({
   return (
     <section id="pricing" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-pricing-heading">
       <div className="mb-8 text-center md:mb-10">
-        <p className="landing-section-badge mb-3 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
-          <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
-          {t("pricing.sectionBadge")}
-        </p>
+        <p className="landing-section-badge mx-auto max-w-xl text-center">{t("pricing.sectionBadge")}</p>
         <h2 id="landing-pricing-heading" className="font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.15] tracking-[-0.02em]">
           {t("pricing.heading")}
         </h2>
@@ -164,7 +161,7 @@ export function LandingPricing({
           >
             {plan.badge && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary-dark)] px-4 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-white shadow-[var(--flux-shadow-primary-medium)]">
+                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary)] px-[18px] py-1 font-display text-[10px] font-bold uppercase tracking-wide text-[var(--flux-surface-dark)] shadow-[var(--flux-shadow-primary-medium)]">
                   {plan.badge}
                 </span>
               </div>
@@ -197,8 +194,12 @@ export function LandingPricing({
             {user ? (
               <Link
                 href={`${localeRoot}/billing`}
-                className={`flex min-h-11 w-full items-center justify-center rounded-[var(--flux-rad)] py-2.5 text-center text-sm ${
-                  plan.highlighted ? "flux-marketing-btn-primary" : "btn-secondary"
+                className={`flex min-h-11 w-full items-center justify-center rounded-full py-2.5 text-center text-sm ${
+                  plan.id === "business"
+                    ? "flux-marketing-btn-accent"
+                    : plan.highlighted
+                      ? "flux-marketing-btn-primary"
+                      : "btn-secondary"
                 }`}
               >
                 {plan.cta}
@@ -206,8 +207,12 @@ export function LandingPricing({
             ) : (
               <Link
                 href={plan.ctaHref}
-                className={`flex min-h-11 w-full items-center justify-center rounded-[var(--flux-rad)] py-2.5 text-center text-sm ${
-                  plan.highlighted ? "flux-marketing-btn-primary" : "btn-secondary"
+                className={`flex min-h-11 w-full items-center justify-center rounded-full py-2.5 text-center text-sm ${
+                  plan.id === "business"
+                    ? "flux-marketing-btn-accent"
+                    : plan.highlighted
+                      ? "flux-marketing-btn-primary"
+                      : "btn-secondary"
                 }`}
               >
                 {plan.cta}

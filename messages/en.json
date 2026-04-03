@@ -1298,15 +1298,20 @@
       "description": "Copilot, goals, and alerts work on board context to summarize, project, and surface what needs attention.",
       "copilot": {
         "title": "Board Copilot",
-        "body": "Ask in natural language, request summaries, and spot bottlenecks without leaving the board — the model uses card context to suggest next steps.",
-        "sampleLabel": "Copilot › ",
-        "sampleQuestion": "Which cards have been blocked for more than 3 days?"
+        "body": "Ask in natural language, request summaries, and spot bottlenecks without leaving the board — Fluxy uses card context to suggest next steps.",
+        "sampleLabel": "Copilot ›",
+        "sampleQuestion": "Which cards have been blocked for more than 3 days?",
+        "fluxyBadge": "Fluxy AI",
+        "answerBadge": "Fluxy answers",
+        "sampleAnswer": "3 blocked cards: \"API Gateway\" (5d), \"Deploy Pipeline\" (4d), \"Schema Migration\" (3d). Consider escalating with the tech lead."
       },
       "okr": {
         "title": "OKR Engine",
         "body": "Objectives and key results linked to board cards. Track progress in real time with delivery outlook and drift alerts.",
         "demoObjective": "Q1 objective",
-        "demoKr": "Key result 1"
+        "demoKr": "Key result 1",
+        "barObjLabel": "OBJ",
+        "barKrLabel": "KR1"
       },
       "anomaly": {
         "title": "Anomaly detection",
@@ -1350,13 +1355,13 @@
         },
         "pro": {
           "name": "Pro",
+          "badge": "Recommended",
           "desc": "For small teams that need AI, OKRs, and portfolio visibility.",
           "cta": "Try Pro for 14 days",
           "limits": "Unlimited boards · Up to 10 members · 50 AI calls/day"
         },
         "business": {
           "name": "Business",
-          "badge": "Recommended",
           "desc": "For scaled operations: unlimited AI, full white-label, proactive alerts, and advanced governance.",
           "cta": "Try Business for 14 days",
           "limits": "Unlimited boards · Up to 100 members · Unlimited AI"
