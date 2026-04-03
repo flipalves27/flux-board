@@ -1,6 +1,18 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { useTranslations as useCollabTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -113,16 +125,20 @@ function CardModalTabs({
   ariaLabel: string;
   tabCounts: Partial<Record<CardModalTabId, number>>;
 }) {
-  const stripRef = useRef<HTMLDivElement>(null);
+  /** Só a barra de abas rola — evita `scrollIntoView` rolar ancestrais e “cortar” o modal nas laterais. */
+  const tabsNavRef = useRef<HTMLElement | null>(null);
   const activeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const el = activeBtnRef.current;
-    const strip = stripRef.current;
-    if (!el || !strip) return;
+    const nav = tabsNavRef.current;
+    if (!el || !nav) return;
     const prefersReduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduce) return;
-    el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const navRect = nav.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const delta = elRect.left + elRect.width / 2 - (navRect.left + navRect.width / 2);
+    if (Math.abs(delta) < 2) return;
+    nav.scrollBy({ left: delta, behavior: prefersReduce ? "auto" : "smooth" });
   }, [activeTab]);
 
   const renderTab = (def: TabDef) => {
@@ -165,11 +181,13 @@ function CardModalTabs({
   };
 
   return (
-    <nav className="mt-5 min-w-0 w-full max-w-full overflow-x-auto" role="tablist" aria-label={ariaLabel}>
-      <div
-        ref={stripRef}
-        className="card-modal-tab-strip flex min-w-max flex-nowrap items-stretch gap-2 py-0.5 sm:flex-wrap sm:min-w-0 sm:py-0"
-      >
+    <nav
+      ref={tabsNavRef}
+      className="mt-5 min-w-0 w-full max-w-full overflow-x-auto overscroll-x-contain"
+      role="tablist"
+      aria-label={ariaLabel}
+    >
+      <div className="card-modal-tab-strip flex min-w-max flex-nowrap items-stretch gap-2 py-0.5 sm:flex-wrap sm:min-w-0 sm:py-0">
         {primaryItems.map(renderTab)}
         <div
           className="hidden h-9 w-px shrink-0 self-center bg-[var(--flux-chrome-alpha-12)] sm:block"
@@ -328,6 +346,82 @@ export function CardModalLayout() {
     return () => cancelAnimationFrame(raf);
   }, [card.id]);
 
+  const dragWrapRef = useRef<HTMLDivElement | null>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragSessionRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+
+  useLayoutEffect(() => {
+    dragOffsetRef.current = { x: 0, y: 0 };
+    const w = dragWrapRef.current;
+    if (w) w.style.transform = "";
+  }, [card.id]);
+
+  const applyDragTransform = useCallback(() => {
+    const w = dragWrapRef.current;
+    const shell = dialogRef.current;
+    if (!w || !shell) return;
+    const pad = 40;
+    for (let i = 0; i < 5; i++) {
+      const { x, y } = dragOffsetRef.current;
+      w.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      const r = shell.getBoundingClientRect();
+      let nx = x;
+      let ny = y;
+      if (r.left < pad) nx += pad - r.left;
+      if (r.right > window.innerWidth - pad) nx -= r.right - (window.innerWidth - pad);
+      if (r.top < pad) ny += pad - r.top;
+      if (r.bottom > window.innerHeight - pad) ny -= r.bottom - (window.innerHeight - pad);
+      if (nx === x && ny === y) break;
+      dragOffsetRef.current = { x: nx, y: ny };
+    }
+  }, [dialogRef]);
+
+  const onDragStripPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragSessionRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: dragOffsetRef.current.x,
+      baseY: dragOffsetRef.current.y,
+    };
+  }, []);
+
+  const onDragStripPointerMove = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (!dragSessionRef.current) return;
+      const s = dragSessionRef.current;
+      dragOffsetRef.current = {
+        x: s.baseX + (e.clientX - s.startX),
+        y: s.baseY + (e.clientY - s.startY),
+      };
+      applyDragTransform();
+    },
+    [applyDragTransform]
+  );
+
+  const onDragStripPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    if (!dragSessionRef.current) return;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    dragSessionRef.current = null;
+  }, []);
+
+  const onDragStripLostCapture = useCallback(() => {
+    dragSessionRef.current = null;
+  }, []);
+
+  const onDragStripDoubleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragOffsetRef.current = { x: 0, y: 0 };
+    const w = dragWrapRef.current;
+    if (w) w.style.transform = "";
+  }, []);
+
   const tabCounts = useMemo<Partial<Record<CardModalTabId, number>>>(() => {
     const counts: Partial<Record<CardModalTabId, number>> = {};
     if (links.length > 0) counts.links = links.length;
@@ -357,23 +451,37 @@ export function CardModalLayout() {
         aria-hidden
         onClick={onClose}
       />
-      <div
-        className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] card-modal-content"
-        onClick={(e) => e.stopPropagation()}
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="card-modal-title"
-        tabIndex={-1}
-      >
-        {/* Animated gradient accent bar */}
+      <div ref={dragWrapRef} className="relative z-[1] max-h-full max-w-full">
         <div
-          className="card-modal-accent h-[3px] shrink-0"
+          className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] card-modal-content"
+          onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="card-modal-title"
+          tabIndex={-1}
+        >
+        {/* Barra superior: gradiente + área de arraste (translate3d no wrapper) */}
+        <div
+          className="card-modal-accent card-modal-drag-strip relative z-[2] flex h-9 shrink-0 cursor-grab items-center justify-center border-b border-[var(--flux-chrome-alpha-08)] touch-none select-none active:cursor-grabbing motion-safe:transition-[filter,opacity] motion-safe:duration-200 hover:brightness-110"
           style={{
             background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary), var(--flux-primary))",
             backgroundSize: "200% 100%",
           }}
-        />
+          aria-label={t("cardModal.aria.dragHandle")}
+          onPointerDown={onDragStripPointerDown}
+          onPointerMove={onDragStripPointerMove}
+          onPointerUp={onDragStripPointerUp}
+          onPointerCancel={onDragStripPointerUp}
+          onLostPointerCapture={onDragStripLostCapture}
+          onDoubleClick={onDragStripDoubleClick}
+        >
+          <span className="grid grid-cols-3 gap-0.5 opacity-40 drop-shadow-sm" aria-hidden>
+            {Array.from({ length: 6 }, (_, i) => (
+              <span key={i} className="h-1 w-1 rounded-full bg-[var(--flux-surface-card)]" />
+            ))}
+          </span>
+        </div>
 
         {showRemoteLockBanner && remoteLock ? (
           <div className="px-8 pt-4" role="status">
@@ -387,7 +495,7 @@ export function CardModalLayout() {
         ) : null}
 
         {/* Header — sem overflow-hidden no bloco inteiro: evita cortar título quando o flex encolhe (min-w-0) */}
-        <header className="relative z-[1] shrink-0 border-b border-[var(--flux-border-muted)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
+        <header className="relative z-[1] min-w-0 shrink-0 border-b border-[var(--flux-border-muted)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
           {/* Ambient glow blobs */}
           <div
             className="pointer-events-none absolute -right-20 -top-24 z-0 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
@@ -453,11 +561,11 @@ export function CardModalLayout() {
 
         {/* Scrollable tab content — key triggers fade-in on tab switch */}
         <div
-          className="min-h-0 flex-1 overflow-y-auto scrollbar-kanban"
+          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scrollbar-kanban"
           role="tabpanel"
           aria-labelledby={`card-modal-tab-${activeTab}`}
         >
-          <div key={activeTab} className="card-modal-panel-sections px-6 py-6 sm:px-8 card-modal-tab-panel-in">
+          <div key={activeTab} className="card-modal-panel-sections min-w-0 px-6 py-6 sm:px-8 card-modal-tab-panel-in">
             {activeTab === "edit" && <CardEditForm cardId={card.id} />}
             {activeTab === "subtasks" && (
               <Suspense fallback={<TabSkeleton />}>
@@ -503,7 +611,7 @@ export function CardModalLayout() {
         </div>
 
         {/* Sticky footer — always visible outside the scroll area */}
-        <footer className="card-modal-footer shrink-0 border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-card)] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-8 sm:pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] card-modal-footer-enter">
+        <footer className="card-modal-footer min-w-0 shrink-0 border-t border-[var(--flux-border-muted)] bg-[var(--flux-surface-card)] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-8 sm:pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] card-modal-footer-enter">
           <div className="flex flex-wrap items-center gap-3">
             {mode === "edit" && onDelete && (
               <button
@@ -570,6 +678,7 @@ export function CardModalLayout() {
         {saveAsTemplateOpen && (
           <CardSaveAsTemplateDialog onClose={() => setSaveAsTemplateOpen(false)} />
         )}
+        </div>
       </div>
     </div>
   );

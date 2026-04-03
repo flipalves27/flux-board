@@ -2157,7 +2157,8 @@
         "deleteLabelAria": "Delete label {label}"
       },
       "aria": {
-        "close": "Close"
+        "close": "Close",
+        "dragHandle": "Drag to move the modal — double-click to re-center"
       },
       "options": {
         "priority": {

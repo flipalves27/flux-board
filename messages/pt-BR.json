@@ -2162,7 +2162,8 @@
         "deleteLabelAria": "Excluir rótulo {label}"
       },
       "aria": {
-        "close": "Fechar"
+        "close": "Fechar",
+        "dragHandle": "Arrastar para mover o modal — duplo clique para recentralizar"
       },
       "options": {
         "priority": {
