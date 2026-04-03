@@ -8,22 +8,32 @@ export type BucketWipLike = { key: string; wipLimit?: number | null };
 /** Só `bucket` é usado na contagem WIP. */
 export type WipCountCardLike = { bucket: string };
 
-export function validateBoardWip(
-  buckets: BucketWipLike[],
-  cards: WipCountCardLike[]
-): { ok: true } | { ok: false; message: string } {
+function bucketCounts(cards: WipCountCardLike[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const c of cards) {
+    counts.set(c.bucket, (counts.get(c.bucket) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function collectWipLimits(buckets: BucketWipLike[]): Map<string, number> {
   const limits = new Map<string, number>();
   for (const b of buckets) {
     if (typeof b.wipLimit === "number" && Number.isFinite(b.wipLimit) && b.wipLimit > 0) {
       limits.set(b.key, Math.min(999, Math.floor(b.wipLimit)));
     }
   }
+  return limits;
+}
+
+export function validateBoardWip(
+  buckets: BucketWipLike[],
+  cards: WipCountCardLike[]
+): { ok: true } | { ok: false; message: string } {
+  const limits = collectWipLimits(buckets);
   if (limits.size === 0) return { ok: true };
 
-  const counts = new Map<string, number>();
-  for (const c of cards) {
-    counts.set(c.bucket, (counts.get(c.bucket) ?? 0) + 1);
-  }
+  const counts = bucketCounts(cards);
   for (const [key, limit] of limits) {
     const n = counts.get(key) ?? 0;
     if (n > limit) {
@@ -31,6 +41,48 @@ export function validateBoardWip(
       return {
         ok: false,
         message: `Limite WIP (${limit}) excedido na coluna «${label}» (${n} cards).`,
+      };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Validação WIP para PUT / mover cards quando o quadro **já está** acima do limite (dívida técnica).
+ * - Coluna dentro do limite: aplica regra estrita (não pode ultrapassar o limite).
+ * - Coluna já acima do limite: só rejeita se o número de cards **aumentar** (não permite piorar);
+ *   permite reordenar, editar metadata e retirar cards até voltar à conformidade.
+ */
+export function validateBoardWipPutTransition(
+  buckets: BucketWipLike[],
+  prevCards: WipCountCardLike[],
+  nextCards: WipCountCardLike[]
+): { ok: true } | { ok: false; message: string } {
+  const limits = collectWipLimits(buckets);
+  if (limits.size === 0) return { ok: true };
+
+  const prevC = bucketCounts(prevCards);
+  const nextC = bucketCounts(nextCards);
+
+  for (const [key, limit] of limits) {
+    const prevN = prevC.get(key) ?? 0;
+    const nextN = nextC.get(key) ?? 0;
+    const label = buckets.find((b) => b.key === key)?.key ?? key;
+
+    if (prevN > limit) {
+      if (nextN > prevN) {
+        return {
+          ok: false,
+          message: `A coluna «${label}» já está acima do WIP (${limit}); há ${prevN} cards. Remova cards desta coluna antes de adicionar novos.`,
+        };
+      }
+      continue;
+    }
+
+    if (nextN > limit) {
+      return {
+        ok: false,
+        message: `Limite WIP (${limit}) excedido na coluna «${label}» (${nextN} cards).`,
       };
     }
   }

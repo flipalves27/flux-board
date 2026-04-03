@@ -14,7 +14,7 @@ import {
   consumeSkipWipValidationOnce,
 } from "@/stores/board-store";
 import {
-  validateBoardWip,
+  validateBoardWipPutTransition,
   simulateMoveCardsBatch,
   simulateMoveSingleCard,
   simulatePatchBucketMove,
@@ -269,7 +269,7 @@ export function useBoardState({
       const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
       const skipWip = consumeSkipWipValidationOnce();
       if (!skipWip && !isWipSoftConfig(snap.config)) {
-        const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+        const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
         if (!wip.ok) {
           setWipOverridePending({ mode: "single", cardId, newBucket, newIndex });
           return;
@@ -328,7 +328,7 @@ export function useBoardState({
       const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
       const skipWip = consumeSkipWipValidationOnce();
       if (!skipWip && !isWipSoftConfig(snap.config)) {
-        const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+        const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
         if (!wip.ok) {
           setWipOverridePending({ mode: "batch", orderedIds, newBucket, insertIndex });
           return;
@@ -555,7 +555,7 @@ export function useBoardState({
           const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
           const skipWip = consumeSkipWipValidationOnce();
           if (!skipWip && !isWipSoftConfig(snap.config)) {
-            const wip = validateBoardWip(snap.config.bucketOrder, nextCards);
+            const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
             if (!wip.ok) {
               const inTarget = nextCards.filter((c) => c.bucket === patch.bucket).length;
               setWipOverridePending({

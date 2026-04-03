@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoard, deleteBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
-import { validateBoardWip, type WipCountCardLike } from "@/lib/board-wip";
+import { validateBoardWip, validateBoardWipPutTransition, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
 import { validateDodOnBoardPut } from "@/lib/board-scrum";
@@ -129,7 +129,11 @@ export async function PUT(
       const mergedCfg = { ...(prevBoard.config as Record<string, unknown>), ...(clean.config as Record<string, unknown> | undefined) };
       const wipMode = mergedCfg.wipEnforcement === "soft" ? "soft" : "strict";
       if (wipMode === "strict") {
-        const wipCheck = validateBoardWip(mergedBuckets, cards as WipCountCardLike[]);
+        const wipCheck = validateBoardWipPutTransition(
+          mergedBuckets,
+          (prevBoard.cards || []) as WipCountCardLike[],
+          cards as WipCountCardLike[]
+        );
         if (!wipCheck.ok) {
           if (wipOverrideReason.length >= 8) {
             // ultrapassagem explícita com justificativa — aceita o PUT
