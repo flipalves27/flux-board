@@ -61,6 +61,33 @@ describe("normalizeBoardForPersist", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("strips invalid intakeForm strings (empty slug / empty required-ish fields) so PUT passes schema", () => {
+    const db = {
+      version: "1",
+      lastUpdated: "t",
+      intakeForm: { enabled: true, slug: "", title: "OK", targetBucketKey: "   " },
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Backlog",
+          priority: "Média",
+          progress: "Não iniciado",
+          desc: "",
+          tags: [],
+          order: 0,
+        },
+      ],
+      config: {
+        bucketOrder: [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+      },
+    } as unknown as BoardData;
+    const n = normalizeBoardForPersist(db);
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
+
   it("strips portal null, bad dailyInsights and null intake fields so PUT passes schema", () => {
     const db = {
       version: "1",

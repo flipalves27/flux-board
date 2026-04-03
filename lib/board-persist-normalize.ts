@@ -31,6 +31,47 @@ function sanitizePortalForPut(portal: NonNullable<BoardData["portal"]>): BoardDa
   return p as BoardData["portal"];
 }
 
+/**
+ * `BoardUpdateSchema` usa `.min()` em campos opcionais: se a chave existe com string vazia ou slug curto, o PUT retorna 400.
+ */
+function sanitizeIntakeFormForPut(form: BoardData["intakeForm"]): BoardData["intakeForm"] | undefined {
+  if (!form || typeof form !== "object") return undefined;
+  const o: Record<string, unknown> = { ...(form as unknown as Record<string, unknown>) };
+
+  if (typeof o.slug === "string") {
+    const s = o.slug.trim().slice(0, 80);
+    if (s.length < 3) delete o.slug;
+    else o.slug = s;
+  }
+
+  for (const [key, max] of [
+    ["title", 120],
+    ["targetBucketKey", 200],
+    ["defaultPriority", 100],
+    ["defaultProgress", 100],
+  ] as const) {
+    if (typeof o[key] !== "string") continue;
+    const t = o[key].trim().slice(0, max);
+    if (!t) delete o[key];
+    else o[key] = t;
+  }
+
+  if (typeof o.description === "string") {
+    const t = o.description.trim().slice(0, 400);
+    o.description = t.length > 0 ? t : null;
+  }
+
+  if (Array.isArray(o.defaultTags)) {
+    const tags = (o.defaultTags as unknown[])
+      .map((x) => (typeof x === "string" ? x.trim().slice(0, 60) : ""))
+      .filter(Boolean);
+    if (tags.length === 0) delete o.defaultTags;
+    else o.defaultTags = tags.slice(0, 20);
+  }
+
+  return omitEntryNulls(o) as BoardData["intakeForm"];
+}
+
 type CardPersistSource = CardData & {
   subtasks?: unknown[];
   subtaskProgress?: { total: number; done: number; blocked: number; pct: number };
@@ -221,16 +262,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
 
   const bucketOrder = bucketOrderRaw.length > 0 ? bucketOrderRaw : [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }];
 
-  let intakeForm = db.intakeForm;
-  if (intakeForm?.slug != null) {
-    const slug = String(intakeForm.slug).trim();
-    if (slug.length > 0 && slug.length < 3) {
-      intakeForm = { ...intakeForm, slug: undefined };
-    }
-  }
-  if (intakeForm && typeof intakeForm === "object") {
-    intakeForm = omitEntryNulls({ ...(intakeForm as unknown as Record<string, unknown>) }) as BoardData["intakeForm"];
-  }
+  const intakeForm = sanitizeIntakeFormForPut(db.intakeForm);
 
   const productGoalRaw = db.config?.productGoal;
   const productGoal =

@@ -56,6 +56,13 @@ const HEALTH_STYLES: Record<string, { bg: string; text: string }> = {
   critical: { bg: "bg-[var(--flux-danger)]/15", text: "text-[var(--flux-danger)]" },
 };
 
+/** API usa snake_case; chaves em `messages/*.json` são camelCase (`atRisk`). */
+const SPRINT_HEALTH_I18N: Record<ForecastData["sprintHealthLabel"], "healthy" | "atRisk" | "critical"> = {
+  healthy: "healthy",
+  at_risk: "atRisk",
+  critical: "critical",
+};
+
 type Props = {
   boardId: string;
 };
@@ -158,7 +165,7 @@ export function DeliveryForecastChart({ boardId }: Props) {
           <div className="flex items-center gap-3">
             <h3 className="font-display text-base font-bold text-[var(--flux-text)]">{t("title")}</h3>
             <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${health.bg} ${health.text}`}>
-              {t(data.sprintHealthLabel)}
+              {t(SPRINT_HEALTH_I18N[data.sprintHealthLabel] ?? "healthy")}
             </span>
           </div>
 
