@@ -78,9 +78,10 @@ function tryRefreshSessionOnce(): Promise<boolean> {
 
 export async function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Response> {
   const { headers: customHeaders, _fluxRefreshAttempted, ...rest } = options;
-  const headers = {
+  const extra = customHeaders ? (customHeaders as Record<string, string>) : {};
+  const headers: Record<string, string> = {
     ...getApiHeaders(),
-    ...customHeaders,
+    ...extra,
   };
   // FormData exige boundary no Content-Type; getApiHeaders() força application/json e quebra request.formData() no servidor.
   if (typeof FormData !== "undefined" && rest.body instanceof FormData) {
