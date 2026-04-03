@@ -543,6 +543,7 @@ export default function BoardPage() {
         saveTimeoutRef.current = null;
         const maxAttempts = 3;
         const backoffBaseMs = 400;
+        let lastSaveFailureMessage: string | undefined;
         try {
           for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
@@ -564,7 +565,10 @@ export default function BoardPage() {
                 lastUpdated?: string;
                 cards?: CardData[];
               };
-              if (!res.ok) throw new Error(saveJson.error || "save");
+              if (!res.ok) {
+                lastSaveFailureMessage = saveJson.error?.trim() || `Erro ${res.status}`;
+                throw new Error(lastSaveFailureMessage);
+              }
               if (Array.isArray(saveJson.cards)) {
                 const snap = useBoardStore.getState().db;
                 const dodIdSet = new Set((snap?.config?.definitionOfDone?.items ?? []).map((x) => x.id));
@@ -607,7 +611,10 @@ export default function BoardPage() {
                 if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
               }, 1500);
               return;
-            } catch {
+            } catch (e) {
+              if (e instanceof Error && e.message && !lastSaveFailureMessage) {
+                lastSaveFailureMessage = e.message;
+              }
               if (attempt >= maxAttempts) break;
               const waitMs = backoffBaseMs * Math.pow(2, attempt - 1);
               await new Promise((r) => window.setTimeout(r, waitMs));
@@ -615,7 +622,13 @@ export default function BoardPage() {
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
           setSaveStatus("error");
-          pushToast({ kind: "error", title: tBoardRef.current("toasts.saveError") });
+          pushToast({
+            kind: "error",
+            title: tBoardRef.current("toasts.saveError"),
+            ...(lastSaveFailureMessage
+              ? { description: lastSaveFailureMessage.slice(0, 400) }
+              : {}),
+          });
           setTimeout(() => {
             if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
           }, 3000);

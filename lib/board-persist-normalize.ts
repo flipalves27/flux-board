@@ -130,6 +130,9 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     delete rest.dodChecks;
     delete rest.storyPoints;
     delete rest.serviceClass;
+    delete rest.matrixWeight;
+    delete rest.matrixWeightBand;
+    delete rest.assigneeId;
     const title = String(c.title ?? "").trim().slice(0, 300);
     const orderRaw = Number(c.order);
     const order = Number.isFinite(orderRaw)
@@ -202,6 +205,10 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
         ? [...new Set(c.blockedBy.map((id) => String(id).trim().slice(0, 200)).filter(Boolean))].slice(0, 50)
         : undefined,
       order,
+      assigneeId:
+        c.assigneeId != null && String(c.assigneeId).trim()
+          ? String(c.assigneeId).trim().slice(0, 200)
+          : null,
       ...(c.columnEnteredAt != null ? { columnEnteredAt: String(c.columnEnteredAt).trim().slice(0, 80) } : {}),
       ...(c.completedAt != null ? { completedAt: String(c.completedAt).trim().slice(0, 80) } : {}),
       ...(c.completedCycleDays != null && Number.isFinite(Number(c.completedCycleDays))
@@ -255,6 +262,17 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     const scRaw = (c as { serviceClass?: unknown }).serviceClass;
     if (typeof scRaw === "string" && (CARD_SERVICE_CLASS_VALUES as readonly string[]).includes(scRaw)) {
       base.serviceClass = scRaw as CardData["serviceClass"];
+    }
+
+    const mwRaw = (c as { matrixWeight?: unknown }).matrixWeight;
+    if (typeof mwRaw === "number" && Number.isFinite(mwRaw)) {
+      base.matrixWeight = Math.max(0, Math.min(100, mwRaw));
+    }
+
+    const MATRIX_BANDS = ["low", "medium", "high", "critical"] as const;
+    const mwbRaw = (c as { matrixWeightBand?: unknown }).matrixWeightBand;
+    if (typeof mwbRaw === "string" && (MATRIX_BANDS as readonly string[]).includes(mwbRaw)) {
+      base.matrixWeightBand = mwbRaw as CardData["matrixWeightBand"];
     }
 
     return base as unknown as CardData;

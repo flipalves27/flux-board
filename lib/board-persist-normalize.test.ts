@@ -120,6 +120,40 @@ describe("normalizeBoardForPersist", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("strips invalid matrix band / coerces assigneeId so PUT passes Zod (evita 400 ao salvar)", () => {
+    const db: BoardData = {
+      version: "1",
+      lastUpdated: "t",
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Backlog",
+          priority: "Média",
+          progress: "Não iniciado",
+          desc: "",
+          tags: [],
+          direction: null,
+          dueDate: null,
+          assigneeId: 58 as unknown as string,
+          order: 0,
+          matrixWeight: 150,
+          matrixWeightBand: "super-high" as unknown as "high",
+        } as BoardData["cards"][number],
+      ],
+      config: {
+        bucketOrder: [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+      },
+    };
+    const n = normalizeBoardForPersist(db);
+    expect(n.cards[0]?.assigneeId).toBe("58");
+    expect(n.cards[0]?.matrixWeight).toBe(100);
+    expect(n.cards[0]?.matrixWeightBand).toBeUndefined();
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
+
   it("preserves boardMethodology lean_six_sigma", () => {
     const db: BoardData = {
       version: "1",
