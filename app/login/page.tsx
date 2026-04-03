@@ -128,7 +128,7 @@ export default function LoginPage() {
 
   if (!isChecked) {
     return (
-      <div className="auth-public-shell home-landing-mesh relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden">
+      <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
         <FluxAppBackdrop variant="immersive" />
         <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
@@ -136,14 +136,13 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    "flux-input min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
+    "flux-input min-h-10 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
-  const submitClass =
-    "flux-marketing-btn-primary min-h-11 w-full rounded-[var(--flux-rad)] py-2.5 text-[15px] disabled:cursor-not-allowed disabled:opacity-60";
+  const submitClass = "flux-marketing-btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="auth-public-shell home-landing-mesh relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+    <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
       <FluxAppBackdrop variant="immersive" />
       <div className="flux-glass-card auth-glass-panel relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">

@@ -194,26 +194,26 @@ export function LandingPricing({
             {user ? (
               <Link
                 href={`${localeRoot}/billing`}
-                className={`flex min-h-11 w-full items-center justify-center rounded-full py-2.5 text-center text-sm ${
+                className={
                   plan.id === "business"
-                    ? "flux-marketing-btn-accent"
+                    ? "flux-marketing-btn-accent w-full justify-center"
                     : plan.highlighted
-                      ? "flux-marketing-btn-primary"
-                      : "btn-secondary"
-                }`}
+                      ? "flux-marketing-btn-primary w-full justify-center"
+                      : "flux-marketing-plan-secondary"
+                }
               >
                 {plan.cta}
               </Link>
             ) : (
               <Link
                 href={plan.ctaHref}
-                className={`flex min-h-11 w-full items-center justify-center rounded-full py-2.5 text-center text-sm ${
+                className={
                   plan.id === "business"
-                    ? "flux-marketing-btn-accent"
+                    ? "flux-marketing-btn-accent w-full justify-center"
                     : plan.highlighted
-                      ? "flux-marketing-btn-primary"
-                      : "btn-secondary"
-                }`}
+                      ? "flux-marketing-btn-primary w-full justify-center"
+                      : "flux-marketing-plan-secondary"
+                }
               >
                 {plan.cta}
               </Link>

@@ -54,7 +54,7 @@ export function OAuthProviderButtons({ locale, invite, redirect }: Props) {
   }
 
   const btnClass =
-    "flex w-full items-center justify-center gap-3 min-h-[44px] rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-4 py-2.5 text-sm font-semibold text-[var(--flux-text)] transition-colors duration-150 hover:bg-[var(--flux-chrome-alpha-12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--flux-primary)] disabled:pointer-events-none disabled:opacity-50 font-display";
+    "flex w-full items-center justify-center gap-2.5 min-h-10 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[0.8125rem] font-semibold text-[var(--flux-text)] transition-colors duration-150 hover:bg-[var(--flux-chrome-alpha-12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--flux-primary)] disabled:pointer-events-none disabled:opacity-50 font-display";
 
   return (
     <div className="space-y-3">

@@ -1391,6 +1391,70 @@
     }
   }
 
+  /* Fundo v3 — orbs grandes + blur (ref. flux-board-redesign-v3.html) */
+  @keyframes landing-orb-drift {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(45px, -35px) scale(1.08);
+    }
+    66% {
+      transform: translate(-25px, 45px) scale(0.94);
+    }
+  }
+
+  .landing-v3-orbs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .landing-v3-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(130px);
+    pointer-events: none;
+    opacity: 0.35;
+  }
+
+  .landing-v3-orb--1 {
+    width: min(650px, 95vw);
+    height: min(650px, 95vw);
+    top: -8%;
+    left: -6%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-primary) 18%, transparent), transparent 70%);
+    animation: landing-orb-drift 28s ease-in-out infinite;
+  }
+
+  .landing-v3-orb--2 {
+    width: min(500px, 85vw);
+    height: min(500px, 85vw);
+    bottom: 5%;
+    right: -10%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-secondary) 12%, transparent), transparent 70%);
+    animation: landing-orb-drift 34s ease-in-out infinite reverse;
+  }
+
+  .landing-v3-orb--3 {
+    width: min(380px, 75vw);
+    height: min(380px, 75vw);
+    top: 45%;
+    left: 35%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-accent) 8%, transparent), transparent 70%);
+    animation: landing-orb-drift 22s ease-in-out infinite 4s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-v3-orb--1,
+    .landing-v3-orb--2,
+    .landing-v3-orb--3 {
+      animation: none;
+    }
+  }
+
   .landing-btn-shimmer,
   .flux-btn-shimmer {
     position: relative;
@@ -1415,10 +1479,15 @@
     pointer-events: none;
   }
 
-  /* Marketing / public auth — CTAs (landing + login shell) — pílulas como redesign v3 */
+  /* Marketing / public auth — pílulas compactas (elegância vs. tamanho grande) */
   .flux-marketing-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 font-display font-semibold transition-all duration-200 ease-out;
+    @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
+    gap: 0.35rem;
     border-radius: 9999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 600;
     color: white;
     background: linear-gradient(
       165deg,
@@ -1428,15 +1497,15 @@
     );
     border: 1px solid color-mix(in srgb, var(--flux-primary) 32%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
-      0 6px 22px color-mix(in srgb, var(--flux-primary) 26%, transparent);
+      inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+      0 4px 16px color-mix(in srgb, var(--flux-primary) 22%, transparent);
   }
 
   .flux-marketing-btn-primary:hover:not(:disabled) {
     filter: brightness(1.05);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
-      0 10px 28px color-mix(in srgb, var(--flux-primary) 32%, transparent);
+      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+      0 6px 22px color-mix(in srgb, var(--flux-primary) 28%, transparent);
   }
 
   .flux-marketing-btn-primary:active:not(:disabled) {
@@ -1450,8 +1519,13 @@
   }
 
   .flux-marketing-btn-ghost {
-    @apply inline-flex items-center justify-center font-display font-semibold transition-all duration-200 ease-out;
+    @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
+    gap: 0.35rem;
     border-radius: 9999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 600;
     color: var(--flux-text-muted);
     background: transparent;
     border: 1px solid var(--flux-control-border);
@@ -1469,16 +1543,21 @@
   }
 
   .flux-marketing-btn-accent {
-    @apply inline-flex items-center justify-center gap-2 font-display font-bold transition-all duration-300 ease-out;
+    @apply inline-flex items-center justify-center font-display transition-all duration-300 ease-out;
+    gap: 0.35rem;
     border-radius: 9999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 700;
     color: var(--flux-surface-dark);
     background: linear-gradient(135deg, var(--flux-secondary), #00b8b9);
     border: none;
-    box-shadow: 0 0 28px color-mix(in srgb, var(--flux-secondary) 30%, transparent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--flux-secondary) 26%, transparent);
   }
 
   .flux-marketing-btn-accent:hover:not(:disabled) {
-    box-shadow: 0 0 36px color-mix(in srgb, var(--flux-secondary) 38%, transparent);
+    box-shadow: 0 0 28px color-mix(in srgb, var(--flux-secondary) 34%, transparent);
     transform: translateY(-1px);
   }
 
@@ -1498,12 +1577,30 @@
     }
   }
 
+  /** Plano Free na landing — mesmo peso visual dos CTAs compactos (btn--secondary v3) */
+  .flux-marketing-plan-secondary {
+    @apply inline-flex w-full items-center justify-center rounded-full font-display font-semibold transition-all duration-200 ease-out;
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    background: color-mix(in srgb, var(--flux-surface-card) 55%, transparent);
+    color: var(--flux-text);
+    border: 1px solid var(--flux-primary-alpha-10);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .flux-marketing-plan-secondary:hover:not(:disabled) {
+    border-color: var(--flux-primary-alpha-25);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 70%, transparent);
+  }
+
   .flux-marketing-segmented {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
-    gap: 0.35rem;
-    padding: 0.2rem;
+    gap: 0.25rem;
+    padding: 0.15rem;
     border-radius: 9999px;
     border: 1px solid color-mix(in srgb, var(--flux-primary) 22%, transparent);
     background: color-mix(in srgb, var(--flux-surface-elevated) 72%, transparent);
@@ -1511,9 +1608,11 @@
   }
 
   .flux-marketing-segmented__btn {
-    @apply min-h-11 flex-1 font-display text-[13px] font-semibold transition-all duration-300 sm:min-h-0;
+    @apply min-h-9 flex-1 font-display font-semibold transition-all duration-300 sm:min-h-0;
     border-radius: 9999px;
-    padding: 0.55rem 1.35rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
     color: var(--flux-text-muted);
     background: transparent;
     border: none;

@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { MotionConfig } from "framer-motion";
@@ -11,7 +10,7 @@ import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import type { LandingLocale } from "@/lib/landing-models";
-import { LandingAmbientOrbs } from "./landing-ambient-orbs";
+import { LandingPublicBackdrop } from "./landing-public-backdrop";
 import { LandingFaqSection } from "./landing-faq-section";
 import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
 import { LandingFooter } from "./landing-footer";
@@ -27,11 +26,6 @@ import { LandingSocialProof } from "./landing-social-proof";
 import { LandingSpotlight } from "./landing-spotlight";
 import { LandingTrust } from "./landing-trust";
 import { ScrollReveal } from "./scroll-reveal";
-
-const LandingStarfield = dynamic(
-  () => import("./landing-starfield").then((mod) => mod.LandingStarfield),
-  { ssr: false }
-);
 
 type LandingPageProps = {
   /** Catálogo SSR (revalidado quando o admin da plataforma salva). */
@@ -71,34 +65,15 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
       <div className="relative">
         <a
           href="#landing-main"
-          className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] px-4 py-2 text-sm transition-transform focus:translate-y-4"
+          className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] transition-transform focus:translate-y-4"
         >
           {t("skipToContent")}
         </a>
         <div
           lang={locale}
-          className="home-variant-vibrant home-landing-mesh relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+          className="home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
         >
-          <div className="pointer-events-none absolute inset-0 z-0 min-h-[100dvh]" aria-hidden>
-            <LandingStarfield className="opacity-[0.42]" />
-            <LandingAmbientOrbs />
-          </div>
-          <div className="home-landing-page-bg flux-aurora-bg" aria-hidden>
-            <span className="flux-aurora-blob flux-aurora-blob--a" />
-            <span className="flux-aurora-blob flux-aurora-blob--b" />
-            <span className="flux-aurora-blob flux-aurora-blob--c" />
-          </div>
-          <div
-            className="pointer-events-none absolute inset-0 z-[1] opacity-[0.22]"
-            style={{
-              backgroundImage: "var(--flux-home-hero-bg)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }}
-            aria-hidden
-          />
-          <div className="flux-grid-overlay flux-grid-overlay--drift pointer-events-none absolute inset-0 z-[1]" aria-hidden />
+          <LandingPublicBackdrop />
 
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 

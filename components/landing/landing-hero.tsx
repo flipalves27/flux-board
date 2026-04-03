@@ -56,8 +56,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
     { val: t("hero.metrics.m3.value"), label: t("hero.metrics.m3.label") },
   ];
 
-  const primaryClass =
-    "flux-marketing-btn-primary landing-btn-shimmer relative w-full px-8 py-3.5 text-center text-[15px] sm:w-auto";
+  const primaryClass = "flux-marketing-btn-primary landing-btn-shimmer relative w-full justify-center text-center sm:w-auto";
 
   return (
     <section className="home-landing-reveal pt-8 md:pt-12 lg:pt-14" aria-labelledby="landing-hero-heading">
@@ -88,7 +87,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
                 {t("hero.primary.loggedOut")}
               </Link>
             )}
-            <a href="#platform" className="flux-marketing-btn-ghost w-full justify-center px-6 py-3 text-[15px] sm:w-auto">
+            <a href="#platform" className="flux-marketing-btn-ghost w-full justify-center sm:w-auto">
               {t("hero.secondaryPlatform")}
             </a>
           </div>
