@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { mergeBucketOrdersForWipResolve } from "@/lib/board-bucket-resolve";
 import {
   validateBoardWip,
   validateBoardWipPutTransition,
@@ -87,6 +88,17 @@ describe("validateBoardWipPutTransition", () => {
     const r = validateBoardWipPutTransition(cols, prev, next);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toMatch(/já está acima|Remova cards/i);
+  });
+
+  it("com merge KV+PUT, label antigo no prev e key no next não dispara primeiro crossing falso", () => {
+    const merged = mergeBucketOrdersForWipResolve(
+      [{ key: "desenvolvimento", label: "Em desenvolvimento (legado)", wipLimit: 5 }],
+      [{ key: "desenvolvimento", label: "Em desenvolvimento", wipLimit: 5 }]
+    );
+    const prev = Array.from({ length: 23 }, () => ({ bucket: "Em desenvolvimento (legado)" }));
+    const next = Array.from({ length: 23 }, () => ({ bucket: "desenvolvimento" }));
+    const r = validateBoardWipPutTransition(merged, prev, next);
+    expect(r.ok).toBe(true);
   });
 
   it("aligns prev vs next when legacy slug buckets share first column with WIP (falso 400 em produção)", () => {

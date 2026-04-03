@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, updateBoard, deleteBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
+import {
+  expandBucketsWithInferredTransitionAliases,
+  mergeBucketOrdersForWipResolve,
+} from "@/lib/board-bucket-resolve";
 import { validateBoardWip, validateBoardWipPutTransition, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
@@ -124,13 +128,24 @@ export async function PUT(
         orgId: payload.orgId,
         boardName: prevBoard.name,
       });
-      const mergedBuckets =
-        clean.config?.bucketOrder ?? (prevBoard.config as { bucketOrder?: { key: string; wipLimit?: number | null }[] })?.bucketOrder ?? [];
+      const prevBucketOrder =
+        (prevBoard.config as { bucketOrder?: { key: string; label?: string; wipLimit?: number | null }[] } | undefined)
+          ?.bucketOrder ?? [];
+      const cleanBucketOrder = clean.config?.bucketOrder ?? [];
+      const mergedBuckets = mergeBucketOrdersForWipResolve(
+        prevBucketOrder,
+        cleanBucketOrder.length > 0 ? cleanBucketOrder : prevBucketOrder
+      );
+      const wipBuckets = expandBucketsWithInferredTransitionAliases(
+        mergedBuckets,
+        (prevBoard.cards || []) as { id?: string; bucket?: string }[],
+        cards as { id?: string; bucket?: string }[]
+      );
       const mergedCfg = { ...(prevBoard.config as Record<string, unknown>), ...(clean.config as Record<string, unknown> | undefined) };
       const wipMode = mergedCfg.wipEnforcement === "soft" ? "soft" : "strict";
       if (wipMode === "strict") {
         const wipCheck = validateBoardWipPutTransition(
-          mergedBuckets,
+          wipBuckets,
           (prevBoard.cards || []) as WipCountCardLike[],
           cards as WipCountCardLike[]
         );
@@ -164,7 +179,11 @@ export async function PUT(
             ? "soft"
             : "strict";
       if (prevForWip?.cards?.length && clean.config.bucketOrder?.length && nextWipMode !== "soft") {
-        const wipOnlyConfig = validateBoardWip(clean.config.bucketOrder, prevForWip.cards as WipCountCardLike[]);
+        const prevCfgBo =
+          (prevForWip.config as { bucketOrder?: { key: string; label?: string; wipLimit?: number | null }[] } | undefined)
+            ?.bucketOrder ?? [];
+        const mergedCfgBuckets = mergeBucketOrdersForWipResolve(prevCfgBo, clean.config.bucketOrder);
+        const wipOnlyConfig = validateBoardWip(mergedCfgBuckets, prevForWip.cards as WipCountCardLike[]);
         if (!wipOnlyConfig.ok) {
           return NextResponse.json({ error: wipOnlyConfig.message }, { status: 400 });
         }
