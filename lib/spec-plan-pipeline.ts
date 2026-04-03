@@ -162,11 +162,13 @@ export async function runSpecPlanPipeline(input: {
         },
       });
     } else if (chunkCount > 0) {
+      if (await abortIfCancelled()) return;
       const ret = await buildSpecPlanRetrievalContext({
         fileName: input.extractMeta.fileName || "especificação",
         methodology: input.methodology,
         chunks,
       });
+      if (await abortIfCancelled()) return;
       if (ret.ok) {
         await emit({
           event: "embeddings_ready",

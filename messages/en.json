@@ -3612,9 +3612,14 @@
     "sticky": {
       "idle": "Ready to analyze.",
       "analyzingSync": "Analysis running in this session.",
-      "analyzingBackground": "Background analysis — you can leave this page."
+      "analyzingBackground": "Background analysis — you can leave this page.",
+      "cancelRequested": "Cancellation requested — waiting for the server to stop the run.",
+      "cancelSending": "Sending cancel request…",
+      "runSyncFailed": "Could not sync this run (network or wrong board). Confirm the board or refresh the page."
     },
     "cancelBackground": "Request cancel",
+    "cancelBackgroundSending": "Cancelling…",
+    "cancelBackgroundTimeout": "The cancel request timed out. Check your connection and try again.",
     "cancelBackgroundError": "Could not request cancellation. Try again.",
     "startBackground": "Analyze in background",
     "backgroundRequiresMongo": "Background runs and history need MongoDB (MONGODB_URI).",

@@ -3617,9 +3617,14 @@
     "sticky": {
       "idle": "Pronto para analisar.",
       "analyzingSync": "Análise em curso nesta sessão.",
-      "analyzingBackground": "Análise em segundo plano — pode sair desta página."
+      "analyzingBackground": "Análise em segundo plano — pode sair desta página.",
+      "cancelRequested": "Cancelamento pedido — a aguardar o servidor parar a análise.",
+      "cancelSending": "A enviar pedido de cancelamento…",
+      "runSyncFailed": "Não foi possível sincronizar esta execução (rede ou board incorreto). Confirme o board ou recarregue a página."
     },
     "cancelBackground": "Pedir cancelamento",
+    "cancelBackgroundSending": "A cancelar…",
+    "cancelBackgroundTimeout": "O pedido de cancelamento demorou demais. Verifique a ligação e tente de novo.",
     "cancelBackgroundError": "Não foi possível pedir o cancelamento. Tente de novo.",
     "startBackground": "Analisar em segundo plano",
     "backgroundRequiresMongo": "Segundo plano e histórico precisam de MongoDB (MONGODB_URI).",

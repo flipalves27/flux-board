@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { SpecPlanAnalysisDrawer } from "@/components/spec-plan/spec-plan-analysis-drawer";
 import type { SpecPlanRunLogEntry } from "@/lib/spec-plan-run-types";
@@ -11,7 +11,7 @@ import { SpecPlanProgressStepper } from "@/components/spec-plan/spec-plan-progre
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
-import { apiDelete, apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { apiDelete, apiGet, apiJson, apiPost, ApiError } from "@/lib/api-client";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 
 function safeStringify(obj: unknown, max = 16_000): string {
@@ -77,6 +77,7 @@ type RunSummary = {
 
 type RunFull = {
   id: string;
+  boardId?: string;
   status: string;
   methodology: "scrum" | "kanban" | "lss";
   remapOnly: boolean;
@@ -96,10 +97,12 @@ type RunFull = {
   preview: PreviewRow[];
   streamError: string | null;
   streamErrorDetail: string | null;
+  cancelRequested?: boolean;
 };
 
 export default function SpecPlanPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const localeRoot = `/${useLocale()}`;
   const t = useTranslations("specPlanPage");
@@ -151,6 +154,15 @@ export default function SpecPlanPage() {
   /** Board a que a execução em segundo plano pertence (pode diferir do seletor se o utilizador mudar de board). */
   const [backgroundRunBoardId, setBackgroundRunBoardId] = useState<string | null>(null);
   const [cancelBgErr, setCancelBgErr] = useState<string | null>(null);
+  const [cancelBgSubmitting, setCancelBgSubmitting] = useState(false);
+  const [bgRunCancelRequested, setBgRunCancelRequested] = useState(false);
+  const [runPollSyncErr, setRunPollSyncErr] = useState<string | null>(null);
+
+  const pollTargetRef = useRef<{ rid: string; runBoard: string }>({ rid: "", runBoard: "" });
+  pollTargetRef.current = {
+    rid: backgroundRunId?.trim() ?? "",
+    runBoard: (backgroundRunBoardId?.trim() || boardId).trim(),
+  };
   const [historyRuns, setHistoryRuns] = useState<RunSummary[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
@@ -193,6 +205,7 @@ export default function SpecPlanPage() {
       setPreview(Array.isArray(run.preview) ? run.preview : []);
       setStreamError(run.streamError);
       setStreamErrorDetail(run.streamErrorDetail);
+      setBgRunCancelRequested(Boolean(run.cancelRequested));
       if (run.methodology === "scrum" || run.methodology === "kanban" || run.methodology === "lss") {
         setMethodology(run.methodology);
       }
@@ -336,16 +349,22 @@ export default function SpecPlanPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!featureOk || !user?.orgId || !boardId) return;
+    if (!featureOk || !user?.orgId) return;
 
     const qRun = searchParams.get("run")?.trim();
+    const qBoard = searchParams.get("board")?.trim();
     if (qRun) {
+      if (!qBoard && !boardId) return;
       setBackgroundRunId(qRun);
-      setBackgroundRunBoardId(boardId);
+      // Com ?run= na URL, `board` na query é a fonte de verdade; o seletor pode mudar e
+      // não deve repointar poll/cancel para outro board (404 silencioso = UI “travada”).
+      setBackgroundRunBoardId((qBoard || boardId).trim());
       setTab("progress");
       setAnalysisDrawerOpen(true);
       return;
     }
+
+    if (!boardId) return;
 
     (async () => {
       try {
@@ -424,29 +443,58 @@ export default function SpecPlanPage() {
       (backgroundRunBoardId?.trim() || boardId).trim();
     if (!rid || !runBoard) return;
     let cancelled = false;
+    let failStreak = 0;
     const poll = async () => {
+      const { rid: r, runBoard: rb } = pollTargetRef.current;
+      if (!r || !rb) return;
       try {
         const data = await apiGet<{ run?: RunFull }>(
-          `/api/boards/${encodeURIComponent(runBoard)}/spec-plan/runs/${encodeURIComponent(rid)}`,
+          `/api/boards/${encodeURIComponent(rb)}/spec-plan/runs/${encodeURIComponent(r)}`,
           getHeaders()
         );
         if (cancelled || !data.run) return;
+        failStreak = 0;
+        setRunPollSyncErr(null);
+        const docBoard = typeof data.run.boardId === "string" ? data.run.boardId.trim() : "";
+        if (docBoard) setBackgroundRunBoardId(docBoard);
         hydrateFromRunFull(data.run);
         const st = data.run.status;
         if (st === "completed" || st === "failed" || st === "cancelled") {
           setBackgroundRunId(null);
           setBackgroundRunBoardId(null);
+          setBgRunCancelRequested(false);
+          setRunPollSyncErr(null);
           try {
             sessionStorage.removeItem("flux_spec_plan_bg");
           } catch {
             /* ignore */
           }
-          useSpecPlanActiveStore.getState().clearRun(rid);
+          useSpecPlanActiveStore.getState().clearRun(r);
           void loadHistory();
           if (st === "completed" && data.run.preview?.length) setTab("review");
         }
-      } catch {
-        /* ignore transient */
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && e.status === 404 && failStreak < 4) {
+          try {
+            const ar = await apiGet<{
+              active?: { runId: string; boardId: string; status: string }[];
+            }>("/api/spec-plan/active-runs", getHeaders());
+            const hit = (ar.active ?? []).find((a) => a.runId === r);
+            if (hit?.boardId) {
+              setBackgroundRunBoardId(hit.boardId);
+              setRunPollSyncErr(null);
+              failStreak = 0;
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        failStreak += 1;
+        if (failStreak >= 5) {
+          setRunPollSyncErr(t("sticky.runSyncFailed"));
+        }
       }
     };
     void poll();
@@ -455,7 +503,7 @@ export default function SpecPlanPage() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [backgroundRunId, backgroundRunBoardId, boardId, getHeaders, hydrateFromRunFull, loadHistory]);
+  }, [backgroundRunId, backgroundRunBoardId, boardId, getHeaders, hydrateFromRunFull, loadHistory, t]);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -500,6 +548,7 @@ export default function SpecPlanPage() {
     setMethodologySummary(null);
     setAnalysisLogs([]);
     setDocReadMeta(null);
+    setBgRunCancelRequested(false);
   }, []);
 
   const runStream = useCallback(
@@ -897,21 +946,54 @@ export default function SpecPlanPage() {
   const cancelBackgroundRun = useCallback(async () => {
     const rid = backgroundRunId?.trim();
     const runBoard = (backgroundRunBoardId?.trim() || boardId).trim();
-    if (!rid || !runBoard) return;
+    if (!rid || !runBoard || cancelBgSubmitting) return;
     setCancelBgErr(null);
+    setCancelBgSubmitting(true);
     try {
-      await apiPost(
+      await apiJson<{ ok?: boolean }>(
         `/api/boards/${encodeURIComponent(runBoard)}/spec-plan/runs/${encodeURIComponent(rid)}/cancel`,
-        {},
-        getHeaders()
+        {
+          method: "POST",
+          body: JSON.stringify({}),
+          headers: getHeaders(),
+          signal: AbortSignal.timeout(45_000),
+        }
       );
+      setBgRunCancelRequested(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("run");
+      params.delete("board");
+      const qs = params.toString();
+      const base = pathname || `${localeRoot}/spec-plan`;
+      router.replace(qs ? `${base}?${qs}` : base);
     } catch (e) {
-      setCancelBgErr(e instanceof ApiError ? e.message : t("cancelBackgroundError"));
+      if (e instanceof Error && e.name === "AbortError") {
+        setCancelBgErr(t("cancelBackgroundTimeout"));
+      } else {
+        setCancelBgErr(e instanceof ApiError ? e.message : t("cancelBackgroundError"));
+      }
+    } finally {
+      setCancelBgSubmitting(false);
     }
-  }, [backgroundRunId, backgroundRunBoardId, boardId, getHeaders, t]);
+  }, [
+    backgroundRunId,
+    backgroundRunBoardId,
+    boardId,
+    cancelBgSubmitting,
+    getHeaders,
+    localeRoot,
+    pathname,
+    router,
+    searchParams,
+    t,
+  ]);
 
   useEffect(() => {
-    if (!backgroundRunId) setCancelBgErr(null);
+    if (!backgroundRunId) {
+      setCancelBgErr(null);
+      setRunPollSyncErr(null);
+      setBgRunCancelRequested(false);
+    }
   }, [backgroundRunId]);
 
   const restoreFromHistory = useCallback(
@@ -1096,9 +1178,13 @@ export default function SpecPlanPage() {
               <span>
                 {analyzing
                   ? t("sticky.analyzingSync")
-                  : backgroundRunId
-                    ? t("sticky.analyzingBackground")
-                    : t("sticky.idle")}
+                  : cancelBgSubmitting
+                    ? t("sticky.cancelSending")
+                    : bgRunCancelRequested && backgroundRunId
+                      ? t("sticky.cancelRequested")
+                      : backgroundRunId
+                        ? t("sticky.analyzingBackground")
+                        : t("sticky.idle")}
               </span>
               <button
                 type="button"
@@ -1110,13 +1196,19 @@ export default function SpecPlanPage() {
               {backgroundRunId ? (
                 <button
                   type="button"
+                  disabled={cancelBgSubmitting}
                   onClick={() => void cancelBackgroundRun()}
-                  className="cursor-pointer font-semibold text-[var(--flux-danger)] underline-offset-2 hover:underline"
+                  className="cursor-pointer font-semibold text-[var(--flux-danger)] underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-60"
                 >
-                  {t("cancelBackground")}
+                  {cancelBgSubmitting ? t("cancelBackgroundSending") : t("cancelBackground")}
                 </button>
               ) : null}
             </div>
+            {runPollSyncErr ? (
+              <p className="text-[11px] font-medium text-[var(--flux-amber)]" role="status">
+                {runPollSyncErr}
+              </p>
+            ) : null}
             {cancelBgErr ? (
               <p className="text-[11px] font-medium text-[var(--flux-danger)]" role="alert">
                 {cancelBgErr}

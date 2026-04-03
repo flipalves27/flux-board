@@ -17,6 +17,7 @@ export function serializeSpecPlanRunSummary(doc: SpecPlanRunDocument) {
 export function serializeSpecPlanRunFull(doc: SpecPlanRunDocument) {
   return {
     ...serializeSpecPlanRunSummary(doc),
+    boardId: doc.boardId,
     phases: doc.phases,
     logs: doc.logs,
     docReadMeta: doc.docReadMeta,
