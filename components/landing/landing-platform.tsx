@@ -78,11 +78,11 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)] md:text-base">{t("midCta.description")}</p>
           <div className="mt-6 flex flex-col items-center gap-3">
             {user ? (
-              <Link href={`${localeRoot}/boards`} className="btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
+              <Link href={`${localeRoot}/boards`} className="flux-marketing-btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
                 {t("midCta.primaryLoggedIn")}
               </Link>
             ) : (
-              <Link href={`${localeRoot}/login`} className="btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
+              <Link href={`${localeRoot}/login`} className="flux-marketing-btn-primary landing-btn-shimmer px-6 py-2.5 text-sm">
                 {t("midCta.primaryLoggedOut")}
               </Link>
             )}

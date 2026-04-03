@@ -575,16 +575,69 @@
   @keyframes fluxAuroraFloat {
     0%,
     100% {
-      opacity: 0.55;
+      opacity: 0.5;
       transform: translate(0, 0) scale(1);
     }
     33% {
-      opacity: 0.88;
-      transform: translate(2.5%, -3%) scale(1.06);
+      opacity: 0.68;
+      transform: translate(1.1%, -1.3%) scale(1.022);
     }
     66% {
-      opacity: 0.68;
-      transform: translate(-2%, 2.5%) scale(1.03);
+      opacity: 0.58;
+      transform: translate(-1%, 1.1%) scale(1.014);
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreath {
+    0%,
+    100% {
+      opacity: 0.86;
+    }
+    50% {
+      opacity: 0.93;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathLight {
+    0%,
+    100% {
+      opacity: 0.9;
+    }
+    50% {
+      opacity: 0.97;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathSubtle {
+    0%,
+    100% {
+      opacity: 0.58;
+    }
+    50% {
+      opacity: 0.66;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathSubtleLight {
+    0%,
+    100% {
+      opacity: 0.62;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes fluxGridDrift {
+    0% {
+      background-position:
+        0 0,
+        0 0;
+    }
+    100% {
+      background-position:
+        56px 56px,
+        56px 56px;
     }
   }
 
@@ -605,6 +658,7 @@
       radial-gradient(ellipse 65% 48% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 9%, transparent), transparent 52%),
       radial-gradient(ellipse 70% 42% at 50% 90%, color-mix(in srgb, var(--flux-accent) 7%, transparent), transparent 52%);
     opacity: 0.92;
+    animation: fluxAuroraBeforeBreath 32s ease-in-out infinite;
   }
 
   [data-theme="light"] .flux-aurora-bg::before {
@@ -613,6 +667,7 @@
       radial-gradient(ellipse 65% 48% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 6%, transparent), transparent 52%),
       radial-gradient(ellipse 70% 42% at 50% 90%, color-mix(in srgb, var(--flux-accent) 5%, transparent), transparent 52%);
     opacity: 0.95;
+    animation: fluxAuroraBeforeBreathLight 32s ease-in-out infinite;
   }
 
   .flux-aurora-blob {
@@ -621,9 +676,9 @@
     height: min(52vw, 420px);
     border-radius: 50%;
     filter: blur(72px);
-    opacity: 0.4;
+    opacity: 0.38;
     will-change: transform;
-    animation: fluxAuroraFloat 16s var(--flux-ease-standard) infinite;
+    animation: fluxAuroraFloat 26s cubic-bezier(0.42, 0, 0.58, 1) infinite;
   }
 
   .flux-aurora-blob--a {
@@ -652,10 +707,22 @@
   }
 
   .flux-aurora-bg--subtle::before {
-    opacity: 0.65;
+    animation: fluxAuroraBeforeBreathSubtle 38s ease-in-out infinite;
+  }
+
+  [data-theme="light"] .flux-aurora-bg--subtle::before {
+    animation: fluxAuroraBeforeBreathSubtleLight 38s ease-in-out infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .flux-aurora-bg::before {
+      animation: none;
+    }
+
+    [data-theme="light"] .flux-aurora-bg::before {
+      animation: none;
+    }
+
     .flux-aurora-blob {
       animation: none;
       opacity: 0.48;
@@ -681,6 +748,18 @@
       linear-gradient(color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px),
       linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px);
     opacity: 0.32;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flux-grid-overlay--drift {
+      animation: fluxGridDrift 140s linear infinite;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-grid-overlay--drift {
+      animation: none;
+    }
   }
 
   .flux-grid-overlay--dense {
@@ -1195,7 +1274,7 @@
       color-mix(in srgb, var(--flux-primary) 28%, transparent),
       transparent 68%
     );
-    animation: fluxAuroraFloat 16s var(--flux-ease-standard) infinite;
+    animation: fluxAuroraFloat 28s cubic-bezier(0.42, 0, 0.58, 1) infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1280,14 +1359,127 @@
     background: linear-gradient(
       105deg,
       transparent 0%,
-      transparent 40%,
-      color-mix(in srgb, white 18%, transparent) 50%,
-      transparent 60%,
+      transparent 42%,
+      color-mix(in srgb, white 11%, transparent) 50%,
+      transparent 58%,
       transparent 100%
     );
     background-size: 200% 100%;
-    animation: landingShimmer 2.8s ease-in-out infinite;
+    animation: landingShimmer 4.2s ease-in-out infinite;
     pointer-events: none;
+  }
+
+  /* Marketing / public auth — CTAs (landing + login shell) */
+  .flux-marketing-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-display font-semibold transition-all duration-200 ease-out;
+    border-radius: var(--flux-rad-lg);
+    color: white;
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-primary-light) 82%, white) 0%,
+      var(--flux-primary) 45%,
+      var(--flux-primary-dark) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 32%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+      0 6px 22px color-mix(in srgb, var(--flux-primary) 26%, transparent);
+  }
+
+  .flux-marketing-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.05);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+      0 10px 28px color-mix(in srgb, var(--flux-primary) 32%, transparent);
+  }
+
+  .flux-marketing-btn-primary:active:not(:disabled) {
+    filter: brightness(0.98);
+    transform: translateY(0.5px);
+  }
+
+  .flux-marketing-btn-primary:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-btn-ghost {
+    @apply inline-flex items-center justify-center font-display font-semibold transition-all duration-200 ease-out;
+    border-radius: var(--flux-rad-lg);
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: 1px solid var(--flux-control-border);
+  }
+
+  .flux-marketing-btn-ghost:hover:not(:disabled) {
+    color: var(--flux-text);
+    border-color: color-mix(in srgb, var(--flux-primary) 35%, transparent);
+    background: var(--flux-primary-glow);
+  }
+
+  .flux-marketing-btn-ghost:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-segmented {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.2rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 72%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  }
+
+  .flux-marketing-segmented__btn {
+    @apply min-h-11 flex-1 font-display text-[13px] font-semibold transition-all duration-300 sm:min-h-0;
+    border-radius: 9999px;
+    padding: 0.55rem 1.35rem;
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .flux-marketing-segmented__btn:hover {
+    color: var(--flux-text);
+  }
+
+  .flux-marketing-segmented__btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-segmented__btn--active {
+    color: white;
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-primary-light) 78%, white) 0%,
+      var(--flux-primary) 50%,
+      var(--flux-primary-dark) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+      0 4px 16px color-mix(in srgb, var(--flux-primary) 28%, transparent);
+  }
+
+  .auth-glass-panel.flux-glass-card {
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    box-shadow:
+      var(--flux-glass-surface-shadow),
+      0 20px 48px -28px color-mix(in srgb, var(--flux-primary) 22%, transparent),
+      inset 0 1px 0 var(--flux-chrome-alpha-14);
+    backdrop-filter: blur(20px) saturate(1.35);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  }
+
+  .auth-public-shell .flux-input:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 70%, transparent);
+    outline-offset: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {

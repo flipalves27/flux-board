@@ -1076,14 +1076,14 @@
   },
   "landing": {
     "meta": {
-      "title": "Flux Board — Organize the flow. Ship what matters.",
-      "description": "Ship with clarity: professional Kanban, Fluxy AI, Flux Goals, Flux Reports, public Flux Forms, and Board Copilot on higher plans. Start free—14-day Pro/Business trial, no credit card.",
+      "title": "Flux Board — A living board to ship with clarity.",
+      "description": "Priorities and context in one place: Kanban, Flux Goals, Flux Reports, Flux Forms, and AI (Fluxy, Copilot) per plan. Start free; 14-day Pro/Business trial, no credit card.",
       "productName": "Flux-Board",
-      "jsonLdDescription": "Kanban platform with AI copilot, OKRs, reporting, forms, and portfolio visibility for teams that want one operating rhythm from intake to delivery."
+      "jsonLdDescription": "Visual work platform with Kanban, OKRs, reporting, public forms, and in-flow AI — for teams that want predictability from idea to delivery."
     },
     "skipToContent": "Skip to main content",
     "header": {
-      "tagline": "Flow that feels fast. Delivery that stays clear."
+      "tagline": "Visible flow. Predictable delivery."
     },
     "nav": {
       "why": "Why {appName}",
@@ -1102,12 +1102,12 @@
       "getStarted": "Start free"
     },
     "hero": {
-      "chip": "Kanban · AI · Goals · Reports · Forms",
+      "chip": "Visual flow · AI in the work · Goals · Reports · Forms",
       "title": {
-        "line1": "The board for teams that want",
-        "highlight": "speed with clarity"
+        "line1": "The board where your team sees",
+        "highlight": "what matters — and ships it"
       },
-      "description": "Kanban, Flux Goals, Flux Reports, and Flux Forms with Fluxy AI on one surface. Priorities visible to everyone—faster, smarter decisions.",
+      "description": "Cards with rich context, explicit priority, and reads ready for decisions. Flux Goals, Flux Reports, and Flux Forms in one place, with Fluxy and Copilot to speed up questions and next steps.",
       "primary": {
         "loggedIn": "Go to my boards",
         "loggedOut": "Create free board"
@@ -1132,39 +1132,39 @@
     "kanbanMock": {
       "liveView": "Live View",
       "columns": {
-        "prospecting": "Prospecting",
-        "proposal": "Proposal",
-        "closing": "Closing"
+        "backlog": "Backlog",
+        "inProgress": "In progress",
+        "done": "Done"
       },
       "tags": {
         "high": "High",
-        "review": "In review",
-        "won": "Won"
+        "inReview": "In review",
+        "done": "Ready"
       }
     },
     "why": {
       "sectionBadge": "Why Flux Board",
-      "heading": "Built for teams that ship — and refuse to lose the thread",
-      "description": "Stop hunting status across threads and attachments. One board with priorities, context, and leadership-ready reads."
+      "heading": "Less status chasing. More steady delivery.",
+      "description": "When work only lives in chat, priorities blur. Here the board is the source of truth — with rich context and a visible cadence for everyone."
     },
     "pillars": {
       "commercialPace": {
-        "title": "Kanban tuned to how you sell, build, and deliver",
-        "description": "Columns and priorities the whole team sees—field, ops, and leadership aligned on what actually moves work."
+        "title": "Kanban aligned with how you actually work",
+        "description": "Columns and WIP that match your flow — triage, execution, or support. Everyone sees the same value queue."
       },
       "insights": {
-        "title": "Signal lives on the board—not lost in attachments",
-        "description": "Daily insights and structured fields per card so you steer the week without another status theater."
+        "title": "Context on the card — decisions where they belong",
+        "description": "Structured fields and daily insights cut meetings that exist only to “update status” and make the next move obvious."
       },
       "executiveView": {
-        "title": "Portfolio and reports from the same source",
-        "description": "Dashboards, roll-ups, and exports when you need to prove progress—no shadow spreadsheet of truth."
+        "title": "Reporting and portfolio without a shadow spreadsheet",
+        "description": "Roll up boards, export when you need proof, and show progress with numbers that match the work on the cards."
       }
     },
     "platform": {
       "sectionBadge": "Platform",
-      "heading": "Everything you already have today in {appName}",
-      "description": "Insights, goals, reports, forms, card context, portfolio, discovery, and routines — all in one place.",
+      "heading": "One platform to run the whole flow",
+      "description": "From intake to cycle close: reports, OKRs, forms, discovery, and alerts — in the surfaces your team already uses every day.",
       "actions": {
         "openPlatform": "Open the platform"
       }
@@ -1199,37 +1199,37 @@
         "detail": "Executive dashboards and trends so leadership reads health and flow without rebuilding the story elsewhere."
       },
       "discoveryAndDeals": {
-        "name": "Discovery and deals",
-        "detail": "Track hypotheses and opportunities with live context on the cards you already use."
+        "name": "Discovery and delivery",
+        "detail": "From idea to done: hypotheses, requests, and work items share the same live context on the cards."
       },
       "routinesAndAlerts": {
         "name": "Routines and alerts",
-        "detail": "Reminders in the flow so critical work does not slip past your team."
+        "detail": "Signals in the flow for throughput, WIP, and lead time so drift shows up before it surprises the retro."
       }
     },
     "how": {
       "sectionBadge": "How it works",
-      "heading": "Three steps to your rhythm",
-      "description": "Live in minutes — defaults help your team keep the cadence week after week."
+      "heading": "Three steps to a sustainable rhythm",
+      "description": "Live in minutes — clear defaults help the team keep cadence week after week."
     },
     "steps": {
       "step1": {
-        "title": "Put your flow in one place",
-        "text": "Shape boards to your funnel or ops model—everyone sees the same priority picture."
+        "title": "Model the flow in one place",
+        "text": "Columns and limits that mirror how work arrives, moves, and finishes — everyone sees the same priority."
       },
       "step2": {
-        "title": "Give each card its context",
-        "text": "Descriptions, structured context, and insights turn tasks into decisions you trust."
+        "title": "Enrich every card",
+        "text": "Description, fields, and automated reads turn tasks into decisions anyone can pick up later."
       },
       "step3": {
-        "title": "Grow without losing clarity",
-        "text": "Metrics, exports, and executive views scale with you—standards stay visible."
+        "title": "Scale with light governance",
+        "text": "Metrics, exports, and executive views grow with you without losing the thread of what is on the board."
       }
     },
     "cta": {
       "trialChip": "14-day trial · No card",
-      "heading": "Make this board yours today",
-      "description": "Start free to explore; unlock Pro or Business with a 14-day trial and no card on file. Your workflows deserve a home that stays honest as you scale.",
+      "heading": "Bring this board to your team today",
+      "description": "Start free to explore; unlock Pro or Business with a 14-day trial and no card on file. One home for work that should not get lost in the noise.",
       "pricingAnchor": "See pricing",
       "actions": {
         "loggedIn": "Continue in {appName}",
@@ -1238,7 +1238,7 @@
       }
     },
     "footer": {
-      "copyright": "© {year} {appName} — Organize the flow. Ship what matters.",
+      "copyright": "© {year} {appName} — Visible flow. Predictable delivery.",
       "signIn": "Sign in",
       "features": "Features",
       "pricing": "Pricing",
@@ -1250,8 +1250,8 @@
       "columnPlatform": "Platform"
     },
     "midCta": {
-      "heading": "Feel the flow on a real board",
-      "description": "Spin up a board, pull in your team, and keep delivery where signal—not noise—wins the week.",
+      "heading": "Feel the flow on a board that tracks delivery",
+      "description": "Create a board, bring the team, and keep decisions where the context lives — not scattered across threads and files.",
       "primaryLoggedIn": "Open my boards",
       "primaryLoggedOut": "Start for free",
       "secondary": "Compare plans"
@@ -1259,15 +1259,15 @@
     "trust": {
       "sectionBadge": "Security",
       "heading": "Your data, your peace of mind",
-      "intro": "Built for teams that work with pipeline and customer data.",
-      "bullet1": "HTTPS across the web app with modern OAuth 2.0 + JWT authentication.",
-      "bullet2": "Multi-tenant by design: boards isolated per organization.",
-      "bullet3": "Product documentation covers features, limits, and how to use each plan.",
+      "intro": "Built for teams that need predictability and control over where work and data live.",
+      "bullet1": "Encrypted traffic (HTTPS) and modern authentication (OAuth 2.0 + JWT) on the web app.",
+      "bullet2": "Multi-tenant by design: each organization keeps its boards and data isolated.",
+      "bullet3": "Documentation covers features, per-plan limits, and usage guidance.",
       "docsCta": "View documentation"
     },
     "roadmap": {
-      "heading": "What's landing next—and how it maps to your plan",
-      "description": "A living view of capabilities rolling out in the product, with the tier that unlocks each one.",
+      "heading": "What is shipping next — and which plan unlocks it",
+      "description": "A living roadmap: each item shows the capability and the tier that unlocks it.",
       "items": {
         "sprint_engine": {
           "title": "Sprint Engine and unified panel",
@@ -1288,21 +1288,17 @@
         "anomaly_email": {
           "title": "Proactive anomalies and alerts",
           "detail": "Deviation detection on throughput, WIP, and lead time with notifications and suggested actions."
-        },
-        "custom_domain": {
-          "title": "SSO and custom corporate domain",
-          "detail": "Custom domain, dedicated branding, and corporate authentication on the Business plan."
         }
       }
     },
     "spotlight": {
       "sectionAria": "Featured product capabilities",
       "sectionBadge": "Highlights",
-      "heading": "Intelligence built into your flow",
-      "description": "AI, goals, and proactive alerts that work while you focus on what matters.",
+      "heading": "AI that speeds decisions — without pulling you out of the flow",
+      "description": "Copilot, goals, and alerts work on board context to summarize, project, and surface what needs attention.",
       "copilot": {
         "title": "Board Copilot",
-        "body": "AI chat on the board—natural-language questions, automatic summaries, bottleneck hints, and actions without changing screens.",
+        "body": "Ask in natural language, request summaries, and spot bottlenecks without leaving the board — the model uses card context to suggest next steps.",
         "sampleLabel": "Copilot › ",
         "sampleQuestion": "Which cards have been blocked for more than 3 days?"
       },
@@ -1314,17 +1310,17 @@
       },
       "anomaly": {
         "title": "Anomaly detection",
-        "body": "Proactive signals on throughput, WIP, and lead time — email and webhooks before issues escalate.",
-        "alert1": "WIP limit exceeded in \"Proposal\"",
+        "body": "Watch throughput, WIP, and lead time with email and webhook alerts so you act before drift becomes a crisis.",
+        "alert1": "WIP limit exceeded in \"In progress\"",
         "alert2": "Lead time up 40% this week"
       }
     },
     "socialProof": {
       "ariaLabel": "Product highlights",
-      "stat1": { "value": "3 min", "label": "to your first live board" },
+      "stat1": { "value": "3 min", "label": "to your first board live" },
       "stat2": { "value": "14 days", "label": "Pro/Business trial, no card" },
-      "stat3": { "value": "One", "label": "source of truth on the board" },
-      "stat4": { "value": "∞", "label": "boards when you need room to grow" }
+      "stat3": { "value": "One", "label": "place for priority and context" },
+      "stat4": { "value": "∞", "label": "boards when you need to scale" }
     },
     "pricing": {
       "sectionBadge": "Pricing",
@@ -1334,7 +1330,7 @@
         "business": "Business"
       },
       "heading": "Plans for every stage of growth",
-      "description": "Start free and scale as your team evolves. No surprise invoices.",
+      "description": "Start free and grow when you need AI, OKRs, and governance — clear per-seat pricing.",
       "monthly": "Monthly",
       "yearly": "Yearly",
       "yearlyTag": "−20%",
@@ -1361,7 +1357,7 @@
         "business": {
           "name": "Business",
           "badge": "Recommended",
-          "desc": "For scaled operations with unlimited AI, white-label, and integrations.",
+          "desc": "For scaled operations: unlimited AI, full white-label, proactive alerts, and advanced governance.",
           "cta": "Try Business for 14 days",
           "limits": "Unlimited boards · Up to 100 members · Unlimited AI"
         }
@@ -1389,9 +1385,6 @@
         "orgChat": "Org chat",
         "webhooksUnlimited": "Unlimited webhooks",
         "retroFacilitator": "Retro facilitator",
-        "slackTeams": "Slack / Teams integration",
-        "sso": "SSO (SAML/OIDC)",
-        "customDomain": "Custom domain",
         "copilotTools": "Custom Copilot Tools",
         "anomalyWebhook": "Anomaly webhooks",
         "dedicatedSupport": "Dedicated support + SLA"
@@ -1413,10 +1406,10 @@
       "a4": "Yes. Upgrades take effect immediately with prorated credit. Downgrades take effect at the end of the current billing cycle, with a 7-day grace period to adjust boards and users.",
       "q5": "What is the Board Copilot?",
       "a5": "A conversational AI assistant embedded in your board. Ask questions in natural language about cards, request summaries, spot bottlenecks, and execute actions — all without leaving the Kanban view.",
-      "q6": "Are Slack and Teams integrations available?",
-      "a6": "Yes. Business and Enterprise include native Slack and Microsoft Teams integrations for board event notifications, anomaly alerts, and Weekly AI Digest summaries.",
-      "q7": "Does Enterprise include SSO?",
-      "a7": "Yes. Enterprise supports SSO with SAML 2.0 and OIDC, enabling your team to log in with existing corporate credentials and centralizing access management in your Identity Provider."
+      "q6": "Can I export data and roll up multiple boards?",
+      "a6": "Yes. On higher tiers you get exports and portfolio views so you can track the full body of work without maintaining parallel spreadsheets.",
+      "q7": "How do AI limits work, and how is my data used?",
+      "a7": "Per-plan limits are shown in the pricing table and documentation. AI uses your workspace context to summarize and suggest — we do not use your data to train public models."
     },
     "fluxyChat": {
       "fabTitle": "Talk to Fluxy",
@@ -1446,7 +1439,7 @@
   },
   "login": {
     "loading": "Loading...",
-    "subtitle": "Organize the flow. Ship what matters.",
+    "subtitle": "Sign in to see your team's flow with clarity.",
     "tabs": {
       "login": "Sign in",
       "register": "Register"

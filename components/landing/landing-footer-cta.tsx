@@ -9,8 +9,7 @@ type LandingFooterCtaProps = {
   user: unknown;
 };
 
-const footerPricingLink =
-  "btn-ghost inline-flex items-center justify-center px-6 py-3 text-[15px] font-semibold";
+const footerPricingLink = "flux-marketing-btn-ghost inline-flex items-center justify-center px-6 py-3 text-[15px]";
 
 export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCtaProps) {
   const t = useTranslations("landing");
@@ -30,12 +29,12 @@ export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCta
           <p className="mx-auto mt-4 max-w-[520px] text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("cta.description")}</p>
           <div className="relative mt-7 flex flex-wrap items-center justify-center gap-3">
             {user ? (
-              <Link href={`${localeRoot}/boards`} className="btn-primary px-9 py-3.5 text-[15px]">
+              <Link href={`${localeRoot}/boards`} className="flux-marketing-btn-primary px-9 py-3.5 text-[15px]">
                 {t("cta.actions.loggedIn", { appName })}
               </Link>
             ) : (
               <>
-                <Link href={`${localeRoot}/login`} className="btn-primary px-9 py-3.5 text-[15px]">
+                <Link href={`${localeRoot}/login`} className="flux-marketing-btn-primary landing-btn-shimmer px-9 py-3.5 text-[15px]">
                   {t("cta.actions.loggedOutPrimary")}
                 </Link>
                 <a href="#pricing" className={footerPricingLink}>

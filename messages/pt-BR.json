@@ -1076,14 +1076,14 @@
   },
   "landing": {
     "meta": {
-      "title": "Flux Board — Organize o fluxo. Entregue o que importa.",
-      "description": "Entregue com clareza: Kanban profissional, Fluxy IA, Flux Goals, Flux Reports, Flux Forms públicos e Board Copilot nos planos superiores. Comece grátis—trial de 14 dias no Pro/Business, sem cartão.",
+      "title": "Flux Board — Um quadro vivo para entregar com clareza.",
+      "description": "Prioridades e contexto num só lugar: Kanban, Flux Goals, Flux Reports, Flux Forms e IA (Fluxy, Copilot) conforme o plano. Comece grátis; trial de 14 dias no Pro/Business, sem cartão.",
       "productName": "Flux-Board",
-      "jsonLdDescription": "Plataforma Kanban com copiloto IA, OKRs, relatórios, formulários e visão de portfólio para times que querem um ritmo só do pedido à entrega."
+      "jsonLdDescription": "Plataforma de trabalho visual com Kanban, OKRs, relatórios, formulários públicos e IA no fluxo — para times que buscam previsibilidade da ideia à entrega."
     },
     "skipToContent": "Ir para o conteúdo principal",
     "header": {
-      "tagline": "Fluxo rápido. Entrega que não se perde."
+      "tagline": "Fluxo visível. Entrega previsível."
     },
     "nav": {
       "why": "Por que {appName}",
@@ -1102,12 +1102,12 @@
       "getStarted": "Começar grátis"
     },
     "hero": {
-      "chip": "Kanban · IA · Metas · Relatórios · Forms",
+      "chip": "Fluxo visual · IA no trabalho · Metas · Relatórios · Forms",
       "title": {
-        "line1": "O board para times que querem",
-        "highlight": "velocidade com clareza"
+        "line1": "O quadro onde o time enxerga",
+        "highlight": "o que importa — e entrega"
       },
-      "description": "Kanban, Flux Goals, Flux Reports e Flux Forms com a Fluxy IA na mesma superfície. Prioridades visíveis para todo mundo — decisões mais rápidas e inteligentes.",
+      "description": "Cartões com contexto, prioridade explícita e leituras prontas para decidir. Flux Goals, Flux Reports e Flux Forms no mesmo lugar, com Fluxy e Copilot para acelerar dúvidas e próximos passos.",
       "primary": {
         "loggedIn": "Ir para meus boards",
         "loggedOut": "Criar board grátis"
@@ -1132,39 +1132,39 @@
     "kanbanMock": {
       "liveView": "Live View",
       "columns": {
-        "prospecting": "Prospecção",
-        "proposal": "Proposta",
-        "closing": "Fechamento"
+        "backlog": "Backlog",
+        "inProgress": "Em andamento",
+        "done": "Entregue"
       },
       "tags": {
         "high": "Alta",
-        "review": "Em análise",
-        "won": "Ganho"
+        "inReview": "Em revisão",
+        "done": "Pronto"
       }
     },
     "why": {
       "sectionBadge": "Por que Flux Board",
-      "heading": "Para quem entrega — e não aceita perder o fio",
-      "description": "Chega de caçar status em threads e anexos. Um board com prioridades, contexto e leituras prontas para liderança."
+      "heading": "Menos caça ao status. Mais entrega contínua.",
+      "description": "Quando o trabalho vive só em mensagens, a prioridade some. Aqui o board é a fonte da verdade — com contexto rico e ritmo visível para todo o time."
     },
     "pillars": {
       "commercialPace": {
-        "title": "Kanban afinado a como você vende, constrói e entrega",
-        "description": "Colunas e prioridades visíveis para campo, operações e liderança—todos no mesmo que move o trabalho."
+        "title": "Kanban alinhado a como vocês realmente trabalham",
+        "description": "Colunas e WIP no ritmo do seu fluxo — triagem, execução ou suporte. Todos enxergam a mesma fila de valor."
       },
       "insights": {
-        "title": "O sinal mora no board—não some em anexo",
-        "description": "Insights diários e campos por card para guiar a semana sem mais teatro de status."
+        "title": "Contexto no card — decisão no lugar certo",
+        "description": "Campos estruturados e insights diários reduzem reuniões só para “atualizar status” e deixam a próxima ação óbvia."
       },
       "executiveView": {
-        "title": "Portfólio e relatórios da mesma fonte",
-        "description": "Painéis, consolidações e exports quando você precisa provar progresso—sem planilha paralela da verdade."
+        "title": "Relatórios e portfólio sem planilha paralela",
+        "description": "Consolide boards, exporte quando precisar e mostre progresso com números que batem com o trabalho real nos cards."
       }
     },
     "platform": {
       "sectionBadge": "Plataforma",
-      "heading": "Tudo o que você já tem hoje no {appName}",
-      "description": "Insights, metas, relatórios, forms, contexto nos cards, portfólio, discovery e rotinas — tudo encaixado.",
+      "heading": "Uma plataforma para operar o fluxo inteiro",
+      "description": "Da entrada de pedidos ao fechamento do ciclo: relatórios, OKRs, forms, discovery e alertas — no que o time já usa no dia a dia.",
       "actions": {
         "openPlatform": "Abrir a plataforma"
       }
@@ -1199,37 +1199,37 @@
         "detail": "Painéis executivos e tendências para a liderança ler saúde e fluxo sem recontar a história em outro lugar."
       },
       "discoveryAndDeals": {
-        "name": "Discovery e deals",
-        "detail": "Hipóteses e oportunidades com contexto vivo nos cards que você já usa."
+        "name": "Discovery e entregas",
+        "detail": "Da ideia à conclusão: hipóteses, pedidos e itens de trabalho com o mesmo contexto vivo nos cards."
       },
       "routinesAndAlerts": {
         "name": "Rotinas e alertas",
-        "detail": "Lembretes no fluxo para o que é crítico não passar despercebido pelo time."
+        "detail": "Sinais no fluxo para perceber desvios de throughput, WIP e lead time antes que virem surpresa na retrospectiva."
       }
     },
     "how": {
       "sectionBadge": "Como funciona",
-      "heading": "Três passos para o seu ritmo",
-      "description": "No ar em minutos — os padrões ajudam o time a manter a cadência semana após semana."
+      "heading": "Três passos para um ritmo sustentável",
+      "description": "No ar em minutos — padrões claros ajudam o time a manter cadência semana após semana."
     },
     "steps": {
       "step1": {
-        "title": "Coloque seu fluxo num só lugar",
-        "text": "Modele boards ao seu funil ou operação—todos veem a mesma imagem de prioridades."
+        "title": "Modele o fluxo num só lugar",
+        "text": "Colunas e limites que espelham como o trabalho entra, anda e sai — todos veem a mesma prioridade."
       },
       "step2": {
-        "title": "Dê contexto a cada card",
-        "text": "Descrições, contexto estruturado e insights transformam tarefas em decisões em que você confia."
+        "title": "Enriqueça cada card",
+        "text": "Descrição, campos e leituras automáticas transformam tarefas em decisões que qualquer pessoa pode retomar depois."
       },
       "step3": {
-        "title": "Cresça sem perder clareza",
-        "text": "Métricas, exports e visão executiva acompanham a escala—o padrão continua visível."
+        "title": "Escale com governança leve",
+        "text": "Métricas, exports e visão executiva acompanham o crescimento sem perder o fio do que está no board."
       }
     },
     "cta": {
       "trialChip": "Trial de 14 dias · Sem cartão",
-      "heading": "Faça deste board o seu hoje",
-      "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 14 dias e sem cartão. Seus fluxos merecem um lugar que acompanha você de verdade.",
+      "heading": "Leve este quadro para o seu time hoje",
+      "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 14 dias e sem cartão. Um lugar único para o trabalho que não pode se perder no ruído.",
       "pricingAnchor": "Ver preços",
       "actions": {
         "loggedIn": "Continuar no {appName}",
@@ -1238,7 +1238,7 @@
       }
     },
     "footer": {
-      "copyright": "© {year} {appName} — Organize o fluxo. Entregue o que importa.",
+      "copyright": "© {year} {appName} — Fluxo visível. Entrega previsível.",
       "signIn": "Entrar",
       "features": "Recursos",
       "pricing": "Preços",
@@ -1250,8 +1250,8 @@
       "columnPlatform": "Plataforma"
     },
     "midCta": {
-      "heading": "Sinta o fluxo num board de verdade",
-      "description": "Suba um board, chame o time e mantenha a entrega onde o sinal—não o ruído—manda na semana.",
+      "heading": "Sinta o fluxo num quadro que acompanha a entrega",
+      "description": "Crie um board, traga o time e mantenha decisões onde o contexto está — não espalhado em threads e anexos.",
       "primaryLoggedIn": "Ir para meus boards",
       "primaryLoggedOut": "Começar grátis",
       "secondary": "Comparar planos"
@@ -1259,15 +1259,15 @@
     "trust": {
       "sectionBadge": "Segurança",
       "heading": "Seus dados, sua tranquilidade",
-      "intro": "Pensado para equipes que lidam com pipeline e dados de clientes.",
-      "bullet1": "HTTPS em todo o app web com autenticação moderna via OAuth 2.0 + JWT.",
-      "bullet2": "Multi-tenant por design: boards isolados por organização.",
-      "bullet3": "Documentação do produto cobre recursos, limites e como usar cada plano.",
+      "intro": "Pensado para equipes que precisam de previsibilidade e controle sobre onde o trabalho e os dados moram.",
+      "bullet1": "Tráfego cifrado (HTTPS) e autenticação moderna (OAuth 2.0 + JWT) no app web.",
+      "bullet2": "Multi-tenant por design: cada organização com seus boards e dados isolados.",
+      "bullet3": "Documentação cobre recursos, limites por plano e boas práticas de uso.",
       "docsCta": "Ver documentação"
     },
     "roadmap": {
-      "heading": "O que vem aí—e como encaixa no seu plano",
-      "description": "Visão viva das capacidades que entram no produto, com o tier que desbloqueia cada uma.",
+      "heading": "O que vem na sequência — e em qual plano entra",
+      "description": "Roteiro vivo: cada item mostra a capacidade e o tier que a desbloqueia.",
       "items": {
         "sprint_engine": {
           "title": "Sprint Engine e painel unificado",
@@ -1288,21 +1288,17 @@
         "anomaly_email": {
           "title": "Anomalias proativas e alertas",
           "detail": "Detecção de desvio em throughput, WIP e lead time com notificações e ação sugerida."
-        },
-        "custom_domain": {
-          "title": "SSO e domínio corporativo",
-          "detail": "Domínio próprio, marca dedicada e autenticação corporativa no plano Business."
         }
       }
     },
     "spotlight": {
       "sectionAria": "Destaques do produto",
       "sectionBadge": "Destaques",
-      "heading": "Inteligência integrada ao seu fluxo",
-      "description": "IA, metas e alertas proativos que trabalham enquanto você foca no que importa.",
+      "heading": "IA que acelera decisão — sem tirar você do fluxo",
+      "description": "Copilot, metas e alertas atuam sobre o contexto do board para resumir, projetar e chamar atenção onde importa.",
       "copilot": {
         "title": "Board Copilot",
-        "body": "Chat com IA direto no board. Perguntas em linguagem natural, resumos automáticos, identificação de gargalos e execução de ações sem trocar de tela.",
+        "body": "Pergunte em linguagem natural, peça resumos e identifique gargalos sem sair do quadro — a IA usa o contexto dos cards para sugerir próximos passos.",
         "sampleLabel": "Copilot › ",
         "sampleQuestion": "Quais cards estão bloqueados há mais de 3 dias?"
       },
@@ -1314,17 +1310,17 @@
       },
       "anomaly": {
         "title": "Detecção de anomalias",
-        "body": "Sinais proativos em throughput, WIP e lead time — e-mail e webhooks antes que o problema escale.",
-        "alert1": "WIP excedeu o limite em \"Proposta\"",
+        "body": "Monitore throughput, WIP e lead time com alertas por e-mail e webhook para agir antes do desvio virar crise.",
+        "alert1": "WIP acima do limite em \"Em andamento\"",
         "alert2": "Lead time subiu 40% esta semana"
       }
     },
     "socialProof": {
       "ariaLabel": "Destaques do produto",
-      "stat1": { "value": "3 min", "label": "até seu primeiro board no ar" },
+      "stat1": { "value": "3 min", "label": "até o primeiro quadro no ar" },
       "stat2": { "value": "14 dias", "label": "trial Pro/Business, sem cartão" },
-      "stat3": { "value": "Uma", "label": "fonte da verdade no board" },
-      "stat4": { "value": "∞", "label": "boards quando você precisar escalar" }
+      "stat3": { "value": "Um", "label": "lugar para prioridade e contexto" },
+      "stat4": { "value": "∞", "label": "quadros quando precisar escalar" }
     },
     "pricing": {
       "sectionBadge": "Preços",
@@ -1334,7 +1330,7 @@
         "business": "Business"
       },
       "heading": "Planos para cada etapa do crescimento",
-      "description": "Comece grátis e escale conforme o time evolui. Sem surpresas na fatura.",
+      "description": "Comece grátis e evolua quando o time precisar de IA, OKRs e governança — preços claros por seat.",
       "monthly": "Mensal",
       "yearly": "Anual",
       "yearlyTag": "−20%",
@@ -1361,7 +1357,7 @@
         "business": {
           "name": "Business",
           "badge": "Recomendado",
-          "desc": "Para operações em escala com IA irrestrita, white-label e integrações.",
+          "desc": "Para operações em escala: IA ilimitada, white-label completo, alertas proativos e governança avançada.",
           "cta": "Testar Business por 14 dias",
           "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"
         }
@@ -1389,9 +1385,6 @@
         "orgChat": "Chat da organização",
         "webhooksUnlimited": "Webhooks ilimitados",
         "retroFacilitator": "Facilitador de retrospectiva",
-        "slackTeams": "Integração Slack / Teams",
-        "sso": "SSO (SAML/OIDC)",
-        "customDomain": "Domínio customizado",
         "copilotTools": "Copilot Tools customizadas",
         "anomalyWebhook": "Webhooks de anomalia",
         "dedicatedSupport": "Suporte dedicado + SLA"
@@ -1413,10 +1406,10 @@
       "a4": "Sim. Upgrades têm efeito imediato com crédito proporcional. Downgrades entram em vigor no final do ciclo atual, com 7 dias de graça para ajustar boards e usuários.",
       "q5": "O que é o Board Copilot?",
       "a5": "Um assistente de IA conversacional embutido no board. Faça perguntas em linguagem natural sobre os cards, peça resumos, identifique gargalos e execute ações — tudo sem sair da visão Kanban.",
-      "q6": "Há integração com Slack e Teams?",
-      "a6": "Sim. Business e Enterprise incluem integração nativa com Slack e Microsoft Teams para notificações de eventos, alertas de anomalia e resumos do Weekly AI Digest.",
-      "q7": "O Enterprise inclui SSO?",
-      "a7": "Sim. O Enterprise suporta SSO com SAML 2.0 e OIDC, permitindo login com credenciais corporativas e gerenciamento centralizado no seu Identity Provider."
+      "q6": "Posso exportar dados e consolidar vários boards?",
+      "a6": "Sim. Nos planos superiores você conta com exportações e visão de portfólio para acompanhar o conjunto do trabalho sem manter planilhas paralelas.",
+      "q7": "Como funcionam os limites de IA e o uso dos meus dados?",
+      "a7": "Os limites por plano aparecem na tabela de preços e na documentação. A IA usa o contexto do seu workspace para resumir e sugerir — não utilizamos seus dados para treinar modelos públicos."
     },
     "fluxyChat": {
       "fabTitle": "Falar com a Fluxy",
@@ -1446,7 +1439,7 @@
   },
   "login": {
     "loading": "Carregando...",
-    "subtitle": "Organize o fluxo. Entregue o que importa.",
+    "subtitle": "Entre para ver o fluxo do seu time com clareza.",
     "tabs": {
       "login": "Entrar",
       "register": "Cadastrar"

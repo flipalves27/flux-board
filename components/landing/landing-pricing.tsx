@@ -96,7 +96,7 @@ function buildPlans(
         { label: t("pricing.features.orgChat"), included: true },
         { label: t("pricing.features.webhooksUnlimited"), included: true },
         { label: t("pricing.features.retroFacilitator"), included: true },
-        { label: t("pricing.features.slackTeams"), included: true },
+        { label: t("pricing.features.anomalyWebhook"), included: true },
         { label: t("pricing.features.activityLogUnlimited"), included: true },
       ],
       inherit: t("pricing.allPro"),
@@ -133,26 +133,18 @@ export function LandingPricing({
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[15px] leading-[1.7] text-[var(--flux-text-muted)]">{t("pricing.description")}</p>
 
-        <div className="mt-6 flex w-full max-w-md flex-col gap-2 rounded-2xl border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.6)] p-[3px] sm:mx-auto sm:inline-flex sm:w-auto sm:flex-row sm:items-center sm:gap-0.5 sm:rounded-full">
+        <div className="flux-marketing-segmented mx-auto mt-6 w-full max-w-md sm:w-auto sm:min-w-[min(100%,22rem)]">
           <button
             type="button"
             onClick={() => onBillingYearlyChange(false)}
-            className={`min-h-11 w-full rounded-full px-6 py-2.5 font-display text-[13px] font-semibold transition-all duration-300 sm:min-h-0 sm:w-auto ${
-              !billingYearly
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_12px_rgba(108,92,231,0.4)]"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn sm:flex-initial ${!billingYearly ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("pricing.monthly")}
           </button>
           <button
             type="button"
             onClick={() => onBillingYearlyChange(true)}
-            className={`flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-6 py-2.5 font-display text-[13px] font-semibold transition-all duration-300 sm:min-h-0 sm:w-auto ${
-              billingYearly
-                ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_12px_rgba(108,92,231,0.4)]"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn flex items-center justify-center gap-1.5 sm:flex-initial ${billingYearly ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("pricing.yearly")}
             <span className="rounded-full bg-[rgba(0,230,118,0.15)] px-[7px] py-0.5 text-[9px] font-bold text-[var(--flux-success)]">{t("pricing.yearlyTag")}</span>
@@ -205,14 +197,18 @@ export function LandingPricing({
             {user ? (
               <Link
                 href={`${localeRoot}/billing`}
-                className={`flex min-h-11 w-full items-center justify-center py-2.5 text-center text-sm ${plan.highlighted ? "btn-primary" : "btn-secondary"}`}
+                className={`flex min-h-11 w-full items-center justify-center rounded-[var(--flux-rad)] py-2.5 text-center text-sm ${
+                  plan.highlighted ? "flux-marketing-btn-primary" : "btn-secondary"
+                }`}
               >
                 {plan.cta}
               </Link>
             ) : (
               <Link
                 href={plan.ctaHref}
-                className={`flex min-h-11 w-full items-center justify-center py-2.5 text-center text-sm ${plan.highlighted ? "btn-primary" : "btn-secondary"}`}
+                className={`flex min-h-11 w-full items-center justify-center rounded-[var(--flux-rad)] py-2.5 text-center text-sm ${
+                  plan.highlighted ? "flux-marketing-btn-primary" : "btn-secondary"
+                }`}
               >
                 {plan.cta}
               </Link>

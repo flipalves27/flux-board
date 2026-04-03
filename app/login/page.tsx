@@ -128,8 +128,8 @@ export default function LoginPage() {
 
   if (!isChecked) {
     return (
-      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden">
-        <FluxAppBackdrop />
+      <div className="auth-public-shell home-landing-mesh relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden">
+        <FluxAppBackdrop variant="immersive" />
         <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
@@ -139,13 +139,13 @@ export default function LoginPage() {
     "flux-input min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
-  const btnClass =
-    "min-h-11 w-full rounded-[var(--flux-rad)] bg-[var(--flux-primary)] py-2.5 font-display font-semibold text-white transition-all hover:bg-[var(--flux-primary-light)] disabled:cursor-not-allowed disabled:opacity-60";
+  const submitClass =
+    "flux-marketing-btn-primary min-h-11 w-full rounded-[var(--flux-rad)] py-2.5 text-[15px] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
-      <FluxAppBackdrop />
-      <div className="flux-glass-card relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
+    <div className="auth-public-shell home-landing-mesh relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <FluxAppBackdrop variant="immersive" />
+      <div className="flux-glass-card auth-glass-panel relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div
             className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"
@@ -173,26 +173,18 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex gap-1 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] p-1">
+        <div className="flux-marketing-segmented mb-6 w-full">
           <button
             type="button"
             onClick={() => switchTab("login")}
-            className={`min-h-11 flex-1 rounded-[var(--flux-rad-sm)] py-2 font-display text-sm font-semibold transition-all ${
-              activeTab === "login"
-                ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn ${activeTab === "login" ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("tabs.login")}
           </button>
           <button
             type="button"
             onClick={() => switchTab("register")}
-            className={`min-h-11 flex-1 rounded-[var(--flux-rad-sm)] py-2 font-display text-sm font-semibold transition-all ${
-              activeTab === "register"
-                ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn ${activeTab === "register" ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("tabs.register")}
           </button>
@@ -236,7 +228,7 @@ export default function LoginPage() {
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
               <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.login")}</span>
             </label>
-            <button type="submit" disabled={loading} className={btnClass}>
+            <button type="submit" disabled={loading} className={submitClass}>
               {t("actions.login")}
             </button>
           </form>
@@ -278,7 +270,7 @@ export default function LoginPage() {
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
               <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.register")}</span>
             </label>
-            <button type="submit" disabled={loading} className={btnClass}>
+            <button type="submit" disabled={loading} className={submitClass}>
               {t("actions.register")}
             </button>
           </form>

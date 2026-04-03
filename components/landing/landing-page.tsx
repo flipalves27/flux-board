@@ -61,7 +61,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
     <div className="relative">
       <a
         href="#landing-main"
-        className="absolute left-4 top-0 z-[100] -translate-y-[120%] rounded-[var(--flux-rad)] bg-[var(--flux-primary)] px-4 py-2 text-sm font-semibold text-white transition-transform focus:translate-y-4 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[var(--flux-primary-light)]"
+        className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] px-4 py-2 text-sm transition-transform focus:translate-y-4"
       >
         {t("skipToContent")}
       </a>
@@ -84,7 +84,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
           }}
           aria-hidden
         />
-        <div className="flux-grid-overlay pointer-events-none absolute inset-0 z-[1]" aria-hidden />
+        <div className="flux-grid-overlay flux-grid-overlay--drift pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-[max(1rem,env(safe-area-inset-left,0px))] pb-12 pt-3 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pl-6 sm:pr-6 md:pb-16 md:pt-4 md:pl-8 md:pr-8 lg:pl-12 lg:pr-12 2xl:max-w-[90rem] 2xl:pl-16 2xl:pr-16">
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />

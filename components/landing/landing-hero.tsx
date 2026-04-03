@@ -22,7 +22,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
   const t = useTranslations("landing");
   const kanbanCols = [
     {
-      title: t("kanbanMock.columns.prospecting"),
+      title: t("kanbanMock.columns.backlog"),
       cards: [
         {
           w: "78%",
@@ -36,24 +36,24 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
       ],
     },
     {
-      title: t("kanbanMock.columns.proposal"),
+      title: t("kanbanMock.columns.inProgress"),
       cards: [
         {
           w: "88%",
           barClassName: "bg-[var(--flux-accent-alpha-35)]",
-          tag: { label: t("kanbanMock.tags.review"), className: "bg-[var(--flux-warning-alpha-12)] text-[var(--flux-warning)]" },
+          tag: { label: t("kanbanMock.tags.inReview"), className: "bg-[var(--flux-warning-alpha-12)] text-[var(--flux-warning)]" },
         },
         { w: "55%", barClassName: "bg-[var(--flux-primary-alpha-30)]" },
         { w: "70%", barClassName: "bg-[var(--flux-secondary-alpha-32)]" },
       ],
     },
     {
-      title: t("kanbanMock.columns.closing"),
+      title: t("kanbanMock.columns.done"),
       cards: [
         {
           w: "92%",
           barClassName: "bg-[var(--flux-success-alpha-30)]",
-          tag: { label: t("kanbanMock.tags.won"), className: "bg-[var(--flux-success-alpha-12)] text-[var(--flux-success)]" },
+          tag: { label: t("kanbanMock.tags.done"), className: "bg-[var(--flux-success-alpha-12)] text-[var(--flux-success)]" },
         },
         { w: "68%", barClassName: "bg-[var(--flux-success-alpha-28)]" },
       ],
@@ -66,7 +66,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
   ];
 
   const primaryClass =
-    "btn-primary landing-btn-shimmer relative inline-flex w-full items-center justify-center gap-2 px-8 py-3.5 text-center text-[15px] sm:w-auto";
+    "flux-marketing-btn-primary landing-btn-shimmer relative w-full px-8 py-3.5 text-center text-[15px] sm:w-auto";
 
   return (
     <section className="home-landing-reveal pt-8 md:pt-12 lg:pt-14" aria-labelledby="landing-hero-heading">
@@ -99,7 +99,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
                 <ArrowRightIcon className="shrink-0" />
               </Link>
             )}
-            <a href="#platform" className="btn-ghost inline-flex w-full justify-center px-6 py-3 text-[15px] sm:w-auto">
+            <a href="#platform" className="flux-marketing-btn-ghost w-full justify-center px-6 py-3 text-[15px] sm:w-auto">
               {t("hero.secondaryPlatform")}
             </a>
           </div>

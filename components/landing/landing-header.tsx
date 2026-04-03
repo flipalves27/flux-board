@@ -88,18 +88,24 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
             {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
           {user ? (
-            <Link href={`${localeRoot}/boards`} className="btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-4 sm:py-2.5 sm:text-[15px]">
+            <Link
+              href={`${localeRoot}/boards`}
+              className="flux-marketing-btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-4 sm:py-2.5 sm:text-[15px]"
+            >
               {t("actions.openDashboardLoggedIn")}
             </Link>
           ) : (
             <>
               <Link
                 href={`${localeRoot}/login`}
-                className="btn-ghost hidden px-3 py-2 text-sm sm:inline-flex sm:px-3.5 sm:text-[15px]"
+                className="flux-marketing-btn-ghost hidden px-3 py-2 text-sm sm:inline-flex sm:px-3.5 sm:text-[15px]"
               >
                 {t("actions.signIn")}
               </Link>
-              <Link href={`${localeRoot}/login`} className="btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-[15px]">
+              <Link
+                href={`${localeRoot}/login`}
+                className="flux-marketing-btn-primary whitespace-nowrap px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-[15px]"
+              >
                 {t("actions.getStarted")}
               </Link>
             </>
