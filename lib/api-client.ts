@@ -82,6 +82,10 @@ export async function apiFetch(url: string, options: ApiFetchOptions = {}): Prom
     ...getApiHeaders(),
     ...customHeaders,
   };
+  // FormData exige boundary no Content-Type; getApiHeaders() força application/json e quebra request.formData() no servidor.
+  if (typeof FormData !== "undefined" && rest.body instanceof FormData) {
+    delete headers["Content-Type"];
+  }
   const res = await fetch(url, { ...rest, headers, credentials: "same-origin" });
 
   if (

@@ -47,6 +47,25 @@ describe("apiFetch session refresh", () => {
     expect(refreshCalls.length).toBe(1);
   });
 
+  it("does not set application/json Content-Type when body is FormData", async () => {
+    const { apiFetch } = await import("./api-client");
+
+    const fd = new FormData();
+    fd.set("methodology", "scrum");
+    fd.set("remapOnly", "0");
+
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const h = init?.headers as Record<string, string> | undefined;
+      expect(h?.["Content-Type"]).toBeUndefined();
+      return new Response(JSON.stringify({ runId: "abc" }), { status: 202 });
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const res = await apiFetch("/api/boards/x/spec-plan/runs", { method: "POST", body: fd });
+    expect(res.status).toBe(202);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("honors backoff after refresh returns 429 and does not spam refresh", async () => {
     const { apiFetch } = await import("./api-client");
 
