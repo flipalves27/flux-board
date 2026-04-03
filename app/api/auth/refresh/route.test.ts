@@ -8,15 +8,17 @@ vi.mock("@/lib/server-session", () => ({
 }));
 
 vi.mock("@/lib/session-cookies", () => ({
+  clearAuthCookiesOnNextResponse: vi.fn(),
   setAuthCookiesOnNextResponse: vi.fn(),
 }));
 
 import { rotateSessionFromRefreshPlain } from "@/lib/server-session";
-import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
+import { clearAuthCookiesOnNextResponse, setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 
 describe("POST /api/auth/refresh", () => {
   beforeEach(() => {
     vi.mocked(rotateSessionFromRefreshPlain).mockReset();
+    vi.mocked(clearAuthCookiesOnNextResponse).mockReset();
     vi.mocked(setAuthCookiesOnNextResponse).mockReset();
   });
 
@@ -34,6 +36,7 @@ describe("POST /api/auth/refresh", () => {
     });
     const res = await POST(req);
     expect(res.status).toBe(401);
+    expect(clearAuthCookiesOnNextResponse).toHaveBeenCalledWith(expect.any(Object));
   });
 
   it("returns 200 and sets cookies when rotation succeeds", async () => {

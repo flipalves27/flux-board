@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { REFRESH_COOKIE } from "@/lib/auth-cookie-names";
 import { rotateSessionFromRefreshPlain } from "@/lib/server-session";
-import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
+import { clearAuthCookiesOnNextResponse, setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
   const rotated = await rotateSessionFromRefreshPlain(refresh);
   if (!rotated) {
     const res = NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
+    clearAuthCookiesOnNextResponse(res);
     return res;
   }
 

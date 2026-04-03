@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { createToken, verifyToken } from "./auth";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "./auth-cookie-names";
-import { setAuthCookies } from "./session-cookies";
+import { clearAuthCookies, setAuthCookies } from "./session-cookies";
 import { createRefreshSession, consumeRefreshSessionForRotation } from "./kv-refresh-sessions";
 import { refreshRecordExpiresAt } from "./session-ttl";
 import { getUserById } from "./kv-users";
@@ -137,9 +137,18 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
     }
   }
 
-  if (!payload) return { ok: false };
+  if (!payload) {
+    if (access || refresh) {
+      await clearAuthCookies();
+    }
+    return { ok: false };
+  }
   const user = await getUserById(payload.id, payload.orgId);
-  return userToValidate(user);
+  const validated = await userToValidate(user);
+  if (!validated.ok) {
+    await clearAuthCookies();
+  }
+  return validated;
 }
 
 /**
