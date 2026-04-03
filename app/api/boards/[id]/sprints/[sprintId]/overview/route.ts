@@ -4,7 +4,7 @@ import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { getSprint } from "@/lib/kv-sprints";
-import { buildSprintOverview } from "@/lib/sprint-overview";
+import { buildSprintOverviewWithSnapshot } from "@/lib/sprint-overview";
 
 export const runtime = "nodejs";
 
@@ -32,6 +32,6 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
 
-  const overview = buildSprintOverview(board, sprint);
+  const overview = buildSprintOverviewWithSnapshot(board, sprint);
   return NextResponse.json(overview);
 }

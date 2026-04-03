@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
@@ -51,6 +52,8 @@ function SprintStatusBadge({ status }: { status: SprintData["status"] }) {
 }
 
 export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
   const tp = useTranslations("sprints.panel");
   const panelOpen = useSprintStore((s) => s.panelOpenBoard === boardId);
   /** `?? EMPTY` em vez de `?? []` — evita nova referência a cada render quando undefined (loop #185). */
@@ -273,15 +276,23 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
                 {activeSprint.name}
               </span>
             )}
-            {selectedSprint && (selectedSprint.status === "planning" || selectedSprint.status === "active") ? (
-              <button
-                type="button"
-                onClick={() => openPlanning(boardId, selectedSprint.id)}
-                className="ml-auto shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)]"
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {selectedSprint && (selectedSprint.status === "planning" || selectedSprint.status === "active") ? (
+                <button
+                  type="button"
+                  onClick={() => openPlanning(boardId, selectedSprint.id)}
+                  className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)]"
+                >
+                  {tp("planningCeremony")}
+                </button>
+              ) : null}
+              <Link
+                href={`${localeRoot}/board/${encodeURIComponent(boardId)}/sprint-history`}
+                className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)]"
               >
-                {tp("planningCeremony")}
-              </button>
-            ) : null}
+                {tp("boardHistoryShort")}
+              </Link>
+            </div>
           </div>
           <button
             type="button"

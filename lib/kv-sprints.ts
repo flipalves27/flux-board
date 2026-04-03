@@ -4,6 +4,7 @@ import { getStore } from "./storage";
 import { mergeBurndownSnapshotRow } from "./sprint-burndown-snapshot";
 import { sanitizeText } from "./schemas";
 import type { BurndownSnapshot, SprintData } from "./schemas";
+import { parseScopeSnapshotFromDoc } from "./sprint-scope-snapshot";
 
 export type { SprintData };
 
@@ -28,6 +29,7 @@ export function normalizeSprintData(raw: SprintData): SprintData {
     programIncrementId: raw.programIncrementId ?? null,
     sprintTags: raw.sprintTags ?? [],
     customFields: cf,
+    scopeSnapshot: parseScopeSnapshotFromDoc(raw.scopeSnapshot as unknown),
   };
 }
 
@@ -202,6 +204,7 @@ export async function updateSprint(
       | "programIncrementId"
       | "sprintTags"
       | "customFields"
+      | "scopeSnapshot"
     >
   >
 ): Promise<SprintData | null> {
@@ -247,6 +250,7 @@ export async function updateSprint(
         }
       : {}),
     ...(updates.customFields !== undefined ? { customFields: sanitizeCustomFields(updates.customFields) } : {}),
+    ...(updates.scopeSnapshot !== undefined ? { scopeSnapshot: updates.scopeSnapshot } : {}),
     updatedAt: new Date().toISOString(),
   };
 

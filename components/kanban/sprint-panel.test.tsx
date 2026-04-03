@@ -30,12 +30,14 @@ vi.mock("@/lib/api-client", () => ({
 vi.mock("@/components/ui/use-modal-a11y", () => ({ useModalA11y: vi.fn() }));
 
 vi.mock("next-intl", () => ({
+  useLocale: () => "en",
   useTranslations: (namespace?: string) => (key: string) => {
     const panel: Record<string, string> = {
       planningCeremony: "Cerimônia de planejamento",
       applyAiMerge: "Mesclar sugestão IA",
       applyAiReplace: "Substituir pelo IA",
       closePanelAria: "Fechar painel Sprint",
+      boardHistoryShort: "History",
     };
     const backlog: Record<string, string> = {
       title: "Itens do sprint",

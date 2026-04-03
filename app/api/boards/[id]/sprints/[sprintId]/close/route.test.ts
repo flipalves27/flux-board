@@ -8,7 +8,7 @@ vi.mock("@/lib/kv-boards", () => ({
   updateBoardFromExisting: vi.fn(),
   userCanAccessBoard: vi.fn(),
 }));
-vi.mock("@/lib/kv-organizations", () => ({ getOrganizationById: vi.fn() }));
+vi.mock("@/lib/kv-organizations", () => ({ getOrganizationById: vi.fn(async () => ({})) }));
 vi.mock("@/lib/plan-gates", () => ({
   assertFeatureAllowed: vi.fn(),
   planGateCtxFromAuthPayload: vi.fn(() => ({})),
@@ -41,13 +41,16 @@ describe("POST /api/boards/[id]/sprints/[sprintId]/close", () => {
       cardIds: ["c1", "c2", "c3"],
       doneCardIds: ["c1", "c2"],
       burndownSnapshots: [],
+      addedMidSprint: [],
+      removedCardIds: [],
     } as never);
     vi.mocked(getBoard).mockResolvedValue({
       id: "b1",
+      config: { bucketOrder: [{ key: "todo", label: "To do" }], collapsedColumns: [] },
       cards: [
-        { id: "c1", storyPoints: 3, tags: [] },
-        { id: "c2", storyPoints: 5, tags: [] },
-        { id: "c3", tags: [] },
+        { id: "c1", storyPoints: 3, tags: [], bucket: "todo", title: "A" },
+        { id: "c2", storyPoints: 5, tags: [], bucket: "todo", title: "B" },
+        { id: "c3", tags: [], bucket: "todo", title: "C" },
       ],
     } as never);
     vi.mocked(updateSprint).mockResolvedValue({ id: "s1", status: "closed", velocity: 8 } as never);
@@ -63,8 +66,15 @@ describe("POST /api/boards/[id]/sprints/[sprintId]/close", () => {
       expect.objectContaining({
         status: "closed",
         velocity: 8,
+        scopeSnapshot: expect.objectContaining({
+          reason: "closed",
+          bucketOrderSnapshot: [{ key: "todo", label: "To do" }],
+          cards: expect.any(Array),
+        }),
       })
     );
+    const call = vi.mocked(updateSprint).mock.calls[0]?.[2];
+    expect(call?.scopeSnapshot?.cards).toHaveLength(3);
     expect(body.carryoverCardIds).toEqual(["c3"]);
     expect(body.carryoverAssist).toMatchObject({
       recommended: true,

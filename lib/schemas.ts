@@ -1038,6 +1038,21 @@ export const SprintGoalHistoryEntrySchema = z.object({
   goal: z.string().trim().max(1000),
 });
 
+/** Frozen board state at sprint close (or other capture reasons) for faithful history. */
+export const SprintScopeSnapshotReasonSchema = z.enum(["closed", "review", "manual"]);
+export type SprintScopeSnapshotReason = z.infer<typeof SprintScopeSnapshotReasonSchema>;
+
+export const SprintScopeSnapshotSchema = z.object({
+  capturedAt: z.string().trim().max(80),
+  reason: SprintScopeSnapshotReasonSchema,
+  /** Copy of `board.config.bucketOrder` at capture time. */
+  bucketOrderSnapshot: z.array(z.unknown()).max(120),
+  /** Deep-cloned card payloads for all ids in sprint scope at capture. */
+  cards: z.array(z.unknown()).max(500),
+});
+
+export type SprintScopeSnapshot = z.infer<typeof SprintScopeSnapshotSchema>;
+
 export const SprintDataSchema = z.object({
   id: z.string().trim().min(1).max(200),
   orgId: z.string().trim().min(1).max(200),
@@ -1067,6 +1082,8 @@ export const SprintDataSchema = z.object({
   programIncrementId: z.string().trim().max(200).nullable().default(null),
   sprintTags: z.array(z.string().trim().max(60)).max(20).default([]),
   customFields: z.record(z.string().trim().max(60), z.string().trim().max(500)).default({}),
+  /** Optional frozen scope for closed/historical sprints (see sprint close flow). */
+  scopeSnapshot: SprintScopeSnapshotSchema.optional(),
   createdAt: z.string().trim().max(80),
   updatedAt: z.string().trim().max(80),
 });

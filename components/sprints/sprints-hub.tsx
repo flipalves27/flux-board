@@ -261,6 +261,18 @@ export function SprintsHub({ getHeaders }: Props) {
         </div>
       ) : null}
 
+      {!loading && !error && filterBoardId ? (
+        <div className="rounded-xl border border-dashed border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-4 py-3 text-sm">
+          <Link
+            href={`${localeRoot}/board/${encodeURIComponent(filterBoardId)}/sprint-history`}
+            className="font-semibold text-[var(--flux-primary-light)] hover:underline"
+          >
+            {t("history.hubBoardHistory")}
+          </Link>
+          <p className="mt-1 text-xs text-[var(--flux-text-muted)]">{t("history.hubBoardHistoryHint")}</p>
+        </div>
+      ) : null}
+
       {error ? (
         error === t("upgradeRequired") ? (
           <FeatureGateNotice

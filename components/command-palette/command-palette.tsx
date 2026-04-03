@@ -308,6 +308,15 @@ export function CommandPalette() {
           action: { type: "boardDeep", boardId: b.id, query: "incrementReview=1" },
           icon: "actions",
         });
+        items.push({
+          id: `sprintHistory:${b.id}`,
+          category: "actions",
+          title: t("actions.boardSprintHistory", { board: b.name }),
+          subtitle: t("subtitles.navigate"),
+          keywords: `sprint history timeline velocity export ${b.name}`,
+          action: { type: "navigate", path: `/board/${encodeURIComponent(b.id)}/sprint-history` },
+          icon: "actions",
+        });
       }
     }
 

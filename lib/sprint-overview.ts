@@ -1,5 +1,6 @@
 import type { BoardData } from "./kv-boards";
 import type { BurndownSnapshot, SprintData } from "./schemas";
+import { collectSprintScopeCardIds } from "./sprint-scope-snapshot";
 
 export type SprintCardResolved = {
   id: string;
@@ -196,6 +197,22 @@ export type SprintOverviewPayload = {
   timeline: SprintTimelineItem[];
 };
 
+export function boardViewForSprintOverview(board: BoardData, sprint: SprintData): BoardData {
+  const snap = sprint.scopeSnapshot;
+  if (!snap) return board;
+  const bucketOrder = Array.isArray(snap.bucketOrderSnapshot)
+    ? snap.bucketOrderSnapshot
+    : (board.config?.bucketOrder ?? []);
+  return {
+    ...board,
+    cards: snap.cards as BoardData["cards"],
+    config: {
+      ...(board.config ?? { bucketOrder: [], collapsedColumns: [] }),
+      bucketOrder,
+    },
+  };
+}
+
 export function buildSprintOverview(board: BoardData, sprint: SprintData): SprintOverviewPayload {
   const cardsScope = sprint.cardIds.map((id) => resolveCardForSprint(board, id));
   const cardsDone = sprint.doneCardIds.map((id) => resolveCardForSprint(board, id));
@@ -213,6 +230,31 @@ export function buildSprintOverview(board: BoardData, sprint: SprintData): Sprin
     burndown,
     timeline,
   };
+}
+
+/** Prefer frozen `scopeSnapshot` when present so closed sprints stay faithful to the past. */
+export function buildSprintOverviewWithSnapshot(board: BoardData, sprint: SprintData): SprintOverviewPayload {
+  const viewBoard = boardViewForSprintOverview(board, sprint);
+  return buildSprintOverview(viewBoard, sprint);
+}
+
+export function buildSprintCardExportRows(
+  board: BoardData,
+  sprint: SprintData
+): { cardId: string; title: string; bucket: string; bucketLabel: string; done: boolean }[] {
+  const view = boardViewForSprintOverview(board, sprint);
+  const done = new Set(sprint.doneCardIds.map(String));
+  const ids = collectSprintScopeCardIds(sprint);
+  return ids.map((id) => {
+    const r = resolveCardForSprint(view, id);
+    return {
+      cardId: id,
+      title: r.title,
+      bucket: r.bucket,
+      bucketLabel: r.bucketLabel,
+      done: done.has(id),
+    };
+  });
 }
 
 /** Texto compacto para prompts de IA (Fluxy / histórico). Evita dados sensíveis além de títulos e metadados de trabalho. */

@@ -196,6 +196,11 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
             <p className="mt-2 text-xs text-[var(--flux-text-muted)]">
               {tc(`status.${sprint.status}`)} · {sprint.cadenceType === "continuous" ? t("cadenceContinuous") : t("cadenceTimebox")}
             </p>
+            {sprint.status === "closed" && !sprint.scopeSnapshot ? (
+              <p className="mt-2 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] px-3 py-2 text-[11px] text-[var(--flux-text-muted)]">
+                {t("reconstructedHint")}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn-primary px-3 py-2 text-xs" onClick={() => setDrawerOpen(true)}>

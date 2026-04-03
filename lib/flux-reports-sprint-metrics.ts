@@ -1,5 +1,33 @@
 import type { BoardData } from "@/lib/kv-boards";
 import { listSprints } from "@/lib/kv-sprints";
+import type { SprintData } from "@/lib/schemas";
+
+function storyPointsFromDoneUsingCards(doneCardIds: readonly string[], cards: unknown[]): number {
+  const byId = new Map<string, { storyPoints?: number | null }>();
+  for (const raw of cards) {
+    if (!raw || typeof raw !== "object") continue;
+    const id = String((raw as { id?: string }).id ?? "").trim();
+    if (!id) continue;
+    byId.set(id, raw as { storyPoints?: number | null });
+  }
+  let pts = 0;
+  for (const id of doneCardIds) {
+    const c = byId.get(String(id));
+    if (!c) continue;
+    const sp = c.storyPoints;
+    if (typeof sp === "number" && Number.isFinite(sp)) pts += sp;
+  }
+  return pts;
+}
+
+function completedStoryPointsForClosedSprint(sprint: SprintData, boardCards: unknown[]): number {
+  const cards = sprint.scopeSnapshot?.cards ?? boardCards;
+  let pts = storyPointsFromDoneUsingCards(sprint.doneCardIds ?? [], cards);
+  if (pts === 0 && sprint.velocity != null && typeof sprint.velocity === "number" && Number.isFinite(sprint.velocity)) {
+    pts = sprint.velocity;
+  }
+  return pts;
+}
 
 export type SprintStoryPointsRow = {
   boardId: string;
@@ -29,19 +57,9 @@ export async function buildSprintStoryPointsHistory(
       continue;
     }
     const cards = Array.isArray(b.cards) ? b.cards : [];
-    const byId = new Map(cards.map((c) => [String((c as { id?: string }).id || ""), c]));
     for (const s of sprints) {
       if (s.status !== "closed") continue;
-      let pts = 0;
-      for (const id of s.doneCardIds ?? []) {
-        const c = byId.get(String(id));
-        if (!c || typeof c !== "object") continue;
-        const sp = (c as { storyPoints?: number | null }).storyPoints;
-        if (typeof sp === "number" && Number.isFinite(sp)) pts += sp;
-      }
-      if (pts === 0 && s.velocity != null && typeof s.velocity === "number" && Number.isFinite(s.velocity)) {
-        pts = s.velocity;
-      }
+      const pts = completedStoryPointsForClosedSprint(s, cards);
       rows.push({
         boardId: b.id,
         boardName: b.name,

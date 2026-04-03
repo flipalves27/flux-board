@@ -11,6 +11,7 @@ import {
   computeCarryoverCardIds,
   computeVelocityFromDoneCards,
 } from "@/lib/sprint-lifecycle";
+import { buildScopeSnapshotFromBoard } from "@/lib/sprint-scope-snapshot";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
 import { logSprintLifecycleEvent } from "@/lib/sprint-lifecycle-observability";
 
@@ -67,10 +68,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
   const velocity = computeVelocityFromDoneCards(sprint.doneCardIds, cards);
 
+  const snapResult = buildScopeSnapshotFromBoard({
+    sprint,
+    board,
+    reason: "closed",
+  });
+  if (!snapResult.ok) {
+    return NextResponse.json({ error: snapResult.error }, { status: 400 });
+  }
+
   const updated = await updateSprint(payload.orgId, sprintId, {
     status: "closed",
     velocity,
     burndownSnapshots,
+    scopeSnapshot: snapResult.snapshot,
   });
   if (!updated) {
     return NextResponse.json({ error: "Falha ao atualizar sprint." }, { status: 500 });
