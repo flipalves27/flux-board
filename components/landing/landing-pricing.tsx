@@ -161,7 +161,7 @@ export function LandingPricing({
           >
             {plan.badge && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary)] px-[18px] py-1 font-display text-[10px] font-bold uppercase tracking-wide text-[var(--flux-surface-dark)] shadow-[var(--flux-shadow-primary-medium)]">
+                <span className="rounded-[var(--flux-marketing-radius)] bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary)] px-[18px] py-1 font-display text-[10px] font-bold uppercase tracking-wide text-[#0f0d1e] shadow-[var(--flux-shadow-primary-medium)]">
                   {plan.badge}
                 </span>
               </div>

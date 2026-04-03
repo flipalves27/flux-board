@@ -1,9 +1,9 @@
 import { LandingPublicBackdrop } from "@/components/landing/landing-public-backdrop";
 
 /**
- * Decorative layers shared with {@link AppShell}: aurora blobs + grid.
- * Use inside a `relative` full-bleed container; keep foreground content in `relative z-[1]` or above.
- * `subtle` matches the in-app shell; `immersive` usa starfield + orbs (mesmo modelo da landing v3).
+ * Fundo global alinhado à tela principal (starfield + orbs v3).
+ * `immersive` — opacidade plena (login, marketing).
+ * `subtle` — starfield um pouco mais suave no app autenticado (boards, relatórios, etc.).
  */
 export function FluxAppBackdrop({
   className = "z-0",
@@ -12,18 +12,6 @@ export function FluxAppBackdrop({
   className?: string;
   variant?: "subtle" | "immersive";
 }) {
-  if (variant === "immersive") {
-    return <LandingPublicBackdrop className={className} />;
-  }
-
-  return (
-    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`} aria-hidden>
-      <div className="flux-aurora-bg flux-aurora-bg--subtle absolute inset-0">
-        <span className="flux-aurora-blob flux-aurora-blob--a" />
-        <span className="flux-aurora-blob flux-aurora-blob--b" />
-        <span className="flux-aurora-blob flux-aurora-blob--c" />
-      </div>
-      <div className="flux-grid-overlay flux-grid-overlay--dense absolute inset-0 opacity-[0.22]" />
-    </div>
-  );
+  const starfieldClassName = variant === "immersive" ? "opacity-[0.52]" : "opacity-[0.46]";
+  return <LandingPublicBackdrop className={className} starfieldClassName={starfieldClassName} />;
 }

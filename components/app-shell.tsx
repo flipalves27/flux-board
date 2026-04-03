@@ -35,14 +35,14 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const t = useTranslations("appShell");
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
+    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
+      <FluxAppBackdrop className="absolute inset-0 z-[var(--flux-z-app-shell-bg)]" />
       <Sidebar />
       <div
-        className={`relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
+        className={`relative z-[var(--flux-z-app-shell-content)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
         {...(layout === "mobile" ? mainAreaProps : {})}
       >
-        <FluxAppBackdrop className="z-[var(--flux-z-app-shell-bg)]" />
-        <div className="relative z-[var(--flux-z-app-shell-content)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <TrialBillingBanner />
           <MobileAppHeader />
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>

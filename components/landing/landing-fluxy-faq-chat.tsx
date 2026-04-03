@@ -36,11 +36,11 @@ export function LandingFluxyFab({
     <button
       type="button"
       onClick={onToggle}
-      className="group flex items-center gap-2 rounded-full border-2 border-[var(--flux-secondary-alpha-28)] bg-gradient-to-br from-[var(--flux-primary-alpha-20)] to-[var(--flux-secondary-alpha-10)] py-2 pl-2 pr-4 shadow-[0_6px_24px_var(--flux-primary-alpha-22)] backdrop-blur-[20px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_36px_var(--flux-primary-alpha-35)] hover:border-[var(--flux-secondary-alpha-40)] active:translate-y-0 md:pr-5"
+      className="group flex items-center gap-2 rounded-[var(--flux-marketing-radius)] border-2 border-[var(--flux-secondary-alpha-28)] bg-gradient-to-br from-[var(--flux-primary-alpha-20)] to-[var(--flux-secondary-alpha-10)] py-2 pl-2 pr-4 shadow-[0_6px_24px_var(--flux-primary-alpha-22)] backdrop-blur-[20px] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_36px_var(--flux-primary-alpha-35)] hover:border-[var(--flux-secondary-alpha-40)] active:translate-y-0 md:pr-5"
       aria-expanded={panelOpen}
       aria-label={ariaLabel}
     >
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1rem] leading-none shadow-[var(--flux-shadow-primary-dot-sm)] md:h-9 md:w-9">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1rem] leading-none shadow-[var(--flux-shadow-primary-dot-sm)] md:h-9 md:w-9">
         <span aria-hidden>🦊</span>
       </span>
       <span className="hidden min-w-0 text-left md:block">

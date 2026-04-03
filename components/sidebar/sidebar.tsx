@@ -290,7 +290,7 @@ export function Sidebar() {
           }
           max-md:fixed max-md:left-0 max-md:top-0 max-md:z-[var(--flux-z-sidebar-drawer)] max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-[min(280px,calc(100vw-24px))] max-md:shadow-[var(--flux-shadow-lg)]
           max-md:-translate-x-full max-md:pointer-events-none max-md:data-[open]:translate-x-0 max-md:data-[open]:pointer-events-auto
-          md:relative md:z-auto md:h-full md:min-h-0 md:translate-x-0 md:pointer-events-auto md:shadow-none`}
+          md:relative md:z-[var(--flux-z-app-shell-content)] md:h-full md:min-h-0 md:translate-x-0 md:pointer-events-auto md:shadow-none`}
         style={layout === "mobile" ? undefined : { width: sidebarWidth }}
         data-open={layout === "mobile" && mobileOpen ? "" : undefined}
       >

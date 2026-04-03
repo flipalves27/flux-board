@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
-import { usePlatformDisplayName } from "@/context/org-branding-context";
+import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { useNavigationVariant } from "@/context/navigation-variant-context";
 
 function IconMenu({ className }: { className?: string }) {
@@ -18,6 +19,7 @@ export function MobileAppHeader() {
   const { layout, mobileOpen, openMobile } = useSidebarLayout();
   const t = useTranslations("navigation.menu");
   const platformName = usePlatformDisplayName();
+  const orgLogoUrl = useOrgBranding()?.effectiveBranding?.logoUrl?.trim();
   const navVariant = useNavigationVariant();
   const isMinimal = navVariant === "minimal";
 
@@ -41,7 +43,8 @@ export function MobileAppHeader() {
       >
         <IconMenu className="h-5 w-5" />
       </button>
-      <span className="font-display text-sm font-bold tracking-tight text-[var(--flux-text)]">{platformName}</span>
+      <FluxBrandMark platformName={platformName} logoUrl={orgLogoUrl} variant="mobile" className="shrink-0" />
+      <span className="min-w-0 truncate font-display text-sm font-bold tracking-tight text-[var(--flux-text)]">{platformName}</span>
     </header>
   );
 }

@@ -4,17 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
-
-function brandMarkInitials(name: string): string {
-  const words = name.split(/[^a-zA-Z0-9]+/).filter(Boolean);
-  if (words.length >= 2) {
-    return `${words[0]![0] ?? ""}${words[1]![0] ?? ""}`.toUpperCase().slice(0, 2) || "FB";
-  }
-  const compact = name.replace(/[^a-zA-Z0-9]/g, "");
-  if (compact.length >= 2) return compact.slice(0, 2).toUpperCase();
-  if (compact.length === 1) return (compact + compact).toUpperCase();
-  return "FB";
-}
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 
 type LandingHeaderProps = {
   localeRoot: string;
@@ -39,30 +29,12 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
   const navClass =
     "rounded-md px-2 py-2.5 transition-colors hover:text-[var(--flux-secondary)] md:py-1.5 min-h-[44px] md:min-h-0 flex items-center text-[13px] font-medium text-[var(--flux-text-muted)]";
   const closeMobile = () => setMobileOpen(false);
-  const initials = brandMarkInitials(appName);
 
   return (
     <header className="fixed left-0 right-0 top-0 z-[100] border-b border-[var(--flux-primary-alpha-10)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_72%,transparent)] px-4 py-3.5 backdrop-blur-[28px] backdrop-saturate-150 md:px-6">
       <div className="mx-auto flex w-full max-w-[1200px] flex-nowrap items-center justify-between gap-2 md:justify-start md:gap-3 lg:gap-4 2xl:max-w-[90rem]">
         <Link href={`${localeRoot}/`} className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3" onClick={closeMobile}>
-          <div
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] sm:h-9 sm:w-9 sm:rounded-[10px]"
-            style={{
-              background: logoUrl
-                ? "var(--flux-surface-elevated)"
-                : "linear-gradient(135deg, var(--flux-primary), var(--flux-secondary))",
-              boxShadow: logoUrl ? "none" : "0 8px 20px var(--flux-primary-alpha-35)",
-            }}
-          >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="max-h-8 max-w-[32px] object-contain" />
-            ) : (
-              <span className="font-display text-[11px] font-extrabold leading-none tracking-tight text-[var(--flux-surface-dark)] sm:text-xs">
-                {initials}
-              </span>
-            )}
-          </div>
+          <FluxBrandMark platformName={appName} logoUrl={logoUrl} variant="landing" />
           <p className="min-w-0 truncate font-display text-[1.05rem] font-bold tracking-tight text-[var(--flux-text)] sm:text-base md:text-[1.15rem]">
             {appName}
           </p>

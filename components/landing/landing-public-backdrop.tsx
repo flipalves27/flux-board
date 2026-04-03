@@ -5,14 +5,23 @@ import { LandingAmbientOrbs } from "./landing-ambient-orbs";
 
 const LandingStarfield = dynamic(() => import("./landing-starfield").then((m) => m.LandingStarfield), { ssr: false });
 
+type LandingPublicBackdropProps = {
+  className?: string;
+  /** Opacidade do starfield — landing/login mais forte; app interno um pouco mais suave para leitura. */
+  starfieldClassName?: string;
+};
+
 /**
- * Fundo público alinhado ao redesign v3: canvas starfield + orbs grandes (sem aurora/malha/SVG).
- * Usado na landing e no login.
+ * Fundo redesign v3: canvas starfield + orbs (sem aurora/malha).
+ * Landing, login, shell da plataforma e páginas públicas.
  */
-export function LandingPublicBackdrop({ className = "" }: { className?: string }) {
+export function LandingPublicBackdrop({
+  className = "",
+  starfieldClassName = "opacity-[0.52]",
+}: LandingPublicBackdropProps) {
   return (
-    <div className={`pointer-events-none absolute inset-0 z-0 min-h-[100dvh] overflow-hidden ${className}`.trim()} aria-hidden>
-      <LandingStarfield className="opacity-[0.52]" />
+    <div className={`pointer-events-none absolute inset-0 z-0 min-h-full overflow-hidden ${className}`.trim()} aria-hidden>
+      <LandingStarfield className={starfieldClassName} />
       <LandingAmbientOrbs />
     </div>
   );

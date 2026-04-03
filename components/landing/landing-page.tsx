@@ -126,7 +126,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
               </ScrollReveal>
             </main>
 
-            <LandingFooter localeRoot={localeRoot} appName={appName} />
+            <LandingFooter localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} />
           </div>
 
           <LandingFluxyFaqChat />

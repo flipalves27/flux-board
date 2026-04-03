@@ -412,6 +412,8 @@
   --flux-rad-sm: 6px;
   --flux-rad-lg: 16px;
   --flux-rad-xl: 20px;
+  /** CTAs marketing / login — cantos moderados (identidade Flux-Board, não pílula) */
+  --flux-marketing-radius: 12px;
   --shadow-md: var(--flux-shadow-md);
   --shadow-drag: var(--flux-shadow-drag);
   --flux-home-hero-bg: linear-gradient(
@@ -1479,11 +1481,11 @@
     pointer-events: none;
   }
 
-  /* Marketing / public auth — pílulas compactas (elegância vs. tamanho grande) */
+  /* Marketing / public auth — compactos, raio moderado, borda e sombra mais nítidas */
   .flux-marketing-btn-primary {
     @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
     gap: 0.35rem;
-    border-radius: 9999px;
+    border-radius: var(--flux-marketing-radius);
     padding: 0.4rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.25;
@@ -1495,17 +1497,20 @@
       var(--flux-primary) 45%,
       var(--flux-primary-dark) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--flux-primary) 32%, transparent);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 42%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
-      0 4px 16px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+      0 2px 0 color-mix(in srgb, var(--flux-primary-dark) 35%, transparent),
+      0 6px 14px color-mix(in srgb, var(--flux-primary) 24%, transparent);
   }
 
   .flux-marketing-btn-primary:hover:not(:disabled) {
-    filter: brightness(1.05);
+    filter: brightness(1.04);
+    border-color: color-mix(in srgb, var(--flux-primary-light) 55%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
-      0 6px 22px color-mix(in srgb, var(--flux-primary) 28%, transparent);
+      inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+      0 2px 0 color-mix(in srgb, var(--flux-primary-dark) 45%, transparent),
+      0 8px 18px color-mix(in srgb, var(--flux-primary) 30%, transparent);
   }
 
   .flux-marketing-btn-primary:active:not(:disabled) {
@@ -1521,20 +1526,21 @@
   .flux-marketing-btn-ghost {
     @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
     gap: 0.35rem;
-    border-radius: 9999px;
+    border-radius: var(--flux-marketing-radius);
     padding: 0.4rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.25;
     font-weight: 600;
     color: var(--flux-text-muted);
-    background: transparent;
-    border: 1px solid var(--flux-control-border);
+    background: color-mix(in srgb, var(--flux-surface-card) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 18%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
   }
 
   .flux-marketing-btn-ghost:hover:not(:disabled) {
     color: var(--flux-text);
-    border-color: color-mix(in srgb, var(--flux-primary) 35%, transparent);
-    background: var(--flux-primary-glow);
+    border-color: color-mix(in srgb, var(--flux-primary) 38%, transparent);
+    background: color-mix(in srgb, var(--flux-primary) 8%, transparent);
   }
 
   .flux-marketing-btn-ghost:focus-visible {
@@ -1545,19 +1551,26 @@
   .flux-marketing-btn-accent {
     @apply inline-flex items-center justify-center font-display transition-all duration-300 ease-out;
     gap: 0.35rem;
-    border-radius: 9999px;
+    border-radius: var(--flux-marketing-radius);
     padding: 0.4rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.25;
     font-weight: 700;
-    color: var(--flux-surface-dark);
+    color: #0f0d1e;
     background: linear-gradient(135deg, var(--flux-secondary), #00b8b9);
-    border: none;
-    box-shadow: 0 0 20px color-mix(in srgb, var(--flux-secondary) 26%, transparent);
+    border: 1px solid color-mix(in srgb, var(--flux-secondary) 45%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+      0 2px 0 color-mix(in srgb, #008b8c 40%, transparent),
+      0 6px 16px color-mix(in srgb, var(--flux-secondary) 28%, transparent);
   }
 
   .flux-marketing-btn-accent:hover:not(:disabled) {
-    box-shadow: 0 0 28px color-mix(in srgb, var(--flux-secondary) 34%, transparent);
+    border-color: color-mix(in srgb, var(--flux-secondary-light) 40%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+      0 2px 0 color-mix(in srgb, #008b8c 50%, transparent),
+      0 8px 20px color-mix(in srgb, var(--flux-secondary) 34%, transparent);
     transform: translateY(-1px);
   }
 
@@ -1579,13 +1592,15 @@
 
   /** Plano Free na landing — mesmo peso visual dos CTAs compactos (btn--secondary v3) */
   .flux-marketing-plan-secondary {
-    @apply inline-flex w-full items-center justify-center rounded-full font-display font-semibold transition-all duration-200 ease-out;
+    @apply inline-flex w-full items-center justify-center font-display font-semibold transition-all duration-200 ease-out;
+    border-radius: var(--flux-marketing-radius);
     padding: 0.4rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.25;
     background: color-mix(in srgb, var(--flux-surface-card) 55%, transparent);
     color: var(--flux-text);
-    border: 1px solid var(--flux-primary-alpha-10);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 16%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
@@ -1600,8 +1615,8 @@
     flex-wrap: wrap;
     align-items: stretch;
     gap: 0.25rem;
-    padding: 0.15rem;
-    border-radius: 9999px;
+    padding: 0.2rem;
+    border-radius: var(--flux-marketing-radius);
     border: 1px solid color-mix(in srgb, var(--flux-primary) 22%, transparent);
     background: color-mix(in srgb, var(--flux-surface-elevated) 72%, transparent);
     box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
@@ -1609,7 +1624,7 @@
 
   .flux-marketing-segmented__btn {
     @apply min-h-9 flex-1 font-display font-semibold transition-all duration-300 sm:min-h-0;
-    border-radius: 9999px;
+    border-radius: calc(var(--flux-marketing-radius) - 4px);
     padding: 0.4rem 1rem;
     font-size: 0.8125rem;
     line-height: 1.25;
@@ -1636,10 +1651,11 @@
       var(--flux-primary) 50%,
       var(--flux-primary-dark) 100%
     );
-    border: 1px solid color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 36%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
-      0 4px 16px color-mix(in srgb, var(--flux-primary) 28%, transparent);
+      0 1px 0 color-mix(in srgb, var(--flux-primary-dark) 40%, transparent),
+      0 4px 12px color-mix(in srgb, var(--flux-primary) 26%, transparent);
   }
 
   .auth-glass-panel.flux-glass-card {

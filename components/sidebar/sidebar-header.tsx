@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FluxLogoIcon, IconChevronLeft, IconChevronRight, IconClose } from "./icons";
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
+import { IconChevronLeft, IconChevronRight, IconClose } from "./icons";
 import type { SidebarLayoutMode } from "./sidebar-nav-context";
 
 export type SidebarHeaderProps = {
@@ -46,22 +47,7 @@ export function SidebarHeader({
         onClick={() => layout === "mobile" && closeMobile()}
         className={`flex min-w-0 items-center ${compactMode ? "shrink-0 justify-center" : "gap-2"}`}
       >
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[var(--flux-rad-sm)] text-white"
-          style={{
-            background: orgLogoUrl
-              ? "var(--flux-surface-elevated)"
-              : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-            boxShadow: orgLogoUrl ? "none" : "0 2px 8px var(--flux-primary-alpha-25)",
-          }}
-        >
-          {orgLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={orgLogoUrl} alt="" className="max-h-[28px] max-w-[28px] object-contain" />
-          ) : (
-            <FluxLogoIcon className="h-4 w-4" />
-          )}
-        </div>
+        <FluxBrandMark platformName={platformName} logoUrl={orgLogoUrl} variant="app" />
         {showExpandedNav && (
           <span className="truncate font-display text-sm font-bold text-[var(--flux-text)]">{platformName}</span>
         )}

@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { FluxLogoIcon } from "./landing-icons";
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 
 type LandingFooterProps = {
   localeRoot: string;
   appName: string;
+  logoUrl?: string;
 };
 
-export function LandingFooter({ localeRoot, appName }: LandingFooterProps) {
+export function LandingFooter({ localeRoot, appName, logoUrl }: LandingFooterProps) {
   const t = useTranslations("landing");
 
   return (
@@ -17,12 +18,7 @@ export function LandingFooter({ localeRoot, appName }: LandingFooterProps) {
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="max-w-xs">
           <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))" }}
-            >
-              <FluxLogoIcon className="h-4 w-4" />
-            </div>
+            <FluxBrandMark platformName={appName} logoUrl={logoUrl} variant="app" />
             <span className="font-display text-sm font-bold">{appName}</span>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-[var(--flux-text-muted)]">

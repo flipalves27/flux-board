@@ -9,6 +9,7 @@ import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-c
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 
 const OAUTH_ERROR_KEYS = new Set([
   "oauth_denied",
@@ -25,18 +26,6 @@ const OAUTH_ERROR_KEYS = new Set([
   "oauth_not_configured",
   "rate_limited",
 ]);
-
-function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 44 44" fill="none" className={className} aria-hidden>
-      <path d="M8 32L16 20L24 26L36 10" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M30 10H36V16" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="20" r="2.5" fill="var(--flux-accent-alpha-80)" />
-      <circle cx="24" cy="26" r="2.5" fill="var(--flux-secondary-alpha-80)" />
-      <path d="M8 36H36" stroke="var(--flux-chrome-alpha-30)" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -146,22 +135,7 @@ export default function LoginPage() {
       <FluxAppBackdrop variant="immersive" />
       <div className="flux-glass-card auth-glass-panel relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div
-            className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"
-            style={{
-              background: logoUrl
-                ? "var(--flux-surface-elevated)"
-                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: logoUrl ? "none" : "0 8px 32px var(--flux-primary-alpha-40)",
-            }}
-          >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="max-h-8 max-w-[36px] object-contain" />
-            ) : (
-              <FluxLogoIcon className="w-5 h-5" />
-            )}
-          </div>
+          <FluxBrandMark platformName={platformName} logoUrl={logoUrl} variant="auth" className="flex-shrink-0" />
           <div>
             <h1 className="font-display font-bold text-xl text-[var(--flux-text)] tracking-tight">
               {platformName}
