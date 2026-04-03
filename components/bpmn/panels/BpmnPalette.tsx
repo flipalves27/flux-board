@@ -4,9 +4,9 @@ import { memo, useState, type DragEvent } from "react";
 import type { BpmnNodeType, BpmnSemanticVariant } from "@/lib/bpmn-types";
 import { useBpmnStore } from "@/stores/bpmn-store";
 import {
-  RebornStencilEventIcon,
-  RebornStencilGatewayIcon,
-} from "@/components/templates/bpmn-reborn-shapes";
+  DeliveredStencilEventIcon,
+  DeliveredStencilGatewayIcon,
+} from "@/components/templates/bpmn-delivered-shapes";
 
 type Stencil = {
   type: string;
@@ -27,7 +27,7 @@ const STENCILS: Stencil[] = [
   { type: "end_event", label: "Fim", hint: "Fim do processo", category: "events", width: 44, height: 44 },
 
   { type: "task", label: "Tarefa — Padrão", hint: "Tarefa manual / padrão", category: "tasks", width: 160, height: 60, semanticVariant: "default", accentColor: "#00897B" },
-  { type: "task", label: "Tarefa — Implementada", hint: "Já implementado / entregue", category: "tasks", width: 160, height: 60, semanticVariant: "reborn", accentColor: "#7CB342" },
+  { type: "task", label: "Tarefa — Implementada", hint: "Já implementado / entregue", category: "tasks", width: 160, height: 60, semanticVariant: "delivered", accentColor: "#7CB342" },
   { type: "task", label: "Tarefa — Automação", hint: "Integração via API / sistêmica", category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
   { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor", category: "tasks", width: 160, height: 60, semanticVariant: "pain", accentColor: "#EF5350" },
   { type: "task", label: "Tarefa — Sistema", hint: "Ação de sistema / serviço externo", category: "tasks", width: 160, height: 60, semanticVariant: "system", accentColor: "#42A5F5" },
@@ -102,9 +102,9 @@ function BpmnPaletteInner() {
               style={{ borderColor: "var(--flux-border-default)", background: "var(--flux-surface-card)" }}
             >
               {stencil.category === "events" ? (
-                <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                <DeliveredStencilEventIcon type={stencil.type as BpmnNodeType} />
               ) : stencil.category === "gateways" ? (
-                <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
               ) : (
                 <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} />
               )}
@@ -170,9 +170,9 @@ function BpmnPaletteInner() {
                     <div className="flex items-center gap-2.5 rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-2.5 py-2 shadow-[var(--flux-shadow-sm)] transition hover:border-[var(--flux-primary)]/40 hover:shadow-[var(--flux-shadow-md)]">
                       <span className="pointer-events-none shrink-0">
                         {stencil.category === "events" ? (
-                          <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                          <DeliveredStencilEventIcon type={stencil.type as BpmnNodeType} />
                         ) : stencil.category === "gateways" ? (
-                          <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                          <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                         ) : stencil.category === "dados" && stencil.type === "annotation" ? (
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
                             <span className="text-[14px]">✎</span>

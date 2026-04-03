@@ -79,10 +79,24 @@ type UserDoc = {
   orgMemberships?: { orgId: string; orgRole: string; isAdmin?: boolean }[];
 };
 
+function productionAdminPasswordPlain(): string {
+  const p = process.env.ADMIN_INITIAL_PASSWORD?.trim();
+  if (!p) {
+    throw new Error(
+      "[kv-users] ADMIN_INITIAL_PASSWORD é obrigatório em produção para criar ou recriar o admin."
+    );
+  }
+  return p;
+}
+
 function recreateAdminUser(): User {
+  const plain =
+    process.env.NODE_ENV === "production"
+      ? productionAdminPasswordPlain()
+      : (process.env.ADMIN_INITIAL_PASSWORD?.trim() || "Admin");
   return {
     ...ADMIN_USER,
-    passwordHash: hashPassword("Admin"),
+    passwordHash: hashPassword(plain),
   };
 }
 

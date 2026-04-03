@@ -705,7 +705,7 @@
         "marketing": "Marketing",
         "customer_success": "Customer Success",
         "support": "Suporte",
-        "insurance_warranty": "Seguro / Garantia"
+        "insurance_warranty": "Operações / garantia de processo"
       }
     }
   },
@@ -2440,22 +2440,22 @@
         },
         "susep": {
           "name": "SUSEP",
-          "description": "Consulta ao órgão regulador do setor de seguros para verificação do status e da regularidade do corretor, assegurando que apenas corretores habilitados operem na plataforma."
+          "description": "Consulta a registos públicos de autorização e regularidade profissional (órgão regulador), garantindo que apenas parceiros habilitados operem nos fluxos críticos."
         },
         "serasa": {
           "name": "SERASA",
-          "description": "Análise de crédito e saúde financeira do Segurado e do Tomador via parceiro especializado, suportando decisões de subscrição e mitigação de risco."
+          "description": "Análise de crédito e indicadores financeiros via parceiro especializado, apoiando due diligence, concessão de acesso e decisões de risco em cadastros."
         }
       },
       "executiveView": {
         "badge": "VISÃO EXECUTIVA",
         "title": "Mapa de Produção — {appName}",
-        "description": "Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo."
+        "description": "Visão consolidada do que já está em produção: linhas de negócio e checagens integradas (SERPRO, SUSEP, SERASA) aplicadas em cada fluxo."
       },
       "sections": {
         "integrations": {
           "title": "Validações integradas",
-          "description": "Consultas automáticas realizadas pela plataforma para garantir conformidade e apoio à subscrição."
+          "description": "Consultas automáticas realizadas pela plataforma para garantir conformidade regulatória e integridade de cadastro."
         },
         "inProduction": {
           "title": "Cadastros em Produção",

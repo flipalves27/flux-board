@@ -37,6 +37,19 @@ describe("boardsApiCorsHeaders", () => {
     expect(h["Access-Control-Allow-Origin"]).toBe("https://app.example.com");
   });
 
+  it("does not allow wildcard on Vercel preview even when legacy flag is set", async () => {
+    process.env.ALLOW_PUBLIC_BOARDS_CORS = "1";
+    process.env.NODE_ENV = "development";
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
+    const { boardsApiCorsHeaders: headers } = await import("./cors-allowlist");
+    const req = new NextRequest("http://localhost/api/boards", {
+      headers: { origin: "https://app.example.com" },
+    });
+    const h = headers(req);
+    expect(h["Access-Control-Allow-Origin"]).toBe("https://app.example.com");
+  });
+
   it("reflects Origin when it matches allowlist from NEXT_PUBLIC_APP_URL", async () => {
     delete process.env.ALLOW_PUBLIC_BOARDS_CORS;
     process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";

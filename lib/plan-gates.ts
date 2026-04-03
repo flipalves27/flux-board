@@ -175,13 +175,32 @@ function adminSuperpowersEnabled(): boolean {
   return envEnabled(process.env.FLUX_ADMIN_SUPERPOWERS, false);
 }
 
+const orgSuperpowerTierAuditAt = new Map<string, number>();
+const ORG_SUPERPOWER_TIER_AUDIT_MS = 60_000;
+
+function auditOrgSuperpowerTierElevation(org: Organization | null | undefined): void {
+  const orgId = org?._id ?? "unknown";
+  const now = Date.now();
+  const prev = orgSuperpowerTierAuditAt.get(orgId) ?? 0;
+  if (now - prev < ORG_SUPERPOWER_TIER_AUDIT_MS) return;
+  orgSuperpowerTierAuditAt.set(orgId, now);
+  writeSecurityAudit({
+    event: "org_admin_superpower_tier_elevation",
+    orgId,
+    details: { effectiveTier: "business", source: "getEffectiveTier" },
+  });
+}
+
 function getTierWithoutAdminBypass(org: Organization | null | undefined): EffectiveGateTier {
   return getEffectiveTier(org, undefined);
 }
 
 export function getEffectiveTier(org: Organization | null | undefined, ctx?: PlanGateContext): EffectiveGateTier {
   if (ctx?.isPlatformAdmin) return "business";
-  if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) return "business";
+  if (ctx?.isOrgAdmin && adminSuperpowersEnabled()) {
+    auditOrgSuperpowerTierElevation(org);
+    return "business";
+  }
   if (isProTenant()) return "pro";
   const plan = org?.plan ?? "free";
 

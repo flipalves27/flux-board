@@ -53,7 +53,7 @@ export function createToken(user: {
       orgRole: roles.orgRole,
     },
     secret,
-    { expiresIn }
+    { expiresIn, algorithm: "HS256" }
   );
 }
 
@@ -70,7 +70,7 @@ export function verifyToken(
 } | null {
   try {
     const secret = getJwtSecret();
-    const payload = jwt.verify(token, secret) as {
+    const payload = jwt.verify(token, secret, { algorithms: ["HS256"] }) as {
       id: string;
       username: string;
       isAdmin: boolean;

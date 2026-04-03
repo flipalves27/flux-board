@@ -77,12 +77,13 @@ function decodeWaypoints(raw: string | undefined): Array<{ x: number; y: number 
   return pts.length ? pts : undefined;
 }
 
-const SEMANTIC_VARIANTS: BpmnSemanticVariant[] = ["default", "reborn", "automation", "pain", "system"];
+const SEMANTIC_VARIANTS: BpmnSemanticVariant[] = ["default", "delivered", "automation", "pain", "system"];
 const EDGE_KINDS: BpmnEdgeKind[] = ["default", "primary", "rework", "cross_lane"];
 const PORTS: BpmnPort[] = ["north", "east", "south", "west"];
 
 function parseSemanticVariant(v: string | undefined): BpmnSemanticVariant | undefined {
   if (!v) return undefined;
+  if (v === "reborn") return "delivered";
   return SEMANTIC_VARIANTS.includes(v as BpmnSemanticVariant) ? (v as BpmnSemanticVariant) : undefined;
 }
 

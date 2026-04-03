@@ -51,7 +51,7 @@ describe("bpmn io", () => {
               ...n,
               subtitle: "Detalhe",
               stepNumber: "1",
-              semanticVariant: "reborn" as const,
+              semanticVariant: "delivered" as const,
               tooltip: "Dica",
               painBadge: "2",
             }
@@ -65,11 +65,31 @@ describe("bpmn io", () => {
     const task = parsed.nodes.find((n) => n.id === "task_1");
     expect(task?.subtitle).toBe("Detalhe");
     expect(task?.stepNumber).toBe("1");
-    expect(task?.semanticVariant).toBe("reborn");
+    expect(task?.semanticVariant).toBe("delivered");
     expect(task?.tooltip).toBe("Dica");
     expect(task?.painBadge).toBe("2");
     expect(parsed.edges[0].kind).toBe("primary");
     expect(parsed.edges[0].label).toBe("ok");
+  });
+
+  it("maps legacy semantic token reborn to delivered when parsing markdown", () => {
+    const md = [
+      `# BPMN Template`,
+      `name: Legacy`,
+      `version: bpmn-2.0-lite`,
+      ``,
+      `## Lanes`,
+      `- lane1: Main`,
+      ``,
+      `## Nodes`,
+      `- t1 | task | X | (10,10) | lane:lane1 | var:reborn`,
+      ``,
+      `## Edges`,
+      ``,
+    ].join("\n");
+    const parsed = markdownToBpmnModel(md);
+    const task = parsed.nodes.find((n) => n.id === "t1");
+    expect(task?.semanticVariant).toBe("delivered");
   });
 });
 

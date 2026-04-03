@@ -280,7 +280,7 @@ export default function PublicIntakeFormPage() {
                 <input
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  placeholder="Comercial, Tomador"
+                  placeholder="Comercial, Cliente"
                   className="min-h-11 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
                 />
               </label>

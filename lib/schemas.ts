@@ -158,7 +158,10 @@ export const LssPremiumAssistBodySchema = z.object({
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
 
 const BpmnNodeTypeSchema = z.enum(BPMN_NODE_TYPES as unknown as [string, ...string[]]);
-const BpmnSemanticVariantSchema = z.enum(["default", "reborn", "automation", "pain", "system"]);
+const BpmnSemanticVariantSchema = z.preprocess(
+  (v) => (v === "reborn" ? "delivered" : v),
+  z.enum(["default", "delivered", "automation", "pain", "system"])
+);
 const BpmnEdgeKindSchema = z.enum(["default", "primary", "rework", "cross_lane"]);
 const BpmnPortSchema = z.enum(["north", "east", "south", "west"]);
 

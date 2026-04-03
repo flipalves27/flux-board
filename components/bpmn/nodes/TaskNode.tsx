@@ -3,10 +3,10 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { BpmnNodeData } from "@/stores/bpmn-store";
-import { BPMN_TASK_VARIANT_STYLES } from "@/lib/bpmn-flow-tokens";
+import { BPMN_TASK_VARIANT_STYLES, resolveBpmnTaskVariant } from "@/lib/bpmn-flow-tokens";
 
 function TaskNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData }) {
-  const variant = data.semanticVariant ?? "default";
+  const variant = resolveBpmnTaskVariant(data.semanticVariant as string | undefined);
   const vs = BPMN_TASK_VARIANT_STYLES[variant];
 
   return (

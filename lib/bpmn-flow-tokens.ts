@@ -17,11 +17,20 @@ export const BPMN_TASK_VARIANT_STYLES: Record<
   { accent: string; badgeBg: string; bg: string; borderStyle: "solid" | "dashed" }
 > = {
   default: { accent: "#00897B", badgeBg: "#00897B", bg: "rgba(255,255,255,0.96)", borderStyle: "solid" },
-  reborn: { accent: "#7CB342", badgeBg: "#7CB342", bg: "rgba(241,248,233,0.98)", borderStyle: "solid" },
+  delivered: { accent: "#7CB342", badgeBg: "#7CB342", bg: "rgba(241,248,233,0.98)", borderStyle: "solid" },
   automation: { accent: "#00ACC1", badgeBg: "#00ACC1", bg: "rgba(224,247,252,0.98)", borderStyle: "solid" },
   pain: { accent: "#EF5350", badgeBg: "#EF5350", bg: "rgba(255,235,238,0.98)", borderStyle: "solid" },
   system: { accent: "#5C6BC0", badgeBg: "#5C6BC0", bg: "rgba(232,234,246,0.95)", borderStyle: "dashed" },
 };
+
+/** Normaliza token legado `reborn` (persistido) para `delivered`. */
+export function resolveBpmnTaskVariant(v: string | undefined): BpmnSemanticVariant {
+  if (v === "reborn") return "delivered";
+  if (v === "default" || v === "delivered" || v === "automation" || v === "pain" || v === "system") {
+    return v;
+  }
+  return "default";
+}
 
 export function isTaskLikeType(type: string): boolean {
   return (

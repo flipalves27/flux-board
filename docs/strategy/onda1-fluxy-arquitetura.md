@@ -76,7 +76,7 @@ type FluxyContextState = {
    - `BoardFluxyDock` e `WorkspaceFluxyDock` viram wrappers leves/deprecated.
 4. **Fase D - Cleanup**
    - Remover logica duplicada remanescente.
-   - Consolidar stores de visibilidade quando seguro.
+   - Consolidar stores de visibilidade quando a análise de impacto estiver concluída.
 
 ## Regras de Prioridade de Estado (Emotion Engine v1)
 1. `listening` / `writing` durante input ou geracao ativa.

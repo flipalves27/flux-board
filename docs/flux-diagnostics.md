@@ -34,9 +34,12 @@ Objetivo: capturar **React #185** e outros erros em produção com **stack** e *
 | `unhandledrejection`| Promises rejeitadas |
 | `console`           | Só com `fluxDebug` ativo — espelha `console.error` (útil em dev / React) |
 
-## Stack legível em produção
+## Stack legível em produção / preview
 
-Em `next.config.ts`, `productionBrowserSourceMaps` pode ser ligado com `ENABLE_PROD_BROWSER_SOURCE_MAPS=1` na Vercel (aumenta o tamanho do deploy).
+Em `next.config.ts`, `productionBrowserSourceMaps` só entra no bundle com flags explícitas (aumenta o tamanho do deploy):
+
+- **Preview Vercel:** `ENABLE_PREVIEW_BROWSER_SOURCE_MAPS=1`
+- **Produção:** `ENABLE_PROD_BROWSER_SOURCE_MAPS=1`
 
 ## Validação antes do deploy
 

@@ -34,7 +34,7 @@ type EventGlyphProps = {
 };
 
 /** Círculo de evento (mesmo padrão visual do anexo). */
-export function RebornEventGlyph({ nodeType, size = 42, className = "" }: EventGlyphProps) {
+export function DeliveredEventGlyph({ nodeType, size = 42, className = "" }: EventGlyphProps) {
   const p = eventPalette(nodeType);
   return (
     <div
@@ -61,7 +61,7 @@ type GatewayGlyphProps = {
 };
 
 /** Losango gateway âmbar com ícone central (anexo). */
-export function RebornGatewayGlyph({ nodeType, size = 40, className = "" }: GatewayGlyphProps) {
+export function DeliveredGatewayGlyph({ nodeType, size = 40, className = "" }: GatewayGlyphProps) {
   const g = gatewayGlyph(nodeType);
   return (
     <div className={`relative flex items-center justify-center ${className}`} style={{ width: size + 16, height: size + 16 }}>
@@ -85,10 +85,19 @@ export function RebornGatewayGlyph({ nodeType, size = 40, className = "" }: Gate
 }
 
 /** Prévia na paleta: evento por tipo BPMN. */
-export function RebornStencilEventIcon({ type }: { type: BpmnNodeType }) {
-  return <RebornEventGlyph nodeType={type} size={36} />;
+export function DeliveredStencilEventIcon({ type }: { type: BpmnNodeType }) {
+  return <DeliveredEventGlyph nodeType={type} size={36} />;
 }
 
-export function RebornStencilGatewayIcon({ type }: { type: BpmnNodeType }) {
-  return <RebornGatewayGlyph nodeType={type} size={34} />;
+export function DeliveredStencilGatewayIcon({ type }: { type: BpmnNodeType }) {
+  return <DeliveredGatewayGlyph nodeType={type} size={34} />;
 }
+
+/** @deprecated Use DeliveredEventGlyph */
+export const RebornEventGlyph = DeliveredEventGlyph;
+/** @deprecated Use DeliveredGatewayGlyph */
+export const RebornGatewayGlyph = DeliveredGatewayGlyph;
+/** @deprecated Use DeliveredStencilEventIcon */
+export const RebornStencilEventIcon = DeliveredStencilEventIcon;
+/** @deprecated Use DeliveredStencilGatewayIcon */
+export const RebornStencilGatewayIcon = DeliveredStencilGatewayIcon;

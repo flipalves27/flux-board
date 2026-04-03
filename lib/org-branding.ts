@@ -23,7 +23,8 @@ export const DEFAULT_PLATFORM_NAME = "Flux-Board";
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 function adminSuperpowersEnabled(): boolean {
-  const raw = (process.env.FLUX_ADMIN_SUPERPOWERS || "true").trim().toLowerCase();
+  const raw = process.env.FLUX_ADMIN_SUPERPOWERS?.trim().toLowerCase();
+  if (raw == null || raw === "") return false;
   return !(raw === "0" || raw === "false" || raw === "off" || raw === "no");
 }
 

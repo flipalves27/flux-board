@@ -169,7 +169,7 @@ function BpmnPropertiesInner() {
                     className="bpmn-prop-input"
                   >
                     <option value="default">Padrão / manual</option>
-                    <option value="reborn">Implementada / entregue</option>
+                    <option value="delivered">Implementada / entregue</option>
                     <option value="automation">API / automação</option>
                     <option value="pain">Pain point</option>
                     <option value="system">Sistema (tracejado)</option>

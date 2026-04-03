@@ -14,6 +14,7 @@ import type {
   BpmnValidationIssue,
 } from "@/lib/bpmn-types";
 import { validateBpmnModel } from "@/lib/bpmn-types";
+import { resolveBpmnTaskVariant } from "@/lib/bpmn-flow-tokens";
 import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
 
 /* ------------------------------------------------------------------ */
@@ -246,7 +247,9 @@ function nodeToModelNode(n: BpmnFlowNode): BpmnTemplateModel["nodes"][number] {
     laneId: d.laneId,
     subtitle: d.subtitle,
     stepNumber: d.stepNumber,
-    semanticVariant: d.semanticVariant,
+    semanticVariant: d.semanticVariant
+      ? resolveBpmnTaskVariant(d.semanticVariant as unknown as string)
+      : undefined,
     tooltip: d.tooltip,
     painBadge: d.painBadge,
     fontSize: d.fontSize,
@@ -283,7 +286,9 @@ function modelNodeToFlowNode(n: BpmnTemplateModel["nodes"][number]): BpmnFlowNod
       label: n.label,
       subtitle: n.subtitle,
       stepNumber: n.stepNumber,
-      semanticVariant: n.semanticVariant,
+      semanticVariant: n.semanticVariant
+        ? resolveBpmnTaskVariant(n.semanticVariant as unknown as string)
+        : undefined,
       tooltip: n.tooltip,
       painBadge: n.painBadge,
       laneId: n.laneId,
@@ -330,7 +335,7 @@ const DEFAULT_MODEL: BpmnTemplateModel = {
     { id: "start_1", type: "start_event", label: "Início", x: 130, y: 60, laneId: "solicitante", width: 44, height: 44 },
     { id: "task_1", type: "task", label: "Analisar solicitação", x: 260, y: 50, laneId: "solicitante", width: 160, height: 60, stepNumber: "1", subtitle: "Responsável" },
     { id: "gw_1", type: "exclusive_gateway", label: "Aprovado?", x: 510, y: 230, laneId: "processamento", width: 56, height: 56 },
-    { id: "task_2", type: "task", label: "Processar", x: 660, y: 220, laneId: "processamento", width: 140, height: 60, stepNumber: "2", semanticVariant: "reborn" },
+    { id: "task_2", type: "task", label: "Processar", x: 660, y: 220, laneId: "processamento", width: 140, height: 60, stepNumber: "2", semanticVariant: "delivered" },
     { id: "task_3", type: "task", label: "Notificar resultado", x: 660, y: 300, laneId: "processamento", width: 150, height: 60, stepNumber: "3" },
     { id: "end_1", type: "end_event", label: "Fim", x: 900, y: 250, laneId: "processamento", width: 44, height: 44 },
   ],

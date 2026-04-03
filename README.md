@@ -29,7 +29,8 @@ flux-board/
 │   └── db.json              # Seed inicial
 ├── public/                  # Assets estáticos (favicon, etc.)
 ├── scripts/
-│   └── migrate-reborn-board-ids.mjs  # Migração legado b_reborn_* → b_default_* (MongoDB)
+│   ├── migrate-legacy-board-ids.mjs  # Migração legado b_reborn_* → b_default_* (MongoDB)
+│   └── migrate-reborn-board-ids.mjs  # Delega para migrate-legacy-board-ids.mjs (compat)
 ├── package.json
 ├── next.config.ts
 ├── tailwind.config.ts
@@ -128,7 +129,7 @@ OAuth 2.0 + OIDC via rotas `/api/auth/oauth/google/*` e `/api/auth/oauth/microso
 
 **Migração:** dados antigos no Redis/KV não são migrados automaticamente; é preciso exportar/importar manualmente se necessário.
 
-**Boards legados `b_reborn_<orgId>`:** antes de publicar versões sem esse ID, rode `npm run migrate:reborn-boards` com `MONGODB_URI` definido (renomeia para `b_default_<orgId>` e atualiza referências). Ordem: migração → deploy.
+**Boards legados `b_reborn_<orgId>`:** antes de publicar versões sem esse ID, rode `npm run migrate:legacy-board-ids` (ou `npm run migrate:reborn-boards`, alias) com `MONGODB_URI` definido (renomeia para `b_default_<orgId>` e atualiza referências). Ordem: migração → deploy.
 
 ## Configuração: Billing / Stripe (Vercel)
 

@@ -7,6 +7,8 @@ describe("validateServerEnv", () => {
     vi.resetModules();
     process.env = { ...envSnapshot };
     process.env.JWT_SECRET = "vitest-jwt-secret-placeholder-min-32chars!";
+    process.env.ADMIN_INITIAL_PASSWORD = "vitest-admin-initial-password!";
+    delete process.env.NEXT_PUBLIC_VERCEL_BYPASS_SECRET;
   });
 
   afterEach(() => {
@@ -60,5 +62,20 @@ describe("validateServerEnv", () => {
     const { validateServerEnv } = await import("./env-validate");
     validateServerEnv();
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/ALLOW_PUBLIC_BOARDS_CORS/));
+  });
+
+  it("throws when NEXT_PUBLIC_VERCEL_BYPASS_SECRET is set on Vercel production", async () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.NEXT_PUBLIC_VERCEL_BYPASS_SECRET = "should-not-exist";
+    const { validateServerEnv } = await import("./env-validate");
+    expect(() => validateServerEnv()).toThrow(/NEXT_PUBLIC_VERCEL_BYPASS_SECRET/);
+  });
+
+  it("throws in production runtime when ADMIN_INITIAL_PASSWORD is missing", async () => {
+    delete process.env.ADMIN_INITIAL_PASSWORD;
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PHASE;
+    const { validateServerEnv } = await import("./env-validate");
+    expect(() => validateServerEnv()).toThrow(/ADMIN_INITIAL_PASSWORD/);
   });
 });

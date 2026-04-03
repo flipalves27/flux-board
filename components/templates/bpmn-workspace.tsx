@@ -6,14 +6,19 @@ import { apiGet, apiPost } from "@/lib/api-client";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
 import { BpmnLegend } from "@/components/templates/bpmn-legend";
 import {
-  RebornEventGlyph,
-  RebornGatewayGlyph,
-  RebornStencilEventIcon,
-  RebornStencilGatewayIcon,
-} from "@/components/templates/bpmn-reborn-shapes";
+  DeliveredEventGlyph,
+  DeliveredGatewayGlyph,
+  DeliveredStencilEventIcon,
+  DeliveredStencilGatewayIcon,
+} from "@/components/templates/bpmn-delivered-shapes";
 import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
 import type { BpmnEdgeKind, BpmnNodeType, BpmnPort, BpmnSemanticVariant, BpmnTemplateModel } from "@/lib/bpmn-types";
-import { BPMN_FLOW_EDGE_STYLES, BPMN_TASK_VARIANT_STYLES, isTaskLikeType } from "@/lib/bpmn-flow-tokens";
+import {
+  BPMN_FLOW_EDGE_STYLES,
+  BPMN_TASK_VARIANT_STYLES,
+  isTaskLikeType,
+  resolveBpmnTaskVariant,
+} from "@/lib/bpmn-flow-tokens";
 import { BPMN_VISUAL_STATE_TOKENS, BPMN_VISUAL_TOKENS, getBpmnVisualSpec } from "@/lib/bpmn-visual-system";
 import { renderBpmnIcon } from "@/lib/bpmn-icon-render";
 
@@ -62,7 +67,7 @@ const BPMN_STENCILS: BpmnStencil[] = [
   { type: "end_event",     label: "Fim",              hint: "Fim do processo",           category: "events",  width: 44, height: 44 },
   // Tasks – 5 variantes visuais
   { type: "task", label: "Tarefa — Padrão",      hint: "Tarefa manual / padrão",             category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
-  { type: "task", label: "Tarefa — Implementada",hint: "Já implementado / entregue",          category: "tasks", width: 160, height: 60, semanticVariant: "reborn",     accentColor: "#7CB342" },
+  { type: "task", label: "Tarefa — Implementada",hint: "Já implementado / entregue",          category: "tasks", width: 160, height: 60, semanticVariant: "delivered",     accentColor: "#7CB342" },
   { type: "task", label: "Tarefa — Automação",  hint: "Integração via API / sistêmica",       category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
   { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor identificado", category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
   { type: "task", label: "Tarefa — Sistema",    hint: "Ação de sistema / serviço externo",    category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
@@ -124,7 +129,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
       { id: "start_1", type: "start_event",       label: "Início",               x: 130, y: 60,  laneId: "solicitante",   width: 44,  height: 44 },
       { id: "task_1",  type: "task",              label: "Analisar solicitação", x: 260, y: 50,  laneId: "solicitante",   width: 160, height: 60, stepNumber: "1", subtitle: "Responsável" },
       { id: "gw_1",    type: "exclusive_gateway", label: "Aprovado?",            x: 510, y: 230, laneId: "processamento", width: 56,  height: 56 },
-      { id: "task_2",  type: "task",              label: "Processar",            x: 660, y: 220, laneId: "processamento", width: 140, height: 60, stepNumber: "2", semanticVariant: "reborn" },
+      { id: "task_2",  type: "task",              label: "Processar",            x: 660, y: 220, laneId: "processamento", width: 140, height: 60, stepNumber: "2", semanticVariant: "delivered" },
       { id: "task_3",  type: "task",              label: "Notificar resultado",  x: 660, y: 300, laneId: "processamento", width: 150, height: 60, stepNumber: "3" },
       { id: "end_1",   type: "end_event",         label: "Fim",                  x: 900, y: 250, laneId: "processamento", width: 44,  height: 44 },
     ],
@@ -1431,9 +1436,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-[#00897B]/50 dark:border-slate-600 dark:bg-slate-900"
                 >
                   {stencil.category === "events" ? (
-                    <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                    <DeliveredStencilEventIcon type={stencil.type as BpmnNodeType} />
                   ) : stencil.category === "gateways" ? (
-                    <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                    <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                   ) : (
                     <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} />
                   )}
@@ -1492,9 +1497,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                             <div className="flex items-center gap-2.5 rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] px-2.5 py-2 shadow-[var(--flux-shadow-sm)] transition hover:border-[var(--flux-primary)]/40 hover:shadow-[var(--flux-shadow-md)]">
                               <span className="pointer-events-none shrink-0">
                                 {stencil.category === "events" ? (
-                                  <RebornStencilEventIcon type={stencil.type as BpmnNodeType} />
+                                  <DeliveredStencilEventIcon type={stencil.type as BpmnNodeType} />
                                 ) : stencil.category === "gateways" ? (
-                                  <RebornStencilGatewayIcon type={stencil.type as BpmnNodeType} />
+                                  <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                                 ) : stencil.category === "dados" && stencil.type === "annotation" ? (
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
                                     <span className="text-[14px]">✎</span>
@@ -2223,8 +2228,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       <span
                         className="pointer-events-none absolute inset-0 rounded-[10px]"
                         style={{
-                          borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].accent}`,
-                          backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].bg,
+                          borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].accent}`,
+                          backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].bg,
                           borderTop: "1px solid rgba(108,92,231,0.12)",
                           borderRight: "1px solid rgba(108,92,231,0.12)",
                           borderBottom: "1px solid rgba(108,92,231,0.12)",
@@ -2238,7 +2243,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       {node.stepNumber ? (
                         <span
                           className="pointer-events-none absolute left-2 top-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold text-white"
-                          style={{ background: BPMN_TASK_VARIANT_STYLES[node.semanticVariant ?? "default"].badgeBg }}
+                          style={{ background: BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].badgeBg }}
                         >
                           {node.stepNumber}
                         </span>
@@ -2268,7 +2273,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     </>
                   ) : getBpmnVisualSpec(node.type).shape === "circle" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-0.5">
-                      <RebornEventGlyph nodeType={node.type} />
+                      <DeliveredEventGlyph nodeType={node.type} />
                       <span
                         className="max-w-[min(168px,100%)] text-center font-bold leading-tight"
                         style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "var(--flux-text)" }}
@@ -2276,7 +2281,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     </div>
                   ) : getBpmnVisualSpec(node.type).shape === "diamond" ? (
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-                      <RebornGatewayGlyph nodeType={node.type} />
+                      <DeliveredGatewayGlyph nodeType={node.type} />
                       <span
                         className="max-w-[min(168px,100%)] text-center font-bold leading-tight"
                         style={{ fontSize: node.fontSize ?? 11, color: node.labelColor ?? "var(--flux-text)" }}
@@ -2458,9 +2463,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   }}
                 >
                   {getBpmnVisualSpec(draggingType).shape === "circle" ? (
-                    <RebornEventGlyph nodeType={draggingType as BpmnNodeType} size={32} />
+                    <DeliveredEventGlyph nodeType={draggingType as BpmnNodeType} size={32} />
                   ) : getBpmnVisualSpec(draggingType).shape === "diamond" ? (
-                    <RebornGatewayGlyph nodeType={draggingType as BpmnNodeType} size={30} />
+                    <DeliveredGatewayGlyph nodeType={draggingType as BpmnNodeType} size={30} />
                   ) : isTaskLikeType(draggingType) ? (
                     <span className="h-8 w-1 shrink-0 rounded-full bg-[var(--flux-primary)]" aria-hidden />
                   ) : (
@@ -2701,7 +2706,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       className="w-full px-2 py-1.5 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-xs"
                     >
                       <option value="default">Padrão / manual</option>
-                      <option value="reborn">Implementada / entregue</option>
+                      <option value="delivered">Implementada / entregue</option>
                       <option value="automation">API / automação</option>
                       <option value="pain">Pain point</option>
                       <option value="system">Sistema (tracejado)</option>

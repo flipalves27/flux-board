@@ -21,10 +21,10 @@ interface MapaModalProps {
 }
 
 const DEFAULT_MAPA: MapaItem[] = [
-  { papel: "Corretor", equipe: "Comercial", linha: "Todas as Linhas", operacoes: "SERPRO (RF), SUSEP" },
-  { papel: "Cliente / Pagador", equipe: "D&O", linha: "Financial Lines", operacoes: "SERPRO (RF), SERASA" },
-  { papel: "Cliente", equipe: "E&O, RCG, Petróleo", linha: "Garantia — RC Profissional, RC Geral, Energy, Subscrição", operacoes: "SERPRO (RF)" },
-  { papel: "Tomador", equipe: "Comercial", linha: "Garantia", operacoes: "SERPRO (RF), SERASA" },
+  { papel: "Product Owner", equipe: "Produto", linha: "Plataforma", operacoes: "SERPRO (RF), SUSEP" },
+  { papel: "Tech Lead", equipe: "Engenharia", linha: "Core / API", operacoes: "SERPRO (RF), SERASA" },
+  { papel: "Designer", equipe: "Design", linha: "Experiência", operacoes: "SERPRO (RF)" },
+  { papel: "Responsável pela conta", equipe: "Operações", linha: "Onboarding", operacoes: "SERPRO (RF), SERASA" },
 ];
 
 type ValidacaoIntegrada = {

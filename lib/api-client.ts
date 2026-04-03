@@ -9,20 +9,26 @@
  * Protection Bypass for Automation → gerar secret → adicionar variável
  * NEXT_PUBLIC_VERCEL_BYPASS_SECRET com o mesmo valor.
  *
- * Segurança: o valor é exposto no bundle do cliente. Não use em produção pública voltada a
- * clientes finais; prefira desativar Protection ou rotas server-only. Se precisar em preview/staging,
- * rotacione o secret periodicamente.
+ * Segurança: o valor é exposto no bundle do cliente. Headers de bypass **não** são enviados quando
+ * `VERCEL_ENV=production` (exposto ao cliente como `NEXT_PUBLIC_VERCEL_ENV` via `next.config`).
+ * Em preview/staging, rotacione o secret periodicamente.
  */
 
 const BYPASS_SECRET =
   typeof process !== "undefined" ? process.env.NEXT_PUBLIC_VERCEL_BYPASS_SECRET : undefined;
+
+/** Bypass só fora de `VERCEL_ENV=production` (deploy público na Vercel). */
+function vercelBypassAllowed(): boolean {
+  const v = process.env.NEXT_PUBLIC_VERCEL_ENV ?? "";
+  return v !== "production";
+}
 
 export function getApiHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...extra,
   };
-  if (BYPASS_SECRET) {
+  if (BYPASS_SECRET && vercelBypassAllowed()) {
     headers["x-vercel-protection-bypass"] = BYPASS_SECRET;
     headers["x-vercel-set-bypass-cookie"] = "true";
   }

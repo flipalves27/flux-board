@@ -705,7 +705,7 @@
         "marketing": "Marketing",
         "customer_success": "Customer Success",
         "support": "Support",
-        "insurance_warranty": "Insurance / Warranty"
+        "insurance_warranty": "Operations / process assurance"
       }
     }
   },
@@ -2561,11 +2561,11 @@
         },
         "susep": {
           "name": "SUSEP",
-          "description": "Query to the insurance sector regulatory body to verify the broker's status and regularity, ensuring only licensed brokers operate on the platform."
+          "description": "Lookup of public authorization and professional standing records (regulatory body), ensuring only qualified partners operate in sensitive workflows."
         },
         "serasa": {
           "name": "SERASA",
-          "description": "Credit analysis and financial health of the Insured and Policyholder through a specialized partner, supporting underwriting decisions and risk mitigation."
+          "description": "Credit analysis and financial indicators via a specialized partner, supporting due diligence, access provisioning, and risk decisions on registrations."
         }
       },
       "executiveView": {
@@ -2576,7 +2576,7 @@
       "sections": {
         "integrations": {
           "title": "Integrated validations",
-          "description": "Automated checks performed by the platform to ensure compliance and support underwriting."
+          "description": "Automated checks performed by the platform to ensure regulatory compliance and data integrity."
         },
         "inProduction": {
           "title": "Records in Production",

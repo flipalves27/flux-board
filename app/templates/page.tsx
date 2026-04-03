@@ -245,7 +245,7 @@ export default function TemplatesShowcasePage() {
             <option value="marketing">Marketing</option>
             <option value="customer_success">Customer Success</option>
             <option value="support">Suporte</option>
-            <option value="insurance_warranty">Seguro / Garantia</option>
+            <option value="insurance_warranty">{t("exportModal.categories.insurance_warranty")}</option>
           </select>
           <select
             value={statusFilter}

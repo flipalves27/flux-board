@@ -40,7 +40,8 @@ export function boardsApiCorsHeaders(request: NextRequest): Record<string, strin
   if (
     process.env.ALLOW_PUBLIC_BOARDS_CORS === "1" &&
     process.env.NODE_ENV !== "production" &&
-    process.env.VERCEL_ENV !== "production"
+    process.env.VERCEL_ENV !== "production" &&
+    process.env.VERCEL_ENV !== "preview"
   ) {
     return {
       "Access-Control-Allow-Origin": "*",
