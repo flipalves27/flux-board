@@ -1,9 +1,17 @@
-const CACHE_NAME = "flux-board-v1";
+const CACHE_NAME = "flux-board-v2";
 const STATIC_ASSETS = ["/", "/offline.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const path of STATIC_ASSETS) {
+        try {
+          await cache.add(new Request(path, { redirect: "follow" }));
+        } catch {
+          /* precache opcional — não bloqueia install */
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
@@ -27,7 +35,8 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
+      // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
+      const fetchPromise = fetch(request, { redirect: "follow" })
         .then((response) => {
           if (response.ok && url.origin === self.location.origin) {
             const clone = response.clone();
