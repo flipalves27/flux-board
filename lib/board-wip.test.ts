@@ -34,6 +34,10 @@ describe("validateBoardWip", () => {
 
 describe("validateBoardWipPutTransition", () => {
   const buckets = [{ key: "Dev", wipLimit: 5 }];
+  const bucketsWithBacklogFirst = [
+    { key: "Backlog", label: "Backlog" },
+    { key: "Dev", wipLimit: 5 },
+  ];
 
   it("allows reducing count in a column already over WIP", () => {
     const prev = Array.from({ length: 22 }, (_, i) => ({ bucket: "Dev" }));
@@ -60,7 +64,7 @@ describe("validateBoardWipPutTransition", () => {
   it("still rejects crossing from compliant to over limit", () => {
     const prev = [...Array.from({ length: 5 }, () => ({ bucket: "Dev" })), { bucket: "Backlog" }];
     const next = [...Array.from({ length: 6 }, () => ({ bucket: "Dev" }))];
-    const r = validateBoardWipPutTransition(buckets, prev, next);
+    const r = validateBoardWipPutTransition(bucketsWithBacklogFirst, prev, next);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toContain("WIP");
   });
@@ -83,6 +87,20 @@ describe("validateBoardWipPutTransition", () => {
     const r = validateBoardWipPutTransition(cols, prev, next);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toMatch(/já está acima|Remova cards/i);
+  });
+
+  it("aligns prev vs next when legacy slug buckets share first column with WIP (falso 400 em produção)", () => {
+    const cols = [
+      { key: "desenvolvimento", label: "Em desenvolvimento", wipLimit: 5 },
+      { key: "done", label: "Feito" },
+    ];
+    const prev = [
+      ...Array.from({ length: 5 }, () => ({ bucket: "desenvolvimento" })),
+      ...Array.from({ length: 18 }, () => ({ bucket: "slug_legado_nao_existe" })),
+    ];
+    const next = Array.from({ length: 23 }, () => ({ bucket: "desenvolvimento" }));
+    const r = validateBoardWipPutTransition(cols, prev, next);
+    expect(r.ok).toBe(true);
   });
 });
 

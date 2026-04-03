@@ -4,6 +4,30 @@ import { BoardUpdateSchema } from "@/lib/schemas";
 import { normalizeBoardForPersist } from "./board-persist-normalize";
 
 describe("normalizeBoardForPersist", () => {
+  it("maps column label to bucket key (not only exact key)", () => {
+    const db: BoardData = {
+      version: "1",
+      lastUpdated: "t",
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Em desenvolvimento",
+          order: 0,
+        } as BoardData["cards"][number],
+      ],
+      config: {
+        bucketOrder: [
+          { key: "backlog", label: "Backlog", color: "x" },
+          { key: "desenvolvimento", label: "Em desenvolvimento", color: "y" },
+        ],
+        collapsedColumns: [],
+      },
+    };
+    const n = normalizeBoardForPersist(db);
+    expect(n.cards[0]?.bucket).toBe("desenvolvimento");
+  });
+
   it("maps unknown bucket to first column and fixes empty title", () => {
     const db: BoardData = {
       version: "1",

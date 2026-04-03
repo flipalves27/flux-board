@@ -2,27 +2,13 @@
  * Limites WIP por coluna (bucket). Contagem = todos os cards na coluna.
  */
 
+import { resolveBucketToColumnKey } from "@/lib/board-bucket-resolve";
+
 export type CardBucketLike = { id: string; bucket: string; order?: number };
 export type BucketWipLike = { key: string; label?: string; wipLimit?: number | null };
 
 /** Só `bucket` é usado na contagem WIP. */
 export type WipCountCardLike = { bucket: string };
-
-/**
- * Mapeia o valor gravado no card (`bucket`) para a `key` canónica em `bucketOrder`.
- * Evita WIP falso: dados legados ou inconsistências onde o card usa o **label** da coluna
- * em vez da **key** (ex.: key `desenvolvimento`, label `Em desenvolvimento`).
- */
-export function canonicalBucketKeyForWip(cardBucket: string, buckets: BucketWipLike[]): string {
-  const raw = String(cardBucket ?? "").trim();
-  if (!raw) return "";
-  for (const bo of buckets) {
-    if (bo.key === raw) return bo.key;
-    const lb = typeof bo.label === "string" ? bo.label.trim() : "";
-    if (lb && lb === raw) return bo.key;
-  }
-  return raw;
-}
 
 function wipColumnDisplayLabel(key: string, buckets: BucketWipLike[]): string {
   const bo = buckets.find((b) => b.key === key);
@@ -33,7 +19,7 @@ function wipColumnDisplayLabel(key: string, buckets: BucketWipLike[]): string {
 function bucketCounts(cards: WipCountCardLike[], buckets: BucketWipLike[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const c of cards) {
-    const k = canonicalBucketKeyForWip(c.bucket, buckets);
+    const k = resolveBucketToColumnKey(c.bucket, buckets);
     if (!k) continue;
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }

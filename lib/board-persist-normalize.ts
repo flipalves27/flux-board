@@ -1,4 +1,5 @@
 import type { BoardData, BoardDefinitionOfDone, BucketConfig, CardData } from "@/app/board/[id]/page";
+import { resolveBucketToColumnKey } from "@/lib/board-bucket-resolve";
 import type { SubtaskData } from "@/lib/schemas";
 import {
   CardAutomationStateSchema,
@@ -111,7 +112,10 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     ? db.config.bucketOrder.map(normalizeBucket)
     : [];
   const bucketKeys = new Set(bucketOrderRaw.map((b) => b.key));
-  const fallbackBucket = bucketOrderRaw[0]?.key ?? "Backlog";
+  const bucketsForCardResolve: BucketConfig[] =
+    bucketOrderRaw.length > 0
+      ? bucketOrderRaw
+      : [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }];
   const dodValidIds = new Set(
     (db.config?.definitionOfDone?.items ?? []).map((it) => String(it.id || "").trim()).filter(Boolean)
   );
@@ -140,7 +144,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       : 0;
 
     const bucket = String(c.bucket ?? "").trim().slice(0, 200);
-    const safeBucket = bucketKeys.has(bucket) ? bucket : fallbackBucket;
+    const safeBucket = resolveBucketToColumnKey(bucket, bucketsForCardResolve).slice(0, 200);
 
     const priority = String(c.priority ?? "").trim().slice(0, 100) || "Média";
     const progress = String(c.progress ?? "").trim().slice(0, 100) || "Não iniciado";
