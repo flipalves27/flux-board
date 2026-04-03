@@ -34,7 +34,8 @@ export function SidebarNavLink({
 }: SidebarNavLinkProps) {
   const { locale, layout, compactMode, isMinimal, closeMobile, isActive, showExpandedNav } = useSidebarNav();
   const href = `/${locale}${path}`;
-  const navActive = isActiveOverride ?? isActive(path);
+  const activePath = trackPath ?? path.split("?")[0];
+  const navActive = isActiveOverride ?? isActive(activePath);
   const itemClass = isMinimal
     ? `relative flex items-center gap-2.5 w-full pl-3 pr-2.5 py-2 rounded-r-[var(--flux-rad-sm)] border-y-0 border-r-0 border-l-2 font-semibold text-sm transition-all duration-200 ease-out font-display overflow-hidden
          ${navActive

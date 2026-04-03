@@ -184,6 +184,25 @@ export async function deleteSpecPlanRun(runId: string, orgId: string, userId: st
   return r.deletedCount > 0;
 }
 
+export async function userHasActiveSpecPlanRunOnBoard(
+  orgId: string,
+  userId: string,
+  boardId: string
+): Promise<boolean> {
+  if (!isMongoConfigured()) return false;
+  const db = await getDb();
+  const doc = await db.collection<SpecPlanRunDocument>(SPEC_PLAN_RUNS_COLLECTION).findOne(
+    {
+      orgId,
+      userId,
+      boardId,
+      status: { $in: ["queued", "running"] as SpecPlanRunStatus[] },
+    },
+    { projection: { _id: 1 } }
+  );
+  return doc != null;
+}
+
 export async function listActiveSpecPlanRunsForUser(orgId: string, userId: string): Promise<
   { runId: string; boardId: string; status: SpecPlanRunStatus; updatedAt: string }[]
 > {

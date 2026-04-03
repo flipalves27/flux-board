@@ -29,6 +29,8 @@ type BucketOpt = { key: string; label: string };
 
 type SpecTab = "configure" | "progress" | "review" | "history";
 
+type PendingSecondRun = { mode: "background" | "stream"; remapOnly: boolean };
+
 type PreviewRow = {
   title: string;
   desc: string;
@@ -150,6 +152,8 @@ export default function SpecPlanPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [secondRunModal, setSecondRunModal] = useState<PendingSecondRun | null>(null);
+  const [awaitingBoardBanner, setAwaitingBoardBanner] = useState<{ runId: string; boardId: string }[]>([]);
 
   const friendlyHints = useMemo(
     () => ({
@@ -280,6 +284,21 @@ export default function SpecPlanPage() {
     }
   }, [boardId, getHeaders, t]);
 
+  const checkActiveRunConflict = useCallback(async (): Promise<boolean> => {
+    if (analyzing) return true;
+    if (!boardId || persistence === false) return false;
+    try {
+      const data = await apiGet<{
+        active?: { runId: string; boardId: string; status: string }[];
+      }>("/api/spec-plan/active-runs", getHeaders());
+      return (data.active ?? []).some(
+        (a) => a.boardId === boardId && (a.status === "running" || a.status === "queued")
+      );
+    } catch {
+      return false;
+    }
+  }, [analyzing, boardId, persistence, getHeaders]);
+
   useEffect(() => {
     if (tab === "history" && boardId && featureOk) void loadHistory();
   }, [tab, boardId, featureOk, loadHistory]);
@@ -307,28 +326,91 @@ export default function SpecPlanPage() {
   }, [boardId, featureOk, getHeaders]);
 
   useEffect(() => {
-    const r = searchParams.get("run");
-    if (r?.trim() && boardId) {
-      setBackgroundRunId(r.trim());
-      setTab("progress");
-      setAnalysisDrawerOpen(true);
-    }
-  }, [searchParams, boardId]);
+    const b = searchParams.get("board")?.trim();
+    if (!b || boards.length === 0) return;
+    if (boards.some((x) => x.id === b)) setBoardId(b);
+  }, [searchParams, boards]);
 
   useEffect(() => {
-    if (!boardId) return;
-    try {
-      const raw = sessionStorage.getItem("flux_spec_plan_bg");
-      if (!raw) return;
-      const o = JSON.parse(raw) as { boardId?: string; runId?: string };
-      if (o.boardId === boardId && o.runId) {
-        setBackgroundRunId(o.runId);
-        setTab("progress");
-      }
-    } catch {
-      /* ignore */
+    let cancelled = false;
+    if (!featureOk || !user?.orgId || !boardId) return;
+
+    const qRun = searchParams.get("run")?.trim();
+    if (qRun) {
+      setBackgroundRunId(qRun);
+      setTab("progress");
+      setAnalysisDrawerOpen(true);
+      return;
     }
-  }, [boardId]);
+
+    (async () => {
+      try {
+        const data = await apiGet<{
+          active?: { runId: string; boardId: string; status: string; updatedAt: string }[];
+        }>("/api/spec-plan/active-runs", getHeaders());
+        if (cancelled) return;
+        const forBoard = (data.active ?? []).filter(
+          (a) => a.boardId === boardId && (a.status === "running" || a.status === "queued")
+        );
+        forBoard.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+        const pick = forBoard[0];
+        if (pick) {
+          setBackgroundRunId(pick.runId);
+          setTab("progress");
+          setAnalysisDrawerOpen(true);
+          try {
+            sessionStorage.setItem("flux_spec_plan_bg", JSON.stringify({ boardId, runId: pick.runId }));
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+      } catch {
+        /* fall through to sessionStorage */
+      }
+      if (cancelled) return;
+      try {
+        const raw = sessionStorage.getItem("flux_spec_plan_bg");
+        if (!raw) return;
+        const o = JSON.parse(raw) as { boardId?: string; runId?: string };
+        if (o.boardId === boardId && o.runId) {
+          setBackgroundRunId(o.runId);
+          setTab("progress");
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, featureOk, user?.orgId, searchParams, getHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!featureOk || !user?.orgId || boardId) {
+      setAwaitingBoardBanner([]);
+      return;
+    }
+    (async () => {
+      try {
+        const data = await apiGet<{
+          active?: { runId: string; boardId: string; status: string }[];
+        }>("/api/spec-plan/active-runs", getHeaders());
+        if (cancelled) return;
+        const active = (data.active ?? []).filter(
+          (a) => a.status === "running" || a.status === "queued"
+        );
+        setAwaitingBoardBanner(active.map((a) => ({ runId: a.runId, boardId: a.boardId })));
+      } catch {
+        if (!cancelled) setAwaitingBoardBanner([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [featureOk, user?.orgId, boardId, getHeaders]);
 
   useEffect(() => {
     if (!backgroundRunId?.trim() || !boardId) return;
@@ -351,6 +433,7 @@ export default function SpecPlanPage() {
             /* ignore */
           }
           useSpecPlanActiveStore.getState().clearRun(rid);
+          void loadHistory();
           if (st === "completed" && data.run.preview?.length) setTab("review");
         }
       } catch {
@@ -363,7 +446,17 @@ export default function SpecPlanPage() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [backgroundRunId, boardId, getHeaders, hydrateFromRunFull]);
+  }, [backgroundRunId, boardId, getHeaders, hydrateFromRunFull, loadHistory]);
+
+  useEffect(() => {
+    if (!analyzing) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [analyzing]);
 
   const appendAnalysisLog = useCallback(
     (level: SpecPlanRunLogEntry["level"], message: string, detail?: string) => {
@@ -671,22 +764,8 @@ export default function SpecPlanPage() {
     [appendAnalysisLog, boardId, file, getHeaders, methodology, pasted, resetPhases, t, workItemsPayload]
   );
 
-  const onStart = useCallback(() => {
-    if (!boardId) return;
-    if (!file && !pasted.trim()) {
-      setStreamError(t("noInputError"));
-      return;
-    }
-    void runStream({ remapOnly: false });
-  }, [boardId, file, pasted, runStream, t]);
-
-  const onRemap = useCallback(() => {
-    if (!boardId || !workItemsPayload.trim()) return;
-    void runStream({ remapOnly: true });
-  }, [boardId, workItemsPayload, runStream]);
-
   const postBackgroundRun = useCallback(
-    async (opts: { remapOnly: boolean }) => {
+    async (opts: { remapOnly: boolean; force?: boolean }) => {
       if (!boardId) return;
       if (persistence === false) {
         setStreamError(t("backgroundRequiresMongo"));
@@ -701,6 +780,7 @@ export default function SpecPlanPage() {
       const form = new FormData();
       form.set("methodology", methodology);
       form.set("remapOnly", opts.remapOnly ? "1" : "0");
+      if (opts.force) form.set("force", "1");
       if (opts.remapOnly) {
         form.set("workItemsJson", workItemsPayload);
       } else {
@@ -715,7 +795,15 @@ export default function SpecPlanPage() {
         headers: h,
         body: form,
       });
-      const data = (await res.json().catch(() => ({}))) as { runId?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        runId?: string;
+        error?: string;
+        errorCode?: string;
+      };
+      if (res.status === 409 && data.errorCode === "SPEC_PLAN_RUN_IN_PROGRESS") {
+        setStreamError(t("secondRunConflictServer"));
+        return;
+      }
       if (!res.ok) {
         setStreamError(typeof data.error === "string" ? data.error : t("streamError"));
         return;
@@ -730,7 +818,12 @@ export default function SpecPlanPage() {
         useSpecPlanActiveStore.setState((s) => ({
           active: [
             ...s.active.filter((a) => a.runId !== data.runId),
-            { runId: data.runId!, boardId, updatedAt: new Date().toISOString() },
+            {
+              runId: data.runId!,
+              boardId,
+              updatedAt: new Date().toISOString(),
+              status: "running",
+            },
           ],
         }));
         resetPhases();
@@ -743,6 +836,53 @@ export default function SpecPlanPage() {
     },
     [boardId, file, getHeaders, methodology, pasted, persistence, resetPhases, t, workItemsPayload]
   );
+
+  const requestStart = useCallback(
+    (action: PendingSecondRun) => {
+      void (async () => {
+        if (!boardId) return;
+        if (await checkActiveRunConflict()) {
+          setSecondRunModal(action);
+          return;
+        }
+        if (action.mode === "background") await postBackgroundRun({ remapOnly: action.remapOnly, force: false });
+        else await runStream({ remapOnly: action.remapOnly });
+      })();
+    },
+    [boardId, checkActiveRunConflict, postBackgroundRun, runStream]
+  );
+
+  const confirmSecondRun = useCallback(() => {
+    const action = secondRunModal;
+    if (!action) return;
+    setSecondRunModal(null);
+    void (async () => {
+      if (action.mode === "background") await postBackgroundRun({ remapOnly: action.remapOnly, force: true });
+      else await runStream({ remapOnly: action.remapOnly });
+    })();
+  }, [secondRunModal, postBackgroundRun, runStream]);
+
+  const onStart = useCallback(() => {
+    if (!boardId) return;
+    if (!file && !pasted.trim()) {
+      setStreamError(t("noInputError"));
+      return;
+    }
+    if (persistence === false) {
+      void requestStart({ mode: "stream", remapOnly: false });
+    } else {
+      void requestStart({ mode: "background", remapOnly: false });
+    }
+  }, [boardId, file, pasted, persistence, requestStart, t]);
+
+  const onRemap = useCallback(() => {
+    if (!boardId || !workItemsPayload.trim()) return;
+    if (persistence === false) {
+      void requestStart({ mode: "stream", remapOnly: true });
+    } else {
+      void requestStart({ mode: "background", remapOnly: true });
+    }
+  }, [boardId, persistence, requestStart, workItemsPayload]);
 
   const cancelBackgroundRun = useCallback(async () => {
     if (!backgroundRunId?.trim() || !boardId) return;
@@ -886,6 +1026,29 @@ export default function SpecPlanPage() {
     <div className="min-h-screen">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel={t("headerBack")} />
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 pb-24">
+        {!boardId && awaitingBoardBanner.length > 0 ? (
+          <div
+            role="status"
+            className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-amber)]/35 bg-[var(--flux-amber)]/10 px-4 py-3 text-sm text-[var(--flux-text)]"
+          >
+            <p className="font-semibold">{t("activeRunBannerTitle")}</p>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-[var(--flux-text-muted)]">
+              {awaitingBoardBanner.map((row) => {
+                const name = boards.find((b) => b.id === row.boardId)?.name ?? row.boardId;
+                return (
+                  <li key={row.runId}>
+                    <Link
+                      className="font-medium text-[var(--flux-primary-light)] underline-offset-2 hover:underline"
+                      href={`${localeRoot}/spec-plan?run=${encodeURIComponent(row.runId)}&board=${encodeURIComponent(row.boardId)}`}
+                    >
+                      {t("activeRunResumeLink", { board: name })}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
         <div className="sticky top-0 z-20 -mx-4 border-b border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-dark)]/92 px-4 py-3 backdrop-blur-md">
           <div className="flex flex-wrap gap-2">
             {(
@@ -1019,16 +1182,21 @@ export default function SpecPlanPage() {
               onClick={() => void onStart()}
               className="w-full rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] py-3 text-sm font-bold text-white disabled:opacity-40 sm:w-auto sm:px-8"
             >
-              {analyzing ? "…" : t("startAnalysis")}
+              {analyzing ? "…" : persistence === false ? t("startAnalysis") : t("startAnalysisPrimary")}
             </button>
-            <button
-              type="button"
-              disabled={!boardId || analyzing || persistence === false}
-              onClick={() => void postBackgroundRun({ remapOnly: false })}
-              className="w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] py-3 text-sm font-semibold text-[var(--flux-primary-light)] disabled:opacity-40 sm:w-auto sm:px-6"
-            >
-              {t("startBackground")}
-            </button>
+            {persistence === true ? (
+              <div className="flex w-full flex-col gap-1 sm:w-auto">
+                <button
+                  type="button"
+                  disabled={!boardId || analyzing}
+                  onClick={() => void requestStart({ mode: "stream", remapOnly: false })}
+                  className="w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] py-3 text-sm font-semibold text-[var(--flux-primary-light)] disabled:opacity-40 sm:px-6"
+                >
+                  {t("followLiveOnPage")}
+                </button>
+                <p className="text-[11px] leading-snug text-[var(--flux-text-muted)]">{t("streamInterruptWarning")}</p>
+              </div>
+            ) : null}
           </div>
         </section>
           </div>
@@ -1115,20 +1283,31 @@ export default function SpecPlanPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={!workItemsPayload || analyzing}
-                  onClick={() => void onRemap()}
-                  className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
-                >
-                  {t("regenerateMapping")}
-                </button>
-                <button
-                  type="button"
                   disabled={!boardId || analyzing || persistence === false || !workItemsPayload.trim()}
-                  onClick={() => void postBackgroundRun({ remapOnly: true })}
+                  onClick={() => void onRemap()}
                   className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
                 >
                   {t("regenerateMappingBackground")}
                 </button>
+                {persistence === true ? (
+                  <button
+                    type="button"
+                    disabled={!workItemsPayload || analyzing}
+                    onClick={() => void requestStart({ mode: "stream", remapOnly: true })}
+                    className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
+                  >
+                    {t("regenerateMappingLive")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!workItemsPayload || analyzing}
+                    onClick={() => void onRemap()}
+                    className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
+                  >
+                    {t("regenerateMapping")}
+                  </button>
+                )}
               </div>
             </div>
             {previewTableView ? (
@@ -1339,6 +1518,34 @@ export default function SpecPlanPage() {
           </section>
         ) : null}
       </div>
+
+      {secondRunModal ? (
+        <div
+          className="fixed inset-0 z-[var(--flux-z-modal-feature)] flex items-center justify-center bg-black/50 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="spec-plan-second-run-title"
+        >
+          <div className="w-full max-w-md rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] p-5 shadow-[var(--flux-shadow-lg)]">
+            <h2 id="spec-plan-second-run-title" className="font-display text-base font-bold text-[var(--flux-text)]">
+              {t("secondRunModalTitle")}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("secondRunModalBody")}</p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setSecondRunModal(null)} className="btn-secondary px-4 py-2 text-sm">
+                {t("secondRunModalCancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmSecondRun()}
+                className="rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
+              >
+                {t("secondRunModalConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <SpecPlanAnalysisDrawer
         open={analysisDrawerOpen}

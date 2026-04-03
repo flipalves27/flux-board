@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
-export type SpecPlanActiveRunRef = { runId: string; boardId: string; updatedAt: string };
+export type SpecPlanActiveRunRef = {
+  runId: string;
+  boardId: string;
+  updatedAt: string;
+  status?: string;
+};
 
 type SpecPlanActiveState = {
   active: SpecPlanActiveRunRef[];

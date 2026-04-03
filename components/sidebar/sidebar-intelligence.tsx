@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import {
   IconDocs,
   IconExecutiveDashboard,
@@ -34,6 +35,11 @@ export function SidebarIntelligence({
   specPlanActiveCount,
 }: SidebarIntelligenceProps) {
   const t = useTranslations("navigation");
+  const specPlanActive = useSpecPlanActiveStore((s) => s.active);
+  const specPlanHref =
+    specPlanActiveCount === 1 && specPlanActive[0]
+      ? `/spec-plan?run=${encodeURIComponent(specPlanActive[0].runId)}&board=${encodeURIComponent(specPlanActive[0].boardId)}`
+      : "/spec-plan";
   const [freq, setFreq] = useState(() => (typeof window !== "undefined" ? readSidebarNavFreq() : {}));
 
   useEffect(() => {
@@ -135,7 +141,7 @@ export function SidebarIntelligence({
           <SidebarNavLink
             key="intel-spec"
             trackPath="/spec-plan"
-            path="/spec-plan"
+            path={specPlanHref}
             hint={t("hints.specScopePlanner")}
             icon={<IconSpecScope className="h-4 w-4 shrink-0" />}
             label={t("specScopePlanner")}
@@ -147,7 +153,7 @@ export function SidebarIntelligence({
     }
 
     return base;
-  }, [user, specScopePlannerEnabled, specPlanActiveCount, t]);
+  }, [user, specScopePlannerEnabled, specPlanActiveCount, specPlanHref, t]);
 
   const sorted = useMemo(() => {
     return [...defs].sort((a, b) => {

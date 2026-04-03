@@ -7,7 +7,7 @@ import { parseSpecPlanFormData } from "@/lib/spec-plan-form-parse";
 import { createInitialSpecPlanRunState } from "@/lib/spec-plan-run-accumulator";
 import { serializeSpecPlanRunSummary } from "@/lib/spec-plan-run-serialize";
 import { isMongoConfigured } from "@/lib/mongo";
-import { insertSpecPlanRun, listSpecPlanRuns } from "@/lib/spec-plan-runs";
+import { insertSpecPlanRun, listSpecPlanRuns, userHasActiveSpecPlanRunOnBoard } from "@/lib/spec-plan-runs";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -60,6 +60,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (parsed instanceof Response) {
     const text = await parsed.text();
     return new NextResponse(text, { status: parsed.status, headers: { "Content-Type": "application/json" } });
+  }
+
+  const forceRaw = formData.get("force");
+  const force = forceRaw === "1" || forceRaw === "true";
+  if (!force) {
+    const busy = await userHasActiveSpecPlanRunOnBoard(access.payload.orgId, access.payload.id, boardId);
+    if (busy) {
+      return NextResponse.json(
+        {
+          error: "Já existe uma análise em curso neste board.",
+          errorCode: "SPEC_PLAN_RUN_IN_PROGRESS",
+        },
+        { status: 409 }
+      );
+    }
   }
 
   const { methodology, remapOnly, documentText, extractMeta, workItemsJson } = parsed;

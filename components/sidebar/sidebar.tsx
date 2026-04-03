@@ -168,7 +168,7 @@ export function Sidebar() {
       }
       try {
         const data = await apiGet<{
-          active?: { runId: string; boardId: string; updatedAt: string }[];
+          active?: { runId: string; boardId: string; updatedAt: string; status?: string }[];
         }>("/api/spec-plan/active-runs", getHeaders());
         if (!cancelled && Array.isArray(data?.active)) {
           useSpecPlanActiveStore.getState().setActive(data.active);
