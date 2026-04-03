@@ -4,6 +4,10 @@ export type FluxyAvatarState =
   | "talking"
   | "celebrating"
   | "waving"
-  | "sleeping";
+  | "sleeping"
+  | "error"
+  | "loading"
+  | "pointing"
+  | "love";
 
 export type FluxyAvatarSize = "fab" | "compact" | "header";

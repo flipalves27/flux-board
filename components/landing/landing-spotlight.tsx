@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 
 export function LandingSpotlight() {
   const t = useTranslations("landing");
@@ -30,8 +31,8 @@ export function LandingSpotlight() {
           />
           <div className="relative">
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-20)] bg-gradient-to-br from-[var(--flux-primary-alpha-15)] to-[var(--flux-secondary-alpha-08)] py-1 pl-1 pr-2.5 font-display text-[11px] font-semibold text-[var(--flux-primary-light)]">
-              <span className="text-sm" aria-hidden>
-                🦊
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-md" aria-hidden>
+                <FluxyAvatar state="idle" size="fab" />
               </span>
               {t("spotlight.copilot.fluxyBadge")}
             </div>
@@ -45,8 +46,8 @@ export function LandingSpotlight() {
           <div className="relative mt-5 md:mt-0">
             <div className="rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-15)] bg-[color-mix(in_srgb,black_30%,transparent)] px-3.5 py-3 font-mono text-[11px]">
               <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--flux-primary-alpha-20)] bg-gradient-to-br from-[var(--flux-primary-alpha-15)] to-[var(--flux-secondary-alpha-08)] py-1 pl-1 pr-2.5 font-display text-[11px] font-semibold text-[var(--flux-primary-light)]">
-                <span className="text-sm" aria-hidden>
-                  🦊
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-md" aria-hidden>
+                  <FluxyAvatar state="talking" size="fab" />
                 </span>
                 {t("spotlight.copilot.answerBadge")}
               </div>

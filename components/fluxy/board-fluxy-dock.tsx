@@ -62,7 +62,7 @@ export function BoardFluxyDock() {
         buttonClassName:
           "inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--flux-primary-alpha-35)] bg-[color-mix(in_srgb,var(--flux-surface-card)_92%,transparent)] px-3 py-2 text-[11px] font-semibold text-[var(--flux-primary-light)] shadow-[0_8px_32px_rgba(13,10,26,0.35)] backdrop-blur-[12px] font-fluxy hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-12)] motion-safe:transition-colors",
         iconWrapperClassName:
-          "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+          "fluxy-fab-bob inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
       }}
       launcher={{
         onOpen: onOpenAssistant,
@@ -75,7 +75,7 @@ export function BoardFluxyDock() {
         openButtonClassName:
           "flex min-w-0 flex-1 items-center gap-2 rounded-[14px] px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
         avatarWrapperClassName:
-          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+          "fluxy-fab-bob inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
         title: tFluxy("title"),
         subtitle: t("chipLabel"),
         titleClassName: "block font-fluxy text-sm font-bold text-[var(--flux-text)] leading-tight",

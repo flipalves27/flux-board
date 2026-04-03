@@ -322,7 +322,7 @@ export function WorkspaceFluxyDock() {
           buttonClassName:
             "inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--flux-primary-alpha-28)] bg-[color-mix(in_srgb,var(--flux-surface-card)_92%,transparent)] px-2.5 py-1.5 text-[10px] font-semibold text-[var(--flux-primary-light)] shadow-[0_8px_32px_rgba(13,10,26,0.35)] backdrop-blur-[12px] font-fluxy hover:border-[var(--flux-primary)] hover:bg-[var(--flux-primary-alpha-10)] motion-safe:transition-colors",
           iconWrapperClassName:
-            "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+            "fluxy-fab-bob inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
         }}
         launcher={{
           onOpen: openPanel,
@@ -336,7 +336,7 @@ export function WorkspaceFluxyDock() {
           openButtonClassName:
             "flex min-w-0 flex-1 items-center gap-2 rounded-[14px] px-1 py-0.5 text-left hover:bg-[var(--flux-primary-alpha-08)] motion-safe:transition-colors",
           avatarWrapperClassName:
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
+            "fluxy-fab-bob inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-void-nested-36)] text-[var(--flux-primary-light)]",
           title: t("fabLabel"),
           subtitle: t("fabHint"),
           titleClassName: "block font-fluxy text-xs font-bold leading-tight text-[var(--flux-text)]",
@@ -365,7 +365,7 @@ export function WorkspaceFluxyDock() {
                   <FluxyAvatar
                     state={fluxy.visualState}
                     size="header"
-                    className="shrink-0 scale-90"
+                    className="shrink-0"
                     title={t("panelTitle")}
                     interactive
                   />

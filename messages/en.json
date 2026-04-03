@@ -1042,7 +1042,11 @@
         "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
         "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
         "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
-        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." },
+        "error": { "emoji": "⚠️", "label": "Something went wrong", "desc": "Couldn’t finish that — try again." },
+        "loading": { "emoji": "⏳", "label": "Loading", "desc": "Fetching your conversation…" },
+        "pointing": { "emoji": "👉", "label": "Look here", "desc": "Check the spot I’m pointing to." },
+        "love": { "emoji": "💜", "label": "Love it", "desc": "Thanks — that helped!" }
       }
     }
   },
@@ -1444,7 +1448,11 @@
         "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
         "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
         "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
-        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+        "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." },
+        "error": { "emoji": "⚠️", "label": "Something went wrong", "desc": "Couldn’t finish that — try again." },
+        "loading": { "emoji": "⏳", "label": "Loading", "desc": "Fetching your conversation…" },
+        "pointing": { "emoji": "👉", "label": "Look here", "desc": "Check the spot I’m pointing to." },
+        "love": { "emoji": "💜", "label": "Love it", "desc": "Thanks — that helped!" }
       }
     }
   },
@@ -3015,7 +3023,11 @@
           "talking": { "emoji": "💬", "label": "Speaking", "desc": "Here’s something for you!" },
           "celebrating": { "emoji": "🎉", "label": "Celebrating", "desc": "Sprint done — nice work!" },
           "waving": { "emoji": "👋", "label": "Hi!", "desc": "Great to see you!" },
-          "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." }
+          "sleeping": { "emoji": "😴", "label": "Resting", "desc": "Ping me when you need me." },
+          "error": { "emoji": "⚠️", "label": "Something went wrong", "desc": "Couldn’t finish that — try again." },
+          "loading": { "emoji": "⏳", "label": "Loading", "desc": "Fetching your conversation…" },
+          "pointing": { "emoji": "👉", "label": "Look here", "desc": "Check the spot I’m pointing to." },
+          "love": { "emoji": "💜", "label": "Love it", "desc": "Thanks — that helped!" }
         }
       },
       "fluxyDock": {

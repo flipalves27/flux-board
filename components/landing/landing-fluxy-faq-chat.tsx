@@ -40,8 +40,8 @@ export function LandingFluxyFab({
       aria-expanded={panelOpen}
       aria-label={ariaLabel}
     >
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1rem] leading-none shadow-[var(--flux-shadow-primary-dot-sm)] md:h-9 md:w-9">
-        <span aria-hidden>🦊</span>
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] leading-none shadow-[var(--flux-shadow-primary-dot-sm)] md:h-11 md:w-11">
+        <FluxyAvatar state="idle" size="fab" className="[&_svg]:drop-shadow-sm" />
       </span>
       <span className="hidden min-w-0 text-left md:block">
         <span className="block font-display text-[0.78rem] font-semibold tracking-wide text-[var(--flux-text)]">{fabTitle}</span>
@@ -75,7 +75,7 @@ export function LandingFluxyChatDrawer({
   onClose: () => void;
   title: string;
   subtitle: string;
-  fluxyState: Extract<FluxyAvatarState, "idle" | "thinking" | "talking">;
+  fluxyState: Extract<FluxyAvatarState, "idle" | "thinking" | "talking" | "error">;
   lines: ChatLine[];
   draft: string;
   onDraftChange: (v: string) => void;
@@ -102,7 +102,15 @@ export function LandingFluxyChatDrawer({
       <div className="flex flex-col gap-2 border-b border-[var(--border)] px-4 py-3">
         <div className="flex items-center gap-3">
           <FluxyAvatar
-            state={fluxyState === "thinking" ? "thinking" : fluxyState === "talking" ? "talking" : "idle"}
+            state={
+              fluxyState === "thinking"
+                ? "thinking"
+                : fluxyState === "talking"
+                  ? "talking"
+                  : fluxyState === "error"
+                    ? "error"
+                    : "idle"
+            }
             size="header"
             interactive
           />
@@ -206,7 +214,7 @@ export function LandingFluxyFaqChat() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [lines, setLines] = useState<ChatLine[]>([]);
-  const [fluxyState, setFluxyState] = useState<Extract<FluxyAvatarState, "idle" | "thinking" | "talking">>("idle");
+  const [fluxyState, setFluxyState] = useState<Extract<FluxyAvatarState, "idle" | "thinking" | "talking" | "error">>("idle");
   const [llmEnabled, setLlmEnabled] = useState<boolean | null>(null);
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -313,6 +321,19 @@ export function LandingFluxyFaqChat() {
               },
             ]);
             setFluxyState("idle");
+            return;
+          }
+          if (!res.ok) {
+            setLines((prev) => [
+              ...prev,
+              {
+                id: `a_${Date.now()}`,
+                role: "assistant",
+                content: t("fluxyChat.visualState.error.desc"),
+              },
+            ]);
+            setFluxyState("error");
+            window.setTimeout(() => setFluxyState("idle"), 2500);
             return;
           }
           const data = (await res.json().catch(() => ({}))) as {

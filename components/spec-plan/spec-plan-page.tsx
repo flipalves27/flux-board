@@ -1206,7 +1206,7 @@ export default function SpecPlanPage() {
         <section className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-black-alpha-04)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <FluxyAvatar state={specFluxyAvatarState} size="compact" className="scale-[0.85] origin-left" />
+              <FluxyAvatar state={specFluxyAvatarState} size="compact" className="origin-left" />
               <div className="min-w-0">
                 <h2 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("timelineTitle")}</h2>
                 <p className="text-[10px] text-[var(--flux-text-muted)]">{tFluxy("subtitle")}</p>

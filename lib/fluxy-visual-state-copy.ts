@@ -7,6 +7,10 @@ const roots: Record<FluxyAvatarState, string> = {
   celebrating: "visualState.celebrating",
   waving: "visualState.waving",
   sleeping: "visualState.sleeping",
+  error: "visualState.error",
+  loading: "visualState.loading",
+  pointing: "visualState.pointing",
+  love: "visualState.love",
 };
 
 export type FluxyVisualStateCopy = { emoji: string; label: string; desc: string };

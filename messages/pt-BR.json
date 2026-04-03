@@ -1042,7 +1042,11 @@
         "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
         "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
         "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
-        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+        "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+        "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+        "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+        "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
       }
     }
   },
@@ -1444,7 +1448,11 @@
         "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
         "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
         "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
-        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+        "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+        "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+        "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+        "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
       }
     }
   },
@@ -3020,7 +3028,11 @@
           "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
           "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
           "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
-          "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" }
+          "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+          "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+          "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+          "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+          "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
         }
       },
       "fluxyDock": {

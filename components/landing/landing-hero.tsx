@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { KanbanMock } from "./landing-kanban-mock";
 
 type LandingHeroProps = {
@@ -115,11 +116,11 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           <div className="home-hero-aurora pointer-events-none absolute -inset-8 rounded-full opacity-80 blur-3xl" aria-hidden />
           <div className="relative">
             <div
-              className="landing-fluxy-emoji-float absolute -bottom-5 -right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] text-[1.6rem] shadow-[0_8px_28px_var(--flux-primary-alpha-35)] sm:-bottom-4 sm:-right-3.5"
+              className="landing-fluxy-emoji-float absolute -bottom-5 -right-4 z-10 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] shadow-[0_8px_28px_var(--flux-primary-alpha-35)] sm:-bottom-4 sm:-right-3.5"
               title={t("hero.fluxyPeekLabel")}
               aria-hidden
             >
-              🦊
+              <FluxyAvatar state="waving" size="compact" className="pointer-events-none" />
             </div>
             <div className="relative max-h-[min(52vh,min(420px,100dvh-12rem))] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />

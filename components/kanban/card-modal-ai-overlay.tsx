@@ -45,7 +45,7 @@ export function CardModalAiOverlay() {
       >
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-start gap-3 min-w-0">
-            <FluxyAvatar state={fluxyState} size="compact" className="shrink-0 scale-90 origin-top-left" />
+            <FluxyAvatar state={fluxyState} size="compact" className="shrink-0 origin-top-left" />
             <div className="min-w-0">
               <h3 id="ai-context-title" className="font-display font-bold text-[var(--flux-text)] text-base">
                 {t("cardModal.aiContext.title")}

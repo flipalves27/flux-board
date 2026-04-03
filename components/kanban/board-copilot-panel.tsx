@@ -180,6 +180,8 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
   const [fluxyWaving, setFluxyWaving] = useState(false);
   const [fluxyCelebrating, setFluxyCelebrating] = useState(false);
+  const [fluxyErrorFlash, setFluxyErrorFlash] = useState(false);
+  const errorFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const COPILOT_TAB_KEY = "flux-board.copilot.sideTab";
   const [sideTab, setSideTabState] = useState<"chat" | "sala">("chat");
@@ -222,9 +224,19 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     }, 2200);
   }, []);
 
+  const triggerFluxyErrorFlash = useCallback(() => {
+    if (errorFlashTimerRef.current) clearTimeout(errorFlashTimerRef.current);
+    setFluxyErrorFlash(true);
+    errorFlashTimerRef.current = setTimeout(() => {
+      setFluxyErrorFlash(false);
+      errorFlashTimerRef.current = null;
+    }, 2500);
+  }, []);
+
   useEffect(
     () => () => {
       if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
+      if (errorFlashTimerRef.current) clearTimeout(errorFlashTimerRef.current);
     },
     []
   );
@@ -301,6 +313,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     lastAssistantContent,
     waving: fluxyWaving,
     celebrating: fluxyCelebrating,
+    errorFlash: fluxyErrorFlash,
   });
 
   const canSend = useMemo(() => {
@@ -401,6 +414,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
               )
             );
             pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
+            triggerFluxyErrorFlash();
             return;
           }
 
@@ -448,6 +462,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
           const txt = tNlq("errorGeneric");
           setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: txt } : m)));
           pushToast({ kind: "error", title: tNlq("toastTitle"), description: txt });
+          triggerFluxyErrorFlash();
         } finally {
           setGenerating(false);
           endRef.current?.scrollIntoView({ behavior: "auto" });
@@ -528,6 +543,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
               prev.map((m) => (m.id === assistantId ? { ...m, content: m.content || msg } : m))
             );
             pushToast({ kind: "error", title: tFluxy("toastErrorTitle"), description: msg });
+            triggerFluxyErrorFlash();
             return;
           }
 
@@ -616,6 +632,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro interno ao gerar.";
         pushToast({ kind: "error", title: tFluxy("toastErrorTitle"), description: message });
+        triggerFluxyErrorFlash();
       } finally {
         setGenerating(false);
         setDraft("");
@@ -637,6 +654,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
       tFluxy,
       tNlq,
       triggerFluxyCelebrate,
+      triggerFluxyErrorFlash,
     ]
   );
 
@@ -903,7 +921,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
                         )}
                         {generating ? (
                           <div className="text-xs text-[var(--flux-text-muted)] pt-1 flex items-center gap-2">
-                            <FluxyAvatar state={fluxyVisualState} size="compact" className="scale-[0.65] origin-left" />
+                            <FluxyAvatar state={fluxyVisualState} size="compact" className="origin-left" />
                             <span>{tFluxy("generating")}</span>
                           </div>
                         ) : null}

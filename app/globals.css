@@ -3042,13 +3042,13 @@
 @keyframes fluxy-tail-wag {
   0%,
   100% {
-    transform: rotate(0deg);
+    transform: rotate(0deg) translateX(0);
   }
   30% {
-    transform: rotate(10deg);
+    transform: rotate(10deg) translateX(2px);
   }
   70% {
-    transform: rotate(-6deg);
+    transform: rotate(-6deg) translateX(-1px);
   }
 }
 @keyframes fluxy-tail-wag-fast {
@@ -3080,7 +3080,7 @@
     opacity: 1;
   }
   100% {
-    transform: translateY(650px) rotate(540deg);
+    transform: translateY(520px) rotate(720deg);
     opacity: 0;
   }
 }
@@ -3089,27 +3089,132 @@
   100% {
     transform: rotate(0deg);
   }
-  20% {
-    transform: rotate(-25deg);
+  25% {
+    transform: rotate(-20deg);
   }
-  40% {
+  75% {
     transform: rotate(15deg);
-  }
-  60% {
-    transform: rotate(-18deg);
-  }
-  80% {
-    transform: rotate(10deg);
   }
 }
 @keyframes fluxy-z-float {
   0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.8;
+    transform: translateY(0) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
   }
   100% {
-    transform: translate(18px, -35px) scale(0.3);
+    transform: translateY(-40px) scale(1.2);
     opacity: 0;
+  }
+}
+@keyframes fluxy-orb-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fluxy-orb-spin-reverse {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes fluxy-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.15);
+  }
+}
+@keyframes fluxy-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes fluxy-sound-wave {
+  0% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scaleX(1.5);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-18px);
+  }
+  60% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes fluxy-error-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes fluxy-point-pulse {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+@keyframes fluxy-heart-float {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    transform: translateY(-50px) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-fab-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 @keyframes fluxy-think-bubble {
@@ -3202,6 +3307,9 @@
   .fluxy-ui-bounce-in-slow {
     animation: fluxy-bounce-in 0.4s ease;
   }
+  .fluxy-fab-bob {
+    animation: fluxy-fab-bob 3s ease-in-out infinite;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3217,6 +3325,9 @@
   .fluxy-ui-bounce-in,
   .fluxy-ui-bounce-in-slow {
     animation: none;
+  }
+  .fluxy-fab-bob {
+    animation: none !important;
   }
   .fluxy-avatar[data-fluxy-motion="reduced"] svg,
   .fluxy-avatar[data-fluxy-motion="reduced"] svg * {
