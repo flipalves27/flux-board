@@ -1,4 +1,4 @@
-const CACHE_NAME = "flux-board-v2";
+const CACHE_NAME = "flux-board-v3";
 const STATIC_ASSETS = ["/", "/offline.html"];
 
 self.addEventListener("install", (event) => {
@@ -32,6 +32,15 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
+
+  // Never cache navigation documents to avoid serving stale authenticated HTML
+  // after deployments or session changes.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request, { redirect: "follow" }).catch(() => caches.match("/offline.html"))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
