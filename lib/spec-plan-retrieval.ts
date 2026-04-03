@@ -5,13 +5,10 @@ import {
   fetchTextEmbeddingsWithMeta,
   type TextEmbeddingsResult,
 } from "@/lib/embeddings-together";
-
-function specPlanPrimaryEmbedModelHint(): string {
-  return (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
-}
 import type { SpecPlanChunk } from "@/lib/spec-plan-chunk";
 import {
   SPEC_PLAN_EMBED_BATCH,
+  SPEC_PLAN_EMBED_CONCURRENCY,
   SPEC_PLAN_RETRIEVAL_CONTEXT_MAX_CHARS,
   SPEC_PLAN_RETRIEVAL_TOP_K,
 } from "@/lib/spec-plan-constants";
@@ -21,6 +18,10 @@ const EMBED_INPUT_MAX_CHARS = 8000;
 
 const CONTEXT_PREFIX_PT =
   "Os trechos abaixo foram selecionados por relevância semântica a partir do documento completo da especificação. Use-os como fonte principal; podem existir lacunas.\n\n";
+
+function specPlanPrimaryEmbedModelHint(): string {
+  return (process.env.TOGETHER_EMBEDDING_MODEL || DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
+}
 
 export function embedInputForSpecChunk(fileName: string, text: string): string {
   return [`Especificação: ${String(fileName || "").trim()}`, "", String(text || "").trim()]
@@ -92,6 +93,44 @@ async function fetchSpecPlanEmbeddingBatch(
   };
 }
 
+/**
+ * Vários lotes de embeddings em paralelo (até `concurrency` pedidos em voo), preservando a ordem dos textos.
+ */
+async function fetchSpecPlanEmbeddingsOrdered(
+  inputs: string[],
+  batchSize: number,
+  concurrency: number
+): Promise<{ ok: true; vectors: number[][] } | { ok: false; reason: string }> {
+  if (!inputs.length) return { ok: true, vectors: [] };
+  const starts: number[] = [];
+  for (let i = 0; i < inputs.length; i += batchSize) starts.push(i);
+  const allVectors: number[][] = [];
+
+  for (let w = 0; w < starts.length; w += concurrency) {
+    const window = starts.slice(w, w + concurrency);
+    const results = await Promise.all(
+      window.map(async (start) => {
+        const batchIn = inputs.slice(start, start + batchSize);
+        const batchRes = await fetchSpecPlanEmbeddingBatch(batchIn);
+        return { start, batchRes };
+      })
+    );
+    results.sort((a, b) => a.start - b.start);
+    for (const { batchRes } of results) {
+      if (!batchRes.ok) return { ok: false, reason: batchRes.reason };
+      allVectors.push(...batchRes.vectors);
+    }
+  }
+
+  if (allVectors.length !== inputs.length) {
+    return {
+      ok: false,
+      reason: `Embedding count mismatch: expected ${inputs.length}, got ${allVectors.length}`,
+    };
+  }
+  return { ok: true, vectors: allVectors };
+}
+
 async function embedSpecPlanChunksWithMeta(
   fileName: string,
   chunks: SpecPlanChunk[]
@@ -101,24 +140,22 @@ async function embedSpecPlanChunksWithMeta(
 > {
   if (!chunks.length) return { ok: true, withVec: [] };
   const inputs = chunks.map((c) => embedInputForSpecChunk(fileName, c.text));
-  const out: SpecPlanChunkWithVector[] = [];
-  const batchSize = SPEC_PLAN_EMBED_BATCH;
-
-  for (let i = 0; i < inputs.length; i += batchSize) {
-    const batchIn = inputs.slice(i, i + batchSize);
-    const batchRes = await fetchSpecPlanEmbeddingBatch(batchIn);
-    if (!batchRes.ok) return { ok: false, reason: batchRes.reason };
-    for (let j = 0; j < batchIn.length; j++) {
-      const ch = chunks[i + j];
-      out.push({
-        chunkId: ch.chunkId,
-        text: ch.text,
-        vector: batchRes.vectors[j],
-        chunkIndex: ch.chunkIndex,
-      });
-    }
-  }
-  return { ok: true, withVec: out };
+  const merged = await fetchSpecPlanEmbeddingsOrdered(
+    inputs,
+    SPEC_PLAN_EMBED_BATCH,
+    SPEC_PLAN_EMBED_CONCURRENCY
+  );
+  if (!merged.ok) return { ok: false, reason: merged.reason };
+  const withVec: SpecPlanChunkWithVector[] = merged.vectors.map((vector, j) => {
+    const ch = chunks[j];
+    return {
+      chunkId: ch.chunkId,
+      text: ch.text,
+      vector,
+      chunkIndex: ch.chunkIndex,
+    };
+  });
+  return { ok: true, withVec };
 }
 
 export function mergeHitsByChunkId(hits: SpecPlanRetrievalHit[]): SpecPlanRetrievalHit[] {
@@ -205,14 +242,13 @@ export async function buildSpecPlanRetrievalContext(input: {
   }
 
   const qTexts = queries.map((q) => String(q).slice(0, EMBED_INPUT_MAX_CHARS));
-  const qEmbeds: number[][] = [];
-  const batchSize = SPEC_PLAN_EMBED_BATCH;
-  for (let i = 0; i < qTexts.length; i += batchSize) {
-    const batch = qTexts.slice(i, i + batchSize);
-    const batchRes = await fetchSpecPlanEmbeddingBatch(batch);
-    if (!batchRes.ok) return { ok: false, reason: batchRes.reason };
-    qEmbeds.push(...batchRes.vectors);
-  }
+  const qMerged = await fetchSpecPlanEmbeddingsOrdered(
+    qTexts,
+    SPEC_PLAN_EMBED_BATCH,
+    SPEC_PLAN_EMBED_CONCURRENCY
+  );
+  if (!qMerged.ok) return { ok: false, reason: qMerged.reason };
+  const qEmbeds = qMerged.vectors;
 
   const allHits: SpecPlanRetrievalHit[] = [];
   for (let qi = 0; qi < queries.length; qi++) {

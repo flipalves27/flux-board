@@ -136,15 +136,19 @@ export async function runSpecPlanPipeline(input: {
 
     let outlineDocExcerpt = fallbackOutlineDoc;
 
-    /** Documentos com poucos trechos: pular embeddings/recuperação (usa texto truncado no outline). */
-    if (chunkCount > 0 && chunkCount <= 3) {
+    /** Documento cabe no limite do outline: análise na íntegra sem embeddings/RAG. */
+    const skipRagFullDoc =
+      chunkCount > 0 && input.documentText.length <= SPEC_PLAN_LLM_DOC_CHUNK_CHARS;
+
+    if (skipRagFullDoc) {
+      outlineDocExcerpt = input.documentText;
       await emit({
         event: "embeddings_ready",
         data: {
           embeddedCount: 0,
           modelHint: modelHintDefault,
           failed: false,
-          skippedTinyDoc: true,
+          skippedFullDocFitsLlm: true,
         },
       });
       await emit({
@@ -154,6 +158,7 @@ export async function runSpecPlanPipeline(input: {
           chunksUsed: 0,
           preview: [],
           fallback: true,
+          skippedFullDocFitsLlm: true,
         },
       });
     } else if (chunkCount > 0) {
