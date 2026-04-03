@@ -25,10 +25,10 @@ export function MobileAppHeader() {
 
   return (
     <header
-      className={`flux-mobile-header-bar sticky top-0 z-[var(--flux-z-mobile-header)] flex min-h-12 shrink-0 items-center gap-2 border-b px-3 pt-[env(safe-area-inset-top,0px)] md:hidden ${
+      className={`flux-mobile-header-bar sticky top-0 z-[var(--flux-z-mobile-header)] flex min-h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-border-subtle)] px-3 pt-[env(safe-area-inset-top,0px)] md:hidden ${
         isMinimal
-          ? "border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-dark)]/95"
-          : "border-[var(--flux-primary-alpha-10)] bg-[linear-gradient(180deg,var(--flux-surface-dark),color-mix(in_srgb,var(--flux-surface-dark)_88%,var(--flux-primary)_12%))]"
+          ? "bg-[color-mix(in_srgb,var(--flux-surface-dark)_88%,transparent)]"
+          : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--flux-surface-dark)_92%,transparent),color-mix(in_srgb,var(--flux-surface-dark)_82%,var(--flux-primary)_18%))]"
       }`}
     >
       <button

@@ -1,33 +1,7 @@
 "use client";
 
+import { Activity, LayoutDashboard, PieChart } from "lucide-react";
 import { useTranslations } from "next-intl";
-
-function PillarIconKanban() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-      <path d="M3 19L8 12L13 15L19 5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PillarIconSignal() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-      <circle cx="11" cy="11" r="4" fill="rgba(255,255,255,0.2)" />
-      <circle cx="11" cy="11" r="2" fill="white" />
-      <path d="M11 4v2M11 16v2M4 11h2M16 11h2" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function PillarIconPortfolio() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-      <rect x="3" y="4" width="16" height="14" rx="2" stroke="white" strokeWidth="1.4" />
-      <path d="M3 9h16M7 4v14" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function LandingPillars() {
   const t = useTranslations("landing");
@@ -35,23 +9,23 @@ export function LandingPillars() {
     {
       title: t("pillars.commercialPace.title"),
       description: t("pillars.commercialPace.description"),
-      glow: "bg-[rgba(108,92,231,0.3)]",
+      glow: "bg-[var(--flux-primary-alpha-30)]",
       iconBg: "bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-primary-dark)]",
-      icon: <PillarIconKanban />,
+      icon: <LayoutDashboard className="h-[22px] w-[22px] text-white" strokeWidth={1.75} aria-hidden />,
     },
     {
       title: t("pillars.insights.title"),
       description: t("pillars.insights.description"),
-      glow: "bg-[rgba(0,210,211,0.25)]",
+      glow: "bg-[var(--flux-secondary-alpha-32)]",
       iconBg: "bg-gradient-to-br from-[var(--flux-secondary-dark)] to-[var(--flux-secondary)]",
-      icon: <PillarIconSignal />,
+      icon: <Activity className="h-[22px] w-[22px] text-white" strokeWidth={1.75} aria-hidden />,
     },
     {
       title: t("pillars.executiveView.title"),
       description: t("pillars.executiveView.description"),
-      glow: "bg-[rgba(253,167,223,0.2)]",
+      glow: "bg-[var(--flux-accent-alpha-35)]",
       iconBg: "bg-gradient-to-br from-[var(--flux-accent-dark)] to-[var(--flux-accent)]",
-      icon: <PillarIconPortfolio />,
+      icon: <PieChart className="h-[22px] w-[22px] text-white" strokeWidth={1.75} aria-hidden />,
     },
   ];
 
@@ -71,14 +45,14 @@ export function LandingPillars() {
         {pillars.map((p) => (
           <article
             key={p.title}
-            className="group relative cursor-default overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] p-7 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+            className="group relative cursor-default overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_52%,transparent)] p-7 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[var(--flux-shadow-lg)]"
           >
             <div
               className={`pointer-events-none absolute -right-5 -top-5 h-[120px] w-[120px] rounded-full ${p.glow} opacity-40 blur-[40px] transition-opacity duration-300 group-hover:opacity-70`}
               aria-hidden
             />
             <div
-              className={`relative mb-4 flex h-12 w-12 items-center justify-center rounded-[14px] ${p.iconBg} shadow-[0_8px_24px_rgba(108,92,231,0.25)]`}
+              className={`relative mb-4 flex h-12 w-12 items-center justify-center rounded-[14px] ${p.iconBg} shadow-[var(--flux-shadow-primary-medium)]`}
             >
               {p.icon}
             </div>

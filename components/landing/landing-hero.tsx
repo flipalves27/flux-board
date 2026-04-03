@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { KanbanMock } from "./landing-kanban-mock";
@@ -9,14 +10,6 @@ type LandingHeroProps = {
   localeRoot: string;
   user: unknown;
 };
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export function LandingHero({ localeRoot, user }: LandingHeroProps) {
   const t = useTranslations("landing");
@@ -91,12 +84,12 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             {user ? (
               <Link href={`${localeRoot}/boards`} className={primaryClass}>
                 {t("hero.primary.loggedIn")}
-                <ArrowRightIcon className="shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             ) : (
               <Link href={`${localeRoot}/login`} className={primaryClass}>
                 {t("hero.primary.loggedOut")}
-                <ArrowRightIcon className="shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             )}
             <a href="#platform" className="flux-marketing-btn-ghost w-full justify-center px-6 py-3 text-[15px] sm:w-auto">

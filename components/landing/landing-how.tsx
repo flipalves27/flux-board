@@ -24,15 +24,10 @@ export function LandingHow() {
         {steps.map((s, i) => (
           <li
             key={s.step}
-            className="relative rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-12)] bg-[rgba(34,31,58,0.4)] px-7 py-8"
+            className="relative rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_45%,transparent)] px-7 py-8"
           >
             <span
-              className="font-display text-5xl font-extrabold leading-none text-transparent"
-              style={{
-                background: "linear-gradient(180deg, rgba(108,92,231,0.3), rgba(108,92,231,0.05))",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-              }}
+              className="bg-gradient-to-b from-[var(--flux-primary-alpha-30)] to-[var(--flux-primary-alpha-05)] bg-clip-text font-display text-5xl font-extrabold leading-none text-transparent"
               aria-hidden
             >
               {s.step}
@@ -41,7 +36,7 @@ export function LandingHow() {
             <p className="mt-2 text-[13px] leading-[1.7] text-[var(--flux-text-muted)]">{s.text}</p>
             {i < steps.length - 1 && (
               <span
-                className="absolute right-[-12px] top-1/2 hidden h-0.5 w-6 -translate-y-1/2 bg-gradient-to-r from-[rgba(108,92,231,0.4)] to-transparent md:block"
+                className="absolute right-[-12px] top-1/2 hidden h-0.5 w-6 -translate-y-1/2 bg-gradient-to-r from-[var(--flux-primary-alpha-40)] to-transparent md:block"
                 aria-hidden
               />
             )}

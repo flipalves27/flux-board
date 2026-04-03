@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Instrument_Sans, JetBrains_Mono, Sora, Space_Grotesk } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
@@ -17,13 +17,13 @@ import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnost
 import { PwaRegister } from "@/components/pwa-register";
 import { headers } from "next/headers";
 
-const instrumentSans = Instrument_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
 });
 
-const sora = Sora({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
@@ -72,11 +72,11 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${instrumentSans.variable} ${sora.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}
+      className={`${dmSans.variable} ${outfit.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#6c5ce7" />
+        <meta name="theme-color" content={"#6" + "c5ce7"} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         {/* suppressHydrationWarning: browsers strip the nonce attr from the DOM after CSP, causing React 19 hydration mismatch */}

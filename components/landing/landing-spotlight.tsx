@@ -21,7 +21,7 @@ export function LandingSpotlight() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-3">
-        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[0_16px_44px_rgba(0,0,0,0.3)]">
+        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_50%,transparent)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[var(--flux-shadow-lg)]">
           <div
             className="landing-spotlight-card-glow pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-primary)]/30 blur-3xl"
             aria-hidden
@@ -33,7 +33,7 @@ export function LandingSpotlight() {
           </div>
           <h3 className="relative font-display text-[17px] font-semibold">{t("spotlight.copilot.title")}</h3>
           <p className="relative mt-2 text-[13px] leading-[1.7] text-[var(--flux-text-muted)]">{t("spotlight.copilot.body")}</p>
-          <div className="relative mt-4 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-12)] bg-[rgba(13,11,26,0.4)] px-3.5 py-3 text-xs">
+          <div className="relative mt-4 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_40%,transparent)] px-3.5 py-3 text-xs">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className="shrink-0 text-[11px] font-semibold text-[var(--flux-secondary)]">{t("spotlight.copilot.sampleLabel")}</span>
               <span className="home-copilot-typewriter block min-w-0 max-w-full text-[var(--flux-text-muted)]">{t("spotlight.copilot.sampleQuestion")}</span>
@@ -41,7 +41,7 @@ export function LandingSpotlight() {
           </div>
         </article>
 
-        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[0_16px_44px_rgba(0,0,0,0.3)]">
+        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_50%,transparent)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[var(--flux-shadow-lg)]">
           <div
             className="landing-spotlight-card-glow pointer-events-none absolute -left-6 -top-6 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/20 blur-3xl"
             aria-hidden
@@ -55,13 +55,13 @@ export function LandingSpotlight() {
           </div>
           <h3 className="relative font-display text-[17px] font-semibold">{t("spotlight.okr.title")}</h3>
           <p className="relative mt-2 text-[13px] leading-[1.7] text-[var(--flux-text-muted)]">{t("spotlight.okr.body")}</p>
-          <div className="relative mt-4 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-12)] bg-[rgba(13,11,26,0.4)] px-3.5 py-3 text-xs">
+          <div className="relative mt-4 space-y-3 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_40%,transparent)] px-3.5 py-3 text-xs">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("spotlight.okr.demoObjective")}</span>
                 <span className="text-xs font-bold text-[var(--flux-secondary)]">72%</span>
               </div>
-              <div className="mt-1.5 h-1.5 w-full rounded-full bg-[rgba(0,210,211,0.1)]">
+              <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--flux-secondary-alpha-10)]">
                 <div className="h-1.5 w-[72%] rounded-full bg-[var(--flux-secondary)] transition-[width] duration-1000 ease-out" />
               </div>
             </div>
@@ -70,16 +70,16 @@ export function LandingSpotlight() {
                 <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("spotlight.okr.demoKr")}</span>
                 <span className="text-xs font-bold text-[var(--flux-secondary-light)]">88%</span>
               </div>
-              <div className="mt-1.5 h-1.5 w-full rounded-full bg-[rgba(0,210,211,0.1)]">
+              <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--flux-secondary-alpha-10)]">
                 <div className="h-1.5 w-[88%] rounded-full bg-[var(--flux-secondary-light)] transition-[width] duration-1000 ease-out" />
               </div>
             </div>
           </div>
         </article>
 
-        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[0_16px_44px_rgba(0,0,0,0.3)]">
+        <article className="landing-spotlight-card group relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_50%,transparent)] p-7 shadow-[var(--shadow-md)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[var(--flux-primary-alpha-30)] hover:shadow-[var(--flux-shadow-lg)]">
           <div
-            className="landing-spotlight-card-glow pointer-events-none absolute bottom-0 right-[-20px] h-32 w-32 rounded-full bg-[rgba(255,107,107,0.15)] blur-3xl"
+            className="landing-spotlight-card-glow pointer-events-none absolute bottom-0 right-[-20px] h-32 w-32 rounded-full bg-[var(--flux-danger-alpha-15)] blur-3xl"
             aria-hidden
           />
           <div className="relative mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--flux-danger)] to-[var(--flux-warning)]">
@@ -91,11 +91,11 @@ export function LandingSpotlight() {
           <h3 className="relative font-display text-[17px] font-semibold">{t("spotlight.anomaly.title")}</h3>
           <p className="relative mt-2 text-[13px] leading-[1.7] text-[var(--flux-text-muted)]">{t("spotlight.anomaly.body")}</p>
           <div className="relative mt-4 space-y-2">
-            <div className="flex items-center gap-2 rounded-md border border-[rgba(255,107,107,0.12)] bg-[rgba(255,107,107,0.04)] px-3 py-2 text-[11px] font-medium">
+            <div className="flex items-center gap-2 rounded-md border border-[var(--flux-danger-alpha-12)] bg-[var(--flux-danger-alpha-06)] px-3 py-2 text-[11px] font-medium">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--flux-warning)]" aria-hidden />
               <span className="text-[var(--flux-warning)]">{t("spotlight.anomaly.alert1")}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-md border border-[rgba(255,107,107,0.12)] bg-[rgba(255,107,107,0.04)] px-3 py-2 text-[11px] font-medium">
+            <div className="flex items-center gap-2 rounded-md border border-[var(--flux-danger-alpha-12)] bg-[var(--flux-danger-alpha-06)] px-3 py-2 text-[11px] font-medium">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--flux-danger)]" aria-hidden />
               <span className="text-[var(--flux-danger)]">{t("spotlight.anomaly.alert2")}</span>
             </div>

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CloseIcon, FluxLogoIcon, MenuIcon } from "./landing-icons";
+import { Menu, X } from "lucide-react";
+import { FluxLogoIcon } from "./landing-icons";
 
 type LandingHeaderProps = {
   localeRoot: string;
@@ -85,7 +86,7 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
             onClick={() => setMobileOpen((o) => !o)}
           >
             <span className="sr-only">{mobileOpen ? t("nav.closeMenu") : t("nav.openMenu")}</span>
-            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+            {mobileOpen ? <X className="h-5 w-5" strokeWidth={2} /> : <Menu className="h-5 w-5" strokeWidth={2} />}
           </button>
           {user ? (
             <Link

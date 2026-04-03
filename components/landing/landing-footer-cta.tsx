@@ -16,9 +16,9 @@ export function LandingFooterCta({ localeRoot, appName, user }: LandingFooterCta
 
   return (
     <section className="home-landing-reveal relative py-12 md:py-14" aria-labelledby="landing-footer-cta-heading">
-      <div className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.6)] px-6 py-14 text-center backdrop-blur-sm md:px-10 md:py-14">
+      <div className="relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[color-mix(in_srgb,var(--flux-surface-card)_60%,transparent)] px-6 py-14 text-center backdrop-blur-sm md:px-10 md:py-14">
         <div
-          className="pointer-events-none absolute bottom-[-40%] left-1/2 h-[200px] w-[80%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(108,92,231,0.25),transparent_70%)] blur-[60px]"
+          className="pointer-events-none absolute bottom-[-40%] left-1/2 h-[200px] w-[80%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,var(--flux-primary-alpha-25),transparent_70%)] blur-[60px]"
           aria-hidden
         />
         <div className="relative">

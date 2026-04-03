@@ -60,7 +60,7 @@ export function LandingPlatform({ localeRoot, appName, user }: LandingPlatformPr
               key={cap.key}
               className="tone-card landing-feature-card flex gap-3.5 rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(34,31,58,0.35)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(0,210,211,0.25)] hover:bg-[rgba(34,31,58,0.55)]"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(108,92,231,0.08)]">{cap.icon}</div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--flux-primary-alpha-08)]">{cap.icon}</div>
               <div className="min-w-0">
                 <h3 className="font-display text-sm font-semibold">{cap.name}</h3>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--flux-text-muted)]">{cap.detail}</p>

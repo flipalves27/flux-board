@@ -5,7 +5,8 @@ Use this after UI changes that touch layout, touch targets, or public/authentica
 ## Viewports
 
 - **360px**, **390px**, **428px** — narrow phones; confirm no horizontal scroll on landing, login, onboarding, portal, forms.
-- **768px** — boundary with `SidebarLayout` / `max-md:` (767px and below = mobile drawer + `MobileAppHeader`).
+- **768px** (`md` / `doc-md`) — boundary with `SidebarLayout` / `max-md:` (767px and below = mobile drawer + `MobileAppHeader`).
+- **1024px** (`lg` / `doc-lg`) — desktop navigation density and landing two-column hero (`lg:grid-cols-[1.1fr_0.9fr]`).
 
 ## Platforms
 
@@ -19,7 +20,7 @@ Use this after UI changes that touch layout, touch targets, or public/authentica
 ## Accessibility
 
 - Drawer: focus returns after close; `aria-*` on mobile nav (landing + sidebar) remains valid.
-- **Reduce motion**: OS setting disables landing shimmer/float where `prefers-reduced-motion` is wired in `app/globals.css`.
+- **Reduce motion**: OS setting shortens motion tokens in `app/globals.css`, disables several CSS animations, and the public landing uses Framer `MotionConfig reducedMotion="user"` plus `useReducedMotion` in the starfield, ambient orbs, and `ScrollReveal`.
 
 ## Authenticated shell
 

@@ -14,7 +14,7 @@ function ShieldIcon() {
         d="M8 2l5 2v4c0 3-2.2 5.5-5 6.5C5.2 13.5 3 11 3 8V4l5-2z"
         stroke="var(--flux-secondary)"
         strokeWidth="1.3"
-        fill="rgba(0,210,211,0.1)"
+        fill="var(--flux-secondary-alpha-10)"
       />
     </svg>
   );
@@ -23,7 +23,7 @@ function ShieldIcon() {
 function LockIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <rect x="2" y="6" width="12" height="8" rx="2" stroke="var(--flux-secondary)" strokeWidth="1.3" fill="rgba(0,210,211,0.1)" />
+      <rect x="2" y="6" width="12" height="8" rx="2" stroke="var(--flux-secondary)" strokeWidth="1.3" fill="var(--flux-secondary-alpha-10)" />
       <path d="M5 6V4a3 3 0 016 0v2" stroke="var(--flux-secondary)" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
@@ -47,7 +47,7 @@ export function LandingTrust({ localeRoot }: LandingTrustProps) {
 
   return (
     <section id="trust" className="home-landing-reveal scroll-mt-24 py-12 md:scroll-mt-28 md:py-14" aria-labelledby="landing-trust-heading">
-      <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)] px-6 py-10 backdrop-blur-sm md:px-9 md:py-10">
+      <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_50%,transparent)] px-6 py-10 backdrop-blur-sm md:px-9 md:py-10">
         <p className="landing-section-badge mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--flux-secondary)]">
           <span className="h-px w-5 bg-[var(--flux-secondary)]" aria-hidden />
           {t("trust.sectionBadge")}
@@ -59,7 +59,7 @@ export function LandingTrust({ localeRoot }: LandingTrustProps) {
         <ul className="mt-6 grid gap-4 md:grid-cols-3">
           {points.map((p) => (
             <li key={p.text} className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(0,210,211,0.08)]">{p.icon}</span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--flux-secondary-alpha-08)]">{p.icon}</span>
               <p className="text-[13px] leading-[1.6] text-[var(--flux-text-muted)]">{p.text}</p>
             </li>
           ))}

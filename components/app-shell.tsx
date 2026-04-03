@@ -60,7 +60,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
             key={alert.id}
             type="button"
             onClick={() => dismissAlert(alert.id)}
-            className="pointer-events-auto animate-[cardModalSlideIn_0.3s_ease] rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-surface-card)]/95 px-4 py-3 text-left shadow-[var(--flux-shadow-toast-strong)] backdrop-blur-sm"
+            className="pointer-events-auto animate-[cardModalSlideIn_0.3s_ease] rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-subtle)] bg-[color-mix(in_srgb,var(--flux-surface-card)_92%,transparent)] px-4 py-3 text-left shadow-[var(--flux-shadow-toast-strong)] backdrop-blur-[18px]"
           >
             <p className="font-display text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
               {t("routineReminder")}

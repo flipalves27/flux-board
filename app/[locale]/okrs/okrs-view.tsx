@@ -376,7 +376,7 @@ export default function OkrsView() {
       ) : (
         <DataFadeIn active key={`${selectedBoardId}-${currentQuarter}`}>
           <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[1fr,420px] gap-6">
-        <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">
+        <section className="bg-[var(--bg-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad-lg)] p-5 shadow-[var(--flux-shadow-sm)]">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">OKRs do trimestre</h2>
             <div className="text-xs text-[var(--flux-text-muted)] text-right max-w-[280px]">
@@ -651,7 +651,7 @@ export default function OkrsView() {
           )}
         </section>
 
-        <aside className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5 space-y-5">
+        <aside className="bg-[var(--bg-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad-lg)] p-5 space-y-5 shadow-[var(--flux-shadow-sm)]">
           <section>
             <h3 className="font-display font-bold text-base text-[var(--flux-text)]">Criar Objective</h3>
             <p className="text-sm text-[var(--flux-text-muted)] mt-1">

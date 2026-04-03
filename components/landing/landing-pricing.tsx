@@ -147,7 +147,7 @@ export function LandingPricing({
             className={`flux-marketing-segmented__btn flex items-center justify-center gap-1.5 sm:flex-initial ${billingYearly ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("pricing.yearly")}
-            <span className="rounded-full bg-[rgba(0,230,118,0.15)] px-[7px] py-0.5 text-[9px] font-bold text-[var(--flux-success)]">{t("pricing.yearlyTag")}</span>
+            <span className="rounded-full bg-[var(--flux-success-alpha-15)] px-[7px] py-0.5 text-[9px] font-bold text-[var(--flux-success)]">{t("pricing.yearlyTag")}</span>
           </button>
         </div>
       </div>
@@ -158,13 +158,13 @@ export function LandingPricing({
             key={plan.id}
             className={`relative flex flex-col rounded-[var(--flux-rad-xl)] border p-7 transition-all duration-300 hover:-translate-y-0.5 ${
               plan.highlighted
-                ? "border-[var(--flux-primary-alpha-40)] bg-gradient-to-b from-[rgba(108,92,231,0.1)] to-[rgba(34,31,58,0.6)] shadow-[0_0_0_1px_rgba(108,92,231,0.15),0_24px_50px_rgba(108,92,231,0.15)]"
-                : "border-[var(--flux-primary-alpha-15)] bg-[rgba(34,31,58,0.5)]"
+                ? "border-[var(--flux-primary-alpha-40)] bg-gradient-to-b from-[var(--flux-primary-alpha-10)] to-[color-mix(in_srgb,var(--flux-surface-card)_60%,transparent)] shadow-[0_0_0_1px_var(--flux-primary-alpha-15),0_24px_50px_var(--flux-primary-alpha-15)]"
+                : "border-[var(--flux-primary-alpha-15)] bg-[color-mix(in_srgb,var(--flux-surface-card)_50%,transparent)]"
             }`}
           >
             {plan.badge && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary-dark)] px-4 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-white shadow-[0_4px_12px_rgba(108,92,231,0.3)]">
+                <span className="rounded-full bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-secondary-dark)] px-4 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-white shadow-[var(--flux-shadow-primary-medium)]">
                   {plan.badge}
                 </span>
               </div>
@@ -185,7 +185,7 @@ export function LandingPricing({
 
             <div className="mb-6 flex-1">
               {plan.inherit && (
-                <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[rgba(162,155,254,0.6)]">{plan.inherit}</p>
+                <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--flux-primary-alpha-40)]">{plan.inherit}</p>
               )}
               <ul className="space-y-2">
                 {plan.features.map((f) => (

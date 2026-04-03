@@ -15,16 +15,16 @@ const defaultBar = "bg-[var(--flux-primary)]/40";
 export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
   return (
     <div
-      className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[rgba(34,31,58,0.85)] p-3 shadow-[0_24px_64px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:p-4 md:p-5"
+      className="home-kanban-mock relative overflow-hidden rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-20)] bg-[color-mix(in_srgb,var(--flux-surface-card)_85%,transparent)] p-3 shadow-[var(--flux-shadow-xl),inset_0_0_0_1px_var(--flux-chrome-alpha-03)] backdrop-blur-sm sm:p-4 md:p-5"
       aria-hidden
     >
       <div className="pointer-events-none absolute -right-8 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[var(--flux-primary)]/15 blur-3xl" />
       <div className="pointer-events-none absolute -left-6 bottom-0 h-32 w-32 rounded-full bg-[var(--flux-secondary)]/12 blur-3xl" />
       <div className="mb-0 flex items-center gap-2 border-b border-[var(--flux-primary-alpha-10)] px-0 pb-3 pt-0.5">
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(255,107,107,0.7)]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(255,217,61,0.7)]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[rgba(0,230,118,0.7)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--flux-danger-alpha-55)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--flux-warning-alpha-40)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--flux-success-alpha-40)]" />
         </div>
         <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">{liveViewLabel}</span>
       </div>
@@ -32,7 +32,7 @@ export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
         {cols.map((col) => (
           <div
             key={col.title}
-            className="home-kanban-col min-w-0 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-10)] bg-[rgba(13,11,26,0.4)] p-2 max-[400px]:p-1.5 sm:p-2.5 md:p-3"
+            className="home-kanban-col min-w-0 rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-10)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_40%,transparent)] p-2 max-[400px]:p-1.5 sm:p-2.5 md:p-3"
           >
             <p className="mb-2 max-[400px]:mb-1.5 max-[400px]:pb-1.5 max-[400px]:text-[9px] border-b border-[var(--flux-primary-alpha-08)] pb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--flux-text-muted)]">
               {col.title}
@@ -41,7 +41,7 @@ export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
               {col.cards.map((c, i) => (
                 <div
                   key={i}
-                  className="home-kanban-card group rounded-md border border-[var(--flux-primary-alpha-12)] bg-[rgba(34,31,58,0.6)] px-2.5 py-2.5 transition-all duration-300 hover:-translate-y-px hover:border-[var(--flux-primary-alpha-30)] md:py-3"
+                  className="home-kanban-card group rounded-md border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_60%,transparent)] px-2.5 py-2.5 transition-all duration-300 hover:-translate-y-px hover:border-[var(--flux-primary-alpha-30)] md:py-3"
                 >
                   <div
                     className={`mb-2 h-[3px] rounded-sm ${c.barClassName ?? defaultBar}`}

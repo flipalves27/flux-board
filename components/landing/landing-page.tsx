@@ -1,7 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { MotionConfig } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding } from "@/context/org-branding-context";
@@ -9,6 +11,7 @@ import { PRICING_BRL, formatBrl } from "@/lib/billing-pricing";
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import type { LandingLocale } from "@/lib/landing-models";
+import { LandingAmbientOrbs } from "./landing-ambient-orbs";
 import { LandingFaqSection } from "./landing-faq-section";
 import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
 import { LandingFooter } from "./landing-footer";
@@ -23,6 +26,12 @@ import { LandingRoadmap } from "./landing-roadmap";
 import { LandingSocialProof } from "./landing-social-proof";
 import { LandingSpotlight } from "./landing-spotlight";
 import { LandingTrust } from "./landing-trust";
+import { ScrollReveal } from "./scroll-reveal";
+
+const LandingStarfield = dynamic(
+  () => import("./landing-starfield").then((mod) => mod.LandingStarfield),
+  { ssr: false }
+);
 
 type LandingPageProps = {
   /** Catálogo SSR (revalidado quando o admin da plataforma salva). */
@@ -58,64 +67,96 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
   };
 
   return (
-    <div className="relative">
-      <a
-        href="#landing-main"
-        className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] px-4 py-2 text-sm transition-transform focus:translate-y-4"
-      >
-        {t("skipToContent")}
-      </a>
-      <div
-        lang={locale}
-        className="home-variant-vibrant home-landing-mesh relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
-      >
-        <div className="home-landing-page-bg flux-aurora-bg" aria-hidden>
-          <span className="flux-aurora-blob flux-aurora-blob--a" />
-          <span className="flux-aurora-blob flux-aurora-blob--b" />
-          <span className="flux-aurora-blob flux-aurora-blob--c" />
-        </div>
+    <MotionConfig reducedMotion="user">
+      <div className="relative">
+        <a
+          href="#landing-main"
+          className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] px-4 py-2 text-sm transition-transform focus:translate-y-4"
+        >
+          {t("skipToContent")}
+        </a>
         <div
-          className="pointer-events-none absolute inset-0 z-[1] opacity-[0.28]"
-          style={{
-            backgroundImage: "var(--flux-home-hero-bg)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-          aria-hidden
-        />
-        <div className="flux-grid-overlay flux-grid-overlay--drift pointer-events-none absolute inset-0 z-[1]" aria-hidden />
+          lang={locale}
+          className="home-variant-vibrant home-landing-mesh relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+        >
+          <div className="pointer-events-none absolute inset-0 z-0 min-h-[100dvh]" aria-hidden>
+            <LandingStarfield className="opacity-[0.42]" />
+            <LandingAmbientOrbs />
+          </div>
+          <div className="home-landing-page-bg flux-aurora-bg" aria-hidden>
+            <span className="flux-aurora-blob flux-aurora-blob--a" />
+            <span className="flux-aurora-blob flux-aurora-blob--b" />
+            <span className="flux-aurora-blob flux-aurora-blob--c" />
+          </div>
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] opacity-[0.22]"
+            style={{
+              backgroundImage: "var(--flux-home-hero-bg)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+            aria-hidden
+          />
+          <div className="flux-grid-overlay flux-grid-overlay--drift pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-[max(1rem,env(safe-area-inset-left,0px))] pb-12 pt-3 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pl-6 sm:pr-6 md:pb-16 md:pt-4 md:pl-8 md:pr-8 lg:pl-12 lg:pr-12 2xl:max-w-[90rem] 2xl:pl-16 2xl:pr-16">
-          <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
+          <div className="relative z-10 mx-auto w-full max-w-[1200px] px-[max(1rem,env(safe-area-inset-left,0px))] pb-12 pt-3 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pl-6 sm:pr-6 md:pb-16 md:pt-4 md:pl-8 md:pr-8 lg:pl-12 lg:pr-12 2xl:max-w-[90rem] 2xl:pl-16 2xl:pr-16">
+            <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
-          <main id="landing-main" className="home-landing-stagger">
-            <LandingHero localeRoot={localeRoot} user={user} />
-            <LandingSocialProof />
-            <LandingPillars />
-            <LandingSpotlight />
-            <LandingPlatform localeRoot={localeRoot} appName={appName} user={user} />
-            <LandingRoadmap chargeLabelByTier={chargeLabelByTier} />
-            <LandingHow />
-            <LandingPricing
-              localeRoot={localeRoot}
-              user={user}
-              billingYearly={billingYearly}
-              onBillingYearlyChange={setBillingYearly}
-              pricing={pricing}
-              proEnabled={proEnabled}
-              businessEnabled={businessEnabled}
-            />
-            <LandingTrust localeRoot={localeRoot} />
-            <LandingFaqSection />
-            <LandingFooterCta localeRoot={localeRoot} appName={appName} user={user} />
-          </main>
+            {/*
+             * Doc §1.2 order: Hero → Why → AI spotlight → Platform → Steps → Pricing → CTA.
+             * Extra blocks (social proof, roadmap, trust, FAQ) stay below the core funnel for SEO and product narrative.
+             */}
+            <main id="landing-main" className="home-landing-stagger">
+              <ScrollReveal delay={0}>
+                <LandingHero localeRoot={localeRoot} user={user} />
+              </ScrollReveal>
+              <ScrollReveal delay={0.07}>
+                <LandingPillars />
+              </ScrollReveal>
+              <ScrollReveal delay={0.14}>
+                <LandingSpotlight />
+              </ScrollReveal>
+              <ScrollReveal delay={0.21}>
+                <LandingPlatform localeRoot={localeRoot} appName={appName} user={user} />
+              </ScrollReveal>
+              <ScrollReveal delay={0.28}>
+                <LandingHow />
+              </ScrollReveal>
+              <ScrollReveal delay={0.35}>
+                <LandingPricing
+                  localeRoot={localeRoot}
+                  user={user}
+                  billingYearly={billingYearly}
+                  onBillingYearlyChange={setBillingYearly}
+                  pricing={pricing}
+                  proEnabled={proEnabled}
+                  businessEnabled={businessEnabled}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.42}>
+                <LandingSocialProof />
+              </ScrollReveal>
+              <ScrollReveal delay={0.49}>
+                <LandingRoadmap chargeLabelByTier={chargeLabelByTier} />
+              </ScrollReveal>
+              <ScrollReveal delay={0.56}>
+                <LandingTrust localeRoot={localeRoot} />
+              </ScrollReveal>
+              <ScrollReveal delay={0.63}>
+                <LandingFaqSection />
+              </ScrollReveal>
+              <ScrollReveal delay={0.7}>
+                <LandingFooterCta localeRoot={localeRoot} appName={appName} user={user} />
+              </ScrollReveal>
+            </main>
 
-          <LandingFooter localeRoot={localeRoot} appName={appName} />
+            <LandingFooter localeRoot={localeRoot} appName={appName} />
+          </div>
+
+          <LandingFluxyFaqChat />
         </div>
-
-        <LandingFluxyFaqChat />
       </div>
-    </div>
+    </MotionConfig>
   );
 }
