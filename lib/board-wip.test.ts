@@ -22,6 +22,14 @@ describe("validateBoardWip", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toContain("WIP");
   });
+
+  it("counts cards stored with column label against the bucket key limit", () => {
+    const r = validateBoardWip(
+      [{ key: "dev", label: "Em desenvolvimento", wipLimit: 2 }],
+      [{ bucket: "Em desenvolvimento" }, { bucket: "Em desenvolvimento" }, { bucket: "Em desenvolvimento" }]
+    );
+    expect(r.ok).toBe(false);
+  });
 });
 
 describe("validateBoardWipPutTransition", () => {
@@ -55,6 +63,26 @@ describe("validateBoardWipPutTransition", () => {
     const r = validateBoardWipPutTransition(buckets, prev, next);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toContain("WIP");
+  });
+
+  it("counts cards by column label toward the bucket key WIP (legacy / inconsistent bucket strings)", () => {
+    const cols = [{ key: "desenvolvimento", label: "Em desenvolvimento", wipLimit: 5 }];
+    const prev = Array.from({ length: 22 }, () => ({ bucket: "Em desenvolvimento" }));
+    const next = Array.from({ length: 21 }, () => ({ bucket: "Em desenvolvimento" }));
+    const r = validateBoardWipPutTransition(cols, prev, next);
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects adding a card when label and key both map to an already-over WIP column", () => {
+    const cols = [{ key: "desenvolvimento", label: "Em desenvolvimento", wipLimit: 5 }];
+    const prev = Array.from({ length: 22 }, () => ({ bucket: "Em desenvolvimento" }));
+    const next = [
+      ...Array.from({ length: 22 }, () => ({ bucket: "Em desenvolvimento" })),
+      { bucket: "desenvolvimento" },
+    ];
+    const r = validateBoardWipPutTransition(cols, prev, next);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/já está acima|Remova cards/i);
   });
 });
 

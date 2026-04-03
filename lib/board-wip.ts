@@ -3,15 +3,39 @@
  */
 
 export type CardBucketLike = { id: string; bucket: string; order?: number };
-export type BucketWipLike = { key: string; wipLimit?: number | null };
+export type BucketWipLike = { key: string; label?: string; wipLimit?: number | null };
 
 /** Só `bucket` é usado na contagem WIP. */
 export type WipCountCardLike = { bucket: string };
 
-function bucketCounts(cards: WipCountCardLike[]): Map<string, number> {
+/**
+ * Mapeia o valor gravado no card (`bucket`) para a `key` canónica em `bucketOrder`.
+ * Evita WIP falso: dados legados ou inconsistências onde o card usa o **label** da coluna
+ * em vez da **key** (ex.: key `desenvolvimento`, label `Em desenvolvimento`).
+ */
+export function canonicalBucketKeyForWip(cardBucket: string, buckets: BucketWipLike[]): string {
+  const raw = String(cardBucket ?? "").trim();
+  if (!raw) return "";
+  for (const bo of buckets) {
+    if (bo.key === raw) return bo.key;
+    const lb = typeof bo.label === "string" ? bo.label.trim() : "";
+    if (lb && lb === raw) return bo.key;
+  }
+  return raw;
+}
+
+function wipColumnDisplayLabel(key: string, buckets: BucketWipLike[]): string {
+  const bo = buckets.find((b) => b.key === key);
+  const lb = bo?.label?.trim();
+  return lb || key;
+}
+
+function bucketCounts(cards: WipCountCardLike[], buckets: BucketWipLike[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const c of cards) {
-    counts.set(c.bucket, (counts.get(c.bucket) ?? 0) + 1);
+    const k = canonicalBucketKeyForWip(c.bucket, buckets);
+    if (!k) continue;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
   }
   return counts;
 }
@@ -33,11 +57,11 @@ export function validateBoardWip(
   const limits = collectWipLimits(buckets);
   if (limits.size === 0) return { ok: true };
 
-  const counts = bucketCounts(cards);
+  const counts = bucketCounts(cards, buckets);
   for (const [key, limit] of limits) {
     const n = counts.get(key) ?? 0;
     if (n > limit) {
-      const label = buckets.find((b) => b.key === key)?.key ?? key;
+      const label = wipColumnDisplayLabel(key, buckets);
       return {
         ok: false,
         message: `Limite WIP (${limit}) excedido na coluna «${label}» (${n} cards).`,
@@ -61,13 +85,13 @@ export function validateBoardWipPutTransition(
   const limits = collectWipLimits(buckets);
   if (limits.size === 0) return { ok: true };
 
-  const prevC = bucketCounts(prevCards);
-  const nextC = bucketCounts(nextCards);
+  const prevC = bucketCounts(prevCards, buckets);
+  const nextC = bucketCounts(nextCards, buckets);
 
   for (const [key, limit] of limits) {
     const prevN = prevC.get(key) ?? 0;
     const nextN = nextC.get(key) ?? 0;
-    const label = buckets.find((b) => b.key === key)?.key ?? key;
+    const label = wipColumnDisplayLabel(key, buckets);
 
     if (prevN > limit) {
       if (nextN > prevN) {
