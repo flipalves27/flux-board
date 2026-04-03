@@ -11,7 +11,7 @@ import { SpecPlanProgressStepper } from "@/components/spec-plan/spec-plan-progre
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import { useAuth } from "@/context/auth-context";
-import { apiDelete, apiGet, apiJson, apiPost, ApiError } from "@/lib/api-client";
+import { apiDelete, apiFetch, apiGet, apiJson, apiPost, ApiError } from "@/lib/api-client";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 
 function safeStringify(obj: unknown, max = 16_000): string {
@@ -78,6 +78,7 @@ type RunSummary = {
 type RunFull = {
   id: string;
   boardId?: string;
+  updatedAt?: string;
   status: string;
   methodology: "scrum" | "kanban" | "lss";
   remapOnly: boolean;
@@ -169,6 +170,8 @@ export default function SpecPlanPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [secondRunModal, setSecondRunModal] = useState<PendingSecondRun | null>(null);
   const [awaitingBoardBanner, setAwaitingBoardBanner] = useState<{ runId: string; boardId: string }[]>([]);
+  const [backgroundPostPending, setBackgroundPostPending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const friendlyHints = useMemo(
     () => ({
@@ -459,6 +462,16 @@ export default function SpecPlanPage() {
         if (docBoard) setBackgroundRunBoardId(docBoard);
         hydrateFromRunFull(data.run);
         const st = data.run.status;
+        const storeBoard = docBoard || rb;
+        if (storeBoard && (st === "running" || st === "queued")) {
+          const u = typeof data.run.updatedAt === "string" ? data.run.updatedAt : new Date().toISOString();
+          useSpecPlanActiveStore.setState((s) => ({
+            active: [
+              ...s.active.filter((x) => x.runId !== r),
+              { runId: r, boardId: storeBoard, updatedAt: u, status: st },
+            ],
+          }));
+        }
         if (st === "completed" || st === "failed" || st === "cancelled") {
           setBackgroundRunId(null);
           setBackgroundRunBoardId(null);
@@ -825,8 +838,9 @@ export default function SpecPlanPage() {
   const postBackgroundRun = useCallback(
     async (opts: { remapOnly: boolean; force?: boolean }) => {
       if (!boardId) return;
-      if (persistence === false) {
-        setStreamError(t("backgroundRequiresMongo"));
+      if (persistence !== true) {
+        if (persistence === false) setStreamError(t("backgroundRequiresMongo"));
+        else setStreamError(t("persistenceLoading"));
         return;
       }
       if (!opts.remapOnly && !file && !pasted.trim()) {
@@ -847,50 +861,67 @@ export default function SpecPlanPage() {
       }
       const h: Record<string, string> = { ...getHeaders() };
       delete h["Content-Type"];
-      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: h,
-        body: form,
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        runId?: string;
-        error?: string;
-        errorCode?: string;
-      };
-      if (res.status === 409 && data.errorCode === "SPEC_PLAN_RUN_IN_PROGRESS") {
-        setStreamError(t("secondRunConflictServer"));
-        return;
-      }
-      if (!res.ok) {
-        setStreamError(typeof data.error === "string" ? data.error : t("streamError"));
-        return;
-      }
-      if (data.runId) {
-        setBackgroundRunId(data.runId);
-        setBackgroundRunBoardId(boardId);
-        try {
-          sessionStorage.setItem("flux_spec_plan_bg", JSON.stringify({ boardId, runId: data.runId }));
-        } catch {
-          /* ignore */
+
+      setBackgroundPostPending(true);
+      setStreamError(null);
+      setStreamErrorDetail(null);
+      try {
+        const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/spec-plan/runs`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: h,
+          body: form,
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          runId?: string;
+          error?: string;
+          errorCode?: string;
+        };
+        if (res.status === 409 && data.errorCode === "SPEC_PLAN_RUN_IN_PROGRESS") {
+          setStreamError(t("secondRunConflictServer"));
+          return;
         }
-        useSpecPlanActiveStore.setState((s) => ({
-          active: [
-            ...s.active.filter((a) => a.runId !== data.runId),
-            {
-              runId: data.runId!,
-              boardId,
-              updatedAt: new Date().toISOString(),
-              status: "running",
-            },
-          ],
-        }));
-        resetPhases();
-        setPreview([]);
-        setStreamError(null);
-        setStreamErrorDetail(null);
-        setTab("progress");
-        setAnalysisDrawerOpen(true);
+        if (res.status === 503) {
+          setStreamError(typeof data.error === "string" ? data.error : t("backgroundRequiresMongo"));
+          return;
+        }
+        if (!res.ok) {
+          setStreamError(typeof data.error === "string" ? data.error : t("streamError"));
+          return;
+        }
+        if (data.runId) {
+          setBackgroundRunId(data.runId);
+          setBackgroundRunBoardId(boardId);
+          try {
+            sessionStorage.setItem("flux_spec_plan_bg", JSON.stringify({ boardId, runId: data.runId }));
+          } catch {
+            /* ignore */
+          }
+          useSpecPlanActiveStore.setState((s) => ({
+            active: [
+              ...s.active.filter((a) => a.runId !== data.runId),
+              {
+                runId: data.runId!,
+                boardId,
+                updatedAt: new Date().toISOString(),
+                status: "running",
+              },
+            ],
+          }));
+          resetPhases();
+          setPreview([]);
+          setStreamError(null);
+          setStreamErrorDetail(null);
+          setTab("progress");
+          setAnalysisDrawerOpen(true);
+        } else {
+          setStreamError(t("streamError"));
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        setStreamError(msg && msg !== "Failed to fetch" ? msg : t("streamError"));
+      } finally {
+        setBackgroundPostPending(false);
       }
     },
     [boardId, file, getHeaders, methodology, pasted, persistence, resetPhases, t, workItemsPayload]
@@ -927,6 +958,10 @@ export default function SpecPlanPage() {
       setStreamError(t("noInputError"));
       return;
     }
+    if (persistence === null) {
+      setStreamError(t("persistenceLoading"));
+      return;
+    }
     if (persistence === false) {
       void requestStart({ mode: "stream", remapOnly: false });
     } else {
@@ -936,12 +971,16 @@ export default function SpecPlanPage() {
 
   const onRemap = useCallback(() => {
     if (!boardId || !workItemsPayload.trim()) return;
+    if (persistence === null) {
+      setStreamError(t("persistenceLoading"));
+      return;
+    }
     if (persistence === false) {
       void requestStart({ mode: "stream", remapOnly: true });
     } else {
       void requestStart({ mode: "background", remapOnly: true });
     }
-  }, [boardId, persistence, requestStart, workItemsPayload]);
+  }, [boardId, persistence, requestStart, t, workItemsPayload]);
 
   const cancelBackgroundRun = useCallback(async () => {
     const rid = backgroundRunId?.trim();
@@ -1090,6 +1129,14 @@ export default function SpecPlanPage() {
     return "idle" as const;
   }, [analysisPhases]);
 
+  const orchestrationBusy = analyzing || backgroundPostPending;
+
+  const clearSelectedFile = useCallback(() => {
+    setFile(null);
+    const el = fileInputRef.current;
+    if (el) el.value = "";
+  }, []);
+
   if (!isChecked || !user) {
     return <div className="min-h-screen" />;
   }
@@ -1178,6 +1225,8 @@ export default function SpecPlanPage() {
               <span>
                 {analyzing
                   ? t("sticky.analyzingSync")
+                  : backgroundPostPending
+                    ? t("startingAnalysis")
                   : cancelBgSubmitting
                     ? t("sticky.cancelSending")
                     : bgRunCancelRequested && backgroundRunId
@@ -1230,6 +1279,7 @@ export default function SpecPlanPage() {
             <select
               className="mt-3 w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] px-3 py-2.5 text-sm text-[var(--flux-text)]"
               value={boardId}
+              disabled={orchestrationBusy}
               onChange={(e) => setBoardId(e.target.value)}
             >
               <option value="">{t("boardPlaceholder")}</option>
@@ -1256,14 +1306,22 @@ export default function SpecPlanPage() {
               ).map(([key, label, hint]) => (
                 <label
                   key={key}
-                  className={`flex cursor-pointer flex-col rounded-[var(--flux-rad-sm)] border px-3 py-2.5 text-sm transition-colors ${
+                  className={`flex flex-col rounded-[var(--flux-rad-sm)] border px-3 py-2.5 text-sm transition-colors ${
+                    orchestrationBusy ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                  } ${
                     methodology === key
                       ? "border-[var(--flux-primary-light)] bg-[var(--flux-primary-alpha-10)]"
                       : "border-[var(--flux-primary-alpha-12)] hover:border-[var(--flux-primary-alpha-25)]"
                   }`}
                 >
                   <span className="flex items-center gap-2 font-semibold text-[var(--flux-text)]">
-                    <input type="radio" name="meth" checked={methodology === key} onChange={() => setMethodology(key)} />
+                    <input
+                      type="radio"
+                      name="meth"
+                      checked={methodology === key}
+                      disabled={orchestrationBusy}
+                      onChange={() => setMethodology(key)}
+                    />
                     {label}
                   </span>
                   <span className="mt-1 pl-6 text-xs text-[var(--flux-text-muted)]">{hint}</span>
@@ -1279,32 +1337,56 @@ export default function SpecPlanPage() {
           </h2>
           <label className="mt-3 block text-xs font-semibold text-[var(--flux-text-muted)]">{t("fileLabel")}</label>
           <input
+            ref={fileInputRef}
             type="file"
             accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             className="mt-1 w-full text-sm text-[var(--flux-text)]"
+            disabled={orchestrationBusy}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
+          {file ? (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-chrome-alpha-04)] px-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-xs text-[var(--flux-text)]" title={file.name}>
+                {file.name}
+              </span>
+              <button
+                type="button"
+                disabled={orchestrationBusy}
+                onClick={clearSelectedFile}
+                className="shrink-0 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-2.5 py-1 text-[11px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)] disabled:opacity-40"
+              >
+                {t("removeSelectedFile")}
+              </button>
+            </div>
+          ) : null}
           <label className="mt-4 block text-xs font-semibold text-[var(--flux-text-muted)]">{t("pasteLabel")}</label>
           <textarea
             className="mt-1 min-h-[120px] w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-dark)] px-3 py-2 text-sm text-[var(--flux-text)]"
             placeholder={t("pastePlaceholder")}
             value={pasted}
+            disabled={orchestrationBusy}
             onChange={(e) => setPasted(e.target.value)}
           />
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
-              disabled={!boardId || analyzing}
+              disabled={!boardId || orchestrationBusy || persistence === null}
               onClick={() => void onStart()}
               className="w-full rounded-[var(--flux-rad-sm)] bg-[var(--flux-primary)] py-3 text-sm font-bold text-white disabled:opacity-40 sm:w-auto sm:px-8"
             >
-              {analyzing ? "…" : persistence === false ? t("startAnalysis") : t("startAnalysisPrimary")}
+              {persistence === null
+                ? t("persistenceLoadingShort")
+                : orchestrationBusy
+                  ? t("startingAnalysis")
+                  : persistence === false
+                    ? t("startAnalysis")
+                    : t("startAnalysisPrimary")}
             </button>
             {persistence === true ? (
               <div className="flex w-full flex-col gap-1 sm:w-auto">
                 <button
                   type="button"
-                  disabled={!boardId || analyzing}
+                  disabled={!boardId || orchestrationBusy}
                   onClick={() => void requestStart({ mode: "stream", remapOnly: false })}
                   className="w-full rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-28)] py-3 text-sm font-semibold text-[var(--flux-primary-light)] disabled:opacity-40 sm:px-6"
                 >
@@ -1314,6 +1396,14 @@ export default function SpecPlanPage() {
               </div>
             ) : null}
           </div>
+          {streamError ? (
+            <div
+              className="mt-4 rounded-[var(--flux-rad-sm)] border border-[var(--flux-danger)]/40 bg-[var(--flux-danger)]/10 px-3 py-2.5 text-sm text-[var(--flux-danger)]"
+              role="alert"
+            >
+              {streamError}
+            </div>
+          ) : null}
         </section>
           </div>
         ) : null}
@@ -1399,7 +1489,7 @@ export default function SpecPlanPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={!boardId || analyzing || persistence === false || !workItemsPayload.trim()}
+                  disabled={!boardId || orchestrationBusy || persistence === false || !workItemsPayload.trim()}
                   onClick={() => void onRemap()}
                   className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
                 >
@@ -1408,7 +1498,7 @@ export default function SpecPlanPage() {
                 {persistence === true ? (
                   <button
                     type="button"
-                    disabled={!workItemsPayload || analyzing}
+                    disabled={!workItemsPayload || orchestrationBusy}
                     onClick={() => void requestStart({ mode: "stream", remapOnly: true })}
                     className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
                   >
@@ -1417,7 +1507,7 @@ export default function SpecPlanPage() {
                 ) : (
                   <button
                     type="button"
-                    disabled={!workItemsPayload || analyzing}
+                    disabled={!workItemsPayload || orchestrationBusy}
                     onClick={() => void onRemap()}
                     className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-25)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] disabled:opacity-40"
                   >
