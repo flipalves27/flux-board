@@ -16,6 +16,15 @@ export async function GET(req: NextRequest) {
   const base = getOAuthPublicBaseUrl(req);
 
   const rawCookie = req.cookies.get(OAUTH_COOKIE_GOOGLE)?.value;
+  if (!rawCookie) {
+    const reqHost =
+      req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host") || "unknown";
+    console.warn("[oauth-google-callback] Cookie de start OAuth não encontrado", {
+      host: reqHost,
+      allCookies: req.cookies.getAll().map((c) => c.name),
+      referer: req.headers.get("referer")?.slice(0, 120),
+    });
+  }
   const payload = parseOAuthStartCookie(rawCookie);
   const locale = payload?.locale ?? "pt-BR";
 
