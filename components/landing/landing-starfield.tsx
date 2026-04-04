@@ -21,6 +21,7 @@ export function LandingStarfield({ className = "" }: { className?: string }) {
 
     let stars: Star[] = [];
     let raf = 0;
+    let visible = true;
     const parent = canvas.parentElement;
     let textColorHex = "f0eeff";
 
@@ -41,8 +42,8 @@ export function LandingStarfield({ className = "" }: { className?: string }) {
       canvas.height = Math.max(1, Math.floor(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const area = w * h;
-      const count = Math.floor(area / 9000);
-      const n = Math.min(160, Math.max(48, count));
+      const count = Math.floor(area / 14000);
+      const n = Math.min(90, Math.max(30, count));
       stars = Array.from({ length: n }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
@@ -56,20 +57,25 @@ export function LandingStarfield({ className = "" }: { className?: string }) {
     if (parent) ro?.observe(parent);
     resize();
 
+    // Pause animation when tab is hidden or canvas is not visible
+    const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: 0 });
+    io.observe(canvas);
+    const onVisibility = () => { if (!document.hidden && visible) tick(); };
+    document.addEventListener("visibilitychange", onVisibility);
+
     function tick() {
-      if (!canvas || !ctx) return;
+      if (!canvas || !ctx || !visible || document.hidden) return;
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
       const drift = !reduceMotion;
+      const fill = "#" + textColorHex;
       for (const s of stars) {
-        ctx.beginPath();
-        ctx.save();
         ctx.globalAlpha = s.o;
-        ctx.fillStyle = "#" + textColorHex;
+        ctx.fillStyle = fill;
+        ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
         if (drift) {
           s.y += s.vy;
           if (s.y > h + 3) s.y = -3;
@@ -82,6 +88,8 @@ export function LandingStarfield({ className = "" }: { className?: string }) {
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [reduceMotion]);
 

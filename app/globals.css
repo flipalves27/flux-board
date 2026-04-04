@@ -1423,9 +1423,10 @@
   .landing-v3-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(130px);
+    filter: blur(80px);
     pointer-events: none;
     opacity: 0.35;
+    will-change: transform;
   }
 
   .landing-v3-orb--1 {
