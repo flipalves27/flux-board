@@ -44,6 +44,9 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+/** Acima do default 30s da Vercel quando Mongo/Server Actions precisam de margem (ex.: cold start + Atlas). Respeita o teto do plano. */
+export const maxDuration = 60;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

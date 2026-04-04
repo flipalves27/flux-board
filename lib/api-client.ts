@@ -1,3 +1,5 @@
+import type { ValidateResult } from "@/lib/auth-types";
+
 /**
  * API client com suporte ao Vercel Deployment Protection Bypass.
  * Quando NEXT_PUBLIC_VERCEL_BYPASS_SECRET está definido, todas as requisições
@@ -150,6 +152,22 @@ export async function apiGet<T = unknown>(
   headers?: Record<string, string>
 ): Promise<T> {
   return apiJson<T>(url, { method: "GET", headers });
+}
+
+/** Valida sessão via `GET /api/auth/session` (evita Server Action no primeiro paint — menos colisão com RSC). */
+export async function fetchSessionValidate(): Promise<ValidateResult> {
+  const res = await apiFetch("/api/auth/session", { method: "GET" });
+  const data = (await res.json().catch(() => ({}))) as ValidateResult;
+  if (res.status === 429 || res.status === 500) {
+    return data?.ok === false ? data : { ok: false, failureKind: "unknown" };
+  }
+  if (!res.ok) {
+    return { ok: false, failureKind: "unknown" };
+  }
+  if (data && typeof data === "object" && "ok" in data) {
+    return data;
+  }
+  return { ok: false, failureKind: "unknown" };
 }
 
 export async function apiPut<T = unknown>(

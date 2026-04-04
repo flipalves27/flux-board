@@ -385,6 +385,7 @@ export async function registerAction(
 
 /**
  * Valida sessão (cookies httpOnly) ou renova access via refresh com rotação.
+ * No browser, o fluxo principal usa `GET /api/auth/session` (`fetchSessionValidate`) para evitar colisão com RSC.
  */
 export async function validateSessionAction(): Promise<ValidateResult> {
   try {

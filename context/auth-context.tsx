@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import { getApiHeaders, apiFetch } from "@/lib/api-client";
-import { validateSessionAction, switchOrganizationAction } from "@/app/actions/auth";
+import { getApiHeaders, apiFetch, fetchSessionValidate } from "@/lib/api-client";
+import { switchOrganizationAction } from "@/app/actions/auth";
 import type { SessionValidateFailureKind, ValidateResult } from "@/lib/auth-types";
 import { FLUX_SESSION_FAILURE_STORAGE_KEY } from "@/lib/session-support-diagnostic";
 import type { ThemePreference } from "@/lib/theme-storage";
@@ -10,10 +10,10 @@ import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
-/** Evita UI presa se a validação de sessão não retornar. Após OAuth / cold start (Vercel + Mongo), 10s era curto demais e gerava `client_timeout` falso. */
-const SESSION_VALIDATE_TIMEOUT_MS = 30_000;
+/** Margem para cold start + Mongo; alinhado ao `maxDuration` da rota `GET /api/auth/session`. */
+const SESSION_VALIDATE_TIMEOUT_MS = 45_000;
 
-/** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount / Server Action). */
+/** Após `ok: false` ou timeout na validação inicial, breve espera antes de re-tentar (cookies OAuth / GET `/api/auth/session`). */
 const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
 
 function sessionFailureFromValidateResult(
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshSession = useCallback(async () => {
     const myGen = ++sessionValidationGenRef.current;
     try {
-      const result = await withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS);
+      const result = await withTimeout(fetchSessionValidate(), SESSION_VALIDATE_TIMEOUT_MS);
       if (myGen !== sessionValidationGenRef.current) return;
       if (result.ok) {
         setState({
@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const runInitialValidate = async (retryIndex: number) => {
       try {
-        const result = await withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS);
+        const result = await withTimeout(fetchSessionValidate(), SESSION_VALIDATE_TIMEOUT_MS);
         if (cancelled) return;
         if (initialGen !== sessionValidationGenRef.current) return;
         if (result.ok) {

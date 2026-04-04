@@ -33,11 +33,11 @@ Se `flux_access` / `flux_refresh` **não** aparecem, o problema está na respost
 
 ## 3. Rede na carga inicial de `/…/boards` (Server Action)
 
-O estado de auth vem de `validateSessionAction` (`app/actions/auth.ts`), chamado no mount do `AuthProvider` (`context/auth-context.tsx`), com retries `[400, 500, 900, 1600, 2400]` ms após `ok: false`.
+O estado de auth vem de `GET /api/auth/session` (`fetchSessionValidate` em `lib/api-client.ts`), chamado no mount do `AuthProvider` (`context/auth-context.tsx`), com retries `[400, 500, 900, 1600, 2400]` ms após `ok: false` ou timeout (evita Server Action a competir com o POST de RSC na primeira carga).
 
 1. Abra **Network**, recarregue a página dos boards.
-2. Localize o **POST** do Server Action (Next.js: pedido ao mesmo pathname, cabeçalhos como `Next-Action` / `text/x-component` conforme versão).
-3. Confirme no pedido (e nos **fetch** subsequentes à mesma origem) o header **`Cookie`** inclui `flux_access` e `flux_refresh`.
+2. Confirme um **GET** a `/api/auth/session` (mesmo origin) com header **`Cookie`** contendo `flux_access` / `flux_refresh` e resposta **200** JSON com `"ok":true` quando a sessão é válida.
+3. (Opcional) POST de Server Action ao pathname da página — hoje a validação inicial não depende disso.
 
 Se os cookies existem em Application mas o **primeiro** POST não os envia, investigue extensões, modo restrito, ou diferença de host (ex.: apex vs www sem `AUTH_COOKIE_DOMAIN`).
 
@@ -59,7 +59,9 @@ Na página de login, o utilizador pode **copiar um JSON** (referência + tipo de
 
 Para desligar estes avisos (ex.: staging ruidoso): `FLUX_SESSION_VALIDATE_LOG=0`.
 
-**`client_timeout` no painel de diagnóstico:** a validação de sessão (Server Action) não respondeu a tempo no browser (limite interno ~30s, com novas tentativas após timeout). Costuma ser cold start + Mongo lento, não ausência de cookies. Se persistir, ver latência da BD e logs da função.
+**`client_timeout` no painel de diagnóstico:** a validação de sessão (Server Action) não respondeu a tempo no browser (limite interno elevado, com novas tentativas após timeout). Costuma ser cold start + Mongo lento, não ausência de cookies.
+
+**504 / `FUNCTION_INVOCATION_TIMEOUT` na Vercel em `POST /…/boards` ou login:** a função serverless pode estar a esperar o MongoDB até ~30s (default antigo do driver). O cliente em `lib/mongo.ts` usa timeouts mais curtos; o `maxDuration` do layout aumenta a margem no plano Vercel. Confirme na Atlas **Network Access** (IPs da Vercel ou `0.0.0.0/0` em dev) e região próxima de `gru1` se possível.
 
 **Diagnóstico opcional:** `FLUX_AUTH_DEBUG=1` emite `[flux-auth-debug]` com JSON (nunca tokens). Eventos úteis:
 

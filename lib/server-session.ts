@@ -145,14 +145,21 @@ function logSessionValidateFail(payload: Record<string, string | undefined>): vo
   console.warn("[flux-session-validate]", JSON.stringify({ event: "fail", ...payload }));
 }
 
+/** Efeitos de cookie a aplicar no `cookies()` ou num `NextResponse` (rota HTTP). */
+export type ValidateSessionCookieSideEffect =
+  | { type: "set_rotated"; access: string; refreshPlain: string; persistent: boolean }
+  | { type: "clear_all" };
+
 /**
- * Valida access JWT ou renova via refresh (cookies httpOnly).
+ * Núcleo de validação a partir dos valores dos cookies (sem `cookies()` do Next).
+ * Usado por `validateSessionFromCookies` e por `GET /api/auth/session`.
  */
-export async function validateSessionFromCookies(): Promise<ValidateResult> {
+export async function validateSessionFromCookieValues(
+  access: string | undefined,
+  refresh: string | undefined,
+  opts?: { requestHostForDebug?: string }
+): Promise<{ result: ValidateResult; sideEffect: ValidateSessionCookieSideEffect | null }> {
   const supportRef = randomUUID();
-  const store = await cookies();
-  const access = store.get(ACCESS_COOKIE)?.value;
-  const refresh = store.get(REFRESH_COOKIE)?.value;
   const hasAccess = Boolean(access?.trim());
   const hasRefresh = Boolean(refresh?.trim());
 
@@ -161,8 +168,15 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   if (!payload && refresh) {
     const rotated = await rotateSessionFromRefreshPlain(refresh);
     if (rotated) {
-      await setAuthCookies(rotated.access, rotated.refreshPlain, rotated.persistent);
-      return userToValidate(rotated.user);
+      return {
+        result: await userToValidate(rotated.user),
+        sideEffect: {
+          type: "set_rotated",
+          access: rotated.access,
+          refreshPlain: rotated.refreshPlain,
+          persistent: rotated.persistent,
+        },
+      };
     }
   }
 
@@ -171,25 +185,19 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
     if (hasAccess || hasRefresh) {
       const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
       logSessionValidateFail({ reason, supportRef });
-      await clearAuthCookies();
-    } else if (isFluxAuthDebugEnabled()) {
-      let requestHost: string | undefined;
-      try {
-        const h = await headers();
-        const forwarded = h.get("x-forwarded-host");
-        requestHost = forwarded?.split(",")[0]?.trim() || h.get("host") || undefined;
-      } catch {
-        /* no request context */
-      }
+      return { result: { ok: false, supportRef, failureKind }, sideEffect: { type: "clear_all" } };
+    }
+    if (isFluxAuthDebugEnabled()) {
       logFluxAuthDebug("session_validate_no_cookies", {
         supportRef,
         hasAccessCookie: false,
         hasRefreshCookie: false,
-        requestHost,
+        requestHost: opts?.requestHostForDebug,
       });
     }
-    return { ok: false, supportRef, failureKind };
+    return { result: { ok: false, supportRef, failureKind }, sideEffect: null };
   }
+
   const user = await getUserById(payload.id, payload.orgId);
   const validated = await userToValidate(user);
   if (!validated.ok) {
@@ -199,10 +207,37 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
       orgId: payload.orgId,
       supportRef,
     });
-    await clearAuthCookies();
-    return { ok: false, supportRef, failureKind: "user_not_found" };
+    return { result: { ok: false, supportRef, failureKind: "user_not_found" }, sideEffect: { type: "clear_all" } };
   }
-  return validated;
+  return { result: validated, sideEffect: null };
+}
+
+/**
+ * Valida access JWT ou renova via refresh (cookies httpOnly).
+ */
+export async function validateSessionFromCookies(): Promise<ValidateResult> {
+  const store = await cookies();
+  const access = store.get(ACCESS_COOKIE)?.value;
+  const refresh = store.get(REFRESH_COOKIE)?.value;
+  let requestHostForDebug: string | undefined;
+  try {
+    const h = await headers();
+    const forwarded = h.get("x-forwarded-host");
+    requestHostForDebug = forwarded?.split(",")[0]?.trim() || h.get("host") || undefined;
+  } catch {
+    /* no request context */
+  }
+
+  const { result, sideEffect } = await validateSessionFromCookieValues(access, refresh, {
+    requestHostForDebug,
+  });
+
+  if (sideEffect?.type === "set_rotated") {
+    await setAuthCookies(sideEffect.access, sideEffect.refreshPlain, sideEffect.persistent);
+  } else if (sideEffect?.type === "clear_all") {
+    await clearAuthCookies();
+  }
+  return result;
 }
 
 /**
