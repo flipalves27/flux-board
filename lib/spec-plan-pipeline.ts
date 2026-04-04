@@ -25,8 +25,8 @@ const CARDS_LLM_JSON_RETRY_SUFFIX =
 
 function cardsMaxOutputTokens(itemCount: number): number {
   const n = Math.max(1, Math.min(60, itemCount));
-  const estimated = 800 + n * 72;
-  return Math.min(7500, Math.max(1400, Math.round(estimated)));
+  const estimated = 1000 + n * 96;
+  return Math.min(8192, Math.max(1800, Math.round(estimated)));
 }
 
 export type SpecPlanPipelineEvent =
@@ -387,13 +387,14 @@ export async function runSpecPlanPipeline(input: {
     maxOutputTokens: cardsMaxTokens,
   });
   if (!cRes.ok && cRes.message === "Resposta da IA não é JSON válido.") {
+    const retryTokens = Math.min(8192, cardsMaxTokens + 2200);
     cRes = await llmJson({
       org: input.org,
       orgId: input.orgId,
       userId: input.userId,
       isAdmin: input.isAdmin,
       userContent: cardsPrompt + CARDS_LLM_JSON_RETRY_SUFFIX,
-      maxOutputTokens: cardsMaxTokens,
+      maxOutputTokens: retryTokens,
       temperature: 0.05,
     });
   }

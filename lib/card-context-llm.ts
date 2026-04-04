@@ -1,4 +1,10 @@
 import { callTogetherApi } from "@/lib/llm-utils";
+import { runOrgLlmChat } from "@/lib/llm-org-chat";
+import type { Organization } from "@/lib/kv-organizations";
+import {
+  isAnthropicApiConfigured,
+  resolveInteractiveLlmRoute,
+} from "@/lib/org-ai-routing";
 
 export const CARD_CONTEXT_LIMITS = {
   titleMaxChars: 180,
@@ -183,37 +189,91 @@ export function parseJsonFromLlmContent(raw: string): { parsed: unknown; recover
   return { parsed: {}, recovered: true };
 }
 
-export async function llmStructuredCardContext(args: {
-  boardName: string;
-  title: string;
-  description: string;
-}): Promise<LlmCardContextResult> {
-  const apiKey = process.env.TOGETHER_API_KEY;
-  if (!apiKey) {
-    const heuristic = heuristicCardContext(args.title, args.description);
+function providerDisplay(provider: "anthropic" | "together"): "anthropic" | "together.ai" {
+  return provider === "anthropic" ? "anthropic" : "together.ai";
+}
+
+function togetherModelDefault(): string {
+  return process.env.TOGETHER_MODEL?.trim() || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
+}
+
+/** Há pelo menos um backend cloud utilizável (Claude e/ou Together com chave). */
+function anyCloudLlmConfigured(): boolean {
+  return isAnthropicApiConfigured() || Boolean(process.env.TOGETHER_API_KEY?.trim());
+}
+
+/**
+ * Roteamento igual ao daily insights: Claude para admin/lista allowlist quando configurado;
+ * caso contrário Together. Se a rota for Anthropic mas a chamada falhar, tenta Together quando houver chave.
+ */
+async function completeCardContextPrompt(params: {
+  org: Organization | null;
+  orgId: string;
+  userId: string;
+  isAdmin: boolean;
+  prompt: string;
+  temperature?: number;
+}): Promise<
+  | { ok: true; assistantText: string; model?: string; provider: "anthropic" | "together" }
+  | { ok: false; error: string; provider: "anthropic" | "together" }
+> {
+  const pick = resolveInteractiveLlmRoute(params.org, { userId: params.userId, isAdmin: params.isAdmin });
+  if (pick.route === "together" && !process.env.TOGETHER_API_KEY?.trim()) {
     return {
-      ...heuristic,
-      generatedWithAI: false,
-      provider: "together.ai",
-      errorKind: "no_api_key",
-      errorMessage: "TOGETHER_API_KEY não configurada. Usando modo heurístico.",
+      ok: false,
+      error: "TOGETHER_API_KEY necessária para este utilizador. Usando modo heurístico.",
+      provider: "together",
     };
   }
 
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-  const model = process.env.TOGETHER_MODEL;
-  if (!model) {
-    const heuristic = heuristicCardContext(args.title, args.description);
+  const temperature = params.temperature ?? 0.25;
+  const res = await runOrgLlmChat({
+    org: params.org,
+    orgId: params.orgId,
+    feature: "card_context",
+    messages: [{ role: "user", content: params.prompt }],
+    options: { temperature, maxTokens: 4096 },
+    mode: "interactive",
+    userId: params.userId,
+    isAdmin: params.isAdmin,
+  });
+
+  if (res.ok) {
     return {
-      ...heuristic,
-      generatedWithAI: false,
-      provider: "together.ai",
-      errorKind: "no_model",
-      errorMessage: "TOGETHER_MODEL não configurada. Defina no ambiente. Usando modo heurístico.",
+      ok: true,
+      assistantText: res.assistantText || "{}",
+      model: res.model,
+      provider: res.provider,
     };
   }
 
-  const prompt = [
+  if (res.resolvedRoute === "anthropic" && process.env.TOGETHER_API_KEY?.trim()) {
+    const apiKey = process.env.TOGETHER_API_KEY.trim();
+    const model = togetherModelDefault();
+    const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
+    const r2 = await callTogetherApi(
+      {
+        model,
+        temperature,
+        max_tokens: 4096,
+        messages: [{ role: "user", content: params.prompt }],
+      },
+      { apiKey, baseUrl }
+    );
+    if (r2.ok) {
+      return { ok: true, assistantText: r2.assistantText || "{}", model, provider: "together" };
+    }
+  }
+
+  return {
+    ok: false,
+    error: res.error || "request_failed",
+    provider: res.resolvedRoute === "anthropic" ? "anthropic" : "together",
+  };
+}
+
+function buildStructuredCardContextPrompt(args: { boardName: string; title: string; description: string }): string {
+  return [
     "Você é a Fluxy, assistente de IA do Flux-Board, atuando como PM técnico sênior.",
     "Recebe um título e uma descrição de card de um board.",
     "Retorne JSON puro com as chaves: titulo, descricao, resumoNegocio, objetivo.",
@@ -239,28 +299,48 @@ export async function llmStructuredCardContext(args: {
     `Descrição (informada):`,
     args.description.slice(0, 6000),
   ].join("\n");
+}
+
+export async function llmStructuredCardContext(args: {
+  boardName: string;
+  title: string;
+  description: string;
+  org: Organization | null;
+  orgId: string;
+  userId: string;
+  isAdmin: boolean;
+}): Promise<LlmCardContextResult> {
+  if (!anyCloudLlmConfigured()) {
+    const heuristic = heuristicCardContext(args.title, args.description);
+    return {
+      ...heuristic,
+      generatedWithAI: false,
+      provider: "together.ai",
+      errorKind: "no_api_key",
+      errorMessage: "Nenhuma chave de IA cloud configurada (Together e/ou Anthropic). Usando modo heurístico.",
+    };
+  }
+
+  const prompt = buildStructuredCardContextPrompt(args);
 
   try {
-    const response = await callTogetherApi(
-      {
-        model,
-        temperature: 0.25,
-        messages: [{ role: "user", content: prompt }],
-      },
-      { apiKey, baseUrl }
-    );
+    const response = await completeCardContextPrompt({
+      org: args.org,
+      orgId: args.orgId,
+      userId: args.userId,
+      isAdmin: args.isAdmin,
+      prompt,
+    });
 
     if (!response.ok) {
-      const errorBody = response.bodySnippet || "";
-      const message = `HTTP ${response.status ?? "?"}${errorBody ? ` - ${errorBody.slice(0, 400)}` : ""}`;
       const heuristic = heuristicCardContext(args.title, args.description);
+      const missingTogetherKey = response.error.includes("TOGETHER_API_KEY necessária");
       return {
         ...heuristic,
         generatedWithAI: false,
-        model,
-        provider: "together.ai",
-        errorKind: "http_error",
-        errorMessage: message,
+        provider: providerDisplay(response.provider),
+        errorKind: missingTogetherKey ? "no_api_key" : "http_error",
+        errorMessage: response.error,
       };
     }
 
@@ -281,8 +361,8 @@ export async function llmStructuredCardContext(args: {
     return {
       ...final,
       generatedWithAI: hasTitulo && hasDescricao,
-      model,
-      provider: "together.ai",
+      model: response.model,
+      provider: providerDisplay(response.provider),
       rawContent: content,
       errorKind: hasTitulo && hasDescricao ? undefined : "parse_error",
       errorMessage:
@@ -296,42 +376,14 @@ export async function llmStructuredCardContext(args: {
       ...heuristic,
       generatedWithAI: false,
       provider: "together.ai",
-      model,
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
     };
   }
 }
 
-export async function llmVoiceTranscriptCardContext(args: { boardName: string; transcript: string }): Promise<LlmCardContextResult> {
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const transcript = args.transcript.slice(0, 4000);
-
-  if (!apiKey) {
-    const heuristic = heuristicCardContextFromTranscript(transcript);
-    return {
-      ...heuristic,
-      generatedWithAI: false,
-      provider: "together.ai",
-      errorKind: "no_api_key",
-      errorMessage: "TOGETHER_API_KEY não configurada. Usando modo heurístico.",
-    };
-  }
-
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-  const model = process.env.TOGETHER_MODEL;
-  if (!model) {
-    const heuristic = heuristicCardContextFromTranscript(transcript);
-    return {
-      ...heuristic,
-      generatedWithAI: false,
-      provider: "together.ai",
-      errorKind: "no_model",
-      errorMessage: "TOGETHER_MODEL não configurada. Defina no ambiente. Usando modo heurístico.",
-    };
-  }
-
-  const prompt = [
+function buildVoiceTranscriptPrompt(args: { boardName: string; transcript: string }): string {
+  return [
     "Você é a Fluxy, assistente de IA do Flux-Board, atuando como PM técnico sênior.",
     "Recebe uma TRANSCRIÇÃO de fala espontânea sobre um possível card de trabalho no board (pode conter disfluências, repetições, hesitações ou ruído de reconhecimento de voz).",
     "Infira a intenção principal do usuário, descarte trechos claramente irrelevantes ou erros óbvios de transcrição, e estruture um card profissional.",
@@ -355,30 +407,52 @@ export async function llmVoiceTranscriptCardContext(args: { boardName: string; t
     `Board: ${args.boardName}`,
     "",
     "Transcrição (falada):",
-    transcript,
+    args.transcript,
   ].join("\n");
+}
+
+export async function llmVoiceTranscriptCardContext(args: {
+  boardName: string;
+  transcript: string;
+  org: Organization | null;
+  orgId: string;
+  userId: string;
+  isAdmin: boolean;
+}): Promise<LlmCardContextResult> {
+  const transcript = args.transcript.slice(0, 4000);
+
+  if (!anyCloudLlmConfigured()) {
+    const heuristic = heuristicCardContextFromTranscript(transcript);
+    return {
+      ...heuristic,
+      generatedWithAI: false,
+      provider: "together.ai",
+      errorKind: "no_api_key",
+      errorMessage: "Nenhuma chave de IA cloud configurada (Together e/ou Anthropic). Usando modo heurístico.",
+    };
+  }
+
+  const prompt = buildVoiceTranscriptPrompt({ boardName: args.boardName, transcript });
 
   try {
-    const response = await callTogetherApi(
-      {
-        model,
-        temperature: 0.3,
-        messages: [{ role: "user", content: prompt }],
-      },
-      { apiKey, baseUrl }
-    );
+    const response = await completeCardContextPrompt({
+      org: args.org,
+      orgId: args.orgId,
+      userId: args.userId,
+      isAdmin: args.isAdmin,
+      prompt,
+      temperature: 0.3,
+    });
 
     if (!response.ok) {
-      const errorBody = response.bodySnippet || "";
-      const message = `HTTP ${response.status ?? "?"}${errorBody ? ` - ${errorBody.slice(0, 400)}` : ""}`;
       const heuristic = heuristicCardContextFromTranscript(transcript);
+      const missingTogetherKey = response.error.includes("TOGETHER_API_KEY necessária");
       return {
         ...heuristic,
         generatedWithAI: false,
-        model,
-        provider: "together.ai",
-        errorKind: "http_error",
-        errorMessage: message,
+        provider: providerDisplay(response.provider),
+        errorKind: missingTogetherKey ? "no_api_key" : "http_error",
+        errorMessage: response.error,
       };
     }
 
@@ -398,8 +472,8 @@ export async function llmVoiceTranscriptCardContext(args: { boardName: string; t
     return {
       ...final,
       generatedWithAI: hasTitulo && hasDescricao,
-      model,
-      provider: "together.ai",
+      model: response.model,
+      provider: providerDisplay(response.provider),
       rawContent: content,
       errorKind: hasTitulo && hasDescricao ? undefined : "parse_error",
       errorMessage:
@@ -413,7 +487,6 @@ export async function llmVoiceTranscriptCardContext(args: { boardName: string; t
       ...heuristic,
       generatedWithAI: false,
       provider: "together.ai",
-      model,
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
     };

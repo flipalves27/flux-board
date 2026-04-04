@@ -1624,6 +1624,7 @@
     },
     "errors": {
       "init": "Error while starting onboarding.",
+      "initTimeout": "Loading your boards took too long. Check your connection and try again.",
       "createBoard": "Error while creating the board.",
       "saveColumns": "Error while saving columns.",
       "createCard": "Error while creating the card."

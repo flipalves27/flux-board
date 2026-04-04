@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
@@ -39,6 +39,9 @@ type PersistedWizardState = {
 
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
+
+/** Evita que o passo 1 fique com botões desativados se GET /api/boards não responder. */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 25_000;
 
 function StepPill({
   index,
@@ -130,6 +133,8 @@ export default function OnboardingPage() {
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
+  const tRef = useRef(t);
+  tRef.current = t;
   const localeRoot = `/${locale}`;
 
   const [step, setStep] = useState<WizardStep>(1);
@@ -178,7 +183,7 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) {
+    if (!isChecked || !user?.id) {
       setOnboardingInitSettled(false);
       return;
     }
@@ -199,7 +204,21 @@ export default function OnboardingPage() {
         const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
 
         // Always verify if user has boards already; onboarding is only for first board.
-        const boardsPayload = await apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders());
+        const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+          const timeoutId = window.setTimeout(
+            () => reject(new Error("onboarding_boards_timeout")),
+            ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+          );
+          void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+            .then((data) => {
+              window.clearTimeout(timeoutId);
+              resolve(data);
+            })
+            .catch((err) => {
+              window.clearTimeout(timeoutId);
+              reject(err);
+            });
+        });
         const boards = boardsPayload.boards ?? [];
 
         if (boards.length > 0) {
@@ -244,7 +263,12 @@ export default function OnboardingPage() {
         loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof ApiError ? e.message : t("errors.init");
+        const msg =
+          e instanceof Error && e.message === "onboarding_boards_timeout"
+            ? tRef.current("errors.initTimeout")
+            : e instanceof ApiError
+              ? e.message
+              : tRef.current("errors.init");
         setInitError(msg);
       } finally {
         if (!cancelled) setOnboardingInitSettled(true);
@@ -254,7 +278,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot, t]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot]);
 
   useEffect(() => {
     if (!onboardingInitSettled || !heroStorageKey) {
@@ -586,7 +610,7 @@ export default function OnboardingPage() {
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(ONBOARDING_TEMPLATES) as TemplateId[]).map((tid) => {
-                      const t = ONBOARDING_TEMPLATES[tid];
+                      const tpl = ONBOARDING_TEMPLATES[tid];
                       const isSelected = tid === templateId;
                       return (
                         <button
@@ -603,11 +627,11 @@ export default function OnboardingPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="font-display font-bold text-[var(--flux-text)]">{t.title}</p>
-                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{t.buckets.length} col.</span>
+                            <p className="font-display font-bold text-[var(--flux-text)]">{tpl.title}</p>
+                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{tpl.buckets.length} col.</span>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {t.buckets.slice(0, 3).map((b) => (
+                            {tpl.buckets.slice(0, 3).map((b) => (
                               <span
                                 key={b.key}
                                 className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2 py-0.5 text-[11px] text-[var(--flux-text-muted)]"
@@ -616,8 +640,8 @@ export default function OnboardingPage() {
                                 {b.label}
                               </span>
                             ))}
-                            {t.buckets.length > 3 && (
-                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{t.buckets.length - 3}</span>
+                            {tpl.buckets.length > 3 && (
+                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{tpl.buckets.length - 3}</span>
                             )}
                           </div>
                         </button>

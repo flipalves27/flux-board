@@ -19,6 +19,7 @@ import {
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
+import { isAnthropicApiConfigured } from "@/lib/org-ai-routing";
 
 type CardContextDebug = {
   source: "ai" | "heuristic" | "cache";
@@ -220,8 +221,9 @@ export async function POST(
     let inFlight = cardContextInFlight.get(cacheKey);
     if (!inFlight) {
       const cap = getDailyAiCallsCap(org, gateCtx);
-      const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-      if (cap !== null && togetherEnabled) {
+      const cloudAiEnabled =
+        isAnthropicApiConfigured() || Boolean(process.env.TOGETHER_API_KEY?.trim());
+      if (cap !== null && cloudAiEnabled) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
         const rlDaily = await rateLimit({
           key: dailyKey,
@@ -237,7 +239,15 @@ export async function POST(
       }
 
       inFlight = (async () => {
-        const res = await llmStructuredCardContext({ boardName, title, description });
+        const res = await llmStructuredCardContext({
+          boardName,
+          title,
+          description,
+          org,
+          orgId: payload.orgId,
+          userId: payload.id,
+          isAdmin: payload.isAdmin,
+        });
         writeCachedContext(cacheKey, res);
         return res;
       })().finally(() => {

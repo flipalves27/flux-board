@@ -1625,6 +1625,7 @@
     },
     "errors": {
       "init": "Erro ao iniciar onboarding.",
+      "initTimeout": "A lista de boards demorou demais. Verifique a ligação e tente novamente.",
       "createBoard": "Erro ao criar board.",
       "saveColumns": "Erro ao salvar colunas.",
       "createCard": "Erro ao criar card."
