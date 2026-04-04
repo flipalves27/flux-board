@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -118,6 +118,9 @@ export default function PlatformAdminConsolePage() {
   const [formError, setFormError] = useState("");
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<UserRow | null>(null);
   const [confirmDeleteOrg, setConfirmDeleteOrg] = useState<OrgRow | null>(null);
+  const pendingDeleteUserRef = useRef<UserRow | null>(null);
+  const deleteUserInFlightRef = useRef(false);
+  const [deleteUserBusy, setDeleteUserBusy] = useState(false);
 
   const loadOrgs = useCallback(
     async (reset: boolean) => {
@@ -400,9 +403,13 @@ export default function PlatformAdminConsolePage() {
   }
 
   async function deleteUserConfirmed(row: UserRow) {
+    if (deleteUserInFlightRef.current) return;
+    deleteUserInFlightRef.current = true;
+    setDeleteUserBusy(true);
     try {
-      await apiDelete(`/api/users/${row.id}`, getHeaders());
+      await apiDelete(`/api/users/${encodeURIComponent(row.id)}`, getHeaders());
       setConfirmDeleteUser(null);
+      pendingDeleteUserRef.current = null;
       setUserCursor(null);
       setUsers([]);
       await loadUsers(true);
@@ -413,6 +420,9 @@ export default function PlatformAdminConsolePage() {
         title: t("error"),
         description: e instanceof ApiError ? (e.data as { error?: string })?.error ?? e.message : "—",
       });
+    } finally {
+      deleteUserInFlightRef.current = false;
+      setDeleteUserBusy(false);
     }
   }
 
@@ -516,7 +526,10 @@ export default function PlatformAdminConsolePage() {
                             <button
                               type="button"
                               className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-danger)] hover:border-[var(--flux-danger)]"
-                              onClick={() => setConfirmDeleteUser(u)}
+                              onClick={() => {
+                                pendingDeleteUserRef.current = u;
+                                setConfirmDeleteUser(u);
+                              }}
                             >
                               {t("delete")}
                             </button>
@@ -1058,9 +1071,15 @@ export default function PlatformAdminConsolePage() {
         confirmText={t("delete")}
         cancelText={t("cancel")}
         intent="danger"
-        onCancel={() => setConfirmDeleteUser(null)}
+        busy={deleteUserBusy}
+        onCancel={() => {
+          if (deleteUserBusy) return;
+          setConfirmDeleteUser(null);
+          pendingDeleteUserRef.current = null;
+        }}
         onConfirm={() => {
-          if (confirmDeleteUser) void deleteUserConfirmed(confirmDeleteUser);
+          const row = pendingDeleteUserRef.current ?? confirmDeleteUser;
+          if (row) void deleteUserConfirmed(row);
         }}
       />
 

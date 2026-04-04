@@ -1064,7 +1064,8 @@
   },
   "confirmDialog": {
     "confirm": "Confirmar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "processing": "A processar…"
   },
   "header": {
     "userFallback": "Usuário",
