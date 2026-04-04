@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+    ];
+  },
   env: {
     /** Exposto ao cliente para gate do bypass de Vercel Protection (não é segredo). */
     NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? "",

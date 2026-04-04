@@ -1,22 +1,7 @@
-const CACHE_NAME = "flux-board-v5";
+const CACHE_NAME = "flux-board-v6";
 
 /** Não precachear `/` — em muitos hosts redireciona (www, locale) e polui a cache com respostas de redirect. */
 const STATIC_ASSETS = ["/offline.html"];
-
-/**
- * Pedidos `navigate` chegam com redirect mode `manual`. Se o SW devolve uma Response com
- * `redirected === true` (ex.: após seguir 302 no fetch interno), o Chrome falha com
- * "redirected response was used for a request whose redirect mode is not 'follow'" e ERR_FAILED.
- */
-async function navigationResponseNoRedirectFlag(res) {
-  if (!res.redirected) return res;
-  const body = await res.blob();
-  return new Response(body, {
-    status: res.status,
-    statusText: res.statusText,
-    headers: res.headers,
-  });
-}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -50,20 +35,12 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
 
-  // Never cache navigation documents to avoid serving stale authenticated HTML
-  // after deployments or session changes.
+  /**
+   * Não interceptar documentos (top-level navigation). Qualquer `respondWith` aqui expõe o site a
+   * bugs do Chrome com redirects (ERR_FAILED / redirect mode manual). O browser trata o HTML sozinho.
+   * Push notifications e precache de /offline.html mantêm-se úteis sem isto.
+   */
   if (request.mode === "navigate") {
-    event.respondWith(
-      (async () => {
-        try {
-          const res = await fetch(request, { redirect: "follow" });
-          return await navigationResponseNoRedirectFlag(res);
-        } catch {
-          const offline = await caches.match("/offline.html");
-          return offline || Response.error();
-        }
-      })()
-    );
     return;
   }
 
