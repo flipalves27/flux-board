@@ -155,8 +155,28 @@ export function parseDescriptionToBlocks(rawDescription: string | null | undefin
   const lines = text.split(/\r?\n/);
   let currentKey: string | null = null;
   let hasStructuredContent = false;
+  let inCodeFence = false;
 
   for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith("```")) {
+      inCodeFence = !inCodeFence;
+      if (currentKey) {
+        blocks[currentKey] = blocks[currentKey] ? `${blocks[currentKey]}\n${line}` : line;
+      } else {
+        blocks.businessContext = blocks.businessContext ? `${blocks.businessContext}\n${line}` : line;
+      }
+      continue;
+    }
+    if (inCodeFence) {
+      if (currentKey) {
+        blocks[currentKey] = blocks[currentKey] ? `${blocks[currentKey]}\n${line}` : line;
+      } else {
+        blocks.businessContext = blocks.businessContext ? `${blocks.businessContext}\n${line}` : line;
+      }
+      continue;
+    }
+
     const headingMatch = line.match(/^([^:]+):(.*)$/);
     if (headingMatch && isLikelySectionHeading(line)) {
       const headingLabel = headingMatch[1].replace(/^\s*(?:\d+\s*[.)-]\s*)+/, "").trim();

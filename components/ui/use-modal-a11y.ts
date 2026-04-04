@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 type UseModalA11yArgs = {
   open: boolean;
@@ -30,48 +30,14 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   });
 }
 
+/**
+ * Acessibilidade de modal: foco inicial + trap Tab + Escape.
+ * Deps **somente [open]** — refs fecham sobre `onClose`/container; evita React #185.
+ */
 export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: UseModalA11yArgs) {
   const lastFocusedElRef = useRef<HTMLElement | null>(null);
-
-  const handlers = useMemo(() => {
-    return {
-      onKeyDownCapture: (e: KeyboardEvent) => {
-        if (!open) return;
-
-        if (e.key === "Escape") {
-          e.preventDefault();
-          onClose();
-          return;
-        }
-
-        if (e.key !== "Tab") return;
-
-        const container = containerRef.current;
-        if (!container) return;
-
-        const focusable = getFocusableElements(container);
-        if (focusable.length === 0) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-
-        const active = document.activeElement as HTMLElement | null;
-        const activeInside = Boolean(active && container.contains(active));
-
-        if (e.shiftKey) {
-          if (!activeInside || active === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (!activeInside || active === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      },
-    };
-  }, [containerRef, initialFocusRef, onClose, open]);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -88,12 +54,42 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
       }
     }
 
-    document.addEventListener("keydown", handlers.onKeyDownCapture, true);
+    const onKeyDownCapture = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
 
+      const el = containerRef.current;
+      if (!el) return;
+
+      const focusable = getFocusableElements(el);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const activeInside = Boolean(active && el.contains(active));
+
+      if (e.shiftKey) {
+        if (!activeInside || active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (!activeInside || active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDownCapture, true);
     return () => {
-      document.removeEventListener("keydown", handlers.onKeyDownCapture, true);
+      document.removeEventListener("keydown", onKeyDownCapture, true);
       lastFocusedElRef.current?.focus?.();
     };
-  }, [containerRef, handlers, initialFocusRef, open]);
+  }, [open]);
 }
-

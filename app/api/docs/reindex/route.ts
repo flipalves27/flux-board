@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { reindexAllDocsForOrg } from "@/lib/kv-doc-chunks";
 import { listDocsFlat } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { canUseFeature } from "@/lib/plan-gates";
+import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { isMongoConfigured } from "@/lib/mongo";
 
@@ -13,14 +13,15 @@ export const runtime = "nodejs";
  * Reindexa embeddings RAG de todos os Flux Docs da org (útil após mudar modelo ou índice vetorial).
  */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs")) {
+  const gateCtx = planGateCtxFromAuthPayload(payload);
+  if (!canUseFeature(org, "flux_docs", gateCtx)) {
     return NextResponse.json({ error: "Flux Docs indisponível no plano atual." }, { status: 403 });
   }
-  if (!canUseFeature(org, "flux_docs_rag")) {
+  if (!canUseFeature(org, "flux_docs_rag", gateCtx)) {
     return NextResponse.json({ error: "RAG / indexação semântica indisponível no plano atual." }, { status: 403 });
   }
 

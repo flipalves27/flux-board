@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { listBoardActivity, parseBoardActivityAction } from "@/lib/kv-board-activity";
 import { isMongoConfigured } from "@/lib/mongo";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -16,7 +16,7 @@ function parseIsoDate(raw: string | null, label: string): Date | undefined {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -26,14 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {

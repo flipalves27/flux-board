@@ -4,7 +4,7 @@ import { ensureAdminUser, updateUser } from "@/lib/kv-users";
 import { UserThemePreferenceSchema, zodErrorToMessage } from "@/lib/schemas";
 
 export async function PATCH(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }

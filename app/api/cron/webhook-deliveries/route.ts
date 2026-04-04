@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { processWebhookOutboxCron } from "@/lib/webhook-delivery";
-
-function requireCronSecret(request: NextRequest): boolean {
-  const required =
-    process.env.WEBHOOK_CRON_SECRET ||
-    process.env.ANOMALY_CRON_SECRET ||
-    process.env.AUTOMATION_CRON_SECRET;
-  if (!required) return true;
-  const header = request.headers.get("x-cron-secret");
-  if (!header) return false;
-  return header === required;
-}
+import { verifyCronSecret } from "@/lib/cron-secret";
 
 async function handle(request: NextRequest) {
-  if (!requireCronSecret(request)) {
+  if (!verifyCronSecret(request, ["WEBHOOK_CRON_SECRET", "CRON_MASTER_SECRET"])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

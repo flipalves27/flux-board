@@ -7,8 +7,8 @@ import {
   updateOrganization,
 } from "@/lib/kv-organizations";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
-import { getEffectiveTier } from "@/lib/plan-gates";
-import type { OrgAiSettings } from "@/lib/kv-organizations";
+import { getEffectiveTier, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
+import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
 import {
   orgBrandingAllowsCustomDomain,
   orgBrandingAllowsTheming,
@@ -18,9 +18,18 @@ import {
   BRANDING_ASSET_MAX_BYTES,
 } from "@/lib/org-branding";
 import type { OrgBranding } from "@/lib/org-branding";
+import {
+  allowAdminPlanOverrideFromEnv,
+  canAdminOverridePlan,
+  planOverrideBlockedByStripe,
+  shouldAllowStripeCheckoutForOrg,
+} from "@/lib/admin-plan-override";
+import { ensureOrgManager } from "@/lib/api-authz";
+import { canManageOrganization, deriveEffectiveRoles, isPlatformAdminFromAuthPayload } from "@/lib/rbac";
+import { insertAuditEvent } from "@/lib/audit-events";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
@@ -32,6 +41,11 @@ export async function GET(request: NextRequest) {
       name: org.name,
       slug: org.slug,
       plan: org.plan,
+      /** Override manual: só administrador da plataforma + env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE`. */
+      canAdminOverridePlan: canAdminOverridePlan(org) && isPlatformAdminFromAuthPayload(payload),
+      /** Só relevante para quem pode override manual (admin da plataforma). */
+      planOverrideBlockedByStripe:
+        planOverrideBlockedByStripe(org) && isPlatformAdminFromAuthPayload(payload),
       maxUsers: org.maxUsers,
       maxBoards: org.maxBoards,
       trialEndsAt: org.trialEndsAt ?? null,
@@ -46,15 +60,16 @@ export async function GET(request: NextRequest) {
       stripePriceId: org.stripePriceId ?? null,
       stripeStatus: org.stripeStatus ?? null,
       stripeCurrentPeriodEnd: org.stripeCurrentPeriodEnd ?? null,
+      /** Novo checkout só quando não há assinatura ativa; senão usar Portal Stripe. */
+      allowStripeCheckout: shouldAllowStripeCheckoutForOrg(org),
       aiSettings: org.aiSettings ?? null,
     },
   });
 }
 
 export async function PUT(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : undefined;
@@ -62,10 +77,22 @@ export async function PUT(request: NextRequest) {
   const hasBranding = body && typeof body === "object" && "branding" in body;
   const dismissBillingNotice = body?.dismissBillingNotice === true;
   const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
+  const hasPlan = body && typeof body === "object" && "plan" in body && body.plan !== undefined;
 
-  if (!name && !slug && !hasBranding && !dismissBillingNotice && !hasAiSettings) {
+  const needsBillingAdmin = dismissBillingNotice || hasPlan;
+  const needsOrgManager =
+    name !== undefined || slug !== undefined || hasBranding || hasAiSettings;
+  if (needsBillingAdmin) {
+    const deniedBa = ensureOrgManager(payload);
+    if (deniedBa) return deniedBa;
+  }
+  if (needsOrgManager) {
+    const deniedOm = ensureOrgManager(payload);
+    if (deniedOm) return deniedOm;
+  }
+  if (!needsBillingAdmin && !needsOrgManager) {
     return NextResponse.json(
-      { error: "Informe `name`, `slug`, `branding`, `aiSettings` ou `dismissBillingNotice`." },
+      { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `plan` ou `dismissBillingNotice`." },
       { status: 400 }
     );
   }
@@ -74,13 +101,15 @@ export async function PUT(request: NextRequest) {
     const current = await getOrganizationById(payload.orgId);
     if (!current) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
 
+    const isOrgAdminForBranding = canManageOrganization(deriveEffectiveRoles(payload));
+
     let brandingPatch: OrgBranding | undefined;
     if (hasBranding) {
       const parsed = OrgBrandingUpdateSchema.safeParse(body?.branding ?? {});
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      if (!orgBrandingAllowsTheming(current)) {
+      if (!orgBrandingAllowsTheming(current, { isOrgAdmin: isOrgAdminForBranding })) {
         return NextResponse.json({ error: "Branding disponível nos planos Pro e Business." }, { status: 403 });
       }
       const b = parsed.data;
@@ -137,7 +166,7 @@ export async function PUT(request: NextRequest) {
         }
       }
       if (b.customDomain !== undefined) {
-        if (!orgBrandingAllowsCustomDomain(current)) {
+        if (!orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding })) {
           return NextResponse.json({ error: "Domínio customizado exige plano Business." }, { status: 403 });
         }
         const d = typeof b.customDomain === "string" ? b.customDomain.trim().toLowerCase() : "";
@@ -159,14 +188,14 @@ export async function PUT(request: NextRequest) {
           }
         }
       }
-      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current) && next.customDomain) {
+      if (b.regenerateDomainToken && orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding }) && next.customDomain) {
         next.domainVerificationToken = randomBytes(24).toString("hex");
         next.customDomainVerifiedAt = undefined;
       }
       brandingPatch = next;
       if (
         brandingPatch &&
-        orgBrandingAllowsCustomDomain(current) &&
+        orgBrandingAllowsCustomDomain(current, { isOrgAdmin: isOrgAdminForBranding }) &&
         brandingPatch.customDomain &&
         !brandingPatch.domainVerificationToken
       ) {
@@ -180,7 +209,7 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      const tier = getEffectiveTier(current);
+      const tier = getEffectiveTier(current, planGateCtxFromAuthPayload(payload));
       if (tier !== "business") {
         return NextResponse.json(
           { error: "Configurações de IA avançadas disponíveis no plano Business." },
@@ -204,12 +233,50 @@ export async function PUT(request: NextRequest) {
       aiSettingsPatch = next;
     }
 
+    let planPatch: Organization["plan"] | undefined;
+    if (hasPlan) {
+      if (!allowAdminPlanOverrideFromEnv()) {
+        return NextResponse.json(
+          { error: "Alteração de plano pelo admin não está habilitada (defina FLUX_ALLOW_ADMIN_PLAN_OVERRIDE=1 no servidor)." },
+          { status: 403 }
+        );
+      }
+      if (!isPlatformAdminFromAuthPayload(payload)) {
+        return NextResponse.json(
+          { error: "Apenas administrador da plataforma pode alterar o plano manualmente." },
+          { status: 403 }
+        );
+      }
+      const raw = typeof (body as { plan?: unknown }).plan === "string" ? (body as { plan: string }).plan.trim() : "";
+      const allowed: Organization["plan"][] = ["free", "trial", "pro", "business"];
+      if (!allowed.includes(raw as Organization["plan"])) {
+        return NextResponse.json({ error: "Plano inválido. Use: free, trial, pro ou business." }, { status: 400 });
+      }
+      planPatch = raw as Organization["plan"];
+      if (planPatch !== current.plan) {
+        await insertAuditEvent({
+          action: "admin_plan_override",
+          resourceType: "organization",
+          actorUserId: payload.id,
+          resourceId: payload.orgId,
+          orgId: payload.orgId,
+          route: "/api/organizations/me",
+          metadata: {
+            fromPlan: current.plan,
+            toPlan: planPatch,
+            viaEnv: "FLUX_ALLOW_ADMIN_PLAN_OVERRIDE",
+          },
+        });
+      }
+    }
+
     const org = await updateOrganization(payload.orgId, {
       ...(name !== undefined ? { name } : {}),
       ...(slug !== undefined ? { slug } : {}),
       ...(brandingPatch !== undefined ? { branding: brandingPatch } : {}),
       ...(dismissBillingNotice ? { billingNotice: null } : {}),
       ...(aiSettingsPatch !== undefined ? { aiSettings: aiSettingsPatch } : {}),
+      ...(planPatch !== undefined ? { plan: planPatch } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
     return NextResponse.json({ organization: org });

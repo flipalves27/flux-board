@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import {
   createCrossDependencyLink,
@@ -15,7 +16,7 @@ import { isMongoConfigured } from "@/lib/mongo";
 const KINDS = new Set<CardDependencyEdgeKind>(["depends_on", "blocks", "related_to"]);
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxFromAuthPayload(payload));
 
     const { searchParams } = new URL(request.url);
     const boardId = searchParams.get("boardId") || undefined;
@@ -55,16 +56,14 @@ export async function GET(request: NextRequest) {
       suggestions,
     });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies GET:", err);
     return NextResponse.json({ error: "Erro ao carregar dependências." }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxFromAuthPayload(payload));
 
     const body = (await request.json()) as {
       sourceBoardId?: string;
@@ -133,16 +132,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, link: created });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies POST:", err);
     return NextResponse.json({ error: "Erro ao criar dependência." }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -152,7 +149,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxFromAuthPayload(payload));
 
     const { searchParams } = new URL(request.url);
     const linkId = searchParams.get("linkId") || "";
@@ -179,9 +176,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("card-dependencies DELETE:", err);
     return NextResponse.json({ error: "Erro ao remover dependência." }, { status: 500 });
   }

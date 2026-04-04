@@ -1,14 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useCardModal } from "@/components/kanban/card-modal-context";
-import { apiPost } from "@/lib/api-client";
+import { useAuth } from "@/context/auth-context";
+import { apiPost, apiFetch, getApiHeaders, ApiError } from "@/lib/api-client";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import { DESCRIPTION_BLOCKS } from "@/components/kanban/description-blocks";
 import { SmartEnrichFieldShell } from "@/components/kanban/smart-enrich-field";
+import { CardIntakeVisionBlock } from "@/components/kanban/card-intake-vision-block";
+import { CardIntakeVoiceBlock } from "@/components/kanban/card-intake-voice-block";
+import { CardAssigneeCombobox, type CardAssigneeOption } from "@/components/kanban/card-form/card-assignee-combobox";
+import { CardDescriptionBlockEditor } from "@/components/kanban/card-form/card-description-block-editor";
 import { AiModelHint } from "@/components/ai-model-hint";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
+import {
+  STORY_POINTS_FIBONACCI,
+  CARD_SERVICE_CLASS_VALUES,
+  type CardServiceClass,
+  type SprintData,
+} from "@/lib/schemas";
+import { useSprintStore } from "@/stores/sprint-store";
+import { isKanbanMethodology, isLeanSixSigmaMethodology } from "@/lib/board-methodology";
+import { buildRefinementInputFromFields, computeRefinementReadinessScore } from "@/lib/card-refinement-readiness";
+
+const EMPTY_SPRINTS: SprintData[] = [];
 
 type DupMatch = {
   cardId: string;
@@ -22,9 +38,11 @@ type DupMatch = {
 
 /** Campos principais do card (aba padrão, import síncrono para abertura rápida do modal). */
 export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
+  const { user } = useAuth();
   const {
     id,
     setId,
+    generatedCardId,
     title,
     setTitle,
     setAiContextApplied,
@@ -38,6 +56,8 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     setProgress,
     dueDate,
     setDueDate,
+    assigneeId,
+    setAssigneeId,
     blockedBy,
     setBlockedBy,
     depSearch,
@@ -71,11 +91,211 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     generateAiContextForCard,
     descriptionForSave,
     boardId,
+    selfId,
     getHeaders,
+    dorReady,
+    setDorReady,
+    definitionOfDone,
+    dodChecks,
+    setDodChecks,
     openExistingCard,
     mergeDraftIntoExistingCard,
+    boardMethodology,
+    storyPoints,
+    setStoryPoints,
+    serviceClass,
+    setServiceClass,
     t,
+    pushToast,
   } = useCardModal();
+
+  const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
+  const upsertSprint = useSprintStore((s) => s.upsertSprint);
+  const [sprintPatching, setSprintPatching] = useState<string | null>(null);
+  const [assigneeOptions, setAssigneeOptions] = useState<CardAssigneeOption[]>([]);
+  const [assigneeLoading, setAssigneeLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadMembers = async () => {
+      setAssigneeLoading(true);
+      try {
+        const res = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/members`, {
+          headers: getApiHeaders(getHeaders()),
+        });
+        if (!res.ok) throw new Error("members_fetch_error");
+        const data = (await res.json()) as {
+          members?: Array<{ userId?: string; username?: string; name?: string }>;
+        };
+        const map = new Map<string, CardAssigneeOption>();
+        for (const m of data.members ?? []) {
+          const userId = String(m?.userId ?? "").trim();
+          if (!userId) continue;
+          const display = String(m?.name ?? m?.username ?? "").trim();
+          map.set(userId, { userId, label: display || userId });
+        }
+        const selfId = String(user?.id ?? "").trim();
+        const selfLabel = String(user?.name ?? user?.username ?? "").trim();
+        if (selfId && !map.has(selfId)) {
+          map.set(selfId, { userId: selfId, label: selfLabel || selfId });
+        }
+        if (!cancelled) {
+          setAssigneeOptions([...map.values()].sort((a, b) => a.label.localeCompare(b.label, "pt-BR")));
+        }
+      } catch {
+        if (!cancelled) {
+          const selfId = String(user?.id ?? "").trim();
+          const selfLabel = String(user?.name ?? user?.username ?? "").trim();
+          setAssigneeOptions(selfId ? [{ userId: selfId, label: selfLabel || selfId }] : []);
+        }
+      } finally {
+        if (!cancelled) setAssigneeLoading(false);
+      }
+    };
+    void loadMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, getHeaders, user?.id, user?.name, user?.username]);
+
+  const cardIdReadyForSprint = useMemo(() => {
+    const cid = String(selfId || "").trim();
+    return Boolean(mode === "edit" && cid);
+  }, [selfId, mode]);
+
+  const toggleSprintMembership = useCallback(
+    async (sprint: SprintData, include: boolean) => {
+      const cid = String(selfId || "").trim();
+      if (mode !== "edit" || !cid) return;
+      if (sprint.status !== "planning" && sprint.status !== "active") return;
+      const nextIds = include
+        ? [...new Set([...(sprint.cardIds ?? []), cid])]
+        : (sprint.cardIds ?? []).filter((id) => id !== cid);
+      setSprintPatching(sprint.id);
+      try {
+        const res = await apiFetch(
+          `/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprint.id)}`,
+          {
+            method: "PATCH",
+            headers: { ...getApiHeaders(getHeaders()), "Content-Type": "application/json" },
+            body: JSON.stringify({ cardIds: nextIds }),
+          }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { sprint: SprintData };
+          upsertSprint(boardId, data.sprint);
+        } else {
+          pushToast({ kind: "error", title: t("cardModal.methodology.sprintPatchError") });
+        }
+      } catch {
+        pushToast({ kind: "error", title: t("cardModal.methodology.sprintPatchError") });
+      } finally {
+        setSprintPatching(null);
+      }
+    },
+    [selfId, mode, boardId, getHeaders, upsertSprint, pushToast, t]
+  );
+
+  const currentBucketWip = useMemo(() => {
+    const b = buckets.find((x) => x.key === bucket);
+    return typeof b?.wipLimit === "number" ? b.wipLimit : null;
+  }, [buckets, bucket]);
+
+  const [unblockBusy, setUnblockBusy] = useState(false);
+  const [unblockText, setUnblockText] = useState<string | null>(null);
+
+  const runUnblockAssist = useCallback(async () => {
+    const cid = String(selfId || "").trim();
+    if (mode !== "edit" || !cid) return;
+    setUnblockBusy(true);
+    setUnblockText(null);
+    try {
+      const res = await apiPost<{
+        steps?: string[];
+        notifyHint?: string;
+      }>(
+        `/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cid)}/unblock-assist`,
+        {},
+        getHeaders()
+      );
+      const lines = [...(res.steps || []), "", res.notifyHint || ""].filter(Boolean);
+      setUnblockText(lines.join("\n"));
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "—";
+      setUnblockText(msg);
+    } finally {
+      setUnblockBusy(false);
+    }
+  }, [boardId, getHeaders, selfId, mode]);
+
+  const [refineBusy, setRefineBusy] = useState(false);
+  const [refinePreview, setRefinePreview] = useState<string | null>(null);
+
+  const refinementReadiness = useMemo(() => {
+    const input = buildRefinementInputFromFields({
+      title,
+      descriptionText: descriptionForSave,
+      priority,
+      progress,
+      dueDate,
+      tags: Array.from(tags),
+      blockedBy,
+      storyPoints,
+      dorReady,
+    });
+    return computeRefinementReadinessScore(input);
+  }, [title, descriptionForSave, priority, progress, dueDate, tags, blockedBy, storyPoints, dorReady]);
+
+  const runRefineAi = useCallback(async () => {
+    const tit = title.trim();
+    const desc = descriptionForSave.trim();
+    if (tit.length < 2) {
+      pushToast({ kind: "error", title: t("cardModal.sections.refineAi.empty") });
+      return;
+    }
+    setRefineBusy(true);
+    setRefinePreview(null);
+    try {
+      const res = await apiPost<{
+        ok?: boolean;
+        parsed?: {
+          acceptanceCriteria: string[];
+          risks: string[];
+          dependencies: string[];
+          notes?: string;
+        };
+        raw?: string;
+        error?: string;
+      }>(
+        `/api/boards/${encodeURIComponent(boardId)}/refine-ai`,
+        { title: tit, description: desc },
+        getHeaders()
+      );
+      if (res.error) throw new Error(res.error);
+      if (res.parsed) {
+        const lines = [
+          "### Refinamento (IA)",
+          "",
+          "**Critérios de aceite**",
+          ...res.parsed.acceptanceCriteria.map((x) => `- ${x}`),
+          "",
+          "**Riscos**",
+          ...res.parsed.risks.map((x) => `- ${x}`),
+          "",
+          "**Dependências**",
+          ...res.parsed.dependencies.map((x) => `- ${x}`),
+          res.parsed.notes ? `\n_${res.parsed.notes}_` : "",
+        ].join("\n");
+        setRefinePreview(lines);
+      } else if (res.raw) {
+        setRefinePreview(res.raw);
+      }
+    } catch {
+      pushToast({ kind: "error", title: t("cardModal.sections.refineAi.error") });
+    } finally {
+      setRefineBusy(false);
+    }
+  }, [boardId, descriptionForSave, getHeaders, title, pushToast, t]);
 
   const [dupMatches, setDupMatches] = useState<DupMatch[]>([]);
   const [dupLoading, setDupLoading] = useState(false);
@@ -148,6 +368,44 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     Boolean(openExistingCard || mergeDraftIntoExistingCard) &&
     dupIgnoreFingerprint !== contentFingerprint &&
     (dupLoading || dupMatches.length > 0);
+  const cardEditorId = useMemo(
+    () =>
+      (mode === "edit" ? String(selfId || id).trim() : String(generatedCardId || "").trim()) || "card",
+    [mode, selfId, id, generatedCardId]
+  );
+
+  const dorCheckboxGrid = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {(
+        [
+          ["titleOk", t("cardModal.fields.dor.titleOk")] as const,
+          ["acceptanceOk", t("cardModal.fields.dor.acceptanceOk")] as const,
+          ["depsOk", t("cardModal.fields.dor.depsOk")] as const,
+          ["sizedOk", t("cardModal.fields.dor.sizedOk")] as const,
+        ] as const
+      ).map(([key, label]) => (
+        <label key={key} className="flex items-center gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(dorReady[key])}
+            onChange={() =>
+              setDorReady((prev) => {
+                const next = { ...prev };
+                if (next[key]) {
+                  delete next[key];
+                } else {
+                  next[key] = true;
+                }
+                return next;
+              })
+            }
+            className="rounded border-[var(--flux-chrome-alpha-20)]"
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-5">
@@ -163,10 +421,11 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                placeholder={t("cardModal.fields.id.placeholder")}
-                className={`${inputBase} flex-1`}
+                value={mode === "new" ? generatedCardId : id}
+                onChange={mode === "new" ? undefined : (e) => setId(e.target.value)}
+                readOnly={mode === "new"}
+                placeholder={mode === "new" ? generatedCardId : t("cardModal.fields.id.placeholder")}
+                className={`${inputBase} flex-1 ${mode === "new" ? "cursor-not-allowed opacity-85" : ""}`}
               />
               <CustomTooltip content={t("cardModal.aiContext.tooltips.trigger")}>
                 <button
@@ -224,9 +483,39 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         description={t("cardModal.sections.content.description")}
       >
         <div>
-          <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
-            {t("cardModal.fields.title.label")}
-          </label>
+          <CardIntakeVisionBlock
+            boardId={boardId}
+            getHeaders={getHeaders}
+            mode={mode}
+            setTitle={setTitle}
+            setDescBlocks={setDescBlocks}
+            onApplied={() => setAiContextApplied(null)}
+          />
+          <CardIntakeVoiceBlock
+            boardId={boardId}
+            getHeaders={getHeaders}
+            mode={mode}
+            setTitle={setTitle}
+            setDescBlocks={setDescBlocks}
+            onApplied={() => setAiContextApplied(null)}
+          />
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
+              {t("cardModal.fields.title.label")}
+            </label>
+            <span
+              className={`font-mono text-[10px] tabular-nums transition-all duration-200 ${
+                title.length === 0
+                  ? "opacity-0"
+                  : title.length > 80
+                  ? "text-[var(--flux-warning)] opacity-100"
+                  : "text-[var(--flux-text-muted)]/45 opacity-100"
+              }`}
+              aria-live="polite"
+            >
+              {title.length}
+            </span>
+          </div>
           <input
             type="text"
             value={title}
@@ -306,6 +595,22 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               ) : null}
             </div>
           ) : null}
+          {mode === "new" && !smartEnrichBusy && !smartEnrichPending && title.trim().length >= 2 && !descriptionForSave.trim() ? (
+            <button
+              type="button"
+              onClick={() => requestSmartEnrich({ immediate: true })}
+              className="mt-2.5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 motion-safe:active:scale-[0.97] shadow-[0_2px_12px_-2px_var(--flux-primary-alpha-35)]"
+              style={{
+                background: "linear-gradient(135deg, var(--flux-primary), color-mix(in srgb, var(--flux-primary) 75%, var(--flux-secondary)))",
+                border: "1px solid var(--flux-primary-alpha-45)",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" aria-hidden>
+                <path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74L12 2z" />
+              </svg>
+              {t("card.aiHints.enrichButton")}
+            </button>
+          ) : null}
           {mode === "new" && smartEnrichBusy ? (
             <p className="mt-1.5 text-[11px] text-[var(--flux-text-muted)]">{t("cardModal.smartEnrich.busy")}</p>
           ) : null}
@@ -334,49 +639,41 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
             {t("cardModal.fields.description.label")}
           </label>
           <div className="rounded-xl border border-[var(--flux-primary-alpha-22)] bg-[var(--flux-surface-mid)]/95 p-4 shadow-[inset_0_1px_0_0_var(--flux-chrome-alpha-04)]">
-            <div className="space-y-3">
-              {DESCRIPTION_BLOCKS.map((block) => (
-                <div key={block.key}>
-                  <label className="mb-1.5 block font-display text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                    {block.label}
-                  </label>
-                  {block.key === "businessContext" ? (
-                    <SmartEnrichFieldShell
-                      active={Boolean(smartEnrichPending?.has("description"))}
-                      onAccept={() => acceptSmartEnrichField("description")}
-                      onReject={() => rejectSmartEnrichField("description")}
-                      badge={t("cardModal.smartEnrich.badge")}
-                      acceptLabel={t("cardModal.smartEnrich.accept")}
-                      rejectLabel={t("cardModal.smartEnrich.reject")}
-                    >
-                      <textarea
-                        value={descBlocks[block.key] || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
-                          setAiContextApplied(null);
-                          dismissSmartEnrichKey("description");
-                        }}
-                        placeholder={block.placeholder}
-                        rows={3}
-                        className="min-h-[90px] w-full resize-y rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_var(--flux-primary-alpha-12)] focus:ring-0 whitespace-pre-wrap"
-                      />
-                    </SmartEnrichFieldShell>
-                  ) : (
-                    <textarea
-                      value={descBlocks[block.key] || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setDescBlocks((prev) => ({ ...prev, [block.key]: value }));
-                        setAiContextApplied(null);
-                      }}
-                      placeholder={block.placeholder}
-                      rows={3}
-                      className="min-h-[90px] w-full resize-y rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] p-3 text-sm leading-relaxed text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none transition-all duration-200 focus:border-[var(--flux-primary)] focus:shadow-[0_0_0_3px_var(--flux-primary-alpha-12)] focus:ring-0 whitespace-pre-wrap"
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="space-y-2">
+              {DESCRIPTION_BLOCKS.map((block) => {
+                const editor = (
+                  <CardDescriptionBlockEditor
+                    editorKey={`${cardEditorId}-${block.key}`}
+                    blockLabel={block.label}
+                    placeholder={block.placeholder}
+                    value={descBlocks[block.key] || ""}
+                    onChange={(md) => {
+                      setDescBlocks((prev) => ({ ...prev, [block.key]: md }));
+                      setAiContextApplied(null);
+                      if (block.key === "businessContext") dismissSmartEnrichKey("description");
+                    }}
+                    defaultOpen={block.key === "businessContext"}
+                  />
+                );
+                return (
+                  <div key={block.key}>
+                    {block.key === "businessContext" ? (
+                      <SmartEnrichFieldShell
+                        active={Boolean(smartEnrichPending?.has("description"))}
+                        onAccept={() => acceptSmartEnrichField("description")}
+                        onReject={() => rejectSmartEnrichField("description")}
+                        badge={t("cardModal.smartEnrich.badge")}
+                        acceptLabel={t("cardModal.smartEnrich.accept")}
+                        rejectLabel={t("cardModal.smartEnrich.reject")}
+                      >
+                        {editor}
+                      </SmartEnrichFieldShell>
+                    ) : (
+                      editor
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           {aiContextApplied && (
@@ -477,6 +774,28 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
               ) : null}
             </SmartEnrichFieldShell>
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+              {t("cardModal.fields.assignee.label")}
+            </label>
+            <CardAssigneeCombobox
+              value={assigneeId}
+              onChange={setAssigneeId}
+              options={assigneeOptions}
+              loading={assigneeLoading}
+              currentUserId={user?.id}
+              labels={{
+                unassigned: t("cardModal.fields.assignee.unassigned"),
+                selectedTag: t("cardModal.fields.assignee.selected"),
+                clear: t("cardModal.fields.assignee.clear"),
+                placeholder: t("cardModal.fields.assignee.placeholder"),
+                meShortcut: t("cardModal.fields.assignee.meShortcut"),
+                loading: t("cardModal.fields.assignee.loading"),
+                emptyFilter: t("cardModal.fields.assignee.emptyFilter"),
+                hint: t("cardModal.fields.assignee.hint"),
+              }}
+            />
+          </div>
           {directions.length ? (
             <div>
               <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
@@ -515,9 +834,125 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
+      {boardMethodology === "scrum" ? (
+        <CardModalSection
+          title={t("cardModal.methodology.scrum.title")}
+          description={t("cardModal.methodology.scrum.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.storyPoints")}
+              </label>
+              <select
+                value={storyPoints ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setStoryPoints(v === "" ? null : Number.parseInt(v, 10));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.storyPointsUnset")}</option>
+                {STORY_POINTS_FIBONACCI.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.sprintsTitle")}
+              </p>
+              {!cardIdReadyForSprint ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.sprintNeedSave")}</p>
+              ) : sprints.length === 0 ? (
+                <p className="text-sm text-[var(--flux-text-muted)]">{t("cardModal.methodology.noSprints")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sprints.map((sp) => {
+                    const inSprint = (sp.cardIds ?? []).includes(String(selfId).trim());
+                    const editable = sp.status === "planning" || sp.status === "active";
+                    return (
+                      <li
+                        key={sp.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] px-3 py-2"
+                      >
+                        <span className="min-w-0 text-sm">
+                          <span className="font-medium text-[var(--flux-text)]">{sp.name}</span>
+                          <span className="ml-2 text-[11px] text-[var(--flux-text-muted)]">({sp.status})</span>
+                        </span>
+                        {editable ? (
+                          <label className="flex items-center gap-2 text-sm shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={inSprint}
+                              disabled={sprintPatching === sp.id}
+                              onChange={() => void toggleSprintMembership(sp, !inSprint)}
+                              className="rounded border-[var(--flux-chrome-alpha-20)]"
+                            />
+                            <span>{t("cardModal.methodology.inSprint")}</span>
+                          </label>
+                        ) : (
+                          <span className="text-[11px] text-[var(--flux-text-muted)] shrink-0">
+                            {inSprint ? t("cardModal.methodology.inSprintReadonly") : "—"}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </CardModalSection>
+      ) : null}
+
+      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
+        <CardModalSection
+          title={t("cardModal.methodology.kanban.title")}
+          description={t("cardModal.methodology.kanban.description")}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 uppercase tracking-wider font-display">
+                {t("cardModal.methodology.serviceClass")}
+              </label>
+              <select
+                value={serviceClass ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setServiceClass(v === "" ? null : (v as CardServiceClass));
+                }}
+                className={inputBase}
+              >
+                <option value="">{t("cardModal.methodology.serviceClassUnset")}</option>
+                {CARD_SERVICE_CLASS_VALUES.map((sc) => (
+                  <option key={sc} value={sc}>
+                    {t(`cardModal.methodology.serviceClassValues.${sc}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {currentBucketWip != null ? (
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                {t("cardModal.methodology.wipHint", { limit: currentBucketWip })}
+              </p>
+            ) : null}
+          </div>
+        </CardModalSection>
+      ) : null}
+
       <CardModalSection
         title={t("cardModal.sections.dependencies.title")}
         description={t("cardModal.sections.dependencies.description")}
+        headerRight={
+          blockedBy.length > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-[var(--flux-warning-alpha-12)] border border-[var(--flux-warning-alpha-35)] px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--flux-warning)]">
+              {blockedBy.length}
+            </span>
+          ) : undefined
+        }
       >
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wider font-display">
@@ -571,9 +1006,152 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
+      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
+        <details className="rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--flux-text)] [&::-webkit-details-marker]:hidden">
+            {t("cardModal.sections.dor.summaryKanban")}
+          </summary>
+          <p className="text-[11px] text-[var(--flux-text-muted)] mt-2 mb-3">{t("cardModal.sections.dor.description")}</p>
+          {dorCheckboxGrid}
+        </details>
+      ) : (
+        <CardModalSection title={t("cardModal.sections.dor.title")} description={t("cardModal.sections.dor.description")}>
+          {dorCheckboxGrid}
+        </CardModalSection>
+      )}
+
+      {definitionOfDone?.enabled && definitionOfDone.items.length > 0 ? (
+        <CardModalSection
+          title={t("cardModal.sections.dod.title")}
+          description={t("cardModal.sections.dod.description")}
+        >
+          <div className="space-y-2">
+            {definitionOfDone.items.map((it) => (
+              <label key={it.id} className="flex items-start gap-2 text-sm text-[var(--flux-text)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(dodChecks[it.id])}
+                  onChange={() =>
+                    setDodChecks((prev) => {
+                      const next = { ...prev };
+                      if (next[it.id]) delete next[it.id];
+                      else next[it.id] = true;
+                      return next;
+                    })
+                  }
+                  className="mt-1 rounded border-[var(--flux-chrome-alpha-20)]"
+                />
+                <span>{it.label}</span>
+              </label>
+            ))}
+          </div>
+        </CardModalSection>
+      ) : null}
+
+      <CardModalSection
+        title={t("cardModal.sections.refinementReadiness.title")}
+        description={t("cardModal.sections.refinementReadiness.description")}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <div
+            className={`flex min-w-[120px] flex-col items-center justify-center rounded-[var(--flux-rad)] border px-4 py-3 ${
+              refinementReadiness.score >= 75
+                ? "border-[var(--flux-success)]/45 bg-[var(--flux-success)]/10"
+                : refinementReadiness.score >= 45
+                  ? "border-[var(--flux-warning)]/45 bg-[var(--flux-warning)]/10"
+                  : "border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-black-alpha-08)]"
+            }`}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--flux-text-muted)]">
+              {t("cardModal.sections.refinementReadiness.label")}
+            </span>
+            <span
+              className="mt-1 text-3xl font-bold tabular-nums text-[var(--flux-text)]"
+              data-testid="refinement-readiness-score"
+            >
+              {refinementReadiness.score}
+            </span>
+            <span className="mt-1 text-center text-[11px] text-[var(--flux-text-muted)] leading-snug">
+              {refinementReadiness.score >= 75
+                ? t("cardModal.sections.refinementReadiness.hintHigh")
+                : refinementReadiness.score >= 45
+                  ? t("cardModal.sections.refinementReadiness.hintMid")
+                  : t("cardModal.sections.refinementReadiness.hintLow")}
+            </span>
+          </div>
+          <ul className="flex-1 space-y-1.5 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] p-3 text-[12px] text-[var(--flux-text-muted)] max-h-36 overflow-y-auto scrollbar-kanban">
+            {refinementReadiness.reasons.map((r) => (
+              <li key={r.code + r.message} className="flex gap-2">
+                <span className="shrink-0 font-mono text-[10px] text-[var(--flux-text-muted)] opacity-70">{r.code}</span>
+                <span className="text-[var(--flux-text)]">{r.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardModalSection>
+
+      <CardModalSection
+        title={t("cardModal.sections.refineAi.title")}
+        description={t("cardModal.sections.refineAi.description")}
+      >
+        <button
+          type="button"
+          disabled={refineBusy}
+          onClick={() => void runRefineAi()}
+          className="btn-secondary text-sm py-2 px-3 disabled:opacity-50"
+        >
+          {refineBusy ? t("cardModal.sections.refineAi.loading") : t("cardModal.sections.refineAi.cta")}
+        </button>
+        {refinePreview ? (
+          <div className="mt-3 space-y-2">
+            <pre className="whitespace-pre-wrap rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] p-3 text-[12px] text-[var(--flux-text)] max-h-48 overflow-y-auto scrollbar-kanban">
+              {refinePreview}
+            </pre>
+            <button
+              type="button"
+              className="btn-primary text-sm py-2 px-3"
+              onClick={() => {
+                setDescBlocks((prev) => ({
+                  ...prev,
+                  notes: [String(prev.notes ?? "").trim(), refinePreview].filter(Boolean).join("\n\n").trim(),
+                }));
+                pushToast({ kind: "success", title: t("cardModal.sections.refineAi.appliedToast") });
+              }}
+            >
+              {t("cardModal.sections.refineAi.apply")}
+            </button>
+          </div>
+        ) : null}
+      </CardModalSection>
+
+      {mode === "edit" && blockedBy.length > 0 && selfId ? (
+        <CardModalSection title={t("cardModal.sections.unblock.title")} description={t("cardModal.sections.unblock.description")}>
+          <button
+            type="button"
+            disabled={unblockBusy}
+            onClick={() => void runUnblockAssist()}
+            className="btn-secondary text-sm py-2 px-3 disabled:opacity-50"
+          >
+            {unblockBusy ? t("cardModal.unblock.loading") : t("cardModal.unblock.cta")}
+          </button>
+          {unblockText ? (
+            <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-12)] p-3 text-[12px] text-[var(--flux-text)]">
+              {unblockText}
+            </pre>
+          ) : null}
+        </CardModalSection>
+      ) : null}
+
       <CardModalSection
         title={t("cardModal.sections.labels.title")}
         description={t("cardModal.sections.labels.description")}
+        headerRight={
+          tags.size > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-[var(--flux-primary-alpha-18)] border border-[var(--flux-primary-alpha-35)] px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--flux-primary-light)]">
+              {tags.size}
+            </span>
+          ) : undefined
+        }
       >
         <SmartEnrichFieldShell
           active={Boolean(smartEnrichPending?.has("tags"))}

@@ -11,8 +11,11 @@ import { getBoardShortcuts } from "@/lib/board-shortcuts";
 import { getRecentCards } from "@/lib/recent-cards";
 import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-history";
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
+import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
+import type { BoardMethodology } from "@/lib/board-methodology";
+import { isPlatformAdminSession, sessionCanManageMembersAndBilling, sessionCanManageOrgBilling } from "@/lib/rbac";
 
-type BoardRow = { id: string; name: string };
+type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
 function CategoryIcon({ kind }: { kind: NonNullable<PaletteItem["icon"]> }) {
   const common = "h-4 w-4 shrink-0 text-[var(--flux-text-muted)]";
@@ -66,6 +69,8 @@ function inferCategoryFromAction(action: PaletteAction): Exclude<PaletteCategory
     case "newCard":
     case "newBoard":
     case "copilot":
+    case "boardDeep":
+    case "aiCommand":
       return "actions";
     default:
       return "navigation";
@@ -94,6 +99,14 @@ function runAction(action: PaletteAction, localeRoot: string, router: ReturnType
     case "copilot":
       router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?copilot=1`);
       break;
+    case "boardDeep":
+      router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?${action.query}`);
+      break;
+    case "aiCommand":
+      if (action.boardId) {
+        router.push(`${localeRoot}/board/${encodeURIComponent(action.boardId)}?copilot=1&q=${encodeURIComponent(action.command)}`);
+      }
+      break;
     default:
       break;
   }
@@ -116,6 +129,11 @@ export function CommandPalette() {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const { user, getHeaders, isChecked } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const t = useTranslations("commandPalette");
 
   const [open, setOpen] = useState(false);
@@ -125,9 +143,10 @@ export function CommandPalette() {
   const flatOrderRef = useRef<PaletteItem[]>([]);
 
   const loadBoards = useCallback(async () => {
-    if (!user) return;
+    const u = userRef.current;
+    if (!u) return;
     try {
-      const data = await apiGet<{ boards: BoardRow[] }>("/api/boards", getHeaders());
+      const data = await apiGet<{ boards: BoardRow[] }>("/api/boards", getHeadersRef.current());
       setBoards(Array.isArray(data.boards) ? data.boards : []);
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -136,12 +155,12 @@ export function CommandPalette() {
       }
       setBoards([]);
     }
-  }, [user, getHeaders]);
+  }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) return;
+    if (!isChecked || !user?.id) return;
     setHistoryState(getCommandHistory(user.id));
-  }, [isChecked, user, open]);
+  }, [isChecked, user?.id, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -174,6 +193,10 @@ export function CommandPalette() {
     const recentCards = getRecentCards(user.id);
 
     for (const b of boards) {
+      const methodology = b.boardMethodology ?? "scrum";
+      const isKanban = methodology === "kanban";
+      const isScrum = methodology === "scrum";
+      const isLss = methodology === "lean_six_sigma";
       items.push({
         id: `board:${b.id}`,
         category: "boards",
@@ -192,6 +215,109 @@ export function CommandPalette() {
         action: { type: "newCard", boardId: b.id },
         icon: "actions",
       });
+      items.push({
+        id: `flow:${b.id}`,
+        category: "actions",
+        title: t("actions.flowHealth", { board: b.name }),
+        subtitle: t("subtitles.openBoard"),
+        keywords: `fluxo saúde flow health wip kanban ${b.name}`,
+        action: { type: "boardDeep", boardId: b.id, query: "flowHealth=1" },
+        icon: "actions",
+      });
+      if (isKanban) {
+        items.push({
+          id: `kanbanCadence:${b.id}`,
+          category: "actions",
+          title: t("actions.kanbanCadence", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `kanban cadência cerimônia fluxo ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "kanbanCadence=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `metodologia agile dod settings ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+      } else if (isLss) {
+        items.push({
+          id: `lssAssist:${b.id}`,
+          category: "actions",
+          title: t("actions.lssAssist", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `lean six sigma dmaic assistente lss ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "lssAssist=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `metodologia board settings ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+      } else if (isScrum) {
+        items.push({
+          id: `sprintpanel:${b.id}`,
+          category: "actions",
+          title: t("actions.sprintPanel", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `sprint painel scrum ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "sprintPanel=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `sprintcoach:${b.id}`,
+          category: "actions",
+          title: t("actions.sprintCoach", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `coach sprint ia planning ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "sprintCoach=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `standup:${b.id}`,
+          category: "actions",
+          title: t("actions.standup", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `standup daily cerimônia ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "standup=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `scrum:${b.id}`,
+          category: "actions",
+          title: t("actions.scrumSettings", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `scrum dod product goal backlog ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `increment:${b.id}`,
+          category: "actions",
+          title: t("actions.incrementReview", { board: b.name }),
+          subtitle: t("subtitles.openBoard"),
+          keywords: `increment review entregue sprint ${b.name}`,
+          action: { type: "boardDeep", boardId: b.id, query: "incrementReview=1" },
+          icon: "actions",
+        });
+        items.push({
+          id: `sprintHistory:${b.id}`,
+          category: "actions",
+          title: t("actions.boardSprintHistory", { board: b.name }),
+          subtitle: t("subtitles.navigate"),
+          keywords: `sprint history timeline velocity export ${b.name}`,
+          action: { type: "navigate", path: `/board/${encodeURIComponent(b.id)}/sprint-history` },
+          icon: "actions",
+        });
+      }
     }
 
     for (const rc of recentCards) {
@@ -235,21 +361,45 @@ export function CommandPalette() {
     const nav: { path: string; title: string; kw: string }[] = [
       { path: "/boards", title: t("nav.boards"), kw: "boards lista" },
       { path: "/reports", title: t("nav.reports"), kw: "reports bi" },
-      ...(user.isAdmin || user.isExecutive
+      ...(sessionCanManageOrgBilling(user)
         ? [{ path: "/dashboard", title: t("nav.dashboard"), kw: "executive dashboard c-level portfolio health" }]
         : []),
       { path: "/okrs", title: t("nav.okrs"), kw: "goals okr" },
-      { path: "/discovery", title: t("nav.discovery"), kw: "discovery" },
       { path: "/templates", title: t("nav.templates"), kw: "templates" },
       { path: "/tasks", title: t("nav.tasks"), kw: "tasks" },
+      { path: "/my-work", title: t("nav.myWork"), kw: "my work meu trabalho workload pessoal" },
+      { path: "/template-marketplace", title: t("nav.marketplace"), kw: "marketplace templates galeria" },
+      { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
+      { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
     ];
-    if (user.isAdmin) {
+    if (sessionCanManageOrgBilling(user)) {
+      nav.push({ path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" });
+    }
+    if (sessionCanManageMembersAndBilling(user)) {
+      nav.push({ path: "/equipe", title: t("nav.team"), kw: "equipe team membros roles" });
+    }
+    if (sessionCanManageOrgBilling(user)) {
       nav.push(
         { path: "/users", title: t("nav.users"), kw: "users members" },
-        { path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" },
         { path: "/billing", title: t("nav.billing"), kw: "billing plan" },
-        { path: "/org-invites", title: t("nav.invites"), kw: "invites" },
-        { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" }
+        { path: "/billing/checkout", title: "Checkout Stripe", kw: "stripe checkout pagamento assinatura billing" },
+        { path: "/org-invites", title: t("nav.invites"), kw: "invites" }
+      );
+    }
+    if (isPlatformAdminSession(user)) {
+      nav.push(
+        {
+          path: "/admin/platform",
+          title: t("nav.platformAdmin"),
+          kw: "platform admin organizations users audit tenants superuser",
+        },
+        { path: "/rate-limit-abuse", title: t("nav.rateLimit"), kw: "rate limit abuse" },
+        {
+          path: "/admin/platform-commercial",
+          title: t("nav.platformCommercial"),
+          kw: "platform commercial plans stripe pricing catalog admin",
+        },
+        { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" }
       );
     }
 
@@ -282,11 +432,40 @@ export function CommandPalette() {
     });
   }, [allItems]);
 
-  const aiPlaceholder = search.trim().toLowerCase().startsWith("/ai") || search.trim().toLowerCase() === "ai";
+  const aiMode = search.trim().toLowerCase().startsWith("/ai") || search.trim().toLowerCase() === "ai";
+  const aiPlaceholder = false;
+
+  const aiParsedItems = useMemo((): PaletteItem[] => {
+    if (!aiMode) return [];
+    const query = search.replace(/^\/ai\s*/i, "").trim();
+    if (query.length < 3) return [];
+    const currentBoardId = boards[0]?.id;
+    const result: AiCommandResult = parseNaturalLanguageCommand(query, {
+      boardNames: boards.map((b) => b.name),
+      columnNames: [],
+      currentBoardId,
+    });
+    if (result.type === "unknown" || result.confidence < 0.5) return [];
+    const action: PaletteAction =
+      result.type === "navigate" && typeof result.params.path === "string"
+        ? { type: "navigate", path: result.params.path }
+        : result.type === "open_copilot" && currentBoardId
+          ? { type: "copilot", boardId: currentBoardId }
+          : { type: "aiCommand", command: query, boardId: currentBoardId };
+    return [{
+      id: `ai:${query}`,
+      category: "actions",
+      title: result.displayMessage || query,
+      subtitle: t("aiAction"),
+      keywords: query,
+      action,
+      icon: "actions",
+    }];
+  }, [aiMode, search, boards, t]);
 
   const filteredFlat = useMemo(() => {
     const q = search.trim();
-    if (aiPlaceholder) return [] as PaletteItem[];
+    if (aiMode) return aiParsedItems;
 
     if (!q) {
       const hist = historyState.map(historyEntryToItem);
@@ -302,6 +481,7 @@ export function CommandPalette() {
         else if (a.type === "newCard") seen.add(`newcard:${a.boardId}`);
         else if (a.type === "newBoard") seen.add("action:newBoard");
         else if (a.type === "copilot") seen.add(`action:copilot:${a.boardId}`);
+        else if (a.type === "boardDeep") seen.add(`deep:${a.boardId}:${a.query}`);
         else if (a.type === "navigate") seen.add(`nav:${a.path}`);
       }
 
@@ -456,8 +636,8 @@ export function CommandPalette() {
       onOpenChange={onOpenChange}
       shouldFilter={false}
       label={t("ariaLabel")}
-      overlayClassName="fixed inset-0 z-[520] bg-black/55 backdrop-blur-[2px]"
-      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[521] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]"
+      overlayClassName="fixed inset-0 z-[var(--flux-z-command-backdrop)] bg-black/50 backdrop-blur-[var(--flux-glass-backdrop-blur)]"
+      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-3 flux-motion-standard"
     >
       <div className="border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
         <div className="flex items-center gap-2">
@@ -485,8 +665,8 @@ export function CommandPalette() {
       </div>
 
       <Command.List className="max-h-[min(420px,55vh)] overflow-y-auto overscroll-contain px-1 py-2 scrollbar-kanban">
-        {aiPlaceholder ? (
-          <div className="px-3 py-6 text-center text-sm text-[var(--flux-text-muted)]">{t("aiComingSoon")}</div>
+        {aiMode && aiParsedItems.length === 0 ? (
+          <div className="px-3 py-6 text-center text-sm text-[var(--flux-text-muted)]">{t("aiHint")}</div>
         ) : filteredFlat.length === 0 ? (
           <Command.Empty className="py-8 text-center text-sm text-[var(--flux-text-muted)]">{t("empty")}</Command.Empty>
         ) : (
@@ -509,7 +689,7 @@ export function CommandPalette() {
                     value={item.id}
                     keywords={[item.keywords]}
                     onSelect={() => execute(item)}
-                    className="flex cursor-pointer items-center gap-2 rounded-[var(--flux-rad-sm)] px-2 py-2 text-left text-sm aria-selected:bg-[var(--flux-primary-alpha-14)] aria-selected:text-[var(--flux-text)]"
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--flux-rad-sm)] px-2 py-2 text-left text-sm flux-motion-standard motion-safe:active:scale-[0.99] aria-selected:bg-[var(--flux-primary-alpha-14)] aria-selected:text-[var(--flux-text)]"
                   >
                     <CategoryIcon kind={item.icon ?? "navigation"} />
                     <div className="min-w-0 flex-1">

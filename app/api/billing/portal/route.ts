@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { createPortalSession } from "@/lib/billing";
+import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
+import { billingErrorMessageForClient, createPortalSession } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-  }
+  const payload = await getAuthFromRequest(request);
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
+  const platformStripe = denyStripeCommercialForPlatformAdmin(payload);
+  if (platformStripe) return platformStripe;
 
   try {
     const session = await createPortalSession({ orgId: payload.orgId });
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: billingErrorMessageForClient(err) }, { status: 400 });
   }
 }
 

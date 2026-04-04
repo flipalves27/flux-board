@@ -9,6 +9,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /** Doc v2 aliases — map to the same CSS vars as `flux.*` */
+        primary: "var(--primary, var(--flux-primary))",
+        secondary: "var(--secondary, var(--flux-secondary))",
+        accent: "var(--accent, var(--flux-accent))",
+        surface: {
+          base: "var(--bg-base, var(--flux-surface-dark))",
+          raised: "var(--bg-raised, var(--flux-surface-mid))",
+          card: "var(--bg-card, var(--flux-surface-card))",
+        },
         flux: {
           primary: "var(--flux-primary)",
           "primary-light": "var(--flux-primary-light)",
@@ -65,10 +74,15 @@ const config: Config = {
       },
       screens: {
         "flux-xs": "400px",
+        /** Doc breakpoints — align QA with design spec (Tailwind `md`/`lg` match 768 / 1024). */
+        "doc-md": "768px",
+        "doc-lg": "1024px",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Outfit", "sans-serif"],
-        body: ["var(--font-body)", "DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Outfit", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
+        fluxy: ["var(--font-fluxy)", "Space Grotesk", "sans-serif"],
       },
     },
   },

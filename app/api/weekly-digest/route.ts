@@ -7,6 +7,7 @@ import { isMongoConfigured, getDb } from "@/lib/mongo";
 import { listUsers } from "@/lib/kv-users";
 import { type Organization, ensureDefaultOrganization } from "@/lib/kv-organizations";
 import { rateLimit } from "@/lib/rate-limit";
+import { verifyCronSecret } from "@/lib/cron-secret";
 
 import { WeeklyDigestEmail } from "@/emails/WeeklyDigestEmail";
 import type { WeeklyDigestBoard, WeeklyDigestOverdueCard, WeeklyDigestOkrSection } from "@/emails/WeeklyDigestEmail";
@@ -33,14 +34,6 @@ import { buildResendFromForOrg } from "@/lib/org-branding-resend";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DigestUser = Awaited<ReturnType<typeof listUsers>>[number];
-
-function requireCronSecret(request: NextRequest): boolean {
-  const required = process.env.WEEKLY_DIGEST_SECRET;
-  if (!required) return true; // dev/local permissivo
-  const header = request.headers.get("x-cron-secret");
-  if (!header) return false;
-  return header === required;
-}
 
 function formatDateRange(weekStartMs: number, weekEndMs: number, timeZone?: string): string {
   const tz = timeZone || process.env.DIGEST_TIMEZONE || "America/Sao_Paulo";
@@ -92,7 +85,7 @@ function pickManagers(
 }
 
 export async function GET(request: NextRequest) {
-  if (!requireCronSecret(request)) {
+  if (!verifyCronSecret(request, ["WEEKLY_DIGEST_SECRET", "CRON_MASTER_SECRET"])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

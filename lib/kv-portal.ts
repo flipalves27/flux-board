@@ -1,7 +1,7 @@
 import { getStore } from "@/lib/storage";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 
-const PORTAL_PREFIX = "reborn_portal:";
+const PORTAL_PREFIX = "flux_portal:";
 const COL_PORTAL_INDEX = "portal_links";
 
 export type PortalIndexRecord = {

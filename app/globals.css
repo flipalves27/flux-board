@@ -2,20 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--flux-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
 /* Flux-Board design system — dark theme */
 :root {
   --flux-primary: #6C5CE7;
-  --flux-primary-light: #A29BFE;
-  --flux-primary-dark: #4834D4;
+  /* Alinhado ao redesign v3 (gradiente primário → escuro) */
+  --flux-primary-dark: #5840dd;
+  /* Tints derived from --flux-primary so org branding stays coherent (hover, links, charts). */
+  --flux-primary-light: color-mix(in srgb, var(--flux-primary) 40%, white);
+  --flux-focus-ring: color-mix(in srgb, var(--flux-primary) 46%, white);
+  --flux-primary-on-surface: var(--flux-primary-light);
   --flux-secondary: #00D2D3;
   --flux-secondary-light: #7EFCF6;
   --flux-secondary-dark: #01A3A4;
   --flux-accent: #FDA7DF;
   --flux-accent-dark: #E056A0;
-  --flux-surface-dark: #0D0B1A;
-  --flux-surface-mid: #1A1730;
-  --flux-surface-card: #221F3A;
-  --flux-surface-elevated: #2D2952;
+  /* Surfaces: indigo-violet family (doc v2 base #0F0D1E / raised #161230) */
+  --flux-surface-dark: #0f0d1e;
+  --flux-surface-mid: #161230;
+  --flux-surface-card: #1e1a36;
+  --flux-surface-elevated: #2a2548;
   --flux-text: #F0EEFF;
   --flux-text-on-primary: #ffffff;
   --flux-text-muted: #9B97C2;
@@ -23,6 +35,16 @@
   --flux-warning: #FFD93D;
   --flux-danger: #FF6B6B;
   --flux-info: #74B9FF;
+
+  /* Fluxy mascot SVG only (matches prototype palette) */
+  --flux-fluxy-fur: #5840dd;
+  --flux-fluxy-fur-dark: #4530c0;
+  --flux-fluxy-fur-light: #7b68e8;
+  --flux-fluxy-face: #e8e4fa;
+  --flux-fluxy-face-muted: #d4ccf5;
+  --flux-fluxy-void: #1e1548;
+  --flux-fluxy-eye: #1e1548;
+  --flux-fluxy-glow-alpha: color-mix(in srgb, var(--flux-primary) 27%, transparent);
 
   /* Spacing scale (~geometric), px for stable UI chrome */
   --flux-space-1: 4px;
@@ -49,348 +71,508 @@
 
   /* Motion */
   --flux-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
-  --flux-transition-fast: 150ms var(--flux-ease-standard);
-  --flux-transition-normal: 250ms var(--flux-ease-standard);
-  --flux-transition-slow: 400ms var(--flux-ease-standard);
   --flux-skeleton-pulse-duration: 1.35s;
   --flux-data-fade-duration: 200ms;
 
-  /* Elevation */
-  --flux-shadow-sm: 0 1px 3px rgba(13, 11, 26, 0.28);
-  --flux-shadow-md: 0 4px 16px rgba(13, 11, 26, 0.4);
-  --flux-shadow-lg: 0 12px 40px -8px rgba(13, 11, 26, 0.45);
-  --flux-shadow-xl: 0 24px 64px -12px rgba(13, 11, 26, 0.55);
-  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.25);
-  --flux-shadow-elevated-card: 0 10px 30px rgba(0, 0, 0, 0.2);
-  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.18);
-  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.35);
-  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.35);
-  --flux-shadow-secondary-outline: 0 0 0 1px rgba(0, 210, 211, 0.12);
-  --flux-shadow-primary-dot: 0 0 10px rgba(108, 92, 231, 0.6);
-  --flux-shadow-primary-dot-sm: 0 0 8px rgba(108, 92, 231, 0.6);
-  --flux-shadow-inset-hairline: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 16px 48px -20px rgba(0, 0, 0, 0.5);
-  --flux-shadow-modal-depth: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 96px -24px rgba(0, 0, 0, 0.65),
-    0 0 120px -40px rgba(108, 92, 231, 0.35);
-  --flux-shadow-logo-underlay: 0 2px 8px rgba(108, 92, 231, 0.25);
+  /*
+   * Motion vocabulary — durations/easing/stagger for lists, panels, and future pilots.
+   * Use --item-index on .flux-list-item children for staggered reveal (0-based).
+   */
+  --flux-motion-ease-standard: var(--flux-ease-standard);
+  --flux-motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --flux-motion-duration-instant: 100ms;
+  --flux-motion-duration-fast: 150ms;
+  --flux-motion-duration-base: 250ms;
+  --flux-motion-duration-slow: 400ms;
+  --flux-motion-stagger-step: 42ms;
+  --flux-motion-list-enter-duration: 340ms;
+  --flux-motion-fade-duration: var(--flux-data-fade-duration);
+  --flux-transition-fast: var(--flux-motion-duration-fast) var(--flux-ease-standard);
+  --flux-transition-normal: var(--flux-motion-duration-base) var(--flux-ease-standard);
+  --flux-transition-slow: var(--flux-motion-duration-slow) var(--flux-ease-standard);
+
+  /* Elevation — depth tinted with surface; brand glows from semantic colors */
+  --flux-shadow-sm: 0 1px 3px color-mix(in srgb, var(--flux-surface-dark) 78%, transparent);
+  --flux-shadow-md: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 72%, transparent);
+  --flux-shadow-lg: 0 12px 40px -8px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
+  --flux-shadow-xl: 0 24px 64px -12px color-mix(in srgb, var(--flux-surface-dark) 65%, transparent);
+  --flux-shadow-drag: 0 12px 36px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  --flux-shadow-elevated-card: 0 10px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
+  --flux-shadow-primary-panel: 0 12px 32px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-shadow-primary-medium: 0 8px 20px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-primary-soft: 0 1px 6px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-secondary-outline: 0 0 0 1px color-mix(in srgb, var(--flux-secondary) 12%, transparent);
+  --flux-shadow-primary-dot: 0 0 10px color-mix(in srgb, var(--flux-primary) 60%, transparent);
+  --flux-shadow-primary-dot-sm: 0 0 8px color-mix(in srgb, var(--flux-primary) 60%, transparent);
+  --flux-shadow-inset-hairline: 0 0 0 1px color-mix(in srgb, white 4%, transparent) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 color-mix(in srgb, white 6%, transparent);
+  --flux-shadow-panel-hover:
+    inset 0 1px 0 0 color-mix(in srgb, white 8%, transparent),
+    0 16px 48px -20px color-mix(in srgb, var(--flux-surface-dark) 82%, transparent);
+  --flux-shadow-modal-depth:
+    0 0 0 1px color-mix(in srgb, white 4%, transparent) inset,
+    0 32px 96px -24px color-mix(in srgb, black 65%, transparent),
+    0 0 120px -40px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 25%, transparent);
 
   /* Gradients & panels */
   --flux-gradient-panel-sheen: linear-gradient(
     148deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.02) 45%,
-    rgba(0, 0, 0, 0.08) 100%
+    color-mix(in srgb, white 5%, transparent) 0%,
+    color-mix(in srgb, white 2%, transparent) 45%,
+    color-mix(in srgb, var(--flux-surface-dark) 35%, transparent) 100%
   );
   --flux-gradient-landing-cta: linear-gradient(
     135deg,
-    rgba(108, 92, 231, 0.35),
-    rgba(0, 210, 211, 0.2),
-    rgba(253, 167, 223, 0.25)
+    color-mix(in srgb, var(--flux-primary) 35%, transparent),
+    color-mix(in srgb, var(--flux-secondary) 20%, transparent),
+    color-mix(in srgb, var(--flux-accent) 25%, transparent)
   );
+  --flux-glass-surface-bg: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--flux-surface-card) 86%, transparent),
+    color-mix(in srgb, var(--flux-surface-dark) 78%, transparent)
+  );
+  --flux-glass-surface-border: color-mix(in srgb, white 16%, transparent);
+  --flux-glass-surface-shadow: 0 14px 42px -18px color-mix(in srgb, var(--flux-surface-dark) 78%, transparent);
+  --flux-glass-elevated-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--flux-primary) 20%, transparent),
+    color-mix(in srgb, var(--flux-surface-mid) 90%, transparent)
+  );
+  --flux-glass-elevated-border: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+  --flux-glass-elevated-shadow: 0 18px 48px -20px color-mix(in srgb, var(--flux-primary) 40%, transparent);
+  --flux-glass-focus-ring: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 38%, transparent);
+  --flux-glass-backdrop-blur: 20px;
+  --flux-input-focus-shadow: 0 0 0 3px color-mix(in srgb, var(--flux-primary) 22%, transparent);
 
-  /* Brand alpha ramps */
-  --flux-primary-alpha-06: rgba(108, 92, 231, 0.06);
-  --flux-primary-alpha-07: rgba(108, 92, 231, 0.07);
-  --flux-primary-alpha-08: rgba(108, 92, 231, 0.08);
-  --flux-primary-alpha-10: rgba(108, 92, 231, 0.1);
-  --flux-primary-alpha-11: rgba(108, 92, 231, 0.11);
-  --flux-primary-alpha-12: rgba(108, 92, 231, 0.12);
-  --flux-primary-alpha-13: rgba(108, 92, 231, 0.13);
-  --flux-primary-alpha-14: rgba(108, 92, 231, 0.14);
-  --flux-primary-alpha-15: rgba(108, 92, 231, 0.15);
-  --flux-primary-alpha-16: rgba(108, 92, 231, 0.16);
-  --flux-primary-alpha-18: rgba(108, 92, 231, 0.18);
-  --flux-primary-alpha-20: rgba(108, 92, 231, 0.2);
-  --flux-primary-alpha-22: rgba(108, 92, 231, 0.22);
-  --flux-primary-alpha-24: rgba(108, 92, 231, 0.24);
-  --flux-primary-alpha-25: rgba(108, 92, 231, 0.25);
-  --flux-primary-alpha-26: rgba(108, 92, 231, 0.26);
-  --flux-primary-alpha-28: rgba(108, 92, 231, 0.28);
-  --flux-primary-alpha-30: rgba(108, 92, 231, 0.3);
-  --flux-primary-alpha-35: rgba(108, 92, 231, 0.35);
-  --flux-primary-alpha-38: rgba(108, 92, 231, 0.38);
-  --flux-primary-alpha-45: rgba(108, 92, 231, 0.45);
-  --flux-primary-alpha-50: rgba(108, 92, 231, 0.5);
-  --flux-primary-alpha-40: rgba(108, 92, 231, 0.4);
-  --flux-primary-alpha-55: rgba(108, 92, 231, 0.55);
-  --flux-primary-alpha-05: rgba(108, 92, 231, 0.05);
+  /* Brand alpha ramps (color-mix → hue from semantic tokens; TSX still uses var(--flux-*-alpha-*)) */
+  --flux-primary-alpha-03: color-mix(in srgb, var(--flux-primary) 3%, transparent);
+  --flux-primary-alpha-05: color-mix(in srgb, var(--flux-primary) 5%, transparent);
+  --flux-primary-alpha-06: color-mix(in srgb, var(--flux-primary) 6%, transparent);
+  --flux-primary-alpha-07: color-mix(in srgb, var(--flux-primary) 7%, transparent);
+  --flux-primary-alpha-08: color-mix(in srgb, var(--flux-primary) 8%, transparent);
+  --flux-primary-alpha-10: color-mix(in srgb, var(--flux-primary) 10%, transparent);
+  --flux-primary-alpha-11: color-mix(in srgb, var(--flux-primary) 11%, transparent);
+  --flux-primary-alpha-12: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-primary-alpha-13: color-mix(in srgb, var(--flux-primary) 13%, transparent);
+  --flux-primary-alpha-14: color-mix(in srgb, var(--flux-primary) 14%, transparent);
+  --flux-primary-alpha-15: color-mix(in srgb, var(--flux-primary) 15%, transparent);
+  --flux-primary-alpha-16: color-mix(in srgb, var(--flux-primary) 16%, transparent);
+  --flux-primary-alpha-18: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-primary-alpha-20: color-mix(in srgb, var(--flux-primary) 20%, transparent);
+  --flux-primary-alpha-22: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-primary-alpha-24: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+  --flux-primary-alpha-25: color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  --flux-primary-alpha-26: color-mix(in srgb, var(--flux-primary) 26%, transparent);
+  --flux-primary-alpha-28: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+  --flux-primary-alpha-30: color-mix(in srgb, var(--flux-primary) 30%, transparent);
+  --flux-primary-alpha-35: color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --flux-primary-alpha-38: color-mix(in srgb, var(--flux-primary) 38%, transparent);
+  --flux-primary-alpha-40: color-mix(in srgb, var(--flux-primary) 40%, transparent);
+  --flux-primary-alpha-45: color-mix(in srgb, var(--flux-primary) 45%, transparent);
+  --flux-primary-alpha-50: color-mix(in srgb, var(--flux-primary) 50%, transparent);
+  --flux-primary-alpha-55: color-mix(in srgb, var(--flux-primary) 55%, transparent);
 
-  --flux-secondary-alpha-04: rgba(0, 210, 211, 0.04);
-  --flux-secondary-alpha-06: rgba(0, 210, 211, 0.06);
-  --flux-secondary-alpha-07: rgba(0, 210, 211, 0.07);
-  --flux-secondary-alpha-08: rgba(0, 210, 211, 0.08);
-  --flux-secondary-alpha-09: rgba(0, 210, 211, 0.09);
-  --flux-secondary-alpha-10: rgba(0, 210, 211, 0.1);
-  --flux-secondary-alpha-12: rgba(0, 210, 211, 0.12);
-  --flux-secondary-alpha-14: rgba(0, 210, 211, 0.14);
-  --flux-secondary-alpha-21: rgba(0, 210, 211, 0.21);
-  --flux-secondary-alpha-22: rgba(0, 210, 211, 0.22);
-  --flux-secondary-alpha-25: rgba(0, 210, 211, 0.25);
-  --flux-secondary-alpha-28: rgba(0, 210, 211, 0.28);
-  --flux-secondary-alpha-32: rgba(0, 210, 211, 0.32);
-  --flux-secondary-alpha-35: rgba(0, 210, 211, 0.35);
-  --flux-secondary-alpha-38: rgba(0, 210, 211, 0.38);
-  --flux-secondary-alpha-55: rgba(0, 210, 211, 0.55);
-  --flux-secondary-alpha-80: rgba(0, 210, 211, 0.8);
-  --flux-secondary-alpha-18: rgba(0, 210, 211, 0.18);
+  --flux-secondary-alpha-04: color-mix(in srgb, var(--flux-secondary) 4%, transparent);
+  --flux-secondary-alpha-06: color-mix(in srgb, var(--flux-secondary) 6%, transparent);
+  --flux-secondary-alpha-07: color-mix(in srgb, var(--flux-secondary) 7%, transparent);
+  --flux-secondary-alpha-08: color-mix(in srgb, var(--flux-secondary) 8%, transparent);
+  --flux-secondary-alpha-09: color-mix(in srgb, var(--flux-secondary) 9%, transparent);
+  --flux-secondary-alpha-10: color-mix(in srgb, var(--flux-secondary) 10%, transparent);
+  --flux-secondary-alpha-12: color-mix(in srgb, var(--flux-secondary) 12%, transparent);
+  --flux-secondary-alpha-14: color-mix(in srgb, var(--flux-secondary) 14%, transparent);
+  --flux-secondary-alpha-18: color-mix(in srgb, var(--flux-secondary) 18%, transparent);
+  --flux-secondary-alpha-21: color-mix(in srgb, var(--flux-secondary) 21%, transparent);
+  --flux-secondary-alpha-22: color-mix(in srgb, var(--flux-secondary) 22%, transparent);
+  --flux-secondary-alpha-25: color-mix(in srgb, var(--flux-secondary) 25%, transparent);
+  --flux-secondary-alpha-28: color-mix(in srgb, var(--flux-secondary) 28%, transparent);
+  --flux-secondary-alpha-32: color-mix(in srgb, var(--flux-secondary) 32%, transparent);
+  --flux-secondary-alpha-35: color-mix(in srgb, var(--flux-secondary) 35%, transparent);
+  --flux-secondary-alpha-38: color-mix(in srgb, var(--flux-secondary) 38%, transparent);
+  --flux-secondary-alpha-55: color-mix(in srgb, var(--flux-secondary) 55%, transparent);
+  --flux-secondary-alpha-80: color-mix(in srgb, var(--flux-secondary) 80%, transparent);
 
-  /* Neutral chrome (dark: light mist; light: ink mist) */
-  --flux-chrome-alpha-03: rgba(255, 255, 255, 0.03);
-  --flux-chrome-alpha-04: rgba(255, 255, 255, 0.04);
-  --flux-chrome-alpha-05: rgba(255, 255, 255, 0.05);
-  --flux-chrome-alpha-06: rgba(255, 255, 255, 0.06);
-  --flux-chrome-alpha-07: rgba(255, 255, 255, 0.07);
-  --flux-chrome-alpha-08: rgba(255, 255, 255, 0.08);
-  --flux-chrome-alpha-09: rgba(255, 255, 255, 0.09);
-  --flux-chrome-alpha-10: rgba(255, 255, 255, 0.1);
-  --flux-chrome-alpha-12: rgba(255, 255, 255, 0.12);
-  --flux-chrome-alpha-14: rgba(255, 255, 255, 0.14);
-  --flux-chrome-alpha-15: rgba(255, 255, 255, 0.15);
-  --flux-chrome-alpha-16: rgba(255, 255, 255, 0.16);
-  --flux-chrome-alpha-18: rgba(255, 255, 255, 0.18);
-  --flux-chrome-alpha-20: rgba(255, 255, 255, 0.2);
-  --flux-chrome-alpha-30: rgba(255, 255, 255, 0.3);
-  --flux-chrome-alpha-80: rgba(255, 255, 255, 0.8);
-  --flux-chrome-alpha-90: rgba(255, 255, 255, 0.9);
+  /* Neutral chrome (dark: light mist; light: ink mist — overrides in [data-theme="light"]) */
+  --flux-chrome-alpha-03: color-mix(in srgb, white 3%, transparent);
+  --flux-chrome-alpha-04: color-mix(in srgb, white 4%, transparent);
+  --flux-chrome-alpha-05: color-mix(in srgb, white 5%, transparent);
+  --flux-chrome-alpha-06: color-mix(in srgb, white 6%, transparent);
+  --flux-chrome-alpha-07: color-mix(in srgb, white 7%, transparent);
+  --flux-chrome-alpha-08: color-mix(in srgb, white 8%, transparent);
+  --flux-chrome-alpha-09: color-mix(in srgb, white 9%, transparent);
+  --flux-chrome-alpha-10: color-mix(in srgb, white 10%, transparent);
+  --flux-chrome-alpha-12: color-mix(in srgb, white 12%, transparent);
+  --flux-chrome-alpha-14: color-mix(in srgb, white 14%, transparent);
+  --flux-chrome-alpha-15: color-mix(in srgb, white 15%, transparent);
+  --flux-chrome-alpha-16: color-mix(in srgb, white 16%, transparent);
+  --flux-chrome-alpha-18: color-mix(in srgb, white 18%, transparent);
+  --flux-chrome-alpha-20: color-mix(in srgb, white 20%, transparent);
+  --flux-chrome-alpha-30: color-mix(in srgb, white 30%, transparent);
+  --flux-chrome-alpha-80: color-mix(in srgb, white 80%, transparent);
+  --flux-chrome-alpha-90: color-mix(in srgb, white 90%, transparent);
 
-  --flux-black-alpha-08: rgba(0, 0, 0, 0.08);
-  --flux-black-alpha-10: rgba(0, 0, 0, 0.1);
-  --flux-black-alpha-12: rgba(0, 0, 0, 0.12);
-  --flux-black-alpha-15: rgba(0, 0, 0, 0.15);
-  --flux-black-alpha-20: rgba(0, 0, 0, 0.2);
-  --flux-black-alpha-30: rgba(0, 0, 0, 0.3);
-  --flux-black-alpha-45: rgba(0, 0, 0, 0.45);
-  --flux-black-alpha-50: rgba(0, 0, 0, 0.5);
-  --flux-black-alpha-65: rgba(0, 0, 0, 0.65);
-  --flux-black-alpha-35: rgba(0, 0, 0, 0.35);
+  --flux-black-alpha-08: color-mix(in srgb, black 8%, transparent);
+  --flux-black-alpha-10: color-mix(in srgb, black 10%, transparent);
+  --flux-black-alpha-12: color-mix(in srgb, black 12%, transparent);
+  --flux-black-alpha-15: color-mix(in srgb, black 15%, transparent);
+  --flux-black-alpha-20: color-mix(in srgb, black 20%, transparent);
+  --flux-black-alpha-30: color-mix(in srgb, black 30%, transparent);
+  --flux-black-alpha-35: color-mix(in srgb, black 35%, transparent);
+  --flux-black-alpha-45: color-mix(in srgb, black 45%, transparent);
+  --flux-black-alpha-50: color-mix(in srgb, black 50%, transparent);
+  --flux-black-alpha-65: color-mix(in srgb, black 65%, transparent);
 
-  --flux-backdrop-scrim: rgba(0, 0, 0, 0.4);
-  --flux-backdrop-scrim-strong: rgba(0, 0, 0, 0.5);
+  --flux-backdrop-scrim: color-mix(in srgb, black 40%, transparent);
+  --flux-backdrop-scrim-strong: color-mix(in srgb, black 50%, transparent);
 
-  --flux-danger-alpha-06: rgba(255, 107, 107, 0.06);
-  --flux-danger-alpha-10: rgba(255, 107, 107, 0.1);
-  --flux-danger-alpha-12: rgba(255, 107, 107, 0.12);
-  --flux-danger-alpha-14: rgba(255, 107, 107, 0.14);
-  --flux-danger-alpha-20: rgba(255, 107, 107, 0.2);
-  --flux-danger-alpha-30: rgba(255, 107, 107, 0.3);
-  --flux-danger-alpha-35: rgba(255, 107, 107, 0.35);
-  --flux-danger-alpha-08: rgba(255, 107, 107, 0.08);
-  --flux-danger-alpha-15: rgba(255, 107, 107, 0.15);
-  --flux-danger-alpha-24: rgba(255, 107, 107, 0.24);
-  --flux-danger-alpha-26: rgba(255, 107, 107, 0.26);
-  --flux-danger-alpha-38: rgba(255, 107, 107, 0.38);
-  --flux-danger-alpha-40: rgba(255, 107, 107, 0.4);
-  --flux-danger-alpha-45: rgba(255, 107, 107, 0.45);
-  --flux-danger-alpha-55: rgba(255, 107, 107, 0.55);
-  --flux-danger-soft-06: rgba(255, 80, 80, 0.06);
-  --flux-red-500-alpha-08: rgba(239, 68, 68, 0.08);
-  --flux-indigo-500-alpha-12: rgba(99, 102, 241, 0.12);
+  /*
+   * Stacking scale — use Tailwind z-[var(--flux-z-…)] so overlays stay predictable.
+   * See docs/ux-execution-baseline.md for QA checklist.
+   */
+  --flux-z-app-shell-bg: 0;
+  --flux-z-app-shell-content: 1;
+  --flux-z-mobile-header: 35;
+  --flux-z-sidebar-backdrop: 40;
+  --flux-z-sidebar-drawer: 50;
+  --flux-z-board-summary-dock: 80;
+  --flux-z-board-canvas: 120;
+  /** Fluxy dock (canto inferior esquerdo) — acima do canvas, abaixo do tour e do painel do copiloto */
+  --flux-z-board-fluxy-dock: 438;
+  /** Widget Fluxy FAQ na landing (fixo no viewport) */
+  --flux-z-landing-fluxy-chat: 160;
+  --flux-z-board-sticky-chrome: 150;
+  /* Below routine toasts (450) so alerts stay visible over the hub */
+  --flux-z-mobile-tool-hub: 430;
+  --flux-z-fab-daily: 467;
+  --flux-z-fab-insights: 468;
+  --flux-z-product-tour: 455;
+  --flux-z-board-tour-fluxy-welcome: 478;
+  --flux-z-fab-activity: 469;
+  --flux-z-fab-copilot: 470;
+  --flux-z-board-tools-rail: 471;
+  /** Card / description modals on the board — above canvas (120), sticky chrome (150) and tools rail (471). */
+  --flux-z-kanban-modal-stack: 475;
+  --flux-z-sprint-scrim-mobile: 199;
+  --flux-z-header-sticky: 200;
+  --flux-z-sprint-panel: 200;
+  --flux-z-board-automations: 200;
+  --flux-z-anomaly-bell-popover: 250;
+  --flux-z-anomaly-modal: 260;
+  --flux-z-modal-base: 300;
+  --flux-z-modal-members: 320;
+  --flux-z-dep-graph: 350;
+  --flux-z-modal-feature: 400;
+  --flux-z-dropdown: 400;
+  --flux-z-daily-insights: 410;
+  --flux-z-card-ai-overlay: 420;
+  --flux-z-app-routine-toasts: 450;
+  --flux-z-fab-panel-backdrop: 480;
+  --flux-z-fab-panel-high: 485;
+  --flux-z-modal-critical: 500;
+  --flux-z-command-backdrop: 520;
+  --flux-z-command-content: 521;
+  --flux-z-shortcuts-modal: 530;
+  --flux-z-tooltip: 9999;
+  --flux-z-diagnostics: 9999;
+
+  --flux-danger-alpha-06: color-mix(in srgb, var(--flux-danger) 6%, transparent);
+  --flux-danger-alpha-08: color-mix(in srgb, var(--flux-danger) 8%, transparent);
+  --flux-danger-alpha-10: color-mix(in srgb, var(--flux-danger) 10%, transparent);
+  --flux-danger-alpha-12: color-mix(in srgb, var(--flux-danger) 12%, transparent);
+  --flux-danger-alpha-14: color-mix(in srgb, var(--flux-danger) 14%, transparent);
+  --flux-danger-alpha-15: color-mix(in srgb, var(--flux-danger) 15%, transparent);
+  --flux-danger-alpha-20: color-mix(in srgb, var(--flux-danger) 20%, transparent);
+  --flux-danger-alpha-24: color-mix(in srgb, var(--flux-danger) 24%, transparent);
+  --flux-danger-alpha-26: color-mix(in srgb, var(--flux-danger) 26%, transparent);
+  --flux-danger-alpha-30: color-mix(in srgb, var(--flux-danger) 30%, transparent);
+  --flux-danger-alpha-35: color-mix(in srgb, var(--flux-danger) 35%, transparent);
+  --flux-danger-alpha-38: color-mix(in srgb, var(--flux-danger) 38%, transparent);
+  --flux-danger-alpha-40: color-mix(in srgb, var(--flux-danger) 40%, transparent);
+  --flux-danger-alpha-45: color-mix(in srgb, var(--flux-danger) 45%, transparent);
+  --flux-danger-alpha-55: color-mix(in srgb, var(--flux-danger) 55%, transparent);
+  --flux-danger-soft-06: color-mix(in srgb, var(--flux-danger) 6%, transparent);
   --flux-danger-bright: #f97373;
   --flux-danger-accent: #ef4444;
-  --flux-error-input-ring: rgba(249, 115, 115, 0.55);
+  --flux-red-500-alpha-08: color-mix(in srgb, var(--flux-danger-accent) 8%, transparent);
+  --flux-indigo-500-alpha-12: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-error-input-ring: color-mix(in srgb, var(--flux-danger-bright) 55%, transparent);
 
-  --flux-info-alpha-10: rgba(116, 185, 255, 0.1);
-  --flux-info-alpha-12: rgba(116, 185, 255, 0.12);
-  --flux-info-alpha-30: rgba(116, 185, 255, 0.3);
-  --flux-info-alpha-35: rgba(116, 185, 255, 0.35);
-  --flux-info-alpha-22: rgba(116, 185, 255, 0.22);
-  --flux-info-alpha-38: rgba(116, 185, 255, 0.38);
+  --flux-info-alpha-10: color-mix(in srgb, var(--flux-info) 10%, transparent);
+  --flux-info-alpha-12: color-mix(in srgb, var(--flux-info) 12%, transparent);
+  --flux-info-alpha-22: color-mix(in srgb, var(--flux-info) 22%, transparent);
+  --flux-info-alpha-30: color-mix(in srgb, var(--flux-info) 30%, transparent);
+  --flux-info-alpha-35: color-mix(in srgb, var(--flux-info) 35%, transparent);
+  --flux-info-alpha-38: color-mix(in srgb, var(--flux-info) 38%, transparent);
 
-  --flux-accent-alpha-14: rgba(253, 167, 223, 0.14);
-  --flux-accent-alpha-18: rgba(253, 167, 223, 0.18);
-  --flux-accent-alpha-80: rgba(253, 167, 223, 0.8);
-  --flux-accent-alpha-15: rgba(253, 167, 223, 0.15);
-  --flux-accent-alpha-20: rgba(253, 167, 223, 0.2);
-  --flux-accent-alpha-35: rgba(253, 167, 223, 0.35);
+  --flux-accent-alpha-14: color-mix(in srgb, var(--flux-accent) 14%, transparent);
+  --flux-accent-alpha-15: color-mix(in srgb, var(--flux-accent) 15%, transparent);
+  --flux-accent-alpha-18: color-mix(in srgb, var(--flux-accent) 18%, transparent);
+  --flux-accent-alpha-20: color-mix(in srgb, var(--flux-accent) 20%, transparent);
+  --flux-accent-alpha-35: color-mix(in srgb, var(--flux-accent) 35%, transparent);
+  --flux-accent-alpha-80: color-mix(in srgb, var(--flux-accent) 80%, transparent);
 
-  --flux-warning-alpha-10: rgba(255, 217, 61, 0.1);
-  --flux-warning-alpha-12: rgba(255, 217, 61, 0.12);
-  --flux-warning-alpha-30: rgba(255, 217, 61, 0.3);
-  --flux-warning-alpha-90: rgba(255, 217, 61, 0.9);
-  --flux-warning-alpha-25: rgba(255, 217, 61, 0.25);
-  --flux-warning-alpha-35: rgba(255, 217, 61, 0.35);
-  --flux-warning-alpha-38: rgba(255, 217, 61, 0.38);
-  --flux-warning-alpha-40: rgba(255, 217, 61, 0.4);
-  --flux-warning-alpha-28: rgba(255, 217, 61, 0.28);
+  --flux-warning-alpha-10: color-mix(in srgb, var(--flux-warning) 10%, transparent);
+  --flux-warning-alpha-12: color-mix(in srgb, var(--flux-warning) 12%, transparent);
+  --flux-warning-alpha-25: color-mix(in srgb, var(--flux-warning) 25%, transparent);
+  --flux-warning-alpha-28: color-mix(in srgb, var(--flux-warning) 28%, transparent);
+  --flux-warning-alpha-30: color-mix(in srgb, var(--flux-warning) 30%, transparent);
+  --flux-warning-alpha-35: color-mix(in srgb, var(--flux-warning) 35%, transparent);
+  --flux-warning-alpha-38: color-mix(in srgb, var(--flux-warning) 38%, transparent);
+  --flux-warning-alpha-40: color-mix(in srgb, var(--flux-warning) 40%, transparent);
+  --flux-warning-alpha-90: color-mix(in srgb, var(--flux-warning) 90%, transparent);
   --flux-warning-foreground: #f59e0b;
 
-  --flux-amber-alpha-12: rgba(245, 158, 11, 0.12);
-  --flux-amber-alpha-28: rgba(245, 158, 11, 0.28);
-  --flux-amber-alpha-45: rgba(245, 158, 11, 0.45);
+  --flux-amber-alpha-12: color-mix(in srgb, var(--flux-warning-foreground) 12%, transparent);
+  --flux-amber-alpha-28: color-mix(in srgb, var(--flux-warning-foreground) 28%, transparent);
+  --flux-amber-alpha-45: color-mix(in srgb, var(--flux-warning-foreground) 45%, transparent);
 
-  --flux-gold-alpha-08: rgba(255, 215, 0, 0.08);
-  --flux-gold-alpha-10: rgba(255, 215, 0, 0.1);
-  --flux-gold-alpha-12: rgba(255, 215, 0, 0.12);
-  --flux-gold-alpha-15: rgba(255, 215, 0, 0.15);
-  --flux-gold-alpha-25: rgba(255, 215, 0, 0.25);
-  --flux-gold-alpha-48: rgba(255, 215, 0, 0.48);
-  --flux-gold-alpha-35: rgba(255, 215, 0, 0.35);
-  --flux-gold-alpha-50: rgba(255, 215, 0, 0.5);
+  --flux-gold-alpha-08: color-mix(in srgb, #ffd700 8%, transparent);
+  --flux-gold-alpha-10: color-mix(in srgb, #ffd700 10%, transparent);
+  --flux-gold-alpha-12: color-mix(in srgb, #ffd700 12%, transparent);
+  --flux-gold-alpha-15: color-mix(in srgb, #ffd700 15%, transparent);
+  --flux-gold-alpha-25: color-mix(in srgb, #ffd700 25%, transparent);
+  --flux-gold-alpha-35: color-mix(in srgb, #ffd700 35%, transparent);
+  --flux-gold-alpha-48: color-mix(in srgb, #ffd700 48%, transparent);
+  --flux-gold-alpha-50: color-mix(in srgb, #ffd700 50%, transparent);
 
-  --flux-success-alpha-08: rgba(0, 230, 118, 0.08);
-  --flux-success-alpha-10: rgba(0, 230, 118, 0.1);
-  --flux-success-alpha-12: rgba(0, 230, 118, 0.12);
-  --flux-success-alpha-30: rgba(0, 230, 118, 0.3);
-  --flux-success-alpha-35: rgba(0, 230, 118, 0.35);
-  --flux-success-alpha-40: rgba(0, 230, 118, 0.4);
-  --flux-success-alpha-45: rgba(0, 230, 118, 0.45);
-  --flux-success-alpha-28: rgba(0, 230, 118, 0.28);
+  --flux-success-alpha-08: color-mix(in srgb, var(--flux-success) 8%, transparent);
+  --flux-success-alpha-10: color-mix(in srgb, var(--flux-success) 10%, transparent);
+  --flux-success-alpha-12: color-mix(in srgb, var(--flux-success) 12%, transparent);
+  --flux-success-alpha-28: color-mix(in srgb, var(--flux-success) 28%, transparent);
+  --flux-success-alpha-30: color-mix(in srgb, var(--flux-success) 30%, transparent);
+  --flux-success-alpha-35: color-mix(in srgb, var(--flux-success) 35%, transparent);
+  --flux-success-alpha-40: color-mix(in srgb, var(--flux-success) 40%, transparent);
+  --flux-success-alpha-45: color-mix(in srgb, var(--flux-success) 45%, transparent);
   --flux-success-solid-dark: #059669;
 
-  --flux-teal-alpha-08: rgba(0, 201, 183, 0.08);
-  --flux-teal-alpha-12: rgba(0, 201, 183, 0.12);
-  --flux-teal-alpha-35: rgba(0, 201, 183, 0.35);
-  --flux-teal-alpha-10: rgba(0, 201, 183, 0.1);
-  --flux-teal-alpha-45: rgba(0, 201, 183, 0.45);
-  --flux-teal-foreground: #009e90;
   --flux-teal-brand: #00c9b7;
+  --flux-teal-foreground: #009e90;
+  --flux-teal-alpha-08: color-mix(in srgb, var(--flux-teal-brand) 8%, transparent);
+  --flux-teal-alpha-10: color-mix(in srgb, var(--flux-teal-brand) 10%, transparent);
+  --flux-teal-alpha-12: color-mix(in srgb, var(--flux-teal-brand) 12%, transparent);
+  --flux-teal-alpha-35: color-mix(in srgb, var(--flux-teal-brand) 35%, transparent);
+  --flux-teal-alpha-45: color-mix(in srgb, var(--flux-teal-brand) 45%, transparent);
 
   --flux-ink-on-bright: #1a1730;
 
-  --flux-emerald-alpha-12: rgba(16, 185, 129, 0.12);
-  --flux-emerald-alpha-35: rgba(16, 185, 129, 0.35);
+  --flux-emerald-alpha-12: color-mix(in srgb, var(--flux-success-solid-dark) 12%, transparent);
+  --flux-emerald-alpha-35: color-mix(in srgb, var(--flux-success-solid-dark) 35%, transparent);
 
-  --flux-portal-chrome-10: rgba(155, 151, 194, 0.1);
-  --flux-portal-chrome-12: rgba(155, 151, 194, 0.12);
-  --flux-portal-chrome-15: rgba(155, 151, 194, 0.15);
-  --flux-portal-chrome-18: rgba(155, 151, 194, 0.18);
-  --flux-portal-chrome-25: rgba(155, 151, 194, 0.25);
-  --flux-portal-chrome-35: rgba(155, 151, 194, 0.35);
-  --flux-portal-chrome-20: rgba(155, 151, 194, 0.2);
+  --flux-portal-chrome-10: color-mix(in srgb, var(--flux-text-muted) 10%, transparent);
+  --flux-portal-chrome-12: color-mix(in srgb, var(--flux-text-muted) 12%, transparent);
+  --flux-portal-chrome-15: color-mix(in srgb, var(--flux-text-muted) 15%, transparent);
+  --flux-portal-chrome-18: color-mix(in srgb, var(--flux-text-muted) 18%, transparent);
+  --flux-portal-chrome-20: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+  --flux-portal-chrome-25: color-mix(in srgb, var(--flux-text-muted) 25%, transparent);
+  --flux-portal-chrome-35: color-mix(in srgb, var(--flux-text-muted) 35%, transparent);
 
-  --flux-surface-card-deep-85: rgba(34, 31, 58, 0.85);
-  --flux-void-nested-36: rgba(13, 11, 26, 0.36);
-  --flux-shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.25);
-  --flux-shadow-toast-strong: 0 10px 30px rgba(0, 0, 0, 0.3);
-  --flux-shadow-copilot-bubble: 0 10px 26px -10px rgba(108, 92, 231, 0.55);
-  --flux-shadow-embed-widget: 0 8px 28px rgba(0, 0, 0, 0.25);
-  --flux-shadow-login-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --flux-shadow-kanban-card-lift: 0 12px 32px rgba(108, 92, 231, 0.3);
-  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px rgba(0, 0, 0, 0.35);
-  --flux-tooltip-surface: rgba(20, 16, 44, 0.95);
-  --flux-primary-alpha-03: rgba(108, 92, 231, 0.03);
+  --flux-surface-card-deep-85: color-mix(in srgb, var(--flux-surface-card) 85%, transparent);
+  --flux-void-nested-36: color-mix(in srgb, var(--flux-surface-dark) 36%, transparent);
+  --flux-shadow-toast: 0 10px 30px color-mix(in srgb, black 25%, transparent);
+  --flux-shadow-toast-strong: 0 10px 30px color-mix(in srgb, black 30%, transparent);
+  --flux-shadow-copilot-bubble: 0 10px 26px -10px color-mix(in srgb, var(--flux-primary) 55%, transparent);
+  --flux-shadow-embed-widget: 0 8px 28px color-mix(in srgb, black 25%, transparent);
+  --flux-shadow-login-panel: 0 8px 32px color-mix(in srgb, black 40%, transparent);
+  --flux-shadow-kanban-card-lift: 0 12px 32px color-mix(in srgb, var(--flux-primary) 30%, transparent);
+  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px color-mix(in srgb, black 35%, transparent);
+  /* Near #14102c @ 95% opacity (tooltips); kept as mix for consistency */
+  --flux-tooltip-surface: color-mix(in srgb, #14102c 95%, transparent);
 
-  --flux-mapa-teal-12: rgba(13, 148, 136, 0.12);
-  --flux-mapa-teal-14: rgba(13, 148, 136, 0.14);
-  --flux-mapa-teal-35: rgba(13, 148, 136, 0.35);
-  --flux-mapa-teal-40: rgba(13, 148, 136, 0.4);
-  --flux-mapa-indigo-10: rgba(79, 70, 229, 0.1);
-  --flux-mapa-indigo-12: rgba(79, 70, 229, 0.12);
-  --flux-mapa-indigo-35: rgba(79, 70, 229, 0.35);
-  --flux-mapa-red-10: rgba(185, 28, 28, 0.1);
-  --flux-mapa-red-12: rgba(185, 28, 28, 0.12);
-  --flux-mapa-red-35: rgba(185, 28, 28, 0.35);
-  --flux-mapa-red-40: rgba(185, 28, 28, 0.4);
   --flux-mapa-text-teal: #0d9488;
   --flux-mapa-text-indigo: #4f46e5;
   --flux-mapa-text-red: #b91c1c;
+  --flux-mapa-teal-12: color-mix(in srgb, var(--flux-mapa-text-teal) 12%, transparent);
+  --flux-mapa-teal-14: color-mix(in srgb, var(--flux-mapa-text-teal) 14%, transparent);
+  --flux-mapa-teal-35: color-mix(in srgb, var(--flux-mapa-text-teal) 35%, transparent);
+  --flux-mapa-teal-40: color-mix(in srgb, var(--flux-mapa-text-teal) 40%, transparent);
+  --flux-mapa-indigo-10: color-mix(in srgb, var(--flux-mapa-text-indigo) 10%, transparent);
+  --flux-mapa-indigo-12: color-mix(in srgb, var(--flux-mapa-text-indigo) 12%, transparent);
+  --flux-mapa-indigo-35: color-mix(in srgb, var(--flux-mapa-text-indigo) 35%, transparent);
+  --flux-mapa-red-10: color-mix(in srgb, var(--flux-mapa-text-red) 10%, transparent);
+  --flux-mapa-red-12: color-mix(in srgb, var(--flux-mapa-text-red) 12%, transparent);
+  --flux-mapa-red-35: color-mix(in srgb, var(--flux-mapa-text-red) 35%, transparent);
+  --flux-mapa-red-40: color-mix(in srgb, var(--flux-mapa-text-red) 40%, transparent);
 
-  --flux-reports-heat-low: rgba(38, 222, 129, 0.35);
+  --flux-reports-heat-low: color-mix(in srgb, #26de81 35%, transparent);
 
   /* Semantic borders & chrome — adapt in [data-theme="light"] */
-  --flux-border-muted: rgba(255, 255, 255, 0.06);
-  --flux-border-subtle: rgba(255, 255, 255, 0.1);
-  --flux-border-default: rgba(108, 92, 231, 0.22);
-  --flux-control-border: rgba(255, 255, 255, 0.12);
-  --flux-hairline: rgba(255, 255, 255, 0.14);
-  --flux-surface-hover: rgba(255, 255, 255, 0.05);
-  --flux-primary-glow: rgba(108, 92, 231, 0.14);
+  --flux-border-muted: color-mix(in srgb, white 6%, transparent);
+  --flux-border-subtle: color-mix(in srgb, white 10%, transparent);
+  --flux-border-default: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-control-border: color-mix(in srgb, white 12%, transparent);
+  --flux-hairline: color-mix(in srgb, white 14%, transparent);
+  --flux-surface-hover: color-mix(in srgb, white 5%, transparent);
+  --flux-primary-glow: color-mix(in srgb, var(--flux-primary) 14%, transparent);
   --flux-board-mesh:
-    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.16), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 210, 211, 0.07), transparent 50%),
-    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(253, 167, 223, 0.06), transparent 50%);
+    radial-gradient(ellipse 80% 55% at 20% 10%, color-mix(in srgb, var(--flux-primary) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 9%, transparent), transparent 50%),
+    radial-gradient(ellipse 60% 42% at 50% 92%, color-mix(in srgb, var(--flux-accent) 7%, transparent), transparent 50%);
   --flux-rad: 10px;
   --flux-rad-sm: 6px;
   --flux-rad-lg: 16px;
   --flux-rad-xl: 20px;
+  /** CTAs marketing / login — cantos moderados (identidade Flux-Board, não pílula) */
+  --flux-marketing-radius: 12px;
   --shadow-md: var(--flux-shadow-md);
   --shadow-drag: var(--flux-shadow-drag);
-  --flux-home-hero-bg: linear-gradient(180deg, rgba(13, 11, 26, 0.55) 0%, rgba(13, 11, 26, 0.82) 100%), url("/flux-background.svg");
+  --flux-home-hero-bg: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-surface-dark) 55%, transparent) 0%,
+      color-mix(in srgb, var(--flux-surface-dark) 82%, transparent) 100%
+    ),
+    url("/flux-background.svg");
+
+  /*
+   * Doc v2 semantic aliases — single source remains --flux-* (org branding overrides still apply).
+   */
+  --primary: var(--flux-primary);
+  --secondary: var(--flux-secondary);
+  --accent: var(--flux-accent);
+  --bg-base: var(--flux-surface-dark);
+  --bg-raised: var(--flux-surface-mid);
+  --bg-card: var(--flux-surface-card);
+  --text: var(--flux-text);
+  --text-dim: var(--flux-text-muted);
+  --border: var(--flux-border-subtle);
+  --border-hover: var(--flux-border-default);
+  --primary-dim: var(--flux-primary-alpha-25);
+  --primary-glow: var(--flux-primary-glow);
+  --rad-sm: var(--flux-rad-sm);
+  --rad-md: var(--flux-rad);
+  --rad-lg: var(--flux-rad-lg);
+  --rad-xl: var(--flux-rad-xl);
 }
 
 /* Flux-Board — light theme */
 [data-theme="light"] {
-  --flux-surface-dark: #F5F4FF;
-  --flux-surface-mid: #EDEBFC;
-  --flux-surface-card: #FFFFFF;
-  --flux-surface-elevated: #E8E6F9;
-  --flux-text: #1A1730;
+  --flux-surface-dark: #f5f4ff;
+  --flux-surface-mid: #edeafc;
+  --flux-surface-card: #ffffff;
+  --flux-surface-elevated: #e8e6f9;
+  --flux-text: #1a1730;
   --flux-text-on-primary: #ffffff;
-  --flux-text-muted: #47427A;
-  --flux-primary-light: #5A49DA;
-  --flux-secondary: #008E97;
-  --flux-border-muted: rgba(26, 23, 48, 0.06);
-  --flux-border-subtle: rgba(26, 23, 48, 0.1);
-  --flux-border-default: rgba(108, 92, 231, 0.24);
-  --flux-control-border: rgba(26, 23, 48, 0.12);
-  --flux-hairline: rgba(26, 23, 48, 0.14);
-  --flux-surface-hover: rgba(108, 92, 231, 0.07);
-  --flux-primary-glow: rgba(108, 92, 231, 0.1);
+  --flux-text-muted: #47427a;
+  /* Full brand ramp on light surfaces (contrast + saturation tuned for WCAG comfort). */
+  --flux-primary: #6c5ce7;
+  --flux-primary-dark: #4834d4;
+  --flux-primary-light: color-mix(in srgb, var(--flux-primary) 62%, var(--flux-text));
+  --flux-focus-ring: color-mix(in srgb, var(--flux-primary) 70%, var(--flux-text));
+  --flux-primary-on-surface: var(--flux-primary-light);
+  --flux-secondary: #008e97;
+  --flux-accent: #e056a0;
+  --flux-accent-dark: #c94490;
+  --flux-success: #00c853;
+  --flux-warning: #f5a623;
+  --flux-danger: #e53935;
+  --flux-info: #1e88e5;
+  --flux-fluxy-fur: color-mix(in srgb, var(--flux-primary) 78%, var(--flux-text));
+  --flux-fluxy-fur-dark: color-mix(in srgb, var(--flux-primary) 88%, var(--flux-text));
+  --flux-fluxy-fur-light: color-mix(in srgb, var(--flux-primary) 58%, white);
+  --flux-fluxy-face: color-mix(in srgb, var(--flux-surface-card) 92%, var(--flux-primary) 8%);
+  --flux-fluxy-face-muted: color-mix(in srgb, var(--flux-surface-elevated) 88%, var(--flux-primary) 12%);
+  --flux-fluxy-void: color-mix(in srgb, var(--flux-text) 88%, var(--flux-primary) 12%);
+  --flux-fluxy-eye: var(--flux-fluxy-void);
+  --flux-border-muted: color-mix(in srgb, var(--flux-text) 6%, transparent);
+  --flux-border-subtle: color-mix(in srgb, var(--flux-text) 10%, transparent);
+  --flux-border-default: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+  --flux-control-border: color-mix(in srgb, var(--flux-text) 12%, transparent);
+  --flux-hairline: color-mix(in srgb, var(--flux-text) 14%, transparent);
+  --flux-surface-hover: color-mix(in srgb, var(--flux-primary) 7%, transparent);
+  --flux-primary-glow: color-mix(in srgb, var(--flux-primary) 10%, transparent);
   --flux-board-mesh:
-    radial-gradient(ellipse 90% 55% at 50% -25%, rgba(108, 92, 231, 0.1), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 142, 151, 0.06), transparent 50%),
-    radial-gradient(ellipse 45% 38% at 0% 100%, rgba(224, 86, 160, 0.05), transparent 50%);
-  --flux-shadow-sm: 0 1px 3px rgba(96, 79, 214, 0.12);
-  --flux-shadow-md: 0 4px 16px rgba(108, 92, 231, 0.12);
-  --flux-shadow-lg: 0 12px 40px -8px rgba(96, 79, 214, 0.14);
-  --flux-shadow-xl: 0 24px 64px -12px rgba(96, 79, 214, 0.16);
-  --flux-shadow-drag: 0 12px 36px rgba(108, 92, 231, 0.18);
-  --flux-shadow-elevated-card: 0 10px 30px rgba(96, 79, 214, 0.12);
-  --flux-shadow-primary-panel: 0 12px 32px rgba(108, 92, 231, 0.12);
-  --flux-shadow-primary-medium: 0 8px 20px rgba(108, 92, 231, 0.22);
-  --flux-shadow-primary-soft: 0 1px 6px rgba(108, 92, 231, 0.22);
-  --flux-shadow-modal-depth: 0 0 0 1px rgba(26, 23, 48, 0.06) inset, 0 32px 96px -24px rgba(26, 23, 48, 0.12),
-    0 0 120px -40px rgba(108, 92, 231, 0.2);
-  --flux-shadow-panel-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.65), 0 16px 48px -20px rgba(96, 79, 214, 0.12);
-  --flux-shadow-inset-hairline: 0 0 0 1px rgba(26, 23, 48, 0.06) inset;
-  --flux-shadow-inset-panel-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.75);
+    radial-gradient(ellipse 80% 55% at 20% 10%, color-mix(in srgb, var(--flux-primary) 11%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 7%, transparent), transparent 50%),
+    radial-gradient(ellipse 60% 42% at 50% 92%, color-mix(in srgb, var(--flux-accent) 6%, transparent), transparent 50%);
+  --flux-shadow-sm: 0 1px 3px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-md: 0 4px 16px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-lg: 0 12px 40px -8px color-mix(in srgb, var(--flux-primary) 14%, transparent);
+  --flux-shadow-xl: 0 24px 64px -12px color-mix(in srgb, var(--flux-primary) 16%, transparent);
+  --flux-shadow-drag: 0 12px 36px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-shadow-elevated-card: 0 10px 30px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-primary-panel: 0 12px 32px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-primary-medium: 0 8px 20px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-shadow-primary-soft: 0 1px 6px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-shadow-secondary-outline: 0 0 0 1px color-mix(in srgb, var(--flux-secondary) 14%, transparent);
+  --flux-shadow-primary-dot: 0 0 10px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+  --flux-shadow-primary-dot-sm: 0 0 8px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+  --flux-shadow-modal-depth:
+    0 0 0 1px color-mix(in srgb, var(--flux-text) 6%, transparent) inset,
+    0 32px 96px -24px color-mix(in srgb, var(--flux-text) 12%, transparent),
+    0 0 120px -40px color-mix(in srgb, var(--flux-primary) 20%, transparent);
+  --flux-shadow-panel-hover:
+    inset 0 1px 0 0 color-mix(in srgb, white 65%, transparent),
+    0 16px 48px -20px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-shadow-inset-hairline: 0 0 0 1px color-mix(in srgb, var(--flux-text) 6%, transparent) inset;
+  --flux-shadow-inset-panel-top: inset 0 1px 0 0 color-mix(in srgb, white 75%, transparent);
+  --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 18%, transparent);
   --flux-gradient-panel-sheen: linear-gradient(
     148deg,
-    rgba(26, 23, 48, 0.04) 0%,
-    rgba(26, 23, 48, 0.02) 45%,
-    rgba(255, 255, 255, 0.65) 100%
+    color-mix(in srgb, var(--flux-text) 4%, transparent) 0%,
+    color-mix(in srgb, var(--flux-text) 2%, transparent) 45%,
+    color-mix(in srgb, white 65%, transparent) 100%
   );
   --flux-gradient-landing-cta: linear-gradient(
     135deg,
-    rgba(108, 92, 231, 0.22),
-    rgba(0, 142, 151, 0.14),
-    rgba(224, 86, 160, 0.16)
+    color-mix(in srgb, var(--flux-primary) 22%, transparent),
+    color-mix(in srgb, var(--flux-secondary) 14%, transparent),
+    color-mix(in srgb, var(--flux-accent) 16%, transparent)
   );
-  --flux-chrome-alpha-03: rgba(26, 23, 48, 0.03);
-  --flux-chrome-alpha-04: rgba(26, 23, 48, 0.04);
-  --flux-chrome-alpha-05: rgba(26, 23, 48, 0.05);
-  --flux-chrome-alpha-06: rgba(26, 23, 48, 0.06);
-  --flux-chrome-alpha-07: rgba(26, 23, 48, 0.07);
-  --flux-chrome-alpha-08: rgba(26, 23, 48, 0.08);
-  --flux-chrome-alpha-09: rgba(26, 23, 48, 0.09);
-  --flux-chrome-alpha-10: rgba(26, 23, 48, 0.1);
-  --flux-chrome-alpha-12: rgba(26, 23, 48, 0.12);
-  --flux-chrome-alpha-14: rgba(26, 23, 48, 0.14);
-  --flux-chrome-alpha-16: rgba(26, 23, 48, 0.16);
-  --flux-chrome-alpha-18: rgba(26, 23, 48, 0.18);
-  --flux-chrome-alpha-20: rgba(26, 23, 48, 0.2);
-  --flux-chrome-alpha-30: rgba(26, 23, 48, 0.3);
-  --flux-chrome-alpha-80: rgba(255, 255, 255, 0.85);
-  --flux-chrome-alpha-90: rgba(255, 255, 255, 0.95);
-  --flux-black-alpha-08: rgba(26, 23, 48, 0.05);
-  --flux-black-alpha-10: rgba(26, 23, 48, 0.06);
-  --flux-black-alpha-12: rgba(26, 23, 48, 0.07);
-  --flux-black-alpha-15: rgba(26, 23, 48, 0.08);
-  --flux-black-alpha-20: rgba(26, 23, 48, 0.1);
-  --flux-black-alpha-45: rgba(26, 23, 48, 0.14);
-  --flux-black-alpha-50: rgba(26, 23, 48, 0.16);
-  --flux-black-alpha-65: rgba(26, 23, 48, 0.18);
-  --flux-backdrop-scrim: rgba(26, 23, 48, 0.35);
-  --flux-backdrop-scrim-strong: rgba(26, 23, 48, 0.5);
-  --flux-shadow-embed-widget: 0 8px 28px rgba(26, 23, 48, 0.12);
-  --flux-shadow-login-panel: 0 8px 32px rgba(26, 23, 48, 0.14);
-  --flux-shadow-kanban-column: inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px rgba(96, 79, 214, 0.1);
-  --flux-shadow-kanban-card-lift: 0 12px 32px rgba(108, 92, 231, 0.18);
-  --flux-tooltip-surface: rgba(255, 255, 255, 0.96);
+  --flux-glass-surface-bg: linear-gradient(
+    160deg,
+    color-mix(in srgb, white 94%, transparent),
+    color-mix(in srgb, var(--flux-surface-dark) 88%, transparent)
+  );
+  --flux-glass-surface-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+  --flux-glass-surface-shadow: 0 14px 42px -20px color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  --flux-glass-elevated-bg: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--flux-primary) 16%, transparent),
+    color-mix(in srgb, white 92%, transparent)
+  );
+  --flux-glass-elevated-border: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+  --flux-glass-elevated-shadow: 0 18px 48px -22px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  --flux-glass-focus-ring: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 35%, transparent);
+  --flux-chrome-alpha-03: color-mix(in srgb, var(--flux-text) 3%, transparent);
+  --flux-chrome-alpha-04: color-mix(in srgb, var(--flux-text) 4%, transparent);
+  --flux-chrome-alpha-05: color-mix(in srgb, var(--flux-text) 5%, transparent);
+  --flux-chrome-alpha-06: color-mix(in srgb, var(--flux-text) 6%, transparent);
+  --flux-chrome-alpha-07: color-mix(in srgb, var(--flux-text) 7%, transparent);
+  --flux-chrome-alpha-08: color-mix(in srgb, var(--flux-text) 8%, transparent);
+  --flux-chrome-alpha-09: color-mix(in srgb, var(--flux-text) 9%, transparent);
+  --flux-chrome-alpha-10: color-mix(in srgb, var(--flux-text) 10%, transparent);
+  --flux-chrome-alpha-12: color-mix(in srgb, var(--flux-text) 12%, transparent);
+  --flux-chrome-alpha-14: color-mix(in srgb, var(--flux-text) 14%, transparent);
+  --flux-chrome-alpha-16: color-mix(in srgb, var(--flux-text) 16%, transparent);
+  --flux-chrome-alpha-18: color-mix(in srgb, var(--flux-text) 18%, transparent);
+  --flux-chrome-alpha-20: color-mix(in srgb, var(--flux-text) 20%, transparent);
+  --flux-chrome-alpha-30: color-mix(in srgb, var(--flux-text) 30%, transparent);
+  --flux-chrome-alpha-80: color-mix(in srgb, white 85%, transparent);
+  --flux-chrome-alpha-90: color-mix(in srgb, white 95%, transparent);
+  --flux-black-alpha-08: color-mix(in srgb, var(--flux-text) 5%, transparent);
+  --flux-black-alpha-10: color-mix(in srgb, var(--flux-text) 6%, transparent);
+  --flux-black-alpha-12: color-mix(in srgb, var(--flux-text) 7%, transparent);
+  --flux-black-alpha-15: color-mix(in srgb, var(--flux-text) 8%, transparent);
+  --flux-black-alpha-20: color-mix(in srgb, var(--flux-text) 10%, transparent);
+  --flux-black-alpha-45: color-mix(in srgb, var(--flux-text) 14%, transparent);
+  --flux-black-alpha-50: color-mix(in srgb, var(--flux-text) 16%, transparent);
+  --flux-black-alpha-65: color-mix(in srgb, var(--flux-text) 18%, transparent);
+  --flux-backdrop-scrim: color-mix(in srgb, var(--flux-text) 35%, transparent);
+  --flux-backdrop-scrim-strong: color-mix(in srgb, var(--flux-text) 50%, transparent);
+  --flux-shadow-embed-widget: 0 8px 28px color-mix(in srgb, var(--flux-text) 12%, transparent);
+  --flux-shadow-login-panel: 0 8px 32px color-mix(in srgb, var(--flux-text) 14%, transparent);
+  --flux-shadow-kanban-column:
+    inset 0 1px 0 var(--flux-border-muted), 0 8px 28px -16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
+  --flux-shadow-kanban-card-lift: 0 12px 32px color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-tooltip-surface: color-mix(in srgb, var(--flux-surface-card) 96%, transparent);
   --shadow-md: var(--flux-shadow-md);
   --shadow-drag: var(--flux-shadow-drag);
-  --flux-home-hero-bg: linear-gradient(180deg, rgba(245, 244, 255, 0.45) 0%, rgba(245, 244, 255, 0.82) 100%), url("/flux-background-light.svg");
+  --flux-home-hero-bg: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-surface-dark) 45%, transparent) 0%,
+      color-mix(in srgb, var(--flux-surface-dark) 82%, transparent) 100%
+    ),
+    url("/flux-background-light.svg");
 }
 
 [data-theme="light"] body {
@@ -403,7 +585,8 @@
     font-size: 14px;
   }
   body {
-    font-family: var(--font-body), "DM Sans", sans-serif;
+    font-family: var(--font-body), system-ui, sans-serif;
+    line-height: 1.6;
     background: var(--flux-surface-dark);
     color: var(--flux-text);
     min-height: 100vh;
@@ -411,135 +594,464 @@
 }
 
 @layer components {
+  /* Visual identity v2 — aurora, grid, glass (shared shells + landing) */
+  @keyframes fluxAuroraFloat {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      opacity: 0.68;
+      transform: translate(1.1%, -1.3%) scale(1.022);
+    }
+    66% {
+      opacity: 0.58;
+      transform: translate(-1%, 1.1%) scale(1.014);
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreath {
+    0%,
+    100% {
+      opacity: 0.86;
+    }
+    50% {
+      opacity: 0.93;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathLight {
+    0%,
+    100% {
+      opacity: 0.9;
+    }
+    50% {
+      opacity: 0.97;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathSubtle {
+    0%,
+    100% {
+      opacity: 0.58;
+    }
+    50% {
+      opacity: 0.66;
+    }
+  }
+
+  @keyframes fluxAuroraBeforeBreathSubtleLight {
+    0%,
+    100% {
+      opacity: 0.62;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes fluxGridDrift {
+    0% {
+      background-position:
+        0 0,
+        0 0;
+    }
+    100% {
+      background-position:
+        56px 56px,
+        56px 56px;
+    }
+  }
+
+  .flux-aurora-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    contain: strict;
+    pointer-events: none;
+  }
+
+  .flux-aurora-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 55% at 20% 10%, color-mix(in srgb, var(--flux-primary) 14%, transparent), transparent 52%),
+      radial-gradient(ellipse 65% 48% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 9%, transparent), transparent 52%),
+      radial-gradient(ellipse 70% 42% at 50% 90%, color-mix(in srgb, var(--flux-accent) 7%, transparent), transparent 52%);
+    opacity: 0.92;
+    animation: fluxAuroraBeforeBreath 32s ease-in-out infinite;
+  }
+
+  [data-theme="light"] .flux-aurora-bg::before {
+    background:
+      radial-gradient(ellipse 80% 55% at 20% 10%, color-mix(in srgb, var(--flux-primary) 9%, transparent), transparent 52%),
+      radial-gradient(ellipse 65% 48% at 80% 30%, color-mix(in srgb, var(--flux-secondary) 6%, transparent), transparent 52%),
+      radial-gradient(ellipse 70% 42% at 50% 90%, color-mix(in srgb, var(--flux-accent) 5%, transparent), transparent 52%);
+    opacity: 0.95;
+    animation: fluxAuroraBeforeBreathLight 32s ease-in-out infinite;
+  }
+
+  .flux-aurora-blob {
+    position: absolute;
+    width: min(52vw, 420px);
+    height: min(52vw, 420px);
+    border-radius: 50%;
+    filter: blur(72px);
+    opacity: 0.38;
+    will-change: transform;
+    animation: fluxAuroraFloat 26s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  }
+
+  .flux-aurora-blob--a {
+    left: -8%;
+    top: -6%;
+    background: color-mix(in srgb, var(--flux-primary) 52%, transparent);
+  }
+
+  .flux-aurora-blob--b {
+    right: -14%;
+    top: 16%;
+    background: color-mix(in srgb, var(--flux-secondary) 42%, transparent);
+    animation-delay: -6s;
+  }
+
+  .flux-aurora-blob--c {
+    left: 22%;
+    bottom: -18%;
+    background: color-mix(in srgb, var(--flux-accent) 38%, transparent);
+    animation-delay: -12s;
+  }
+
+  .flux-aurora-bg--subtle .flux-aurora-blob {
+    opacity: 0.26;
+    filter: blur(80px);
+  }
+
+  .flux-aurora-bg--subtle::before {
+    animation: fluxAuroraBeforeBreathSubtle 38s ease-in-out infinite;
+  }
+
+  [data-theme="light"] .flux-aurora-bg--subtle::before {
+    animation: fluxAuroraBeforeBreathSubtleLight 38s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-aurora-bg::before {
+      animation: none;
+    }
+
+    [data-theme="light"] .flux-aurora-bg::before {
+      animation: none;
+    }
+
+    .flux-aurora-blob {
+      animation: none;
+      opacity: 0.48;
+    }
+
+    .flux-aurora-bg--subtle .flux-aurora-blob {
+      opacity: 0.32;
+    }
+  }
+
+  .flux-grid-overlay {
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--flux-primary) 3.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 3.5%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 75% 60% at 50% 30%, black 15%, transparent 70%);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  [data-theme="light"] .flux-grid-overlay {
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--flux-primary) 6%, transparent) 1px, transparent 1px);
+    opacity: 0.32;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flux-grid-overlay--drift {
+      animation: fluxGridDrift 140s linear infinite;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-grid-overlay--drift {
+      animation: none;
+    }
+  }
+
+  .flux-grid-overlay--dense {
+    opacity: 0.34;
+    mask-image: radial-gradient(ellipse 88% 72% at 50% 42%, black 22%, transparent 78%);
+  }
+
+  .flux-glass-card {
+    border-radius: var(--flux-rad-xl);
+    border: 1px solid var(--flux-glass-surface-border);
+    background: var(--flux-glass-surface-bg);
+    box-shadow: var(--flux-glass-surface-shadow), inset 0 1px 0 var(--flux-chrome-alpha-12);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    transition:
+      transform var(--flux-transition-normal),
+      box-shadow var(--flux-transition-normal),
+      border-color var(--flux-transition-normal);
+  }
+
+  .flux-glass-card:hover {
+    border-color: color-mix(in srgb, var(--flux-primary) 30%, transparent);
+    box-shadow:
+      var(--flux-glass-surface-shadow),
+      0 16px 48px -24px color-mix(in srgb, var(--flux-primary) 26%, transparent),
+      inset 0 1px 0 var(--flux-chrome-alpha-14);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flux-glass-card:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-glass-card:hover {
+      transform: none;
+    }
+
+    .flux-glass-card {
+      backdrop-filter: blur(10px) saturate(1.15);
+      -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    }
+  }
+
+  .flux-glass-card--elevated {
+    border-color: var(--flux-glass-elevated-border);
+    background: var(--flux-glass-elevated-bg);
+    box-shadow: var(--flux-glass-elevated-shadow), inset 0 1px 0 var(--flux-chrome-alpha-12);
+  }
+
+  .flux-glass-card--elevated:hover {
+    border-color: color-mix(in srgb, var(--flux-primary) 42%, transparent);
+    box-shadow:
+      var(--flux-glass-elevated-shadow),
+      0 20px 56px -28px color-mix(in srgb, var(--flux-primary) 32%, transparent),
+      inset 0 1px 0 var(--flux-chrome-alpha-14);
+  }
+
+  .flux-sidebar-nav-stack {
+    border-radius: var(--flux-rad-lg);
+    border: 1px solid var(--flux-border-muted);
+    background: color-mix(in srgb, var(--flux-surface-mid) 58%, transparent);
+    backdrop-filter: blur(14px) saturate(1.25);
+    -webkit-backdrop-filter: blur(14px) saturate(1.25);
+    box-shadow: inset 0 1px 0 var(--flux-chrome-alpha-06);
+  }
+
+  [data-theme="light"] .flux-sidebar-nav-stack {
+    background: color-mix(in srgb, var(--flux-surface-card) 72%, transparent);
+    border-color: color-mix(in srgb, var(--flux-primary) 14%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-sidebar-nav-stack {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
+  .flux-mobile-header-bar {
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-mobile-header-bar {
+      backdrop-filter: blur(10px) saturate(1.15);
+      -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    }
+  }
+
+  .flux-input {
+    outline: none;
+    transition: border-color var(--flux-transition-fast), box-shadow var(--flux-transition-fast);
+  }
+
+  .flux-input:focus-visible {
+    border-color: var(--flux-primary);
+    box-shadow: var(--flux-input-focus-shadow);
+    outline: none;
+  }
+
   /* Home aesthetics variants */
   .home-variant-sober {
-    --home-shell-border: rgba(140, 145, 186, 0.2);
-    --home-shell-bg: rgba(23, 24, 42, 0.72);
-    --home-panel-border: rgba(126, 132, 176, 0.2);
-    --home-panel-bg: linear-gradient(155deg, rgba(89, 94, 134, 0.16), rgba(29, 31, 50, 0.95));
-    --home-panel-glow-cyan: rgba(111, 153, 172, 0.13);
-    --home-panel-glow-pink: rgba(178, 140, 170, 0.1);
-    --home-chip-border: rgba(196, 205, 242, 0.24);
-    --home-chip-bg: rgba(16, 17, 32, 0.5);
-    --home-chip-text: #c7d1ff;
-    --home-spotlight-border: rgba(172, 180, 224, 0.16);
-    --home-spotlight-bg: rgba(32, 34, 53, 0.8);
-    --home-list-border: rgba(154, 164, 214, 0.2);
-    --home-list-bg: rgba(35, 37, 58, 0.78);
-    --home-card-border: rgba(152, 160, 211, 0.2);
-    --home-accent-cyan-border: rgba(145, 183, 196, 0.24);
-    --home-accent-pink-border: rgba(188, 149, 178, 0.24);
-    --home-cta-border: rgba(139, 147, 196, 0.24);
-    --home-btn-shadow: 0 4px 16px rgba(82, 87, 136, 0.3);
-    --home-btn-hover-shadow: 0 6px 24px rgba(82, 87, 136, 0.38);
-    --home-shell-shadow: 0 12px 26px rgba(10, 12, 22, 0.34);
-    --home-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 34px rgba(10, 12, 22, 0.32);
-    --home-spotlight-shadow: 0 16px 28px rgba(10, 12, 22, 0.3);
+    --home-shell-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-shell-bg: color-mix(in srgb, var(--flux-surface-mid) 72%, transparent);
+    --home-panel-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-panel-bg: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--flux-text-muted) 16%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 95%, transparent)
+    );
+    --home-panel-glow-cyan: color-mix(in srgb, var(--flux-secondary) 13%, transparent);
+    --home-panel-glow-pink: color-mix(in srgb, var(--flux-accent) 10%, transparent);
+    --home-chip-border: color-mix(in srgb, var(--flux-text) 24%, transparent);
+    --home-chip-bg: color-mix(in srgb, var(--flux-surface-dark) 50%, transparent);
+    --home-chip-text: color-mix(in srgb, var(--flux-primary-light) 85%, white);
+    --home-spotlight-border: color-mix(in srgb, var(--flux-text-muted) 16%, transparent);
+    --home-spotlight-bg: color-mix(in srgb, var(--flux-surface-mid) 80%, transparent);
+    --home-list-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-list-bg: color-mix(in srgb, var(--flux-surface-card) 78%, transparent);
+    --home-card-border: color-mix(in srgb, var(--flux-text-muted) 20%, transparent);
+    --home-accent-cyan-border: color-mix(in srgb, var(--flux-secondary) 24%, transparent);
+    --home-accent-pink-border: color-mix(in srgb, var(--flux-accent) 24%, transparent);
+    --home-cta-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-btn-shadow: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent);
+    --home-btn-hover-shadow: 0 6px 24px color-mix(in srgb, var(--flux-surface-dark) 62%, transparent);
+    --home-shell-shadow: 0 12px 26px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
+    --home-panel-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+      0 18px 34px color-mix(in srgb, var(--flux-surface-dark) 65%, transparent);
+    --home-spotlight-shadow: 0 16px 28px color-mix(in srgb, var(--flux-surface-dark) 62%, transparent);
   }
 
   .home-variant-vibrant {
-    --home-shell-border: rgba(108, 92, 231, 0.26);
-    --home-shell-bg: rgba(34, 31, 58, 0.78);
-    --home-panel-border: rgba(108, 92, 231, 0.24);
-    --home-panel-bg: linear-gradient(160deg, rgba(108, 92, 231, 0.24), rgba(45, 41, 82, 0.95));
-    --home-panel-glow-cyan: rgba(0, 210, 211, 0.21);
-    --home-panel-glow-pink: rgba(253, 167, 223, 0.18);
-    --home-chip-border: rgba(255, 255, 255, 0.2);
-    --home-chip-bg: rgba(13, 11, 26, 0.5);
+    --home-shell-border: color-mix(in srgb, var(--flux-primary) 26%, transparent);
+    --home-shell-bg: color-mix(in srgb, var(--flux-surface-card) 78%, transparent);
+    --home-panel-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-panel-bg: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--flux-primary) 24%, transparent),
+      color-mix(in srgb, var(--flux-surface-elevated) 95%, transparent)
+    );
+    --home-panel-glow-cyan: color-mix(in srgb, var(--flux-secondary) 21%, transparent);
+    --home-panel-glow-pink: color-mix(in srgb, var(--flux-accent) 18%, transparent);
+    --home-chip-border: color-mix(in srgb, white 20%, transparent);
+    --home-chip-bg: color-mix(in srgb, var(--flux-surface-dark) 50%, transparent);
     --home-chip-text: var(--flux-secondary-light);
-    --home-spotlight-border: rgba(255, 255, 255, 0.14);
-    --home-spotlight-bg: rgba(26, 23, 48, 0.82);
-    --home-list-border: rgba(108, 92, 231, 0.34);
+    --home-spotlight-border: color-mix(in srgb, white 14%, transparent);
+    --home-spotlight-bg: color-mix(in srgb, var(--flux-surface-mid) 82%, transparent);
+    --home-list-border: color-mix(in srgb, var(--flux-primary) 34%, transparent);
     --home-list-bg: var(--flux-surface-card);
-    --home-card-border: rgba(108, 92, 231, 0.24);
-    --home-accent-cyan-border: rgba(0, 210, 211, 0.32);
-    --home-accent-pink-border: rgba(253, 167, 223, 0.32);
-    --home-cta-border: rgba(108, 92, 231, 0.34);
-    --home-btn-shadow: 0 4px 16px rgba(108, 92, 231, 0.35);
-    --home-btn-hover-shadow: 0 6px 24px rgba(108, 92, 231, 0.45);
-    --home-shell-shadow: 0 12px 28px rgba(13, 11, 26, 0.28);
-    --home-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(13, 11, 26, 0.32);
-    --home-spotlight-shadow: 0 18px 30px rgba(13, 11, 26, 0.32);
+    --home-card-border: color-mix(in srgb, var(--flux-primary) 24%, transparent);
+    --home-accent-cyan-border: color-mix(in srgb, var(--flux-secondary) 32%, transparent);
+    --home-accent-pink-border: color-mix(in srgb, var(--flux-accent) 32%, transparent);
+    --home-cta-border: color-mix(in srgb, var(--flux-primary) 34%, transparent);
+    --home-btn-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+    --home-btn-hover-shadow: 0 6px 24px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+    --home-shell-shadow: 0 12px 28px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent);
+    --home-panel-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+      0 18px 36px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
+    --home-spotlight-shadow: 0 18px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent);
   }
 
   .hero-shell {
-    border-color: var(--home-shell-border, rgba(108, 92, 231, 0.22));
-    background: var(--home-shell-bg, rgba(34, 31, 58, 0.78));
-    box-shadow: var(--home-shell-shadow, 0 12px 28px rgba(13, 11, 26, 0.28));
+    border-color: var(--home-shell-border, color-mix(in srgb, var(--flux-primary) 15%, transparent));
+    background: var(--home-shell-bg, color-mix(in srgb, var(--flux-surface-dark) 72%, transparent));
+    box-shadow:
+      var(--home-shell-shadow, 0 8px 32px color-mix(in srgb, var(--flux-surface-dark) 70%, transparent)),
+      inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+    backdrop-filter: blur(28px) saturate(1.4);
+    -webkit-backdrop-filter: blur(28px) saturate(1.4);
   }
 
   .hero-panel {
-    border-color: var(--home-panel-border, rgba(108, 92, 231, 0.2));
-    background: var(--home-panel-bg, linear-gradient(160deg, rgba(108, 92, 231, 0.2), rgba(45, 41, 82, 0.95)));
-    box-shadow: var(--home-panel-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(13, 11, 26, 0.32));
+    border-color: var(--home-panel-border, color-mix(in srgb, var(--flux-primary) 20%, transparent));
+    background: var(
+      --home-panel-bg,
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--flux-primary) 20%, transparent),
+        color-mix(in srgb, var(--flux-surface-elevated) 95%, transparent)
+      )
+    );
+    box-shadow: var(
+      --home-panel-shadow,
+      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+      0 18px 36px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent)
+    );
   }
 
   .hero-chip {
-    border-color: var(--home-chip-border, rgba(255, 255, 255, 0.18));
-    background: var(--home-chip-bg, rgba(13, 11, 26, 0.45));
+    border-color: var(--home-chip-border, color-mix(in srgb, white 18%, transparent));
+    background: var(--home-chip-bg, color-mix(in srgb, var(--flux-surface-dark) 45%, transparent));
     color: var(--home-chip-text, var(--flux-secondary-light));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
   }
 
   .hero-spotlight {
-    border-color: var(--home-spotlight-border, rgba(255, 255, 255, 0.12));
-    background: var(--home-spotlight-bg, rgba(26, 23, 48, 0.8));
-    box-shadow: var(--home-spotlight-shadow, 0 18px 30px rgba(13, 11, 26, 0.32));
+    border-color: var(--home-spotlight-border, color-mix(in srgb, white 12%, transparent));
+    background: var(--home-spotlight-bg, color-mix(in srgb, var(--flux-surface-mid) 80%, transparent));
+    box-shadow: var(--home-spotlight-shadow, 0 18px 30px color-mix(in srgb, var(--flux-surface-dark) 58%, transparent));
   }
 
   .hero-list-card {
-    border-color: var(--home-list-border, rgba(108, 92, 231, 0.3));
+    border-color: var(--home-list-border, color-mix(in srgb, var(--flux-primary) 30%, transparent));
     background: var(--home-list-bg, var(--flux-surface-card));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
   }
 
   .hero-glow-cyan {
-    background: var(--home-panel-glow-cyan, rgba(0, 210, 211, 0.18));
+    background: var(--home-panel-glow-cyan, color-mix(in srgb, var(--flux-secondary) 18%, transparent));
   }
 
   .hero-glow-pink {
-    background: var(--home-panel-glow-pink, rgba(253, 167, 223, 0.14));
+    background: var(--home-panel-glow-pink, color-mix(in srgb, var(--flux-accent) 14%, transparent));
   }
 
   [data-theme="light"] .hero-shell {
-    border-color: rgba(108, 92, 231, 0.34);
-    background: rgba(255, 255, 255, 0.86);
-    box-shadow: 0 14px 30px rgba(96, 79, 214, 0.14);
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 82%, transparent);
+    box-shadow:
+      0 8px 28px color-mix(in srgb, var(--flux-primary) 12%, transparent),
+      inset 0 1px 0 color-mix(in srgb, white 90%, transparent);
+    backdrop-filter: blur(28px) saturate(1.2);
+    -webkit-backdrop-filter: blur(28px) saturate(1.2);
   }
 
   [data-theme="light"] .hero-panel {
-    border-color: rgba(108, 92, 231, 0.3);
-    background: linear-gradient(160deg, rgba(108, 92, 231, 0.19), rgba(255, 255, 255, 0.94));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 20px 40px rgba(96, 79, 214, 0.12);
+    border-color: color-mix(in srgb, var(--flux-primary) 30%, transparent);
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--flux-primary) 19%, transparent),
+      color-mix(in srgb, var(--flux-surface-card) 94%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 80%, transparent),
+      0 20px 40px color-mix(in srgb, var(--flux-primary) 12%, transparent);
   }
 
   [data-theme="light"] .hero-chip {
-    border-color: rgba(108, 92, 231, 0.32);
-    background: rgba(255, 255, 255, 0.74);
+    border-color: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 74%, transparent);
     color: var(--flux-primary-dark);
   }
 
   [data-theme="light"] .hero-spotlight {
-    border-color: rgba(108, 92, 231, 0.28);
-    background: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 18px 34px rgba(96, 79, 214, 0.14);
+    border-color: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 72%, transparent);
+    box-shadow: 0 18px 34px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   [data-theme="light"] .hero-list-card {
-    border-color: rgba(108, 92, 231, 0.26);
-    background: rgba(248, 247, 255, 0.92);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: color-mix(in srgb, var(--flux-primary) 26%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-dark) 92%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 90%, transparent);
   }
 
   .btn-primary {
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
     background: var(--flux-primary);
     color: white;
-    box-shadow: var(--home-btn-shadow, 0 4px 16px rgba(108, 92, 231, 0.35));
+    box-shadow: var(--home-btn-shadow, 0 4px 16px color-mix(in srgb, var(--flux-primary) 35%, transparent));
   }
   .btn-primary:hover:not(:disabled) {
     background: var(--flux-primary-light);
-    box-shadow: var(--home-btn-hover-shadow, 0 6px 24px rgba(108, 92, 231, 0.45));
+    box-shadow: var(--home-btn-hover-shadow, 0 6px 24px color-mix(in srgb, var(--flux-primary) 45%, transparent));
     transform: translateY(-1px);
   }
   .btn-primary:active:not(:disabled) {
@@ -569,6 +1081,32 @@
     color: var(--flux-text);
     border-color: var(--flux-primary);
     background: var(--flux-primary-glow);
+  }
+
+  .btn-accent {
+    @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
+    background: linear-gradient(135deg, var(--flux-primary), var(--flux-accent-dark));
+    color: var(--flux-text-on-primary);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 35%, transparent);
+    box-shadow: 0 4px 22px color-mix(in srgb, var(--flux-primary) 38%, transparent);
+  }
+
+  .btn-accent:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--flux-primary) 45%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .btn-accent:active:not(:disabled) {
+    transform: translateY(0);
+    filter: brightness(0.98);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-accent:hover:not(:disabled),
+    .btn-accent:active:not(:disabled) {
+      transform: none;
+    }
   }
 
   .btn-pill {
@@ -606,15 +1144,15 @@
 
   .btn-danger {
     @apply px-4 py-2.5 rounded-[var(--flux-rad)] font-semibold text-sm transition-all duration-200 ease-out font-display;
-    background: rgba(255, 107, 107, 0.12);
+    background: var(--flux-danger-alpha-12);
     color: var(--flux-danger);
-    border: 1px solid rgba(255, 107, 107, 0.35);
+    border: 1px solid var(--flux-danger-alpha-35);
   }
   .btn-danger:hover:not(:disabled) {
     background: var(--flux-danger);
     color: white;
     border-color: var(--flux-danger);
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--flux-danger) 30%, transparent);
   }
 
   .btn-danger-solid {
@@ -625,92 +1163,611 @@
   }
   .btn-danger-solid:hover:not(:disabled) {
     background: #e05555;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--flux-danger) 40%, transparent);
     transform: translateY(-1px);
   }
 
   .tone-card {
-    border-color: var(--home-card-border, rgba(108, 92, 231, 0.22));
+    border-color: var(--home-card-border, color-mix(in srgb, var(--flux-primary) 22%, transparent));
   }
 
   .tone-cyan {
-    border-color: var(--home-accent-cyan-border, rgba(0, 210, 211, 0.28));
+    border-color: var(--home-accent-cyan-border, color-mix(in srgb, var(--flux-secondary) 28%, transparent));
   }
 
   .tone-pink {
-    border-color: var(--home-accent-pink-border, rgba(253, 167, 223, 0.28));
+    border-color: var(--home-accent-pink-border, color-mix(in srgb, var(--flux-accent) 28%, transparent));
   }
 
   .tone-cta {
-    border-color: var(--home-cta-border, rgba(108, 92, 231, 0.3));
+    border-color: var(--home-cta-border, color-mix(in srgb, var(--flux-primary) 30%, transparent));
   }
 
-  /* Landing — malha sutil e mock Kanban */
+  /* Landing — fundo fixo: malha + blobs via .flux-aurora-bg (grade em .flux-grid-overlay no TSX) */
+  .home-landing-page-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  @keyframes homeLandingPulseGlow {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.95;
+    }
+  }
+
+  .home-landing-chip-dot {
+    animation: homeLandingPulseGlow 2s ease infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-landing-chip-dot {
+      animation: none;
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes homeLandingFluxyFloat {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .home-fluxy-peek-float {
+    animation: homeLandingFluxyFloat 4s ease infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-fluxy-peek-float {
+      animation: none;
+    }
+  }
+
+  @keyframes homeLandingCopilotType {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+
+  @keyframes homeLandingCaretBlink {
+    0%,
+    100% {
+      border-color: var(--flux-secondary);
+    }
+    50% {
+      border-color: transparent;
+    }
+  }
+
+  .home-copilot-typewriter {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid var(--flux-secondary);
+    animation:
+      homeLandingCopilotType 3s steps(40, end) 1s both,
+      homeLandingCaretBlink 0.7s step-end infinite 4s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-copilot-typewriter {
+      animation: none;
+      width: auto !important;
+      border-right: none;
+      white-space: normal;
+    }
+  }
+
+  /* Landing — malha alinhada a --flux-board-mesh + spot extra no canto */
   .home-landing-mesh {
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 92, 231, 0.22), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 210, 211, 0.12), transparent),
-      radial-gradient(ellipse 50% 35% at 0% 100%, rgba(253, 167, 223, 0.1), transparent);
+    background-image: var(--flux-board-mesh),
+      radial-gradient(ellipse 50% 30% at 80% 85%, color-mix(in srgb, var(--flux-primary) 10%, transparent), transparent);
   }
 
   [data-theme="light"] .home-landing-mesh {
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 92, 231, 0.14), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 210, 211, 0.08), transparent),
-      radial-gradient(ellipse 50% 35% at 0% 100%, rgba(253, 167, 223, 0.08), transparent);
+    background-image: var(--flux-board-mesh),
+      radial-gradient(ellipse 50% 30% at 80% 85%, color-mix(in srgb, var(--flux-primary) 6%, transparent), transparent);
+  }
+
+  @keyframes homeSpotlightGlow {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+
+  .home-hero-aurora {
+    background: radial-gradient(
+      ellipse at 50% 45%,
+      color-mix(in srgb, var(--flux-primary) 28%, transparent),
+      transparent 68%
+    );
+    animation: fluxAuroraFloat 28s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-hero-aurora {
+      animation: none;
+      opacity: 0.72;
+    }
+  }
+
+  .landing-spotlight-card-glow {
+    animation: homeSpotlightGlow 5s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-spotlight-card-glow {
+      animation: none;
+      opacity: 0.75;
+    }
+  }
+
+  /* Stagger de seções na landing (filhos diretos de main) */
+  .home-landing-stagger > section.home-landing-reveal:nth-child(1) {
+    animation-delay: 0.04s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(4) {
+    animation-delay: 0.22s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(5) {
+    animation-delay: 0.28s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(6) {
+    animation-delay: 0.34s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(7) {
+    animation-delay: 0.4s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(8) {
+    animation-delay: 0.46s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(9) {
+    animation-delay: 0.52s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(10) {
+    animation-delay: 0.58s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(11) {
+    animation-delay: 0.64s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(12) {
+    animation-delay: 0.7s;
+  }
+  .home-landing-stagger > section.home-landing-reveal:nth-child(13) {
+    animation-delay: 0.76s;
+  }
+
+  @keyframes landingShimmer {
+    0% {
+      background-position: 200% center;
+    }
+    100% {
+      background-position: -200% center;
+    }
+  }
+
+  /** Rótulos de seção — redesign v3 (JetBrains Mono, caixa alta, tracking largo) */
+  .landing-section-badge {
+    @apply mb-3 block font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--flux-secondary)];
+  }
+
+  @keyframes landing-float-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .landing-fluxy-emoji-float {
+    animation: landing-float-bob 3s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-fluxy-emoji-float {
+      animation: none;
+    }
+  }
+
+  /* Fundo v3 — orbs grandes + blur (ref. flux-board-redesign-v3.html) */
+  @keyframes landing-orb-drift {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(45px, -35px) scale(1.08);
+    }
+    66% {
+      transform: translate(-25px, 45px) scale(0.94);
+    }
+  }
+
+  .landing-v3-orbs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .landing-v3-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(130px);
+    pointer-events: none;
+    opacity: 0.35;
+  }
+
+  .landing-v3-orb--1 {
+    width: min(650px, 95vw);
+    height: min(650px, 95vw);
+    top: -8%;
+    left: -6%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-primary) 18%, transparent), transparent 70%);
+    animation: landing-orb-drift 28s ease-in-out infinite;
+  }
+
+  .landing-v3-orb--2 {
+    width: min(500px, 85vw);
+    height: min(500px, 85vw);
+    bottom: 5%;
+    right: -10%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-secondary) 12%, transparent), transparent 70%);
+    animation: landing-orb-drift 34s ease-in-out infinite reverse;
+  }
+
+  .landing-v3-orb--3 {
+    width: min(380px, 75vw);
+    height: min(380px, 75vw);
+    top: 45%;
+    left: 35%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--flux-accent) 8%, transparent), transparent 70%);
+    animation: landing-orb-drift 22s ease-in-out infinite 4s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-v3-orb--1,
+    .landing-v3-orb--2,
+    .landing-v3-orb--3 {
+      animation: none;
+    }
+  }
+
+  .landing-btn-shimmer,
+  .flux-btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .landing-btn-shimmer::after,
+  .flux-btn-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 42%,
+      color-mix(in srgb, white 11%, transparent) 50%,
+      transparent 58%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: landingShimmer 4.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Marketing / public auth — compactos, raio moderado, borda e sombra mais nítidas */
+  .flux-marketing-btn-primary {
+    @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
+    gap: 0.35rem;
+    border-radius: var(--flux-marketing-radius);
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-primary-light) 82%, white) 0%,
+      var(--flux-primary) 45%,
+      var(--flux-primary-dark) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 42%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+      0 2px 0 color-mix(in srgb, var(--flux-primary-dark) 35%, transparent),
+      0 6px 14px color-mix(in srgb, var(--flux-primary) 24%, transparent);
+  }
+
+  .flux-marketing-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.04);
+    border-color: color-mix(in srgb, var(--flux-primary-light) 55%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+      0 2px 0 color-mix(in srgb, var(--flux-primary-dark) 45%, transparent),
+      0 8px 18px color-mix(in srgb, var(--flux-primary) 30%, transparent);
+  }
+
+  .flux-marketing-btn-primary:active:not(:disabled) {
+    filter: brightness(0.98);
+    transform: translateY(0.5px);
+  }
+
+  .flux-marketing-btn-primary:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-btn-ghost {
+    @apply inline-flex items-center justify-center font-display transition-all duration-200 ease-out;
+    gap: 0.35rem;
+    border-radius: var(--flux-marketing-radius);
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 600;
+    color: var(--flux-text-muted);
+    background: color-mix(in srgb, var(--flux-surface-card) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 18%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  }
+
+  .flux-marketing-btn-ghost:hover:not(:disabled) {
+    color: var(--flux-text);
+    border-color: color-mix(in srgb, var(--flux-primary) 38%, transparent);
+    background: color-mix(in srgb, var(--flux-primary) 8%, transparent);
+  }
+
+  .flux-marketing-btn-ghost:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-btn-accent {
+    @apply inline-flex items-center justify-center font-display transition-all duration-300 ease-out;
+    gap: 0.35rem;
+    border-radius: var(--flux-marketing-radius);
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #0f0d1e;
+    background: linear-gradient(135deg, var(--flux-secondary), #00b8b9);
+    border: 1px solid color-mix(in srgb, var(--flux-secondary) 45%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+      0 2px 0 color-mix(in srgb, #008b8c 40%, transparent),
+      0 6px 16px color-mix(in srgb, var(--flux-secondary) 28%, transparent);
+  }
+
+  .flux-marketing-btn-accent:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--flux-secondary-light) 40%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+      0 2px 0 color-mix(in srgb, #008b8c 50%, transparent),
+      0 8px 20px color-mix(in srgb, var(--flux-secondary) 34%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .flux-marketing-btn-accent:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .flux-marketing-btn-accent:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-marketing-btn-accent:hover:not(:disabled),
+    .flux-marketing-btn-accent:active:not(:disabled) {
+      transform: none;
+    }
+  }
+
+  /** Plano Free na landing — mesmo peso visual dos CTAs compactos (btn--secondary v3) */
+  .flux-marketing-plan-secondary {
+    @apply inline-flex w-full items-center justify-center font-display font-semibold transition-all duration-200 ease-out;
+    border-radius: var(--flux-marketing-radius);
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    background: color-mix(in srgb, var(--flux-surface-card) 55%, transparent);
+    color: var(--flux-text);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 16%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .flux-marketing-plan-secondary:hover:not(:disabled) {
+    border-color: var(--flux-primary-alpha-25);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 70%, transparent);
+  }
+
+  .flux-marketing-segmented {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.2rem;
+    border-radius: var(--flux-marketing-radius);
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 72%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  }
+
+  .flux-marketing-segmented__btn {
+    @apply min-h-9 flex-1 font-display font-semibold transition-all duration-300 sm:min-h-0;
+    border-radius: calc(var(--flux-marketing-radius) - 4px);
+    padding: 0.4rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    color: var(--flux-text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .flux-marketing-segmented__btn:hover {
+    color: var(--flux-text);
+  }
+
+  .flux-marketing-segmented__btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 85%, white);
+    outline-offset: 2px;
+  }
+
+  .flux-marketing-segmented__btn--active {
+    color: white;
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-primary-light) 78%, white) 0%,
+      var(--flux-primary) 50%,
+      var(--flux-primary-dark) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--flux-primary) 36%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+      0 1px 0 color-mix(in srgb, var(--flux-primary-dark) 40%, transparent),
+      0 4px 12px color-mix(in srgb, var(--flux-primary) 26%, transparent);
+  }
+
+  .auth-glass-panel.flux-glass-card {
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    box-shadow:
+      var(--flux-glass-surface-shadow),
+      0 20px 48px -28px color-mix(in srgb, var(--flux-primary) 22%, transparent),
+      inset 0 1px 0 var(--flux-chrome-alpha-14);
+    backdrop-filter: blur(20px) saturate(1.35);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  }
+
+  .auth-public-shell .flux-input:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--flux-secondary) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-btn-shimmer::after,
+    .flux-btn-shimmer::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
+  .landing-feature-card {
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .landing-feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), 0 12px 40px color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  }
+
+  [data-theme="light"] .landing-feature-card:hover {
+    box-shadow: var(--shadow-md), 0 12px 36px color-mix(in srgb, var(--flux-primary) 10%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-feature-card {
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .landing-feature-card:hover {
+      transform: none;
+    }
   }
 
   .home-kanban-mock {
-    border-color: rgba(108, 92, 231, 0.28);
-    background: linear-gradient(165deg, rgba(34, 31, 58, 0.92), rgba(13, 11, 26, 0.65));
+    border-color: color-mix(in srgb, var(--flux-primary) 28%, transparent);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-surface-card) 92%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 65%, transparent)
+    );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 24px 48px rgba(13, 11, 26, 0.45);
+      inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+      0 24px 48px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
   }
 
   [data-theme="light"] .home-kanban-mock {
-    border-color: rgba(108, 92, 231, 0.22);
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.95), rgba(248, 247, 255, 0.88));
+    border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--flux-surface-card) 95%, transparent),
+      color-mix(in srgb, var(--flux-surface-dark) 88%, transparent)
+    );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 24px 48px rgba(96, 79, 214, 0.12);
+      inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
+      0 24px 48px color-mix(in srgb, var(--flux-primary) 12%, transparent);
   }
 
   .home-kanban-card {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(45, 41, 82, 0.55);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border-color: color-mix(in srgb, white 8%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-elevated) 55%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
   }
 
   [data-theme="light"] .home-kanban-card {
-    border-color: rgba(108, 92, 231, 0.15);
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1);
+    border-color: color-mix(in srgb, var(--flux-primary) 15%, transparent);
+    background: color-mix(in srgb, var(--flux-surface-card) 85%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 100%, transparent);
   }
 
   .home-kanban-col {
-    border-color: rgba(108, 92, 231, 0.12);
-    background: rgba(0, 0, 0, 0.12);
+    border-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+    background: color-mix(in srgb, black 12%, transparent);
   }
 
   [data-theme="light"] .home-kanban-col {
-    background: rgba(108, 92, 231, 0.04);
+    background: color-mix(in srgb, var(--flux-primary) 4%, transparent);
   }
 
   .home-kanban-line {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, white 6%, transparent);
   }
 
   [data-theme="light"] .home-kanban-line {
-    background: rgba(108, 92, 231, 0.08);
+    background: color-mix(in srgb, var(--flux-primary) 8%, transparent);
   }
 
   .home-kanban-line-muted {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, white 4%, transparent);
   }
 
   [data-theme="light"] .home-kanban-line-muted {
-    background: rgba(108, 92, 231, 0.06);
+    background: color-mix(in srgb, var(--flux-primary) 6%, transparent);
   }
 
   @keyframes homeLandingFadeUp {
@@ -739,23 +1796,24 @@
   /* Board — Kanban toolbar, canvas & summary (uses --flux-border-* tokens) */
   .board-toolbar {
     background: var(--flux-surface-mid);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
     border-bottom: 1px solid var(--flux-border-default);
     box-shadow:
       inset 0 1px 0 var(--flux-border-muted),
-      0 10px 36px -16px rgba(0, 0, 0, 0.45);
+      0 10px 36px -16px color-mix(in srgb, var(--flux-surface-dark) 72%, transparent);
   }
 
   [data-theme="light"] .board-toolbar {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.78),
-      0 12px 40px -18px rgba(96, 79, 214, 0.14);
+      inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+      0 12px 40px -18px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   .board-canvas {
     background-color: var(--flux-surface-dark);
-    background-image: var(--flux-board-mesh);
+    background-image: var(--flux-board-mesh),
+      radial-gradient(ellipse 55% 40% at 80% 88%, color-mix(in srgb, var(--flux-primary) 6%, transparent), transparent 55%);
   }
 
   .board-segment {
@@ -770,15 +1828,15 @@
     background: var(--flux-surface-mid);
     box-shadow:
       inset 0 1px 0 var(--flux-border-muted),
-      0 -8px 32px -12px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+      0 -8px 32px -12px color-mix(in srgb, var(--flux-surface-dark) 68%, transparent);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
   }
 
   [data-theme="light"] .board-summary-dock {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.82),
-      0 -10px 36px -14px rgba(96, 79, 214, 0.14);
+      inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
+      0 -10px 36px -14px color-mix(in srgb, var(--flux-primary) 14%, transparent);
   }
 
   .board-stat-tile {
@@ -843,7 +1901,7 @@
   .scrollbar-kanban {
     scrollbar-width: thin;
     scrollbar-gutter: stable;
-    scrollbar-color: rgba(108, 92, 231, 0.6) transparent;
+    scrollbar-color: color-mix(in srgb, var(--flux-primary) 60%, transparent) transparent;
   }
   .scrollbar-flux::-webkit-scrollbar,
   .scrollbar-kanban::-webkit-scrollbar {
@@ -852,34 +1910,114 @@
   }
   .scrollbar-flux::-webkit-scrollbar-track,
   .scrollbar-kanban::-webkit-scrollbar-track {
-    background: radial-gradient(circle at 50% 0, rgba(255, 255, 255, 0.04), transparent);
+    background: radial-gradient(circle at 50% 0, var(--flux-chrome-alpha-04), transparent);
     border-radius: 999px;
   }
   .scrollbar-flux::-webkit-scrollbar-thumb,
   .scrollbar-kanban::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(162, 155, 254, 0.9), rgba(108, 92, 231, 0.9));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-primary-light) 90%, transparent),
+      color-mix(in srgb, var(--flux-primary) 90%, transparent)
+    );
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: padding-box;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 1px color-mix(in srgb, black 35%, transparent);
     transition: background 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out;
   }
   .scrollbar-flux::-webkit-scrollbar-thumb:hover,
   .scrollbar-kanban::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(162, 155, 254, 1), rgba(0, 210, 211, 1));
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 10px rgba(162, 155, 254, 0.7);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--flux-primary-light) 100%, transparent),
+      color-mix(in srgb, var(--flux-secondary) 100%, transparent)
+    );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, black 55%, transparent),
+      0 0 10px color-mix(in srgb, var(--flux-primary-light) 70%, transparent);
     transform: translateY(-1px);
   }
   .scrollbar-flux::-webkit-scrollbar-corner,
   .scrollbar-kanban::-webkit-scrollbar-corner {
     background: transparent;
   }
+
+  /* Kanban — base card glass + state variants */
+  .flux-kanban-card {
+    border-radius: 12px;
+    border: 1px solid var(--flux-border-subtle);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--bg-card, var(--flux-surface-card)) 88%, transparent),
+      color-mix(in srgb, var(--flux-surface-elevated) 92%, transparent)
+    );
+    box-shadow:
+      inset 0 1px 0 var(--flux-chrome-alpha-08),
+      0 2px 14px color-mix(in srgb, var(--flux-surface-dark) 42%, transparent);
+    transition:
+      transform var(--flux-transition-normal),
+      box-shadow var(--flux-transition-normal),
+      border-color var(--flux-transition-normal);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flux-kanban-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--flux-border-default);
+      box-shadow:
+        inset 0 1px 0 var(--flux-chrome-alpha-10),
+        var(--flux-shadow-kanban-card-lift);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flux-kanban-card:hover {
+      transform: none;
+    }
+  }
+
+  .flux-kanban-card--done {
+    border-color: color-mix(in srgb, var(--flux-success) 42%, var(--flux-border-default));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--flux-success) 25%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--flux-success) 18%, transparent);
+    background-image: var(--flux-gradient-panel-sheen);
+  }
+  .flux-kanban-card--overdue:not([data-selected="true"]) {
+    border-color: color-mix(in srgb, var(--flux-danger) 55%, var(--flux-border-default));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--flux-danger) 22%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--flux-danger) 28%, transparent);
+  }
+  .flux-kanban-card--blocked:not([data-selected="true"]) {
+    border-color: color-mix(in srgb, var(--flux-warning) 40%, var(--flux-border-default));
+  }
+  .flux-kanban-card--ai:not([data-selected="true"]):not(.flux-kanban-card--overdue):not(.flux-kanban-card--blocked) {
+    background-image: var(--flux-gradient-panel-sheen);
+    border-color: color-mix(in srgb, var(--flux-primary) 35%, var(--flux-border-default));
+  }
+
+  .flux-kanban-drop-slot {
+    border-radius: 6px;
+    transition: background 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out;
+  }
+  .flux-kanban-drop-slot[data-tall="true"] {
+    min-height: 18px;
+  }
+
+  /**
+   * content-visibility keeps all droppables in the DOM (DnD-safe) while skipping
+   * rendering work for off-screen cards. contain-intrinsic-size stabilizes scrollbars.
+   */
+  .flux-kanban-card-cv-wrap[data-flux-cv="1"] {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 132px;
+  }
 }
 
 /* Scrollbars globais (body e overflow) alinhados ao tema */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(108, 92, 231, 0.4) transparent;
+  scrollbar-color: color-mix(in srgb, var(--flux-primary) 40%, transparent) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
@@ -890,13 +2028,13 @@
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(108, 92, 231, 0.4);
+  background: color-mix(in srgb, var(--flux-primary) 40%, transparent);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(108, 92, 231, 0.6);
+  background: color-mix(in srgb, var(--flux-primary) 60%, transparent);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -905,7 +2043,7 @@
 }
 
 [data-theme="light"] * {
-  scrollbar-color: rgba(108, 92, 231, 0.35) var(--flux-surface-dark);
+  scrollbar-color: color-mix(in srgb, var(--flux-primary) 35%, transparent) var(--flux-surface-dark);
 }
 [data-theme="light"] *::-webkit-scrollbar-track,
 [data-theme="light"] *::-webkit-scrollbar-corner {
@@ -915,12 +2053,50 @@
 @layer components {
   .card-modal-backdrop {
     animation: cardModalBackdropIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .card-modal-backdrop {
+      padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    }
   }
   .card-modal-content {
     animation: cardModalPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
+  }
+  .card-modal-tab-panel-in {
+    animation: cardModalTabIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .card-modal-footer-enter {
+    animation: cardModalFooterEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .card-modal-tab-strip {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+  }
+  .card-modal-tab-strip::-webkit-scrollbar {
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .card-modal-tab-strip {
+      scroll-snap-type: none;
+    }
+  }
+
+  .card-modal-panel-sections section {
+    animation: cardModalSectionIn 0.32s var(--flux-ease-standard) both;
   }
 
   .modal-overlay-animate {
@@ -965,14 +2141,53 @@
   }
 }
 
+@keyframes cardModalTabIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardModalFooterEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardModalSectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-modal-backdrop,
   .card-modal-content,
-  .card-modal-accent {
+  .card-modal-accent,
+  .card-modal-tab-panel-in,
+  .card-modal-footer-enter,
+  .card-modal-panel-sections section {
     animation: none !important;
   }
   .card-modal-content {
     filter: none !important;
+  }
+  .card-modal-tab-strip {
+    scroll-behavior: auto;
   }
 }
 
@@ -1011,7 +2226,100 @@
   }
 }
 
+@keyframes flux-list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flux-ai-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--flux-primary-alpha-25);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 8px 3px var(--flux-primary-alpha-25);
+    transform: scale(1.08);
+  }
+}
+
 @layer utilities {
+  .flux-glass-surface {
+    background: var(--flux-glass-surface-bg);
+    border: 1px solid var(--flux-glass-surface-border);
+    box-shadow: var(--flux-glass-surface-shadow), inset 0 1px 0 var(--flux-chrome-alpha-12);
+    backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+  }
+
+  .flux-glass-elevated {
+    background: var(--flux-glass-elevated-bg);
+    border: 1px solid var(--flux-glass-elevated-border);
+    box-shadow: var(--flux-glass-elevated-shadow), inset 0 1px 0 var(--flux-chrome-alpha-12);
+    backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+  }
+
+  /* Modal de card — tema claro: painel sólido e sombra explícita (glass + depth-3 ficavam lavados) */
+  [data-theme="light"] .card-modal-shell.flux-glass-elevated {
+    background: var(--flux-surface-card);
+    border-color: var(--flux-border-default);
+    box-shadow: var(--flux-shadow-modal-depth), inset 0 1px 0 var(--flux-chrome-alpha-12);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-theme="light"] .card-modal-shell .card-modal-footer {
+    background: var(--flux-surface-elevated);
+    border-top-color: var(--flux-border-subtle);
+  }
+
+  .flux-glass-focus:focus-visible {
+    box-shadow: var(--flux-glass-focus-ring);
+  }
+
+  /*
+   * Depth scale — stack shadows without implying z-index (pair with sticky/modal z tokens in layout).
+   */
+  .flux-depth-0 {
+    box-shadow: var(--flux-shadow-inset-hairline);
+  }
+
+  .flux-depth-1 {
+    box-shadow: var(--flux-shadow-sm);
+  }
+
+  .flux-depth-2 {
+    box-shadow: var(--flux-shadow-md);
+  }
+
+  .flux-depth-3 {
+    box-shadow: var(--flux-shadow-lg);
+  }
+
+  .flux-motion-standard {
+    transition: transform var(--flux-transition-normal), opacity var(--flux-transition-normal), box-shadow var(--flux-transition-normal), background-color var(--flux-transition-normal), border-color var(--flux-transition-normal);
+  }
+
+  /*
+   * Staggered list / grid entrances: set style={{ "--item-index": i } as React.CSSProperties} on each row.
+   */
+  .flux-list-item {
+    animation: flux-list-item-enter var(--flux-motion-list-enter-duration) var(--flux-motion-ease-standard) both;
+    animation-delay: calc(var(--item-index, 0) * var(--flux-motion-stagger-step));
+  }
+
+  .flux-shimmer {
+    background-image: linear-gradient(110deg, transparent 10%, var(--flux-chrome-alpha-08) 35%, transparent 60%);
+    background-size: 220% 100%;
+    animation: flux-shimmer-sweep 1.4s var(--flux-ease-standard) infinite;
+  }
+
   .flux-animate-skeleton-pulse {
     animation: flux-skeleton-pulse var(--flux-skeleton-pulse-duration) var(--flux-ease-standard) infinite;
   }
@@ -1019,9 +2327,62 @@
   .flux-animate-data-fade-in {
     animation: flux-data-fade-in var(--flux-data-fade-duration) var(--flux-ease-standard) forwards;
   }
+
+  .flux-intelligence-badge-pulse {
+    animation: flux-ai-pulse 2.8s var(--flux-ease-standard) infinite;
+  }
+
+  /*
+   * Safe area — pair with root viewport `viewportFit: cover` (see app/layout.tsx).
+   * Use on fixed chrome, modals, and optional horizontal inset on narrow viewports.
+   */
+  .flux-safe-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .flux-safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .flux-safe-pl {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .flux-safe-pr {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .flux-safe-px {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .flux-safe-py {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .flux-safe-p {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+      env(safe-area-inset-left, 0px);
+  }
+}
+
+@keyframes flux-shimmer-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .flux-shimmer {
+    animation: none;
+    background-image: none;
+  }
+
   .flux-animate-skeleton-pulse {
     animation: none;
     opacity: 0.88;
@@ -1031,16 +2392,528 @@
     animation: none;
     opacity: 1;
   }
+
+  .flux-list-item {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .flux-glass-surface,
+  .flux-glass-elevated {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .flux-intelligence-badge-pulse {
+    animation: none;
+  }
 }
 
 /* Product tour — spotlight via large box-shadow on the target (see board-product-tour.tsx) */
 .flux-tour-highlight {
   position: relative !important;
   z-index: 475 !important;
-  box-shadow: 0 0 0 9999px rgba(6, 4, 12, 0.72);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--flux-surface-dark) 72%, black);
   border-radius: var(--flux-rad, 0.75rem);
-  outline: 2px solid var(--flux-primary);
+  outline: 2px solid var(--flux-focus-ring);
   outline-offset: 3px;
+}
+
+/* ─── BPMN Workspace Design System ──────────────────────────────────────────
+   Design tokens for the BPMN canvas. Scoped to .bpmn-workspace so they
+   don't bleed into the rest of the Flux-Board design system.
+   ─────────────────────────────────────────────────────────────────────────── */
+.bpmn-workspace {
+  /* ── BPMN toolbar ── */
+  --bpmn-toolbar-bg: linear-gradient(135deg, var(--flux-surface-mid) 0%, var(--flux-surface-elevated) 100%);
+  --bpmn-toolbar-text: var(--flux-text);
+  --bpmn-toolbar-muted: color-mix(in srgb, var(--flux-text) 65%, transparent);
+
+  /* ── Canvas dots ── */
+  --bpmn-dots-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+
+  /* ── Lane gradients (index-ordered) ── */
+  --lane-grad-0: linear-gradient(180deg, #558B2F, #7CB342);
+  --lane-grad-1: linear-gradient(180deg, #00695C, #00897B);
+  --lane-grad-2: linear-gradient(180deg, #1565C0, #42A5F5);
+  --lane-grad-3: linear-gradient(180deg, #5E35B1, #7E57C2);
+  --lane-grad-4: linear-gradient(180deg, #E65100, #FF9800);
+
+  /* ── Typography ── */
+  --bpmn-font-logo:          "Barlow Condensed", "Barlow", sans-serif;
+  --bpmn-font-body:          "Barlow", sans-serif;
+  --bpmn-font-size-node:     13px;
+  --bpmn-font-size-sub:      10px;
+  --bpmn-radius:             10px;
+
+  /* ── Document spec tokens (from HTML prototype) ── */
+  --navy: #1A2744;
+  --teal: #00897B;
+  --tealL: #4DB6AC;
+  --lime: #7CB342;
+  --limeBg: #F1F8E9;
+  --cyan: #00ACC1;
+  --cyanBg: #E0F7FA;
+  --red: #EF5350;
+  --redBg: #FFEBEE;
+  --blue: #42A5F5;
+  --blueBg: #E3F2FD;
+  --amber: #FFB300;
+  --amberL: #FFE082;
+  --purple: #7E57C2;
+  --purpleBg: #EDE7F6;
+  --sh: 0 3px 12px color-mix(in srgb, black 12%, transparent);
+  --shH: 0 8px 28px color-mix(in srgb, black 22%, transparent);
+}
+
+/* ─── React Flow overrides — Flux Board identity ───────────────────────── */
+.bpmn-react-flow .react-flow__background {
+  background-color: var(--flux-surface-dark);
+}
+
+.bpmn-react-flow .react-flow__node {
+  transition: transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease, opacity 80ms ease;
+  cursor: grab;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]):hover {
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--flux-surface-dark) 45%, transparent));
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).dragging {
+  opacity: 0.92;
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--flux-surface-dark) 52%, transparent));
+  cursor: grabbing;
+}
+
+.bpmn-react-flow .react-flow__edge path {
+  transition: stroke 150ms ease, stroke-width 100ms ease;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Edge "flow" animation for primary edges */
+@keyframes bpmn-edge-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.bpmn-react-flow .react-flow__edge.selected path {
+  animation: bpmn-edge-flow 0.8s linear infinite;
+  stroke-dasharray: 5 5;
+}
+
+.bpmn-react-flow .react-flow__connection-line {
+  stroke: color-mix(in srgb, var(--flux-secondary) 95%, white);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.bpmn-react-flow .react-flow__minimap {
+  border-radius: var(--flux-rad);
+  box-shadow: var(--flux-shadow-md);
+}
+
+.bpmn-react-flow .react-flow__controls button {
+  background: var(--flux-surface-card);
+  border-color: var(--flux-border-default);
+  color: var(--flux-text);
+}
+
+/* ─── BPMN Task card ───────────────────────────────────────────────────── */
+.bpmn-task-card {
+  transition: box-shadow 150ms ease, transform 150ms cubic-bezier(0.22,1,0.36,1);
+}
+
+.react-flow__node:hover .bpmn-task-card {
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--flux-text) 18%, transparent) !important;
+}
+
+.react-flow__node.selected .bpmn-task-card {
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 30%, transparent) !important;
+}
+
+/* ─── BPMN Handles (connection ports) ──────────────────────────────────── */
+.bpmn-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: var(--flux-surface-card) !important;
+  border: 1.5px solid var(--flux-primary) !important;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 150ms ease;
+}
+
+.react-flow__node:hover .bpmn-handle,
+.react-flow__node.selected .bpmn-handle {
+  opacity: 0.7;
+}
+
+.bpmn-handle:hover {
+  opacity: 1 !important;
+  transform: scale(1.4);
+  background: var(--flux-primary-light) !important;
+}
+
+/* ─── BPMN Toolbar button styles ───────────────────────────────────────── */
+.bpmn-toolbar-btn {
+  border-radius: 8px;
+  border: 1px solid var(--flux-chrome-alpha-18);
+  background: var(--flux-chrome-alpha-08);
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bpmn-toolbar-text);
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  cursor: pointer;
+}
+
+.bpmn-toolbar-btn:hover {
+  background: var(--flux-chrome-alpha-20);
+}
+
+.bpmn-toolbar-btn-active {
+  background: var(--flux-primary) !important;
+  border-color: var(--flux-primary) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--flux-primary) 40%, transparent);
+}
+
+/* ─── BPMN Properties inputs ───────────────────────────────────────────── */
+.bpmn-prop-input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: var(--flux-rad);
+  background: var(--flux-surface-elevated);
+  border: 1px solid var(--flux-control-border);
+  font-size: 12px;
+  color: var(--flux-text);
+}
+
+.bpmn-prop-input:focus {
+  border-color: var(--flux-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 40%, transparent);
+}
+
+/* ─── BPMN Legend inputs ──────────────────────────────────────────────── */
+.bpmn-legend-input {
+  min-width: 0;
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--flux-text-muted);
+}
+
+.bpmn-legend-input:hover {
+  border-color: var(--flux-border-subtle);
+}
+
+.bpmn-legend-input:focus {
+  border-color: color-mix(in srgb, var(--flux-secondary) 50%, transparent);
+  outline: none;
+}
+
+/* ─── BPMN Swim Lane Styles ───────────────────────────────────────────── */
+.bpmn-swim-lane-body {
+  border-radius: 8px;
+  border: 2px solid color-mix(in srgb, var(--flux-secondary) 15%, transparent);
+  background: color-mix(in srgb, var(--flux-secondary) 3%, transparent);
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+  overflow: visible;
+}
+
+.bpmn-swim-lane-body[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--flux-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 4%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--flux-primary) 12%, transparent),
+    0 8px 32px color-mix(in srgb, var(--flux-text) 12%, transparent);
+}
+
+.bpmn-swim-lane-body:hover {
+  border-color: color-mix(in srgb, var(--flux-secondary) 30%, transparent);
+}
+
+.bpmn-swim-lane-bar {
+  cursor: grab;
+  transition: filter 200ms ease;
+}
+
+.bpmn-swim-lane-bar:hover {
+  filter: brightness(1.1);
+}
+
+.bpmn-swim-lane-bar:active {
+  cursor: grabbing;
+}
+
+.bpmn-swim-lane-label-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 2px;
+  text-orientation: mixed;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: white;
+  user-select: none;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.bpmn-swim-lane-label-input {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  letter-spacing: 1px;
+  width: 100%;
+  height: 100%;
+  padding: 4px 0;
+  background: transparent;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-align: center;
+  outline: none;
+  caret-color: rgba(255,255,255,0.9);
+}
+
+.bpmn-swim-lane-label-input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.bpmn-swim-lane-toolbar {
+  position: absolute;
+  top: -36px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: var(--flux-surface-card);
+  border: 1px solid var(--flux-border-default);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-surface-dark) 45%, transparent);
+  z-index: 50;
+  animation: bpmn-lane-toolbar-in 150ms cubic-bezier(0.22,1,0.36,1);
+}
+
+@keyframes bpmn-lane-toolbar-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bpmn-lane-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--flux-border-default);
+  background: var(--flux-surface-elevated);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.bpmn-lane-tool-btn:hover {
+  background: var(--flux-primary);
+  border-color: var(--flux-primary);
+  transform: scale(1.08);
+}
+
+.bpmn-lane-tool-btn-danger:hover {
+  background: #EF5350 !important;
+  border-color: #EF5350 !important;
+}
+
+/* Swim lane resize handles */
+.bpmn-lane-resize-line {
+  border-color: color-mix(in srgb, var(--flux-primary) 35%, transparent) !important;
+}
+
+.bpmn-lane-resize-handle {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: var(--flux-primary) !important;
+  border: 2px solid var(--flux-surface-card) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--flux-primary) 35%, transparent) !important;
+  pointer-events: auto !important;
+}
+
+.bpmn-lane-resize-line {
+  pointer-events: auto !important;
+}
+
+/* Swim lane React Flow node overrides — always behind everything */
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"] {
+  z-index: -10 !important;
+  transition: none;
+  pointer-events: all;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"]:hover {
+  z-index: -10 !important;
+  filter: none;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"].selected {
+  z-index: -10 !important;
+}
+
+.bpmn-react-flow .react-flow__node[data-type="swim_lane"].dragging {
+  opacity: 0.85;
+  z-index: -5 !important;
+}
+
+/* Non-swim-lane nodes always above lanes */
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]) {
+  z-index: 1 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]):hover {
+  z-index: 100 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).selected {
+  z-index: 100 !important;
+}
+
+.bpmn-react-flow .react-flow__node:not([data-type="swim_lane"]).dragging {
+  z-index: 1000 !important;
+}
+
+/* ─── BPMN Light Theme ─────────────────────────────────────────────────── */
+[data-theme="light"] .bpmn-workspace {
+  --bpmn-toolbar-bg: linear-gradient(135deg, var(--flux-surface-dark) 0%, var(--flux-surface-elevated) 100%);
+  --bpmn-toolbar-text: var(--flux-text);
+  --bpmn-toolbar-muted: color-mix(in srgb, var(--flux-text) 55%, transparent);
+  --bpmn-dots-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --sh: 0 3px 12px color-mix(in srgb, var(--flux-text) 8%, transparent);
+  --shH: 0 8px 28px color-mix(in srgb, var(--flux-text) 14%, transparent);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__background {
+  background-color: color-mix(in srgb, var(--flux-surface-dark) 96%, white);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__node:hover {
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--flux-primary) 12%, transparent));
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__node.dragging {
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--flux-primary) 16%, transparent));
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__connection-line {
+  stroke: color-mix(in srgb, var(--flux-primary) 70%, transparent);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__controls button {
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  color: var(--flux-text);
+}
+
+[data-theme="light"] .bpmn-react-flow .react-flow__minimap {
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
+}
+
+[data-theme="light"] .bpmn-toolbar-btn {
+  border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 6%, transparent);
+  color: var(--flux-text);
+}
+
+[data-theme="light"] .bpmn-toolbar-btn:hover {
+  background: color-mix(in srgb, var(--flux-primary) 14%, transparent);
+}
+
+[data-theme="light"] .bpmn-toolbar-btn-active {
+  background: var(--flux-primary) !important;
+  border-color: var(--flux-primary) !important;
+  color: #fff !important;
+}
+
+[data-theme="light"] .bpmn-handle {
+  background: #fff !important;
+  border-color: var(--flux-primary) !important;
+}
+
+[data-theme="light"] .bpmn-handle:hover {
+  background: var(--flux-primary-light) !important;
+}
+
+[data-theme="light"] .bpmn-task-card {
+  border-top-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--flux-primary) 10%, transparent) !important;
+}
+
+[data-theme="light"] .react-flow__node:hover .bpmn-task-card {
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--flux-primary) 14%, transparent) !important;
+}
+
+[data-theme="light"] .react-flow__node.selected .bpmn-task-card {
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 22%, transparent) !important;
+}
+
+[data-theme="light"] .bpmn-prop-input {
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  color: var(--flux-text);
+}
+
+[data-theme="light"] .bpmn-prop-input:focus {
+  border-color: var(--flux-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--flux-focus-ring) 35%, transparent);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body {
+  border-color: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 2%, transparent);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--flux-primary) 32%, transparent);
+  background: color-mix(in srgb, var(--flux-primary) 3%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--flux-primary) 10%, transparent),
+    0 8px 32px color-mix(in srgb, var(--flux-primary) 8%, transparent);
+}
+
+[data-theme="light"] .bpmn-swim-lane-body:hover {
+  border-color: color-mix(in srgb, var(--flux-primary) 22%, transparent);
+}
+
+[data-theme="light"] .bpmn-swim-lane-toolbar {
+  background: var(--flux-surface-card);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--flux-primary) 10%, transparent);
+}
+
+[data-theme="light"] .bpmn-lane-tool-btn {
+  background: color-mix(in srgb, var(--flux-surface-dark) 96%, white);
+  border-color: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+}
+
+[data-theme="light"] .bpmn-lane-tool-btn:hover {
+  background: var(--flux-primary);
+  border-color: var(--flux-primary);
+  color: #fff;
+}
+
+[data-theme="light"] .bpmn-lane-resize-handle {
+  border-color: var(--flux-surface-dark) !important;
+}
+
+[data-theme="light"] .bpmn-lane-resize-line {
+  border-color: color-mix(in srgb, var(--flux-primary) 25%, transparent) !important;
 }
 
 /* Theme changes — View Transitions API (see theme-context fallback for older browsers) */
@@ -1049,5 +2922,415 @@
   ::view-transition-new(root) {
     animation-duration: 0.35s;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Flux Docs — markdown preview & TipTap surface */
+.flux-docs-prose h1,
+.flux-docs-prose h2,
+.flux-docs-prose h3 {
+  font-weight: 700;
+  color: var(--flux-text);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+.flux-docs-prose h1 {
+  font-size: var(--flux-text-2xl);
+}
+.flux-docs-prose h2 {
+  font-size: var(--flux-text-xl);
+}
+.flux-docs-prose h3 {
+  font-size: var(--flux-text-lg);
+}
+.flux-docs-prose p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+  color: var(--flux-text);
+}
+.flux-docs-prose ul,
+.flux-docs-prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: var(--flux-text);
+}
+.flux-docs-prose li {
+  margin: 0.25rem 0;
+}
+.flux-docs-prose blockquote {
+  margin: 0.75rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--flux-primary-alpha-25);
+  color: var(--flux-text-muted);
+}
+.flux-docs-prose hr {
+  margin: 1rem 0;
+  border: none;
+  border-top: 1px solid var(--flux-chrome-alpha-12);
+}
+.flux-docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: var(--flux-text-sm);
+}
+.flux-docs-prose th,
+.flux-docs-prose td {
+  border: 1px solid var(--flux-chrome-alpha-12);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.flux-docs-prose th {
+  background: var(--flux-surface-elevated);
+  color: var(--flux-primary-light);
+}
+.flux-docs-prose input[type="checkbox"] {
+  margin-right: 0.35rem;
+  accent-color: var(--flux-primary);
+}
+
+.flux-docs-prosemirror {
+  min-height: 50vh;
+}
+.flux-docs-prosemirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--flux-text-muted);
+}
+.flux-docs-prosemirror .ProseMirror-focused {
+  outline: none;
+}
+.flux-docs-prosemirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: var(--flux-text-sm);
+}
+.flux-docs-prosemirror th,
+.flux-docs-prosemirror td {
+  border: 1px solid var(--flux-chrome-alpha-12);
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.flux-docs-prosemirror th {
+  background: var(--flux-surface-elevated);
+  font-weight: 600;
+}
+
+/* Fluxy mascot — animations (used by components/fluxy/fluxy-avatar.tsx) */
+@keyframes fluxy-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes fluxy-breathe-slow {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.01);
+  }
+}
+@keyframes fluxy-tail-wag {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
+  30% {
+    transform: rotate(10deg) translateX(2px);
+  }
+  70% {
+    transform: rotate(-6deg) translateX(-1px);
+  }
+}
+@keyframes fluxy-tail-wag-fast {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(-12deg);
+  }
+}
+@keyframes fluxy-float-card {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+@keyframes fluxy-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(520px) rotate(720deg);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-wave-arm {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-20deg);
+  }
+  75% {
+    transform: rotate(15deg);
+  }
+}
+@keyframes fluxy-z-float {
+  0% {
+    transform: translateY(0) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) scale(1.2);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-orb-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fluxy-orb-spin-reverse {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes fluxy-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.15);
+  }
+}
+@keyframes fluxy-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes fluxy-sound-wave {
+  0% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scaleX(1.5);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-18px);
+  }
+  60% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes fluxy-error-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes fluxy-point-pulse {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+@keyframes fluxy-heart-float {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    transform: translateY(-50px) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-fab-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes fluxy-think-bubble {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+@keyframes fluxy-ear-perk {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes fluxy-ear-perk-r {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes fluxy-cheek-blush {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes fluxy-heart-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.3);
+    opacity: 0;
+  }
+}
+@keyframes fluxy-glasses-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flux-primary) 27%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--flux-primary) 67%, transparent));
+  }
+}
+@keyframes fluxy-sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fluxy-bounce-in {
+  0% {
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@layer utilities {
+  .fluxy-ui-bounce-in {
+    animation: fluxy-bounce-in 0.35s ease;
+  }
+  .fluxy-ui-bounce-in-slow {
+    animation: fluxy-bounce-in 0.4s ease;
+  }
+  .fluxy-fab-bob {
+    animation: fluxy-fab-bob 3s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --flux-motion-duration-instant: 0.01ms;
+    --flux-motion-duration-fast: 0.01ms;
+    --flux-motion-duration-base: 0.01ms;
+    --flux-motion-duration-slow: 0.01ms;
+    --flux-motion-list-enter-duration: 0.01ms;
+    --flux-skeleton-pulse-duration: 0.01ms;
+  }
+
+  .fluxy-ui-bounce-in,
+  .fluxy-ui-bounce-in-slow {
+    animation: none;
+  }
+  .fluxy-fab-bob {
+    animation: none !important;
+  }
+  .fluxy-avatar[data-fluxy-motion="reduced"] svg,
+  .fluxy-avatar[data-fluxy-motion="reduced"] svg * {
+    animation: none !important;
   }
 }

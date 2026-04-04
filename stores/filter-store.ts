@@ -7,12 +7,15 @@ export type BoardFiltersSlice = {
   activePrio: string;
   activeLabels: string[];
   searchQuery: string;
+  /** Foco vindo dos chips de inteligência (interseção com filtros normais). */
+  insightFocusCardIds: string[];
 };
 
 const DEFAULT_FILTERS: BoardFiltersSlice = {
   activePrio: "all",
   activeLabels: [],
   searchQuery: "",
+  insightFocusCardIds: [],
 };
 
 const SESSION_KEY = "flux.kanban.filters.session.v1";
@@ -30,12 +33,23 @@ export const useFilterStore = create<FilterStoreState>()(
     persist(
       (set, get) => ({
         filtersByBoard: {},
-        getFilters: (boardId) => get().filtersByBoard[boardId] ?? { ...DEFAULT_FILTERS },
+        getFilters: (boardId) => {
+          const cur = get().filtersByBoard[boardId];
+          if (!cur) return { ...DEFAULT_FILTERS };
+          return {
+            ...DEFAULT_FILTERS,
+            ...cur,
+            insightFocusCardIds: Array.isArray(cur.insightFocusCardIds) ? cur.insightFocusCardIds : [],
+          };
+        },
         patchFilters: (boardId, partial) =>
           set((s) => {
             const cur = s.filtersByBoard[boardId] ?? { ...DEFAULT_FILTERS };
+            const base = { ...DEFAULT_FILTERS, ...cur };
+            const merged = { ...base, ...partial };
+            if (!Array.isArray(merged.insightFocusCardIds)) merged.insightFocusCardIds = [];
             return {
-              filtersByBoard: { ...s.filtersByBoard, [boardId]: { ...cur, ...partial } },
+              filtersByBoard: { ...s.filtersByBoard, [boardId]: merged },
             };
           }),
       }),
@@ -43,6 +57,7 @@ export const useFilterStore = create<FilterStoreState>()(
         name: SESSION_KEY,
         storage: createJSONStorage(() => (typeof window !== "undefined" ? sessionStorage : noopStorage)),
         partialize: (s) => ({ filtersByBoard: s.filtersByBoard }),
+        skipHydration: true,
       }
     ),
     { name: "FluxFilters", enabled: devEnabled }

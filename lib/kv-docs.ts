@@ -3,9 +3,9 @@ import { deleteDocChunksForDocument, syncDocChunksFromDocument } from "./kv-doc-
 import { getDb, isMongoConfigured } from "./mongo";
 import { getStore } from "./storage";
 
-const DOC_PREFIX = "reborn_doc:";
-const DOCS_BY_ORG_PREFIX = "reborn_docs_by_org:";
-const DOC_COUNTER = "reborn_doc_counter";
+const DOC_PREFIX = "flux_doc:";
+const DOCS_BY_ORG_PREFIX = "flux_docs_by_org:";
+const DOC_COUNTER = "flux_doc_counter";
 
 const COL_DOCS = "docs";
 const COL_COUNTERS = "counters";

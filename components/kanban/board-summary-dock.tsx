@@ -37,7 +37,7 @@ export function BoardSummaryDock({
   okrProjectionByKrId,
 }: BoardSummaryDockProps) {
   return (
-    <div className="board-summary-dock rounded-t-[var(--flux-rad)] border-t border-x border-[var(--flux-border-default)] py-2.5 px-5 sm:px-6 lg:px-8 z-[80] max-w-[1200px] mx-auto">
+    <div className="board-summary-dock w-full max-w-full sm:max-w-[1200px] rounded-t-[var(--flux-rad)] border-t border-x border-[var(--flux-border-default)] py-2 px-3 sm:py-2.5 sm:px-6 lg:px-8 z-[var(--flux-z-board-summary-dock)] mx-auto box-border">
       <div className="w-full flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 text-center">
         <div className="flex items-center justify-center gap-2 overflow-x-auto flex-wrap min-w-0 scrollbar-flux pb-1">
           {buckets.map((b, i) => {

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensurePlatformAdmin } from "@/lib/api-authz";
 import {
   deleteWebhookSubscription,
   getWebhookSubscription,
   updateWebhookSubscription,
 } from "@/lib/kv-webhooks";
 import { WebhookSubscriptionUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
-import { assertWebhookUrlAllowed } from "@/lib/webhook-url";
+import { assertWebhookUrlResolvesSafely, WebhookUrlBlockedError } from "@/lib/webhook-url";
 
 function secretHint(secret: string): string {
   const s = String(secret || "");
@@ -17,9 +18,10 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(_request);
+  const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedGet = ensurePlatformAdmin(payload);
+  if (deniedGet) return deniedGet;
 
   const { id } = await params;
   const sub = await getWebhookSubscription(payload.orgId, id);
@@ -33,9 +35,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedPatch = ensurePlatformAdmin(payload);
+  if (deniedPatch) return deniedPatch;
 
   const { id } = await params;
   const existing = await getWebhookSubscription(payload.orgId, id);
@@ -49,9 +52,10 @@ export async function PATCH(
 
   if (parsed.data.url) {
     try {
-      assertWebhookUrlAllowed(parsed.data.url);
+      await assertWebhookUrlResolvesSafely(parsed.data.url);
     } catch (e) {
-      return NextResponse.json({ error: e instanceof Error ? e.message : "URL inválida" }, { status: 400 });
+      const msg = e instanceof WebhookUrlBlockedError ? e.message : "URL inválida.";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
   }
 
@@ -75,9 +79,10 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(_request);
+  const payload = await getAuthFromRequest(_request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const deniedDel = ensurePlatformAdmin(payload);
+  if (deniedDel) return deniedDel;
 
   const { id } = await params;
   const ok = await deleteWebhookSubscription(payload.orgId, id);

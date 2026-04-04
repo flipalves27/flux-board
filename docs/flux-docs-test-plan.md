@@ -12,7 +12,12 @@
 ## UI
 - Open `/docs` and verify docs tree is visible.
 - Create root doc and child doc from sidebar.
-- Edit title/content and confirm autosave state transitions to `Salvo`.
+- Edit title/content and confirm autosave state transitions to `Salvo` (or localized “Saved”).
+- Use **Salvar agora / Save now** and confirm save completes without waiting for the debounce.
+- In **Editar / Edit**, use the formatting toolbar (headings, lists, task list, quote, code block, link, table) and confirm content persists after refresh.
+- Switch to **Visualizar / Preview** and confirm Markdown renders (including tables and task lists when present).
+- **Exportar .md / Export .md** downloads a file; **Importar .md / Import .md** replaces content after confirmation when the body is non-empty.
+- Expand “Como usar / How to use” and keyboard shortcuts `<details>`; dismiss the IA tip banner once and confirm it stays hidden (localStorage).
 - Search docs and select a result.
 - Delete selected doc and confirm tree refresh.
 

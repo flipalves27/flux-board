@@ -124,7 +124,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="fixed right-4 bottom-4 z-[520] flex w-[min(420px,92vw)] flex-col gap-2 pointer-events-none"
+        className="fixed right-4 bottom-4 z-[var(--flux-z-command-backdrop)] flex w-[min(420px,92vw)] flex-col gap-2.5 pointer-events-none"
       >
         {toasts.map((toast) => {
           const st = kindStyles(toast.kind);
@@ -140,18 +140,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div
               key={toast.id}
               role="status"
-              className="pointer-events-auto border rounded-[var(--flux-rad)] px-4 py-3 bg-[var(--flux-surface-card)]/95 backdrop-blur-sm shadow-[var(--flux-shadow-toast)]"
+              className="pointer-events-auto flux-glass-elevated flux-motion-standard rounded-[var(--flux-rad-lg)] px-4 py-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 shadow-[var(--flux-shadow-toast-strong)]"
               style={{
                 borderColor: st.border,
-                background: `linear-gradient(180deg, ${st.bg}, var(--flux-surface-card-deep-85))`,
+                backgroundImage: `linear-gradient(180deg, ${st.bg}, transparent), var(--flux-glass-elevated-bg)`,
               }}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide font-semibold font-display" style={{ color: st.text }}>
+                  <p className="text-[11px] uppercase tracking-[0.08em] font-semibold font-display" style={{ color: st.text }}>
                     {kindLabel}
                   </p>
-                  <p className="text-sm font-semibold text-[var(--flux-text)] mt-1">{toast.title}</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--flux-text)]">{toast.title}</p>
                   {toast.description && (
                     <p className="text-xs text-[var(--flux-text-muted)] mt-1">{toast.description}</p>
                   )}
@@ -159,7 +159,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   onClick={() => dismissToast(toast.id)}
-                  className="w-8 h-8 rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] flex items-center justify-center hover:bg-[var(--flux-chrome-alpha-08)] hover:text-[var(--flux-text)] transition-all duration-200"
+                  className="flux-glass-focus flux-motion-standard flex h-8 w-8 items-center justify-center rounded-full border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-chrome-alpha-08)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-12)] hover:text-[var(--flux-text)]"
                   aria-label={toastsT("closeAria")}
                 >
                   ×

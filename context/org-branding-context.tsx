@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import type { OrgBranding } from "@/lib/org-branding";
@@ -52,6 +52,12 @@ type OrgBrandingContextValue = {
 const OrgBrandingContext = createContext<OrgBrandingContextValue | null>(null);
 
 const DEFAULT_DOC_TITLE = `${DEFAULT_PLATFORM_NAME} — Commercial operations with clarity`;
+const DEFAULT_FAVICON_HREF = "/favicon.svg";
+
+function isVercelPreviewHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase();
+  return normalized.endsWith(".vercel.app") && normalized.includes("-");
+}
 
 function applyBrandingToDocument(
   branding: OrgBranding | null | undefined,
@@ -68,6 +74,10 @@ function applyBrandingToDocument(
     root.style.removeProperty("--flux-org-accent-dark");
     root.style.removeProperty("--org-branding-active");
     document.title = DEFAULT_DOC_TITLE;
+    const defaultIcon = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+    if (defaultIcon) defaultIcon.href = DEFAULT_FAVICON_HREF;
+    const defaultApple = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
+    if (defaultApple) defaultApple.href = DEFAULT_FAVICON_HREF;
     return;
   }
   const primary = sanitizeHexColor(branding.primaryColor);
@@ -130,18 +140,28 @@ function applyBrandingToDocument(
 
 export function OrgBrandingProvider({ children }: { children: React.ReactNode }) {
   const { user, getHeaders, isChecked } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const getHeadersRef = useRef(getHeaders);
+  getHeadersRef.current = getHeaders;
+
   const [org, setOrg] = useState<OrgPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [publicBranding, setPublicBranding] = useState<PublicBrandingPayload | null>(null);
 
+  /**
+   * `user` e `getHeaders` mudam de identidade no contexto; não podem estar nas deps de `useCallback`
+   * sem recriar `refresh` a cada render → `useEffect([refresh])` dispara em loop (React #185).
+   */
   const refresh = useCallback(async () => {
-    if (!user) {
+    const u = userRef.current;
+    if (!u) {
       setOrg(null);
       return;
     }
     setLoading(true);
     try {
-      const data = await apiGet<{ organization: OrgPayload }>("/api/organizations/me", getHeaders());
+      const data = await apiGet<{ organization: OrgPayload }>("/api/organizations/me", getHeadersRef.current());
       setOrg(data?.organization ?? null);
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -152,27 +172,31 @@ export function OrgBrandingProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user, getHeaders]);
+  }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) {
+    if (!isChecked || !user?.id) {
       setOrg(null);
       applyBrandingToDocument(null, false, DEFAULT_PLATFORM_NAME);
       return;
     }
     void refresh();
-  }, [isChecked, user, refresh]);
+  }, [isChecked, user?.id, user?.orgId, refresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
-    const host = window.location.hostname;
+    const host = window.location.hostname.toLowerCase();
     const appHost = defaultAppHostnameFromEnv();
-    if (!host || host === "localhost" || host === "127.0.0.1") {
+    if (!host || host === "localhost" || host === "127.0.0.1" || host === "::1") {
       setPublicBranding(null);
       return;
     }
     if (appHost && host === appHost) {
+      setPublicBranding(null);
+      return;
+    }
+    if (isVercelPreviewHost(host)) {
       setPublicBranding(null);
       return;
     }

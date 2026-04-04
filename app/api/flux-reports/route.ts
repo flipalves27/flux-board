@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser } from "@/lib/kv-boards";
+import { listBoardsForUser } from "@/lib/kv-boards";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
+  averageApproxCycleTimeDays,
   averageLeadTimeDays,
+  buildBlockerTagDistribution,
   buildCfdPoints,
   buildColumnAndPriorityDistribution,
   buildCreatedVsDoneFromCopilot,
@@ -18,8 +21,10 @@ import {
   buildTeamVelocity,
   buildWeeklyThroughputFromCopilot,
   collectBucketLabels,
+  scrumDorReadySnapshot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { buildSprintStoryPointsHistory } from "@/lib/flux-reports-sprint-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
@@ -35,7 +40,7 @@ function weekStartLabelFromMs(ms: number): string {
  * Agregação org-wide para Flux Reports (dashboard ao vivo).
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -43,16 +48,13 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
-    await ensureBoardReborn(payload.orgId, "admin", getDefaultBoardData);
-
     const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
@@ -118,6 +120,15 @@ export async function GET(request: NextRequest) {
     const { byColumn, byPriority } = buildColumnAndPriorityDistribution(boards);
     const heatmap = buildPortfolioHeatmap(rows);
     const avgLeadDays = averageLeadTimeDays(boards);
+    const avgApproxCycleDays = averageApproxCycleTimeDays(boards);
+    const blockerTagDistribution = buildBlockerTagDistribution(boards);
+    const scrumDorReady = scrumDorReadySnapshot(boards);
+    let sprintStoryPointsHistory: Awaited<ReturnType<typeof buildSprintStoryPointsHistory>> = [];
+    try {
+      sprintStoryPointsHistory = await buildSprintStoryPointsHistory(payload.orgId, boards);
+    } catch {
+      sprintStoryPointsHistory = [];
+    }
 
     const generatedAt = new Date().toISOString();
 
@@ -144,6 +155,7 @@ export async function GET(request: NextRequest) {
       aggregates: {
         ...aggregates,
         avgLeadTimeDays: avgLeadDays,
+        avgApproxCycleTimeDays: avgApproxCycleDays,
       },
       weeks: weeks.map((w) => ({ label: w.label, startMs: w.startMs, endMs: w.endMs })),
       cfd: {
@@ -166,6 +178,9 @@ export async function GET(request: NextRequest) {
         copilotHistory: copilotChats.length > 0,
         boardCount: boards.length,
       },
+      blockerTagDistribution,
+      scrumDorReady,
+      sprintStoryPointsHistory,
     });
   } catch (err) {
     console.error("Flux reports API error:", err);

@@ -8,6 +8,8 @@ import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
+import { extractVoiceToBoardSuggestions } from "@/lib/daily-voice-extract";
+import { nextBoardCardId } from "@/lib/card-id";
 import type {
   DailyLog,
   DailyStatusPhase,
@@ -30,6 +32,7 @@ type DailySessionState = {
   historySearchQuery: string;
 };
 
+const EMPTY_INSIGHTS: DailyInsightEntry[] = [];
 const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
 const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
 const DAILY_SESSION_MAX_JSON_CHARS = 120000;
@@ -50,7 +53,7 @@ export function useDailySession({
 
   const db = useBoardStore((s) => s.db);
   const updateDb = useBoardStore((s) => s.updateDb);
-  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : [];
+  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : EMPTY_INSIGHTS;
 
   const dailyOpen = useKanbanUiStore((s) => s.dailyOpen);
 
@@ -74,6 +77,16 @@ export function useDailySession({
   const dailyRequestSeqRef = useRef(0);
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
   const dailyInFlightRef = useRef(false);
+
+  const voiceToBoardSuggestions = useMemo(() => {
+    const cards = Array.isArray(db?.cards) ? db.cards : [];
+    if (!dailyTranscript.trim()) return [];
+    return extractVoiceToBoardSuggestions(
+      dailyTranscript,
+      cards.map((c) => ({ id: c.id, title: c.title })),
+      { minScore: 0.28, limit: 8 }
+    );
+  }, [dailyTranscript, db?.cards]);
 
   const closeDailyModal = useCallback(() => {
     useKanbanUiStore.getState().setDailyOpen(false);
@@ -331,6 +344,7 @@ export function useDailySession({
           "Backlog";
 
         const nextOrderByBucket: Record<string, number> = {};
+        const usedCardIds = new Set(d.cards.map((c) => c.id));
         const created: CardData[] = [];
         const createdCardsPayload: DailyCreatedCard[] = [];
         let createdCount = 0;
@@ -356,15 +370,17 @@ export function useDailySession({
 
           const directionLower = String(s.direcionamento || "").toLowerCase();
           const direction = directions.map((d) => d.toLowerCase()).includes(directionLower) ? directionLower : null;
+          const generatedCardId = alreadyExists ? "" : nextBoardCardId(usedCardIds);
+          if (generatedCardId) usedCardIds.add(generatedCardId);
 
           const cardPayload: DailyCreatedCard = {
-            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
+            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : generatedCardId,
             title: s.titulo,
             bucket: bucketKey,
             priority: s.prioridade,
             progress: s.progresso,
             desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
-            tags: s.tags?.length ? s.tags : ["Reborn"],
+            tags: s.tags?.length ? s.tags : ["Geral"],
             direction,
             dueDate: s.dataConclusao || null,
             createdAt: nowIso,
@@ -1046,6 +1062,8 @@ export function useDailySession({
     requestDeleteDailyHistoryEntry,
     cancelDeleteDailyHistoryEntry,
     confirmDeleteDailyHistoryEntry,
+
+    voiceToBoardSuggestions,
   };
 }
 

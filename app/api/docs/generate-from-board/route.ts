@@ -3,14 +3,15 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { createDoc } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { canUseFeature } from "@/lib/plan-gates";
+import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { logDocsMetric } from "@/lib/docs-metrics";
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs_rag")) return NextResponse.json({ error: "RAG indisponível no plano atual." }, { status: 403 });
+  if (!canUseFeature(org, "flux_docs_rag", planGateCtxFromAuthPayload(payload)))
+    return NextResponse.json({ error: "RAG indisponível no plano atual." }, { status: 403 });
 
   const body = (await request.json().catch(() => ({}))) as { boardId?: string; title?: string };
   const boardId = String(body.boardId || "").trim();

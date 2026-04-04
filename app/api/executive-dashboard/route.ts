@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, getUserById } from "@/lib/kv-users";
-import { ensureBoardReborn, getDefaultBoardData, listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, canUseFeature, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
+import { canManageOrganization, deriveEffectiveRoles } from "@/lib/rbac";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
 import {
   buildRollingWeekRanges,
@@ -26,6 +28,7 @@ import {
 import { computePortfolioHealthScore } from "@/lib/executive-dashboard-metrics";
 import { currentQuarterLabel } from "@/lib/quarter-label";
 import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
+import { buildLeanSixSigmaPortfolioSummary } from "@/lib/flux-reports-lss";
 
 const NUM_WEEKS = 8;
 
@@ -50,7 +53,7 @@ function toObjectiveDefinition(objective: OkrsObjective, keyResults: OkrsKeyResu
 }
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -61,27 +64,20 @@ export async function GET(request: NextRequest) {
     if (!actor) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
-    if (!actor.isAdmin && !actor.isExecutive) {
+    if (!canManageOrganization(deriveEffectiveRoles(payload))) {
       return NextResponse.json({ error: "Acesso restrito a gestores." }, { status: 403 });
     }
 
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
-    await ensureBoardReborn(payload.orgId, "admin", getDefaultBoardData);
-
-    const boards = await listBoardsForUser(
-      payload.id,
-      payload.orgId,
-      payload.isAdmin || !!actor.isExecutive
-    );
+    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
 
@@ -93,7 +89,7 @@ export async function GET(request: NextRequest) {
     const quarter = currentQuarterLabel();
     let okrRings: Array<{ id: string; title: string; progressPct: number; quarter: string }> = [];
     let okrAvgPct: number | null = null;
-    const okrEnabled = canUseFeature(org, "okr_engine");
+    const okrEnabled = canUseFeature(org, "okr_engine", gateCtx);
 
     if (okrEnabled) {
       const grouped = await listObjectivesWithKeyResults(payload.orgId, quarter);
@@ -132,6 +128,19 @@ export async function GET(request: NextRequest) {
       .filter((r) => r.portfolio.cardCount > 0 && r.portfolio.risco != null)
       .sort((a, b) => (a.portfolio.risco ?? 100) - (b.portfolio.risco ?? 100))
       .slice(0, 5)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        clientLabel: r.clientLabel ?? null,
+        risco: r.portfolio.risco,
+        throughput: r.portfolio.throughput,
+        previsibilidade: r.portfolio.previsibilidade,
+        cardCount: r.portfolio.cardCount,
+      }));
+
+    const portfolioBoards = [...rows]
+      .filter((r) => r.portfolio.cardCount > 0)
+      .sort((a, b) => (a.portfolio.risco ?? 100) - (b.portfolio.risco ?? 100))
       .map((r) => ({
         id: r.id,
         name: r.name,
@@ -218,6 +227,9 @@ export async function GET(request: NextRequest) {
 
     const generatedAt = new Date().toISOString();
 
+    const lssReportsEnabled = canUseFeature(org, "lss_executive_reports", gateCtx);
+    const leanSixSigmaPortfolio = lssReportsEnabled ? buildLeanSixSigmaPortfolioSummary(boards) : null;
+
     return NextResponse.json(
       {
       schema: "flux-board.executive_dashboard.v1",
@@ -243,11 +255,13 @@ export async function GET(request: NextRequest) {
       },
       throughputTrend,
       topRiskBoards,
+      portfolioBoards,
       anomalies,
       meta: {
         boardCount: boards.length,
         copilotHistory: copilotChats.length > 0,
       },
+      leanSixSigmaPortfolio,
     },
       {
         headers: {

@@ -34,9 +34,9 @@ export type IntakeClassifierOutput = {
 const TAG_RULES: Array<{ tag: string; keywords: string[] }> = [
   { tag: "Incidente", keywords: ["incidente", "erro", "falha", "bug", "fora do ar", "indisponivel"] },
   { tag: "Comercial", keywords: ["comercial", "cliente", "proposta", "venda"] },
-  { tag: "Corretor", keywords: ["corretor", "broker"] },
+  { tag: "Parceiro", keywords: ["parceiro", "partner", "broker"] },
   { tag: "Subscrição", keywords: ["subscricao", "subscrição", "tomador", "garantia"] },
-  { tag: "Reborn", keywords: ["reborn", "plataforma"] },
+  { tag: "Plataforma", keywords: ["plataforma", "cadastro", "sistema"] },
 ];
 
 const PRIORITIES = new Set(["Urgente", "Importante", "Média"]);

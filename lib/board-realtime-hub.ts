@@ -1,7 +1,7 @@
 /**
  * Hub in-memory para SSE de presença / movimentos / locks por board.
  * Funciona em um único processo Node (dev, VPS, instância única).
- * Em deploy multi-instância, substituir por Redis / PartyKit / Liveblocks.
+ * Com `REDIS_URL`, mutações de board são também publicadas em Redis; ver `board-realtime-dispatch`.
  */
 
 export const MAX_PEERS_PER_BOARD = 20;
@@ -20,13 +20,14 @@ export type BucketMovePayload = { bucketKey: string; orderedCardIds: string[] };
 
 export type CardMoveEventPayload = {
   fromUserId: string;
-  fromConnectionId: string;
+  /** Presente quando o emissor tinha SSE ligado — só para diagnóstico; clientes usam `fromUserId`. */
+  fromConnectionId?: string;
   buckets: BucketMovePayload[];
 };
 
 export type ColumnReorderPayload = {
   fromUserId: string;
-  fromConnectionId: string;
+  fromConnectionId?: string;
   bucketKeys: string[];
 };
 
@@ -79,11 +80,17 @@ function safeWrite(c: ClientConn, event: string, data: unknown) {
   }
 }
 
-function broadcast(boardId: string, event: string, data: unknown, exceptConnectionId?: string) {
+/** Envia um evento SSE a todas as ligações do board (exceto `excludeConnectionId` se definido). */
+export function deliverSseToBoard(
+  boardId: string,
+  event: string,
+  data: unknown,
+  excludeConnectionId?: string
+) {
   const m = byBoard.get(boardId);
   if (!m) return;
   for (const c of m.values()) {
-    if (exceptConnectionId && c.connectionId === exceptConnectionId) continue;
+    if (excludeConnectionId && c.connectionId === excludeConnectionId) continue;
     safeWrite(c, event, data);
   }
 }
@@ -108,7 +115,7 @@ function presenceSnapshot(boardId: string): PresencePeer[] {
 }
 
 function broadcastPresence(boardId: string) {
-  broadcast(boardId, "presence", { peers: presenceSnapshot(boardId) });
+  deliverSseToBoard(boardId, "presence", { peers: presenceSnapshot(boardId) });
 }
 
 function clearLocksForClient(boardId: string, clientId: string) {
@@ -117,7 +124,7 @@ function clearLocksForClient(boardId: string, clientId: string) {
   for (const [cardId, v] of L) {
     if (v.clientId === clientId) {
       L.delete(cardId);
-      broadcast(boardId, "card_lock", {
+      deliverSseToBoard(boardId, "card_lock", {
         cardId,
         userId: v.userId,
         userName: v.userName,
@@ -126,6 +133,33 @@ function clearLocksForClient(boardId: string, clientId: string) {
       } satisfies CardLockPayload);
     }
   }
+}
+
+export function cardLockCanApply(boardId: string, args: CardLockPayload): boolean {
+  const L = locksFor(boardId);
+  if (args.locked) {
+    const prev = L.get(args.cardId);
+    if (prev && prev.userId !== args.userId) {
+      return false;
+    }
+    return true;
+  }
+  const prev = L.get(args.cardId);
+  if (prev && prev.clientId !== args.clientId) {
+    return false;
+  }
+  return true;
+}
+
+/** Aplica lock/unlock e envia SSE (origem fidedigna: POST local ou réplica Redis). */
+export function applyCardLockFromEvent(boardId: string, args: CardLockPayload) {
+  const L = locksFor(boardId);
+  if (args.locked) {
+    L.set(args.cardId, { userId: args.userId, userName: args.userName, clientId: args.clientId });
+  } else {
+    L.delete(args.cardId);
+  }
+  deliverSseToBoard(boardId, "card_lock", args);
 }
 
 export const boardRealtimeHub = {
@@ -215,43 +249,6 @@ export const boardRealtimeHub = {
       }
     }
     return false;
-  },
-
-  broadcastCardMove(
-    boardId: string,
-    fromConnectionId: string,
-    payload: { fromUserId: string; buckets: BucketMovePayload[] }
-  ) {
-    const data: CardMoveEventPayload = { ...payload, fromConnectionId };
-    broadcast(boardId, "card_move", data, fromConnectionId);
-  },
-
-  broadcastColumnReorder(
-    boardId: string,
-    fromConnectionId: string,
-    payload: { fromUserId: string; bucketKeys: string[] }
-  ) {
-    const data: ColumnReorderPayload = { ...payload, fromConnectionId };
-    broadcast(boardId, "column_reorder", data, fromConnectionId);
-  },
-
-  setCardLock(boardId: string, args: CardLockPayload): { ok: boolean } {
-    const L = locksFor(boardId);
-    if (args.locked) {
-      const prev = L.get(args.cardId);
-      if (prev && prev.userId !== args.userId) {
-        return { ok: false };
-      }
-      L.set(args.cardId, { userId: args.userId, userName: args.userName, clientId: args.clientId });
-    } else {
-      const prev = L.get(args.cardId);
-      if (prev && prev.clientId !== args.clientId) {
-        return { ok: false };
-      }
-      L.delete(args.cardId);
-    }
-    broadcast(boardId, "card_lock", args);
-    return { ok: true };
   },
 
   clearLocksForClientPublic(boardId: string, clientId: string) {

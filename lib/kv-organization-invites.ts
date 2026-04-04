@@ -2,16 +2,24 @@ import crypto from "crypto";
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
+import type { OrgMembershipRole } from "./rbac";
 
 export type OrganizationInvite = {
   _id: string; // token/code
   orgId: string;
   emailLower: string;
+  /** Papel na org quando o convite for aceite (definido pelo convidador). */
+  assignedOrgRole?: OrgMembershipRole;
   createdAt: string;
   expiresAt: string;
   usedAt?: string;
   usedByUserId?: string;
 };
+
+export function normalizeInviteAssignedOrgRole(raw: unknown): OrgMembershipRole {
+  if (raw === "convidado" || raw === "membro" || raw === "gestor") return raw;
+  return "membro";
+}
 
 const COL_INVITES = "organization_invites";
 
@@ -29,8 +37,8 @@ function normalizeEmail(email: string): string {
   return String(email || "").trim().toLowerCase();
 }
 
-const INVITE_PREFIX = "reborn_org_invite:";
-const INVITE_INDEX_PREFIX = "reborn_org_invite_index:";
+const INVITE_PREFIX = "flux_org_invite:";
+const INVITE_INDEX_PREFIX = "flux_org_invite_index:";
 
 function inviteIndexKey(orgId: string): string {
   return `${INVITE_INDEX_PREFIX}${orgId}`;
@@ -48,9 +56,14 @@ async function ensureInviteIndexes(db: Db): Promise<void> {
   await col.createIndex({ orgId: 1, emailLower: 1, expiresAt: 1 });
 }
 
-export async function createOrganizationInvite(params: { orgId: string; email: string }): Promise<OrganizationInvite> {
+export async function createOrganizationInvite(params: {
+  orgId: string;
+  email: string;
+  assignedOrgRole: OrgMembershipRole;
+}): Promise<OrganizationInvite> {
   const emailLower = normalizeEmail(params.email);
   if (!emailLower || !emailLower.includes("@")) throw new Error("E-mail inválido.");
+  const assignedOrgRole = normalizeInviteAssignedOrgRole(params.assignedOrgRole);
 
   if (!isMongoConfigured()) {
     const code = generateInviteCode();
@@ -59,6 +72,7 @@ export async function createOrganizationInvite(params: { orgId: string; email: s
       _id: code,
       orgId: params.orgId,
       emailLower,
+      assignedOrgRole,
       createdAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + defaultExpiryDays() * 24 * 60 * 60 * 1000).toISOString(),
     };
@@ -79,6 +93,7 @@ export async function createOrganizationInvite(params: { orgId: string; email: s
     _id: code,
     orgId: params.orgId,
     emailLower,
+    assignedOrgRole,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + defaultExpiryDays() * 24 * 60 * 60 * 1000).toISOString(),
   };
@@ -87,7 +102,10 @@ export async function createOrganizationInvite(params: { orgId: string; email: s
   return inv;
 }
 
-export async function validateOrganizationInvite(params: { code: string; email: string }): Promise<{ orgId: string } | null> {
+export async function validateOrganizationInvite(params: {
+  code: string;
+  email: string;
+}): Promise<{ orgId: string; assignedOrgRole: OrgMembershipRole } | null> {
   const code = String(params.code || "").trim();
   const emailLower = normalizeEmail(params.email);
   if (!code || !emailLower) return null;
@@ -102,7 +120,7 @@ export async function validateOrganizationInvite(params: { code: string; email: 
     if (inv.emailLower !== emailLower) return null;
     if (inv.usedAt) return null;
     if (new Date(inv.expiresAt).getTime() <= now) return null;
-    return { orgId: inv.orgId };
+    return { orgId: inv.orgId, assignedOrgRole: normalizeInviteAssignedOrgRole(inv.assignedOrgRole) };
   }
 
   const db = await getDb();
@@ -115,7 +133,7 @@ export async function validateOrganizationInvite(params: { code: string; email: 
   if (!inv) return null;
   if (inv.usedAt) return null;
   if (new Date(inv.expiresAt).getTime() <= now) return null;
-  return { orgId: inv.orgId };
+  return { orgId: inv.orgId, assignedOrgRole: normalizeInviteAssignedOrgRole(inv.assignedOrgRole) };
 }
 
 export async function consumeOrganizationInvite(params: {

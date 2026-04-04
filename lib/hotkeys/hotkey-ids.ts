@@ -6,6 +6,7 @@ export const HOTKEY_IDS = [
   "board.newCard",
   "board.toggleFilters",
   "board.focusSearch",
+  "board.focusMode",
 ] as const;
 
 export type HotkeyId = (typeof HOTKEY_IDS)[number];

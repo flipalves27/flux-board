@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import type { CardData, BucketConfig } from "@/app/board/[id]/page";
 import { useTranslations } from "next-intl";
+import { predictDelivery } from "@/lib/predictive-delivery";
 
 export interface BoardTableViewProps {
   cards: CardData[];
@@ -23,6 +24,8 @@ export interface BoardTableViewProps {
     patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
   ) => void;
   onOpenCard: (card: CardData) => void;
+  historicalCycleDays?: number[];
+  finalBucketKey?: string;
 }
 
 const columnHelper = createColumnHelper<CardData>();
@@ -164,9 +167,11 @@ function TagsCell({
   onPatch: BoardTableViewProps["onPatchCard"];
 }) {
   const [v, setV] = useState(() => row.original.tags.join(", "));
+  /** String estável — `tags[]` muda de referência a cada render do pai (immer) e dispara #185. */
+  const tagsFingerprint = row.original.tags.join("\u0001");
   useEffect(() => {
     setV(row.original.tags.join(", "));
-  }, [row.original.id, row.original.tags]);
+  }, [row.original.id, tagsFingerprint]);
   return (
     <input
       type="text"
@@ -194,6 +199,8 @@ export function BoardTableView({
   priorities,
   onPatchCard,
   onOpenCard,
+  historicalCycleDays,
+  finalBucketKey,
 }: BoardTableViewProps) {
   const t = useTranslations("kanban.board.table");
   const data = useMemo(() => cards.filter(filterCard), [cards, filterCard]);
@@ -253,8 +260,34 @@ export function BoardTableView({
         sortingFn: "alphanumeric",
         cell: ({ row }) => <TagsCell row={row} onPatch={onPatchCard} />,
       }),
+      columnHelper.display({
+        id: "estDelivery",
+        header: t("colEstDelivery"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const c = row.original;
+          if (finalBucketKey && c.bucket === finalBucketKey) return null;
+          if (!historicalCycleDays?.length) return null;
+          const pred = predictDelivery(
+            { columnEnteredAt: c.columnEnteredAt, dueDate: c.dueDate, completedAt: c.completedAt },
+            historicalCycleDays,
+          );
+          if (!pred) return null;
+          return (
+            <span
+              className={`text-[11px] tabular-nums font-medium whitespace-nowrap ${
+                pred.isLate ? "text-[var(--flux-danger)]" : "text-[var(--flux-text-muted)]"
+              }`}
+            >
+              {pred.estimatedDate}
+              {pred.isLate && <span className="ml-1 text-[9px] font-bold uppercase">Late</span>}
+            </span>
+          );
+        },
+        size: 110,
+      }),
     ],
-    [t, buckets, priorities, onPatchCard, onOpenCard]
+    [t, buckets, priorities, onPatchCard, onOpenCard, historicalCycleDays, finalBucketKey]
   );
 
   const table = useReactTable({

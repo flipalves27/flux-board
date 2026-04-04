@@ -9,15 +9,22 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
+import { OnboardingFluxyHero } from "@/components/onboarding/onboarding-fluxy-hero";
 import {
   DEFAULT_TEMPLATE_ID,
   ONBOARDING_TEMPLATES,
   type BucketConfig,
   type TemplateId,
   getOnboardingDoneStorageKey,
+  getOnboardingFluxyHeroStorageKey,
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
+import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
+import { nextBoardCardId } from "@/lib/card-id";
+import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -119,6 +126,7 @@ function safeParseJson<T>(value: string | null): T | null {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  useInviteJoinAcknowledgement();
   const { user, getHeaders, isChecked } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
@@ -140,9 +148,13 @@ export default function OnboardingPage() {
   const [cardBucketKey, setCardBucketKey] = useState<string>("");
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
+  const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
+  const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
+  const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
+  const heroStorageKey = useMemo(() => (user ? getOnboardingFluxyHeroStorageKey(user.id) : null), [user]);
 
   const persistState = useCallback(
     (next: Omit<PersistedWizardState, "step"> & { step: WizardStep }) => {
@@ -166,9 +178,13 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) return;
+    if (!isChecked || !user) {
+      setOnboardingInitSettled(false);
+      return;
+    }
 
     let cancelled = false;
+    setOnboardingInitSettled(false);
     (async () => {
       try {
         setInitError(null);
@@ -230,13 +246,36 @@ export default function OnboardingPage() {
         if (cancelled) return;
         const msg = e instanceof ApiError ? e.message : t("errors.init");
         setInitError(msg);
+      } finally {
+        if (!cancelled) setOnboardingInitSettled(true);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot, t]);
+
+  useEffect(() => {
+    if (!onboardingInitSettled || !heroStorageKey) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    if (step !== 1 || boardId !== null) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    try {
+      if (localStorage.getItem(heroStorageKey) === "1") {
+        setFluxyHeroOpen(false);
+        return;
+      }
+    } catch {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    setFluxyHeroOpen(true);
+  }, [onboardingInitSettled, heroStorageKey, step, boardId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -277,17 +316,23 @@ export default function OnboardingPage() {
       setInitError(null);
       try {
         const name = (nextBoardName || "").trim() || "Meu Board";
-        const templateBuckets = ONBOARDING_TEMPLATES[nextTemplateId].buckets;
+        const templateBuckets =
+          wizardMethodology === "lean_six_sigma"
+            ? defaultBucketOrderLeanSixSigma()
+            : ONBOARDING_TEMPLATES[nextTemplateId].buckets;
 
         const { board } = await apiPost<{ board: { id: string; name: string } }>(
           "/api/boards",
-          { name },
+          { name, boardMethodology: wizardMethodology },
           getHeaders()
         );
 
         await apiPut(
           `/api/boards/${encodeURIComponent(board.id)}`,
-          { config: { bucketOrder: templateBuckets, collapsedColumns: [] } },
+          {
+            boardMethodology: wizardMethodology,
+            config: { bucketOrder: templateBuckets, collapsedColumns: [] },
+          },
           getHeaders()
         );
 
@@ -314,7 +359,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user]
+    [getHeaders, persistState, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -370,7 +415,8 @@ export default function OnboardingPage() {
       const cards = Array.isArray(board.cards) ? board.cards : [];
 
       const bucketCardsCount = cards.filter((c) => (c as any)?.bucket === cardBucketKey).length;
-      const cardId = `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const existingIds = cards.map((c) => String((c as { id?: string }).id || ""));
+      const cardId = nextBoardCardId(existingIds);
 
       const newCard = {
         id: cardId,
@@ -431,7 +477,16 @@ export default function OnboardingPage() {
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="relative min-h-[100dvh] overflow-x-hidden">
+      <FluxAppBackdrop />
+      <div className="relative z-[1]">
+      {heroStorageKey ? (
+        <OnboardingFluxyHero
+          open={fluxyHeroOpen}
+          onDismiss={() => setFluxyHeroOpen(false)}
+          storageKey={heroStorageKey}
+        />
+      ) : null}
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="flex items-center gap-2">
           <StepPill index={1} current={step} label={t("steps.pill1")} />
@@ -440,7 +495,11 @@ export default function OnboardingPage() {
         </div>
       </Header>
 
-      <main className="max-w-[980px] mx-auto px-6 py-10">
+      <main className="mx-auto max-w-[980px] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-6 sm:py-10 md:px-8">
+        <div className="mb-6 flex items-center gap-3 rounded-[var(--flux-rad-lg)] border border-[var(--flux-secondary-alpha-28)] bg-[linear-gradient(90deg,var(--flux-primary-alpha-10),var(--flux-secondary-alpha-08))] px-4 py-3">
+          <FluxyAvatar state="waving" size="compact" className="shrink-0" />
+          <p className="text-sm leading-snug text-[var(--flux-text)]">{t("fluxyHint")}</p>
+        </div>
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">{title}</h2>
@@ -471,10 +530,54 @@ export default function OnboardingPage() {
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
                     placeholder={t("placeholders.boardName")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
+
+                <div className="mt-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">
+                    {t("fields.methodology")}
+                  </p>
+                  <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("scrum")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "scrum"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyScrum")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("kanban")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "kanban"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyKanban")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("lean_six_sigma")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "lean_six_sigma"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyLss")}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="mt-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
@@ -629,7 +732,7 @@ export default function OnboardingPage() {
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
                   placeholder={t("placeholders.cardTitle")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
@@ -642,7 +745,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardBucketKey}
                   onChange={(e) => setCardBucketKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {bucketOrder.map((b) => (
@@ -660,7 +763,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardPriority}
                   onChange={(e) => setCardPriority(e.target.value as (typeof PRIORITIES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PRIORITIES.map((p) => (
@@ -678,7 +781,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardProgress}
                   onChange={(e) => setCardProgress(e.target.value as (typeof PROGRESSES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PROGRESSES.map((p) => (
@@ -698,7 +801,7 @@ export default function OnboardingPage() {
                   onChange={(e) => setCardDesc(e.target.value)}
                   placeholder={t("placeholders.cardDescriptionOptional")}
                   rows={4}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                 />
               </div>
@@ -726,6 +829,7 @@ export default function OnboardingPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

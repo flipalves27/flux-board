@@ -15,7 +15,8 @@ export type AnomalyKind =
   | "stagnation_cluster"
   | "okr_drift"
   | "overdue_cascade"
-  | "cross_board_blocker_overdue";
+  | "cross_board_blocker_overdue"
+  | "scope_creep";
 
 export type AnomalySeverity = "info" | "warning" | "critical";
 
@@ -388,4 +389,45 @@ export function detectOverdueCascade(args: {
 
 export function collectBucketLabelsForBoards(boards: BoardData[]): Map<string, string> {
   return collectBucketLabels(boards);
+}
+
+function countCardsCreatedBetween(board: BoardData, startMs: number, endMs: number): number {
+  const cards = Array.isArray(board.cards) ? board.cards : [];
+  let n = 0;
+  for (const raw of cards) {
+    if (!raw || typeof raw !== "object") continue;
+    const c = raw as Record<string, unknown>;
+    const ca = c.createdAt;
+    if (typeof ca !== "string" || !ca) continue;
+    const t = new Date(ca).getTime();
+    if (!Number.isFinite(t)) continue;
+    if (t >= startMs && t < endMs) n++;
+  }
+  return n;
+}
+
+/** Compara criação de cards na última semana vs. semana anterior (proxy de scope creep sem campo “sprint”). */
+export function detectScopeCreepForBoards(args: { boards: BoardData[]; nowMs: number }): AnomalyAlertPayload[] {
+  const { boards, nowMs } = args;
+  const DAY = 24 * 60 * 60 * 1000;
+  const w7 = nowMs - 7 * DAY;
+  const w14 = nowMs - 14 * DAY;
+  const out: AnomalyAlertPayload[] = [];
+  for (const board of boards) {
+    const last7 = countCardsCreatedBetween(board, w7, nowMs);
+    const prev7 = countCardsCreatedBetween(board, w14, w7);
+    if (last7 < 5) continue;
+    const baseline = Math.max(1, prev7);
+    if (last7 < baseline * 2 + 2 && last7 < baseline + 5) continue;
+    out.push({
+      kind: "scope_creep",
+      severity: last7 >= baseline * 3 ? "warning" : "info",
+      title: "Possível scope creep (entrada de cards)",
+      message: `${last7} cards criados nos últimos 7 dias vs ${prev7} na janela anterior — volume acima do padrão recente.`,
+      diagnostics: { newCardsLast7d: last7, newCardsPrev7d: prev7 },
+      boardId: board.id,
+      boardName: board.name,
+    });
+  }
+  return out;
 }

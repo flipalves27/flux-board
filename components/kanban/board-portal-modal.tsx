@@ -108,7 +108,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
 
       if (removePassword && portal?.passwordProtected) {
         (body.portal as Record<string, unknown>).portalPassword = "";
-      } else if (newPassword.trim().length >= 4) {
+      } else if (newPassword.trim().length >= 8) {
         (body.portal as Record<string, unknown>).portalPassword = newPassword.trim();
       }
 
@@ -134,7 +134,7 @@ export function BoardPortalModal({ open, onClose, boardId, bucketOrder, portal, 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/55 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-[var(--flux-z-modal-critical)] flex items-center justify-center p-4 bg-black/55 backdrop-blur-[2px]">
       <div
         ref={containerRef}
         role="dialog"

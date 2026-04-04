@@ -6,6 +6,8 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { getDailyActionSuggestions, getDailyCreateSuggestions, renderOrganizedContext } from "./daily-utils";
 import { useTranslations } from "next-intl";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { StandupSummarySection } from "./StandupSummarySection";
+import type { VoiceToBoardSuggestion } from "@/lib/daily-voice-extract";
 
 export type DailyTab = "entrada" | "historico" | "status";
 export type DailyLogStatus = "start" | "success" | "error";
@@ -23,7 +25,9 @@ export type DailyLog = {
 };
 
 export type DailyInsightsPanelProps = {
+  boardId: string;
   boardName: string;
+  getHeaders: () => Record<string, string>;
 
   dailyTab: DailyTab;
   dailyGenerating: boolean;
@@ -78,11 +82,17 @@ export type DailyInsightsPanelProps = {
   onCreateCardsFromInsight: (entryId?: string) => void;
   onDeleteDailyHistoryEntry: (entryId: string) => void;
   onExpandDailyHistoryCreatedCards: (entryId: string) => void;
+
+  /** Cards provavelmente citados na transcrição (voz → board). */
+  voiceToBoardSuggestions?: VoiceToBoardSuggestion[];
+  onOpenCardFromVoice?: (cardId: string) => void;
 };
 
 export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
   const {
+    boardId,
     boardName,
+    getHeaders,
     dailyTab,
     dailyGenerating,
     dailyTranscribing = false,
@@ -124,13 +134,15 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
     onCreateCardsFromInsight,
     onDeleteDailyHistoryEntry,
     onExpandDailyHistoryCreatedCards,
+    voiceToBoardSuggestions = [],
+    onOpenCardFromVoice,
   } = props;
 
   const t = useTranslations("kanban");
 
   return (
     <div
-      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[410] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-daily-insights)] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
@@ -236,6 +248,43 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
               placeholder={t("daily.entry.transcriptPlaceholder")}
               className="w-full min-h-[260px] p-3 rounded-[10px] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-mid)] text-[var(--flux-text)] text-sm outline-none focus:border-[var(--flux-primary)]"
             />
+            {voiceToBoardSuggestions.length > 0 ? (
+              <div className="mt-3 rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-black-alpha-06)] p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
+                  {t("daily.entry.voiceToBoard.title")}
+                </div>
+                <p className="mt-1 text-[11px] text-[var(--flux-text-muted)]">{t("daily.entry.voiceToBoard.hint")}</p>
+                <ul className="mt-2 space-y-2">
+                  {voiceToBoardSuggestions.map((s) => (
+                    <li
+                      key={s.cardId}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-surface-card)]/90 px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-[var(--flux-text)] truncate">{s.title}</div>
+                        <div className="text-[10px] text-[var(--flux-text-muted)]">
+                          {t("daily.entry.voiceToBoard.match", { pct: Math.round(s.score * 100) })}
+                          {s.hints.includes("possible_blocker") ? ` · ${t("daily.entry.voiceToBoard.hintBlocker")}` : ""}
+                          {s.hints.includes("progress_done") ? ` · ${t("daily.entry.voiceToBoard.hintDone")}` : ""}
+                        </div>
+                      </div>
+                      {onOpenCardFromVoice ? (
+                        <button
+                          type="button"
+                          className="btn-secondary shrink-0 py-1.5 px-2 text-xs"
+                          onClick={() => {
+                            onOpenCardFromVoice(s.cardId);
+                            onClose();
+                          }}
+                        >
+                          {t("daily.entry.voiceToBoard.openCard")}
+                        </button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <div className="flex items-center gap-2 justify-end mt-3 flex-wrap">
               <button type="button" className="btn-secondary" onClick={onClose}>
                 {t("daily.entry.close")}
@@ -850,6 +899,13 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     {t("daily.history.emptyNoMatches")}
                   </p>
                 )}
+
+                <StandupSummarySection
+                  boardId={boardId}
+                  dailyInsights={dailyInsights}
+                  getHeaders={getHeaders}
+                  onCreateCardsFromInsight={onCreateCardsFromInsight}
+                />
               </>
             ) : (
               <p className="text-xs text-[var(--flux-text-muted)]">{t("daily.history.emptyNoSummaryYet")}</p>

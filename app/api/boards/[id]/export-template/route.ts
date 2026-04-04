@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { createPublishedTemplate } from "@/lib/kv-templates";
-import { buildTemplateSnapshotFromBoard } from "@/lib/template-snapshot";
+import {
+  buildBpmnSnapshotFromModel,
+  buildPriorityMatrixGrid4SnapshotFromBoard,
+  buildPriorityMatrixSnapshotFromBoard,
+  buildTemplateSnapshotFromBoard,
+} from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
+import { markdownToBpmnModel, xmlToBpmnModel } from "@/lib/bpmn-io";
+import { bpmnModelFromBoard } from "@/lib/bpmn-io";
+import type { BpmnTemplateModel } from "@/lib/bpmn-types";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Apenas administradores podem publicar templates." }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const { id: boardId } = await params;
   if (!boardId) return NextResponse.json({ error: "Board inválido." }, { status: 400 });
@@ -27,8 +37,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
 
-  const rules = await getBoardAutomationRules(boardId, payload.orgId);
-  const snapshot = buildTemplateSnapshotFromBoard(board, rules);
+  const kind = parsed.data.templateKind ?? "kanban";
+  let snapshot;
+  if (kind === "priority_matrix") {
+    const model = parsed.data.priorityMatrixModel ?? "eisenhower";
+    try {
+      if (model === "grid4") {
+        const gridSel = parsed.data.priorityMatrixGridSelections ?? [];
+        snapshot = buildPriorityMatrixGrid4SnapshotFromBoard(board, gridSel);
+      } else {
+        const selections = parsed.data.priorityMatrixSelections ?? [];
+        snapshot = buildPriorityMatrixSnapshotFromBoard(board, selections);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot da matriz.";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  } else if (kind === "bpmn") {
+    try {
+      const model = parsed.data.bpmnModel
+        ? parsed.data.bpmnModel
+        : parsed.data.bpmnMarkdown
+          ? markdownToBpmnModel(parsed.data.bpmnMarkdown)
+          : parsed.data.bpmnXml
+            ? xmlToBpmnModel(parsed.data.bpmnXml)
+            : bpmnModelFromBoard(board);
+      if (!model) {
+        return NextResponse.json({ error: "Não foi possível obter o modelo BPMN para exportação." }, { status: 400 });
+      }
+      snapshot = buildBpmnSnapshotFromModel(model as BpmnTemplateModel);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot BPMN.";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+  } else {
+    const rules = await getBoardAutomationRules(boardId, payload.orgId);
+    snapshot = buildTemplateSnapshotFromBoard(board, rules);
+  }
   const org = await getOrganizationById(payload.orgId);
 
   const tpl = await createPublishedTemplate({
@@ -40,6 +85,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     creatorOrgName: org?.name,
     snapshot,
     sourceBoardId: boardId,
+    status: "published",
+    updatedBy: payload.id,
   });
 
   return NextResponse.json({

@@ -4,17 +4,22 @@ import { listUsers, createUser, getUserByEmail, ensureAdminUser } from "@/lib/kv
 import { hashPassword } from "@/lib/auth";
 import { sanitizeText, UserCreateSchema, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { getUserCap } from "@/lib/plan-gates";
+import { getUserCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
+import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
+import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  const payload = await getAuthFromRequest(request);
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgTeamManager(payload);
+  if (denied) return denied;
 
   try {
     await ensureAdminUser();
-    const users = await listUsers(payload.orgId);
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const users = await listUsers(targetOrgId);
     return NextResponse.json({ users });
   } catch (err) {
     console.error("Users API error:", err);
@@ -26,10 +31,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado. Apenas administradores." }, { status: 403 });
-  }
+  const payload = await getAuthFromRequest(request);
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   try {
     await ensureAdminUser();
@@ -51,9 +56,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 });
     }
 
-    const org = await getOrganizationById(payload.orgId);
-    const members = await listUsers(payload.orgId);
-    const cap = getUserCap(org);
+    const targetOrgId = isPlatformAdmin(deriveEffectiveRoles(payload))
+      ? request.nextUrl.searchParams.get("orgId") || payload.orgId
+      : payload.orgId;
+    const org = await getOrganizationById(targetOrgId);
+    const members = await listUsers(targetOrgId);
+    const cap = getUserCap(org, planGateCtxFromAuthPayload(payload));
     if (cap !== null && members.length >= cap) {
       return NextResponse.json(
         { error: `Limite do plano: no máximo ${cap} usuário(s) por organização.` },
@@ -61,12 +69,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const orgRole = parsed.data.orgRole ?? "membro";
+
     const user = await createUser({
       username: emailNorm,
       name,
       email: emailNorm,
       passwordHash: hashPassword(password),
-      orgId: payload.orgId,
+      orgId: targetOrgId,
+      orgRole,
     });
 
     return NextResponse.json(
@@ -76,7 +87,8 @@ export async function POST(request: NextRequest) {
           username: user.username,
           name: user.name,
           email: user.email,
-          isAdmin: false,
+          orgRole: user.orgRole,
+          isAdmin: !!user.isAdmin,
         },
       },
       { status: 201 }

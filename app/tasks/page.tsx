@@ -8,7 +8,8 @@ import { useAuth } from "@/context/auth-context";
 import { RoutineTaskInput, RoutineType, useRoutineTasks } from "@/context/routine-tasks-context";
 import { ALERT_SOUND_PRESETS, DEFAULT_ALERT_SOUND_ID, getAlertSoundSettings, playAlertSound, setAlertSoundSettings } from "@/lib/alert-sounds";
 import { apiGet, ApiError } from "@/lib/api-client";
-import { getEffectiveTier, type Tier } from "@/lib/plan-gates";
+import { getEffectiveTier, planGateCtxFromAuthPayload, type Tier } from "@/lib/plan-gates";
+import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
 
 const WEEKDAYS = [
   { value: 0, label: "Dom" },
@@ -69,7 +70,16 @@ export default function TasksPage() {
       try {
         const data = await apiGet<{ organization: any }>("/api/organizations/me", getHeaders());
         const org = data?.organization;
-        const next = getEffectiveTier(org);
+        const next = getEffectiveTier(
+          org,
+          planGateCtxFromAuthPayload({
+            id: user.id,
+            platformRole: user.platformRole,
+            orgRole: user.orgRole,
+            isAdmin: user.isAdmin,
+            isExecutive: user.isExecutive,
+          })
+        );
         setTier(next);
       } catch (e) {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -151,27 +161,22 @@ export default function TasksPage() {
 
   if (!loadingTier && tier === "free") {
     return (
-      <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+      <div className="min-h-screen">
         <Header title="Minhas tarefas" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
         <main className="max-w-[780px] mx-auto px-6 py-10">
-          <div className="rounded-[var(--flux-rad-xl)] border border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)] p-6">
-            <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">Routine é Pro/Business</h2>
-            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
-              Para criar e sincronizar rotinas, faça upgrade no Stripe.
-            </p>
-            <div className="mt-5">
-              <button className="btn-primary" onClick={() => router.replace(`${localeRoot}/billing`)}>
-                Ver planos e assinar
-              </button>
-            </div>
-          </div>
+          <FeatureGateNotice
+            title="Routine é Pro/Business"
+            description="Para criar e sincronizar rotinas, faça upgrade no Stripe."
+            ctaLabel="Ver planos e assinar"
+            ctaHref={`${localeRoot}/billing`}
+          />
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Minhas tarefas" />
       <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[410px,1fr] gap-6">
         <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">

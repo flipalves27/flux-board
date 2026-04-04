@@ -1,4 +1,5 @@
 import type { Organization, OrgAiSettings } from "@/lib/kv-organizations";
+import type { PlanGateContext } from "@/lib/plan-gates";
 import { getEffectiveTier } from "@/lib/plan-gates";
 
 export type LlmRoute = "anthropic" | "together";
@@ -48,12 +49,15 @@ export function resolveInteractiveLlmRoute(
 /**
  * Weekly digest / OKR blocos sem usuário: Business pode preferir Claude em lote.
  */
-export function resolveBatchLlmRoute(org: Organization | null | undefined): { route: LlmRoute; anthropicModel: string } {
+export function resolveBatchLlmRoute(
+  org: Organization | null | undefined,
+  ctx?: PlanGateContext
+): { route: LlmRoute; anthropicModel: string } {
   const anthropicModel = anthropicModelForOrg(org);
   if (!isAnthropicApiConfigured()) {
     return { route: "together", anthropicModel };
   }
-  const tier = getEffectiveTier(org);
+  const tier = getEffectiveTier(org, ctx);
   if (tier === "business" && org?.aiSettings?.batchLlmProvider === "anthropic") {
     return { route: "anthropic", anthropicModel };
   }

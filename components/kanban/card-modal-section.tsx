@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 
 export const inputBase =
-  "w-full px-4 py-3 border border-[var(--flux-chrome-alpha-12)] rounded-xl text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] transition-all duration-200 outline-none focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-25)] hover:border-[var(--flux-chrome-alpha-20)]";
+  "flux-input w-full px-4 py-3 border border-[var(--flux-chrome-alpha-12)] rounded-xl text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] shadow-[0_1px_2px_var(--flux-chrome-alpha-04)] transition-[border-color,box-shadow,background-color] duration-200 ease-[var(--flux-ease-standard)] hover:border-[var(--flux-chrome-alpha-20)] hover:shadow-[0_2px_8px_-2px_var(--flux-chrome-alpha-08)] disabled:pointer-events-none disabled:opacity-50";
 
 const sectionShell =
-  "rounded-2xl border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-gradient-panel-sheen)] p-5 shadow-[var(--flux-shadow-inset-panel-top)] transition-[border-color,box-shadow] duration-300 ease-out hover:border-[var(--flux-primary-alpha-20)] hover:shadow-[var(--flux-shadow-panel-hover)]";
+  "rounded-2xl border border-[var(--flux-border-subtle)] bg-[var(--flux-gradient-panel-sheen)] p-5 shadow-[var(--flux-shadow-inset-panel-top)] transition-[border-color,box-shadow] duration-300 ease-[var(--flux-ease-standard)] hover:border-[var(--flux-primary-alpha-20)] hover:shadow-[var(--flux-shadow-panel-hover)]";
 
 export function CardModalSection({
   title,

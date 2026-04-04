@@ -6,17 +6,40 @@ import { computeOkrsProgress, type OkrsObjectiveDefinition, type OkrsKeyResultDe
 import type { OkrKrProjection } from "@/lib/okr-projection";
 import { useToast } from "@/context/toast-context";
 import { useTranslations } from "next-intl";
-import { useBoardStore } from "@/stores/board-store";
+import {
+  useBoardStore,
+  registerCsvExportHandler,
+  armSkipWipValidationOnce,
+  setPendingWipOverrideReason,
+  consumeSkipWipValidationOnce,
+} from "@/stores/board-store";
+import {
+  validateBoardWipPutTransition,
+  simulateMoveCardsBatch,
+  simulateMoveSingleCard,
+  simulatePatchBucketMove,
+} from "@/lib/board-wip";
+import { nextBoardCardId } from "@/lib/card-id";
+import { assertDodAllowsCompleting, resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { useFilterStore } from "@/stores/filter-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useDailySession } from "./useDailySession";
 import { COLUMN_COLORS } from "../kanban-constants";
 import { daysUntilDueDate } from "../utils/days-until-due";
 
+const EMPTY_LABELS: string[] = [];
+
+function isWipSoftConfig(cfg: unknown): boolean {
+  return Boolean(cfg && typeof cfg === "object" && (cfg as { wipEnforcement?: string }).wipEnforcement === "soft");
+}
+
+export type WipOverridePending =
+  | { mode: "single"; cardId: string; newBucket: string; newIndex: number }
+  | { mode: "batch"; orderedIds: string[]; newBucket: string; insertIndex: number };
+
 type UseBoardStateArgs = {
   boardId: string;
   getHeaders: () => Record<string, string>;
-  filterLabels: string[];
   priorities: string[];
   progresses: string[];
   directions: string[];
@@ -28,7 +51,6 @@ type UseBoardStateArgs = {
 export function useBoardState({
   boardId,
   getHeaders,
-  filterLabels,
   priorities,
   progresses,
   directions,
@@ -109,6 +131,9 @@ export function useBoardState({
     moved: false,
   });
   const [isPanning, setIsPanning] = useState(false);
+  const [wipOverridePending, setWipOverridePending] = useState<WipOverridePending | null>(null);
+  const moveCardRef = useRef<(cardId: string, newBucket: string, newIndex: number) => void>(() => {});
+  const moveCardsBatchRef = useRef<(orderedIds: string[], newBucket: string, insertIndex: number) => void>(() => {});
 
   const currentQuarter = useMemo(() => {
     const now = new Date();
@@ -213,13 +238,45 @@ export function useBoardState({
   });
 
   const buckets = db.config.bucketOrder;
-  const boardLabels = db.config.labels && db.config.labels.length > 0 ? db.config.labels : filterLabels;
-  const collapsed = new Set(db.config.collapsedColumns || []);
+  const boardLabels = db.config.labels ?? EMPTY_LABELS;
+  const collapsedArr = db.config.collapsedColumns;
+  const collapsed = useMemo(() => new Set(collapsedArr || []), [collapsedArr]);
   const cards = db.cards;
 
   const moveCard = useCallback(
     (cardId: string, newBucket: string, newIndex: number) => {
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      const card = snap.cards.find((c) => c.id === cardId);
+      if (card) {
+        const doneKeys = resolveDoneBucketKeys(
+          snap.config.bucketOrder,
+          snap.config.definitionOfDone?.doneBucketKeys ?? null
+        );
+        const dod = assertDodAllowsCompleting({
+          card,
+          nextBucket: newBucket,
+          nextProgress: card.progress,
+          doneBucketKeys: doneKeys,
+          completedProgressLabel: "Concluída",
+          def: snap.config.definitionOfDone,
+        });
+        if (!dod.ok) {
+          pushToast({ kind: "error", title: dod.message });
+          return;
+        }
+      }
+      const nextCards = simulateMoveSingleCard(snap.cards, cardId, newBucket, newIndex);
+      const skipWip = consumeSkipWipValidationOnce();
+      if (!skipWip && !isWipSoftConfig(snap.config)) {
+        const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
+        if (!wip.ok) {
+          setWipOverridePending({ mode: "single", cardId, newBucket, newIndex });
+          return;
+        }
+      }
       const oldBucket = db.cards.find((c) => c.id === cardId)?.bucket;
+      const enteredAt = new Date().toISOString();
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
         if (idx === -1) return;
@@ -228,7 +285,7 @@ export function useBoardState({
         const bucketCards = withoutCard
           .filter((c) => c.bucket === newBucket)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket });
+        bucketCards.splice(newIndex, 0, { ...card, bucket: newBucket, columnEnteredAt: enteredAt });
         bucketCards.forEach((c, i) => {
           c.order = i;
         });
@@ -238,14 +295,47 @@ export function useBoardState({
       const buckets = [newBucket, ...(oldBucket && oldBucket !== newBucket ? [oldBucket] : [])];
       onAfterCardBucketsChange?.([...new Set(buckets)]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
   );
 
   /** Move vários cards na ordem dada para `newBucket` em `insertIndex` (0 = topo). */
   const moveCardsBatch = useCallback(
     (orderedIds: string[], newBucket: string, insertIndex: number) => {
       if (orderedIds.length === 0) return;
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      const doneKeys = resolveDoneBucketKeys(
+        snap.config.bucketOrder,
+        snap.config.definitionOfDone?.doneBucketKeys ?? null
+      );
+      const def = snap.config.definitionOfDone;
+      for (const id of orderedIds) {
+        const card = snap.cards.find((c) => c.id === id);
+        if (!card) continue;
+        const dod = assertDodAllowsCompleting({
+          card,
+          nextBucket: newBucket,
+          nextProgress: card.progress,
+          doneBucketKeys: doneKeys,
+          completedProgressLabel: "Concluída",
+          def,
+        });
+        if (!dod.ok) {
+          pushToast({ kind: "error", title: dod.message });
+          return;
+        }
+      }
+      const nextCards = simulateMoveCardsBatch(snap.cards, orderedIds, newBucket, insertIndex);
+      const skipWip = consumeSkipWipValidationOnce();
+      if (!skipWip && !isWipSoftConfig(snap.config)) {
+        const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
+        if (!wip.ok) {
+          setWipOverridePending({ mode: "batch", orderedIds, newBucket, insertIndex });
+          return;
+        }
+      }
       const idSet = new Set(orderedIds);
+      const enteredAt = new Date().toISOString();
       const fromBuckets = [
         ...new Set(
           orderedIds
@@ -262,7 +352,7 @@ export function useBoardState({
         const bucketCards = without
           .filter((c) => c.bucket === newBucket)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        const toInsert = moving.map((c) => ({ ...c, bucket: newBucket }));
+        const toInsert = moving.map((c) => ({ ...c, bucket: newBucket, columnEnteredAt: enteredAt }));
         const safeIdx = Math.max(0, Math.min(insertIndex, bucketCards.length));
         bucketCards.splice(safeIdx, 0, ...toInsert);
         bucketCards.forEach((c, i) => {
@@ -273,7 +363,7 @@ export function useBoardState({
       });
       onAfterCardBucketsChange?.([...new Set([...fromBuckets, newBucket])]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb]
+    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
   );
 
   const reorderColumns = useCallback(
@@ -290,25 +380,50 @@ export function useBoardState({
     [onAfterColumnReorder, updateDb]
   );
 
-  const saveColumn = useCallback(() => {
-    const label = newColumnName.trim() || "Nova Coluna";
-    if (editingColumnKey) {
-      updateDb((d) => {
-        d.config.bucketOrder = d.config.bucketOrder.map((b) =>
-          b.key === editingColumnKey ? { ...b, label } : b
-        );
-      });
-    } else {
-      const key = `col_${Date.now()}`;
-      const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
-      updateDb((d) => {
-        d.config.bucketOrder.push({ key, label, color });
-      });
-    }
-    setNewColumnName("");
-    setAddColumnOpen(false);
-    setEditingColumnKey(null);
-  }, [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]);
+  const saveColumn = useCallback(
+    (opts?: { wipLimit?: number | null; policy?: string | null }) => {
+      const wipLimit = opts?.wipLimit;
+      const policyRaw = opts?.policy;
+      const policyTrim = typeof policyRaw === "string" ? policyRaw.trim().slice(0, 500) : "";
+      const label = newColumnName.trim() || "Nova Coluna";
+      if (editingColumnKey) {
+        updateDb((d) => {
+          d.config.bucketOrder = d.config.bucketOrder.map((b) => {
+            if (b.key !== editingColumnKey) return b;
+            const next = { ...b, label } as typeof b & { policy?: string };
+            if (wipLimit === null) {
+              delete (next as { wipLimit?: number }).wipLimit;
+            } else if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) {
+              (next as { wipLimit?: number }).wipLimit = wipLimit;
+            }
+            if (!policyTrim) {
+              delete next.policy;
+            } else {
+              next.policy = policyTrim;
+            }
+            return next;
+          });
+        });
+      } else {
+        const key = `col_${Date.now()}`;
+        const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
+        updateDb((d) => {
+          const row: { key: string; label: string; color: string; wipLimit?: number; policy?: string } = {
+            key,
+            label,
+            color,
+          };
+          if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) row.wipLimit = wipLimit;
+          if (policyTrim) row.policy = policyTrim;
+          d.config.bucketOrder.push(row);
+        });
+      }
+      setNewColumnName("");
+      setAddColumnOpen(false);
+      setEditingColumnKey(null);
+    },
+    [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]
+  );
 
   const deleteColumn = useCallback(
     (key: string) => {
@@ -342,18 +457,18 @@ export function useBoardState({
       const normalized = label.trim();
       if (!normalized) return;
       updateDb((d) => {
-        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        const current = d.config.labels ?? [];
         if (current.some((l) => l.toLowerCase() === normalized.toLowerCase())) return;
         d.config.labels = [...current, normalized];
       });
     },
-    [filterLabels, updateDb]
+    [updateDb]
   );
 
   const deleteLabel = useCallback(
     (label: string) => {
       updateDb((d) => {
-        const current = d.config.labels && d.config.labels.length > 0 ? d.config.labels : filterLabels;
+        const current = d.config.labels ?? [];
         if (!current.includes(label)) return;
         d.cards.forEach((c) => {
           c.tags = c.tags.filter((t) => t !== label);
@@ -365,7 +480,7 @@ export function useBoardState({
         activeLabels: prevLabels.filter((l) => l !== label),
       });
     },
-    [boardId, filterLabels, updateDb]
+    [boardId, updateDb]
   );
 
   const handleTimelineDueDate = useCallback(
@@ -389,10 +504,7 @@ export function useBoardState({
       updateDb((d) => {
         const source = d.cards.find((c) => c.id === cardId);
         if (!source) return;
-        const newId =
-          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-            ? `COPY-${crypto.randomUUID().slice(0, 8)}`
-            : `COPY-${Date.now()}`;
+        const newId = nextBoardCardId(d.cards.map((c) => c.id));
         const titleBase = String(source.title || "").trim();
         const dup: CardData = {
           ...source,
@@ -419,6 +531,44 @@ export function useBoardState({
       cardId: string,
       patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
     ) => {
+      const snap = useBoardStore.getState().db;
+      if (!snap) return;
+      if (patch.bucket !== undefined) {
+        const card = snap.cards.find((c) => c.id === cardId);
+        if (card && patch.bucket !== card.bucket) {
+          const doneKeys = resolveDoneBucketKeys(
+            snap.config.bucketOrder,
+            snap.config.definitionOfDone?.doneBucketKeys ?? null
+          );
+          const dod = assertDodAllowsCompleting({
+            card,
+            nextBucket: patch.bucket,
+            nextProgress: card.progress,
+            doneBucketKeys: doneKeys,
+            completedProgressLabel: "Concluída",
+            def: snap.config.definitionOfDone,
+          });
+          if (!dod.ok) {
+            pushToast({ kind: "error", title: dod.message });
+            return;
+          }
+          const nextCards = simulatePatchBucketMove(snap.cards, cardId, patch.bucket);
+          const skipWip = consumeSkipWipValidationOnce();
+          if (!skipWip && !isWipSoftConfig(snap.config)) {
+            const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
+            if (!wip.ok) {
+              const inTarget = nextCards.filter((c) => c.bucket === patch.bucket).length;
+              setWipOverridePending({
+                mode: "single",
+                cardId,
+                newBucket: patch.bucket,
+                newIndex: Math.max(0, inTarget - 1),
+              });
+              return;
+            }
+          }
+        }
+      }
       updateDb((d) => {
         const idx = d.cards.findIndex((c) => c.id === cardId);
         if (idx === -1) return;
@@ -436,6 +586,15 @@ export function useBoardState({
           if (patch.dueDate !== undefined) merged.dueDate = patch.dueDate;
           if (patch.tags !== undefined) merged.tags = patch.tags;
           merged.bucket = targetBucket;
+          merged.columnEnteredAt = new Date().toISOString();
+          const doneKeys = resolveDoneBucketKeys(
+            d.config.bucketOrder,
+            d.config.definitionOfDone?.doneBucketKeys ?? null
+          );
+          if (doneKeys.includes(targetBucket)) {
+            merged.progress = "Concluída";
+            merged.completedAt = new Date().toISOString();
+          }
           bucketCards.push(merged);
           bucketCards.forEach((c, i) => {
             c.order = i;
@@ -449,6 +608,28 @@ export function useBoardState({
         if (patch.priority !== undefined) card.priority = patch.priority;
         if (patch.dueDate !== undefined) card.dueDate = patch.dueDate;
         if (patch.tags !== undefined) card.tags = patch.tags;
+      });
+    },
+    [updateDb, pushToast]
+  );
+
+  const pinCardToTop = useCallback(
+    (cardId: string) => {
+      updateDb((d) => {
+        const idx = d.cards.findIndex((c) => c.id === cardId);
+        if (idx === -1) return;
+        const card = d.cards[idx];
+        const bucket = card.bucket;
+        const without = d.cards.filter((c) => c.id !== cardId);
+        const bucketCards = without
+          .filter((c) => c.bucket === bucket)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        bucketCards.unshift({ ...card, bucket });
+        bucketCards.forEach((c, i) => {
+          c.order = i;
+        });
+        const otherBuckets = without.filter((c) => c.bucket !== bucket);
+        d.cards = [...otherBuckets, ...bucketCards];
       });
     },
     [updateDb]
@@ -549,9 +730,12 @@ export function useBoardState({
     });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
-    a.download = "backlog_reborn_export.csv";
+    a.download = "flux-board-export.csv";
     a.click();
   }, [cards]);
+
+  const handleExportCsvRef = useRef(handleExportCSV);
+  handleExportCsvRef.current = handleExportCSV;
 
   const handleImportCSV = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -776,6 +960,32 @@ export function useBoardState({
     }
   }, []);
 
+  useEffect(() => {
+    registerCsvExportHandler(() => handleExportCsvRef.current());
+    return () => registerCsvExportHandler(null);
+  }, []);
+
+  moveCardRef.current = moveCard;
+  moveCardsBatchRef.current = moveCardsBatch;
+
+  const confirmWipOverride = useCallback(
+    (reason: string) => {
+      const p = wipOverridePending;
+      const trimmed = reason.trim();
+      if (!p || trimmed.length < 8) return;
+      setPendingWipOverrideReason(trimmed);
+      armSkipWipValidationOnce();
+      setWipOverridePending(null);
+      queueMicrotask(() => {
+        if (p.mode === "single") moveCardRef.current(p.cardId, p.newBucket, p.newIndex);
+        else moveCardsBatchRef.current(p.orderedIds, p.newBucket, p.insertIndex);
+      });
+    },
+    [wipOverridePending]
+  );
+
+  const dismissWipOverride = useCallback(() => setWipOverridePending(null), []);
+
   return {
     boardScrollRef,
     isPanning,
@@ -826,10 +1036,14 @@ export function useBoardState({
     handleTimelineOpenCard,
     duplicateCard,
     patchCardFromTable,
+    pinCardToTop,
     directionCounts,
     totalWithDir,
     executionInsights,
     handleExportCSV,
     handleImportCSV,
+    wipOverridePending,
+    confirmWipOverride,
+    dismissWipOverride,
   };
 }

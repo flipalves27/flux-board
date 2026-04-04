@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/context/toast-context";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 
 interface UserRow {
   id: string;
@@ -14,11 +15,20 @@ interface UserRow {
   name: string;
   email: string;
   isAdmin: boolean;
+  orgRole?: "gestor" | "membro" | "convidado";
+}
+
+function roleLabel(u: UserRow): string {
+  if (u.orgRole === "gestor" || (u.isAdmin && u.orgRole !== "membro" && u.orgRole !== "convidado")) {
+    return "Gestor";
+  }
+  if (u.orgRole === "convidado") return "Convidado";
+  return "Membro";
 }
 
 export default function UsersPage() {
   const router = useRouter();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, refreshSession } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -27,6 +37,7 @@ export default function UsersPage() {
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPwd, setFormPwd] = useState("");
+  const [formOrgRole, setFormOrgRole] = useState<"gestor" | "membro" | "convidado">("membro");
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const { pushToast } = useToast();
@@ -36,7 +47,7 @@ export default function UsersPage() {
       router.replace("/login");
       return;
     }
-    if (!user.isAdmin) {
+    if (!sessionCanManageOrgBilling(user)) {
       router.replace("/boards");
       return;
     }
@@ -64,6 +75,7 @@ export default function UsersPage() {
     setFormName("");
     setFormEmail("");
     setFormPwd("");
+    setFormOrgRole("membro");
     setFormError("");
     setModalOpen(true);
   }
@@ -74,6 +86,13 @@ export default function UsersPage() {
     setFormName(u.name);
     setFormEmail(u.email);
     setFormPwd("");
+    setFormOrgRole(
+      u.orgRole === "gestor" || u.orgRole === "convidado" || u.orgRole === "membro"
+        ? u.orgRole
+        : u.isAdmin
+          ? "gestor"
+          : "membro"
+    );
     setFormError("");
     setModalOpen(true);
   }
@@ -84,16 +103,21 @@ export default function UsersPage() {
       setFormError("Preencha todos os campos.");
       return;
     }
-    if (formPwd.length < 4) {
-      setFormError("Senha deve ter pelo menos 4 caracteres.");
+    if (formPwd.length < 8) {
+      setFormError("Senha deve ter pelo menos 8 caracteres.");
       return;
     }
     try {
-      await apiPost("/api/users", {
-        name: formName.trim(),
-        email: formEmail.trim(),
-        password: formPwd,
-      }, getHeaders());
+      await apiPost(
+        "/api/users",
+        {
+          name: formName.trim(),
+          email: formEmail.trim(),
+          password: formPwd,
+          orgRole: formOrgRole,
+        },
+        getHeaders()
+      );
       setModalOpen(false);
       loadUsers();
     } catch (e) {
@@ -108,12 +132,26 @@ export default function UsersPage() {
       setFormError("Nome é obrigatório.");
       return;
     }
-    const body: { name: string; password?: string } = { name: formName.trim() };
-    if (formPwd.length >= 4) body.password = formPwd;
+    const body: {
+      name: string;
+      email?: string;
+      password?: string;
+      orgRole: "gestor" | "membro" | "convidado";
+    } = {
+      name: formName.trim(),
+      orgRole: formOrgRole,
+    };
+    if (editingId === "admin" && user?.id === "admin" && formEmail.trim()) {
+      body.email = formEmail.trim().toLowerCase();
+    }
+    if (formPwd.length >= 8) body.password = formPwd;
     try {
       await apiPut(`/api/users/${editingId}`, body, getHeaders());
       setModalOpen(false);
-      loadUsers();
+      await loadUsers();
+      if (user && editingId === user.id) {
+        await refreshSession();
+      }
     } catch (e) {
       setFormError(e instanceof ApiError ? (e.data as { error?: string })?.error ?? e.message : "Erro ao salvar.");
     }
@@ -126,7 +164,7 @@ export default function UsersPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Usuários" backHref="/boards" />
       <main className="max-w-[900px] mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
@@ -171,16 +209,20 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-[var(--flux-text)]">{u.name}</td>
                     <td className="px-4 py-3 text-[var(--flux-text-muted)]">{u.email}</td>
                     <td className="px-4 py-3">
-                      {u.isAdmin ? (
+                      {roleLabel(u) === "Gestor" ? (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[var(--flux-primary)] text-white">
-                          Admin
+                          Gestor
+                        </span>
+                      ) : roleLabel(u) === "Convidado" ? (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)]">
+                          Convidado
                         </span>
                       ) : (
-                        "Usuário"
+                        "Membro"
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {u.id !== "admin" ? (
+                      {u.id !== "admin" || user?.id === "admin" ? (
                         <div className="flex gap-3">
                           <button
                             onClick={() => openEditModal(u)}
@@ -188,12 +230,14 @@ export default function UsersPage() {
                           >
                             Editar
                           </button>
-                          <button
-                            onClick={() => deleteUser(u.id, u.name)}
-                            className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-                          >
-                            Excluir
-                          </button>
+                          {u.id !== "admin" ? (
+                            <button
+                              onClick={() => deleteUser(u.id, u.name)}
+                              className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
+                            >
+                              Excluir
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         "-"
@@ -209,7 +253,7 @@ export default function UsersPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[300] flex items-center justify-center"
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-base)] flex items-center justify-center"
           onClick={() => setModalOpen(false)}
         >
           <div
@@ -244,7 +288,7 @@ export default function UsersPage() {
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="email@exemplo.com"
-                  disabled={modalMode === "edit"}
+                  disabled={modalMode === "edit" && !(user?.id === "admin" && editingId === "admin")}
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] disabled:opacity-60 focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
@@ -256,10 +300,29 @@ export default function UsersPage() {
                   type="password"
                   value={formPwd}
                   onChange={(e) => setFormPwd(e.target.value)}
-                  placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 4 caracteres"}
+                  placeholder={modalMode === "edit" ? "Deixe em branco para manter" : "Mínimo 8 caracteres"}
                   className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                  Papel na organização
+                </label>
+                <select
+                  value={formOrgRole}
+                  onChange={(e) =>
+                    setFormOrgRole(e.target.value as "gestor" | "membro" | "convidado")
+                  }
+                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] outline-none"
+                >
+                  <option value="gestor">Gestor</option>
+                  <option value="membro">Membro</option>
+                  <option value="convidado">Convidado</option>
+                </select>
+              </div>
+              <p className="text-[11px] text-[var(--flux-text-muted)]">
+                Gestores gerem billing, convites e definições. Convidados têm as mesmas bases que membros, com limitações extra (ex.: não criar boards).
+              </p>
             </div>
             <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[var(--flux-chrome-alpha-08)]">
               <button

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { ExecutiveDashboard } from "@/components/dashboard/executive-dashboard";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import { ReportsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 
 export default function ExecutiveDashboardPage() {
@@ -15,7 +16,7 @@ export default function ExecutiveDashboardPage() {
   const t = useTranslations("executiveDashboard");
   const localeRoot = `/${locale}`;
 
-  const canAccess = Boolean(user?.isAdmin || user?.isExecutive);
+  const canAccess = user ? sessionCanManageOrgBilling(user) : false;
 
   useEffect(() => {
     if (!isChecked) return;
@@ -37,8 +38,8 @@ export default function ExecutiveDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery />
+    <div className="min-h-screen">
+      <Header />
       <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-6">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">

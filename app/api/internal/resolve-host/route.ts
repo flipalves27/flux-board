@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationByCustomDomain } from "@/lib/kv-organizations";
 
 function authorize(request: NextRequest): boolean {
-  const secret =
-    process.env.INTERNAL_HOST_RESOLVE_SECRET || process.env.RATE_LIMIT_INTERNAL_SECRET || process.env.JWT_SECRET;
-  if (!secret) return process.env.NODE_ENV === "development";
+  const secret = process.env.INTERNAL_HOST_RESOLVE_SECRET?.trim();
+  if (!secret) return false;
   const h = request.headers.get("x-internal-host-secret");
   return h === secret;
 }

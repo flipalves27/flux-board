@@ -9,7 +9,7 @@
 | `/` | `app/page.tsx` (redireciona para /boards ou /login) | Não |
 | `/login` | `app/login/page.tsx` (React) | Não |
 | `/boards` | `app/boards/page.tsx` (React) | Não |
-| `/board/:id` (ex: `/board/b_reborn`) | `app/board/[id]/page.tsx` + componente `KanbanBoard` (React) | Não |
+| `/board/:id` (ex: `/board/b_1`) | `app/board/[id]/page.tsx` + componente `KanbanBoard` (React) | Não |
 | `/board.html` | Não (arquivo removido; 404) | Não |
 | `/boards.html` | Não (arquivo removido; 404) | Não |
 
@@ -17,7 +17,7 @@ Ou seja: o fluxo normal (login → lista de boards → abrir um board) é 100% *
 
 ## Onde estão as “duas versões” do board
 
-- **Versão que realmente roda em produção** (quando você acessa `/board/b_reborn`):
+- **Versão que realmente roda em produção** (quando você acessa `/board/:id`):
   - Página: `app/board/[id]/page.tsx`
   - UI do Kanban: `components/kanban/kanban-board.tsx`, `kanban-column.tsx`, `kanban-card.tsx`, `card-modal.tsx`, `mapa-modal.tsx`
   - Estilos: `app/globals.css` + classes Tailwind nos componentes
@@ -31,10 +31,9 @@ Se as melhorias foram feitas nesses arquivos legados (`board.html`/`boards.html`
 ## Configuração atual de rotas
 
 - **next.config.ts**: sem rewrites; não redireciona nenhuma rota para os .html.
-- **vercel.json**: apenas um rewrite:
-  - `/resumo-reborn` → `/resumo-reborn.html` (arquivo em `public/`).
+- **vercel.json**: sem rewrites para HTML estático; crons de API conforme o arquivo.
 
-Não existe regra que envie `/boards` ou `/board` para os arquivos `.html`.
+Não existe regra que envie `/boards` ou `/board` para arquivos `.html`.
 
 ## O que fazer para as melhorias “subirem” na implantação
 

@@ -1,2 +1,2 @@
-export { default } from "../../org-settings/page";
+export { default } from "../../(org)/org-settings/page";
 

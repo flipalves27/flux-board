@@ -9,6 +9,7 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
 import { logDocsMetric } from "@/lib/docs-metrics";
 import { rateLimit } from "@/lib/rate-limit";
@@ -63,11 +64,12 @@ const SYS: Record<DocsGenerationFlow, string> = {
 };
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs_rag")) {
+  const gateCtx = planGateCtxFromAuthPayload(payload);
+  if (!canUseFeature(org, "flux_docs_rag", gateCtx)) {
     return NextResponse.json({ error: "RAG / Flux Docs indisponível no plano atual." }, { status: 403 });
   }
 
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
 
-  if (flow === "okr_progress" && !canUseFeature(org, "okr_engine")) {
+  if (flow === "okr_progress" && !canUseFeature(org, "okr_engine", gateCtx)) {
     return NextResponse.json({ error: "OKRs disponíveis apenas em planos com Flux Goals." }, { status: 403 });
   }
 
@@ -116,10 +118,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const tier = getEffectiveTier(org);
+  const tier = getEffectiveTier(org, gateCtx);
   const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
   if (tier === "free" && togetherEnabled) {
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
       const rlDaily = await rateLimit({

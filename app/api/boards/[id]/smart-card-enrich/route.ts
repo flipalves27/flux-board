@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enrichSmartCardWithTogether } from "@/lib/automation-ai";
 import { getAuthFromRequest } from "@/lib/auth";
+import type { PlanGateContext } from "@/lib/plan-gates";
 import {
   assertFeatureAllowed,
   canUseFeature,
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { searchDocs } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
+import type { Organization } from "@/lib/kv-organizations";
 import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText, SmartCardEnrichInputSchema, zodErrorToMessage } from "@/lib/schemas";
 import {
@@ -19,6 +22,115 @@ import {
   leadTimeStatsFromSimilarConcluded,
   pickSimilarCardRefs,
 } from "@/lib/smart-card-enrich";
+import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
+import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { parseDecomposeSubtasksFromAssistant } from "@/lib/decompose-subtasks-from-llm";
+
+async function handleDecomposeMode(
+  body: Record<string, unknown>,
+  _orgId: string,
+  _boardId: string,
+  planBlocksAi: boolean,
+  org: Organization | null,
+  planGateCtx?: PlanGateContext
+): Promise<NextResponse> {
+  const cardId = typeof body.cardId === "string" ? body.cardId : "";
+  const title = sanitizeText(String(body.title ?? "")).trim().slice(0, 300);
+  const desc = sanitizeText(String(body.desc ?? "")).trim().slice(0, 2000);
+
+  if (planBlocksAi || !title) {
+    return NextResponse.json({ ok: true, subtasks: [] });
+  }
+
+  const prompt = `Você é um assistente de decomposição de tarefas para gestão ágil. Dado o título e descrição de um card, gere uma lista de subtasks claras e acionáveis em português.
+
+Card: "${title}"
+${desc ? `Descrição: "${desc.slice(0, 500)}"` : ""}
+
+Responda em JSON válido:
+{"subtasks": [{"title": "string (max 200 chars)", "priority": "low|medium|high", "estimateHours": number|null}]}
+Máximo 8 subtasks. Seja conciso e específico.`;
+
+  try {
+    const { route } = resolveBatchLlmRoute(org, planGateCtx);
+    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    const result = await provider.chat(
+      [{ role: "user", content: prompt }],
+      undefined,
+      { maxTokens: 600, temperature: 0.4 }
+    );
+    if (!result.ok) return NextResponse.json({ ok: true, subtasks: [] });
+    const subtasks = parseDecomposeSubtasksFromAssistant(result.assistantText);
+    return NextResponse.json({ ok: true, subtasks });
+  } catch {
+    return NextResponse.json({ ok: true, subtasks: [] });
+  }
+}
+
+async function handleCreateFromProseMode(
+  body: Record<string, unknown>,
+  _orgId: string,
+  _boardId: string,
+  planBlocksAi: boolean,
+  org: Organization | null,
+  planGateCtx?: PlanGateContext
+): Promise<NextResponse> {
+  const prose = sanitizeText(String(body.prose ?? "")).trim().slice(0, 1000);
+  if (planBlocksAi || !prose) {
+    return NextResponse.json({ ok: false, error: "Texto obrigatório." }, { status: 400 });
+  }
+
+  const prompt = `Você é um assistente de criação de cards para gestão ágil. A partir de uma descrição em linguagem natural, crie um card estruturado.
+
+Descrição: "${prose}"
+
+Responda em JSON válido:
+{
+  "title": "título conciso do card (max 200 chars)",
+  "description": "descrição com contexto e critérios de aceite (max 800 chars)",
+  "priority": "Urgente|Importante|Média",
+  "tags": ["tag1"],
+  "subtasks": [{"title": "subtask", "priority": "low|medium|high"}],
+  "suggestedColumn": "nome sugerido para coluna (ex: Backlog)"
+}`;
+
+  try {
+    const { route } = resolveBatchLlmRoute(org, planGateCtx);
+    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    const result = await provider.chat(
+      [{ role: "user", content: prompt }],
+      undefined,
+      { maxTokens: 800, temperature: 0.4 }
+    );
+    if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
+    const jsonMatch = result.assistantText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return NextResponse.json({ ok: false, error: "Resposta inválida" }, { status: 500 });
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      title?: string;
+      description?: string;
+      priority?: string;
+      tags?: string[];
+      subtasks?: Array<{ title: string; priority?: string }>;
+      suggestedColumn?: string;
+    };
+    return NextResponse.json({
+      ok: true,
+      title: sanitizeText(String(parsed.title ?? prose.slice(0, 100))).trim().slice(0, 200),
+      description: sanitizeText(String(parsed.description ?? "")).trim().slice(0, 800),
+      priority: ["Urgente", "Importante", "Média"].includes(String(parsed.priority ?? "")) ? parsed.priority : "Média",
+      tags: Array.isArray(parsed.tags) ? parsed.tags.map(String).slice(0, 5) : [],
+      subtasks: Array.isArray(parsed.subtasks) ? parsed.subtasks.slice(0, 6).map((s, i) => ({
+        title: sanitizeText(String(s.title ?? "")).trim().slice(0, 300),
+        priority: ["low","medium","high"].includes(String(s.priority ?? "")) ? s.priority : "medium",
+        status: "pending" as const,
+        order: i,
+      })) : [],
+      suggestedColumn: sanitizeText(String(parsed.suggestedColumn ?? "Backlog")).trim().slice(0, 200),
+    });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Erro interno" }, { status: 500 });
+  }
+}
 
 const PRIORITIES = new Set(["Urgente", "Importante", "Média"]);
 
@@ -88,7 +200,7 @@ function normalizeResponse(args: {
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -97,19 +209,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!requestedBoardId || requestedBoardId === "boards") {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const org = await getOrganizationById(payload.orgId);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   let planBlocksAi = false;
   try {
-    assertFeatureAllowed(org, "card_context");
+    assertFeatureAllowed(org, "card_context", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) planBlocksAi = true;
     else throw err;
@@ -134,6 +240,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     const body = await request.json();
+    const mode = typeof (body as Record<string, unknown>).mode === "string" ? (body as Record<string, unknown>).mode as string : null;
+
+    // mode=decompose: generate subtasks from card title+desc
+    if (mode === "decompose") {
+      return handleDecomposeMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org, gateCtx);
+    }
+
+    // mode=create-from-prose: generate full card from natural language description
+    if (mode === "create-from-prose") {
+      return handleCreateFromProseMode(body as Record<string, unknown>, payload.orgId, boardId, planBlocksAi, org, gateCtx);
+    }
+
     const parsed = SmartCardEnrichInputSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: zodErrorToMessage(parsed.error) }, { status: 400 });
@@ -180,7 +298,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .map((x) => `${x.t.slice(0, 100)}`);
 
     const ragExcerpts: string[] = [];
-    if (canUseFeature(org, "flux_docs")) {
+    if (canUseFeature(org, "flux_docs", gateCtx)) {
       try {
         const docs = await searchDocs(payload.orgId, title, 4);
         for (const d of docs.slice(0, 3)) {
@@ -227,7 +345,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
     if (togetherEnabled) {
-      const cap = getDailyAiCallsCap(org);
+      const cap = getDailyAiCallsCap(org, gateCtx);
       if (cap !== null) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
         const rlDaily = await rateLimit({

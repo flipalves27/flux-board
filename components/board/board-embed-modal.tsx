@@ -54,7 +54,7 @@ export function BoardEmbedModal({ open, onClose, boardId, getHeaders }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm" role="dialog" aria-modal>
+    <div className="fixed inset-0 z-[var(--flux-z-modal-critical)] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm" role="dialog" aria-modal>
       <div className="w-full max-w-lg rounded-[var(--flux-rad-xl)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] shadow-[0_20px_50px_var(--flux-black-alpha-45)] p-6">
         <h2 className="text-lg font-semibold text-[var(--flux-text)] font-display">Widget para sites externos</h2>
         <p className="text-sm text-[var(--flux-text-muted)] mt-1 mb-4">

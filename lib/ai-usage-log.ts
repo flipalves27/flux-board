@@ -45,6 +45,8 @@ export type AiUsageLogInput = {
   model: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Versão de prompt / política de servidor (rastreio). */
+  promptFluxVersion?: string;
 };
 
 export async function logAiUsage(entry: AiUsageLogInput): Promise<void> {
@@ -72,6 +74,9 @@ export async function logAiUsage(entry: AiUsageLogInput): Promise<void> {
       inputTokens,
       outputTokens,
       estimatedCostUsd,
+      ...(entry.promptFluxVersion
+        ? { promptFluxVersion: entry.promptFluxVersion.slice(0, 40) }
+        : {}),
       createdAt: new Date().toISOString(),
     });
   } catch (e) {

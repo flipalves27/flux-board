@@ -1,40 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import {
-  getBoardIds,
-  getBoardsByIds,
-  createBoard,
-  ensureBoardReborn,
-  getDefaultBoardData,
-  getBoardRebornId,
-} from "@/lib/kv-boards";
+import { getBoardIds, getBoardsByIds, createBoard } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
 } from "@/lib/board-portfolio-metrics";
 import { ensureAdminUser } from "@/lib/kv-users";
+import { deriveEffectiveRoles, isOrgConvidado, isPlatformAdmin } from "@/lib/rbac";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { getBoardCap } from "@/lib/plan-gates";
+import { getBoardCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { getPublishedTemplateById } from "@/lib/kv-templates";
 import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
+import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
+import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
+function corsHeaders(request: NextRequest) {
+  return boardsApiCorsHeaders(request);
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
 }
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -42,7 +34,6 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
 
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
     const boardRows = await getBoardsByIds(boardIds, payload.orgId);
@@ -52,14 +43,14 @@ export async function GET(request: NextRequest) {
       ownerId: b.ownerId,
       clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
       lastUpdated: b.lastUpdated,
+      boardMethodology: b.boardMethodology,
       portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
     }));
 
-    const rebornId = getBoardRebornId(payload.orgId);
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
-    const currentCount = orgBoardIds.filter((id) => id !== rebornId).length;
-    const cap = getBoardCap(org);
+    const currentCount = orgBoardIds.length;
+    const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
 
     const plan =
@@ -69,7 +60,7 @@ export async function GET(request: NextRequest) {
         currentCount,
         atLimit: cap !== null && currentCount >= cap,
       };
-    return NextResponse.json({ boards, plan });
+    return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
     console.error("Boards API error:", err);
     return NextResponse.json(
@@ -80,7 +71,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -88,7 +79,11 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
+
+    const roleCtx = deriveEffectiveRoles(payload);
+    if (isOrgConvidado(roleCtx) && !isPlatformAdmin(roleCtx)) {
+      return NextResponse.json({ error: "Convidados não podem criar boards." }, { status: 403 });
+    }
 
     const body = await request.json();
     const parsed = BoardCreateSchema.safeParse(body);
@@ -103,11 +98,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Use apenas templateId ou templateSnapshot, não ambos." }, { status: 400 });
     }
 
-    const rebornId = getBoardRebornId(payload.orgId);
-    const cap = getBoardCap(org);
+    const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     if (cap !== null) {
       const existingIds = await getBoardIds(payload.id, payload.orgId, true);
-      const currentCount = existingIds.filter((id) => id !== rebornId).length;
+      const currentCount = existingIds.length;
       if (currentCount >= cap) {
         return NextResponse.json(
           { error: `Limite do plano: no máximo ${cap} board(s) por organização.` },
@@ -116,6 +110,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const methodology = parsed.data.boardMethodology;
     let board;
     if (templateId) {
       const tpl = await getPublishedTemplateById(templateId);
@@ -125,21 +120,17 @@ export async function POST(request: NextRequest) {
       const snap = tpl.snapshot;
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...snap,
+        boardMethodology: snap.boardMethodology ?? methodology,
         automations: Array.isArray(snap.automations) ? (snap.automations as AutomationRule[]) : [],
       });
     } else if (rawSnap) {
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...rawSnap,
+        boardMethodology: rawSnap.boardMethodology ?? methodology,
         automations: Array.isArray(rawSnap.automations) ? (rawSnap.automations as AutomationRule[]) : [],
       });
     } else {
-      board = await createBoard(payload.orgId, payload.id, name, {
-        version: "2.0",
-        cards: [],
-        config: { bucketOrder: [], collapsedColumns: [] },
-        mapaProducao: [],
-        dailyInsights: [],
-      });
+      board = await createBoard(payload.orgId, payload.id, name, initialBoardPayloadForMethodology(methodology));
     }
     return NextResponse.json(
       {
@@ -148,9 +139,10 @@ export async function POST(request: NextRequest) {
           name: board.name,
           ownerId: board.ownerId,
           lastUpdated: board.lastUpdated,
+          boardMethodology: board.boardMethodology ?? methodology,
         },
       },
-      { status: 201 }
+      { status: 201, headers: corsHeaders(request) }
     );
   } catch (err) {
     console.error("Boards API error:", err);

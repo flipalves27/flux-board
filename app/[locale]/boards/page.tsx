@@ -1,11 +1,6 @@
-import { Suspense } from "react";
-import BoardsPage from "../../boards/page";
-import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
+import BoardsPage from "../../(workspace)/boards/page";
 
+/** Suspense em volta da página inteira mantinha o skeleton preso enquanto `useSearchParams` suspendia; o sync de query fica isolado dentro de `BoardsPage`. */
 export default function Page() {
-  return (
-    <Suspense fallback={<BoardsRouteLoadingFallback />}>
-      <BoardsPage />
-    </Suspense>
-  );
+  return <BoardsPage />;
 }

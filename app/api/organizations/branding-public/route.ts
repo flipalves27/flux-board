@@ -2,12 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrganizationByCustomDomain } from "@/lib/kv-organizations";
 import type { OrgBranding } from "@/lib/org-branding";
 import { resolvePlatformDisplayName } from "@/lib/org-branding";
+import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 /**
  * Branding público por host (white-label em domínio customizado, sem sessão).
  * GET ?host=board.cliente.com ou header Host.
  */
 export async function GET(request: NextRequest) {
+  const ip = getClientIpFromHeaders(request.headers);
+  const rl = await rateLimit({
+    key: `branding:public:${ip}`,
+    limit: Number(process.env.FLUX_RL_BRANDING_PUBLIC_PER_MIN || 120),
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
+  }
+
   const qp = request.nextUrl.searchParams.get("host")?.trim().toLowerCase();
   const rawHost =
     qp ||

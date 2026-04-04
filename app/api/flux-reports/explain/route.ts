@@ -7,9 +7,11 @@ import {
   assertFeatureAllowed,
   getDailyAiCallsCap,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
   PlanGateError,
   getDailyAiCallsWindowMs,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { generateFluxReportExplain } from "@/lib/flux-reports-explain";
 
@@ -23,7 +25,7 @@ const BodySchema = z.object({
  * Narrativa executiva (IA) para um gráfico do Flux Reports.
  */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -31,12 +33,11 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "portfolio_export");
+      assertFeatureAllowed(org, "portfolio_export", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) {
-        return NextResponse.json({ error: err.message }, { status: err.status });
-      }
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
     const { chartId, chartTitle, dataSummary } = parsed.data;
 
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
     if (cap !== null && togetherEnabled) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);

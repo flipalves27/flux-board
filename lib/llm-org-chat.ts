@@ -1,5 +1,7 @@
 import type { Organization } from "@/lib/kv-organizations";
 import { logAiUsage } from "@/lib/ai-usage-log";
+import { assertOrgAiBudget } from "@/lib/ai-org-budget";
+import { FLUX_LLM_PROMPT_VERSION } from "@/lib/prompt-versions";
 import {
   createAnthropicProvider,
   createTogetherProvider,
@@ -30,6 +32,11 @@ export async function runOrgLlmChat(params: {
 }): Promise<OrgLlmChatResult> {
   const { org, orgId, feature, messages, options, mode, userId, isAdmin } = params;
 
+  const budget = await assertOrgAiBudget(orgId);
+  if (!budget.ok) {
+    return { ok: false, error: budget.message, resolvedRoute: "together" };
+  }
+
   let route: LlmRoute;
   let modelForCall: string;
 
@@ -58,6 +65,7 @@ export async function runOrgLlmChat(params: {
       model: res.model,
       inputTokens: res.usage?.inputTokens,
       outputTokens: res.usage?.outputTokens,
+      promptFluxVersion: FLUX_LLM_PROMPT_VERSION,
     });
   }
 

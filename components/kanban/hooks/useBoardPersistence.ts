@@ -11,6 +11,12 @@ export function useBoardPersistence(boardId: string) {
   const filtersStorageKey = `${KANBAN_FILTERS_STORAGE_PREFIX}${boardId}`;
   const viewStorageKey = `flux.board.viewMode.session.v1::${boardId}`;
 
+  /** Hidrata stores persistidos só no cliente (skipHydration), alinhando SSR ao primeiro paint. */
+  useEffect(() => {
+    void useKanbanUiStore.persist.rehydrate();
+    void useFilterStore.persist.rehydrate();
+  }, []);
+
   useEffect(() => {
     migrateBoardViewFromLegacyLocalStorage(boardId);
   }, [boardId]);
@@ -42,6 +48,9 @@ export function useBoardPersistence(boardId: string) {
   const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
   const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? EMPTY_LABELS);
   const searchQuery = useFilterStore((s) => s.filtersByBoard[boardId]?.searchQuery ?? "");
+  const insightFocusCardIdsArr = useFilterStore(
+    (s) => s.filtersByBoard[boardId]?.insightFocusCardIds ?? EMPTY_LABELS,
+  );
 
   const boardView = useKanbanUiStore((s) => s.getBoardView(boardId));
 
@@ -82,7 +91,19 @@ export function useBoardPersistence(boardId: string) {
     [boardId]
   );
 
+  const setInsightFocusCardIds = useCallback(
+    (ids: string[]) => {
+      useFilterStore.getState().patchFilters(boardId, { insightFocusCardIds: [...new Set(ids.filter(Boolean))] });
+    },
+    [boardId]
+  );
+
+  const clearInsightFocus = useCallback(() => {
+    useFilterStore.getState().patchFilters(boardId, { insightFocusCardIds: [] });
+  }, [boardId]);
+
   const activeLabels = useMemo(() => new Set(activeLabelsArr), [activeLabelsArr]);
+  const insightFocusCardIds = useMemo(() => new Set(insightFocusCardIdsArr), [insightFocusCardIdsArr]);
 
   return {
     boardView,
@@ -93,6 +114,9 @@ export function useBoardPersistence(boardId: string) {
     setActiveLabels,
     searchQuery,
     setSearchQuery,
+    insightFocusCardIds,
+    setInsightFocusCardIds,
+    clearInsightFocus,
     filtersStorageKey,
     viewStorageKey,
   };
