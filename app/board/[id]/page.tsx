@@ -404,7 +404,7 @@ export default function BoardPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const boardId = Array.isArray(params.id) ? params.id[0] ?? "" : (params.id as string);
-  const { user, getHeaders, isChecked, setAuth } = useAuth();
+  const { user, getHeaders, isChecked, setAuth, refreshSession } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
   const backToBoards = `/${locale}/boards`;
@@ -465,6 +465,11 @@ export default function BoardPage() {
   pushToastRef.current = pushToast;
   const userRef = useRef(user);
   userRef.current = user;
+  /**
+   * Após um `refreshSession()` por convidado, incrementamos para o efeito voltar a correr
+   * (React pode não re-renderizar se `user` continua `null` com o mesmo objeto de estado).
+   */
+  const [guestSessionGate, setGuestSessionGate] = useState(0);
 
   /** Rehydrate persisted stores early (while skeleton shows) so KanbanBoardLoaded
    *  doesn't trigger a state-update cascade on its first render (#185). */
@@ -567,9 +572,14 @@ export default function BoardPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
+      if (guestSessionGate === 0) {
+        void refreshSession().finally(() => setGuestSessionGate(1));
+        return;
+      }
       routerRef.current.replace(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/board/${boardId}`)}`);
       return;
     }
+    if (guestSessionGate !== 0) setGuestSessionGate(0);
     if (!boardId) {
       routerRef.current.replace(`/${locale}/boards`);
       return;
@@ -577,7 +587,7 @@ export default function BoardPage() {
     useKanbanUiStore.getState().resetForBoardSwitch();
     useCopilotStore.getState().resetSessionUi();
     loadBoard();
-  }, [isChecked, user?.id, boardId, locale, loadBoard]);
+  }, [isChecked, user?.id, guestSessionGate, boardId, locale, loadBoard, refreshSession]);
 
   useEffect(() => {
     const id = boardId;

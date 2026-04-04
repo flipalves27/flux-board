@@ -34,21 +34,21 @@ export async function GET(req: NextRequest) {
   };
 
   if (!clientId || !clientSecret) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_not_configured"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_not_configured", payload?.redirect));
   }
 
   if (req.nextUrl.searchParams.get("error")) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_denied"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_denied", payload?.redirect));
   }
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   if (!code || !state) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_invalid"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_invalid", payload?.redirect));
   }
 
   if (!payload || payload.state !== state) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_state"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_state", payload?.redirect));
   }
 
   const redirectUri = googleRedirectUri(base);
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     const tokens = await google.validateAuthorizationCode(code, payload.codeVerifier);
     const profile = await resolveOAuthProfile("google", tokens);
     if (!profile) {
-      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_profile"));
+      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_profile", payload.redirect));
     }
 
     const result = await completeOAuthSignIn({
@@ -85,10 +85,10 @@ export async function GET(req: NextRequest) {
         })
       );
     }
-    return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error));
+    return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error, payload.redirect));
   } catch (e) {
     if (e instanceof OAuth2RequestError) {
-      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_exchange"));
+      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_exchange", payload.redirect));
     }
     throw e;
   }

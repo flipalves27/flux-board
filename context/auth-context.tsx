@@ -12,8 +12,8 @@ const LEGACY_AUTH_KEY = "flux_board_auth";
 /** Evita UI presa se a validação de sessão não retornar (ex.: BD lento). Equilíbrio com redirecionamentos para /login. */
 const SESSION_VALIDATE_TIMEOUT_MS = 10_000;
 
-/** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount). */
-const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900] as const;
+/** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount / Server Action). */
+const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
