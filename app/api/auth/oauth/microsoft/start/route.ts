@@ -5,6 +5,7 @@ import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_MICROSOFT, OAUTH_SCOPES } from "@/lib/oauth/constants";
 import { setOAuthStartCookie } from "@/lib/oauth/cookie";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_MICROSOFT_CLIENT_ID?.trim();
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   const codeVerifier = generateCodeVerifier();
   const nonce = generateState();
   const invite = req.nextUrl.searchParams.get("invite") ?? undefined;
-  const redirect = req.nextUrl.searchParams.get("redirect") ?? undefined;
+  const redirect = sanitizeOAuthReturnPath(req.nextUrl.searchParams.get("redirect") ?? undefined);
   const locale = req.nextUrl.searchParams.get("locale") ?? "pt-BR";
 
   const url = entra.createAuthorizationURL(state, codeVerifier, [...OAUTH_SCOPES]);

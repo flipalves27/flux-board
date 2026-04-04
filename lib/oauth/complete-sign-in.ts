@@ -27,6 +27,7 @@ import {
 import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import { getUserCap } from "@/lib/plan-gates";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 import { auditOrganizationInviteAccepted } from "@/lib/invite-audit";
 
 export type OAuthSignInProfile = {
@@ -48,8 +49,9 @@ function normalizeLocale(locale: string): string {
 
 function postAuthPath(locale: string, redirect: string | undefined, isNewUser: boolean): string {
   const root = `/${normalizeLocale(locale)}`;
-  if (redirect && redirect.startsWith("/")) {
-    return redirect;
+  const safe = sanitizeOAuthReturnPath(redirect);
+  if (safe) {
+    return safe;
   }
   if (isNewUser) {
     return `${root}/onboarding`;

@@ -5,13 +5,10 @@ import { NextResponse } from "next/server";
 import { clearOAuthCookie } from "@/lib/oauth/cookie";
 import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 
-function escapeHtmlAttribute(url: string): string {
-  return url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-}
-
 /**
- * Resposta HTML 200 que aplica cookies de sessão e limpa o cookie OAuth na mesma resposta,
- * depois redireciona via script — evita corrida em que o cliente navega antes de persistir cookies.
+ * Redirecionamento HTTP com `Set-Cookie` na mesma resposta (padrão OAuth).
+ * O browser aplica os cookies antes de seguir `Location`, o que evita corrida com
+ * `window.location` em HTML estático e garante que a página seguinte já envie a sessão.
  */
 export function buildOAuthSessionLandingResponse(args: {
   targetUrl: string;
@@ -21,17 +18,8 @@ export function buildOAuthSessionLandingResponse(args: {
   oauthCookieName: string;
 }): NextResponse {
   const { targetUrl, accessToken, refreshPlain, remember, oauthCookieName } = args;
-  const urlJson = JSON.stringify(targetUrl);
-  const href = escapeHtmlAttribute(targetUrl);
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Redirecting…</title></head><body><p>Redirecting…</p><noscript><a href="${href}">Continue</a></noscript><script>window.location.replace(${urlJson});</script></body></html>`;
-
-  const res = new NextResponse(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+  const res = NextResponse.redirect(targetUrl, 303);
+  res.headers.set("Cache-Control", "no-store");
   setAuthCookiesOnNextResponse(res, accessToken, refreshPlain, remember);
   clearOAuthCookie(res, oauthCookieName);
   return res;

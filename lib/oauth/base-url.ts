@@ -1,20 +1,44 @@
 import type { NextRequest } from "next/server";
 
+function requestPublicOrigin(req: NextRequest): string {
+  const host = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host");
+  const rawProto =
+    req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    (req.nextUrl.protocol === "https:" ? "https" : "http");
+  const proto = rawProto === "https" || rawProto === "http" ? rawProto : "https";
+  if (host) return `${proto}://${host}`;
+  return req.nextUrl.origin;
+}
+
 /**
- * Base pública da app (redirect OAuth). Preferir NEXT_PUBLIC_APP_URL em produção
- * para coincidir com o registrado no Google/Azure.
+ * Base pública da app (redirect OAuth). `NEXT_PUBLIC_APP_URL` deve coincidir com o host
+ * no browser; quando **não** coincide (www vs apex, domínio custom vs `*.vercel.app`),
+ * usamos o host deste pedido para o `redirect_uri` — senão o Google devolve a outro host,
+ * os cookies de sessão ficam lá e o utilizador volta ao site “sem login”.
  *
- * Checklist deploy: `NEXT_PUBLIC_APP_URL` deve ser exatamente o host que o utilizador
- * vê no browser (apex vs www, preview vs prod). Desalinhamento quebra cookies e OAuth.
+ * Registe em Google/Microsoft **todos** os redirect URIs dos hosts que o tráfego usa.
  */
 export function getOAuthPublicBaseUrl(req: NextRequest): string {
-  const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  if (explicit) return explicit;
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  const proto =
-    req.headers.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-  if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
+  const explicitRaw = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  const requestOrigin = requestPublicOrigin(req);
+  if (!explicitRaw) return requestOrigin;
+
+  let explicitHost: string;
+  try {
+    explicitHost = new URL(explicitRaw).hostname.toLowerCase();
+  } catch {
+    return explicitRaw;
+  }
+
+  const reqHost = (() => {
+    const h =
+      req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host") || "";
+    return h.split(":")[0]!.toLowerCase();
+  })();
+
+  if (reqHost && explicitHost === reqHost) return explicitRaw;
+  if (reqHost) return requestOrigin;
+  return explicitRaw;
 }
 
 /**
@@ -23,13 +47,7 @@ export function getOAuthPublicBaseUrl(req: NextRequest): string {
  * por causa de NEXT_PUBLIC_APP_URL, o browser não envia sessão e o utilizador cai no login.
  */
 export function getOAuthCallbackRequestOrigin(req: NextRequest): string {
-  const host = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host");
-  const rawProto =
-    req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-    (req.nextUrl.protocol === "https:" ? "https" : "http");
-  const proto = rawProto === "https" || rawProto === "http" ? rawProto : "https";
-  if (host) return `${proto}://${host}`;
-  return req.nextUrl.origin;
+  return requestPublicOrigin(req);
 }
 
 export function googleRedirectUri(base: string): string {

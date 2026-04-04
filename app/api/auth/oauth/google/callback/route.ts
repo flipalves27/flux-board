@@ -8,6 +8,7 @@ import { clearOAuthCookie, parseOAuthStartCookie } from "@/lib/oauth/cookie";
 import { buildOAuthSessionLandingResponse } from "@/lib/oauth/session-landing-response";
 import { resolveOAuthProfile } from "@/lib/oauth/id-token-profile";
 import { redirectToLoginWithOAuthError } from "@/lib/oauth/redirect-login";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_GOOGLE_CLIENT_ID?.trim();
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
       name: profile.name,
       emailVerified: profile.emailVerified,
       invite: payload.invite,
-      redirect: payload.redirect,
+      redirect: sanitizeOAuthReturnPath(payload.redirect),
       locale: payload.locale,
     });
 
