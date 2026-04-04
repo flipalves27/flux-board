@@ -10,8 +10,8 @@ import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
-/** Evita UI presa se a validação de sessão não retornar (ex.: BD lento). Equilíbrio com redirecionamentos para /login. */
-const SESSION_VALIDATE_TIMEOUT_MS = 10_000;
+/** Evita UI presa se a validação de sessão não retornar. Após OAuth / cold start (Vercel + Mongo), 10s era curto demais e gerava `client_timeout` falso. */
+const SESSION_VALIDATE_TIMEOUT_MS = 30_000;
 
 /** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount / Server Action). */
 const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
@@ -246,9 +246,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         applyValidateResult(result);
-      } catch {
+      } catch (e) {
         if (cancelled) return;
         if (initialGen !== sessionValidationGenRef.current) return;
+        const isTimeout = e instanceof Error && e.message === "session_validate_timeout";
+        if (isTimeout && retryIndex < INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS.length) {
+          await new Promise((r) => setTimeout(r, INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS[retryIndex]));
+          if (cancelled) return;
+          if (initialGen !== sessionValidationGenRef.current) return;
+          await runInitialValidate(retryIndex + 1);
+          return;
+        }
         const supportRef =
           typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
             ? globalThis.crypto.randomUUID()

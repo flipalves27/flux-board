@@ -59,6 +59,8 @@ Na página de login, o utilizador pode **copiar um JSON** (referência + tipo de
 
 Para desligar estes avisos (ex.: staging ruidoso): `FLUX_SESSION_VALIDATE_LOG=0`.
 
+**`client_timeout` no painel de diagnóstico:** a validação de sessão (Server Action) não respondeu a tempo no browser (limite interno ~30s, com novas tentativas após timeout). Costuma ser cold start + Mongo lento, não ausência de cookies. Se persistir, ver latência da BD e logs da função.
+
 **Diagnóstico opcional:** `FLUX_AUTH_DEBUG=1` emite `[flux-auth-debug]` com JSON (nunca tokens). Eventos úteis:
 
 - `session_validate_no_cookies` — validação sem cookies (inclui `requestHost` quando disponível)
