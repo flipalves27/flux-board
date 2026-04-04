@@ -14,6 +14,8 @@ export function authCookieBase(): {
   sameSite: "lax";
   path: string;
 } {
+  /** Sem `domain` explícito = host-only; correto para a maioria dos deploys. Só defina domínio
+   * partilhado se souber o impacto em subdomínios (e alinhe com NEXT_PUBLIC_APP_URL). */
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

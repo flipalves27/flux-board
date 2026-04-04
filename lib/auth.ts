@@ -12,6 +12,7 @@ import {
   type OrgRole,
   type PlatformRole,
 } from "./rbac";
+import { getUserById } from "./kv-users";
 
 const SALT_LEN = 16;
 
@@ -121,7 +122,6 @@ export async function getAuthFromRequest(
   if (!token) return null;
   const payload = verifyToken(token);
   if (!payload) return null;
-  const { getUserById } = await import("./kv-users");
   const user = await getUserById(payload.id, payload.orgId);
   if (!user) return null;
   const roles = deriveEffectiveRoles({

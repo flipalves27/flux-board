@@ -1,5 +1,7 @@
 "use client";
 
+import "@/components/kanban/kanban-card-globals.css";
+
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
@@ -1329,8 +1331,8 @@ function KanbanBoardLoaded({
 }
 
 export function KanbanBoard(props: KanbanBoardProps) {
-  const db = useBoardStore((s) => s.db);
-  if (!db) return null;
+  const hasDb = useBoardStore((s) => s.db != null);
+  if (!hasDb) return null;
   return (
     <Suspense fallback={<SkeletonKanbanBoard />}>
       <KanbanBoardLoaded {...props} />

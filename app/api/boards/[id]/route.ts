@@ -40,9 +40,19 @@ export async function GET(
       return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
     }
     let boardMethodology: BoardMethodology = board.boardMethodology ?? "scrum";
+    let inferredMethodology = false;
     if (!board.boardMethodology) {
       const sprints = await listSprints(payload.orgId, boardId);
       boardMethodology = inferLegacyBoardMethodology(sprints.length > 0);
+      inferredMethodology = true;
+    }
+    if (inferredMethodology) {
+      await updateBoard(
+        boardId,
+        payload.orgId,
+        { boardMethodology },
+        { userId: payload.id, userName: payload.username, orgId: payload.orgId }
+      );
     }
     const safe = {
       ...board,

@@ -1,6 +1,6 @@
 /**
  * Visual variants for Kanban cards (blocked, done, overdue, AI-enriched).
- * Classes are defined in app/globals.css (`.flux-kanban-card--*`).
+ * Classes are defined in `kanban-card-globals.css` (`.flux-kanban-card--*`).
  */
 export type KanbanCardSurfaceVariant = "default" | "done" | "overdue" | "blocked" | "ai";
 

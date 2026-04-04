@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 /**
  * Base pública da app (redirect OAuth). Preferir NEXT_PUBLIC_APP_URL em produção
  * para coincidir com o registrado no Google/Azure.
+ *
+ * Checklist deploy: `NEXT_PUBLIC_APP_URL` deve ser exatamente o host que o utilizador
+ * vê no browser (apex vs www, preview vs prod). Desalinhamento quebra cookies e OAuth.
  */
 export function getOAuthPublicBaseUrl(req: NextRequest): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");

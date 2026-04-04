@@ -2,10 +2,10 @@ import { MicrosoftEntraId, OAuth2RequestError } from "arctic";
 import { NextRequest, NextResponse } from "next/server";
 
 import { completeOAuthSignIn } from "@/lib/oauth/complete-sign-in";
-import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 import { getOAuthCallbackRequestOrigin, getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_MICROSOFT } from "@/lib/oauth/constants";
 import { clearOAuthCookie, parseOAuthStartCookie } from "@/lib/oauth/cookie";
+import { buildOAuthSessionLandingResponse } from "@/lib/oauth/session-landing-response";
 import { resolveOAuthProfile } from "@/lib/oauth/id-token-profile";
 import { redirectToLoginWithOAuthError } from "@/lib/oauth/redirect-login";
 
@@ -65,9 +65,16 @@ export async function GET(req: NextRequest) {
 
     if (result.ok) {
       const afterLoginOrigin = getOAuthCallbackRequestOrigin(req);
-      const res = NextResponse.redirect(new URL(result.path, afterLoginOrigin).toString(), 302);
-      setAuthCookiesOnNextResponse(res, result.access, result.refreshPlain, true);
-      return finish(res);
+      const targetUrl = new URL(result.path, afterLoginOrigin).toString();
+      return finish(
+        buildOAuthSessionLandingResponse({
+          targetUrl,
+          accessToken: result.access,
+          refreshPlain: result.refreshPlain,
+          remember: true,
+          oauthCookieName: OAUTH_COOKIE_MICROSOFT,
+        })
+      );
     }
     return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error));
   } catch (e) {
