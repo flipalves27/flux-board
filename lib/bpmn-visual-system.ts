@@ -28,7 +28,7 @@ export const BPMN_VISUAL_TOKENS = {
     fontWeight: 700,
     lineHeight: 1.35,
   },
-  minReadableZoom: 0.36,
+  minReadableZoom: 0.5,
   minLabelWidth: 56,
   minContrastRatio: 4.5,
   semanticPalette: {
