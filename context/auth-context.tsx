@@ -9,6 +9,25 @@ import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
+/** Evita tela de login presa em "Carregando…" se a validação de sessão não retornar (ex.: BD lento). */
+const SESSION_VALIDATE_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error("session_validate_timeout")), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(id);
+        reject(e);
+      }
+    );
+  });
+}
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -109,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     try {
-      const result = await validateSessionAction();
+      const result = await withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS);
       if (result.ok) {
         setState({
           user: sessionUserToAuthUser(result.user),
@@ -144,8 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     clearLegacyStorage();
 
-    validateSessionAction()
+    let cancelled = false;
+
+    withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS)
       .then((result) => {
+        if (cancelled) return;
         if (result.ok) {
           setState({
             user: sessionUserToAuthUser(result.user),
@@ -157,8 +179,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
-        setState({ user: null, isLoading: false, isChecked: true });
+        if (!cancelled) setState({ user: null, isLoading: false, isChecked: true });
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
