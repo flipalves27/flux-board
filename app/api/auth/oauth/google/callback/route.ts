@@ -7,6 +7,7 @@ import { OAUTH_COOKIE_GOOGLE } from "@/lib/oauth/constants";
 import { clearOAuthCookie, parseOAuthStartCookie } from "@/lib/oauth/cookie";
 import { resolveOAuthProfile } from "@/lib/oauth/id-token-profile";
 import { redirectToLoginWithOAuthError } from "@/lib/oauth/redirect-login";
+import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_GOOGLE_CLIENT_ID?.trim();
@@ -62,7 +63,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (result.ok) {
-      return finish(NextResponse.redirect(new URL(result.path, base).toString(), 302));
+      const res = NextResponse.redirect(new URL(result.path, base).toString(), 302);
+      setAuthCookiesOnNextResponse(res, result.access, result.refreshPlain, true);
+      return finish(res);
     }
     return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error));
   } catch (e) {
