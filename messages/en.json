@@ -141,7 +141,8 @@
     "deleteUserConfirm": "Permanently delete {name}?",
     "deleteOrgTitle": "Delete organization",
     "deleteOrgConfirm": "Delete {name} and all related data (users, boards, invites, etc.)? This cannot be undone.",
-    "orgDeleted": "Organization deleted"
+    "orgDeleted": "Organization deleted",
+    "requestTimeout": "The request took too long. Check your connection or try again."
   },
   "sprints": {
     "title": "Sprints",

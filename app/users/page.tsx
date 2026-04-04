@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
@@ -41,6 +41,7 @@ export default function UsersPage() {
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const deleteUserInFlightRef = useRef(false);
   const { pushToast } = useToast();
 
   useEffect(() => {
@@ -356,18 +357,29 @@ export default function UsersPage() {
           setConfirmDelete(null);
         }}
         onConfirm={async () => {
-          if (!confirmDelete || deleteBusy) return;
+          if (!confirmDelete || deleteBusy || deleteUserInFlightRef.current) return;
+          deleteUserInFlightRef.current = true;
           const { id } = confirmDelete;
           setDeleteBusy(true);
+          const ac = new AbortController();
+          const timeoutId = setTimeout(() => ac.abort(), 60_000);
           try {
-            await apiDelete(`/api/users/${id}`, getHeaders());
+            await apiDelete(`/api/users/${id}`, getHeaders(), { signal: ac.signal });
             setUsers((prev) => prev.filter((u) => u.id !== id));
             setConfirmDelete(null);
             pushToast({ kind: "success", title: "Utilizador removido." });
             void loadUsers();
-          } catch {
-            pushToast({ kind: "error", title: "Erro ao excluir." });
+          } catch (e) {
+            const aborted =
+              (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
+              (e instanceof Error && e.name === "AbortError");
+            pushToast({
+              kind: "error",
+              title: aborted ? "Pedido demorou demais." : "Erro ao excluir.",
+            });
           } finally {
+            clearTimeout(timeoutId);
+            deleteUserInFlightRef.current = false;
             setDeleteBusy(false);
           }
         }}

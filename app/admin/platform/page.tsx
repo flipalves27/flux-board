@@ -406,20 +406,30 @@ export default function PlatformAdminConsolePage() {
     if (deleteUserInFlightRef.current) return;
     deleteUserInFlightRef.current = true;
     setDeleteUserBusy(true);
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 60_000);
     try {
-      await apiDelete(`/api/users/${encodeURIComponent(row.id)}`, getHeaders());
+      await apiDelete(`/api/users/${encodeURIComponent(row.id)}`, getHeaders(), { signal: ac.signal });
       setUsers((prev) => prev.filter((u) => u.id !== row.id));
       setUserCursor(null);
       setConfirmDeleteUser(null);
       pendingDeleteUserRef.current = null;
       pushToast({ kind: "success", title: t("userDeleted") });
     } catch (e) {
+      const aborted =
+        (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
+        (e instanceof Error && e.name === "AbortError");
       pushToast({
         kind: "error",
         title: t("error"),
-        description: e instanceof ApiError ? (e.data as { error?: string })?.error ?? e.message : "—",
+        description: aborted
+          ? t("requestTimeout")
+          : e instanceof ApiError
+            ? (e.data as { error?: string })?.error ?? e.message
+            : "—",
       });
     } finally {
+      clearTimeout(timeoutId);
       deleteUserInFlightRef.current = false;
       setDeleteUserBusy(false);
     }

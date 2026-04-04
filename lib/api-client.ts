@@ -178,9 +178,10 @@ export async function apiPatch<T = unknown>(
 
 export async function apiDelete(
   url: string,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
+  extra?: Omit<ApiFetchOptions, "method" | "headers">
 ): Promise<void> {
-  const res = await apiFetch(url, { method: "DELETE", headers });
+  const res = await apiFetch(url, { method: "DELETE", headers, ...extra });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new ApiError(
