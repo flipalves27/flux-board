@@ -20,7 +20,42 @@ import { CardsLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec
 import { fluxyPromptPrefix } from "@/lib/fluxy-persona";
 
 const CARDS_LLM_JSON_RETRY_SUFFIX =
-  "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Se necessário, use no máximo 40 cardRows e textos curtos em rationale/desc — prefira JSON válido a resposta longa truncada.";
+  "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Use no máximo 25 cardRows e omita o campo rationale — prefira JSON válido a resposta longa truncada.";
+
+/**
+ * Tenta completar um JSON truncado adicionando os fechamentos necessários.
+ * Se o texto termina no meio de um array de cardRows, fecha o array e o objeto.
+ * Retorna o JSON recuperado ou null se não for possível recuperar nada útil.
+ */
+function tryRecoverTruncatedCardsJson(raw: string): unknown | null {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  // Try increasingly aggressive closing suffixes
+  const closings = ["}]}", "}]},\"bucketMappingPreview\":[]}", "]}}"];
+  for (const suffix of closings) {
+    try {
+      const candidate = trimmed + suffix;
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // continue
+    }
+  }
+
+  // Last resort: find the last complete cardRow object and close from there
+  const lastComplete = trimmed.lastIndexOf("},");
+  if (lastComplete > 100) {
+    try {
+      const candidate = trimmed.slice(0, lastComplete + 1) + "]}";
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
 
 export type SpecPlanPipelineEvent =
   | { event: "document_parsed"; data: Record<string, unknown> }
@@ -47,7 +82,7 @@ async function llmJson(params: {
   /** Saída JSON: outline ~6k; itens/cartões até 8k (teto Anthropic no provider). */
   maxOutputTokens?: number;
   temperature?: number;
-}): Promise<{ ok: true; json: unknown } | { ok: false; message: string }> {
+}): Promise<{ ok: true; json: unknown } | { ok: false; message: string; raw?: string }> {
   const maxTokens = params.maxOutputTokens ?? 7200;
   const temperature = params.temperature ?? 0.15;
   const res = await runOrgLlmChat({
@@ -63,9 +98,10 @@ async function llmJson(params: {
   if (!res.ok) {
     return { ok: false, message: res.error || "LLM indisponível" };
   }
-  const parsed = safeJsonParse(String(res.assistantText || ""));
+  const rawText = String(res.assistantText || "");
+  const parsed = safeJsonParse(rawText);
   if (parsed == null) {
-    return { ok: false, message: "Resposta da IA não é JSON válido." };
+    return { ok: false, message: "Resposta da IA não é JSON válido.", raw: rawText };
   }
   return { ok: true, json: parsed };
 }
@@ -365,8 +401,18 @@ export async function runSpecPlanPipeline(input: {
     userId: input.userId,
     isAdmin: input.isAdmin,
     userContent: cardsPrompt,
-    maxOutputTokens: 10_000,
+    maxOutputTokens: 6_500,
   });
+  if (!cRes.ok && cRes.message === "Resposta da IA não é JSON válido.") {
+    // Before making a second LLM call, try to recover a truncated JSON response.
+    const rawText = cRes.raw;
+    if (rawText) {
+      const recovered = tryRecoverTruncatedCardsJson(rawText);
+      if (recovered !== null) {
+        cRes = { ok: true, json: recovered };
+      }
+    }
+  }
   if (!cRes.ok && cRes.message === "Resposta da IA não é JSON válido.") {
     cRes = await llmJson({
       org: input.org,
@@ -374,7 +420,7 @@ export async function runSpecPlanPipeline(input: {
       userId: input.userId,
       isAdmin: input.isAdmin,
       userContent: cardsPrompt + CARDS_LLM_JSON_RETRY_SUFFIX,
-      maxOutputTokens: 10_000,
+      maxOutputTokens: 5_000,
       temperature: 0.05,
     });
   }

@@ -17,10 +17,12 @@ function clip(s: string, max: number): string {
  * e menos risco de truncar a saída no meio (erro "não é JSON válido").
  */
 export function compactWorkItemsForCardsJson(data: WorkItemsData): string {
-  let maxItems = 48;
-  let titleMax = 200;
-  let descMax = 320;
-  let summaryMax = 400;
+  // Start with tighter limits to keep the cards LLM input smaller,
+  // which reduces output size and avoids JSON truncation mid-response.
+  let maxItems = 35;
+  let titleMax = 120;
+  let descMax = 180;
+  let summaryMax = 280;
 
   const build = (): WorkItemsData => ({
     methodologySummary: clip(data.methodologySummary || "", summaryMax),
@@ -29,16 +31,16 @@ export function compactWorkItemsForCardsJson(data: WorkItemsData): string {
       title: clip(it.title, titleMax),
       description: clip(it.description, descMax),
       type: clip(it.type, 72),
-      suggestedTags: (it.suggestedTags ?? []).slice(0, 12).map((t) => clip(String(t), 48)),
+      suggestedTags: (it.suggestedTags ?? []).slice(0, 8).map((t) => clip(String(t), 40)),
     })),
   });
 
   let json = JSON.stringify(build());
-  while (json.length > HARD_CAP && maxItems > 22) {
+  while (json.length > HARD_CAP && maxItems > 18) {
     maxItems -= 4;
-    titleMax = Math.max(120, titleMax - 24);
-    descMax = Math.max(160, descMax - 40);
-    summaryMax = Math.max(200, summaryMax - 40);
+    titleMax = Math.max(80, titleMax - 20);
+    descMax = Math.max(100, descMax - 30);
+    summaryMax = Math.max(160, summaryMax - 30);
     json = JSON.stringify(build());
   }
   return json;
