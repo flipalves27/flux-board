@@ -13,4 +13,10 @@ describe("sanitizeOAuthReturnPath", () => {
     expect(sanitizeOAuthReturnPath("https://evil.test")).toBeUndefined();
     expect(sanitizeOAuthReturnPath("/x\\y")).toBeUndefined();
   });
+
+  it("rejects API routes (not HTML pages)", () => {
+    expect(sanitizeOAuthReturnPath("/api/organizations/me")).toBeUndefined();
+    expect(sanitizeOAuthReturnPath("/api/foo")).toBeUndefined();
+    expect(sanitizeOAuthReturnPath("/apiana")).toBe("/apiana");
+  });
 });
