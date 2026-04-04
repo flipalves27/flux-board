@@ -150,15 +150,6 @@ export default function LoginPage() {
     setError("");
   };
 
-  if (!isChecked) {
-    return (
-      <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
-        <FluxAppBackdrop variant="immersive" />
-        <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
-      </div>
-    );
-  }
-
   const inputClass =
     "flux-input min-h-10 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
