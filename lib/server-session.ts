@@ -1,10 +1,11 @@
 import "server-only";
 
 import { randomBytes } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createToken, verifyToken } from "./auth";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "./auth-cookie-names";
 import { clearAuthCookies, setAuthCookies } from "./session-cookies";
+import { isFluxAuthDebugEnabled, logFluxAuthDebug } from "./flux-auth-debug";
 import { createRefreshSession, consumeRefreshSessionForRotation } from "./kv-refresh-sessions";
 import { refreshRecordExpiresAt } from "./session-ttl";
 import { getUserById } from "./kv-users";
@@ -169,6 +170,20 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
       const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
       logSessionValidateFail({ reason });
       await clearAuthCookies();
+    } else if (isFluxAuthDebugEnabled()) {
+      let requestHost: string | undefined;
+      try {
+        const h = await headers();
+        const forwarded = h.get("x-forwarded-host");
+        requestHost = forwarded?.split(",")[0]?.trim() || h.get("host") || undefined;
+      } catch {
+        /* no request context */
+      }
+      logFluxAuthDebug("session_validate_no_cookies", {
+        hasAccessCookie: false,
+        hasRefreshCookie: false,
+        requestHost,
+      });
     }
     return { ok: false };
   }

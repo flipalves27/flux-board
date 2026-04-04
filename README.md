@@ -123,6 +123,8 @@ OAuth 2.0 + OIDC via rotas `/api/auth/oauth/google/*` e `/api/auth/oauth/microso
 - `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED` = `1` ou `true`
 - `NEXT_PUBLIC_OAUTH_MICROSOFT_ENABLED` = `1` ou `true`
 
+**Diagnóstico (opcional):** `FLUX_AUTH_DEBUG=1` no servidor emite logs com prefixo `[flux-auth-debug]` (JSON numa linha) para investigar perda de sessão após login social, por exemplo *www* vs *apex* e cookies. Ver [`.env.example`](.env.example).
+
 **Desenvolvimento local:** sem `MONGODB_URI`, a API usa armazenamento **em memória** (dados somem ao reiniciar o servidor).
 
 **Coleções criadas automaticamente:** `users`, `boards`, `user_boards`, `counters` (índices em `emailLower` / `usernameLower` na primeira execução).

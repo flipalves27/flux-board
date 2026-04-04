@@ -13,6 +13,7 @@ import {
   type PlatformRole,
 } from "./rbac";
 import { getUserById } from "./kv-users";
+import { isFluxAuthDebugEnabled, logFluxAuthDebug } from "./flux-auth-debug";
 
 const SALT_LEN = 16;
 
@@ -119,7 +120,18 @@ export async function getAuthFromRequest(
   let token: string | null = null;
   if (auth?.startsWith("Bearer ")) token = auth.slice(7);
   if (!token) token = req.cookies.get(ACCESS_COOKIE)?.value ?? null;
-  if (!token) return null;
+  if (!token) {
+    if (isFluxAuthDebugEnabled()) {
+      const forwarded = req.headers.get("x-forwarded-host");
+      const host = forwarded?.split(",")[0]?.trim() || req.headers.get("host") || undefined;
+      logFluxAuthDebug("api_auth_no_access_token", {
+        pathname: req.nextUrl.pathname,
+        host,
+        cookieHeaderPresent: req.headers.has("cookie"),
+      });
+    }
+    return null;
+  }
   const payload = verifyToken(token);
   if (!payload) return null;
   const user = await getUserById(payload.id, payload.orgId);

@@ -3687,6 +3687,7 @@
         "workItemsLlmStarted": "Generating work items (~{chars} chars of outline in prompt). Large PDFs may take several minutes at this step.",
         "workItemsReady": "Work items draft received.",
         "methodologyApplied": "Methodology applied to draft.",
+        "cardsLlmStarted": "Mapping to board cards: AI in progress ({count} work items, ~{chars} chars in prompt). Large specs may take a while at this step.",
         "bucketMapping": "Suggested mapping to board columns.",
         "cardsPreview": "Preview of {count} card(s) received.",
         "streamError": "Stream error: {message}",
