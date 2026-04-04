@@ -2,6 +2,7 @@ node_modules
 .next
 .fluxy-ref
 coverage
+tsconfig.tsbuildinfo
 
 # Variáveis de ambiente — NUNCA commitar
 .env
