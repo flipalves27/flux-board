@@ -1,6 +1,7 @@
 node_modules
 .next
 .fluxy-ref
+coverage
 
 # Variáveis de ambiente — NUNCA commitar
 .env
