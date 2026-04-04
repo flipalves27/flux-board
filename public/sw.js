@@ -1,4 +1,4 @@
-const CACHE_NAME = "flux-board-v3";
+const CACHE_NAME = "flux-board-v4";
 // Only cache offline.html on install; "/" is dynamic and may redirect based on locale
 const STATIC_ASSETS = ["/offline.html"];
 
@@ -38,19 +38,11 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
 
-  // Never cache navigation documents to avoid serving stale authenticated HTML
-  // after deployments or session changes.
-  // Also don't try to cache responses from navigation requests that may have redirects.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request, { redirect: "follow" })
-        .catch(() => {
-          // If fetch fails entirely, try offline page
-          return caches.match("/offline.html");
-        })
-    );
-    return;
-  }
+  // Let the browser handle navigation requests natively.
+  // The next-intl middleware redirects "/" → "/pt-BR/" or "/en/"; intercepting
+  // these in the SW produces opaqueredirect responses that cannot be used to
+  // fulfil a navigate-mode fetch, causing ERR_FAILED.
+  if (request.mode === "navigate") return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
