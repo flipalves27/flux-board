@@ -1,4 +1,4 @@
-const CACHE_NAME = "flux-board-v3";
+const CACHE_NAME = "flux-board-v4";
 const STATIC_ASSETS = ["/", "/offline.html"];
 
 self.addEventListener("install", (event) => {
@@ -65,8 +65,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Flux Board";
   const options = {
     body: data.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/favicon.svg",
+    badge: "/favicon.svg",
     data: { url: data.url || "/" },
     vibrate: [100, 50, 100],
   };

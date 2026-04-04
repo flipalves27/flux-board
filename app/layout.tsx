@@ -80,6 +80,7 @@ export default async function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content={"#6" + "c5ce7"} />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         {/* suppressHydrationWarning: browsers strip the nonce attr from the DOM after CSP, causing React 19 hydration mismatch */}
