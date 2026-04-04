@@ -99,7 +99,15 @@ export default function BillingPage() {
     setError(null);
     (async () => {
       try {
-        const orgData = await apiGet<{ organization: Record<string, unknown> }>("/api/organizations/me", getHeaders());
+        const catalogPromise = apiGet<PublicCommercialCatalog>("/api/platform/commercial-catalog", getHeaders()).catch(
+          () => null as PublicCommercialCatalog | null
+        );
+        const [orgData, usersData, cat] = await Promise.all([
+          apiGet<{ organization: Record<string, unknown> }>("/api/organizations/me", getHeaders()),
+          apiGet<{ users: unknown[] }>("/api/users", getHeaders()),
+          catalogPromise,
+        ]);
+
         const org = orgData?.organization;
         const rawPlan = String(org?.plan ?? "free");
         const nextPlan: Plan =
@@ -122,20 +130,14 @@ export default function BillingPage() {
             : true
         );
 
-        try {
-          const cat = await apiGet<PublicCommercialCatalog>("/api/platform/commercial-catalog", getHeaders());
-          if (cat?.pricing) {
-            setCommercialCatalog({
-              pricing: cat.pricing,
-              proEnabled: cat.proEnabled !== false,
-              businessEnabled: cat.businessEnabled !== false,
-            });
-          }
-        } catch {
-          /* mantém defaults */
+        if (cat?.pricing) {
+          setCommercialCatalog({
+            pricing: cat.pricing,
+            proEnabled: cat.proEnabled !== false,
+            businessEnabled: cat.businessEnabled !== false,
+          });
         }
 
-        const usersData = await apiGet<{ users: unknown[] }>("/api/users", getHeaders());
         const count = Array.isArray(usersData?.users) ? usersData.users.length : 1;
         setMembersCount(Math.max(1, count));
         setSeats((prev) => {

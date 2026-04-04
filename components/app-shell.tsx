@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { SidebarLayoutProvider, useSidebarLayout } from "@/context/sidebar-layout-context";
 import { Sidebar } from "@/components/sidebar";
 import { TrialBillingBanner } from "@/components/trial-billing-banner";
-import { CommandPalette } from "@/components/command-palette/command-palette";
 import { GlobalHotkeys } from "@/components/hotkeys/global-hotkeys";
-import CeremonyPlanningModal from "@/components/ceremonies/ceremony-planning-modal";
-import StandupModal from "@/components/ceremonies/standup-modal";
-import CeremonyRetroModal from "@/components/kanban/ceremony-retro-modal";
+
+const CommandPalette = dynamic(
+  () => import("@/components/command-palette/command-palette").then((m) => m.CommandPalette),
+  { ssr: false }
+);
+const CeremonyPlanningModal = dynamic(() => import("@/components/ceremonies/ceremony-planning-modal"), {
+  ssr: false,
+});
+const StandupModal = dynamic(() => import("@/components/ceremonies/standup-modal"), { ssr: false });
+const CeremonyRetroModal = dynamic(() => import("@/components/kanban/ceremony-retro-modal"), { ssr: false });
 import { useRoutineTasks } from "@/context/routine-tasks-context";
 import { playAlertSound } from "@/lib/alert-sounds";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
