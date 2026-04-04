@@ -1,7 +1,23 @@
-const CACHE_NAME = "flux-board-v6";
+const CACHE_NAME = "flux-board-v7";
 
 /** Não precachear `/` — em muitos hosts redireciona (www, locale) e polui a cache com respostas de redirect. */
 const STATIC_ASSETS = ["/offline.html"];
+
+/**
+ * Pedidos internos do App Router (RSC / flight). Não são `mode: "navigate"`; se o SW os tratar e o
+ * `.catch` devolver `undefined`, o Chrome falha com "Failed to convert value to 'Response'".
+ * @see next/dist/client/components/app-router-headers.js
+ */
+function isNextAppRouterDataRequest(request) {
+  if (request.headers.get("rsc") === "1") return true;
+  if (request.headers.has("next-router-state-tree")) return true;
+  if (request.headers.has("next-router-prefetch")) return true;
+  if (request.headers.has("next-router-segment-prefetch")) return true;
+  if (request.headers.has("next-hmr-refresh")) return true;
+  const accept = request.headers.get("accept") || "";
+  if (accept.includes("text/x-component")) return true;
+  return false;
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -36,33 +52,37 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/_next/")) return;
 
   /**
-   * Não interceptar documentos (top-level navigation). Qualquer `respondWith` aqui expõe o site a
-   * bugs do Chrome com redirects (ERR_FAILED / redirect mode manual). O browser trata o HTML sozinho.
-   * Push notifications e precache de /offline.html mantêm-se úteis sem isto.
+   * Documento top-level: deixar o browser (evita bugs com redirects).
+   * Navegação client-side do Next: não é "navigate" — tem header RSC; também ignorar.
    */
-  if (request.mode === "navigate") {
-    return;
-  }
+  if (request.mode === "navigate") return;
+  if (isNextAppRouterDataRequest(request)) return;
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
-      const fetchPromise = fetch(request, { redirect: "follow" })
-        .then((response) => {
-          if (
-            response.ok &&
-            url.origin === self.location.origin &&
-            !response.redirected
-          ) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached || caches.match("/offline.html"));
-
-      return cached || fetchPromise;
-    })
+    (async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      try {
+        const response = await fetch(request, { redirect: "follow" });
+        if (
+          response.ok &&
+          url.origin === self.location.origin &&
+          !response.redirected
+        ) {
+          const cache = await caches.open(CACHE_NAME);
+          void cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        const offline = await caches.match("/offline.html");
+        if (offline) return offline;
+        return new Response("Offline", {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      }
+    })()
   );
 });
 
