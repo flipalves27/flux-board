@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   const org = await getOrganizationByCustomDomain(host);
   if (!org) {
-    return NextResponse.json({ branding: null }, { status: 404 });
+    return NextResponse.json({ branding: null });
   }
 
   const b = org.branding ?? {};

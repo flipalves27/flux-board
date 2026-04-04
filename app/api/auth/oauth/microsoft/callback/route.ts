@@ -2,11 +2,13 @@ import { MicrosoftEntraId, OAuth2RequestError } from "arctic";
 import { NextRequest, NextResponse } from "next/server";
 
 import { completeOAuthSignIn } from "@/lib/oauth/complete-sign-in";
-import { getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
+import { getOAuthCallbackRequestOrigin, getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_MICROSOFT } from "@/lib/oauth/constants";
 import { clearOAuthCookie, parseOAuthStartCookie } from "@/lib/oauth/cookie";
+import { buildOAuthSessionLandingResponse } from "@/lib/oauth/session-landing-response";
 import { resolveOAuthProfile } from "@/lib/oauth/id-token-profile";
 import { redirectToLoginWithOAuthError } from "@/lib/oauth/redirect-login";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_MICROSOFT_CLIENT_ID?.trim();
@@ -23,21 +25,21 @@ export async function GET(req: NextRequest) {
   };
 
   if (!clientId || !clientSecret) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_not_configured"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_not_configured", payload?.redirect));
   }
 
   if (req.nextUrl.searchParams.get("error")) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_denied"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_denied", payload?.redirect));
   }
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   if (!code || !state) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_invalid"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_invalid", payload?.redirect));
   }
 
   if (!payload || payload.state !== state) {
-    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_state"));
+    return finish(redirectToLoginWithOAuthError(req, locale, "oauth_state", payload?.redirect));
   }
 
   const redirectUri = microsoftRedirectUri(base);
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
     const tokens = await entra.validateAuthorizationCode(code, payload.codeVerifier);
     const profile = await resolveOAuthProfile("microsoft", tokens);
     if (!profile) {
-      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_profile"));
+      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_profile", payload.redirect));
     }
 
     const result = await completeOAuthSignIn({
@@ -58,17 +60,27 @@ export async function GET(req: NextRequest) {
       name: profile.name,
       emailVerified: profile.emailVerified,
       invite: payload.invite,
-      redirect: payload.redirect,
+      redirect: sanitizeOAuthReturnPath(payload.redirect),
       locale: payload.locale,
     });
 
     if (result.ok) {
-      return finish(NextResponse.redirect(new URL(result.path, base).toString(), 302));
+      const afterLoginOrigin = getOAuthCallbackRequestOrigin(req);
+      const targetUrl = new URL(result.path, afterLoginOrigin).toString();
+      return finish(
+        buildOAuthSessionLandingResponse({
+          targetUrl,
+          accessToken: result.access,
+          refreshPlain: result.refreshPlain,
+          remember: true,
+          oauthCookieName: OAUTH_COOKIE_MICROSOFT,
+        })
+      );
     }
-    return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error));
+    return finish(redirectToLoginWithOAuthError(req, payload.locale, result.error, payload.redirect));
   } catch (e) {
     if (e instanceof OAuth2RequestError) {
-      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_exchange"));
+      return finish(redirectToLoginWithOAuthError(req, payload.locale, "oauth_exchange", payload.redirect));
     }
     throw e;
   }

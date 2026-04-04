@@ -24,6 +24,9 @@ function shouldRenderWorkspaceFluxy(normalizedPath: string): boolean {
   if (
     normalizedPath === "/" ||
     normalizedPath === "/login" ||
+    normalizedPath === "/onboarding" ||
+    normalizedPath === "/onboarding-org" ||
+    normalizedPath === "/onboarding-invites" ||
     normalizedPath.startsWith("/portal/") ||
     normalizedPath.startsWith("/forms/") ||
     normalizedPath.startsWith("/embed/")

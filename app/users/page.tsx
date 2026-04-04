@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
@@ -40,6 +40,8 @@ export default function UsersPage() {
   const [formOrgRole, setFormOrgRole] = useState<"gestor" | "membro" | "convidado">("membro");
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const deleteUserInFlightRef = useRef(false);
   const { pushToast } = useToast();
 
   useEffect(() => {
@@ -349,15 +351,36 @@ export default function UsersPage() {
         intent="danger"
         confirmText="Excluir"
         cancelText="Cancelar"
-        onCancel={() => setConfirmDelete(null)}
+        busy={deleteBusy}
+        onCancel={() => {
+          if (deleteBusy) return;
+          setConfirmDelete(null);
+        }}
         onConfirm={async () => {
-          if (!confirmDelete) return;
+          if (!confirmDelete || deleteBusy || deleteUserInFlightRef.current) return;
+          deleteUserInFlightRef.current = true;
+          const { id } = confirmDelete;
+          setDeleteBusy(true);
+          const ac = new AbortController();
+          const timeoutId = setTimeout(() => ac.abort(), 60_000);
           try {
-            await apiDelete(`/api/users/${confirmDelete.id}`, getHeaders());
+            await apiDelete(`/api/users/${id}`, getHeaders(), { signal: ac.signal });
+            setUsers((prev) => prev.filter((u) => u.id !== id));
             setConfirmDelete(null);
-            loadUsers();
-          } catch {
-            pushToast({ kind: "error", title: "Erro ao excluir." });
+            pushToast({ kind: "success", title: "Utilizador removido." });
+            void loadUsers();
+          } catch (e) {
+            const aborted =
+              (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
+              (e instanceof Error && e.name === "AbortError");
+            pushToast({
+              kind: "error",
+              title: aborted ? "Pedido demorou demais." : "Erro ao excluir.",
+            });
+          } finally {
+            clearTimeout(timeoutId);
+            deleteUserInFlightRef.current = false;
+            setDeleteBusy(false);
           }
         }}
       />

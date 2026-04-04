@@ -5,6 +5,7 @@ import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { getOAuthPublicBaseUrl, googleRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_GOOGLE, OAUTH_SCOPES } from "@/lib/oauth/constants";
 import { setOAuthStartCookie } from "@/lib/oauth/cookie";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_GOOGLE_CLIENT_ID?.trim();
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
   const invite = req.nextUrl.searchParams.get("invite") ?? undefined;
-  const redirect = req.nextUrl.searchParams.get("redirect") ?? undefined;
+  const redirect = sanitizeOAuthReturnPath(req.nextUrl.searchParams.get("redirect") ?? undefined);
   const locale = req.nextUrl.searchParams.get("locale") ?? "pt-BR";
 
   const url = google.createAuthorizationURL(state, codeVerifier, [...OAUTH_SCOPES]);

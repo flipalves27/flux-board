@@ -147,7 +147,20 @@ export default function OkrsView() {
 
     setOkrFetchBusy(true);
     try {
-      const board = await apiGet<any>(`/api/boards/${encodeURIComponent(selectedBoardId)}`, getHeaders());
+      const quarterQ = encodeURIComponent(currentQuarter);
+      const boardIdQ = encodeURIComponent(selectedBoardId);
+      const [board, okrsRes, objectivesR] = await Promise.all([
+        apiGet<any>(`/api/boards/${boardIdQ}`, getHeaders()),
+        apiGet<OkrByBoardResponse>(
+          `/api/okrs/by-board?boardId=${boardIdQ}&quarter=${quarterQ}`,
+          getHeaders()
+        ),
+        apiGet<{ ok: boolean; quarter: string | null; objectives: Array<any> }>(
+          `/api/okrs/objectives?quarter=${quarterQ}`,
+          getHeaders()
+        ),
+      ]);
+
       const cards = Array.isArray(board?.cards) ? (board.cards as any[]) : [];
       const keys = new Set<string>(
         Array.isArray(board?.config?.bucketOrder)
@@ -157,10 +170,6 @@ export default function OkrsView() {
       setBoardCards(cards);
       setBucketKeys(keys);
 
-      const okrsRes = await apiGet<OkrByBoardResponse>(
-        `/api/okrs/by-board?boardId=${encodeURIComponent(selectedBoardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-        getHeaders()
-      );
       const defs: OkrsObjectiveDefinition[] = Array.isArray(okrsRes?.objectives)
         ? okrsRes.objectives.reduce<OkrsObjectiveDefinition[]>((acc, g) => {
             const obj = g.objective;
@@ -178,7 +187,8 @@ export default function OkrsView() {
         : [];
       setOkrObjectives(defs);
 
-      await refreshObjectivesForQuarter(currentQuarter);
+      const objList = Array.isArray(objectivesR?.objectives) ? objectivesR.objectives : [];
+      setObjectivesList(objList.map((o: any) => ({ id: String(o.id), title: String(o.title || "") })));
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Erro ao carregar OKRs";
       pushToast({ kind: "error", title: msg });

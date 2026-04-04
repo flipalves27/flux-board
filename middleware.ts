@@ -29,10 +29,10 @@ function buildCsp(nonce: string, frameAncestors = "'none'"): string {
     "font-src 'self' data: https://fonts.gstatic.com https://vercel.live",
     "img-src 'self' data: https:",
     // allow Vercel edge network and analytics endpoints
-    "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live wss://*.pusher.com https://*.pusher.com",
+    "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live wss://*.pusher.com https://*.pusher.com https://accounts.google.com https://*.googleapis.com",
     `frame-ancestors ${frameAncestors}`,
-    // allow Vercel live preview toolbar to load in an iframe inside our pages
-    "frame-src https://vercel.live",
+    // Vercel preview toolbar; OAuth providers may embed consent/account UI in iframes in some flows
+    "frame-src https://vercel.live https://accounts.google.com https://login.microsoftonline.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

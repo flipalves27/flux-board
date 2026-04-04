@@ -70,15 +70,14 @@ export function OnboardingFluxyHero({ open, onDismiss, storageKey }: OnboardingF
 
   return (
     <div
-      className="fixed inset-0 z-[var(--flux-z-board-tour-fluxy-welcome)] flex flex-col items-center justify-center gap-8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 bg-[radial-gradient(ellipse_75%_55%_at_50%_30%,rgba(0,210,211,0.18)_0%,transparent_52%),rgba(0,0,0,0.78)] backdrop-blur-[2px]"
+      className="pointer-events-none fixed inset-0 z-[var(--flux-z-board-tour-fluxy-welcome)] flex flex-col items-center justify-center gap-8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 bg-[radial-gradient(ellipse_75%_55%_at_50%_30%,rgba(0,210,211,0.18)_0%,transparent_52%),rgba(0,0,0,0.78)] backdrop-blur-[2px]"
       role="presentation"
-      onPointerDown={(e) => e.stopPropagation()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex w-full max-w-lg flex-col items-center text-center"
+        className="pointer-events-auto flex w-full max-w-lg flex-col items-center text-center"
       >
         <div className="flex min-h-[11rem] items-center justify-center sm:min-h-[13rem]">
           <FluxyAvatar

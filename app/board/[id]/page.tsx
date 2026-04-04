@@ -3,24 +3,63 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import dynamic from "next/dynamic";
+import { useShallow } from "zustand/react/shallow";
+
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { KanbanBoard } from "@/components/kanban";
-import { BoardCopilotPanel } from "@/components/kanban/board-copilot-panel";
-import { BoardActivityPanel } from "@/components/kanban/board-activity-panel";
-import { BoardDesktopToolsRail } from "@/components/kanban/board-desktop-tools-rail";
-import dynamic from "next/dynamic";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import type { PortalClientState } from "@/components/kanban/board-portal-modal";
+
+const BoardCopilotPanel = dynamic(
+  () => import("@/components/kanban/board-copilot-panel").then((m) => ({ default: m.BoardCopilotPanel })),
+  { ssr: false }
+);
+const BoardActivityPanel = dynamic(
+  () => import("@/components/kanban/board-activity-panel").then((m) => ({ default: m.BoardActivityPanel })),
+  { ssr: false }
+);
+const BoardDesktopToolsRail = dynamic(
+  () => import("@/components/kanban/board-desktop-tools-rail").then((m) => ({ default: m.BoardDesktopToolsRail })),
+  { ssr: false }
+);
 const SprintPanel = dynamic(() => import("@/components/kanban/sprint-panel"), { ssr: false });
-import { BoardAutomationsModal } from "@/components/kanban/board-automations-modal";
-import { BoardPortalModal, type PortalClientState } from "@/components/kanban/board-portal-modal";
-import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
-import { BoardEmbedModal } from "@/components/board/board-embed-modal";
-import { BoardAnomalyNotificationsModal } from "@/components/kanban/board-anomaly-notifications-modal";
-import { CopilotNudgeToast } from "@/components/kanban/copilot-nudge-toast";
-import { CollaborationCursors } from "@/components/kanban/collaboration-cursors";
+const BoardAutomationsModal = dynamic(
+  () => import("@/components/kanban/board-automations-modal").then((m) => ({ default: m.BoardAutomationsModal })),
+  { ssr: false }
+);
+const BoardPortalModal = dynamic(
+  () => import("@/components/kanban/board-portal-modal").then((m) => ({ default: m.BoardPortalModal })),
+  { ssr: false }
+);
+const BoardTemplateExportModal = dynamic(
+  () => import("@/components/board/board-template-export-modal").then((m) => ({ default: m.BoardTemplateExportModal })),
+  { ssr: false }
+);
+const BoardEmbedModal = dynamic(
+  () => import("@/components/board/board-embed-modal").then((m) => ({ default: m.BoardEmbedModal })),
+  { ssr: false }
+);
+const BoardAnomalyNotificationsModal = dynamic(
+  () => import("@/components/kanban/board-anomaly-notifications-modal").then((m) => ({
+    default: m.BoardAnomalyNotificationsModal,
+  })),
+  { ssr: false }
+);
+const CopilotNudgeToast = dynamic(
+  () => import("@/components/kanban/copilot-nudge-toast").then((m) => ({ default: m.CopilotNudgeToast })),
+  { ssr: false }
+);
+const CollaborationCursors = dynamic(
+  () => import("@/components/kanban/collaboration-cursors").then((m) => ({ default: m.CollaborationCursors })),
+  { ssr: false }
+);
+const BoardExecutiveBriefModal = dynamic(
+  () => import("@/components/kanban/board-executive-brief-modal").then((m) => ({ default: m.BoardExecutiveBriefModal })),
+  { ssr: false }
+);
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
-import { BoardExecutiveBriefModal } from "@/components/kanban/board-executive-brief-modal";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
@@ -42,13 +81,7 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
-import { BoardFluxyDock } from "@/components/fluxy/board-fluxy-dock";
-import {
-  BoardProductTour,
-  BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX,
-  type BoardProductTourHandle,
-} from "@/components/board/board-product-tour";
-import { BoardPresenceAvatars } from "@/components/kanban/board-presence-avatars";
+import { BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX, type BoardProductTourHandle } from "@/components/board/board-product-tour";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -58,6 +91,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { isPlatformAdminSession } from "@/lib/rbac";
+
+const BoardFluxyDock = dynamic(
+  () => import("@/components/fluxy/board-fluxy-dock").then((m) => ({ default: m.BoardFluxyDock })),
+  { ssr: false }
+);
+const BoardProductTour = dynamic(
+  () => import("@/components/board/board-product-tour").then((m) => ({ default: m.BoardProductTour })),
+  { ssr: false }
+);
+const BoardPresenceAvatars = dynamic(
+  () => import("@/components/kanban/board-presence-avatars").then((m) => ({ default: m.BoardPresenceAvatars })),
+  { ssr: false }
+);
 
 const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
@@ -358,7 +404,7 @@ export default function BoardPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const boardId = Array.isArray(params.id) ? params.id[0] ?? "" : (params.id as string);
-  const { user, getHeaders, isChecked, setAuth } = useAuth();
+  const { user, getHeaders, isChecked, setAuth, refreshSession } = useAuth();
   const { pushToast } = useToast();
   const locale = useLocale();
   const backToBoards = `/${locale}/boards`;
@@ -368,7 +414,26 @@ export default function BoardPage() {
   const [clientLabel, setClientLabel] = useState<string | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
   const tourRef = useRef<BoardProductTourHandle | null>(null);
-  const db = useBoardStore((s) => s.db);
+  const hasBoardData = useBoardStore((s) => s.db != null);
+  const {
+    bucketOrder: boardBucketOrder,
+    portal: boardPortal,
+    anomalyNotifications: boardAnomalyNotifications,
+    boardMethodology: boardMethodologyForSprint,
+    intakeForm: boardIntakeForm,
+  } = useBoardStore(
+    useShallow((s) => {
+      const d = s.db;
+      return {
+        bucketOrder: d?.config.bucketOrder,
+        portal: d?.portal,
+        anomalyNotifications: d?.anomalyNotifications,
+        boardMethodology: d?.boardMethodology,
+        intakeForm: d?.intakeForm,
+      };
+    })
+  );
+  const updateDbSilent = useBoardStore((s) => s.updateDbSilent);
   const [loading, setLoading] = useState(true);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
@@ -400,6 +465,11 @@ export default function BoardPage() {
   pushToastRef.current = pushToast;
   const userRef = useRef(user);
   userRef.current = user;
+  /**
+   * Após um `refreshSession()` por convidado, incrementamos para o efeito voltar a correr
+   * (React pode não re-renderizar se `user` continua `null` com o mesmo objeto de estado).
+   */
+  const [guestSessionGate, setGuestSessionGate] = useState(0);
 
   /** Rehydrate persisted stores early (while skeleton shows) so KanbanBoardLoaded
    *  doesn't trigger a state-update cascade on its first render (#185). */
@@ -502,9 +572,14 @@ export default function BoardPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
+      if (guestSessionGate === 0) {
+        void refreshSession().finally(() => setGuestSessionGate(1));
+        return;
+      }
       routerRef.current.replace(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/board/${boardId}`)}`);
       return;
     }
+    if (guestSessionGate !== 0) setGuestSessionGate(0);
     if (!boardId) {
       routerRef.current.replace(`/${locale}/boards`);
       return;
@@ -512,7 +587,7 @@ export default function BoardPage() {
     useKanbanUiStore.getState().resetForBoardSwitch();
     useCopilotStore.getState().resetSessionUi();
     loadBoard();
-  }, [isChecked, user?.id, boardId, locale, loadBoard]);
+  }, [isChecked, user?.id, guestSessionGate, boardId, locale, loadBoard, refreshSession]);
 
   useEffect(() => {
     const id = boardId;
@@ -665,7 +740,7 @@ export default function BoardPage() {
   if (authWaiting) {
     return <BoardRouteLoadingFallback />;
   }
-  if (showBoardSkeleton || !db) {
+  if (showBoardSkeleton || !hasBoardData) {
     return (
       <div className="min-h-screen">
         <Header title={boardName}>
@@ -678,7 +753,7 @@ export default function BoardPage() {
       </div>
     );
   }
-  const formSlug = String(db.intakeForm?.slug || "").trim();
+  const formSlug = String(boardIntakeForm?.slug || "").trim();
   const formLink = formSlug && formOrigin ? `${formOrigin}/${locale}/forms/${encodeURIComponent(formSlug)}` : "";
 
   return (
@@ -929,7 +1004,7 @@ export default function BoardPage() {
         open={automationsOpen}
         onClose={() => setAutomationsOpen(false)}
         boardId={boardId}
-        bucketKeys={db.config.bucketOrder.map((b) => b.key)}
+        bucketKeys={(boardBucketOrder ?? []).map((b) => b.key)}
         priorities={PRIORITIES}
         progresses={PROGRESSES}
         getHeaders={getHeaders}
@@ -939,11 +1014,11 @@ export default function BoardPage() {
         open={portalOpen}
         onClose={() => setPortalOpen(false)}
         boardId={boardId}
-        bucketOrder={db.config.bucketOrder}
-        portal={db.portal}
+        bucketOrder={boardBucketOrder ?? []}
+        portal={boardPortal}
         getHeaders={getHeaders}
         onSaved={(portal) => {
-          useBoardStore.getState().updateDbSilent((d) => {
+          updateDbSilent((d) => {
             d.portal = portal;
           });
         }}
@@ -962,10 +1037,10 @@ export default function BoardPage() {
         open={anomalySettingsOpen}
         onClose={() => setAnomalySettingsOpen(false)}
         boardId={boardId}
-        initial={db.anomalyNotifications}
+        initial={boardAnomalyNotifications}
         getHeaders={getHeaders}
         onSaved={(next) => {
-          useBoardStore.getState().updateDbSilent((d) => {
+          updateDbSilent((d) => {
             d.anomalyNotifications = next;
           });
         }}
@@ -973,7 +1048,7 @@ export default function BoardPage() {
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
-      {isScrumMethodology(db?.boardMethodology ?? "scrum") ? (
+      {isScrumMethodology(boardMethodologyForSprint ?? "scrum") ? (
         <SprintPanel boardId={boardId} getHeaders={getHeaders} />
       ) : null}
 

@@ -25,8 +25,12 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
     if (el.hasAttribute("disabled")) return false;
     const ariaHidden = el.getAttribute("aria-hidden");
     if (ariaHidden === "true") return false;
-    if (!el.offsetParent && el.offsetParent !== null) return false; // Best-effort visibility
-    return el.tabIndex !== -1;
+    if (el.hidden) return false;
+    if (typeof window !== "undefined") {
+      const style = window.getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") return false;
+    }
+    return true;
   });
 }
 

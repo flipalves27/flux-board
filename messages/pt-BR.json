@@ -141,7 +141,8 @@
     "deleteUserConfirm": "Excluir {name} permanentemente?",
     "deleteOrgTitle": "Excluir organização",
     "deleteOrgConfirm": "Excluir {name} e todos os dados associados (utilizadores, boards, convites, etc.)? Esta ação não pode ser desfeita.",
-    "orgDeleted": "Organização excluída"
+    "orgDeleted": "Organização excluída",
+    "requestTimeout": "O pedido demorou demais. Verifique a ligação ou tente de novo."
   },
   "sprints": {
     "title": "Sprints",
@@ -1064,7 +1065,8 @@
   },
   "confirmDialog": {
     "confirm": "Confirmar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "processing": "A processar…"
   },
   "header": {
     "userFallback": "Usuário",

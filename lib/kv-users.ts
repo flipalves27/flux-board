@@ -199,14 +199,14 @@ async function persistAdminUserKv(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
-  // Migra esquema multi-tenancy quando necessário.
-  await ensureTenancyMigrationForExistingData("admin");
-  await ensureDefaultOrganization("admin");
-
   if (adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
   if (ensureAdminPromise) return ensureAdminPromise;
 
   ensureAdminPromise = (async () => {
+  // Migra esquema multi-tenancy quando necessário (após cache miss).
+  await ensureTenancyMigrationForExistingData("admin");
+  await ensureDefaultOrganization("admin");
+
   if (isMongoConfigured()) {
     const db = await getDb();
     const col = db.collection<UserDoc>(COL_USERS);
@@ -669,8 +669,7 @@ export async function listAllUsersPaginated(params: {
   orgId?: string;
   q?: string;
 }): Promise<{ users: PlatformUserListRow[]; nextCursor: string | null; storage: "mongo" | "kv" }> {
-  await ensureTenancyMigrationOnce();
-  await ensureAdminUser();
+  // Chamador deve invocar `ensureAdminUser()` antes (ex.: rota admin) para evitar dupla execução por pedido.
   const limit = Math.min(Math.max(1, params.limit || 50), 200);
   const q = (params.q || "").trim();
   const orgFilter = params.orgId?.trim() || undefined;

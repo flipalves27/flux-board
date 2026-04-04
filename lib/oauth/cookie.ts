@@ -2,6 +2,11 @@ import type { NextResponse } from "next/server";
 
 import type { OAuthStartPayload } from "./constants";
 
+function oauthCookieDomainOption(): { domain: string } | Record<string, never> {
+  const d = process.env.AUTH_COOKIE_DOMAIN?.trim();
+  return d ? { domain: d } : {};
+}
+
 const COOKIE_BASE = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -10,12 +15,16 @@ const COOKIE_BASE = {
   maxAge: 600,
 };
 
+function fullCookieOptions() {
+  return { ...COOKIE_BASE, ...oauthCookieDomainOption() };
+}
+
 export function setOAuthStartCookie(res: NextResponse, name: string, payload: OAuthStartPayload): void {
-  res.cookies.set(name, JSON.stringify(payload), COOKIE_BASE);
+  res.cookies.set(name, JSON.stringify(payload), fullCookieOptions());
 }
 
 export function clearOAuthCookie(res: NextResponse, name: string): void {
-  res.cookies.set(name, "", { ...COOKIE_BASE, maxAge: 0 });
+  res.cookies.set(name, "", { ...fullCookieOptions(), maxAge: 0 });
 }
 
 export function parseOAuthStartCookie(raw: string | undefined): OAuthStartPayload | null {

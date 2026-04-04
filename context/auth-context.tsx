@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateSessionAction, switchOrganizationAction } from "@/app/actions/auth";
 import type { ValidateResult } from "@/lib/auth-types";
@@ -8,6 +8,28 @@ import type { ThemePreference } from "@/lib/theme-storage";
 import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
+
+/** Evita UI presa se a validação de sessão não retornar (ex.: BD lento). Equilíbrio com redirecionamentos para /login. */
+const SESSION_VALIDATE_TIMEOUT_MS = 10_000;
+
+/** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount / Server Action). */
+const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error("session_validate_timeout")), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(id);
+        reject(e);
+      }
+    );
+  });
+}
 
 export interface AuthUser {
   id: string;
@@ -81,7 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isChecked: false,
   });
 
+  /** Incrementado em login/setAuth/logout e antes de operações de sessão — validações em voo ignoram resultado se a geração mudou. */
+  const sessionValidationGenRef = useRef(0);
+
   const setAuth = useCallback((user: AuthUser, _remember = true) => {
+    sessionValidationGenRef.current += 1;
     setState({ user, isLoading: false, isChecked: true });
   }, []);
 
@@ -92,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       /* ignore */
     }
     clearLegacyStorage();
+    sessionValidationGenRef.current += 1;
     setState({ user: null, isLoading: false, isChecked: true });
   }, []);
 
@@ -108,8 +135,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshSession = useCallback(async () => {
+    const myGen = ++sessionValidationGenRef.current;
     try {
-      const result = await validateSessionAction();
+      const result = await withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS);
+      if (myGen !== sessionValidationGenRef.current) return;
       if (result.ok) {
         setState({
           user: sessionUserToAuthUser(result.user),
@@ -120,13 +149,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({ user: null, isLoading: false, isChecked: true });
       }
     } catch {
+      if (myGen !== sessionValidationGenRef.current) return;
       setState({ user: null, isLoading: false, isChecked: true });
     }
   }, []);
 
   const switchOrganization = useCallback(async (orgId: string) => {
+    const myGen = ++sessionValidationGenRef.current;
     try {
       const result = await switchOrganizationAction(orgId);
+      if (myGen !== sessionValidationGenRef.current) return false;
       if (result.ok) {
         setState({
           user: sessionUserToAuthUser(result.user),
@@ -144,21 +176,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     clearLegacyStorage();
 
-    validateSessionAction()
-      .then((result) => {
-        if (result.ok) {
-          setState({
-            user: sessionUserToAuthUser(result.user),
-            isLoading: false,
-            isChecked: true,
-          });
-        } else {
-          setState({ user: null, isLoading: false, isChecked: true });
-        }
-      })
-      .catch(() => {
+    let cancelled = false;
+    const initialGen = sessionValidationGenRef.current;
+
+    const applyValidateResult = (result: ValidateResult) => {
+      if (cancelled) return;
+      if (initialGen !== sessionValidationGenRef.current) return;
+      if (result.ok) {
+        setState({
+          user: sessionUserToAuthUser(result.user),
+          isLoading: false,
+          isChecked: true,
+        });
+      } else {
         setState({ user: null, isLoading: false, isChecked: true });
-      });
+      }
+    };
+
+    const runInitialValidate = async (retryIndex: number) => {
+      try {
+        const result = await withTimeout(validateSessionAction(), SESSION_VALIDATE_TIMEOUT_MS);
+        if (cancelled) return;
+        if (initialGen !== sessionValidationGenRef.current) return;
+        if (result.ok) {
+          applyValidateResult(result);
+          return;
+        }
+        if (retryIndex < INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS.length) {
+          await new Promise((r) => setTimeout(r, INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS[retryIndex]));
+          if (cancelled) return;
+          if (initialGen !== sessionValidationGenRef.current) return;
+          await runInitialValidate(retryIndex + 1);
+          return;
+        }
+        applyValidateResult(result);
+      } catch {
+        if (cancelled) return;
+        if (initialGen !== sessionValidationGenRef.current) return;
+        setState({ user: null, isLoading: false, isChecked: true });
+      }
+    };
+
+    void runInitialValidate(0);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

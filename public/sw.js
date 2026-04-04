@@ -1,5 +1,23 @@
-const CACHE_NAME = "flux-board-v3";
-const STATIC_ASSETS = ["/", "/offline.html"];
+const CACHE_NAME = "flux-board-v7";
+
+/** Não precachear `/` — em muitos hosts redireciona (www, locale) e polui a cache com respostas de redirect. */
+const STATIC_ASSETS = ["/offline.html"];
+
+/**
+ * Pedidos internos do App Router (RSC / flight). Não são `mode: "navigate"`; se o SW os tratar e o
+ * `.catch` devolver `undefined`, o Chrome falha com "Failed to convert value to 'Response'".
+ * @see next/dist/client/components/app-router-headers.js
+ */
+function isNextAppRouterDataRequest(request) {
+  if (request.headers.get("rsc") === "1") return true;
+  if (request.headers.has("next-router-state-tree")) return true;
+  if (request.headers.has("next-router-prefetch")) return true;
+  if (request.headers.has("next-router-segment-prefetch")) return true;
+  if (request.headers.has("next-hmr-refresh")) return true;
+  const accept = request.headers.get("accept") || "";
+  if (accept.includes("text/x-component")) return true;
+  return false;
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -33,30 +51,38 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
 
-  // Never cache navigation documents to avoid serving stale authenticated HTML
-  // after deployments or session changes.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request, { redirect: "follow" }).catch(() => caches.match("/offline.html"))
-    );
-    return;
-  }
+  /**
+   * Documento top-level: deixar o browser (evita bugs com redirects).
+   * Navegação client-side do Next: não é "navigate" — tem header RSC; também ignorar.
+   */
+  if (request.mode === "navigate") return;
+  if (isNextAppRouterDataRequest(request)) return;
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
-      const fetchPromise = fetch(request, { redirect: "follow" })
-        .then((response) => {
-          if (response.ok && url.origin === self.location.origin) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached || caches.match("/offline.html"));
-
-      return cached || fetchPromise;
-    })
+    (async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      try {
+        const response = await fetch(request, { redirect: "follow" });
+        if (
+          response.ok &&
+          url.origin === self.location.origin &&
+          !response.redirected
+        ) {
+          const cache = await caches.open(CACHE_NAME);
+          void cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        const offline = await caches.match("/offline.html");
+        if (offline) return offline;
+        return new Response("Offline", {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      }
+    })()
   );
 });
 
@@ -65,8 +91,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Flux Board";
   const options = {
     body: data.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/favicon.svg",
+    badge: "/favicon.svg",
     data: { url: data.url || "/" },
     vibrate: [100, 50, 100],
   };

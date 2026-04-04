@@ -11,6 +11,7 @@ import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 
 const OAUTH_ERROR_KEYS = new Set([
   "oauth_denied",
@@ -41,8 +42,8 @@ export default function LoginPage() {
   const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const localeRoot = `/${locale}`;
   const inviteCode = searchParams.get("invite") ?? undefined;
-  const redirectTo = searchParams.get("redirect");
-  const postLoginPath = redirectTo && redirectTo.startsWith("/") ? redirectTo : `${localeRoot}/boards`;
+  const safeRedirect = sanitizeOAuthReturnPath(searchParams.get("redirect") ?? undefined);
+  const postLoginPath = safeRedirect ?? `${localeRoot}/boards`;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -150,15 +151,6 @@ export default function LoginPage() {
     setError("");
   };
 
-  if (!isChecked) {
-    return (
-      <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)]">
-        <FluxAppBackdrop variant="immersive" />
-        <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
-      </div>
-    );
-  }
-
   const inputClass =
     "flux-input min-h-10 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
@@ -213,7 +205,7 @@ export default function LoginPage() {
         <OAuthProviderButtons
           locale={locale}
           invite={inviteCode}
-          redirect={redirectTo && redirectTo.startsWith("/") ? redirectTo : undefined}
+          redirect={safeRedirect}
         />
 
         {activeTab === "login" && (

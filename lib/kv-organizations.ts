@@ -53,6 +53,9 @@ export interface Organization {
 }
 
 const COL_ORGS = "organizations";
+/** Marca migrações idempotentes já aplicadas (evita `updateMany` em coleções inteiras a cada pedido, ex. serverless). */
+const COL_APP_MIGRATIONS = "app_migrations";
+const TENANCY_ORGID_BACKFILL_ID = "tenancy_orgid_backfill_v1";
 
 /**
  * Documentos Mongo antigos podem ter `plan: "enterprise"` — tratamos como Business em memória.
@@ -164,6 +167,10 @@ export async function ensureTenancyMigrationForExistingData(ownerId: string): Pr
   if (!isMongoConfigured()) return;
 
   const db = await getDb();
+  const migrations = db.collection<{ _id: string; completedAt?: string }>(COL_APP_MIGRATIONS);
+  const already = await migrations.findOne({ _id: TENANCY_ORGID_BACKFILL_ID });
+  if (already) return;
+
   // Garante que a default exista antes de atualizar referências.
   await ensureDefaultOrganization(ownerId);
 
@@ -186,6 +193,12 @@ export async function ensureTenancyMigrationForExistingData(ownerId: string): Pr
       { $or: [{ orgId: { $exists: false } }, { orgId: null }] },
       { $set: { orgId: DEFAULT_ORG_ID } }
     );
+
+  await migrations.updateOne(
+    { _id: TENANCY_ORGID_BACKFILL_ID },
+    { $set: { completedAt: new Date().toISOString() } },
+    { upsert: true }
+  );
 }
 
 function slugify(input: string): string {
