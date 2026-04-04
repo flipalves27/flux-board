@@ -1,5 +1,6 @@
 const CACHE_NAME = "flux-board-v3";
-const STATIC_ASSETS = ["/", "/offline.html"];
+// Only cache offline.html on install; "/" is dynamic and may redirect based on locale
+const STATIC_ASSETS = ["/offline.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -39,9 +40,14 @@ self.addEventListener("fetch", (event) => {
 
   // Never cache navigation documents to avoid serving stale authenticated HTML
   // after deployments or session changes.
+  // Also don't try to cache responses from navigation requests that may have redirects.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request, { redirect: "follow" }).catch(() => caches.match("/offline.html"))
+      fetch(request, { redirect: "follow" })
+        .catch(() => {
+          // If fetch fails entirely, try offline page
+          return caches.match("/offline.html");
+        })
     );
     return;
   }
