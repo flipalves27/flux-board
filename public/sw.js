@@ -1,5 +1,22 @@
-const CACHE_NAME = "flux-board-v4";
-const STATIC_ASSETS = ["/", "/offline.html"];
+const CACHE_NAME = "flux-board-v5";
+
+/** Não precachear `/` — em muitos hosts redireciona (www, locale) e polui a cache com respostas de redirect. */
+const STATIC_ASSETS = ["/offline.html"];
+
+/**
+ * Pedidos `navigate` chegam com redirect mode `manual`. Se o SW devolve uma Response com
+ * `redirected === true` (ex.: após seguir 302 no fetch interno), o Chrome falha com
+ * "redirected response was used for a request whose redirect mode is not 'follow'" e ERR_FAILED.
+ */
+async function navigationResponseNoRedirectFlag(res) {
+  if (!res.redirected) return res;
+  const body = await res.blob();
+  return new Response(body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers,
+  });
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -37,7 +54,15 @@ self.addEventListener("fetch", (event) => {
   // after deployments or session changes.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request, { redirect: "follow" }).catch(() => caches.match("/offline.html"))
+      (async () => {
+        try {
+          const res = await fetch(request, { redirect: "follow" });
+          return await navigationResponseNoRedirectFlag(res);
+        } catch {
+          const offline = await caches.match("/offline.html");
+          return offline || Response.error();
+        }
+      })()
     );
     return;
   }
@@ -47,7 +72,11 @@ self.addEventListener("fetch", (event) => {
       // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
       const fetchPromise = fetch(request, { redirect: "follow" })
         .then((response) => {
-          if (response.ok && url.origin === self.location.origin) {
+          if (
+            response.ok &&
+            url.origin === self.location.origin &&
+            !response.redirected
+          ) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
