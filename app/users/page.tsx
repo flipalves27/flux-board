@@ -40,6 +40,7 @@ export default function UsersPage() {
   const [formOrgRole, setFormOrgRole] = useState<"gestor" | "membro" | "convidado">("membro");
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const { pushToast } = useToast();
 
   useEffect(() => {
@@ -349,15 +350,25 @@ export default function UsersPage() {
         intent="danger"
         confirmText="Excluir"
         cancelText="Cancelar"
-        onCancel={() => setConfirmDelete(null)}
+        busy={deleteBusy}
+        onCancel={() => {
+          if (deleteBusy) return;
+          setConfirmDelete(null);
+        }}
         onConfirm={async () => {
-          if (!confirmDelete) return;
+          if (!confirmDelete || deleteBusy) return;
+          const { id } = confirmDelete;
+          setDeleteBusy(true);
           try {
-            await apiDelete(`/api/users/${confirmDelete.id}`, getHeaders());
+            await apiDelete(`/api/users/${id}`, getHeaders());
+            setUsers((prev) => prev.filter((u) => u.id !== id));
             setConfirmDelete(null);
-            loadUsers();
+            pushToast({ kind: "success", title: "Utilizador removido." });
+            void loadUsers();
           } catch {
             pushToast({ kind: "error", title: "Erro ao excluir." });
+          } finally {
+            setDeleteBusy(false);
           }
         }}
       />

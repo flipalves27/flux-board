@@ -408,11 +408,10 @@ export default function PlatformAdminConsolePage() {
     setDeleteUserBusy(true);
     try {
       await apiDelete(`/api/users/${encodeURIComponent(row.id)}`, getHeaders());
+      setUsers((prev) => prev.filter((u) => u.id !== row.id));
+      setUserCursor(null);
       setConfirmDeleteUser(null);
       pendingDeleteUserRef.current = null;
-      setUserCursor(null);
-      setUsers([]);
-      await loadUsers(true);
       pushToast({ kind: "success", title: t("userDeleted") });
     } catch (e) {
       pushToast({
@@ -424,6 +423,13 @@ export default function PlatformAdminConsolePage() {
       deleteUserInFlightRef.current = false;
       setDeleteUserBusy(false);
     }
+    void loadUsers(true).catch((e) => {
+      pushToast({
+        kind: "error",
+        title: t("loadError"),
+        description: e instanceof Error ? e.message : "—",
+      });
+    });
   }
 
   if (!user) return null;
