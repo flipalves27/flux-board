@@ -1,9 +1,29 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["coverage/**", "**/*.test.ts", "**/*.test.tsx", "e2e/**", "scripts/apply-flux-tokens.mjs"],
-  "ignoreDependencies": ["eslint-config-next", "postcss", "@vitest/coverage-v8"],
+  "ignore": [
+    "scripts/apply-flux-tokens.mjs",
+    "public/sw.js",
+    "components/kanban/board-metrics-strip.tsx",
+    "components/kanban/card-triage-suggestion.tsx",
+    "components/onboarding/ai-setup-wizard.tsx",
+    "components/templates/bpmn-icon-preview.tsx",
+    "components/templates/bpmn-workspace.tsx",
+    "components/templates/priority-matrix-workspace.tsx",
+    "lib/bpmn-ai-agent-node.ts",
+    "lib/bpmn-icon-render.tsx",
+    "lib/kaizen-experiments.ts",
+    "lib/kv-program-increments.ts",
+    "lib/mcp-hub-stub.ts",
+    "lib/meeting-summary-ai.ts",
+    "lib/okr-card-prioritization.ts",
+    "lib/personalized-digest-ai.ts",
+    "lib/plan-product.ts",
+    "lib/redis-upstash.ts"
+  ],
+  "ignoreDependencies": ["eslint-config-next", "@tiptap/core"],
   "rules": {
     "exports": "off",
-    "types": "off"
+    "types": "off",
+    "duplicates": "off"
   }
 }

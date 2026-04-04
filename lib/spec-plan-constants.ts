@@ -27,9 +27,8 @@ export const SPEC_PLAN_RETRIEVAL_CONTEXT_MAX_CHARS = 40_000;
 
 /**
  * Pedidos HTTP de embeddings em paralelo (cada um com até SPEC_PLAN_EMBED_BATCH textos).
- * Manter baixo para reduzir rate limits na Together.
  */
-export const SPEC_PLAN_EMBED_CONCURRENCY = 4;
+export const SPEC_PLAN_EMBED_CONCURRENCY = 8;
 
 /** Tamanho do lote de embeddings (Together). Lotes grandes + texto longo podem falhar por limite de pedido. */
 export const SPEC_PLAN_EMBED_BATCH = 12;

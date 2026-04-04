@@ -3,8 +3,8 @@
  * and light/dark themes stay aligned (see app/globals.css).
  */
 export const REPORTS_TOOLTIP_CONTENT_STYLE = {
-  background: "var(--bg-card, var(--flux-surface-card))",
-  border: "1px solid var(--flux-border-default)",
+  background: "var(--flux-surface-card)",
+  border: "1px solid var(--flux-primary-alpha-25)",
   borderRadius: 8,
   fontSize: 12,
   color: "var(--flux-text)",

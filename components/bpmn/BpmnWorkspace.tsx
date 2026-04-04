@@ -13,8 +13,6 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Barlow, Barlow_Condensed } from "next/font/google";
-
 import { bpmnNodeTypes } from "./nodes";
 import { bpmnEdgeTypes, BpmnEdgeMarkers } from "./edges";
 import { BpmnToolbar } from "./panels/BpmnToolbar";
@@ -33,8 +31,6 @@ import type { BpmnEdgeKind } from "@/lib/bpmn-types";
 import { apiPost } from "@/lib/api-client";
 import { bpmnModelToMarkdown, bpmnModelToXml } from "@/lib/bpmn-io";
 import { BoardTemplateExportModal } from "@/components/board/board-template-export-modal";
-
-const barlow = Barlow({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 type Props = {
   getHeaders: () => Record<string, string>;
@@ -193,7 +189,7 @@ function BpmnWorkspaceInner({ getHeaders, isAdmin }: Props) {
   );
 
   return (
-    <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden`}>
+    <div className="bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <BpmnToolbar getHeaders={getHeaders} />
 
       <div

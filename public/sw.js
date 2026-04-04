@@ -1,12 +1,17 @@
-const CACHE_NAME = "flux-board-v3";
-const STATIC_ASSETS = ["/", "/offline.html"];
+const CACHE_NAME = "flux-board-v4";
+// Only cache offline.html on install; "/" is dynamic and may redirect based on locale
+const STATIC_ASSETS = ["/offline.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       for (const path of STATIC_ASSETS) {
         try {
-          await cache.add(new Request(path, { redirect: "follow" }));
+          const response = await fetch(new Request(path, { redirect: "follow" }));
+          // Only cache successful responses, not redirects
+          if (response.status >= 200 && response.status < 300) {
+            await cache.put(path, response.clone());
+          }
         } catch {
           /* precache opcional — não bloqueia install */
         }
@@ -33,21 +38,20 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
 
-  // Never cache navigation documents to avoid serving stale authenticated HTML
-  // after deployments or session changes.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request, { redirect: "follow" }).catch(() => caches.match("/offline.html"))
-    );
-    return;
-  }
+  // Let the browser handle navigation requests natively.
+  // The next-intl middleware redirects "/" → "/pt-BR/" or "/en/"; intercepting
+  // these in the SW produces opaqueredirect responses that cannot be used to
+  // fulfil a navigate-mode fetch, causing ERR_FAILED.
+  if (request.mode === "navigate") return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
       // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
       const fetchPromise = fetch(request, { redirect: "follow" })
         .then((response) => {
-          if (response.ok && url.origin === self.location.origin) {
+          // Only cache successful responses (status 200-299) from same origin
+          // Avoid caching redirect responses (3xx) which can break subsequent requests
+          if (response.status >= 200 && response.status < 300 && url.origin === self.location.origin) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("Stripe webhook error:", err);
-    return NextResponse.json({ received: true, handled: false, reason: "processing_error" }, { status: 500 });
+    return NextResponse.json({ received: true, handled: false, reason: "processing_error" }, { status: 200 });
   }
 }
 

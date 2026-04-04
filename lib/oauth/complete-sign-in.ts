@@ -2,7 +2,7 @@ import "server-only";
 
 import { routing } from "@/i18n";
 import { deriveEffectiveRoles } from "@/lib/rbac";
-import { issueSessionForCredentials } from "@/lib/server-session";
+import { issueSessionTokens, issueSessionForCredentials } from "@/lib/server-session";
 import {
   appendOAuthLink,
   createUser,
@@ -75,6 +75,11 @@ function mapAcceptOrgInviteErrorToOAuth(code: AcceptOrgInviteErrorCode): string 
 }
 
 async function issueSessionForUser(user: User): Promise<void> {
+  const tokens = await issueSessionForUserTokens(user);
+  // Not used in this function, just for side-effect of issuing session
+}
+
+async function issueSessionForUserTokens(user: User): Promise<{ access: string; refreshPlain: string }> {
   const isAdmin = user.id === "admin" || !!user.isAdmin;
   const isExecutive = !!user.isExecutive;
   const roles = deriveEffectiveRoles({
@@ -84,7 +89,7 @@ async function issueSessionForUser(user: User): Promise<void> {
     platformRole: user.platformRole,
     orgRole: user.orgRole,
   });
-  await issueSessionForCredentials(
+  return await issueSessionTokens(
     {
       id: user.id,
       username: user.username,
@@ -100,7 +105,10 @@ async function issueSessionForUser(user: User): Promise<void> {
 
 export async function completeOAuthSignIn(
   profile: OAuthSignInProfile
-): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; path: string; access: string; refreshPlain: string }
+  | { ok: false; error: string }
+> {
   if (!profile.emailVerified) {
     return { ok: false, error: "oauth_email_unverified" };
   }
@@ -133,10 +141,12 @@ export async function completeOAuthSignIn(
       if (!accepted.ok) {
         return { ok: false, error: mapAcceptOrgInviteErrorToOAuth(accepted.error) };
       }
-      await issueSessionForUser(accepted.user);
+      const tokens1 = await issueSessionForUserTokens(accepted.user);
       return {
         ok: true,
         path: appendJoinedViaInviteQuery(postAuthPath(profile.locale, profile.redirect, false)),
+        access: tokens1.access,
+        refreshPlain: tokens1.refreshPlain,
       };
     }
 
@@ -179,7 +189,7 @@ export async function completeOAuthSignIn(
       emailLower: emailNorm,
     });
 
-    await issueSessionForCredentials(
+    const tokens2 = await issueSessionTokens(
       {
         id: user.id,
         username: user.username,
@@ -194,14 +204,18 @@ export async function completeOAuthSignIn(
     return {
       ok: true,
       path: appendJoinedViaInviteQuery(postAuthPath(profile.locale, profile.redirect, true)),
+      access: tokens2.access,
+      refreshPlain: tokens2.refreshPlain,
     };
   }
 
   if (byOAuth) {
-    await issueSessionForUser(byOAuth);
+    const tokens3 = await issueSessionForUserTokens(byOAuth);
     return {
       ok: true,
       path: postAuthPath(profile.locale, profile.redirect, false),
+      access: tokens3.access,
+      refreshPlain: tokens3.refreshPlain,
     };
   }
 
@@ -214,10 +228,12 @@ export async function completeOAuthSignIn(
     if (!merged) {
       return { ok: false, error: "oauth_account_conflict" };
     }
-    await issueSessionForUser(merged);
+    const tokens4 = await issueSessionForUserTokens(merged);
     return {
       ok: true,
       path: postAuthPath(profile.locale, profile.redirect, false),
+      access: tokens4.access,
+      refreshPlain: tokens4.refreshPlain,
     };
   }
 
@@ -250,7 +266,7 @@ export async function completeOAuthSignIn(
 
   await updateOrganizationOwner(org._id, user.id);
 
-  await issueSessionForCredentials(
+  const tokens5 = await issueSessionTokens(
     {
       id: user.id,
       username: user.username,
@@ -265,5 +281,7 @@ export async function completeOAuthSignIn(
   return {
     ok: true,
     path: postAuthPath(profile.locale, profile.redirect, true),
+    access: tokens5.access,
+    refreshPlain: tokens5.refreshPlain,
   };
 }

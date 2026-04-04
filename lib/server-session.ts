@@ -51,7 +51,7 @@ async function userToValidate(user: User | null): Promise<ValidateResult> {
   };
 }
 
-export async function issueSessionForCredentials(
+export async function issueSessionTokens(
   user: {
     id: string;
     username: string;
@@ -62,7 +62,7 @@ export async function issueSessionForCredentials(
     orgRole?: OrgRole;
   },
   remember: boolean
-): Promise<void> {
+): Promise<{ access: string; refreshPlain: string }> {
   const access = createToken({
     id: user.id,
     username: user.username,
@@ -81,7 +81,23 @@ export async function issueSessionForCredentials(
     persistent: remember,
     expiresAt,
   });
-  await setAuthCookies(access, plain, remember);
+  return { access, refreshPlain: plain };
+}
+
+export async function issueSessionForCredentials(
+  user: {
+    id: string;
+    username: string;
+    isAdmin: boolean;
+    isExecutive?: boolean;
+    orgId: string;
+    platformRole?: PlatformRole;
+    orgRole?: OrgRole;
+  },
+  remember: boolean
+): Promise<void> {
+  const { access, refreshPlain } = await issueSessionTokens(user, remember);
+  await setAuthCookies(access, refreshPlain, remember);
 }
 
 /**

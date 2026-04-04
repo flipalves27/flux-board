@@ -311,7 +311,10 @@ export default function OnboardingPage() {
 
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
-      if (!user) return;
+      if (!user) {
+        router.replace(`${localeRoot}/login`);
+        return;
+      }
       setBusy(true);
       setInitError(null);
       try {
@@ -359,7 +362,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user, wizardMethodology]
+    [getHeaders, localeRoot, persistState, router, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -398,7 +401,11 @@ export default function OnboardingPage() {
   }, [handleContinueStep2]);
 
   const handleCreateCard = useCallback(async () => {
-    if (!user || !boardId) return;
+    if (!user) {
+      router.replace(`${localeRoot}/login`);
+      return;
+    }
+    if (!boardId) return;
     const title = cardTitle.trim();
     if (!title) return;
 
@@ -475,6 +482,28 @@ export default function OnboardingPage() {
   const template = ONBOARDING_TEMPLATES[templateId];
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
+
+  // Redirect to login if auth check is done but no user session exists
+  useEffect(() => {
+    if (isChecked && !user) {
+      router.replace(`${localeRoot}/login`);
+    }
+  }, [isChecked, user, router, localeRoot]);
+
+  // Show a loading skeleton until auth + init are settled
+  if (!isChecked || !onboardingInitSettled) {
+    return (
+      <div className="relative min-h-[100dvh] overflow-x-hidden">
+        <FluxAppBackdrop />
+        <div className="relative z-[1] flex min-h-[100dvh] items-center justify-center">
+          <div className="flex items-center gap-3">
+            <FluxyAvatar state="thinking" size="compact" className="shrink-0" />
+            <p className="text-sm text-[var(--flux-text-muted)] animate-pulse">{t("loading.board")}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden">

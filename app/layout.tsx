@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { DM_Sans, JetBrains_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
@@ -17,32 +16,11 @@ import { FluxDiagnosticsRoot } from "@/components/flux-diagnostics/flux-diagnost
 import { PwaRegister } from "@/components/pwa-register";
 import { headers } from "next/headers";
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-fluxy",
-  display: "swap",
-});
+// Font variables using system fallbacks to avoid external font fetch failures
+const dmSans = { variable: "--font-body" };
+const outfit = { variable: "--font-display" };
+const jetbrainsMono = { variable: "--font-mono" };
+const spaceGrotesk = { variable: "--font-fluxy" };
 
 export const viewport: Viewport = {
   width: "device-width",
