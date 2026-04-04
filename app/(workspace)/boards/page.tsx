@@ -127,7 +127,7 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 export default function BoardsPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, sessionFailure } = useAuth();
   const locale = useLocale();
   const t = useTranslations("boards");
   const localeRoot = `/${locale}`;
@@ -159,11 +159,17 @@ export default function BoardsPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
-      router.replace(`${localeRoot}/login`);
+      const sp = new URLSearchParams();
+      if (sessionFailure?.supportRef) {
+        sp.set("sessionRef", sessionFailure.supportRef);
+        sp.set("sessionKind", sessionFailure.failureKind);
+      }
+      const q = sp.toString();
+      router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
       return;
     }
     loadBoards();
-  }, [isChecked, user, router]);
+  }, [isChecked, user, router, localeRoot, sessionFailure?.supportRef, sessionFailure?.failureKind]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
@@ -205,7 +211,13 @@ export default function BoardsPage() {
       setEmpty(list.length === 0);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
-        router.replace(`${localeRoot}/login`);
+        const sp = new URLSearchParams();
+        if (sessionFailure?.supportRef) {
+          sp.set("sessionRef", sessionFailure.supportRef);
+          sp.set("sessionKind", sessionFailure.failureKind);
+        }
+        const q = sp.toString();
+        router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
         return;
       }
       setBoards([]);

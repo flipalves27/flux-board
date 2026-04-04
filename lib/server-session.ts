@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { createToken, verifyToken } from "./auth";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "./auth-cookie-names";
@@ -10,7 +10,7 @@ import { createRefreshSession, consumeRefreshSessionForRotation } from "./kv-ref
 import { refreshRecordExpiresAt } from "./session-ttl";
 import { getUserById } from "./kv-users";
 import type { ThemePreference } from "./theme-storage";
-import type { ValidateResult } from "./auth-types";
+import type { SessionValidateFailureKind, ValidateResult } from "./auth-types";
 import type { User } from "./kv-users";
 import {
   canManageOrganization,
@@ -149,6 +149,7 @@ function logSessionValidateFail(payload: Record<string, string | undefined>): vo
  * Valida access JWT ou renova via refresh (cookies httpOnly).
  */
 export async function validateSessionFromCookies(): Promise<ValidateResult> {
+  const supportRef = randomUUID();
   const store = await cookies();
   const access = store.get(ACCESS_COOKIE)?.value;
   const refresh = store.get(REFRESH_COOKIE)?.value;
@@ -166,9 +167,10 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   }
 
   if (!payload) {
+    const failureKind: SessionValidateFailureKind = hasAccess || hasRefresh ? "token_invalid" : "no_cookies";
     if (hasAccess || hasRefresh) {
       const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
-      logSessionValidateFail({ reason });
+      logSessionValidateFail({ reason, supportRef });
       await clearAuthCookies();
     } else if (isFluxAuthDebugEnabled()) {
       let requestHost: string | undefined;
@@ -180,12 +182,13 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
         /* no request context */
       }
       logFluxAuthDebug("session_validate_no_cookies", {
+        supportRef,
         hasAccessCookie: false,
         hasRefreshCookie: false,
         requestHost,
       });
     }
-    return { ok: false };
+    return { ok: false, supportRef, failureKind };
   }
   const user = await getUserById(payload.id, payload.orgId);
   const validated = await userToValidate(user);
@@ -194,8 +197,10 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
       reason: "user_not_found",
       userId: payload.id,
       orgId: payload.orgId,
+      supportRef,
     });
     await clearAuthCookies();
+    return { ok: false, supportRef, failureKind: "user_not_found" };
   }
   return validated;
 }

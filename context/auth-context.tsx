@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { getApiHeaders, apiFetch } from "@/lib/api-client";
 import { validateSessionAction, switchOrganizationAction } from "@/app/actions/auth";
-import type { ValidateResult } from "@/lib/auth-types";
+import type { SessionValidateFailureKind, ValidateResult } from "@/lib/auth-types";
+import { FLUX_SESSION_FAILURE_STORAGE_KEY } from "@/lib/session-support-diagnostic";
 import type { ThemePreference } from "@/lib/theme-storage";
 import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
@@ -14,6 +15,16 @@ const SESSION_VALIDATE_TIMEOUT_MS = 10_000;
 
 /** Após `ok: false` na validação inicial, breve espera antes de re-tentar (cookies OAuth / landing HTML / mount / Server Action). */
 const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
+
+function sessionFailureFromValidateResult(
+  result: ValidateResult
+): { supportRef: string; failureKind: SessionValidateFailureKind } | null {
+  if (result.ok || !result.supportRef) return null;
+  return {
+    supportRef: result.supportRef,
+    failureKind: result.failureKind ?? "unknown",
+  };
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -71,6 +82,8 @@ export interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isChecked: boolean;
+  /** Última falha de validação de sessão (referência para correlacionar com logs no servidor). */
+  sessionFailure: { supportRef: string; failureKind: SessionValidateFailureKind } | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -101,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     isLoading: true,
     isChecked: false,
+    sessionFailure: null,
   });
 
   /** Incrementado em login/setAuth/logout e antes de operações de sessão — validações em voo ignoram resultado se a geração mudou. */
@@ -108,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setAuth = useCallback((user: AuthUser, _remember = true) => {
     sessionValidationGenRef.current += 1;
-    setState({ user, isLoading: false, isChecked: true });
+    setState({ user, isLoading: false, isChecked: true, sessionFailure: null });
   }, []);
 
   const logout = useCallback(async () => {
@@ -119,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     clearLegacyStorage();
     sessionValidationGenRef.current += 1;
-    setState({ user: null, isLoading: false, isChecked: true });
+    setState({ user: null, isLoading: false, isChecked: true, sessionFailure: null });
   }, []);
 
   const login = useCallback(
@@ -144,13 +158,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: sessionUserToAuthUser(result.user),
           isLoading: false,
           isChecked: true,
+          sessionFailure: null,
         });
       } else {
-        setState({ user: null, isLoading: false, isChecked: true });
+        setState({
+          user: null,
+          isLoading: false,
+          isChecked: true,
+          sessionFailure: sessionFailureFromValidateResult(result),
+        });
       }
     } catch {
       if (myGen !== sessionValidationGenRef.current) return;
-      setState({ user: null, isLoading: false, isChecked: true });
+      const supportRef =
+        typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
+          ? globalThis.crypto.randomUUID()
+          : `client-${Date.now()}`;
+      setState({
+        user: null,
+        isLoading: false,
+        isChecked: true,
+        sessionFailure: { supportRef, failureKind: "client_timeout" },
+      });
     }
   }, []);
 
@@ -164,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: sessionUserToAuthUser(result.user),
           isLoading: false,
           isChecked: true,
+          sessionFailure: null,
         });
         return true;
       }
@@ -187,9 +217,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: sessionUserToAuthUser(result.user),
           isLoading: false,
           isChecked: true,
+          sessionFailure: null,
         });
       } else {
-        setState({ user: null, isLoading: false, isChecked: true });
+        setState({
+          user: null,
+          isLoading: false,
+          isChecked: true,
+          sessionFailure: sessionFailureFromValidateResult(result),
+        });
       }
     };
 
@@ -213,7 +249,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
         if (cancelled) return;
         if (initialGen !== sessionValidationGenRef.current) return;
-        setState({ user: null, isLoading: false, isChecked: true });
+        const supportRef =
+          typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
+            ? globalThis.crypto.randomUUID()
+            : `client-${Date.now()}`;
+        setState({
+          user: null,
+          isLoading: false,
+          isChecked: true,
+          sessionFailure: { supportRef, failureKind: "client_timeout" },
+        });
       }
     };
 
@@ -223,6 +268,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (state.sessionFailure) {
+        sessionStorage.setItem(FLUX_SESSION_FAILURE_STORAGE_KEY, JSON.stringify(state.sessionFailure));
+      } else {
+        sessionStorage.removeItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [state.sessionFailure]);
 
   return (
     <AuthContext.Provider

@@ -1468,6 +1468,20 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
+    "sessionDiag": {
+      "title": "Não foi possível manter a sessão",
+      "hint": "Envie o JSON (botão abaixo) ao suporte para cruzarmos com os logs do servidor. Não contém senha, e-mail nem cookies.",
+      "kindLabel": "Tipo:",
+      "copyJson": "Copiar diagnóstico (JSON)",
+      "copied": "Copiado.",
+      "kinds": {
+        "no_cookies": "Sem cookies de sessão no pedido ao servidor.",
+        "token_invalid": "Token inválido ou renovação da sessão falhou.",
+        "user_not_found": "Utilizador não encontrado para o token atual.",
+        "unknown": "Erro desconhecido no servidor.",
+        "client_timeout": "A validação demorou demais no navegador (pode não haver log correspondente no servidor)."
+      }
+    },
     "inviteBanner": "Você está entrando com um convite. Se já tiver conta, use a aba Entrar ou Google/Microsoft — o convite será aplicado ao e-mail certo.",
     "errors": {
       "missingCredentials": "Preencha usuário e senha.",

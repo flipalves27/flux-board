@@ -2,29 +2,16 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
+import { canonicalizeOAuthSessionLandingUrl } from "@/lib/oauth/canonicalize-oauth-landing-url";
 import { clearOAuthCookie } from "@/lib/oauth/cookie";
 import { isFluxAuthDebugEnabled, logFluxAuthDebug } from "@/lib/flux-auth-debug";
 import { setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 
-/**
- * Garante que a URL de destino use o host canônico (NEXT_PUBLIC_APP_URL).
- * Evita que cookies de sessão fiquem em um host diferente do que o browser vai acessar.
- */
 function canonicalizeTargetUrl(targetUrl: string): string {
-  const canonical = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  if (!canonical) return targetUrl;
-  try {
-    const target = new URL(targetUrl);
-    const canon = new URL(canonical);
-    if (target.hostname !== canon.hostname) {
-      target.hostname = canon.hostname;
-      target.protocol = canon.protocol;
-      return target.toString();
-    }
-  } catch {
-    /* manter URL original */
-  }
-  return targetUrl;
+  return canonicalizeOAuthSessionLandingUrl(targetUrl, {
+    nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL,
+    authCookieDomain: process.env.AUTH_COOKIE_DOMAIN,
+  });
 }
 
 /**

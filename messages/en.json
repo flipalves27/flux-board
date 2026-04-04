@@ -1468,6 +1468,20 @@
       "login": "Sign in",
       "register": "Register"
     },
+    "sessionDiag": {
+      "title": "We couldn’t keep your session",
+      "hint": "Send the JSON (button below) to support so we can match it with server logs. It does not include your password, email, or cookies.",
+      "kindLabel": "Type:",
+      "copyJson": "Copy diagnostic (JSON)",
+      "copied": "Copied.",
+      "kinds": {
+        "no_cookies": "No session cookies were sent to the server.",
+        "token_invalid": "Session token was invalid or refresh failed.",
+        "user_not_found": "No user record matched the current token.",
+        "unknown": "Unknown server error.",
+        "client_timeout": "Validation timed out in the browser (there may be no matching server log)."
+      }
+    },
     "inviteBanner": "You’re signing in with an invite. If you already have an account, use Sign in or Google/Microsoft — the invite applies to the matching email.",
     "errors": {
       "missingCredentials": "Enter username and password.",

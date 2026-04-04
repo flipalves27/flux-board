@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
@@ -389,7 +390,14 @@ export async function validateSessionAction(): Promise<ValidateResult> {
   try {
     return await validateSessionFromCookies();
   } catch {
-    return { ok: false };
+    const supportRef = randomUUID();
+    if (process.env.FLUX_SESSION_VALIDATE_LOG !== "0") {
+      console.warn(
+        "[flux-session-validate]",
+        JSON.stringify({ event: "fail", reason: "validate_exception", supportRef })
+      );
+    }
+    return { ok: false, supportRef, failureKind: "unknown" };
   }
 }
 
