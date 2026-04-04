@@ -6,7 +6,11 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then(async (cache) => {
       for (const path of STATIC_ASSETS) {
         try {
-          await cache.add(new Request(path, { redirect: "follow" }));
+          const response = await fetch(new Request(path, { redirect: "follow" }));
+          // Only cache successful responses, not redirects
+          if (response.status >= 200 && response.status < 300) {
+            await cache.put(path, response.clone());
+          }
         } catch {
           /* precache opcional — não bloqueia install */
         }
@@ -47,7 +51,9 @@ self.addEventListener("fetch", (event) => {
       // Navegação/documentos podem vir com redirect !== "follow"; sem isso, 302 do app quebra o fetch no SW.
       const fetchPromise = fetch(request, { redirect: "follow" })
         .then((response) => {
-          if (response.ok && url.origin === self.location.origin) {
+          // Only cache successful responses (status 200-299) from same origin
+          // Avoid caching redirect responses (3xx) which can break subsequent requests
+          if (response.status >= 200 && response.status < 300 && url.origin === self.location.origin) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
