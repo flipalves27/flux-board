@@ -136,6 +136,14 @@ export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promi
   return { access: accessNew, refreshPlain: plain, persistent, user };
 }
 
+/** `FLUX_SESSION_VALIDATE_LOG=0` desliga os avisos (útil se o volume em staging incomodar). */
+const SESSION_VALIDATE_LOG = process.env.FLUX_SESSION_VALIDATE_LOG !== "0";
+
+function logSessionValidateFail(payload: Record<string, string | undefined>): void {
+  if (!SESSION_VALIDATE_LOG) return;
+  console.warn("[flux-session-validate]", JSON.stringify({ event: "fail", ...payload }));
+}
+
 /**
  * Valida access JWT ou renova via refresh (cookies httpOnly).
  */
@@ -143,6 +151,8 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   const store = await cookies();
   const access = store.get(ACCESS_COOKIE)?.value;
   const refresh = store.get(REFRESH_COOKIE)?.value;
+  const hasAccess = Boolean(access?.trim());
+  const hasRefresh = Boolean(refresh?.trim());
 
   const payload = access ? verifyToken(access) : null;
 
@@ -155,7 +165,9 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   }
 
   if (!payload) {
-    if (access || refresh) {
+    if (hasAccess || hasRefresh) {
+      const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
+      logSessionValidateFail({ reason });
       await clearAuthCookies();
     }
     return { ok: false };
@@ -163,6 +175,11 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   const user = await getUserById(payload.id, payload.orgId);
   const validated = await userToValidate(user);
   if (!validated.ok) {
+    logSessionValidateFail({
+      reason: "user_not_found",
+      userId: payload.id,
+      orgId: payload.orgId,
+    });
     await clearAuthCookies();
   }
   return validated;

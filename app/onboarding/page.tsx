@@ -479,7 +479,7 @@ export default function OnboardingPage() {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden">
       <FluxAppBackdrop />
-      <div className="relative z-[1]">
+      {/* Fora de `z-[1]`: o hero usa z-index alto; dentro do contexto z-1 ficaria sempre abaixo do Fluxy dock (z~438). */}
       {heroStorageKey ? (
         <OnboardingFluxyHero
           open={fluxyHeroOpen}
@@ -487,6 +487,7 @@ export default function OnboardingPage() {
           storageKey={heroStorageKey}
         />
       ) : null}
+      <div className="relative z-[1]">
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="flex items-center gap-2">
           <StepPill index={1} current={step} label={t("steps.pill1")} />
@@ -655,7 +656,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     className="btn-secondary"
-                    disabled={busy}
+                    disabled={busy || !user || !onboardingInitSettled}
                     onClick={() => handleSkipStep1()}
                   >
                     {t("buttons.skip")}
@@ -663,7 +664,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     className="btn-primary"
-                    disabled={busy}
+                    disabled={busy || !user || !onboardingInitSettled}
                     onClick={() => handleContinueStep1()}
                   >
                     {busy ? t("buttons.creating") : t("buttons.continue")}
