@@ -106,17 +106,21 @@ export async function issueSessionForCredentials(
  * Valida refresh opaco, revoga o token anterior e emite par access+refresh.
  * Usado pela rota POST /api/auth/refresh e por validateSessionFromCookies.
  */
-export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promise<{
-  access: string;
-  refreshPlain: string;
-  persistent: boolean;
-  user: User;
-} | null> {
-  const rotated = await consumeRefreshSessionForRotation(refreshPlain);
-  if (!rotated) return null;
-  const persistent = rotated.persistent ?? true;
-  const user = await getUserById(rotated.userId, rotated.orgId);
-  if (!user) return null;
+export type RotateSessionFromRefreshPlainResult =
+  | { ok: true; access: string; refreshPlain: string; persistent: boolean; user: User }
+  | { ok: false; clearCookies: boolean };
+
+export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promise<RotateSessionFromRefreshPlainResult> {
+  const consumed = await consumeRefreshSessionForRotation(refreshPlain);
+  if (consumed.kind !== "ok") {
+    return {
+      ok: false,
+      clearCookies: consumed.kind !== "revoked_replay",
+    };
+  }
+  const persistent = consumed.persistent ?? true;
+  const user = await getUserById(consumed.userId, consumed.orgId);
+  if (!user) return { ok: false, clearCookies: true };
   const accessNew = createToken({
     id: user.id,
     username: user.username,
@@ -130,11 +134,11 @@ export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promi
   const { plain } = await createRefreshSession({
     userId: user.id,
     orgId: user.orgId,
-    familyId: rotated.familyId,
+    familyId: consumed.familyId,
     persistent,
     expiresAt,
   });
-  return { access: accessNew, refreshPlain: plain, persistent, user };
+  return { ok: true, access: accessNew, refreshPlain: plain, persistent, user };
 }
 
 /** `FLUX_SESSION_VALIDATE_LOG=0` desliga os avisos (útil se o volume em staging incomodar). */
@@ -168,7 +172,7 @@ export async function validateSessionFromCookieValues(
 
     if (!payload && refresh) {
       const rotated = await rotateSessionFromRefreshPlain(refresh);
-      if (rotated) {
+      if (rotated.ok) {
         return {
           result: await userToValidate(rotated.user),
           sideEffect: {
@@ -177,6 +181,12 @@ export async function validateSessionFromCookieValues(
             refreshPlain: rotated.refreshPlain,
             persistent: rotated.persistent,
           },
+        };
+      }
+      if (!rotated.clearCookies) {
+        return {
+          result: { ok: false, supportRef, failureKind: "token_invalid" },
+          sideEffect: null,
         };
       }
     }

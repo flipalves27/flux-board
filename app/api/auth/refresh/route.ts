@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
   }
 
   const rotated = await rotateSessionFromRefreshPlain(refresh);
-  if (!rotated) {
+  if (!rotated.ok) {
     const res = NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
-    clearAuthCookiesOnNextResponse(res);
+    if (rotated.clearCookies) clearAuthCookiesOnNextResponse(res);
     return res;
   }
 
