@@ -1675,7 +1675,8 @@
       "continue": "Continue",
       "creating": "Creating…",
       "saving": "Saving…",
-      "createCard": "Create card"
+      "createCard": "Create card",
+      "retryInit": "Try again"
     },
     "step1": {
       "preparing": "Checking your account and boards… The buttons will enable in a moment.",

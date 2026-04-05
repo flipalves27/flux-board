@@ -64,6 +64,9 @@ export async function getMongoClient(): Promise<MongoClient> {
       socketTimeoutMS: mongoSocketTimeoutMs(),
       maxPoolSize: mongoMaxPoolSize(),
       waitQueueTimeoutMS: mongoWaitQueueTimeoutMs(),
+      /** Mantém uma ligação quente por instância (menos handshake em cold start). Atlas M0: monitorizar contagem de conexões. */
+      minPoolSize: 1,
+      heartbeatFrequencyMS: 10_000,
       /** Evita abrir dezenas de handshakes em paralelo no mesmo tick (Atlas). */
       maxConnecting: 5,
     });

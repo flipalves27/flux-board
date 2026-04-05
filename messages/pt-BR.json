@@ -1676,7 +1676,8 @@
       "continue": "Continuar",
       "creating": "Criando…",
       "saving": "Salvando…",
-      "createCard": "Criar card"
+      "createCard": "Criar card",
+      "retryInit": "Tentar novamente"
     },
     "step1": {
       "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes.",

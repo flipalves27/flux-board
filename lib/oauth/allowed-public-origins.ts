@@ -43,6 +43,11 @@ function jsonError(error: string, status: 403 | 503): NextResponse {
   return NextResponse.json({ error }, { status });
 }
 
+function truncateForLog(s: string, max = 200): string {
+  const t = s.trim();
+  return t.length <= max ? t : `${t.slice(0, max)}…`;
+}
+
 /**
  * Em `NODE_ENV === "production"` com OAuth ativo, exige allowlist válida e não vazia
  * e que a origem pública do pedido esteja na lista (espelho do Google/Azure Console).
@@ -57,9 +62,17 @@ export function assertOAuthRequestHostAllowed(
 
   const parsed = parseOAuthAllowedPublicOriginsFromEnv();
   if (!parsed.ok) {
+    const raw = process.env.OAUTH_ALLOWED_PUBLIC_ORIGINS ?? "";
+    console.error("[oauth] OAUTH_ALLOWED_PUBLIC_ORIGINS parse failed", {
+      code: OAUTH_ERROR_ALLOWLIST_MISCONFIGURED,
+      rawTruncated: truncateForLog(raw),
+    });
     return jsonError(OAUTH_ERROR_ALLOWLIST_MISCONFIGURED, 503);
   }
   if (parsed.origins.length === 0) {
+    console.error("[oauth] OAUTH_ALLOWED_PUBLIC_ORIGINS empty in production with OAuth active", {
+      code: OAUTH_ERROR_ALLOWLIST_MISCONFIGURED,
+    });
     return jsonError(OAUTH_ERROR_ALLOWLIST_MISCONFIGURED, 503);
   }
 

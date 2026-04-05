@@ -45,6 +45,16 @@ export async function GET(request: NextRequest) {
     const t2 = Date.now();
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
     logFluxApiPhase(route, "getBoardIds(userView)", t2);
+    if (
+      process.env.FLUX_LOG_EMPTY_BOARD_LIST === "1" &&
+      boardIds.length === 0 &&
+      !payload.isAdmin
+    ) {
+      console.warn("[api/boards] empty board list for non-admin", {
+        orgId: payload.orgId,
+        userId: payload.id,
+      });
+    }
 
     const t3 = Date.now();
     const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);

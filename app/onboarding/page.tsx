@@ -9,7 +9,7 @@ import { useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/c
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
@@ -42,7 +42,7 @@ const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 
 /** Evita que o passo 1 fique com botões desativados se GET /api/boards não responder. */
-const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 25_000;
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 40_000;
 
 /**
  * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
@@ -169,6 +169,7 @@ export default function OnboardingPage() {
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
   const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
+  const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
   /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
   const onboardingInitRunIdRef = useRef(0);
@@ -315,7 +316,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
 
   useEffect(() => {
     if (!onboardingInitSettled || !heroStorageKey) {
@@ -388,14 +389,26 @@ export default function OnboardingPage() {
           getHeaders()
         );
 
-        await apiPut(
-          `/api/boards/${encodeURIComponent(board.id)}`,
-          {
-            boardMethodology: wizardMethodology,
-            config: { bucketOrder: templateBuckets, collapsedColumns: [] },
-          },
-          getHeaders()
-        );
+        try {
+          await apiPut(
+            `/api/boards/${encodeURIComponent(board.id)}`,
+            {
+              boardMethodology: wizardMethodology,
+              config: { bucketOrder: templateBuckets, collapsedColumns: [] },
+            },
+            getHeaders()
+          );
+        } catch (putErr) {
+          try {
+            await apiDelete(`/api/boards/${encodeURIComponent(board.id)}`, getHeaders());
+          } catch (delErr) {
+            console.error("[onboarding] rollback DELETE /api/boards failed after PUT error", {
+              boardId: board.id,
+              delErr,
+            });
+          }
+          throw putErr;
+        }
 
         setBoardId(board.id);
         setTemplateId(nextTemplateId);
@@ -538,7 +551,7 @@ export default function OnboardingPage() {
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
   const step1ActionsDisabled =
-    busy || isLoading || !isChecked || !user || !onboardingInitSettled;
+    busy || isLoading || !isChecked || !user || (!onboardingInitSettled && !initError);
 
   const loginHrefWithSessionDiag = useMemo(() => {
     const sp = new URLSearchParams();
@@ -589,8 +602,20 @@ export default function OnboardingPage() {
         </div>
 
         {initError && (
-          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
-            {initError}
+          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm space-y-2">
+            <p>{initError}</p>
+            {step === 1 && user ? (
+              <button
+                type="button"
+                className="btn-secondary text-[var(--flux-text)]"
+                onClick={() => {
+                  setInitError(null);
+                  setOnboardingBoardsRetryKey((k) => k + 1);
+                }}
+              >
+                {t("buttons.retryInit")}
+              </button>
+            ) : null}
           </div>
         )}
 

@@ -27,10 +27,12 @@ export async function GET(req: NextRequest) {
   if (!rawCookie) {
     const reqHost =
       req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host") || "unknown";
+    const ua = req.headers.get("user-agent")?.slice(0, 160);
     console.warn("[oauth-google-callback] Cookie de start OAuth não encontrado", {
       host: reqHost,
       allCookies: req.cookies.getAll().map((c) => c.name),
       referer: req.headers.get("referer")?.slice(0, 120),
+      ...(ua ? { userAgent: ua } : {}),
     });
   }
   const payload = parseOAuthStartCookie(rawCookie);

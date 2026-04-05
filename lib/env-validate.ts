@@ -1,10 +1,20 @@
 import { assertJwtSecretConfigured } from "./jwt-secret";
+import { parseOAuthAllowedPublicOriginsFromEnv } from "./oauth/allowed-public-origins";
 
 let validated = false;
 
 function isNextCompilerBuildPhase(): boolean {
   const p = process.env.NEXT_PHASE ?? "";
   return p === "phase-production-build" || p === "phase-development-build";
+}
+
+function productionOAuthConfigured(): boolean {
+  const g =
+    Boolean(process.env.AUTH_GOOGLE_CLIENT_ID?.trim()) && Boolean(process.env.AUTH_GOOGLE_CLIENT_SECRET?.trim());
+  const m =
+    Boolean(process.env.AUTH_MICROSOFT_CLIENT_ID?.trim()) &&
+    Boolean(process.env.AUTH_MICROSOFT_CLIENT_SECRET?.trim());
+  return g || m;
 }
 
 /**
@@ -52,6 +62,24 @@ export function validateServerEnv(): void {
     }
     if (!process.env.INTERNAL_HOST_RESOLVE_SECRET?.trim()) {
       console.warn("[env] INTERNAL_HOST_RESOLVE_SECRET ausente — resolução de domínio interno ficará indisponível.");
+    }
+    if (productionOAuthConfigured()) {
+      if (!process.env.NEXT_PUBLIC_APP_URL?.trim()) {
+        console.warn(
+          "[env] NEXT_PUBLIC_APP_URL ausente com OAuth ativo — redirects e diagnósticos podem falhar; defina a URL canónica da app."
+        );
+      }
+      if (!process.env.AUTH_COOKIE_DOMAIN?.trim()) {
+        console.warn(
+          "[env] AUTH_COOKIE_DOMAIN ausente com OAuth ativo — cookies de state OAuth podem não partilhar entre apex/www; defina o domínio do cookie (ex.: flux-board.com)."
+        );
+      }
+      const allow = parseOAuthAllowedPublicOriginsFromEnv();
+      if (!allow.ok || allow.origins.length === 0) {
+        console.warn(
+          "[env] OAUTH_ALLOWED_PUBLIC_ORIGINS vazio ou inválido com OAuth ativo — em produção a allowlist é obrigatória (CSV ou JSON de origins HTTPS)."
+        );
+      }
     }
     const superRaw = process.env.FLUX_ADMIN_SUPERPOWERS?.trim().toLowerCase();
     if (superRaw === "1" || superRaw === "true" || superRaw === "on") {

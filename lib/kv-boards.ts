@@ -1,7 +1,8 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
-import { getOrgWideTeamBoardAccess } from "./kv-team-members";
+import { listBoardIdsForExplicitBoardMembership } from "./kv-board-members";
+import { getOrgWideTeamBoardAccess, listActiveBoardScopedTeamBoardIdsForUser } from "./kv-team-members";
 import type { BoardPortalSettings } from "./portal-types";
 import type { BoardAnomalyNotifications } from "./anomaly-board-settings";
 import type { Db } from "mongodb";
@@ -150,6 +151,12 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
         orgId,
       });
       (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
+      const [fromBoardMembers, fromTeamBoardScope] = await Promise.all([
+        listBoardIdsForExplicitBoardMembership(orgId, userId),
+        listActiveBoardScopedTeamBoardIdsForUser(orgId, userId),
+      ]);
+      for (const bid of fromBoardMembers) ids.add(bid);
+      for (const bid of fromTeamBoardScope) ids.add(bid);
     }
     return [...ids];
   }
@@ -168,6 +175,12 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
   } else {
     const userIds = ((await kv.get<string[]>(userBoardsKey(userId))) as string[]) || [];
     userIds.forEach((id) => ids.add(id));
+    const [fromBoardMembers, fromTeamBoardScope] = await Promise.all([
+      listBoardIdsForExplicitBoardMembership(orgId, userId),
+      listActiveBoardScopedTeamBoardIdsForUser(orgId, userId),
+    ]);
+    for (const bid of fromBoardMembers) ids.add(bid);
+    for (const bid of fromTeamBoardScope) ids.add(bid);
   }
   return [...ids];
 }

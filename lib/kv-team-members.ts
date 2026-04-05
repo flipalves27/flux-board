@@ -97,6 +97,35 @@ export async function getOrgWideTeamBoardAccess(
   return null;
 }
 
+/**
+ * IDs de boards em que o utilizador tem vínculo de Equipe ativo com escopo desse board (`boardId` preenchido).
+ * Não inclui escopo org-wide (`boardId` vazio).
+ */
+export async function listActiveBoardScopedTeamBoardIdsForUser(orgId: string, userId: string): Promise<string[]> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureTeamIndexes(db);
+    const rows = await db
+      .collection<TeamMember>(COL)
+      .find({ orgId, userId, active: true } as never)
+      .toArray();
+    const out: string[] = [];
+    for (const m of rows) {
+      const bid = String(m.boardId ?? "").trim();
+      if (bid) out.push(bid);
+    }
+    return [...new Set(out)];
+  }
+  const members = await listTeamMembers(orgId);
+  const out: string[] = [];
+  for (const m of members) {
+    if (m.userId !== userId || !m.active) continue;
+    const bid = String(m.boardId ?? "").trim();
+    if (bid) out.push(bid);
+  }
+  return [...new Set(out)];
+}
+
 export async function removeTeamMember(orgId: string, userId: string, boardId?: string): Promise<boolean> {
   if (isMongoConfigured()) {
     const db = await getDb();

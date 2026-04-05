@@ -13,8 +13,11 @@ const LEGACY_AUTH_KEY = "flux_board_auth";
 /** Margem para cold start + Mongo; alinhado ao `maxDuration` da rota `GET /api/auth/session`. */
 const SESSION_VALIDATE_TIMEOUT_MS = 45_000;
 
-/** Após `ok: false` ou timeout na validação inicial, breve espera antes de re-tentar (cookies OAuth / GET `/api/auth/session`). */
-const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [400, 500, 900, 1600, 2400] as const;
+/** Após `ok: false` ou timeout na validação inicial, espera antes de re-tentar (cookies OAuth / GET `/api/auth/session`). ~15s total. */
+const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [500, 800, 1500, 2500, 4000, 5500] as const;
+
+/** Extra antes do delay normal quando o servidor devolveu `server_timeout` (evita rajadas inúteis). */
+const SERVER_TIMEOUT_RETRY_EXTRA_MS = 2_800;
 
 function sessionFailureFromValidateResult(
   result: ValidateResult
@@ -239,7 +242,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         if (retryIndex < INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS.length) {
-          await new Promise((r) => setTimeout(r, INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS[retryIndex]));
+          let waitMs = INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS[retryIndex];
+          if (result.failureKind === "server_timeout") waitMs += SERVER_TIMEOUT_RETRY_EXTRA_MS;
+          await new Promise((r) => setTimeout(r, waitMs));
           if (cancelled) return;
           if (initialGen !== sessionValidationGenRef.current) return;
           await runInitialValidate(retryIndex + 1);

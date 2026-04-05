@@ -37,6 +37,16 @@ import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
+/** Cold start: atraso antes do primeiro GET /api/boards. `0` desliga. */
+const BOARDS_LIST_STAGGER_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_FLUX_BOARDS_STAGGER_MS?.trim();
+  if (raw === "0") return 0;
+  if (raw === undefined || raw === "") return 200;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 30_000) return Math.floor(n);
+  return 200;
+})();
+
 interface Board {
   id: string;
   name: string;
@@ -162,7 +172,15 @@ export default function BoardsPage() {
       router.replace(`${localeRoot}/login`);
       return;
     }
-    loadBoards();
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      void loadBoards();
+    }, BOARDS_LIST_STAGGER_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {
