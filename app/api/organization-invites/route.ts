@@ -5,6 +5,7 @@ import {
   listOrganizationInvites,
   normalizeInviteAssignedOrgRole,
 } from "@/lib/kv-organization-invites";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { assignableInviteOrgRoles, deriveEffectiveRoles, isAssignableInviteOrgRole } from "@/lib/rbac";
 import { getUserById } from "@/lib/kv-users";
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 400 });
+    return publicApiErrorResponse(err, { context: "api/organization-invites/route.ts", status: 400, fallbackMessage: "Pedido inválido. Tente novamente." });
   }
 }
 

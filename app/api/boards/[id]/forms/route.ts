@@ -4,6 +4,7 @@ import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { IntakeFormUpsertSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { normalizeFormSlug } from "@/lib/forms-intake";
 import { upsertIntakeFormIndex } from "@/lib/kv-intake-forms";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
@@ -80,6 +81,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
     return NextResponse.json({ ok: true, intakeForm: (board as any).intakeForm });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/forms/route.ts" });
   }
 }

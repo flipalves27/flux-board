@@ -7,6 +7,7 @@ import { isMongoConfigured } from "@/lib/mongo";
 import { getUserById } from "@/lib/kv-users";
 import { ORG_INVITE_ACCEPTED_AUDIT_ACTION } from "@/lib/invite-audit";
 import { isPlatformAdminFromAuthPayload } from "@/lib/rbac";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 function parseActionParam(raw: string | null): string | undefined {
   const t = raw?.trim();
@@ -95,9 +96,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("organization-audit GET:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/organization-audit/route.ts" });
   }
 }

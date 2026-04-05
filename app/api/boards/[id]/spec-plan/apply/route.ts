@@ -8,6 +8,7 @@ import {
   planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { rateLimit } from "@/lib/rate-limit";
 import { zodErrorToMessage } from "@/lib/schemas";
 import { SpecPlanApplyBodySchema } from "@/lib/spec-plan-schemas";
@@ -98,6 +99,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (err) {
     console.error("spec-plan apply", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro ao aplicar" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/spec-plan/apply/route.ts", fallbackMessage: "Erro ao aplicar." });
   }
 }

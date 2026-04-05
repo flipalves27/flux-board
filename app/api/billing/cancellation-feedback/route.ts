@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { updateOrganization } from "@/lib/kv-organizations";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export const runtime = "nodejs";
 
@@ -34,9 +35,10 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return publicApiErrorResponse(err, {
+      context: "POST api/billing/cancellation-feedback",
+      status: 400,
+      fallbackMessage: "Não foi possível guardar o feedback.",
+    });
   }
 }

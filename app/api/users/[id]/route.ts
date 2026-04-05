@@ -13,6 +13,7 @@ import { sanitizeText, UserUpdateSchema, zodErrorToMessage } from "@/lib/schemas
 import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
 import { insertAuditEvent } from "@/lib/audit-events";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(
   request: NextRequest,
@@ -61,10 +62,7 @@ export async function GET(
     });
   } catch (err) {
     console.error("User API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "GET api/users/[id]" });
   }
 }
 
@@ -195,10 +193,7 @@ export async function PUT(
     });
   } catch (err) {
     console.error("User API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "PUT api/users/[id]" });
   }
 }
 
@@ -242,9 +237,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("User API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "DELETE api/users/[id]" });
   }
 }

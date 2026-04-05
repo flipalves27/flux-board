@@ -272,11 +272,11 @@ export function getUserCap(org: Organization | null | undefined, ctx?: PlanGateC
 
 export function canUseFeature(org: Organization | null | undefined, feature: FeatureKey, ctx?: PlanGateContext): boolean {
   if (feature === "flux_docs") {
-    const raw = (process.env.FLUX_DOCS_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_ENABLED || "true").toLowerCase();
+    const raw = (process.env.FLUX_DOCS_ENABLED || "true").toLowerCase();
     if (raw === "false" || raw === "0" || raw === "off") return false;
   }
   if (feature === "flux_docs_rag") {
-    const raw = (process.env.FLUX_DOCS_RAG_ENABLED || process.env.NEXT_PUBLIC_FLUX_DOCS_RAG_ENABLED || "true").toLowerCase();
+    const raw = (process.env.FLUX_DOCS_RAG_ENABLED || "true").toLowerCase();
     if (raw === "false" || raw === "0" || raw === "off") return false;
   }
   const tier = getEffectiveTier(org, ctx);
@@ -359,11 +359,7 @@ function parsePositiveInt(raw: string | undefined): number | null {
 export function getDailyAiCallsCap(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {
   const tier = getEffectiveTier(org, ctx);
   if (tier !== "free") return null;
-  return (
-    parsePositiveInt(process.env.FLUX_FREE_CALLS_PER_DAY) ??
-    parsePositiveInt(process.env.NEXT_PUBLIC_FLUX_FREE_CALLS_PER_DAY) ??
-    3
-  );
+  return parsePositiveInt(process.env.FLUX_FREE_CALLS_PER_DAY) ?? 3;
 }
 
 export function makeDailyAiCallsRateLimitKey(orgId: string): string {

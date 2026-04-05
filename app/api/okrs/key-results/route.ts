@@ -6,6 +6,7 @@ import { denyPlan } from "@/lib/api-authz";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { createKeyResult, getObjective } from "@/lib/kv-okrs";
 import { OkrsKeyResultCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, keyResult: kr }, { status: 201 });
   } catch (err) {
     console.error("OKRs key-results POST error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/key-results/route.ts" });
   }
 }
 

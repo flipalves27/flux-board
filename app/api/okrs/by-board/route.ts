@@ -5,6 +5,7 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { userCanAccessBoard } from "@/lib/kv-boards";
 import { getObjectivesAndKeyResultsByBoard } from "@/lib/kv-okrs";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("OKRs by-board API error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/by-board/route.ts" });
   }
 }
 

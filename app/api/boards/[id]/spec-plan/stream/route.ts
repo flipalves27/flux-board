@@ -8,6 +8,7 @@ import {
   persistSpecPlanRunSnapshot,
 } from "@/lib/spec-plan-persist-stream";
 import { runSpecPlanPipeline } from "@/lib/spec-plan-pipeline";
+import { publicSseErrorPayload } from "@/lib/public-api-error";
 
 export const runtime = "nodejs";
 /** PDFs longos: embeddings + 2–3 chamadas LLM; 120s cortava no meio da fase “itens”. */
@@ -25,14 +26,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     formData = await request.formData();
   } catch (e) {
-    const cause = e instanceof Error ? e.message : String(e);
     console.error("[spec-plan/stream] formData parse failed", e);
     return new Response(
       JSON.stringify({
         error:
           "Não foi possível ler os dados enviados (multipart). Confirme o arquivo, o tamanho ou cole o texto da especificação.",
         errorCode: "FORM_DATA_INVALID",
-        cause,
       }),
       { status: 400 }
     );
@@ -90,15 +89,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         sendEvent("done", { ok: true });
       } catch (err) {
-        console.error("spec-plan stream pipeline", err);
-        const e = err instanceof Error ? err : new Error(String(err));
-        const errPayload = {
-          message: e.message || "Erro interno",
-          code: "pipeline_uncaught",
-          cause: e.message,
-          stack: process.env.NODE_ENV === "development" ? e.stack : undefined,
-        };
-        sendEvent("error", errPayload);
+        const errPayload = publicSseErrorPayload(err, "spec-plan stream pipeline");
+        sendEvent("error", { ...errPayload, code: "pipeline_uncaught" });
       } finally {
         await persistSpecPlanRunSnapshot({
           orgId: payload.orgId,

@@ -14,6 +14,7 @@ import {
   buildWeeklyThroughputFromCopilot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { listObjectivesWithKeyResults, type OkrsKeyResult, type OkrsObjective } from "@/lib/kv-okrs";
 import {
   computeObjectiveProgressForOrg,
@@ -272,9 +273,6 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     console.error("Executive dashboard API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/executive-dashboard/route.ts" });
   }
 }

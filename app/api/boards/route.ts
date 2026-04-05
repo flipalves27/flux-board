@@ -5,6 +5,7 @@ import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
 } from "@/lib/board-portfolio-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { deriveEffectiveRoles, isOrgConvidado, isPlatformAdmin } from "@/lib/rbac";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
@@ -87,10 +88,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
     console.error("Boards API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/route.ts" });
   }
 }
 
@@ -169,9 +167,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("Boards API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/route.ts" });
   }
 }

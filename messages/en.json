@@ -101,7 +101,7 @@
     "tabAudit": "Audit",
     "loading": "Loading…",
     "loadError": "Failed to load",
-    "kvWarning": "Without MongoDB, global listings are limited (dev mode). Set MONGODB_URI for full data.",
+    "kvWarning": "Without a persistent database (MongoDB) configured on the server, global listings are limited (dev mode). Ask your platform administrator to complete data configuration.",
     "searchUsers": "Search name, email, or username",
     "searchOrgs": "Search organization",
     "applySearch": "Apply",
@@ -926,7 +926,7 @@
       },
       "unread": "new",
       "lastRun": "Last run",
-      "neverRun": "No runs recorded yet. Configure cron at /api/cron/anomaly-check (x-cron-secret header).",
+      "neverRun": "No runs recorded yet. Check scheduling is configured by your platform administrator in the deployment environment.",
       "refresh": "Refresh",
       "markAllRead": "Mark all read",
       "runsTitle": "Check history",
@@ -939,7 +939,7 @@
       "showDiag": "View diagnostics (metrics)",
       "hideDiag": "Hide diagnostics",
       "suggested": "Suggested action",
-      "cronHint": "The daily job (e.g. Vercel Cron) calls GET /api/cron/anomaly-check with the same secret as your other crons. Weekly emails can include an optional summary of these alerts."
+      "cronHint": "The daily job runs on the server with secrets defined only in the deployment environment. Weekly emails can include an optional summary of these alerts."
     }
   },
   "executiveDashboard": {
@@ -2025,7 +2025,7 @@
     "cardModal": {
       "intakeVision": {
         "badge": "Image → text",
-        "hint": "Upload a screenshot or mock; AI suggests a title and fills notes. Requires OPENAI_API_KEY on the server.",
+        "hint": "Upload a screenshot or mock; AI suggests a title and fills notes. Requires a vision model configured on the server.",
         "pick": "Choose image",
         "busy": "Analyzing image…",
         "apply": "Apply to card",
@@ -2501,7 +2501,7 @@
       "clearFilters": "Clear",
       "retentionHint": "Free plan: last {days} days.",
       "retentionPro": "Pro/Business: full history.",
-      "noMongo": "Activity history requires MongoDB (MONGODB_URI).",
+      "noMongo": "Activity history requires a persistent database configured on the server.",
       "actions": {
         "card_created": "Card created",
         "card_moved": "Card moved",
@@ -3424,7 +3424,7 @@
     "subtitle": "Shortcuts to intelligence features: portfolio, docs, forecasting, Copilot, sprint cockpit, and OKRs.",
     "governance": {
       "title": "Governance & agents",
-      "body": "Business tier: configurable autonomy levels, audit trail on agent runs (`agent_runs` in Mongo), and MCP hub on the roadmap. Daily digest e-mails use per-user idempotency per day."
+      "body": "Business tier: configurable autonomy levels, audit trail for agent runs, and MCP hub on the roadmap. Daily digest e-mails use per-user idempotency per day."
     },
     "cards": {
       "exec": {
@@ -3661,7 +3661,7 @@
     "cancelBackgroundTimeout": "The cancel request timed out. Check your connection and try again.",
     "cancelBackgroundError": "Could not request cancellation. Try again.",
     "startBackground": "Analyze in background",
-    "backgroundRequiresMongo": "Background runs and history need MongoDB (MONGODB_URI).",
+    "backgroundRequiresMongo": "Background runs and history need a persistent database on the server.",
     "previewTableView": "Table view",
     "previewCardView": "Card view",
     "regenerateMappingBackground": "Remap in background",

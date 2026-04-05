@@ -11,6 +11,7 @@ import {
   PlanGateError,
   getDailyAiCallsWindowMs,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { denyPlan } from "@/lib/api-authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { generateFluxReportExplain } from "@/lib/flux-reports-explain";
@@ -77,9 +78,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("Flux reports explain API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/explain/route.ts" });
   }
 }

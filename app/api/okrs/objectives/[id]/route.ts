@@ -5,6 +5,7 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { deleteObjective, getObjective, updateObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function PATCH(
   request: NextRequest,
@@ -35,7 +36,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, objective });
   } catch (err) {
     console.error("OKRs objective PATCH error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/[id]/route.ts" });
   }
 }
 
@@ -72,7 +73,7 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("OKRs objective DELETE error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/[id]/route.ts" });
   }
 }
 

@@ -101,7 +101,7 @@
     "tabAudit": "Auditoria",
     "loading": "Carregando…",
     "loadError": "Erro ao carregar",
-    "kvWarning": "Sem MongoDB, as listagens globais são limitadas (modo desenvolvimento). Configure MONGODB_URI para dados completos.",
+    "kvWarning": "Sem base de dados persistente (MongoDB) configurada no servidor, as listagens globais ficam limitadas (modo desenvolvimento). Peça ao administrador da plataforma para completar a configuração de dados.",
     "searchUsers": "Pesquisar nome, e-mail ou utilizador",
     "searchOrgs": "Pesquisar organização",
     "applySearch": "Aplicar",
@@ -926,7 +926,7 @@
       },
       "unread": "novos",
       "lastRun": "Última execução",
-      "neverRun": "Nenhuma execução registrada ainda. Configure o cron em /api/cron/anomaly-check (header x-cron-secret).",
+      "neverRun": "Nenhuma execução registrada ainda. O agendamento de verificações é configurado pelo administrador da plataforma no ambiente de deploy.",
       "refresh": "Atualizar",
       "markAllRead": "Marcar como lidos",
       "runsTitle": "Histórico de checagens",
@@ -939,7 +939,7 @@
       "showDiag": "Ver diagnóstico (métricas)",
       "hideDiag": "Ocultar diagnóstico",
       "suggested": "Ação sugerida",
-      "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
+      "cronHint": "O job diário corre no servidor com segredos definidos só no ambiente de deploy. Relatórios semanais por e-mail podem incluir um resumo opcional destes alertas."
     }
   },
   "executiveDashboard": {
@@ -2030,7 +2030,7 @@
     "cardModal": {
       "intakeVision": {
         "badge": "Imagem → texto",
-        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer OPENAI_API_KEY no servidor.",
+        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer modelo de visão configurado no servidor.",
         "pick": "Escolher imagem",
         "busy": "Analisando imagem…",
         "apply": "Aplicar ao card",
@@ -2866,7 +2866,7 @@
       "clearFilters": "Limpar",
       "retentionHint": "Plano Free: últimos {days} dias.",
       "retentionPro": "Pro/Business: histórico completo.",
-      "noMongo": "O histórico de atividade requer MongoDB (MONGODB_URI).",
+      "noMongo": "O histórico de atividade requer base de dados persistente configurada no servidor.",
       "actions": {
         "card_created": "Card criado",
         "card_moved": "Card movido",
@@ -3429,7 +3429,7 @@
     "subtitle": "Atalhos para inteligência: portfólio, documentação, previsão, Copiloto, cockpit de sprint e OKRs.",
     "governance": {
       "title": "Governança e agentes",
-      "body": "Plano Business: níveis de autonomia, auditoria em `agent_runs` (Mongo) e hub MCP no roadmap. E-mails de resumo diário usam idempotência por usuário e dia."
+      "body": "Plano Business: níveis de autonomia, trilho de auditoria para execuções de agentes e hub MCP no roadmap. E-mails de resumo diário usam idempotência por utilizador e dia."
     },
     "cards": {
       "exec": {
@@ -3666,7 +3666,7 @@
     "cancelBackgroundTimeout": "O pedido de cancelamento demorou demais. Verifique a ligação e tente de novo.",
     "cancelBackgroundError": "Não foi possível pedir o cancelamento. Tente de novo.",
     "startBackground": "Analisar em segundo plano",
-    "backgroundRequiresMongo": "Segundo plano e histórico precisam de MongoDB (MONGODB_URI).",
+    "backgroundRequiresMongo": "Segundo plano e histórico precisam de base de dados persistente no servidor.",
     "previewTableView": "Vista em tabela",
     "previewCardView": "Vista em cards",
     "regenerateMappingBackground": "Remapear em segundo plano",

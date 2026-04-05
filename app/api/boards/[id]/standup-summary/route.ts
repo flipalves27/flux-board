@@ -10,6 +10,7 @@ import {
   planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { denyPlan } from "@/lib/api-authz";
 
 type SuggestedCard = {
@@ -298,9 +299,6 @@ export async function POST(
     });
   } catch (err) {
     console.error("Standup summary API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal error" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/standup-summary/route.ts", fallbackMessage: "Internal error" });
   }
 }

@@ -7,6 +7,7 @@ import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { stripPortalForClient } from "@/lib/portal-settings";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export const maxDuration = 60;
 
@@ -83,9 +84,6 @@ export async function GET(
     return NextResponse.json({ board: safe, sprints });
   } catch (err) {
     console.error("Board bootstrap API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/bootstrap/route.ts" });
   }
 }

@@ -6,6 +6,7 @@ import { boardsToPortfolioRows, buildExecutiveBriefMarkdown } from "@/lib/portfo
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -37,9 +38,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Executive brief API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "GET api/executive-brief" });
   }
 }

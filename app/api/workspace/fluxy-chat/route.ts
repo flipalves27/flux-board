@@ -11,6 +11,7 @@ import {
   makeDailyAiCallsRateLimitKey,
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
+import { publicErrorMessage } from "@/lib/public-api-error";
 import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
@@ -323,7 +324,7 @@ export async function POST(request: NextRequest) {
         sendEvent("done", { ok: true });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro interno na Fluxy.";
+        const message = publicErrorMessage(err, "Erro interno na Fluxy.", "api/workspace/fluxy-chat/route.ts");
         sendEvent("error", { message });
         try {
           controller.close();

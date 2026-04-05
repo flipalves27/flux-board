@@ -5,6 +5,7 @@ import { listBoardActivity, parseBoardActivityAction } from "@/lib/kv-board-acti
 import { isMongoConfigured } from "@/lib/mongo";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getBoardActivityRetentionDays } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 function parseIsoDate(raw: string | null, label: string): Date | undefined {
   if (!raw) return undefined;
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     from = parseIsoDate(url.searchParams.get("from"), "Data inicial");
     to = parseIsoDate(url.searchParams.get("to"), "Data final");
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Datas inválidas" }, { status: 400 });
+    return publicApiErrorResponse(e, { context: "api/boards/[id]/activity/route.ts", status: 400, fallbackMessage: "Datas inválidas." });
   }
 
   if (actionRaw && !action) {

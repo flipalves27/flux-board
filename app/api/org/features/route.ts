@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 /**
  * Sinaliza recursos do plano para a UI (sem expor matriz completa).
@@ -26,9 +27,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("org/features error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/org/features/route.ts" });
   }
 }

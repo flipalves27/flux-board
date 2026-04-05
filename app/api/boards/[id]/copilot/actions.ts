@@ -1,4 +1,5 @@
 import { nextBoardCardId } from "@/lib/card-id";
+import { clientSafeErrorText } from "@/lib/public-api-error";
 import { postFluxyNotifyStakeholdersFromCopilot } from "@/lib/fluxy-notify-from-copilot";
 import type { CopilotAction, CopilotToolName, CopilotToolResult } from "./types";
 
@@ -346,7 +347,7 @@ export async function executeCopilotActions(params: {
       toolResults.push({
         tool: action.tool,
         ok: false,
-        message: err instanceof Error ? err.message : "Erro ao executar tool.",
+        message: clientSafeErrorText(err, "Erro ao executar tool."),
       });
     }
   }

@@ -9,6 +9,7 @@ import {
   catalogFlagsFromDoc,
   updatePlatformCommercialSettings,
 } from "@/lib/platform-commercial-settings";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { PlatformCommercialSettingsPatchSchema, zodErrorToMessage } from "@/lib/schemas";
 
 export const runtime = "nodejs";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("[commercial-settings GET]", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/platform/commercial-settings/route.ts" });
   }
 }
 
@@ -76,9 +77,10 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (err) {
     console.error("[commercial-settings PATCH]", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro ao salvar configuração." },
-      { status: 400 }
-    );
+    return publicApiErrorResponse(err, {
+      context: "PATCH api/platform/commercial-settings",
+      status: 400,
+      fallbackMessage: "Erro ao salvar configuração.",
+    });
   }
 }

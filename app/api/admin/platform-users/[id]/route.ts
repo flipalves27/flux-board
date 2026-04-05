@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensurePlatformAdmin } from "@/lib/api-authz";
 import { ensureAdminUser, getUserRecordById } from "@/lib/kv-users";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(
   request: NextRequest,
@@ -38,9 +39,6 @@ export async function GET(
     });
   } catch (err) {
     console.error("platform-users [id] GET:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/admin/platform-users/[id]/route.ts" });
   }
 }
