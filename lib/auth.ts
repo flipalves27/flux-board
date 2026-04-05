@@ -33,6 +33,10 @@ export function verifyPassword(password: string, stored: string): boolean {
 export function createToken(user: {
   id: string;
   username: string;
+  /** Incluído no JWT para permitir bootstrap de sessão sem round-trip ao banco. */
+  name?: string;
+  /** Incluído no JWT para permitir bootstrap de sessão sem round-trip ao banco. */
+  email?: string;
   isAdmin?: boolean;
   isExecutive?: boolean;
   orgId?: string;
@@ -47,6 +51,8 @@ export function createToken(user: {
     {
       id: user.id,
       username: user.username,
+      ...(user.name ? { name: user.name } : {}),
+      ...(user.email ? { email: user.email } : {}),
       /** Compat: mesmo critério que `seesAllBoardsInOrg` (gestor ou admin do domínio). */
       isAdmin: seesAll,
       isExecutive: !!user.isExecutive,
@@ -64,6 +70,10 @@ export function verifyToken(
 ): {
   id: string;
   username: string;
+  /** Presente apenas em tokens emitidos após a migração; undefined em tokens legados. */
+  name?: string;
+  /** Presente apenas em tokens emitidos após a migração; undefined em tokens legados. */
+  email?: string;
   isAdmin: boolean;
   isExecutive: boolean;
   orgId: string;
@@ -75,6 +85,8 @@ export function verifyToken(
     const payload = jwt.verify(token, secret, { algorithms: ["HS256"] }) as {
       id: string;
       username: string;
+      name?: string;
+      email?: string;
       isAdmin: boolean;
       isExecutive?: boolean;
       orgId?: string;
@@ -86,6 +98,8 @@ export function verifyToken(
     return {
       id: payload.id,
       username: payload.username,
+      ...(payload.name ? { name: payload.name } : {}),
+      ...(payload.email ? { email: payload.email } : {}),
       isAdmin: seesAll,
       isExecutive: !!payload.isExecutive,
       orgId: payload.orgId ? String(payload.orgId) : "org_default",

@@ -92,6 +92,8 @@ async function createOAuthSessionTokensForUser(
     {
       id: user.id,
       username: user.username,
+      name: user.name,
+      email: user.email,
       isAdmin,
       ...(isExecutive ? { isExecutive: true } : {}),
       orgId: user.orgId,
@@ -192,6 +194,8 @@ export async function completeOAuthSignIn(
       {
         id: user.id,
         username: user.username,
+        name: user.name,
+        email: user.email,
         isAdmin: user.id === "admin" || !!user.isAdmin,
         orgId: user.orgId,
         platformRole: roles.platformRole,
@@ -269,6 +273,8 @@ export async function completeOAuthSignIn(
     {
       id: user.id,
       username: user.username,
+      name: user.name,
+      email: user.email,
       isAdmin: true,
       orgId: user.orgId,
       platformRole: roles.platformRole,
