@@ -1480,6 +1480,7 @@
     "sessionDiag": {
       "title": "We couldn’t keep your session",
       "hint": "Send the JSON (button below) to support so we can match it with server logs. It does not include your password, email, or cookies.",
+      "copyHint": "The support reference is not shown on this page; use the button only if support asks for the JSON.",
       "kindLabel": "Type:",
       "copyJson": "Copy diagnostic (JSON)",
       "copied": "Copied.",

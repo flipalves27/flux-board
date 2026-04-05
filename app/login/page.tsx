@@ -8,8 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
-import { SessionSupportDiagnostic } from "@/components/auth/session-support-diagnostic";
-import { isPlatformAdminSession } from "@/lib/rbac";
+import { SessionFailureCopyJsonButton } from "@/components/auth/session-support-diagnostic";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
@@ -227,14 +226,14 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
-          <SessionSupportDiagnostic
-            supportRef={sessionDiagRef.slice(0, 200)}
-            failureKind={sessionDiagKind}
-          />
-        ) : sessionDiagRef ? (
-          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left">
+        {sessionDiagRef && isChecked ? (
+          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left space-y-2">
             <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{t("sessionIssueGeneric")}</p>
+            <p className="text-[11px] text-[var(--flux-text-muted)] leading-snug">{t("sessionDiag.copyHint")}</p>
+            <SessionFailureCopyJsonButton
+              supportRef={sessionDiagRef.slice(0, 200)}
+              failureKind={sessionDiagKind}
+            />
           </div>
         ) : null}
 
