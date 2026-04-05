@@ -1644,6 +1644,7 @@
     "errors": {
       "init": "Error while starting onboarding.",
       "initTimeout": "Loading your boards took too long. Check your connection and try again.",
+      "needSession": "We could not confirm your session. Refresh the page or sign in again.",
       "createBoard": "Error while creating the board.",
       "saveColumns": "Error while saving columns.",
       "createCard": "Error while creating the card."

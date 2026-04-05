@@ -144,7 +144,7 @@ function safeParseJson<T>(value: string | null): T | null {
 export default function OnboardingPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked, isLoading, sessionFailure } = useAuth();
+  const { user, getHeaders, isChecked, isLoading, sessionFailure, refreshSession } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
   const tRef = useRef(t);
@@ -178,12 +178,19 @@ export default function OnboardingPage() {
   const heroStorageKey = useMemo(() => (user ? getOnboardingFluxyHeroStorageKey(user.id) : null), [user]);
 
   const persistState = useCallback(
-    (next: Omit<PersistedWizardState, "step"> & { step: WizardStep }) => {
-      if (!user || !storageKey) return;
-      const payload = JSON.stringify(next);
-      localStorage.setItem(storageKey, payload);
+    (
+      next: Omit<PersistedWizardState, "step"> & { step: WizardStep },
+      wizardUserId?: string
+    ) => {
+      const uid = wizardUserId ?? user?.id;
+      if (!uid) return;
+      try {
+        localStorage.setItem(getOnboardingStateStorageKey(uid), JSON.stringify(next));
+      } catch {
+        /* ignore quota / private mode */
+      }
     },
-    [user, storageKey]
+    [user?.id]
   );
 
   const markDone = useCallback(() => {
@@ -366,10 +373,18 @@ export default function OnboardingPage() {
 
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
-      if (!user) return;
       setBusy(true);
       setInitError(null);
       try {
+        let actor = user;
+        if (!actor) {
+          actor = await refreshSession();
+        }
+        if (!actor) {
+          setInitError(tRef.current("errors.needSession"));
+          return;
+        }
+
         const name = (nextBoardName || "").trim() || "Meu Board";
         const templateBuckets =
           wizardMethodology === "lean_six_sigma"
@@ -411,14 +426,17 @@ export default function OnboardingPage() {
         setCardBucketKey((templateBuckets[0]?.key ?? "").toString());
         setStep(2);
 
-        persistState({
-          step: 2,
-          boardId: board.id,
-          templateId: nextTemplateId,
-          boardName: name,
-          bucketOrder: templateBuckets,
-          columnsPersisted: true,
-        });
+        persistState(
+          {
+            step: 2,
+            boardId: board.id,
+            templateId: nextTemplateId,
+            boardName: name,
+            bucketOrder: templateBuckets,
+            columnsPersisted: true,
+          },
+          actor.id
+        );
       } catch (e) {
         const msg = e instanceof ApiError ? e.message : t("errors.createBoard");
         setInitError(msg);
@@ -426,7 +444,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user, wizardMethodology]
+    [getHeaders, persistState, refreshSession, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
