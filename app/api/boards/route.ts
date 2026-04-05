@@ -70,9 +70,10 @@ export async function GET(request: NextRequest) {
     }));
 
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
+    // Otimização: se o utilizador não é admin, usa a contagem dos seus boards (mais rápido).
     const t4 = Date.now();
-    const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
-    logFluxApiPhase(route, "getBoardIds(orgCount)", t4);
+    const orgBoardIds = payload.isAdmin ? await getBoardIds(payload.id, payload.orgId, true) : boardIds;
+    logFluxApiPhase(route, `getBoardIds(orgCount)${!payload.isAdmin ? "-optimized" : ""}`, t4);
     const currentCount = orgBoardIds.length;
     const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
     logFluxApiPhase(route, "total", t0);
     return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
-    console.error("Boards API error:", err);
+    const elapsed = Date.now() - t0;
+    console.error("[api/boards] erro após", elapsed, "ms:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

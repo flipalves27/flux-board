@@ -41,8 +41,13 @@ type PersistedWizardState = {
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 
-/** Evita que o passo 1 fique com botões desativados se GET /api/boards não responder. */
-const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 40_000;
+/**
+ * Timeout para GET /api/boards no onboarding. Reduzido de 40s para 10s:
+ * - Falha rápido em vez de bloquear por 40s
+ * - Graceful degradation: se falhar, assume que não tem boards (caso comum para novos users)
+ * - Elimina bloqueio por MongoDB frio/lento.
+ */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
@@ -239,23 +244,35 @@ export default function OnboardingPage() {
         }
         if (cancelled) return;
 
-        // Always verify if user has boards already; onboarding is only for first board.
-        const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
-          const timeoutId = window.setTimeout(
-            () => reject(new Error("onboarding_boards_timeout")),
-            ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
-          );
-          void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
-            .then((data) => {
-              window.clearTimeout(timeoutId);
-              resolve(data);
-            })
-            .catch((err) => {
-              window.clearTimeout(timeoutId);
-              reject(err);
-            });
-        });
-        const boards = boardsPayload.boards ?? [];
+        // Tenta verificar se o utilizador já tem boards. Timeout rápido (10s):
+        // - Se responder: continua com lógica normal
+        // - Se timeout/erro: graceful degradation → assume que não tem boards (caso comum)
+        let boards: Array<{ id: string }> = [];
+        try {
+          const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+            const timeoutId = window.setTimeout(
+              () => reject(new Error("onboarding_boards_timeout")),
+              ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+            );
+            void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+              .then((data) => {
+                window.clearTimeout(timeoutId);
+                resolve(data);
+              })
+              .catch((err) => {
+                window.clearTimeout(timeoutId);
+                reject(err);
+              });
+          });
+          boards = boardsPayload.boards ?? [];
+        } catch (fetchErr) {
+          // Graceful degradation: se fetch falhar (timeout/erro), assume que não tem boards.
+          // Isso é o caso comum para novos utilizadores pós-OAuth.
+          if (cancelled) return;
+          if (runId !== onboardingInitRunIdRef.current) return;
+          console.warn("[onboarding] Fetch de boards falhou, continuando com onboarding:", fetchErr);
+          boards = [];
+        }
 
         if (boards.length > 0) {
           if (persisted?.boardId && boards.some((b) => b.id === persisted.boardId)) {
