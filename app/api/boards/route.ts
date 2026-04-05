@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoardIds, getBoardsByIds, createBoard } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, createBoard } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const org = await getOrganizationById(payload.orgId);
 
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
-    const boardRows = await getBoardsByIds(boardIds, payload.orgId);
+    const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);
     const boards = boardRows.map((b) => ({
       id: b.id,
       name: b.name,
