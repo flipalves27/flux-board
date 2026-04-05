@@ -2,6 +2,7 @@ import type { BoardData, BoardDefinitionOfDone, BucketConfig, CardData } from "@
 import { resolveBucketToColumnKey } from "@/lib/board-bucket-resolve";
 import type { SubtaskData } from "@/lib/schemas";
 import {
+  BoardDefinitionOfDoneSchema,
   CardAutomationStateSchema,
   CARD_SERVICE_CLASS_VALUES,
   computeSubtaskProgress,
@@ -298,7 +299,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     bucketOrder.some((b) => b.key === backlogKeyRaw.trim())
       ? backlogKeyRaw.trim().slice(0, 200)
       : undefined;
-  let definitionOfDone: BoardDefinitionOfDone | undefined;
+  let builtDefinitionOfDone: BoardDefinitionOfDone | undefined;
   const defRaw = db.config?.definitionOfDone;
   if (defRaw && typeof defRaw === "object") {
     const enabled = defRaw.enabled === true;
@@ -326,7 +327,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
           )
         : undefined;
     if (enabled || items.length > 0 || (doneBucketKeys?.length ?? 0) > 0) {
-      definitionOfDone = {
+      builtDefinitionOfDone = {
         enabled,
         enforce,
         ...(doneBucketKeys?.length ? { doneBucketKeys } : {}),
@@ -334,6 +335,18 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
       };
     }
   }
+
+  /** Nunca repassar `definitionOfDone` cru no spread: legado sem `items` quebra o BoardUpdateSchema (PUT 400). */
+  let definitionOfDone: BoardDefinitionOfDone | undefined = builtDefinitionOfDone;
+  if (!definitionOfDone && defRaw && typeof defRaw === "object") {
+    const dodParsed = BoardDefinitionOfDoneSchema.safeParse(defRaw);
+    if (dodParsed.success) {
+      definitionOfDone = dodParsed.data as BoardDefinitionOfDone;
+    }
+  }
+
+  const configBase: Record<string, unknown> = { ...(db.config ?? {}) };
+  delete configBase.definitionOfDone;
 
   const wipRaw = (db.config as { wipEnforcement?: unknown } | undefined)?.wipEnforcement;
   const wipEnforcement = wipRaw === "soft" || wipRaw === "strict" ? wipRaw : undefined;
@@ -363,7 +376,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     ...(boardMethodology ? { boardMethodology } : {}),
     cards,
     config: {
-      ...db.config,
+      ...configBase,
       bucketOrder,
       collapsedColumns: (db.config?.collapsedColumns ?? [])
         .map((k) => String(k).trim().slice(0, 200))

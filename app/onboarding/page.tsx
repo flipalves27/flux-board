@@ -1,6 +1,7 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
@@ -8,7 +9,7 @@ import { useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/c
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
@@ -39,6 +40,27 @@ type PersistedWizardState = {
 
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
+
+/**
+ * Timeout para GET /api/boards no onboarding. Reduzido de 40s para 10s:
+ * - Falha rápido em vez de bloquear por 40s
+ * - Graceful degradation: se falhar, assume que não tem boards (caso comum para novos users)
+ * - Elimina bloqueio por MongoDB frio/lento.
+ */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
+ * `0` desativa. Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
+ */
+const ONBOARDING_BOARDS_STAGGER_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS?.trim();
+  if (raw === "0") return 0;
+  if (raw === undefined || raw === "") return 280;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 10_000) return Math.floor(n);
+  return 280;
+})();
 
 function StepPill({
   index,
@@ -127,9 +149,11 @@ function safeParseJson<T>(value: string | null): T | null {
 export default function OnboardingPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, isLoading, sessionFailure } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
+  const tRef = useRef(t);
+  tRef.current = t;
   const localeRoot = `/${locale}`;
 
   const [step, setStep] = useState<WizardStep>(1);
@@ -150,7 +174,10 @@ export default function OnboardingPage() {
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
   const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
+  const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
+  /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
+  const onboardingInitRunIdRef = useRef(0);
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -178,11 +205,25 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) {
+    if (!isChecked) return;
+    if (!user) {
+      const sp = new URLSearchParams();
+      if (sessionFailure?.supportRef) {
+        sp.set("sessionRef", sessionFailure.supportRef);
+        sp.set("sessionKind", sessionFailure.failureKind);
+      }
+      const q = sp.toString();
+      router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
+    }
+  }, [isChecked, user, router, localeRoot, sessionFailure]);
+
+  useEffect(() => {
+    if (!isChecked || !user?.id) {
       setOnboardingInitSettled(false);
       return;
     }
 
+    const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
     setOnboardingInitSettled(false);
     (async () => {
@@ -198,9 +239,42 @@ export default function OnboardingPage() {
 
         const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
 
-        // Always verify if user has boards already; onboarding is only for first board.
-        const boardsPayload = await apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders());
-        const boards = boardsPayload.boards ?? [];
+        // Utilizadores não-admin não vêem boards de outros — são sempre novos no onboarding.
+        // Skip o fetch de boards para evitar 504 por MongoDB frio e liberar o UI imediatamente.
+        const isAdmin = user.seesAllBoardsInOrg || user.isAdmin;
+
+        let boards: Array<{ id: string }> = [];
+        if (isAdmin) {
+          // Admins podem ter boards existentes de outros utilizadores → verificar no servidor.
+          if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
+            await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+          }
+          if (cancelled) return;
+          try {
+            const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+              const timeoutId = window.setTimeout(
+                () => reject(new Error("onboarding_boards_timeout")),
+                ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+              );
+              void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+                .then((data) => {
+                  window.clearTimeout(timeoutId);
+                  resolve(data);
+                })
+                .catch((err) => {
+                  window.clearTimeout(timeoutId);
+                  reject(err);
+                });
+            });
+            boards = boardsPayload.boards ?? [];
+          } catch (fetchErr) {
+            if (cancelled) return;
+            if (runId !== onboardingInitRunIdRef.current) return;
+            console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
+            boards = [];
+          }
+        }
+        // Para não-admin: boards = [] → prossegue direto ao onboarding sem round-trip ao servidor.
 
         if (boards.length > 0) {
           if (persisted?.boardId && boards.some((b) => b.id === persisted.boardId)) {
@@ -244,17 +318,24 @@ export default function OnboardingPage() {
         loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof ApiError ? e.message : t("errors.init");
+        const msg =
+          e instanceof Error && e.message === "onboarding_boards_timeout"
+            ? tRef.current("errors.initTimeout")
+            : e instanceof ApiError
+              ? e.message
+              : tRef.current("errors.init");
         setInitError(msg);
       } finally {
-        if (!cancelled) setOnboardingInitSettled(true);
+        if (cancelled) return;
+        if (runId !== onboardingInitRunIdRef.current) return;
+        setOnboardingInitSettled(true);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot, t]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
 
   useEffect(() => {
     if (!onboardingInitSettled || !heroStorageKey) {
@@ -327,14 +408,26 @@ export default function OnboardingPage() {
           getHeaders()
         );
 
-        await apiPut(
-          `/api/boards/${encodeURIComponent(board.id)}`,
-          {
-            boardMethodology: wizardMethodology,
-            config: { bucketOrder: templateBuckets, collapsedColumns: [] },
-          },
-          getHeaders()
-        );
+        try {
+          await apiPut(
+            `/api/boards/${encodeURIComponent(board.id)}`,
+            {
+              boardMethodology: wizardMethodology,
+              config: { bucketOrder: templateBuckets, collapsedColumns: [] },
+            },
+            getHeaders()
+          );
+        } catch (putErr) {
+          try {
+            await apiDelete(`/api/boards/${encodeURIComponent(board.id)}`, getHeaders());
+          } catch (delErr) {
+            console.error("[onboarding] rollback DELETE /api/boards failed after PUT error", {
+              boardId: board.id,
+              delErr,
+            });
+          }
+          throw putErr;
+        }
 
         setBoardId(board.id);
         setTemplateId(nextTemplateId);
@@ -476,6 +569,19 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
+  const step1ActionsDisabled =
+    busy || isLoading || !isChecked || !user || (!onboardingInitSettled && !initError);
+
+  const loginHrefWithSessionDiag = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (sessionFailure?.supportRef) {
+      sp.set("sessionRef", sessionFailure.supportRef);
+      sp.set("sessionKind", sessionFailure.failureKind);
+    }
+    const q = sp.toString();
+    return `${localeRoot}/login${q ? `?${q}` : ""}`;
+  }, [localeRoot, sessionFailure]);
+
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden">
       <FluxAppBackdrop />
@@ -515,8 +621,32 @@ export default function OnboardingPage() {
         </div>
 
         {initError && (
-          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
-            {initError}
+          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm space-y-2">
+            <p>{initError}</p>
+            {step === 1 && user ? (
+              <button
+                type="button"
+                className="btn-secondary text-[var(--flux-text)]"
+                onClick={() => {
+                  setInitError(null);
+                  setOnboardingBoardsRetryKey((k) => k + 1);
+                }}
+              >
+                {t("buttons.retryInit")}
+              </button>
+            ) : null}
+          </div>
+        )}
+
+        {step === 1 && isChecked && !user && sessionFailure && (
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-30)] bg-[var(--flux-danger-alpha-12)] p-4 text-sm text-[var(--flux-text)]">
+            <p className="text-[var(--flux-danger)] leading-relaxed">{t("step1.sessionInvalid")}</p>
+            <Link
+              href={loginHrefWithSessionDiag}
+              className="btn-primary self-start text-center no-underline"
+            >
+              {t("step1.signInAgain")}
+            </Link>
           </div>
         )}
 
@@ -586,7 +716,7 @@ export default function OnboardingPage() {
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(ONBOARDING_TEMPLATES) as TemplateId[]).map((tid) => {
-                      const t = ONBOARDING_TEMPLATES[tid];
+                      const tpl = ONBOARDING_TEMPLATES[tid];
                       const isSelected = tid === templateId;
                       return (
                         <button
@@ -603,11 +733,11 @@ export default function OnboardingPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="font-display font-bold text-[var(--flux-text)]">{t.title}</p>
-                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{t.buckets.length} col.</span>
+                            <p className="font-display font-bold text-[var(--flux-text)]">{tpl.title}</p>
+                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{tpl.buckets.length} col.</span>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {t.buckets.slice(0, 3).map((b) => (
+                            {tpl.buckets.slice(0, 3).map((b) => (
                               <span
                                 key={b.key}
                                 className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2 py-0.5 text-[11px] text-[var(--flux-text-muted)]"
@@ -616,8 +746,8 @@ export default function OnboardingPage() {
                                 {b.label}
                               </span>
                             ))}
-                            {t.buckets.length > 3 && (
-                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{t.buckets.length - 3}</span>
+                            {tpl.buckets.length > 3 && (
+                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{tpl.buckets.length - 3}</span>
                             )}
                           </div>
                         </button>
@@ -652,23 +782,35 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={busy || !user || !onboardingInitSettled}
-                    onClick={() => handleSkipStep1()}
-                  >
-                    {t("buttons.skip")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={busy || !user || !onboardingInitSettled}
-                    onClick={() => handleContinueStep1()}
-                  >
-                    {busy ? t("buttons.creating") : t("buttons.continue")}
-                  </button>
+                <div className="mt-5 flex flex-col items-end gap-2">
+                  {step1ActionsDisabled && !user && (!isChecked || isLoading) ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.checkingSession")}
+                    </p>
+                  ) : null}
+                  {step1ActionsDisabled && user && !initError ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.preparing")}
+                    </p>
+                  ) : null}
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleSkipStep1()}
+                    >
+                      {t("buttons.skip")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleContinueStep1()}
+                    >
+                      {busy ? t("buttons.creating") : t("buttons.continue")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -3,16 +3,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/context/auth-context";
 import { useFluxDiagnosticsStore } from "@/stores/flux-diagnostics-store";
-import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabled } from "@/lib/flux-diagnostics-shared";
+import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabledFromStorage, syncFluxDebugQueryParam } from "@/lib/flux-diagnostics-shared";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 /**
- * Painel flutuante quando fluxDiag está ativo (?fluxDebug=1 ou localStorage fluxDiag=1).
+ * Painel flutuante quando fluxDiag está ativo (?fluxDebug=1 ou localStorage fluxDiag=1), apenas platform_admin.
  */
 export function FluxDiagnosticsPanel() {
   const t = useTranslations("diagnostics");
+  const { user, isChecked } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryKey = searchParams.toString();
   const entries = useFluxDiagnosticsStore((s) => s.entries);
   const sessionTraceId = useFluxDiagnosticsStore((s) => s.sessionTraceId);
   const clear = useFluxDiagnosticsStore((s) => s.clear);
@@ -21,12 +25,17 @@ export function FluxDiagnosticsPanel() {
   const [enabled, setEnabled] = useState(false);
 
   const sync = useCallback(() => {
-    setEnabled(readFluxDiagEnabled());
-  }, []);
+    if (!isChecked || !user || !isPlatformAdminSession(user)) {
+      setEnabled(false);
+      return;
+    }
+    syncFluxDebugQueryParam(true);
+    setEnabled(readFluxDiagEnabledFromStorage());
+  }, [isChecked, user, pathname, queryKey]);
 
   useEffect(() => {
     sync();
-  }, [pathname, searchParams, sync]);
+  }, [sync]);
 
   const copyAll = async () => {
     const text = JSON.stringify(

@@ -2,6 +2,7 @@ import { MicrosoftEntraId, generateCodeVerifier, generateState } from "arctic";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
+import { assertOAuthRequestHostAllowed } from "@/lib/oauth/allowed-public-origins";
 import { getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_MICROSOFT, OAUTH_SCOPES } from "@/lib/oauth/constants";
 import { setOAuthStartCookie } from "@/lib/oauth/cookie";
@@ -13,6 +14,9 @@ export async function GET(req: NextRequest) {
   if (!clientId || !clientSecret) {
     return NextResponse.json({ error: "oauth_not_configured" }, { status: 503 });
   }
+
+  const hostDenied = assertOAuthRequestHostAllowed(req, true);
+  if (hostDenied) return hostDenied;
 
   const clientIp = getClientIpFromHeaders(req.headers);
   const rl = await rateLimit({

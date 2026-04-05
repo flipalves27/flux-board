@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { ACCESS_COOKIE } from "@/lib/auth-cookie-names";
 import { routing } from "./i18n";
 
 const NON_CSP_HEADERS = {
@@ -46,6 +47,112 @@ function isDocumentRequest(req: NextRequest) {
   return accept.includes("text/html");
 }
 
+/** Primeiro segmento de path com barra inicial (ex. `/boards` → `boards`). */
+function firstPathSegment(pathWithLeadingSlash: string): string | null {
+  const trimmed = pathWithLeadingSlash.replace(/\/+$/, "") || "/";
+  const parts = trimmed.split("/").filter(Boolean);
+  return parts[0] ?? null;
+}
+
+/**
+ * Áreas autenticadas (após locale `pt-BR` | `en`). Não inclui login, portal, embed, forms públicos.
+ * Validação JWT fica nas APIs / AuthContext — aqui só evita HTML completo sem cookie de acesso.
+ */
+const AUTH_DOCUMENT_FIRST_SEGMENTS = new Set([
+  "boards",
+  "board",
+  "onboarding",
+  "onboarding-org",
+  "onboarding-invites",
+  "org-settings",
+  "admin",
+  "ai",
+  "billing",
+  "equipe",
+  "users",
+  "dashboard",
+  "tasks",
+  "templates",
+  "reports",
+  "docs",
+  "org-audit",
+  "sprints",
+  "my-work",
+  "program-increments",
+  "spec-plan",
+  "template-marketplace",
+  "okrs",
+  "org-invites",
+  "rate-limit-abuse",
+]);
+
+function authDocumentCookieRedirect(req: NextRequest): NextResponse | null {
+  if (!isDocumentRequest(req)) return null;
+  const pathname = req.nextUrl.pathname;
+  if (pathname.includes("/login")) return null;
+
+  let locale: (typeof routing.locales)[number] = routing.defaultLocale;
+  let pathAfterLocale = pathname;
+
+  for (const loc of routing.locales) {
+    const prefix = `/${loc}`;
+    if (pathname === prefix) {
+      locale = loc;
+      pathAfterLocale = "/";
+      break;
+    }
+    if (pathname.startsWith(`${prefix}/`)) {
+      locale = loc;
+      pathAfterLocale = pathname.slice(prefix.length) || "/";
+      break;
+    }
+  }
+
+  const seg = firstPathSegment(pathAfterLocale);
+  if (!seg || !AUTH_DOCUMENT_FIRST_SEGMENTS.has(seg)) return null;
+
+  const token = req.cookies.get(ACCESS_COOKIE)?.value;
+  if (token?.trim()) return null;
+
+  const loginUrl = new URL(`/${locale}/login`, req.url);
+  loginUrl.searchParams.set("redirect", pathname + req.nextUrl.search);
+  return NextResponse.redirect(loginUrl, 307);
+}
+
+/**
+ * Produção: opcionalmente redireciona pedidos HTML de hosts em SITE_HOST_ALIASES
+ * para SITE_CANONICAL_ORIGIN (308). Útil para apex → www mantendo ambos no OAuth Console.
+ */
+function tryCanonicalHostRedirect(req: NextRequest): NextResponse | null {
+  if (process.env.NODE_ENV !== "production") return null;
+  const canonicalRaw = process.env.SITE_CANONICAL_ORIGIN?.trim();
+  const aliasesRaw = process.env.SITE_HOST_ALIASES?.trim();
+  if (!canonicalRaw || !aliasesRaw || !isDocumentRequest(req)) return null;
+  try {
+    const canonicalUrl = new URL(canonicalRaw);
+    const aliases = new Set(
+      aliasesRaw
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const forwarded = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const hostHeader = forwarded || req.headers.get("host") || "";
+    const host = hostHeader.split(":")[0]!.toLowerCase();
+    if (!host || !aliases.has(host)) return null;
+    const canonicalHost = canonicalUrl.hostname.toLowerCase();
+    if (host === canonicalHost) return null;
+    const rawProto =
+      req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      (req.nextUrl.protocol === "https:" ? "https" : "http");
+    if (rawProto !== "https") return null;
+    const dest = new URL(req.nextUrl.pathname + req.nextUrl.search, canonicalUrl.origin);
+    return NextResponse.redirect(dest, 308);
+  } catch {
+    return null;
+  }
+}
+
 const intlMiddleware = createMiddleware(routing);
 
 function isEmbedDocumentPath(pathname: string) {
@@ -83,6 +190,12 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/")) {
     return handleApiRequest(req);
   }
+
+  const canonicalRedirect = tryCanonicalHostRedirect(req);
+  if (canonicalRedirect) return canonicalRedirect;
+
+  const authRedirect = authDocumentCookieRedirect(req);
+  if (authRedirect) return applyNonCspSecurityHeaders(authRedirect);
 
   if (isLikelyPublicStaticAsset(pathname)) {
     return applyNonCspSecurityHeaders(NextResponse.next());

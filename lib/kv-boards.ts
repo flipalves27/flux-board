@@ -1,7 +1,8 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
 import { ensureTenancyMigrationForExistingData } from "./kv-organizations";
-import { getOrgWideTeamBoardAccess } from "./kv-team-members";
+import { listBoardIdsForExplicitBoardMembership } from "./kv-board-members";
+import { getOrgWideTeamBoardAccess, listActiveBoardScopedTeamBoardIdsForUser } from "./kv-team-members";
 import type { BoardPortalSettings } from "./portal-types";
 import type { BoardAnomalyNotifications } from "./anomaly-board-settings";
 import type { Db } from "mongodb";
@@ -120,6 +121,7 @@ async function ensureBoardIndexes(db: Db): Promise<void> {
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, ownerId: 1 });
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ _id: 1, orgId: 1 });
+  await db.collection(COL_USER_BOARDS).createIndex({ orgId: 1 });
   boardIndexesEnsured = true;
 }
 
@@ -132,15 +134,16 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
     await ensureBoardIndexes(db);
     const ids = new Set<string>();
     if (seesAllBoards) {
-      const { listUsers } = await import("./kv-users");
-      const users = await listUsers(orgId);
       const ub = db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS);
-      const userIds = users.map((u) => u.id);
-      if (userIds.length) {
-        const rows = await ub.find({ _id: { $in: userIds }, orgId }).toArray();
-        for (const row of rows) {
-          (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
-        }
+      const grouped = await ub
+        .aggregate<{ _id: string }>([
+          { $match: { orgId } },
+          { $unwind: { path: "$boardIds", preserveNullAndEmptyArrays: false } },
+          { $group: { _id: "$boardIds" } },
+        ])
+        .toArray();
+      for (const g of grouped) {
+        if (g?._id) ids.add(g._id);
       }
     } else {
       const row = await db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS).findOne({
@@ -148,6 +151,12 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
         orgId,
       });
       (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
+      const [fromBoardMembers, fromTeamBoardScope] = await Promise.all([
+        listBoardIdsForExplicitBoardMembership(orgId, userId),
+        listActiveBoardScopedTeamBoardIdsForUser(orgId, userId),
+      ]);
+      for (const bid of fromBoardMembers) ids.add(bid);
+      for (const bid of fromTeamBoardScope) ids.add(bid);
     }
     return [...ids];
   }
@@ -166,6 +175,12 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
   } else {
     const userIds = ((await kv.get<string[]>(userBoardsKey(userId))) as string[]) || [];
     userIds.forEach((id) => ids.add(id));
+    const [fromBoardMembers, fromTeamBoardScope] = await Promise.all([
+      listBoardIdsForExplicitBoardMembership(orgId, userId),
+      listActiveBoardScopedTeamBoardIdsForUser(orgId, userId),
+    ]);
+    for (const bid of fromBoardMembers) ids.add(bid);
+    for (const bid of fromTeamBoardScope) ids.add(bid);
   }
   return [...ids];
 }
@@ -173,6 +188,74 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
 export async function listBoardsForUser(userId: string, orgId: string, seesAllBoardsFromAuth: boolean): Promise<BoardData[]> {
   const boardIds = await getBoardIds(userId, orgId, seesAllBoardsFromAuth);
   return getBoardsByIds(boardIds, orgId);
+}
+
+/** Só os campos de card usados por `computeBoardPortfolio` (listagem não precisa de título/desc/anexos). */
+function boardCardsToPortfolioSlice(board: BoardData): BoardData {
+  const cards = Array.isArray(board.cards)
+    ? board.cards.map((c) => {
+        if (!c || typeof c !== "object") return {};
+        const o = c as Record<string, unknown>;
+        return {
+          bucket: typeof o.bucket === "string" ? o.bucket : undefined,
+          priority: typeof o.priority === "string" ? o.priority : undefined,
+          progress: typeof o.progress === "string" ? o.progress : undefined,
+          dueDate: o.dueDate === null || o.dueDate === undefined ? null : String(o.dueDate),
+        };
+      })
+    : [];
+  return { ...board, cards };
+}
+
+/**
+ * Mesma ordem/filtro que `getBoardsByIds`, porém evita trafegar cards completos do Mongo (só bucket/priority/progress/dueDate).
+ * Reduz tempo e memória na serverless — importante para `GET /api/boards` em contas com muitos cards.
+ */
+export async function getBoardListRowsByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .aggregate<BoardDoc>([
+        { $match: { _id: { $in: boardIds }, orgId } },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            ownerId: 1,
+            orgId: 1,
+            boardMethodology: 1,
+            clientLabel: 1,
+            lastUpdated: 1,
+            config: 1,
+            cards: {
+              $map: {
+                input: { $ifNull: ["$cards", []] },
+                as: "c",
+                in: {
+                  bucket: "$$c.bucket",
+                  priority: "$$c.priority",
+                  progress: "$$c.progress",
+                  dueDate: "$$c.dueDate",
+                },
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) {
+      byId.set(doc._id, boardDocToData(doc));
+    }
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
+  }
+
+  const full = await getBoardsByIds(boardIds, orgId);
+  return full.map(boardCardsToPortfolioSlice);
 }
 
 export async function getBoardsByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {

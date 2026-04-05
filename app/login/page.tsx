@@ -8,10 +8,13 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
+import { SessionSupportDiagnostic } from "@/components/auth/session-support-diagnostic";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
 import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
+import { FLUX_SESSION_FAILURE_STORAGE_KEY } from "@/lib/session-support-diagnostic";
 
 const OAUTH_ERROR_KEYS = new Set([
   "oauth_denied",
@@ -41,6 +44,8 @@ export default function LoginPage() {
   const orgBranding = useOrgBranding();
   const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const localeRoot = `/${locale}`;
+  const sessionRef = searchParams.get("sessionRef")?.trim();
+  const sessionKindFromUrl = searchParams.get("sessionKind")?.trim() || "unknown";
   const inviteCode = searchParams.get("invite") ?? undefined;
   const safeRedirect = sanitizeOAuthReturnPath(searchParams.get("redirect") ?? undefined);
   const postLoginPath = safeRedirect ?? `${localeRoot}/boards`;
@@ -48,10 +53,39 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
+  const [storedSessionDiag, setStoredSessionDiag] = useState<{
+    supportRef: string;
+    failureKind: string;
+  } | null>(null);
 
   useEffect(() => {
     if (inviteCode) setActiveTab("login");
   }, [inviteCode]);
+
+  useEffect(() => {
+    if (sessionRef) {
+      try {
+        sessionStorage.removeItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      const p = JSON.parse(raw) as { supportRef?: string; failureKind?: string };
+      if (typeof p.supportRef === "string" && p.supportRef.length > 0) {
+        setStoredSessionDiag({
+          supportRef: p.supportRef.slice(0, 200),
+          failureKind: typeof p.failureKind === "string" ? p.failureKind : "unknown",
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [sessionRef]);
 
   useEffect(() => {
     const oauthErr = searchParams.get("error");
@@ -157,6 +191,9 @@ export default function LoginPage() {
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
   const submitClass = "flux-marketing-btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60";
 
+  const sessionDiagRef = sessionRef ?? storedSessionDiag?.supportRef;
+  const sessionDiagKind = sessionRef ? sessionKindFromUrl : (storedSessionDiag?.failureKind ?? "unknown");
+
   return (
     <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
       <FluxAppBackdrop variant="immersive" />
@@ -189,6 +226,17 @@ export default function LoginPage() {
             {t("tabs.register")}
           </button>
         </div>
+
+        {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
+          <SessionSupportDiagnostic
+            supportRef={sessionDiagRef.slice(0, 200)}
+            failureKind={sessionDiagKind}
+          />
+        ) : sessionDiagRef ? (
+          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left">
+            <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{t("sessionIssueGeneric")}</p>
+          </div>
+        ) : null}
 
         {error && (
           <div className="bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">

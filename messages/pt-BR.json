@@ -56,7 +56,7 @@
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
       "invites": "Convites pendentes para novos membros.",
-      "orgAudit": "Convites aceites, entradas e outros eventos da organização (requer MongoDB).",
+      "orgAudit": "Convites aceites, entradas e outros eventos da organização.",
       "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
       "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
       "platformCommercial": "Preços de vitrine, planos no catálogo e sincronização Stripe.",
@@ -916,6 +916,9 @@
       "loadError": "Não foi possível carregar o painel.",
       "empty": "Sem dados.",
       "noMongo": "Conecte MongoDB para habilitar histórico e alertas automáticos.",
+      "noMongoPublic": "O histórico de alertas proativos não está disponível neste ambiente neste momento.",
+      "neverRunPublic": "Ainda não há verificações automáticas registadas.",
+      "cronHintPublic": "As verificações automáticas seguem um calendário configurado para o seu espaço de trabalho.",
       "health": {
         "ok": "Ativo",
         "review": "Verificar",
@@ -1468,6 +1471,22 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
+    "sessionIssueGeneric": "Não foi possível restaurar a sessão. Tente entrar novamente ou contacte o administrador da sua organização se o problema continuar.",
+    "sessionDiag": {
+      "title": "Não foi possível manter a sessão",
+      "hint": "Envie o JSON (botão abaixo) ao suporte para cruzarmos com os logs do servidor. Não contém senha, e-mail nem cookies.",
+      "kindLabel": "Tipo:",
+      "copyJson": "Copiar diagnóstico (JSON)",
+      "copied": "Copiado.",
+      "kinds": {
+        "no_cookies": "Sem cookies de sessão no pedido ao servidor.",
+        "token_invalid": "Token inválido ou renovação da sessão falhou.",
+        "user_not_found": "Utilizador não encontrado para o token atual.",
+        "unknown": "Erro desconhecido no servidor.",
+        "client_timeout": "A validação demorou demais no navegador (pode não haver log correspondente no servidor).",
+        "server_timeout": "O servidor não concluiu a validação a tempo (Mongo/rede lenta). Procure `[api/auth/session] validate wall timeout` nos logs."
+      }
+    },
     "inviteBanner": "Você está entrando com um convite. Se já tiver conta, use a aba Entrar ou Google/Microsoft — o convite será aplicado ao e-mail certo.",
     "errors": {
       "missingCredentials": "Preencha usuário e senha.",
@@ -1585,7 +1604,7 @@
     "filterInvites": "Convites aceites",
     "filterAll": "Todos os eventos",
     "linkInvites": "← Voltar aos convites",
-    "mongoDisabled": "O armazenamento de auditoria não está configurado (MongoDB). Neste ambiente os eventos não são guardados.",
+    "mongoDisabled": "O armazenamento de auditoria não está totalmente configurado. Neste ambiente os eventos podem não ser guardados.",
     "colWhen": "Quando",
     "colEvent": "Evento",
     "colActor": "Utilizador",
@@ -1625,6 +1644,7 @@
     },
     "errors": {
       "init": "Erro ao iniciar onboarding.",
+      "initTimeout": "A lista de boards demorou demais. Verifique a ligação e tente novamente.",
       "createBoard": "Erro ao criar board.",
       "saveColumns": "Erro ao salvar colunas.",
       "createCard": "Erro ao criar card."
@@ -1656,7 +1676,14 @@
       "continue": "Continuar",
       "creating": "Criando…",
       "saving": "Salvando…",
-      "createCard": "Criar card"
+      "createCard": "Criar card",
+      "retryInit": "Tentar novamente"
+    },
+    "step1": {
+      "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes.",
+      "checkingSession": "Confirmando a sessão…",
+      "sessionInvalid": "A sessão não pôde ser validada (servidor ou base de dados indisponível). Corrija o ambiente ou entre de novo.",
+      "signInAgain": "Ir para o login"
     },
     "step2": {
       "reorderTitle": "Arraste para reordenar",
@@ -3692,6 +3719,7 @@
         "workItemsLlmStarted": "A gerar itens de trabalho (prompt com ~{chars} caracteres). PDFs grandes podem demorar vários minutos nesta fase.",
         "workItemsReady": "Rascunho de itens de trabalho recebido.",
         "methodologyApplied": "Metodologia aplicada ao rascunho.",
+        "cardsLlmStarted": "Mapeamento em cards: chamada à IA em curso ({count} itens, ~{chars} caracteres no prompt). Especificações grandes podem demorar nesta etapa.",
         "bucketMapping": "Mapeamento sugerido para colunas do board.",
         "cardsPreview": "Preview de {count} card(s) recebido.",
         "streamError": "Erro no fluxo: {message}",

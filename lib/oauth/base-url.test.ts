@@ -1,7 +1,7 @@
 import { describe, expect, it, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
-import { getOAuthPublicBaseUrl } from "./base-url";
+import { getOAuthPublicBaseUrl, getOAuthRequestPublicOrigin } from "./base-url";
 
 function reqWithHost(url: string, headers: Record<string, string>) {
   return new NextRequest(url, { headers });
@@ -49,5 +49,13 @@ describe("getOAuthPublicBaseUrl", () => {
       "x-forwarded-proto": "https",
     });
     expect(getOAuthPublicBaseUrl(req)).toBe("https://myapp.vercel.app");
+  });
+
+  it("getOAuthRequestPublicOrigin matches forwarded host and proto", () => {
+    const req = reqWithHost("http://internal/any", {
+      "x-forwarded-host": "example.com",
+      "x-forwarded-proto": "https",
+    });
+    expect(getOAuthRequestPublicOrigin(req)).toBe("https://example.com");
   });
 });

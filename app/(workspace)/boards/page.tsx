@@ -37,6 +37,16 @@ import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
+/** Cold start: atraso antes do primeiro GET /api/boards. `0` desliga. */
+const BOARDS_LIST_STAGGER_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_FLUX_BOARDS_STAGGER_MS?.trim();
+  if (raw === "0") return 0;
+  if (raw === undefined || raw === "") return 200;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 30_000) return Math.floor(n);
+  return 200;
+})();
+
 interface Board {
   id: string;
   name: string;
@@ -127,7 +137,7 @@ function PortfolioMetricBar({ label, value }: { label: string; value: number | n
 export default function BoardsPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, sessionFailure } = useAuth();
   const locale = useLocale();
   const t = useTranslations("boards");
   const localeRoot = `/${locale}`;
@@ -162,8 +172,16 @@ export default function BoardsPage() {
       router.replace(`${localeRoot}/login`);
       return;
     }
-    loadBoards();
-  }, [isChecked, user, router]);
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      void loadBoards();
+    }, BOARDS_LIST_STAGGER_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
@@ -205,7 +223,13 @@ export default function BoardsPage() {
       setEmpty(list.length === 0);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
-        router.replace(`${localeRoot}/login`);
+        const sp = new URLSearchParams();
+        if (sessionFailure?.supportRef) {
+          sp.set("sessionRef", sessionFailure.supportRef);
+          sp.set("sessionKind", sessionFailure.failureKind);
+        }
+        const q = sp.toString();
+        router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
         return;
       }
       setBoards([]);

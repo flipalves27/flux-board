@@ -767,8 +767,23 @@ export default function SpecPlanPage() {
               const s = payload.summary;
               if (typeof s === "string") setMethodologySummary(s.slice(0, 800));
               appendAnalysisLog("info", t("analysisModal.logEvents.methodologyApplied"), safeStringify(payload));
-            } else if (event === "bucket_mapping") {
+            } else if (event === "cards_llm_started") {
               setPhaseCards("running");
+              const n =
+                typeof payload.workItemCount === "number" && Number.isFinite(payload.workItemCount)
+                  ? payload.workItemCount
+                  : 0;
+              const ch =
+                typeof payload.promptChars === "number" && Number.isFinite(payload.promptChars)
+                  ? payload.promptChars
+                  : 0;
+              appendAnalysisLog(
+                "info",
+                t("analysisModal.logEvents.cardsLlmStarted", { count: n, chars: ch }),
+                safeStringify(payload)
+              );
+            } else if (event === "bucket_mapping") {
+              setPhaseCards((p) => (p === "pending" ? "running" : p));
               appendAnalysisLog("info", t("analysisModal.logEvents.bucketMapping"), safeStringify(payload));
             } else if (event === "cards_preview") {
               setPhaseCards("done");

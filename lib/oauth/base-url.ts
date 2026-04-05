@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
-function requestPublicOrigin(req: NextRequest): string {
+/** Origin pública derivada dos headers do pedido (proxy-aware). Usada na allowlist OAuth e no `redirect_uri`. */
+export function getOAuthRequestPublicOrigin(req: NextRequest): string {
   const host = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || req.headers.get("host");
   const rawProto =
     req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
@@ -17,10 +18,13 @@ function requestPublicOrigin(req: NextRequest): string {
  * os cookies de sessão ficam lá e o utilizador volta ao site “sem login”.
  *
  * Registe em Google/Microsoft **todos** os redirect URIs dos hosts que o tráfego usa.
+ *
+ * Em produção, as rotas OAuth devem chamar antes `assertOAuthRequestHostAllowed` (allowlist
+ * `OAUTH_ALLOWED_PUBLIC_ORIGINS`) para não emitir `redirect_uri` com host não registado.
  */
 export function getOAuthPublicBaseUrl(req: NextRequest): string {
   const explicitRaw = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  const requestOrigin = requestPublicOrigin(req);
+  const requestOrigin = getOAuthRequestPublicOrigin(req);
   if (!explicitRaw) return requestOrigin;
 
   let explicitHost: string;
@@ -47,7 +51,7 @@ export function getOAuthPublicBaseUrl(req: NextRequest): string {
  * por causa de NEXT_PUBLIC_APP_URL, o browser não envia sessão e o utilizador cai no login.
  */
 export function getOAuthCallbackRequestOrigin(req: NextRequest): string {
-  return requestPublicOrigin(req);
+  return getOAuthRequestPublicOrigin(req);
 }
 
 export function googleRedirectUri(base: string): string {

@@ -178,6 +178,67 @@ describe("normalizeBoardForPersist", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("drops invalid legacy definitionOfDone (missing items) so PUT passes BoardUpdateSchema", () => {
+    const db = {
+      version: "1",
+      lastUpdated: "t",
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Backlog",
+          priority: "Média",
+          progress: "Não iniciado",
+          desc: "",
+          tags: [],
+          order: 0,
+        },
+      ],
+      config: {
+        bucketOrder: [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+        /** enabled false + sem items: o normalizador não reconstrói; o cru quebrava o Zod no PUT. */
+        definitionOfDone: { enabled: false, enforce: true },
+      },
+    } as unknown as BoardData;
+    const n = normalizeBoardForPersist(db);
+    expect(n.config.definitionOfDone).toBeUndefined();
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("preserves valid definitionOfDone from config", () => {
+    const db: BoardData = {
+      version: "1",
+      lastUpdated: "t",
+      cards: [
+        {
+          id: "c1",
+          title: "Card",
+          bucket: "Backlog",
+          priority: "Média",
+          progress: "Não iniciado",
+          desc: "",
+          tags: [],
+          order: 0,
+        } as BoardData["cards"][number],
+      ],
+      config: {
+        bucketOrder: [{ key: "Backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+        definitionOfDone: {
+          enabled: true,
+          enforce: true,
+          items: [{ id: "chk1", label: "Critério" }],
+        },
+      },
+    };
+    const n = normalizeBoardForPersist(db);
+    expect(n.config.definitionOfDone?.items).toHaveLength(1);
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
+
   it("preserves boardMethodology lean_six_sigma", () => {
     const db: BoardData = {
       version: "1",

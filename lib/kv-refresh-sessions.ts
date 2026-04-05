@@ -84,23 +84,26 @@ async function markRevoked(hid: string): Promise<void> {
   }
 }
 
+export type ConsumeRefreshOutcome =
+  | { kind: "ok"; userId: string; orgId: string; familyId: string; persistent: boolean }
+  | { kind: "miss" }
+  | { kind: "expired" }
+  /** Token já consumido — típico de pedidos paralelos (ex.: session + refresh). Não limpar cookies da sessão válida emitida pelo outro pedido. */
+  | { kind: "revoked_replay" };
+
 /**
  * Valida o refresh opaco, revoga o registro (rotação / blacklist) e devolve metadados para emitir novos tokens.
  */
-export async function consumeRefreshSessionForRotation(plain: string): Promise<{
-  userId: string;
-  orgId: string;
-  familyId: string;
-  persistent: boolean;
-} | null> {
-  if (!plain) return null;
+export async function consumeRefreshSessionForRotation(plain: string): Promise<ConsumeRefreshOutcome> {
+  if (!plain) return { kind: "miss" };
   const hid = hashToken(plain);
   const doc = await getDoc(hid);
-  if (!doc || doc.revoked || doc.expiresAt <= now()) {
-    return null;
-  }
+  if (!doc) return { kind: "miss" };
+  if (doc.expiresAt <= now()) return { kind: "expired" };
+  if (doc.revoked) return { kind: "revoked_replay" };
   await markRevoked(hid);
   return {
+    kind: "ok",
     userId: doc.userId,
     orgId: doc.orgId,
     familyId: doc.familyId,

@@ -148,6 +148,17 @@ export function isPlatformAdminFromAuthPayload(payload: {
   return isPlatformAdmin(deriveEffectiveRoles(payload));
 }
 
+/** Incluir `llmDebug`, `provider`/`model` técnicos, etc. nas respostas JSON de rotas de IA. */
+export function includeLlmTelemetryInApiResponse(payload: {
+  id: string;
+  isAdmin?: boolean;
+  isExecutive?: boolean;
+  platformRole?: PlatformRole;
+  orgRole?: OrgRole | string;
+}): boolean {
+  return isPlatformAdminFromAuthPayload(payload);
+}
+
 export function isOrgGestorOrPlatformAdminFromPayload(payload: {
   id?: string;
   isAdmin?: boolean;

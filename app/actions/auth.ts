@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
@@ -149,6 +150,8 @@ export async function loginAction(
       {
         id: user.id,
         username: user.username,
+        name: user.name,
+        email: user.email,
         isAdmin: user.id === "admin" || !!user.isAdmin,
         ...(isExecutive ? { isExecutive: true } : {}),
         orgId: user.orgId,
@@ -184,10 +187,21 @@ export async function loginAction(
       },
     };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
     console.error("Login error:", err);
+    // Erros de infra (MongoDB timeout/DNS) não devem vazar detalhes técnicos ao utilizador.
+    const isInfraError =
+      msg.includes("Server selection timed out") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("MongoNetworkError") ||
+      msg.includes("MongoServerSelectionError");
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Erro interno",
+      error: isInfraError
+        ? "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
+        : err instanceof Error ? err.message : "Erro interno",
     };
   }
 }
@@ -288,6 +302,8 @@ export async function registerAction(
         {
           id: user.id,
           username: user.username,
+          name: user.name,
+          email: user.email,
           isAdmin: user.id === "admin" || !!user.isAdmin,
           orgId: user.orgId,
           platformRole: roles.platformRole,
@@ -347,6 +363,8 @@ export async function registerAction(
       {
         id: user.id,
         username: user.username,
+        name: user.name,
+        email: user.email,
         isAdmin: true,
         orgId: user.orgId,
         platformRole: roles.platformRole,
@@ -374,22 +392,40 @@ export async function registerAction(
       },
     };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
     console.error("Register error:", err);
+    const isInfraError =
+      msg.includes("Server selection timed out") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("MongoNetworkError") ||
+      msg.includes("MongoServerSelectionError");
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Erro interno",
+      error: isInfraError
+        ? "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
+        : err instanceof Error ? err.message : "Erro interno",
     };
   }
 }
 
 /**
  * Valida sessão (cookies httpOnly) ou renova access via refresh com rotação.
+ * No browser, o fluxo principal usa `GET /api/auth/session` (`fetchSessionValidate`) para evitar colisão com RSC.
  */
 export async function validateSessionAction(): Promise<ValidateResult> {
   try {
     return await validateSessionFromCookies();
   } catch {
-    return { ok: false };
+    const supportRef = randomUUID();
+    if (process.env.FLUX_SESSION_VALIDATE_LOG !== "0") {
+      console.warn(
+        "[flux-session-validate]",
+        JSON.stringify({ event: "fail", reason: "validate_exception", supportRef })
+      );
+    }
+    return { ok: false, supportRef, failureKind: "unknown" };
   }
 }
 

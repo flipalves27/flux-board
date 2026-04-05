@@ -27,6 +27,8 @@ import { useBoardStore } from "@/stores/board-store";
 import { assertDodAllowsCompleting } from "@/lib/board-scrum";
 import { nextBoardCardId } from "@/lib/card-id";
 import { useToast } from "@/context/toast-context";
+import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { useTranslations } from "next-intl";
 import {
   createEmptyDescriptionBlocks,
@@ -293,6 +295,8 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   }, []);
 
   const { pushToast } = useToast();
+  const { user } = useAuth();
+  const showAiTelemetry = Boolean(user && isPlatformAdminSession(user));
   const t = useTranslations("kanban");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
@@ -950,10 +954,14 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
             timestamp: new Date().toISOString(),
             status: "error",
             message,
-            provider: String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined,
-            model: String(data?.model || data?.llmDebug?.model || "").trim() || undefined,
-            errorKind: String(data?.llmDebug?.errorKind || "").trim() || undefined,
-            errorMessage: String(data?.llmDebug?.errorMessage || "").trim() || undefined,
+            ...(showAiTelemetry
+              ? {
+                  provider: String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined,
+                  model: String(data?.model || data?.llmDebug?.model || "").trim() || undefined,
+                  errorKind: String(data?.llmDebug?.errorKind || "").trim() || undefined,
+                  errorMessage: String(data?.llmDebug?.errorMessage || "").trim() || undefined,
+                }
+              : {}),
           },
           ...prev,
         ]);
@@ -972,8 +980,12 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
         Boolean(data?.llmDebug?.generatedWithAI) ||
         Boolean((data as { usedLlm?: boolean }).usedLlm);
 
-      const providerName = String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined;
-      const modelName = String(data?.model || data?.llmDebug?.model || "").trim() || undefined;
+      const providerName = showAiTelemetry
+        ? String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined
+        : undefined;
+      const modelName = showAiTelemetry
+        ? String(data?.model || data?.llmDebug?.model || "").trim() || undefined
+        : undefined;
 
       setAiContextApplied({
         usedLlm,
@@ -990,8 +1002,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
           timestamp: new Date().toISOString(),
           status: "success",
           message: usedLlm ? t("cardModal.logs.contextGeneratedByAI") : t("cardModal.logs.contextStructuredFallback"),
-          provider: providerName,
-          model: modelName,
+          ...(showAiTelemetry ? { provider: providerName, model: modelName } : {}),
           resultSnippet: String(data?.objetivo || data?.resumoNegocio || "").trim().slice(0, 180) || undefined,
         },
         ...prev,
@@ -1019,7 +1030,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
         // keep modal open for result
       }
     }
-  }, [title, descriptionForSave, pushToast, t, boardId, getHeaders]);
+  }, [title, descriptionForSave, pushToast, showAiTelemetry, t, boardId, getHeaders]);
 
   const value = useMemo<CardModalContextValue>(
     () => ({

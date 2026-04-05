@@ -63,28 +63,25 @@ export function buildCardsUserPrompt(params: {
   allowSubtasks: boolean;
 }): string {
   const subtaskNote = params.allowSubtasks
-    ? '"subtasks": [ { "title": string, "status": "pending" | "in_progress" | "done" | "blocked" } ] (máx. 8 por card, opcional)'
-    : '"subtasks": [] (sempre vazio — não use subtarefas)';
+    ? '"subtasks": [ { "title": string, "status": "pending" | "in_progress" | "done" | "blocked" } ] (máx. 6 por item, só se agregarem valor; omita ou [] se não fizer sentido)'
+    : '"subtasks": [] (sempre array vazio — não use subtarefas)';
 
   return [
-    "Você mapeia itens de trabalho para colunas de um quadro Kanban real.",
-    "Cada card deve usar bucketKey EXATAMENTE igual a uma das keys listadas em buckets (case-sensitive).",
-    "Prioridade deve ser uma de: Urgente, Importante, Média.",
-    "Progresso sempre: Não iniciado.",
+    "Você mapeia cada work item para uma coluna (bucket) do quadro. NÃO inclua title, desc nem progress no JSON — o servidor copia título e descrição do JSON de work items; progress fica sempre «Não iniciado».",
+    "Cada entrada usa workItemId de um item existente no JSON de work items.",
+    "bucketKey deve ser EXATAMENTE igual a uma das keys em buckets (case-sensitive).",
+    "priority: uma de Urgente, Importante, Média.",
+    "Textos curtos para caber no JSON: bucketRationale ≤ 200 caracteres (1 frase curta); rationale ≤ 400 caracteres (2–3 frases no máximo).",
     methodologyRulesBlock(params.methodology),
     "",
     "Schema:",
     `{
-  "bucketMappingPreview": [ { "workItemId": string, "bucketKey": string, "why": string } ],
   "cardRows": [
     {
       "workItemId": string,
-      "title": string,
-      "desc": string,
       "bucketKey": string,
       "bucketRationale": string,
       "priority": "Urgente" | "Importante" | "Média",
-      "progress": "Não iniciado",
       "tags": string[],
       "storyPoints": number | null,
       "serviceClass": "expedite" | "fixed_date" | "standard" | "intangible" | null,
@@ -94,8 +91,8 @@ export function buildCardsUserPrompt(params: {
     }
   ]
 }`,
-    "Limite: no máximo 45 cardRows. Um card principal por work item (pode omitir itens redundantes).",
-    "O JSON tem de ser completo e válido (JSON.parse); não corte a resposta a meio. Se faltar espaço, reduza rationale, desc e bucketMappingPreview.",
+    "Limite: no máximo 45 entradas em cardRows. Um por work item quando fizer sentido (pode omitir redundantes).",
+    "O JSON tem de ser completo e válido (JSON.parse); não corte a resposta a meio. Se faltar espaço, encurte bucketRationale e rationale primeiro.",
     "Responda APENAS o JSON.",
     "",
     "Colunas (buckets):",
@@ -113,7 +110,7 @@ export function buildRemapUserPrompt(params: {
   allowSubtasks: boolean;
 }): string {
   return [
-    "Remapeie os work items para as colunas corretas. Mantenha títulos e descrições; ajuste bucketKey, tags, storyPoints e serviceClass se necessário.",
+    "Remapeie os work items para as colunas corretas do quadro. Título e descrição do card vêm do JSON de work items no servidor — não os repita; ajuste bucketKey, tags, storyPoints, serviceClass, rationale e subtarefas conforme as novas colunas.",
     "",
     buildCardsUserPrompt(params),
   ].join("\n");

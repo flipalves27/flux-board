@@ -16,11 +16,18 @@ import {
 import { buildSpecPlanRetrievalContext } from "@/lib/spec-plan-retrieval";
 import { compactOutlineForWorkItemsJson } from "@/lib/spec-plan-outline-compact";
 import { compactRemapWorkItemsJsonString, compactWorkItemsForCardsJson } from "@/lib/spec-plan-work-items-compact";
-import { CardsLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec-plan-schemas";
+import { hydrateSpecPlanCardRows } from "@/lib/spec-plan-cards-hydrate";
+import { CardsSlimLlmSchema, OutlineLlmSchema, WorkItemsLlmSchema } from "@/lib/spec-plan-schemas";
 import { fluxyPromptPrefix } from "@/lib/fluxy-persona";
 
 const CARDS_LLM_JSON_RETRY_SUFFIX =
-  "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Se necessário, use no máximo 40 cardRows e textos curtos em rationale/desc — prefira JSON válido a resposta longa truncada.";
+  "\n\nA resposta anterior não foi JSON válido ou estava incompleta. Devolva um ÚNICO objeto JSON completo (feche todas as chaves {} e colchetes []). Sem markdown, sem texto antes ou depois. Schema: { \"cardRows\": [ ... ] } apenas com workItemId, bucketKey, bucketRationale (≤200 caracteres), priority, rationale (≤400 caracteres), tags, storyPoints, serviceClass, blockedByTitles, subtasks — sem title, desc nem progress. No máximo 40 entradas; prefira JSON válido a texto longo truncado.";
+
+function cardsMaxOutputTokens(itemCount: number): number {
+  const n = Math.max(1, Math.min(60, itemCount));
+  const estimated = 1000 + n * 96;
+  return Math.min(8192, Math.max(1800, Math.round(estimated)));
+}
 
 export type SpecPlanPipelineEvent =
   | { event: "document_parsed"; data: Record<string, unknown> }
@@ -31,6 +38,7 @@ export type SpecPlanPipelineEvent =
   | { event: "work_items_llm_started"; data: Record<string, unknown> }
   | { event: "work_items_draft"; data: Record<string, unknown> }
   | { event: "methodology_applied"; data: Record<string, unknown> }
+  | { event: "cards_llm_started"; data: Record<string, unknown> }
   | { event: "bucket_mapping"; data: Record<string, unknown> }
   | { event: "cards_preview"; data: Record<string, unknown> }
   | {
@@ -359,22 +367,34 @@ export async function runSpecPlanPipeline(input: {
 
   if (await abortIfCancelled()) return;
 
+  const workItemCount = workParsed.data.items.length;
+  const cardsMaxTokens = cardsMaxOutputTokens(workItemCount);
+  await emit({
+    event: "cards_llm_started",
+    data: {
+      workItemCount,
+      promptChars: cardsPrompt.length,
+      remapOnly: Boolean(input.remapOnly),
+    },
+  });
+
   let cRes = await llmJson({
     org: input.org,
     orgId: input.orgId,
     userId: input.userId,
     isAdmin: input.isAdmin,
     userContent: cardsPrompt,
-    maxOutputTokens: 10_000,
+    maxOutputTokens: cardsMaxTokens,
   });
   if (!cRes.ok && cRes.message === "Resposta da IA não é JSON válido.") {
+    const retryTokens = Math.min(8192, cardsMaxTokens + 2200);
     cRes = await llmJson({
       org: input.org,
       orgId: input.orgId,
       userId: input.userId,
       isAdmin: input.isAdmin,
       userContent: cardsPrompt + CARDS_LLM_JSON_RETRY_SUFFIX,
-      maxOutputTokens: 10_000,
+      maxOutputTokens: retryTokens,
       temperature: 0.05,
     });
   }
@@ -382,7 +402,7 @@ export async function runSpecPlanPipeline(input: {
     await emit({ event: "error", data: { message: cRes.message, code: "cards_llm" } });
     return;
   }
-  const cardsParsed = CardsLlmSchema.safeParse(cRes.json);
+  const cardsParsed = CardsSlimLlmSchema.safeParse(cRes.json);
   if (!cardsParsed.success) {
     await emit({
       event: "error",
@@ -395,14 +415,20 @@ export async function runSpecPlanPipeline(input: {
     return;
   }
 
+  const { cardRows, bucketMappingRows } = hydrateSpecPlanCardRows({
+    workItems: workParsed.data.items,
+    slimRows: cardsParsed.data.cardRows,
+    allowSubtasks: input.allowSubtasks,
+  });
+
   await emit({
     event: "bucket_mapping",
-    data: { rows: cardsParsed.data.bucketMappingPreview },
+    data: { rows: bucketMappingRows },
   });
   await emit({
     event: "cards_preview",
     data: {
-      cardRows: cardsParsed.data.cardRows,
+      cardRows,
       workItems: workParsed.data,
     },
   });

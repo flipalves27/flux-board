@@ -6,6 +6,8 @@ import type { CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/
 import { useBoardStore } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
+import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
 import { extractVoiceToBoardSuggestions } from "@/lib/daily-voice-extract";
@@ -49,6 +51,8 @@ export function useDailySession({
   directions: string[];
 }) {
   const { pushToast } = useToast();
+  const { user } = useAuth();
+  const showAiTelemetry = Boolean(user && isPlatformAdminSession(user));
   const t = useTranslations("kanban");
 
   const db = useBoardStore((s) => s.db);
@@ -471,7 +475,7 @@ export function useDailySession({
       `Resumo Daily IA${dt ? ` - ${dt}` : ""}`,
       "",
       generatedWithAi
-        ? `Texto aprimorado por IA${modelName ? ` (${modelName})` : ""}`
+        ? `Texto aprimorado por IA${showAiTelemetry && modelName ? ` (${modelName})` : ""}`
         : "Texto estruturado automaticamente",
       "",
       `Arquivo de origem: ${String(entry?.sourceFileName || "Transcrição colada no modal")}`,
@@ -532,7 +536,7 @@ export function useDailySession({
     ];
 
     return blocks.join("\n");
-  }, []);
+  }, [showAiTelemetry]);
 
   const downloadDailyContextDoc = useCallback(
     (entry: DailyInsightEntry) => {
@@ -631,10 +635,14 @@ export function useDailySession({
             timestamp: new Date().toISOString(),
             status: "error" as DailyLogStatus,
             message: String(data?.error || t("daily.logs.generate.errorFallback")),
-            errorKind: data?.llmDebug?.errorKind,
-            errorMessage: data?.llmDebug?.errorMessage,
-            provider: data?.llmDebug?.provider,
-            model: data?.llmDebug?.model,
+            ...(showAiTelemetry
+              ? {
+                  errorKind: data?.llmDebug?.errorKind,
+                  errorMessage: data?.llmDebug?.errorMessage,
+                  provider: data?.llmDebug?.provider,
+                  model: data?.llmDebug?.model,
+                }
+              : {}),
           } as DailyLog,
           ...prev,
         ].slice(0, 50));
@@ -654,17 +662,19 @@ export function useDailySession({
         createCardsFromInsight(String(data.entry.id), data.entry as DailyInsightEntry);
       }
 
-      const modelName = String(data?.llmDebug?.model || data?.entry?.generationMeta?.model || "").trim();
-      const providerName = String(
-        data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || ""
-      ).trim();
+      const modelName = showAiTelemetry
+        ? String(data?.llmDebug?.model || data?.entry?.generationMeta?.model || "").trim()
+        : "";
+      const providerName = showAiTelemetry
+        ? String(data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || "").trim()
+        : "";
       const generatedWithAI = Boolean(
         data?.llmDebug?.generatedWithAI ?? data?.entry?.generationMeta?.usedLlm
       );
-      const errorKind = String(
-        data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || ""
-      ).trim();
-      const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
+      const errorKind = showAiTelemetry
+        ? String(data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || "").trim()
+        : "";
+      const errorMessage = showAiTelemetry ? String(data?.llmDebug?.errorMessage || "").trim() : "";
       const hasRealLlmFailure = Boolean(errorKind) || !generatedWithAI;
       const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
 
@@ -677,8 +687,9 @@ export function useDailySession({
           message: generatedWithAI
             ? t("daily.logs.generate.success.aiModelGenerated")
             : t("daily.logs.generate.success.heuristic"),
-          model: modelName || undefined,
-          provider: providerName || undefined,
+          ...(showAiTelemetry
+            ? { model: modelName || undefined, provider: providerName || undefined }
+            : {}),
           resultSnippet: insightResumo
             ? `${t("daily.logs.generate.resultSnippetPrefix")} ${insightResumo.slice(0, 200)}${
                 insightResumo.length > 200 ? "..." : ""
@@ -690,13 +701,19 @@ export function useDailySession({
               {
                 timestamp: new Date().toISOString(),
                 status: "error" as DailyLogStatus,
-                  message: `${t("daily.logs.generate.error.integrationFailure.prefix")}${providerName ? ` (${providerName})` : ""}${
-                    modelName ? ` - ${t("daily.logs.generate.error.integrationFailure.modelLabel")}: ${modelName}` : ""
-                  }${errorKind ? ` [${errorKind}]` : ""}. ${t("daily.logs.generate.error.integrationFailure.heuristicSuffix")}`,
-                errorKind,
-                errorMessage: errorMessage || undefined,
-                provider: providerName || undefined,
-                model: modelName || undefined,
+                message: showAiTelemetry
+                  ? `${t("daily.logs.generate.error.integrationFailure.prefix")}${providerName ? ` (${providerName})` : ""}${
+                      modelName ? ` - ${t("daily.logs.generate.error.integrationFailure.modelLabel")}: ${modelName}` : ""
+                    }${errorKind ? ` [${errorKind}]` : ""}. ${t("daily.logs.generate.error.integrationFailure.heuristicSuffix")}`
+                  : t("daily.logs.generate.error.integrationFailure.heuristicSuffix"),
+                ...(showAiTelemetry
+                  ? {
+                      errorKind,
+                      errorMessage: errorMessage || undefined,
+                      provider: providerName || undefined,
+                      model: modelName || undefined,
+                    }
+                  : {}),
               } as DailyLog,
             ] as DailyLog[])
           : []),
@@ -740,7 +757,17 @@ export function useDailySession({
         }
       }
     }
-  }, [boardId, createCardsFromInsight, dailySourceFileName, dailyTranscript, getHeaders, pushToast, updateDb]);
+  }, [
+    boardId,
+    createCardsFromInsight,
+    dailySourceFileName,
+    dailyTranscript,
+    getHeaders,
+    pushToast,
+    showAiTelemetry,
+    t,
+    updateDb,
+  ]);
 
   const onGenerateDailyInsightAndCreateCards = useCallback(() => {
     void onGenerateDailyInsight({ alsoCreateCards: true });

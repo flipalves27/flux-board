@@ -29,7 +29,7 @@ describe("POST /api/auth/refresh", () => {
   });
 
   it("returns 401 when rotation fails", async () => {
-    vi.mocked(rotateSessionFromRefreshPlain).mockResolvedValue(null);
+    vi.mocked(rotateSessionFromRefreshPlain).mockResolvedValue({ ok: false, clearCookies: true });
     const req = new NextRequest("http://localhost/api/auth/refresh", {
       method: "POST",
       headers: { cookie: `${REFRESH_COOKIE}=opaque` },
@@ -39,14 +39,29 @@ describe("POST /api/auth/refresh", () => {
     expect(clearAuthCookiesOnNextResponse).toHaveBeenCalledWith(expect.any(Object));
   });
 
+  it("returns 401 without clearing cookies on refresh replay race", async () => {
+    vi.mocked(rotateSessionFromRefreshPlain).mockResolvedValue({ ok: false, clearCookies: false });
+    const req = new NextRequest("http://localhost/api/auth/refresh", {
+      method: "POST",
+      headers: { cookie: `${REFRESH_COOKIE}=opaque` },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+    expect(clearAuthCookiesOnNextResponse).not.toHaveBeenCalled();
+  });
+
   it("returns 200 and sets cookies when rotation succeeds", async () => {
     vi.mocked(rotateSessionFromRefreshPlain).mockResolvedValue({
+      ok: true,
       access: "access-jwt",
       refreshPlain: "new-refresh",
       persistent: true,
       user: {
         id: "u1",
         username: "tester",
+        name: "Tester",
+        email: "t@example.com",
+        passwordHash: "x:y",
         orgId: "org1",
         isAdmin: false,
         isExecutive: false,

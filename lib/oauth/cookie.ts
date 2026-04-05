@@ -12,7 +12,8 @@ const COOKIE_BASE = {
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
-  maxAge: 600,
+  /** 15m — margem para cold start; produção deve usar AUTH_COOKIE_DOMAIN + hosts OAuth alinhados. */
+  maxAge: 900,
 };
 
 function fullCookieOptions() {

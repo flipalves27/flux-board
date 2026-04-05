@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
-import { sessionCanManageOrgBilling } from "@/lib/rbac";
+import { isPlatformAdminSession, sessionCanManageOrgBilling } from "@/lib/rbac";
 
 type AuditFilter = "all" | "invites";
 
@@ -179,7 +179,7 @@ export default function OrgAuditPage() {
             </Link>
           </p>
 
-          {!mongoConfigured && (
+          {user && isPlatformAdminSession(user) && !mongoConfigured && (
             <div className="mb-4 rounded-[var(--flux-rad)] border border-[var(--flux-warning-alpha-30)] bg-[var(--flux-warning-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
               {t("mongoDisabled")}
             </div>

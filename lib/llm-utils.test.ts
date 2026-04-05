@@ -70,6 +70,16 @@ describe("safeJsonParse", () => {
     expect(safeJsonParse<{ x: string }>(raw)).toEqual({ x: "y" });
   });
 
+  it("parses first object when trailing prose contains closing braces", () => {
+    const raw = '{"cardRows":[]}\n\nTexto extra com chave: } no fim.';
+    expect(safeJsonParse<{ cardRows: unknown[] }>(raw)).toEqual({ cardRows: [] });
+  });
+
+  it("respects braces inside JSON strings when extracting object", () => {
+    const raw = 'x {"a":"literal } brace","b":1} tail';
+    expect(safeJsonParse<{ a: string; b: number }>(raw)).toEqual({ a: "literal } brace", b: 1 });
+  });
+
   it("parses whole string when no braces are found", () => {
     expect(safeJsonParse('"ok"')).toBe("ok");
   });

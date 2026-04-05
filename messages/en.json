@@ -56,7 +56,7 @@
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
       "invites": "Pending invites for new members.",
-      "orgAudit": "Accepted invites, sign-ins, and other org events (requires MongoDB).",
+      "orgAudit": "Accepted invites, sign-ins, and other organization events.",
       "rateLimitAbuse": "API rate-limit blocks (abuse).",
       "tracer": "Client-side error buffer (Flux diagnostics) for admins.",
       "platformCommercial": "Display pricing, catalog availability, and Stripe sync.",
@@ -916,6 +916,9 @@
       "loadError": "Could not load the panel.",
       "empty": "No data.",
       "noMongo": "Connect MongoDB to enable history and automatic alerts.",
+      "noMongoPublic": "Proactive alert history isn’t available in this environment right now.",
+      "neverRunPublic": "No automated checks have been recorded yet.",
+      "cronHintPublic": "Automated checks run on a schedule configured for your workspace.",
       "health": {
         "ok": "Active",
         "review": "Check",
@@ -1468,6 +1471,22 @@
       "login": "Sign in",
       "register": "Register"
     },
+    "sessionIssueGeneric": "We couldn’t restore your session. Try signing in again, or contact your workspace administrator if this keeps happening.",
+    "sessionDiag": {
+      "title": "We couldn’t keep your session",
+      "hint": "Send the JSON (button below) to support so we can match it with server logs. It does not include your password, email, or cookies.",
+      "kindLabel": "Type:",
+      "copyJson": "Copy diagnostic (JSON)",
+      "copied": "Copied.",
+      "kinds": {
+        "no_cookies": "No session cookies were sent to the server.",
+        "token_invalid": "Session token was invalid or refresh failed.",
+        "user_not_found": "No user record matched the current token.",
+        "unknown": "Unknown server error.",
+        "client_timeout": "Validation timed out in the browser (there may be no matching server log).",
+        "server_timeout": "The server didn’t finish validation in time (slow MongoDB/network). Look for `[api/auth/session] validate wall timeout` in logs."
+      }
+    },
     "inviteBanner": "You’re signing in with an invite. If you already have an account, use Sign in or Google/Microsoft — the invite applies to the matching email.",
     "errors": {
       "missingCredentials": "Enter username and password.",
@@ -1584,7 +1603,7 @@
     "filterInvites": "Accepted invites",
     "filterAll": "All events",
     "linkInvites": "← Back to invites",
-    "mongoDisabled": "Audit storage is not configured (MongoDB). Events are not recorded in this environment.",
+    "mongoDisabled": "Audit storage is not fully configured. Events may not be recorded in this environment.",
     "colWhen": "When",
     "colEvent": "Event",
     "colActor": "User",
@@ -1624,6 +1643,7 @@
     },
     "errors": {
       "init": "Error while starting onboarding.",
+      "initTimeout": "Loading your boards took too long. Check your connection and try again.",
       "createBoard": "Error while creating the board.",
       "saveColumns": "Error while saving columns.",
       "createCard": "Error while creating the card."
@@ -1655,7 +1675,14 @@
       "continue": "Continue",
       "creating": "Creating…",
       "saving": "Saving…",
-      "createCard": "Create card"
+      "createCard": "Create card",
+      "retryInit": "Try again"
+    },
+    "step1": {
+      "preparing": "Checking your account and boards… The buttons will enable in a moment.",
+      "checkingSession": "Confirming your session…",
+      "sessionInvalid": "We couldn’t validate your session (server or database may be unavailable). Fix the environment or sign in again.",
+      "signInAgain": "Go to sign in"
     },
     "step2": {
       "reorderTitle": "Drag to reorder",
@@ -3687,6 +3714,7 @@
         "workItemsLlmStarted": "Generating work items (~{chars} chars of outline in prompt). Large PDFs may take several minutes at this step.",
         "workItemsReady": "Work items draft received.",
         "methodologyApplied": "Methodology applied to draft.",
+        "cardsLlmStarted": "Mapping to board cards: AI in progress ({count} work items, ~{chars} chars in prompt). Large specs may take a while at this step.",
         "bucketMapping": "Suggested mapping to board columns.",
         "cardsPreview": "Preview of {count} card(s) received.",
         "streamError": "Stream error: {message}",

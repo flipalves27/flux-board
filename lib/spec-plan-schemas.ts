@@ -42,6 +42,7 @@ const SubtaskDraftSchema = z.object({
   status: z.enum(["pending", "in_progress", "done", "blocked"]).optional().default("pending"),
 });
 
+/** Saída completa dos cards (após hidratação no servidor a partir dos work items). */
 export const CardRowLlmSchema = z.object({
   workItemId: z.string(),
   title: z.string(),
@@ -58,18 +59,24 @@ export const CardRowLlmSchema = z.object({
   subtasks: z.array(SubtaskDraftSchema).optional().default([]),
 });
 
-export const CardsLlmSchema = z.object({
-  bucketMappingPreview: z
-    .array(
-      z.object({
-        workItemId: z.string(),
-        bucketKey: z.string(),
-        why: z.string(),
-      })
-    )
-    .optional()
-    .default([]),
-  cardRows: z.array(CardRowLlmSchema).max(80),
+/**
+ * O modelo só decide mapeamento e metadados; título, descrição e progresso vêm dos work items (hidratação).
+ */
+export const CardMappingSlimRowSchema = z.object({
+  workItemId: z.string(),
+  bucketKey: z.string(),
+  bucketRationale: z.string(),
+  priority: z.string(),
+  tags: z.array(z.string()).optional().default([]),
+  storyPoints: z.number().int().nullable().optional(),
+  serviceClass: z.enum(["expedite", "fixed_date", "standard", "intangible"]).nullable().optional(),
+  rationale: z.string(),
+  blockedByTitles: z.array(z.string()).optional().default([]),
+  subtasks: z.array(SubtaskDraftSchema).optional().default([]),
+});
+
+export const CardsSlimLlmSchema = z.object({
+  cardRows: z.array(CardMappingSlimRowSchema).max(60),
 });
 
 export const SpecPlanApplyCardSchema = z.object({

@@ -5,6 +5,7 @@ import { clearAuthCookiesOnNextResponse, setAuthCookiesOnNextResponse } from "@/
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIpFromHeaders(request.headers);
@@ -26,9 +27,9 @@ export async function POST(request: NextRequest) {
   }
 
   const rotated = await rotateSessionFromRefreshPlain(refresh);
-  if (!rotated) {
+  if (!rotated.ok) {
     const res = NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
-    clearAuthCookiesOnNextResponse(res);
+    if (rotated.clearCookies) clearAuthCookiesOnNextResponse(res);
     return res;
   }
 

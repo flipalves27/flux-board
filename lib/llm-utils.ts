@@ -54,7 +54,57 @@ export function extractTextFromLlmContent(content: unknown): string {
 }
 
 /**
- * Lenient JSON parse for LLM output: strips ``` fences, tenta objeto `{…}` e por fim a string inteira.
+ * Primeiro objeto `{ ... }` completo, respeitando strings JSON (`\"`, `\\`, `\uXXXX`).
+ * Evita o bug de `lastIndexOf("}")` quando há texto após o JSON com chaves soltas.
+ */
+function extractFirstJsonObject(raw: string): string | null {
+  const start = raw.indexOf("{");
+  if (start < 0) return null;
+  let depth = 0;
+  let i = start;
+  while (i < raw.length) {
+    const c = raw[i]!;
+    if (c === '"') {
+      i++;
+      while (i < raw.length) {
+        const q = raw[i]!;
+        if (q === "\\") {
+          i++;
+          if (i >= raw.length) return null;
+          const esc = raw[i]!;
+          if (esc === "u") {
+            let h = 0;
+            i++;
+            while (h < 4 && i < raw.length) {
+              i++;
+              h++;
+            }
+          } else {
+            i++;
+          }
+          continue;
+        }
+        if (q === '"') {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    if (c === "{") {
+      depth++;
+    } else if (c === "}") {
+      depth--;
+      if (depth === 0) return raw.slice(start, i + 1);
+    }
+    i++;
+  }
+  return null;
+}
+
+/**
+ * Lenient JSON parse for LLM output: strips ``` fences, extrai o primeiro objeto balanceado, senão tenta a string inteira ou o span first–last.
  */
 export function safeJsonParse<T = unknown>(raw: string): T | null {
   const s = String(raw ?? "").trim();
@@ -65,20 +115,34 @@ export function safeJsonParse<T = unknown>(raw: string): T | null {
     .replace(/```/g, "")
     .trim();
 
-  const first = unfenced.indexOf("{");
-  const last = unfenced.lastIndexOf("}");
-  if (first >= 0 && last > first) {
+  const tryParse = (fragment: string): T | null => {
     try {
-      return JSON.parse(unfenced.slice(first, last + 1)) as T;
+      return JSON.parse(fragment) as T;
     } catch {
-      /* tentar corpo completo */
+      return null;
     }
+  };
+
+  const balanced = extractFirstJsonObject(unfenced);
+  if (balanced) {
+    const v = tryParse(balanced);
+    if (v != null) return v;
   }
+
   try {
     return JSON.parse(unfenced) as T;
   } catch {
-    return null;
+    /* continuar */
   }
+
+  const first = unfenced.indexOf("{");
+  const last = unfenced.lastIndexOf("}");
+  if (first >= 0 && last > first) {
+    const v = tryParse(unfenced.slice(first, last + 1));
+    if (v != null) return v;
+  }
+
+  return null;
 }
 
 /**

@@ -76,17 +76,16 @@ function stubLlmResponses() {
       ok: true as const,
       resolvedRoute: "together" as const,
       assistantText: JSON.stringify({
-        bucketMappingPreview: [],
         cardRows: [
           {
             workItemId: "wi1",
-            title: "Card",
-            desc: "D",
             bucketKey: "todo",
             bucketRationale: "r",
             priority: "Média",
-            progress: "0%",
-            rationale: "r",
+            tags: [],
+            rationale: "r2",
+            blockedByTitles: [],
+            subtasks: [],
           },
         ],
       }),
@@ -166,5 +165,103 @@ describe("runSpecPlanPipeline RAG shortcut", () => {
     const retr = events.find((e) => e.event === "retrieval_ready");
     expect(retr?.data.skippedFullDocFitsLlm).toBe(true);
     expect(retr?.data.fallback).toBe(true);
+  });
+
+  it("emits cards_llm_started before bucket_mapping and hydrates slim card JSON", async () => {
+    const documentText = "x".repeat(12_000);
+    const events: { event: string; data: Record<string, unknown> }[] = [];
+
+    await runSpecPlanPipeline({
+      org: minimalOrg,
+      orgId: minimalOrg._id,
+      userId: "u1",
+      isAdmin: true,
+      methodology: "scrum",
+      documentText,
+      extractMeta: { kind: "text", fileName: "spec.txt", warnings: [] },
+      allowSubtasks: false,
+      board: { config: { bucketOrder: [] } },
+      onEvent: async (ev) => {
+        events.push({ event: ev.event, data: ev.data });
+      },
+    });
+
+    const iCards = events.findIndex((e) => e.event === "cards_llm_started");
+    const iBucket = events.findIndex((e) => e.event === "bucket_mapping");
+    const iPreview = events.findIndex((e) => e.event === "cards_preview");
+    expect(iCards).toBeGreaterThan(-1);
+    expect(iBucket).toBeGreaterThan(iCards);
+    expect(iPreview).toBeGreaterThan(iBucket);
+
+    const started = events[iCards];
+    expect(started?.data.workItemCount).toBe(1);
+    expect(started?.data.remapOnly).toBe(false);
+    expect(typeof started?.data.promptChars).toBe("number");
+
+    const bm = events.find((e) => e.event === "bucket_mapping");
+    expect(bm?.data.rows).toEqual([{ workItemId: "wi1", bucketKey: "todo", why: "r" }]);
+
+    const preview = events.find((e) => e.event === "cards_preview");
+    const rows = preview?.data.cardRows as Record<string, unknown>[] | undefined;
+    expect(rows?.[0]?.title).toBe("Item");
+    expect(rows?.[0]?.desc).toBe("Desc");
+    expect(rows?.[0]?.progress).toBe("Não iniciado");
+
+    const thirdCall = mockRunOrgLlm.mock.calls[2]?.[0] as { options?: { maxTokens?: number } } | undefined;
+    expect(thirdCall?.options?.maxTokens).toBeDefined();
+    expect(thirdCall?.options?.maxTokens).toBeLessThanOrEqual(7500);
+  });
+
+  it("remapOnly runs a single cards LLM call and marks cards_llm_started with remapOnly", async () => {
+    vi.clearAllMocks();
+    mockRunOrgLlm.mockResolvedValue({
+      ok: true as const,
+      resolvedRoute: "together" as const,
+      assistantText: JSON.stringify({
+        cardRows: [
+          {
+            workItemId: "w1",
+            bucketKey: "todo",
+            bucketRationale: "fit",
+            priority: "Média",
+            tags: [],
+            rationale: "",
+            blockedByTitles: [],
+            subtasks: [],
+          },
+        ],
+      }),
+    });
+
+    const events: { event: string; data: Record<string, unknown> }[] = [];
+    await runSpecPlanPipeline({
+      org: minimalOrg,
+      orgId: minimalOrg._id,
+      userId: "u1",
+      isAdmin: true,
+      methodology: "kanban",
+      documentText: "",
+      extractMeta: { kind: "text", fileName: "x.txt", warnings: [] },
+      allowSubtasks: false,
+      board: { config: { bucketOrder: [{ key: "todo", label: "Todo" }] } },
+      remapOnly: {
+        workItemsJson: JSON.stringify({
+          methodologySummary: "M",
+          items: [{ id: "w1", title: "A", description: "B", type: "story", suggestedTags: [] }],
+        }),
+      },
+      onEvent: async (ev) => {
+        events.push({ event: ev.event, data: ev.data });
+      },
+    });
+
+    expect(mockRunOrgLlm).toHaveBeenCalledTimes(1);
+    const started = events.find((e) => e.event === "cards_llm_started");
+    expect(started?.data.remapOnly).toBe(true);
+    expect(started?.data.workItemCount).toBe(1);
+    const preview = events.find((e) => e.event === "cards_preview");
+    const rows = preview?.data.cardRows as Record<string, unknown>[] | undefined;
+    expect(rows?.[0]?.title).toBe("A");
+    expect(rows?.[0]?.desc).toBe("B");
   });
 });

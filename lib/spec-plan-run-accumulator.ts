@@ -224,8 +224,22 @@ export function applySpecPlanSseEvent(
     return { ...state, methodologySummary, logs };
   }
 
-  if (event === "bucket_mapping") {
+  if (event === "cards_llm_started") {
     phases.cards = "running";
+    const n =
+      typeof data.workItemCount === "number" && Number.isFinite(data.workItemCount) ? data.workItemCount : 0;
+    const ch =
+      typeof data.promptChars === "number" && Number.isFinite(data.promptChars) ? data.promptChars : 0;
+    append(
+      "info",
+      `Mapeamento em cards: chamada à IA em curso (${n} itens, prompt ~${ch} caracteres).`,
+      safeStringify(data)
+    );
+    return { ...state, phases, logs };
+  }
+
+  if (event === "bucket_mapping") {
+    if (phases.cards === "pending") phases.cards = "running";
     append("info", "Mapeamento sugerido para colunas do board.", safeStringify(data));
     return { ...state, phases, logs };
   }

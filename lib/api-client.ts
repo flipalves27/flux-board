@@ -1,3 +1,5 @@
+import type { ValidateResult } from "@/lib/auth-types";
+
 /**
  * API client com suporte ao Vercel Deployment Protection Bypass.
  * Quando NEXT_PUBLIC_VERCEL_BYPASS_SECRET está definido, todas as requisições
@@ -150,6 +152,40 @@ export async function apiGet<T = unknown>(
   headers?: Record<string, string>
 ): Promise<T> {
   return apiJson<T>(url, { method: "GET", headers });
+}
+
+/** Evita dois `GET /api/auth/session` em paralelo (Strict Mode / efeitos duplicados) consumindo o mesmo refresh. */
+let sessionValidateInFlight: Promise<ValidateResult> | null = null;
+
+/** Valida sessão via `GET /api/auth/session` (evita Server Action no primeiro paint — menos colisão com RSC). */
+export async function fetchSessionValidate(): Promise<ValidateResult> {
+  if (typeof window !== "undefined" && sessionValidateInFlight) {
+    return sessionValidateInFlight;
+  }
+
+  const run = async (): Promise<ValidateResult> => {
+    const res = await apiFetch("/api/auth/session", { method: "GET" });
+    const data = (await res.json().catch(() => ({}))) as ValidateResult;
+    if (res.status === 429 || res.status === 500 || res.status === 503) {
+      return data?.ok === false ? data : { ok: false, failureKind: "unknown" };
+    }
+    if (!res.ok) {
+      return { ok: false, failureKind: "unknown" };
+    }
+    if (data && typeof data === "object" && "ok" in data) {
+      return data;
+    }
+    return { ok: false, failureKind: "unknown" };
+  };
+
+  const p = run();
+  if (typeof window !== "undefined") {
+    sessionValidateInFlight = p;
+    void p.finally(() => {
+      if (sessionValidateInFlight === p) sessionValidateInFlight = null;
+    });
+  }
+  return p;
 }
 
 export async function apiPut<T = unknown>(

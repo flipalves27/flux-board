@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoardIds, getBoardsByIds, createBoard } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, createBoard } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
@@ -16,6 +16,9 @@ import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
 import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
 import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
+
+export const maxDuration = 60;
 
 function corsHeaders(request: NextRequest) {
   return boardsApiCorsHeaders(request);
@@ -26,17 +29,36 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const route = "GET /api/boards";
+  const t0 = Date.now();
   const payload = await getAuthFromRequest(request);
+  logFluxApiPhase(route, "getAuthFromRequest", t0);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   try {
-    await ensureAdminUser();
+    const t1 = Date.now();
     const org = await getOrganizationById(payload.orgId);
+    logFluxApiPhase(route, "getOrganizationById", t1);
 
+    const t2 = Date.now();
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
-    const boardRows = await getBoardsByIds(boardIds, payload.orgId);
+    logFluxApiPhase(route, "getBoardIds(userView)", t2);
+    if (
+      process.env.FLUX_LOG_EMPTY_BOARD_LIST === "1" &&
+      boardIds.length === 0 &&
+      !payload.isAdmin
+    ) {
+      console.warn("[api/boards] empty board list for non-admin", {
+        orgId: payload.orgId,
+        userId: payload.id,
+      });
+    }
+
+    const t3 = Date.now();
+    const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);
+    logFluxApiPhase(route, "getBoardListRowsByIds", t3);
     const boards = boardRows.map((b) => ({
       id: b.id,
       name: b.name,
@@ -48,7 +70,10 @@ export async function GET(request: NextRequest) {
     }));
 
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
-    const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
+    // Otimização: se o utilizador não é admin, usa a contagem dos seus boards (mais rápido).
+    const t4 = Date.now();
+    const orgBoardIds = payload.isAdmin ? await getBoardIds(payload.id, payload.orgId, true) : boardIds;
+    logFluxApiPhase(route, `getBoardIds(orgCount)${!payload.isAdmin ? "-optimized" : ""}`, t4);
     const currentCount = orgBoardIds.length;
     const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
@@ -60,9 +85,11 @@ export async function GET(request: NextRequest) {
         currentCount,
         atLimit: cap !== null && currentCount >= cap,
       };
+    logFluxApiPhase(route, "total", t0);
     return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
-    console.error("Boards API error:", err);
+    const elapsed = Date.now() - t0;
+    console.error("[api/boards] erro após", elapsed, "ms:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

@@ -1,15 +1,16 @@
 import "server-only";
 
-import { randomBytes } from "crypto";
-import { cookies } from "next/headers";
+import { randomBytes, randomUUID } from "crypto";
+import { cookies, headers } from "next/headers";
 import { createToken, verifyToken } from "./auth";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "./auth-cookie-names";
 import { clearAuthCookies, setAuthCookies } from "./session-cookies";
+import { isFluxAuthDebugEnabled, logFluxAuthDebug } from "./flux-auth-debug";
 import { createRefreshSession, consumeRefreshSessionForRotation } from "./kv-refresh-sessions";
 import { refreshRecordExpiresAt } from "./session-ttl";
 import { getUserById } from "./kv-users";
 import type { ThemePreference } from "./theme-storage";
-import type { ValidateResult } from "./auth-types";
+import type { SessionValidateFailureKind, ValidateResult } from "./auth-types";
 import type { User } from "./kv-users";
 import {
   canManageOrganization,
@@ -56,6 +57,10 @@ export async function createSessionTokensForCredentials(
   user: {
     id: string;
     username: string;
+    /** Incluído no JWT para bootstrap de sessão sem round-trip ao banco. */
+    name?: string;
+    /** Incluído no JWT para bootstrap de sessão sem round-trip ao banco. */
+    email?: string;
     isAdmin: boolean;
     isExecutive?: boolean;
     orgId: string;
@@ -67,6 +72,8 @@ export async function createSessionTokensForCredentials(
   const access = createToken({
     id: user.id,
     username: user.username,
+    ...(user.name ? { name: user.name } : {}),
+    ...(user.email ? { email: user.email } : {}),
     isAdmin: user.isAdmin,
     isExecutive: user.isExecutive,
     orgId: user.orgId,
@@ -89,6 +96,8 @@ export async function issueSessionForCredentials(
   user: {
     id: string;
     username: string;
+    name?: string;
+    email?: string;
     isAdmin: boolean;
     isExecutive?: boolean;
     orgId: string;
@@ -105,20 +114,26 @@ export async function issueSessionForCredentials(
  * Valida refresh opaco, revoga o token anterior e emite par access+refresh.
  * Usado pela rota POST /api/auth/refresh e por validateSessionFromCookies.
  */
-export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promise<{
-  access: string;
-  refreshPlain: string;
-  persistent: boolean;
-  user: User;
-} | null> {
-  const rotated = await consumeRefreshSessionForRotation(refreshPlain);
-  if (!rotated) return null;
-  const persistent = rotated.persistent ?? true;
-  const user = await getUserById(rotated.userId, rotated.orgId);
-  if (!user) return null;
+export type RotateSessionFromRefreshPlainResult =
+  | { ok: true; access: string; refreshPlain: string; persistent: boolean; user: User }
+  | { ok: false; clearCookies: boolean };
+
+export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promise<RotateSessionFromRefreshPlainResult> {
+  const consumed = await consumeRefreshSessionForRotation(refreshPlain);
+  if (consumed.kind !== "ok") {
+    return {
+      ok: false,
+      clearCookies: consumed.kind !== "revoked_replay",
+    };
+  }
+  const persistent = consumed.persistent ?? true;
+  const user = await getUserById(consumed.userId, consumed.orgId);
+  if (!user) return { ok: false, clearCookies: true };
   const accessNew = createToken({
     id: user.id,
     username: user.username,
+    name: user.name,
+    email: user.email,
     isAdmin: user.id === "admin" || !!user.isAdmin,
     isExecutive: !!user.isExecutive,
     orgId: user.orgId,
@@ -129,11 +144,11 @@ export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promi
   const { plain } = await createRefreshSession({
     userId: user.id,
     orgId: user.orgId,
-    familyId: rotated.familyId,
+    familyId: consumed.familyId,
     persistent,
     expiresAt,
   });
-  return { access: accessNew, refreshPlain: plain, persistent, user };
+  return { ok: true, access: accessNew, refreshPlain: plain, persistent, user };
 }
 
 /** `FLUX_SESSION_VALIDATE_LOG=0` desliga os avisos (útil se o volume em staging incomodar). */
@@ -144,6 +159,87 @@ function logSessionValidateFail(payload: Record<string, string | undefined>): vo
   console.warn("[flux-session-validate]", JSON.stringify({ event: "fail", ...payload }));
 }
 
+/** Efeitos de cookie a aplicar no `cookies()` ou num `NextResponse` (rota HTTP). */
+export type ValidateSessionCookieSideEffect =
+  | { type: "set_rotated"; access: string; refreshPlain: string; persistent: boolean }
+  | { type: "clear_all" };
+
+/**
+ * Núcleo de validação a partir dos valores dos cookies (sem `cookies()` do Next).
+ * Usado por `validateSessionFromCookies` e por `GET /api/auth/session`.
+ */
+export async function validateSessionFromCookieValues(
+  access: string | undefined,
+  refresh: string | undefined,
+  opts?: { requestHostForDebug?: string }
+): Promise<{ result: ValidateResult; sideEffect: ValidateSessionCookieSideEffect | null }> {
+  const supportRef = randomUUID();
+  try {
+    const hasAccess = Boolean(access?.trim());
+    const hasRefresh = Boolean(refresh?.trim());
+
+    const payload = access ? verifyToken(access) : null;
+
+    if (!payload && refresh) {
+      const rotated = await rotateSessionFromRefreshPlain(refresh);
+      if (rotated.ok) {
+        return {
+          result: await userToValidate(rotated.user),
+          sideEffect: {
+            type: "set_rotated",
+            access: rotated.access,
+            refreshPlain: rotated.refreshPlain,
+            persistent: rotated.persistent,
+          },
+        };
+      }
+      if (!rotated.clearCookies) {
+        return {
+          result: { ok: false, supportRef, failureKind: "token_invalid" },
+          sideEffect: null,
+        };
+      }
+    }
+
+    if (!payload) {
+      const failureKind: SessionValidateFailureKind = hasAccess || hasRefresh ? "token_invalid" : "no_cookies";
+      if (hasAccess || hasRefresh) {
+        const reason =
+          hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
+        logSessionValidateFail({ reason, supportRef });
+        return { result: { ok: false, supportRef, failureKind }, sideEffect: { type: "clear_all" } };
+      }
+      if (isFluxAuthDebugEnabled()) {
+        logFluxAuthDebug("session_validate_no_cookies", {
+          supportRef,
+          hasAccessCookie: false,
+          hasRefreshCookie: false,
+          requestHost: opts?.requestHostForDebug,
+        });
+      }
+      return { result: { ok: false, supportRef, failureKind }, sideEffect: null };
+    }
+
+    const user = await getUserById(payload.id, payload.orgId);
+    const validated = await userToValidate(user);
+    if (!validated.ok) {
+      logSessionValidateFail({
+        reason: "user_not_found",
+        userId: payload.id,
+        orgId: payload.orgId,
+        supportRef,
+      });
+      return { result: { ok: false, supportRef, failureKind: "user_not_found" }, sideEffect: { type: "clear_all" } };
+    }
+    return { result: validated, sideEffect: null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[validateSessionFromCookieValues]", e);
+    logSessionValidateFail({ reason: "uncaught_exception", supportRef, message: msg.slice(0, 500) });
+    return { result: { ok: false, supportRef, failureKind: "unknown" }, sideEffect: null };
+  }
+}
+
 /**
  * Valida access JWT ou renova via refresh (cookies httpOnly).
  */
@@ -151,38 +247,25 @@ export async function validateSessionFromCookies(): Promise<ValidateResult> {
   const store = await cookies();
   const access = store.get(ACCESS_COOKIE)?.value;
   const refresh = store.get(REFRESH_COOKIE)?.value;
-  const hasAccess = Boolean(access?.trim());
-  const hasRefresh = Boolean(refresh?.trim());
-
-  const payload = access ? verifyToken(access) : null;
-
-  if (!payload && refresh) {
-    const rotated = await rotateSessionFromRefreshPlain(refresh);
-    if (rotated) {
-      await setAuthCookies(rotated.access, rotated.refreshPlain, rotated.persistent);
-      return userToValidate(rotated.user);
-    }
+  let requestHostForDebug: string | undefined;
+  try {
+    const h = await headers();
+    const forwarded = h.get("x-forwarded-host");
+    requestHostForDebug = forwarded?.split(",")[0]?.trim() || h.get("host") || undefined;
+  } catch {
+    /* no request context */
   }
 
-  if (!payload) {
-    if (hasAccess || hasRefresh) {
-      const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
-      logSessionValidateFail({ reason });
-      await clearAuthCookies();
-    }
-    return { ok: false };
-  }
-  const user = await getUserById(payload.id, payload.orgId);
-  const validated = await userToValidate(user);
-  if (!validated.ok) {
-    logSessionValidateFail({
-      reason: "user_not_found",
-      userId: payload.id,
-      orgId: payload.orgId,
-    });
+  const { result, sideEffect } = await validateSessionFromCookieValues(access, refresh, {
+    requestHostForDebug,
+  });
+
+  if (sideEffect?.type === "set_rotated") {
+    await setAuthCookies(sideEffect.access, sideEffect.refreshPlain, sideEffect.persistent);
+  } else if (sideEffect?.type === "clear_all") {
     await clearAuthCookies();
   }
-  return validated;
+  return result;
 }
 
 /**

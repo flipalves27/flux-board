@@ -1049,6 +1049,12 @@
     color: white;
     box-shadow: var(--home-btn-shadow, 0 4px 16px color-mix(in srgb, var(--flux-primary) 35%, transparent));
   }
+  .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
   .btn-primary:hover:not(:disabled) {
     background: var(--flux-primary-light);
     box-shadow: var(--home-btn-hover-shadow, 0 6px 24px color-mix(in srgb, var(--flux-primary) 45%, transparent));
@@ -1064,6 +1070,10 @@
     background: var(--flux-surface-card);
     color: var(--flux-text);
     border-color: var(--flux-border-default);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--flux-surface-elevated);

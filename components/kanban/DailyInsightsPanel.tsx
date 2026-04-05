@@ -6,6 +6,8 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { getDailyActionSuggestions, getDailyCreateSuggestions, renderOrganizedContext } from "./daily-utils";
 import { useTranslations } from "next-intl";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { StandupSummarySection } from "./StandupSummarySection";
 import type { VoiceToBoardSuggestion } from "@/lib/daily-voice-extract";
 
@@ -89,6 +91,8 @@ export type DailyInsightsPanelProps = {
 };
 
 export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
+  const { user } = useAuth();
+  const showAiTelemetry = Boolean(user && isPlatformAdminSession(user));
   const {
     boardId,
     boardName,
@@ -463,7 +467,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                                     {t("daily.badges.ai")}
                                   </span>
                                 )}
-                                {gm?.model || gm?.provider ? (
+                                {showAiTelemetry && (gm?.model || gm?.provider) ? (
                                   <AiModelHint model={gm?.model} provider={gm?.provider} />
                                 ) : null}
                               </div>
@@ -614,7 +618,7 @@ export function DailyInsightsPanel(props: DailyInsightsPanelProps) {
                     entry.sourceFileName || t("daily.history.entry.sourceManualFallback")
                   );
                   const generatedWithAi = Boolean(entry?.generationMeta?.usedLlm);
-                  const aiModel = String(entry?.generationMeta?.model || "").trim();
+                  const aiModel = showAiTelemetry ? String(entry?.generationMeta?.model || "").trim() : "";
 
                   return (
                     <div

@@ -6,6 +6,7 @@ import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/context/auth-context";
+import { getBootstrapSessionUser } from "@/lib/session-bootstrap";
 import { OrgBrandingProvider } from "@/context/org-branding-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { NavigationVariantProvider } from "@/context/navigation-variant-context";
@@ -44,6 +45,9 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+/** Acima do default 30s da Vercel quando Mongo/Server Actions precisam de margem (ex.: cold start + Atlas). Respeita o teto do plano. */
+export const maxDuration = 60;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -71,6 +75,8 @@ export default async function RootLayout({
   const messages = await getMessages();
   const hdrs = await headers();
   const nonce = hdrs.get("x-nonce") ?? undefined;
+  // Bootstrap JWT-only (sem DB) — elimina "Confirmando a sessão…" no onboarding após OAuth.
+  const bootstrapUser = await getBootstrapSessionUser();
   return (
     <html
       lang={locale}
@@ -89,8 +95,8 @@ export default async function RootLayout({
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Suspense fallback={null}>
-            <FluxDiagnosticsRoot>
-              <AuthProvider>
+            <AuthProvider initialUser={bootstrapUser}>
+              <FluxDiagnosticsRoot>
                 <OrgBrandingProvider>
                   <ToastProvider>
                     <ThemeProvider>
@@ -105,8 +111,8 @@ export default async function RootLayout({
                     </ThemeProvider>
                   </ToastProvider>
                 </OrgBrandingProvider>
-              </AuthProvider>
-            </FluxDiagnosticsRoot>
+              </FluxDiagnosticsRoot>
+            </AuthProvider>
           </Suspense>
         </NextIntlClientProvider>
       </body>
