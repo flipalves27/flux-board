@@ -32,7 +32,6 @@ import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration"
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
-import { BoardsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
 import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
@@ -163,15 +162,34 @@ export default function BoardsPage() {
   const [visitCounts, setVisitCounts] = useState<Record<string, number>>({});
   const { pushToast } = useToast();
 
-  const authWaiting = !isChecked || !user;
-  const showListSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
+  const showListSkeleton = useMinimumSkeletonDuration(loading);
+
+  const loadBoards = useCallback(async () => {
+    try {
+      const data = await apiGet<{ boards: Board[]; plan?: PlanInfo }>("/api/boards", getHeaders());
+      const list = data.boards ?? [];
+      setBoards(list);
+      setPlan(data.plan ?? null);
+      setEmpty(list.length === 0);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        const sp = new URLSearchParams();
+        if (sessionFailure?.supportRef) {
+          sp.set("sessionRef", sessionFailure.supportRef);
+          sp.set("sessionKind", sessionFailure.failureKind);
+        }
+        const q = sp.toString();
+        router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
+        return;
+      }
+      setBoards([]);
+      setEmpty(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [getHeaders, localeRoot, router, sessionFailure]);
 
   useEffect(() => {
-    if (!isChecked) return;
-    if (!user) {
-      router.replace(`${localeRoot}/login`);
-      return;
-    }
     let cancelled = false;
     const timer = window.setTimeout(() => {
       if (cancelled) return;
@@ -181,6 +199,13 @@ export default function BoardsPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
+  }, [loadBoards]);
+
+  useEffect(() => {
+    if (!isChecked) return;
+    if (!user) {
+      router.replace(`${localeRoot}/login`);
+    }
   }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {
@@ -213,31 +238,6 @@ export default function BoardsPage() {
       // ignore localStorage read errors
     }
   }, [empty, isChecked, loading, router, user]);
-
-  async function loadBoards() {
-    try {
-      const data = await apiGet<{ boards: Board[]; plan?: PlanInfo }>("/api/boards", getHeaders());
-      const list = data.boards ?? [];
-      setBoards(list);
-      setPlan(data.plan ?? null);
-      setEmpty(list.length === 0);
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        const sp = new URLSearchParams();
-        if (sessionFailure?.supportRef) {
-          sp.set("sessionRef", sessionFailure.supportRef);
-          sp.set("sessionKind", sessionFailure.failureKind);
-        }
-        const q = sp.toString();
-        router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
-        return;
-      }
-      setBoards([]);
-      setEmpty(true);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
     if (!user || boards.length === 0) return;
@@ -446,10 +446,6 @@ export default function BoardsPage() {
   function handleClearRecents() {
     if (!user) return;
     setRecentEntries(clearRecentBoards(user.id));
-  }
-
-  if (authWaiting) {
-    return <BoardsRouteLoadingFallback />;
   }
 
   return (

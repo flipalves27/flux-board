@@ -168,16 +168,10 @@ export default function OnboardingPage() {
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
-  const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
   const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
   /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
   const onboardingInitRunIdRef = useRef(0);
-  /**
-   * Resolve após processar GET /api/boards (redirect, restaurar wizard, etc.).
-   * `createBoard` espera isto para não correr com a lista de boards ainda desconhecida.
-   */
-  const boardsReadyForCreateRef = useRef<Promise<void>>(Promise.resolve());
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -219,49 +213,22 @@ export default function OnboardingPage() {
 
   useLayoutEffect(() => {
     if (!isChecked || !user?.id) {
-      setOnboardingInitSettled(false);
-      boardsReadyForCreateRef.current = Promise.resolve();
       return;
     }
 
     if (!doneKey || !storageKey) {
-      boardsReadyForCreateRef.current = Promise.resolve();
       return;
     }
 
-    let gateDone = false;
-    let resolveGate: () => void = () => {};
-    const gate = new Promise<void>((resolve) => {
-      resolveGate = () => {
-        if (gateDone) return;
-        gateDone = true;
-        resolve();
-      };
-    });
-    boardsReadyForCreateRef.current = gate;
-
     const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
-
-    if (onboardingBoardsRetryKey > 0) {
-      setOnboardingInitSettled(false);
-    }
 
     const doneRaw = localStorage.getItem(doneKey);
     const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
 
     if (doneRaw === "1") {
       router.replace(`${localeRoot}/boards`);
-      resolveGate();
       return;
-    }
-
-    const needsStrictBoardsWait = Boolean(persisted?.boardId);
-
-    if (!needsStrictBoardsWait) {
-      setOnboardingInitSettled(true);
-    } else if (onboardingBoardsRetryKey === 0) {
-      setOnboardingInitSettled(false);
     }
 
     void (async () => {
@@ -336,11 +303,6 @@ export default function OnboardingPage() {
               ? e.message
               : tRef.current("errors.init");
         setInitError(msg);
-      } finally {
-        if (!cancelled && runId === onboardingInitRunIdRef.current && needsStrictBoardsWait) {
-          setOnboardingInitSettled(true);
-        }
-        resolveGate();
       }
     })();
 
@@ -350,7 +312,7 @@ export default function OnboardingPage() {
   }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
 
   useEffect(() => {
-    if (!onboardingInitSettled || !heroStorageKey) {
+    if (!heroStorageKey) {
       setFluxyHeroOpen(false);
       return;
     }
@@ -368,7 +330,7 @@ export default function OnboardingPage() {
       return;
     }
     setFluxyHeroOpen(true);
-  }, [onboardingInitSettled, heroStorageKey, step, boardId]);
+  }, [heroStorageKey, step, boardId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -405,7 +367,6 @@ export default function OnboardingPage() {
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
       if (!user) return;
-      await boardsReadyForCreateRef.current;
       setBusy(true);
       setInitError(null);
       try {
@@ -582,8 +543,7 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
-  const step1ActionsDisabled =
-    busy || isLoading || !isChecked || !user || (!onboardingInitSettled && !initError);
+  const step1ActionsDisabled = busy;
 
   const loginHrefWithSessionDiag = useMemo(() => {
     const sp = new URLSearchParams();
