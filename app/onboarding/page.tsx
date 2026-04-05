@@ -239,40 +239,42 @@ export default function OnboardingPage() {
 
         const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
 
-        if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
-          await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
-        }
-        if (cancelled) return;
+        // Utilizadores não-admin não vêem boards de outros — são sempre novos no onboarding.
+        // Skip o fetch de boards para evitar 504 por MongoDB frio e liberar o UI imediatamente.
+        const isAdmin = user.seesAllBoardsInOrg || user.isAdmin;
 
-        // Tenta verificar se o utilizador já tem boards. Timeout rápido (10s):
-        // - Se responder: continua com lógica normal
-        // - Se timeout/erro: graceful degradation → assume que não tem boards (caso comum)
         let boards: Array<{ id: string }> = [];
-        try {
-          const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
-            const timeoutId = window.setTimeout(
-              () => reject(new Error("onboarding_boards_timeout")),
-              ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
-            );
-            void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
-              .then((data) => {
-                window.clearTimeout(timeoutId);
-                resolve(data);
-              })
-              .catch((err) => {
-                window.clearTimeout(timeoutId);
-                reject(err);
-              });
-          });
-          boards = boardsPayload.boards ?? [];
-        } catch (fetchErr) {
-          // Graceful degradation: se fetch falhar (timeout/erro), assume que não tem boards.
-          // Isso é o caso comum para novos utilizadores pós-OAuth.
+        if (isAdmin) {
+          // Admins podem ter boards existentes de outros utilizadores → verificar no servidor.
+          if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
+            await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+          }
           if (cancelled) return;
-          if (runId !== onboardingInitRunIdRef.current) return;
-          console.warn("[onboarding] Fetch de boards falhou, continuando com onboarding:", fetchErr);
-          boards = [];
+          try {
+            const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+              const timeoutId = window.setTimeout(
+                () => reject(new Error("onboarding_boards_timeout")),
+                ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+              );
+              void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+                .then((data) => {
+                  window.clearTimeout(timeoutId);
+                  resolve(data);
+                })
+                .catch((err) => {
+                  window.clearTimeout(timeoutId);
+                  reject(err);
+                });
+            });
+            boards = boardsPayload.boards ?? [];
+          } catch (fetchErr) {
+            if (cancelled) return;
+            if (runId !== onboardingInitRunIdRef.current) return;
+            console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
+            boards = [];
+          }
         }
+        // Para não-admin: boards = [] → prossegue direto ao onboarding sem round-trip ao servidor.
 
         if (boards.length > 0) {
           if (persisted?.boardId && boards.some((b) => b.id === persisted.boardId)) {
