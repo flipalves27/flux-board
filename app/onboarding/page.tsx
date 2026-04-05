@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
@@ -130,7 +131,7 @@ function safeParseJson<T>(value: string | null): T | null {
 export default function OnboardingPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked } = useAuth();
+  const { user, getHeaders, isChecked, isLoading, sessionFailure } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
   const tRef = useRef(t);
@@ -187,9 +188,15 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
-      router.replace(`${localeRoot}/login`);
+      const sp = new URLSearchParams();
+      if (sessionFailure?.supportRef) {
+        sp.set("sessionRef", sessionFailure.supportRef);
+        sp.set("sessionKind", sessionFailure.failureKind);
+      }
+      const q = sp.toString();
+      router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
     }
-  }, [isChecked, user, router, localeRoot]);
+  }, [isChecked, user, router, localeRoot, sessionFailure]);
 
   useEffect(() => {
     if (!isChecked || !user?.id) {
@@ -512,7 +519,18 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
-  const step1ActionsDisabled = busy || !isChecked || !user || !onboardingInitSettled;
+  const step1ActionsDisabled =
+    busy || isLoading || !isChecked || !user || !onboardingInitSettled;
+
+  const loginHrefWithSessionDiag = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (sessionFailure?.supportRef) {
+      sp.set("sessionRef", sessionFailure.supportRef);
+      sp.set("sessionKind", sessionFailure.failureKind);
+    }
+    const q = sp.toString();
+    return `${localeRoot}/login${q ? `?${q}` : ""}`;
+  }, [localeRoot, sessionFailure]);
 
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden">
@@ -555,6 +573,18 @@ export default function OnboardingPage() {
         {initError && (
           <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
             {initError}
+          </div>
+        )}
+
+        {step === 1 && isChecked && !user && sessionFailure && (
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-30)] bg-[var(--flux-danger-alpha-12)] p-4 text-sm text-[var(--flux-text)]">
+            <p className="text-[var(--flux-danger)] leading-relaxed">{t("step1.sessionInvalid")}</p>
+            <Link
+              href={loginHrefWithSessionDiag}
+              className="btn-primary self-start text-center no-underline"
+            >
+              {t("step1.signInAgain")}
+            </Link>
           </div>
         )}
 
@@ -691,6 +721,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="mt-5 flex flex-col items-end gap-2">
+                  {step1ActionsDisabled && !user && (!isChecked || isLoading) ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.checkingSession")}
+                    </p>
+                  ) : null}
                   {step1ActionsDisabled && user && !initError ? (
                     <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
                       {t("step1.preparing")}

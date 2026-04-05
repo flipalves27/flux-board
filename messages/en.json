@@ -1678,7 +1678,10 @@
       "createCard": "Create card"
     },
     "step1": {
-      "preparing": "Checking your account and boards… The buttons will enable in a moment."
+      "preparing": "Checking your account and boards… The buttons will enable in a moment.",
+      "checkingSession": "Confirming your session…",
+      "sessionInvalid": "We couldn’t validate your session (server or database may be unavailable). Fix the environment or sign in again.",
+      "signInAgain": "Go to sign in"
     },
     "step2": {
       "reorderTitle": "Drag to reorder",

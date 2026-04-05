@@ -85,13 +85,14 @@ export async function GET(request: NextRequest) {
       console.error("[api/auth/session] validate wall timeout", { supportRef, wallMs });
       return NextResponse.json(
         { ok: false, supportRef, failureKind: "server_timeout" as const },
-        { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "3" } }
+        { status: 200, headers: { "Cache-Control": "no-store, private" } }
       );
     }
+    const supportRef = randomUUID();
     console.error("[api/auth/session]", e);
     return NextResponse.json(
-      { ok: false, failureKind: "unknown" },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
+      { ok: false, supportRef, failureKind: "unknown" as const },
+      { status: 200, headers: { "Cache-Control": "no-store, private" } }
     );
   }
 }

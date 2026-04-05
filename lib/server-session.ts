@@ -160,56 +160,64 @@ export async function validateSessionFromCookieValues(
   opts?: { requestHostForDebug?: string }
 ): Promise<{ result: ValidateResult; sideEffect: ValidateSessionCookieSideEffect | null }> {
   const supportRef = randomUUID();
-  const hasAccess = Boolean(access?.trim());
-  const hasRefresh = Boolean(refresh?.trim());
+  try {
+    const hasAccess = Boolean(access?.trim());
+    const hasRefresh = Boolean(refresh?.trim());
 
-  const payload = access ? verifyToken(access) : null;
+    const payload = access ? verifyToken(access) : null;
 
-  if (!payload && refresh) {
-    const rotated = await rotateSessionFromRefreshPlain(refresh);
-    if (rotated) {
-      return {
-        result: await userToValidate(rotated.user),
-        sideEffect: {
-          type: "set_rotated",
-          access: rotated.access,
-          refreshPlain: rotated.refreshPlain,
-          persistent: rotated.persistent,
-        },
-      };
+    if (!payload && refresh) {
+      const rotated = await rotateSessionFromRefreshPlain(refresh);
+      if (rotated) {
+        return {
+          result: await userToValidate(rotated.user),
+          sideEffect: {
+            type: "set_rotated",
+            access: rotated.access,
+            refreshPlain: rotated.refreshPlain,
+            persistent: rotated.persistent,
+          },
+        };
+      }
     }
-  }
 
-  if (!payload) {
-    const failureKind: SessionValidateFailureKind = hasAccess || hasRefresh ? "token_invalid" : "no_cookies";
-    if (hasAccess || hasRefresh) {
-      const reason = hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
-      logSessionValidateFail({ reason, supportRef });
-      return { result: { ok: false, supportRef, failureKind }, sideEffect: { type: "clear_all" } };
+    if (!payload) {
+      const failureKind: SessionValidateFailureKind = hasAccess || hasRefresh ? "token_invalid" : "no_cookies";
+      if (hasAccess || hasRefresh) {
+        const reason =
+          hasAccess && hasRefresh ? "jwt_invalid_refresh_failed" : hasAccess ? "jwt_invalid_no_refresh" : "refresh_failed";
+        logSessionValidateFail({ reason, supportRef });
+        return { result: { ok: false, supportRef, failureKind }, sideEffect: { type: "clear_all" } };
+      }
+      if (isFluxAuthDebugEnabled()) {
+        logFluxAuthDebug("session_validate_no_cookies", {
+          supportRef,
+          hasAccessCookie: false,
+          hasRefreshCookie: false,
+          requestHost: opts?.requestHostForDebug,
+        });
+      }
+      return { result: { ok: false, supportRef, failureKind }, sideEffect: null };
     }
-    if (isFluxAuthDebugEnabled()) {
-      logFluxAuthDebug("session_validate_no_cookies", {
+
+    const user = await getUserById(payload.id, payload.orgId);
+    const validated = await userToValidate(user);
+    if (!validated.ok) {
+      logSessionValidateFail({
+        reason: "user_not_found",
+        userId: payload.id,
+        orgId: payload.orgId,
         supportRef,
-        hasAccessCookie: false,
-        hasRefreshCookie: false,
-        requestHost: opts?.requestHostForDebug,
       });
+      return { result: { ok: false, supportRef, failureKind: "user_not_found" }, sideEffect: { type: "clear_all" } };
     }
-    return { result: { ok: false, supportRef, failureKind }, sideEffect: null };
+    return { result: validated, sideEffect: null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[validateSessionFromCookieValues]", e);
+    logSessionValidateFail({ reason: "uncaught_exception", supportRef, message: msg.slice(0, 500) });
+    return { result: { ok: false, supportRef, failureKind: "unknown" }, sideEffect: null };
   }
-
-  const user = await getUserById(payload.id, payload.orgId);
-  const validated = await userToValidate(user);
-  if (!validated.ok) {
-    logSessionValidateFail({
-      reason: "user_not_found",
-      userId: payload.id,
-      orgId: payload.orgId,
-      supportRef,
-    });
-    return { result: { ok: false, supportRef, failureKind: "user_not_found" }, sideEffect: { type: "clear_all" } };
-  }
-  return { result: validated, sideEffect: null };
 }
 
 /**

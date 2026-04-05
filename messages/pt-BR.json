@@ -1679,7 +1679,10 @@
       "createCard": "Criar card"
     },
     "step1": {
-      "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes."
+      "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes.",
+      "checkingSession": "Confirmando a sessão…",
+      "sessionInvalid": "A sessão não pôde ser validada (servidor ou base de dados indisponível). Corrija o ambiente ou entre de novo.",
+      "signInAgain": "Ir para o login"
     },
     "step2": {
       "reorderTitle": "Arraste para reordenar",
