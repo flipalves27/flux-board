@@ -14,6 +14,31 @@ function mongoSocketTimeoutMs(): number {
   return 30_000;
 }
 
+/**
+ * Tamanho do pool por processo Node. Valores baixos (ex.: 10) geram
+ * `MongoWaitQueueTimeoutError` sob burst (login + /api/auth/session + /api/boards).
+ * Em serverless, cada instância quente tem o seu pool — não suba demais no Atlas M0
+ * se tiver centenas de instâncias quentes (limite de ligações ao cluster).
+ */
+function mongoMaxPoolSize(): number {
+  const raw = process.env.MONGO_MAX_POOL_SIZE?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 1 && n <= 100) return Math.floor(n);
+  }
+  return 25;
+}
+
+/** Tempo máximo à espera de uma ligação livre no pool (fila). */
+function mongoWaitQueueTimeoutMs(): number {
+  const raw = process.env.MONGO_WAIT_QUEUE_TIMEOUT_MS?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 1_000 && n <= 120_000) return Math.floor(n);
+  }
+  return 30_000;
+}
+
 const globalForMongo = globalThis as typeof globalThis & {
   _fluxBoardMongoClient?: Promise<MongoClient>;
 };
@@ -35,8 +60,10 @@ export async function getMongoClient(): Promise<MongoClient> {
       serverSelectionTimeoutMS: MONGO_TIMEOUT_MS,
       connectTimeoutMS: MONGO_TIMEOUT_MS,
       socketTimeoutMS: mongoSocketTimeoutMs(),
-      maxPoolSize: 10,
-      waitQueueTimeoutMS: MONGO_TIMEOUT_MS,
+      maxPoolSize: mongoMaxPoolSize(),
+      waitQueueTimeoutMS: mongoWaitQueueTimeoutMs(),
+      /** Evita abrir dezenas de handshakes em paralelo no mesmo tick (Atlas). */
+      maxConnecting: 5,
     });
     globalForMongo._fluxBoardMongoClient = client.connect();
   }
