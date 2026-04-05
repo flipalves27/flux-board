@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, getUserById } from "@/lib/kv-users";
-import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
       throw err;
     }
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boardIdsExec = await getBoardIds(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boards = await getBoardListRowsByIds(boardIdsExec, payload.orgId);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
 

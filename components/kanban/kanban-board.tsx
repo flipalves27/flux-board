@@ -19,10 +19,8 @@ import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useBoardFilters } from "./hooks/useBoardFilters";
-import { apiGet, ApiError } from "@/lib/api-client";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
-import type { SprintData } from "@/lib/schemas";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
@@ -258,8 +256,6 @@ function KanbanBoardLoaded({
     return new Set(nlqIdsArr);
   }, [nlqIdsArr]);
 
-  const setActiveSprintBoard = useSprintStore((s) => s.setActiveSprint);
-  const setSprintsBoard = useSprintStore((s) => s.setSprints);
   const activeSprintBoard = useSprintStore((s) => s.activeSprint[boardId] ?? null);
   const sprintScopeKey = `flux-kanban-sprint-scope:${boardId}`;
   const [sprintScopeOnly, setSprintScopeOnly] = useState(false);
@@ -272,29 +268,7 @@ function KanbanBoardLoaded({
     }
   }, [sprintScopeKey]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await apiGet<{ sprints: SprintData[] }>(
-          `/api/boards/${encodeURIComponent(boardId)}/sprints`,
-          getHeaders()
-        );
-        if (cancelled) return;
-        const list = Array.isArray(data.sprints) ? data.sprints : [];
-        setSprintsBoard(boardId, list);
-        setActiveSprintBoard(boardId, list.find((s) => s.status === "active") ?? null);
-      } catch (e) {
-        if (cancelled) return;
-        setSprintsBoard(boardId, []);
-        setActiveSprintBoard(boardId, null);
-        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return;
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [boardId, getHeaders, setActiveSprintBoard, setSprintsBoard]);
+  /** Sprints vêm de `GET /api/boards/[id]/bootstrap` no `loadBoard` da página (evita segundo round-trip). */
 
   const sprintCardIdSet = useMemo(() => {
     if (!sprintScopeOnly) return null;

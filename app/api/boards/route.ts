@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoardIds, getBoardListRowsByIds, createBoard } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, createBoard, countBoardsInOrg } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
@@ -69,11 +69,10 @@ export async function GET(request: NextRequest) {
       portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
     }));
 
-    // Contagem de boards deve ser por organização (não apenas pelo usuário).
+    // Contagem alinhada a documentos `boards` com este orgId (limite de plano / billing).
     const t4 = Date.now();
-    const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
-    logFluxApiPhase(route, "getBoardIds(orgCount)", t4);
-    const currentCount = orgBoardIds.length;
+    const currentCount = await countBoardsInOrg(payload.orgId);
+    logFluxApiPhase(route, "countBoardsInOrg", t4);
     const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
 
@@ -125,8 +124,7 @@ export async function POST(request: NextRequest) {
 
     const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     if (cap !== null) {
-      const existingIds = await getBoardIds(payload.id, payload.orgId, true);
-      const currentCount = existingIds.length;
+      const currentCount = await countBoardsInOrg(payload.orgId);
       if (currentCount >= cap) {
         return NextResponse.json(
           { error: `Limite do plano: no máximo ${cap} board(s) por organização.` },

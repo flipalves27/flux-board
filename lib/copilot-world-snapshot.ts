@@ -6,7 +6,7 @@ import { canUseFeature } from "@/lib/plan-gates";
 import { computeBoardPortfolio, type PortfolioBoardLike } from "@/lib/board-portfolio-metrics";
 import { getBoardAutomationRules } from "@/lib/kv-automations";
 import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
-import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsCopilotOrgSnapshotByIds, type BoardData } from "@/lib/kv-boards";
 import type { DocChunkRag } from "@/lib/docs-rag";
 import { retrieveRelevantDocChunks } from "@/lib/docs-rag";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
@@ -151,7 +151,8 @@ export async function buildCopilotWorldSnapshot(params: {
 }): Promise<{ snapshot: string; ragChunksUsed: DocChunkRag[] }> {
   const { orgId, userId, isAdmin, boardId, board, userMessage, org, ragChunks: preChunks, planGateCtx } = params;
 
-  const boards = await listBoardsForUser(userId, orgId, isAdmin);
+  const boardIdsSnap = await getBoardIds(userId, orgId, isAdmin);
+  const boards = await getBoardsCopilotOrgSnapshotByIds(boardIdsSnap, orgId);
   const boardNames = new Map(boards.map((b) => [b.id, String(b.name || b.id)]));
 
   const rulesEntries = await Promise.all(boards.map(async (b) => [b.id, await getBoardAutomationRules(b.id, orgId)] as const));

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, getUserById } from "@/lib/kv-users";
-import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Mensagem vazia após validação." }, { status: 400 });
     }
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boardIdsPortfolio = await getBoardIds(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boards = await getBoardListRowsByIds(boardIdsPortfolio, payload.orgId);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
     const quarter = currentQuarterLabel();

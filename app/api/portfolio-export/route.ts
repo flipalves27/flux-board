@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds } from "@/lib/kv-boards";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsExport = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardListRowsByIds(boardIdsExport, payload.orgId);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
 

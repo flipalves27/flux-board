@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsForCardSearchByIds } from "@/lib/kv-boards";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ schema: "flux-board.cards_search.v1", results: [] });
     }
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsSearch = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardsForCardSearchByIds(boardIdsSearch, payload.orgId);
     const results: Array<{ boardId: string; boardName: string; cardId: string; title: string }> = [];
 
     for (const b of boards) {

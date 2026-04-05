@@ -149,20 +149,34 @@ export function useBoardState({
 
   useEffect(() => {
     let cancelled = false;
-    async function loadOkrs() {
+    if (!boardId) return;
+
+    async function loadOkrsAndProjections() {
       setOkrLoadError(null);
+      setOkrProjectionError(null);
+      setOkrProjections(null);
+      const q = encodeURIComponent(currentQuarter);
+      const bid = encodeURIComponent(boardId);
+      const byBoardUrl = `/api/okrs/by-board?boardId=${bid}&quarter=${q}`;
+      const projectionUrl = `/api/okrs/projection?boardId=${bid}&quarter=${q}`;
+      const headers = getHeaders();
+
       try {
-        const r = await apiGet<{
-          ok: boolean;
-          objectives: Array<{ objective: unknown; keyResults: unknown[] }>;
-        }>(
-          `/api/okrs/by-board?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-          getHeaders()
-        );
+        const [objOutcome, projOutcome] = await Promise.allSettled([
+          apiGet<{
+            ok: boolean;
+            objectives: Array<{ objective: unknown; keyResults: unknown[] }>;
+          }>(byBoardUrl, headers),
+          apiGet<{
+            ok?: boolean;
+            projections?: OkrKrProjection[];
+          }>(projectionUrl, headers),
+        ]);
 
         if (cancelled) return;
-        if (r?.ok && Array.isArray(r.objectives)) {
-          const defs: OkrsObjectiveDefinition[] = r.objectives
+
+        if (objOutcome.status === "fulfilled" && objOutcome.value?.ok && Array.isArray(objOutcome.value.objectives)) {
+          const defs: OkrsObjectiveDefinition[] = objOutcome.value.objectives
             .map((g) => {
               const obj = g.objective as Record<string, unknown> | null | undefined;
               if (!obj) return null;
@@ -181,49 +195,37 @@ export function useBoardState({
           setOkrObjectives(defs);
         } else {
           setOkrObjectives([]);
+          if (objOutcome.status === "rejected") {
+            setOkrLoadError(
+              objOutcome.reason instanceof Error ? objOutcome.reason.message : "Erro ao carregar OKRs"
+            );
+          }
+        }
+
+        if (projOutcome.status === "fulfilled" && Array.isArray(projOutcome.value?.projections)) {
+          setOkrProjections(projOutcome.value.projections);
+        } else {
+          setOkrProjections([]);
+          if (projOutcome.status === "rejected") {
+            setOkrProjectionError(
+              projOutcome.reason instanceof Error ? projOutcome.reason.message : "Erro ao carregar projeções"
+            );
+          }
         }
       } catch (err) {
         if (cancelled) return;
         setOkrObjectives([]);
+        setOkrProjections(null);
         setOkrLoadError(err instanceof Error ? err.message : "Erro ao carregar OKRs");
+        setOkrProjectionError(err instanceof Error ? err.message : "Erro ao carregar projeções");
       }
     }
 
-    if (!boardId) return;
-    loadOkrs();
+    void loadOkrsAndProjections();
     return () => {
       cancelled = true;
     };
   }, [boardId, currentQuarter, getHeaders]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadProjections() {
-      setOkrProjectionError(null);
-      setOkrProjections(null);
-      if (!boardId || okrObjectives.length === 0) return;
-      try {
-        const r = await apiGet<{
-          ok?: boolean;
-          projections?: OkrKrProjection[];
-        }>(
-          `/api/okrs/projection?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-          getHeaders()
-        );
-        if (cancelled) return;
-        if (r && Array.isArray(r.projections)) setOkrProjections(r.projections);
-        else setOkrProjections([]);
-      } catch (err) {
-        if (cancelled) return;
-        setOkrProjections(null);
-        setOkrProjectionError(err instanceof Error ? err.message : "Erro ao carregar projeções");
-      }
-    }
-    loadProjections();
-    return () => {
-      cancelled = true;
-    };
-  }, [boardId, currentQuarter, getHeaders, okrObjectives.length]);
 
   const okrProjectionByKrId = useMemo(() => {
     const m = new Map<string, OkrKrProjection>();

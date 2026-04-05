@@ -64,7 +64,7 @@ import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
 import { isScrumMethodology, type BoardMethodology } from "@/lib/board-methodology";
-import type { CardServiceClass, SubtaskData, SubtaskProgress } from "@/lib/schemas";
+import type { CardServiceClass, SprintData, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import {
   setBoardPersistenceHandler,
   useBoardStore,
@@ -485,7 +485,7 @@ export default function BoardPage() {
     const seq = ++loadSeqRef.current;
     setLoading(true);
     try {
-      const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
+      const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/bootstrap`, {
         cache: "no-store",
         headers: getHeadersRef.current(),
       });
@@ -500,8 +500,18 @@ export default function BoardPage() {
         return;
       }
       if (!r.ok) throw new Error("Erro ao carregar");
-      const d = await r.json();
+      const body = (await r.json()) as {
+        board?: BoardData & { name?: string; clientLabel?: string };
+        sprints?: SprintData[];
+      };
+      const d = body.board;
+      if (!d || typeof d !== "object") throw new Error("Erro ao carregar");
       if (seq !== loadSeqRef.current) return;
+      const sprints = Array.isArray(body.sprints) ? body.sprints : [];
+      useSprintStore.getState().setSprints(boardId, sprints);
+      useSprintStore
+        .getState()
+        .setActiveSprint(boardId, sprints.find((s) => s.status === "active") ?? null);
       setBoardName(d.name || "Board");
       const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
       setClientLabel(rawClient || null);

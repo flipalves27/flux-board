@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsForCardSearchByIds } from "@/lib/kv-boards";
 import { listCrossDependencyLinksForOrg } from "@/lib/kv-card-dependencies";
 import { isMongoConfigured } from "@/lib/mongo";
 
@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
     const minConfidence = Number(searchParams.get("minConfidence") || "0");
     const minC = Number.isFinite(minConfidence) ? minConfidence : 0;
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsDep = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardsForCardSearchByIds(boardIdsDep, payload.orgId);
     const accessible = new Set(boards.map((b) => b.id));
 
     let links = await listCrossDependencyLinksForOrg(payload.orgId, { minConfidence: minC });
