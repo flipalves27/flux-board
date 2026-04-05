@@ -14,6 +14,8 @@ import type { BucketConfig } from "@/app/board/[id]/page";
 import { inferLegacyBoardMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { listSprints, getActiveSprint } from "@/lib/kv-sprints";
 
+export const maxDuration = 60;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

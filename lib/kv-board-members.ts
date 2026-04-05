@@ -107,6 +107,16 @@ export async function getBoardEffectiveRole(
   isOrgAdmin: boolean
 ): Promise<BoardRole | "none" | "open"> {
   if (isOrgAdmin || isOwner) return "admin";
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureIndexes(db);
+    const col = db.collection<BoardMember>(COL_BOARD_MEMBERS);
+    const member = await col.findOne({ orgId, boardId, userId } as never);
+    if (member) return member.role as BoardRole;
+    const anyMember = await col.findOne({ orgId, boardId } as never, { projection: { _id: 1 } });
+    if (!anyMember) return "open";
+    return "none";
+  }
   const members = await listBoardMembers(orgId, boardId);
   if (members.length === 0) return "open";
   const member = members.find((m) => m.userId === userId);

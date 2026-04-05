@@ -1,4 +1,5 @@
 import { getDb, isMongoConfigured } from "./mongo";
+import type { Db } from "mongodb";
 import { getStore } from "./storage";
 import { normalizeTeamRole, type TeamRole } from "./rbac";
 
@@ -14,6 +15,15 @@ type TeamMember = {
 
 const COL = "team_members";
 
+let teamIndexesEnsured = false;
+async function ensureTeamIndexes(db: Db): Promise<void> {
+  if (teamIndexesEnsured) return;
+  await db.collection(COL).createIndex({ orgId: 1 });
+  await db.collection(COL).createIndex({ orgId: 1, boardId: 1 });
+  await db.collection(COL).createIndex({ orgId: 1, userId: 1 });
+  teamIndexesEnsured = true;
+}
+
 function kvKey(orgId: string): string {
   return `team_members:${orgId}`;
 }
@@ -25,6 +35,7 @@ function withNormalizedRoles(rows: TeamMember[]): TeamMember[] {
 export async function listTeamMembers(orgId: string, boardId?: string): Promise<TeamMember[]> {
   if (isMongoConfigured()) {
     const db = await getDb();
+    await ensureTeamIndexes(db);
     const q = boardId ? { orgId, boardId } : { orgId };
     const raw = await db.collection<TeamMember>(COL).find(q).toArray();
     return withNormalizedRoles(raw);
@@ -39,6 +50,7 @@ export async function upsertTeamMember(input: TeamMember): Promise<TeamMember> {
   const row: TeamMember = { ...input, role: normalizeTeamRole(input.role) };
   if (isMongoConfigured()) {
     const db = await getDb();
+    await ensureTeamIndexes(db);
     await db.collection<TeamMember>(COL).updateOne(
       { orgId: row.orgId, userId: row.userId, boardId: row.boardId ?? null } as never,
       { $set: row },
@@ -63,6 +75,19 @@ export async function getOrgWideTeamBoardAccess(
   orgId: string,
   userId: string
 ): Promise<TeamRole | null> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureTeamIndexes(db);
+    const rows = await db
+      .collection<TeamMember>(COL)
+      .find({ orgId, userId, active: true } as never)
+      .toArray();
+    for (const m of rows) {
+      if (String(m.boardId ?? "").trim()) continue;
+      return normalizeTeamRole(m.role);
+    }
+    return null;
+  }
   const members = await listTeamMembers(orgId);
   for (const m of members) {
     if (m.userId !== userId || !m.active) continue;
@@ -75,6 +100,7 @@ export async function getOrgWideTeamBoardAccess(
 export async function removeTeamMember(orgId: string, userId: string, boardId?: string): Promise<boolean> {
   if (isMongoConfigured()) {
     const db = await getDb();
+    await ensureTeamIndexes(db);
     const result = await db.collection<TeamMember>(COL).deleteOne({
       orgId,
       userId,

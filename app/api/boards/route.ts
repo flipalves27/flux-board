@@ -17,6 +17,8 @@ import type { AutomationRule } from "@/lib/automation-types";
 import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
 import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
 
+export const maxDuration = 60;
+
 function corsHeaders(request: NextRequest) {
   return boardsApiCorsHeaders(request);
 }
