@@ -9,7 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
-import { DOWNGRADE_GRACE_DAYS, getProMaxUsers } from "@/lib/billing-limits";
+import { DOWNGRADE_GRACE_DAYS, getProMaxUsers, TRIAL_DAYS } from "@/lib/billing-limits";
 import { formatBrl, PRICING_BRL } from "@/lib/billing-pricing";
 import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
@@ -622,7 +622,7 @@ export default function BillingPage() {
               </div>
               {(plan === "trial" || plan === "free") && (
                 <p className="mt-4 text-xs text-[var(--flux-text-muted)]">
-                  Trial de 14 dias inclui recursos Pro. Após o trial, o espaço volta ao Free até você assinar.
+                  Trial de {TRIAL_DAYS} dias inclui recursos Pro. Após o trial, o espaço volta ao Free até você assinar.
                 </p>
               )}
                 </>
