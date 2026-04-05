@@ -101,3 +101,11 @@ export async function rateLimit({ key, limit, windowMs }: RateLimitParams): Prom
   return rateLimitInMemory({ key, limit, windowMs });
 }
 
+/**
+ * Limite só em memória (por instância serverless). Use em rotas muito frequentes onde um round-trip
+ * extra ao Mongo para rate limit competiria com a latência crítica (ex.: `GET /api/auth/session`).
+ */
+export async function rateLimitMemoryOnly(params: RateLimitParams): Promise<RateLimitResult> {
+  return rateLimitInMemory(params);
+}
+

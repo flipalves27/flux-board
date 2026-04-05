@@ -1483,7 +1483,8 @@
         "token_invalid": "Token inválido ou renovação da sessão falhou.",
         "user_not_found": "Utilizador não encontrado para o token atual.",
         "unknown": "Erro desconhecido no servidor.",
-        "client_timeout": "A validação demorou demais no navegador (pode não haver log correspondente no servidor)."
+        "client_timeout": "A validação demorou demais no navegador (pode não haver log correspondente no servidor).",
+        "server_timeout": "O servidor não concluiu a validação a tempo (Mongo/rede lenta). Procure `[api/auth/session] validate wall timeout` nos logs."
       }
     },
     "inviteBanner": "Você está entrando com um convite. Se já tiver conta, use a aba Entrar ou Google/Microsoft — o convite será aplicado ao e-mail certo.",
@@ -1676,6 +1677,9 @@
       "creating": "Criando…",
       "saving": "Salvando…",
       "createCard": "Criar card"
+    },
+    "step1": {
+      "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes."
     },
     "step2": {
       "reorderTitle": "Arraste para reordenar",

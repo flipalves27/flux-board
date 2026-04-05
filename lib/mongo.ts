@@ -4,6 +4,16 @@ function mongoUri(): string | undefined {
   return process.env.MONGODB_URI || process.env.MONGO_URI;
 }
 
+/** Pós-handshake: o default do driver é 0 (sem limite), o que pode pendurar a função até o `maxDuration` da Vercel (504). */
+function mongoSocketTimeoutMs(): number {
+  const raw = process.env.MONGO_SOCKET_TIMEOUT_MS?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 600_000);
+  }
+  return 30_000;
+}
+
 const globalForMongo = globalThis as typeof globalThis & {
   _fluxBoardMongoClient?: Promise<MongoClient>;
 };
@@ -12,8 +22,10 @@ export function isMongoConfigured(): boolean {
   return Boolean(mongoUri());
 }
 
-/** Abaixo do limite típico de 30s da Vercel: o default do driver é serverSelectionTimeoutMS=30s e competia com o timeout da função (504). */
-const MONGO_TIMEOUT_MS = 15_000;
+/**
+ * Seleção de servidor / handshake: manter moderado; operações em si são limitadas por `socketTimeoutMS`.
+ */
+const MONGO_TIMEOUT_MS = 12_000;
 
 export async function getMongoClient(): Promise<MongoClient> {
   const uri = mongoUri();
@@ -22,6 +34,7 @@ export async function getMongoClient(): Promise<MongoClient> {
     const client = new MongoClient(uri, {
       serverSelectionTimeoutMS: MONGO_TIMEOUT_MS,
       connectTimeoutMS: MONGO_TIMEOUT_MS,
+      socketTimeoutMS: mongoSocketTimeoutMs(),
       maxPoolSize: 10,
       waitQueueTimeoutMS: MONGO_TIMEOUT_MS,
     });

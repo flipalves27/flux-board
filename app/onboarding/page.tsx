@@ -156,6 +156,8 @@ export default function OnboardingPage() {
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
   const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
+  /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
+  const onboardingInitRunIdRef = useRef(0);
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -183,11 +185,19 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
+    if (!isChecked) return;
+    if (!user) {
+      router.replace(`${localeRoot}/login`);
+    }
+  }, [isChecked, user, router, localeRoot]);
+
+  useEffect(() => {
     if (!isChecked || !user?.id) {
       setOnboardingInitSettled(false);
       return;
     }
 
+    const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
     setOnboardingInitSettled(false);
     (async () => {
@@ -271,7 +281,9 @@ export default function OnboardingPage() {
               : tRef.current("errors.init");
         setInitError(msg);
       } finally {
-        if (!cancelled) setOnboardingInitSettled(true);
+        if (cancelled) return;
+        if (runId !== onboardingInitRunIdRef.current) return;
+        setOnboardingInitSettled(true);
       }
     })();
 
@@ -500,6 +512,8 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
+  const step1ActionsDisabled = busy || !isChecked || !user || !onboardingInitSettled;
+
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden">
       <FluxAppBackdrop />
@@ -676,23 +690,30 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={busy || !user || !onboardingInitSettled}
-                    onClick={() => handleSkipStep1()}
-                  >
-                    {t("buttons.skip")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={busy || !user || !onboardingInitSettled}
-                    onClick={() => handleContinueStep1()}
-                  >
-                    {busy ? t("buttons.creating") : t("buttons.continue")}
-                  </button>
+                <div className="mt-5 flex flex-col items-end gap-2">
+                  {step1ActionsDisabled && user && !initError ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.preparing")}
+                    </p>
+                  ) : null}
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleSkipStep1()}
+                    >
+                      {t("buttons.skip")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleContinueStep1()}
+                    >
+                      {busy ? t("buttons.creating") : t("buttons.continue")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

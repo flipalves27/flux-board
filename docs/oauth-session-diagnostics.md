@@ -61,7 +61,7 @@ Para desligar estes avisos (ex.: staging ruidoso): `FLUX_SESSION_VALIDATE_LOG=0`
 
 **`client_timeout` no painel de diagnóstico:** a validação de sessão (Server Action) não respondeu a tempo no browser (limite interno elevado, com novas tentativas após timeout). Costuma ser cold start + Mongo lento, não ausência de cookies.
 
-**504 / `FUNCTION_INVOCATION_TIMEOUT` na Vercel em `POST /…/boards` ou login:** a função serverless pode estar a esperar o MongoDB até ~30s (default antigo do driver). O cliente em `lib/mongo.ts` usa timeouts mais curtos; o `maxDuration` do layout aumenta a margem no plano Vercel. Confirme na Atlas **Network Access** (IPs da Vercel ou `0.0.0.0/0` em dev) e região próxima de `gru1` se possível.
+**504 / `FUNCTION_INVOCATION_TIMEOUT` na Vercel (ex.: mensagem “Task timed out after 60 seconds” em `GET /api/auth/session`):** a função corre até ao `maxDuration` (60s nessa rota) porque alguma operação **não devolveu** — com `socketTimeoutMS` em 0 (antigo default do driver), um `findOne` / `createIndex` pendurado na rede pode esperar indefinidamente após o handshake. Em `lib/mongo.ts` define-se `socketTimeoutMS` (override: `MONGO_SOCKET_TIMEOUT_MS`) e a rota `GET /api/auth/session` aplica ainda um teto (`FLUX_SESSION_VALIDATE_WALL_MS`, default 25s) para responder **503** + JSON (`failureKind: server_timeout`) em vez de 504 sem corpo. Confirme na Atlas **Network Access** e região próxima à da Vercel.
 
 **Diagnóstico opcional:** `FLUX_AUTH_DEBUG=1` emite `[flux-auth-debug]` com JSON (nunca tokens). Eventos úteis:
 

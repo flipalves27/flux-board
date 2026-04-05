@@ -1483,7 +1483,8 @@
         "token_invalid": "Session token was invalid or refresh failed.",
         "user_not_found": "No user record matched the current token.",
         "unknown": "Unknown server error.",
-        "client_timeout": "Validation timed out in the browser (there may be no matching server log)."
+        "client_timeout": "Validation timed out in the browser (there may be no matching server log).",
+        "server_timeout": "The server didn’t finish validation in time (slow MongoDB/network). Look for `[api/auth/session] validate wall timeout` in logs."
       }
     },
     "inviteBanner": "You’re signing in with an invite. If you already have an account, use Sign in or Google/Microsoft — the invite applies to the matching email.",
@@ -1675,6 +1676,9 @@
       "creating": "Creating…",
       "saving": "Saving…",
       "createCard": "Create card"
+    },
+    "step1": {
+      "preparing": "Checking your account and boards… The buttons will enable in a moment."
     },
     "step2": {
       "reorderTitle": "Drag to reorder",

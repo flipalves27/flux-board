@@ -158,7 +158,7 @@ export async function apiGet<T = unknown>(
 export async function fetchSessionValidate(): Promise<ValidateResult> {
   const res = await apiFetch("/api/auth/session", { method: "GET" });
   const data = (await res.json().catch(() => ({}))) as ValidateResult;
-  if (res.status === 429 || res.status === 500) {
+  if (res.status === 429 || res.status === 500 || res.status === 503) {
     return data?.ok === false ? data : { ok: false, failureKind: "unknown" };
   }
   if (!res.ok) {

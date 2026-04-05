@@ -7,6 +7,8 @@ export type SessionValidateFailureKind =
   | "token_invalid"
   | "user_not_found"
   | "unknown"
+  /** Resposta da rota `GET /api/auth/session` quando a validação excedeu o teto (Mongo lento / rede). */
+  | "server_timeout"
   /** Gerado no cliente quando a validação expira (não aparece nos logs do servidor). */
   | "client_timeout";
 

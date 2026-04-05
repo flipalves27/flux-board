@@ -38,6 +38,8 @@ export function SessionSupportDiagnostic({ supportRef, failureKind }: Props) {
         return t("kinds.user_not_found");
       case "client_timeout":
         return t("kinds.client_timeout");
+      case "server_timeout":
+        return t("kinds.server_timeout");
       default:
         return t("kinds.unknown");
     }
