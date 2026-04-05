@@ -187,10 +187,21 @@ export async function loginAction(
       },
     };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
     console.error("Login error:", err);
+    // Erros de infra (MongoDB timeout/DNS) não devem vazar detalhes técnicos ao utilizador.
+    const isInfraError =
+      msg.includes("Server selection timed out") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("MongoNetworkError") ||
+      msg.includes("MongoServerSelectionError");
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Erro interno",
+      error: isInfraError
+        ? "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
+        : err instanceof Error ? err.message : "Erro interno",
     };
   }
 }
@@ -381,10 +392,20 @@ export async function registerAction(
       },
     };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
     console.error("Register error:", err);
+    const isInfraError =
+      msg.includes("Server selection timed out") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("MongoNetworkError") ||
+      msg.includes("MongoServerSelectionError");
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Erro interno",
+      error: isInfraError
+        ? "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
+        : err instanceof Error ? err.message : "Erro interno",
     };
   }
 }
