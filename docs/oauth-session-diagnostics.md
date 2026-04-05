@@ -118,3 +118,41 @@ O código monta o redirect com `googleRedirectUri(base)` → `{base}/api/auth/oa
 Após estes passos, cruze: cookies presentes + `Cookie` no POST + ausência de `fail` em `[flux-session-validate]` ⇒ sessão ok; caso contrário o `reason` e os eventos `[flux-auth-debug]` indicam o próximo ficheiro a rever.
 
 **Plano de correções (prioridades, matriz sintoma → fix):** [`oauth-session-fix-plan.md`](oauth-session-fix-plan.md).
+
+## 7. Primeiro acesso (registo → onboarding): reprodução e “quem excede primeiro”
+
+1. DevTools → **Network** → preservar log; opcionalmente **Disable cache**.
+2. Fluxo: **registar** nova conta (e/ou OAuth, se aplicável) até aterrar em `/{locale}/onboarding`.
+3. Filtrar por `session` e `boards` e anotar **ordem de início** e **duração** de:
+   - `GET /api/auth/session`
+   - `GET /api/boards`
+4. Na Vercel, cruzar com `[api/auth/session] validate wall timeout`, `[flux-session-validate]`, `MongoWaitQueueTimeoutError` e duração das invocações.
+
+**Logs por fase (servidor):** com `FLUX_API_PHASE_LOG=1`, as funções emitem linhas `[flux-api-phase]` com tempos por etapa em `GET /api/auth/session` e `GET /api/boards` (útil para ver se o gargalo é auth, org, `getBoardIds`, agregação de listagem, etc.).
+
+## 8. `app_migrations` e backfill de tenancy
+
+- **Marcador:** `app_migrations._id === "tenancy_orgid_backfill_v1"` (constante `TENANCY_ORGID_BACKFILL_MIGRATION_ID` em `lib/kv-organizations.ts`).
+- **Atlas:** `db.app_migrations.find({ _id: "tenancy_orgid_backfill_v1" })` — se existir, o caminho lazy só faz `findOne` barato; a primeira vez numa base grande, o `updateMany` em `users` / `boards` / `user_boards` pode ser pesado.
+- **Offline (recomendado em bases grandes):** após deploy, correr uma vez no ambiente com URI correta:
+
+  `npm run mongo:ensure-tenancy-migration`
+
+  (equivalente idempotente ao `ensureTenancyMigrationForExistingData` da app.)
+
+- **Índices:** o primeiro `createIndex` por deploy/instância pode acrescentar latência; em Atlas, preferir criar índices em janela de manutenção ou pipeline de release quando possível.
+
+## 9. Afinar Mongo e parede de sessão (staging / burst)
+
+| Variável | Função |
+|----------|--------|
+| `MONGO_MAX_POOL_SIZE` | Tamanho do pool por instância (default no código subiu para ~32; reduzir no M0 se o Atlas limitar ligações). |
+| `MONGO_WAIT_QUEUE_TIMEOUT_MS` | Espera na fila do pool (default ~40s). |
+| `MONGO_SOCKET_TIMEOUT_MS` | Teto por operação após handshake (default ~35s). |
+| `FLUX_SESSION_VALIDATE_WALL_MS` | Teto em `GET /api/auth/session` antes de responder `server_timeout` (default 25s; intervalo válido 5s–55s no código). |
+
+**Burst artificial (staging):** cold start + abrir onboarding ou `/boards` com Network aberto; repetir com `FLUX_API_PHASE_LOG=1` e ajustar variáveis até desaparecerem `MongoWaitQueueTimeoutError` e tempos P95 aceitáveis.
+
+## 10. Onboarding: stagger do `GET /api/boards`
+
+Para reduzir competição com a validação de sessão no primeiro paint, o onboarding aplica por omissão um atraso curto (~280 ms) antes do primeiro `GET /api/boards`. Desativar: `NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS=0`; personalizar (0–10000 ms) com o mesmo nome.

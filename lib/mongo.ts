@@ -11,7 +11,7 @@ function mongoSocketTimeoutMs(): number {
     const n = Number(raw);
     if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 600_000);
   }
-  return 30_000;
+  return 35_000;
 }
 
 /**
@@ -19,6 +19,8 @@ function mongoSocketTimeoutMs(): number {
  * `MongoWaitQueueTimeoutError` sob burst (login + /api/auth/session + /api/boards).
  * Em serverless, cada instância quente tem o seu pool — não suba demais no Atlas M0
  * se tiver centenas de instâncias quentes (limite de ligações ao cluster).
+ * Default ~32 equilibra burst (registo + /api/auth/session + /api/boards) com ligações ao Atlas;
+ * afinar em staging com `MONGO_MAX_POOL_SIZE` / métricas de fila.
  */
 function mongoMaxPoolSize(): number {
   const raw = process.env.MONGO_MAX_POOL_SIZE?.trim();
@@ -26,7 +28,7 @@ function mongoMaxPoolSize(): number {
     const n = Number(raw);
     if (Number.isFinite(n) && n >= 1 && n <= 100) return Math.floor(n);
   }
-  return 25;
+  return 32;
 }
 
 /** Tempo máximo à espera de uma ligação livre no pool (fila). */
@@ -36,7 +38,7 @@ function mongoWaitQueueTimeoutMs(): number {
     const n = Number(raw);
     if (Number.isFinite(n) && n >= 1_000 && n <= 120_000) return Math.floor(n);
   }
-  return 30_000;
+  return 40_000;
 }
 
 const globalForMongo = globalThis as typeof globalThis & {

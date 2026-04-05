@@ -16,6 +16,7 @@ import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
 import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
 import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 
 export const maxDuration = 60;
 
@@ -28,17 +29,26 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const route = "GET /api/boards";
+  const t0 = Date.now();
   const payload = await getAuthFromRequest(request);
+  logFluxApiPhase(route, "getAuthFromRequest", t0);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   try {
-    await ensureAdminUser();
+    const t1 = Date.now();
     const org = await getOrganizationById(payload.orgId);
+    logFluxApiPhase(route, "getOrganizationById", t1);
 
+    const t2 = Date.now();
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    logFluxApiPhase(route, "getBoardIds(userView)", t2);
+
+    const t3 = Date.now();
     const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);
+    logFluxApiPhase(route, "getBoardListRowsByIds", t3);
     const boards = boardRows.map((b) => ({
       id: b.id,
       name: b.name,
@@ -50,7 +60,9 @@ export async function GET(request: NextRequest) {
     }));
 
     // Contagem de boards deve ser por organização (não apenas pelo usuário).
+    const t4 = Date.now();
     const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
+    logFluxApiPhase(route, "getBoardIds(orgCount)", t4);
     const currentCount = orgBoardIds.length;
     const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
@@ -62,6 +74,7 @@ export async function GET(request: NextRequest) {
         currentCount,
         atLimit: cap !== null && currentCount >= cap,
       };
+    logFluxApiPhase(route, "total", t0);
     return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
     console.error("Boards API error:", err);

@@ -44,6 +44,19 @@ const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 /** Evita que o passo 1 fique com botões desativados se GET /api/boards não responder. */
 const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 25_000;
 
+/**
+ * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
+ * `0` desativa. Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
+ */
+const ONBOARDING_BOARDS_STAGGER_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS?.trim();
+  if (raw === "0") return 0;
+  if (raw === undefined || raw === "") return 280;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 10_000) return Math.floor(n);
+  return 280;
+})();
+
 function StepPill({
   index,
   current,
@@ -219,6 +232,11 @@ export default function OnboardingPage() {
         }
 
         const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
+
+        if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
+          await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+        }
+        if (cancelled) return;
 
         // Always verify if user has boards already; onboarding is only for first board.
         const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {

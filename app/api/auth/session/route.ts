@@ -4,6 +4,7 @@ import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/auth-cookie-names";
 import { validateSessionFromCookieValues } from "@/lib/server-session";
 import { clearAuthCookiesOnNextResponse, setAuthCookiesOnNextResponse } from "@/lib/session-cookies";
 import { getClientIpFromHeaders, rateLimitMemoryOnly } from "@/lib/rate-limit";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 export const runtime = "nodejs";
 /** Isolado do POST de RSC/Server Actions — evita competir pelo mesmo timeout ao abrir /boards após OAuth. */
 export const maxDuration = 60;
@@ -39,6 +40,8 @@ function withWall<T>(promise: Promise<T>, ms: number, label: string): Promise<T>
  * Sempre 200 + JSON `ValidateResult` para o cliente tratar `ok`; `Cache-Control: no-store`.
  */
 export async function GET(request: NextRequest) {
+  const route = "GET /api/auth/session";
+  const t0 = Date.now();
   const ip = getClientIpFromHeaders(request.headers);
   const rl = await rateLimitMemoryOnly({
     key: `auth-session:ip:${ip}`,
@@ -46,6 +49,7 @@ export async function GET(request: NextRequest) {
     windowMs: 60_000,
   });
   if (!rl.allowed) {
+    logFluxApiPhase(route, "rate_limited", t0);
     return NextResponse.json(
       { ok: false, failureKind: "unknown" as const },
       { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds), "Cache-Control": "no-store" } }
@@ -77,10 +81,12 @@ export async function GET(request: NextRequest) {
     } else if (sideEffect?.type === "clear_all") {
       clearAuthCookiesOnNextResponse(res);
     }
+    logFluxApiPhase(route, "validateSession_total", t0);
     return res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
     if (msg === "session_validate_wall_timeout") {
+      logFluxApiPhase(route, "validateSession_wall_timeout", t0);
       const supportRef = randomUUID();
       console.error("[api/auth/session] validate wall timeout", { supportRef, wallMs });
       return NextResponse.json(

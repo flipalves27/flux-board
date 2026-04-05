@@ -21,6 +21,7 @@
     "migrate:legacy-board-ids": "node scripts/migrate-legacy-board-ids.mjs",
     "migrate:reborn-boards": "node scripts/migrate-reborn-board-ids.mjs",
     "mongo:clear-platform-stripe-price-ids": "node scripts/clear-platform-stripe-price-ids.mjs",
+    "mongo:ensure-tenancy-migration": "node scripts/ensure-tenancy-migration.mjs",
     "validate:deploy": "npm run lint && npm run test && npm run build",
     "test:watch": "vitest",
     "test:coverage:llm-utils": "vitest run lib/llm-utils.test.ts --coverage",

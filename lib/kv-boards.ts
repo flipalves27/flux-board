@@ -120,6 +120,7 @@ async function ensureBoardIndexes(db: Db): Promise<void> {
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, ownerId: 1 });
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ _id: 1, orgId: 1 });
+  await db.collection(COL_USER_BOARDS).createIndex({ orgId: 1 });
   boardIndexesEnsured = true;
 }
 
@@ -132,15 +133,16 @@ export async function getBoardIds(userId: string, orgId: string, seesAllBoardsFr
     await ensureBoardIndexes(db);
     const ids = new Set<string>();
     if (seesAllBoards) {
-      const { listUsers } = await import("./kv-users");
-      const users = await listUsers(orgId);
       const ub = db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS);
-      const userIds = users.map((u) => u.id);
-      if (userIds.length) {
-        const rows = await ub.find({ _id: { $in: userIds }, orgId }).toArray();
-        for (const row of rows) {
-          (row?.boardIds ?? []).forEach((bid) => ids.add(bid));
-        }
+      const grouped = await ub
+        .aggregate<{ _id: string }>([
+          { $match: { orgId } },
+          { $unwind: { path: "$boardIds", preserveNullAndEmptyArrays: false } },
+          { $group: { _id: "$boardIds" } },
+        ])
+        .toArray();
+      for (const g of grouped) {
+        if (g?._id) ids.add(g._id);
       }
     } else {
       const row = await db.collection<{ _id: string; orgId: string; boardIds: string[] }>(COL_USER_BOARDS).findOne({
