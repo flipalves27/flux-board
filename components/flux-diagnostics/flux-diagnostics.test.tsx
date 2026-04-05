@@ -18,6 +18,30 @@ vi.mock("next-intl", () => ({
   },
 }));
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: {
+      id: "admin",
+      username: "admin",
+      name: "Admin",
+      email: "admin@test.dev",
+      isAdmin: false,
+      orgId: "org1",
+      platformRole: "platform_admin" as const,
+      orgRole: "gestor" as const,
+    },
+    isLoading: false,
+    isChecked: true,
+    sessionFailure: null,
+    login: () => {},
+    logout: async () => {},
+    setAuth: () => {},
+    getHeaders: () => ({}),
+    refreshSession: async () => {},
+    switchOrganization: async () => false,
+  }),
+}));
+
 function Boom(): never {
   throw new Error("boom-test");
 }

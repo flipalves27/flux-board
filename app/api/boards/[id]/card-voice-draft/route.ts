@@ -19,6 +19,17 @@ import {
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { isAnthropicApiConfigured } from "@/lib/org-ai-routing";
+import { includeLlmTelemetryInApiResponse } from "@/lib/rbac";
+
+type AuthPayload = NonNullable<Awaited<ReturnType<typeof getAuthFromRequest>>>;
+
+function voiceDraftJsonResponse(payload: AuthPayload, body: Record<string, unknown>) {
+  if (!includeLlmTelemetryInApiResponse(payload)) {
+    const { provider: _pr, model: _mo, llmDebug: _dbg, ...rest } = body;
+    return NextResponse.json(rest);
+  }
+  return NextResponse.json(body);
+}
 
 export async function POST(
   request: NextRequest,
@@ -94,7 +105,7 @@ export async function POST(
         errorKind: "plan_blocked",
         errorMessage: "Plano atual sem acesso ao recurso de IA completo. Aplicado fallback estruturado.",
       };
-      return NextResponse.json({
+      return voiceDraftJsonResponse(payload, {
         ok: true,
         titulo: result.titulo,
         descricao: result.descricao,
@@ -144,7 +155,7 @@ export async function POST(
     });
     const debugSource = result.generatedWithAI ? "ai" : "heuristic";
 
-    return NextResponse.json({
+    return voiceDraftJsonResponse(payload, {
       ok: true,
       titulo: result.titulo,
       descricao: result.descricao,

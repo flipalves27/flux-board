@@ -9,7 +9,7 @@ Runbook alinhado ao código atual (`lib/oauth/*`, `lib/server-session.ts`, `cont
 3. Abra só esse URL, faça **Sign in** → **Google** até voltar à app.
 4. **Anotar:** fica autenticado nas boards ou é redirecionado de volta ao login?
 
-**Nota:** Se misturar `www`, apex (`flux-board.com`) e `*.vercel.app`, o `redirect_uri` e os cookies podem divergir. O servidor usa o host do pedido quando difere de `NEXT_PUBLIC_APP_URL` para montar o OAuth (`getOAuthPublicBaseUrl` em `lib/oauth/base-url.ts`).
+**Nota:** Se misturar `www`, apex (`flux-board.com`) e `*.vercel.app`, o `redirect_uri` e os cookies podem divergir. O servidor usa o host do pedido quando difere de `NEXT_PUBLIC_APP_URL` para montar o OAuth (`getOAuthPublicBaseUrl` em `lib/oauth/base-url.ts`). Em **produção**, `OAUTH_ALLOWED_PUBLIC_ORIGINS` deve espelhar todos esses origins no Google/Azure; caso contrário o start/callback responde 403 `oauth_host_not_allowed` ou 503 `oauth_allowlist_misconfigured` (ver `lib/oauth/allowed-public-origins.ts`).
 
 ## 2. Cookies após o callback Google (Application)
 
@@ -79,7 +79,9 @@ Confirmar no dashboard (**Settings** → **Environment Variables**), sem expor v
 | `JWT_SECRET` | Obrigatório; ≥ 32 caracteres; estável entre deploys (`lib/jwt-secret.ts`) |
 | `AUTH_GOOGLE_CLIENT_ID` / `AUTH_GOOGLE_CLIENT_SECRET` | OAuth Google |
 | `NEXT_PUBLIC_APP_URL` | URL canónica (ex.: `https://www.flux-board.com`), sem barra final desnecessária |
+| `OAUTH_ALLOWED_PUBLIC_ORIGINS` | Produção com OAuth ativo: CSV ou JSON array de origins HTTPS (igual às **JavaScript origins** no Google; incluir `www` e apex se ambos forem usados) |
 | `AUTH_COOKIE_DOMAIN` | Ex.: `flux-board.com` (sem `https://`, sem path); alinha www e apex |
+| `SITE_CANONICAL_ORIGIN` / `SITE_HOST_ALIASES` | Opcional — redirecionamento 308 HTML de aliases para o host canónico (`middleware.ts`) |
 | `NEXT_PUBLIC_OAUTH_GOOGLE_ENABLED` | `1` ou `true` para mostrar o botão |
 | `NEXT_PUBLIC_VERCEL_BYPASS_SECRET` | Se usar **Deployment Protection** com bypass; ver secção no `README.md` |
 | `MONGODB_URI` (ou `MONGO_URI`) | Dados de utilizador / refresh |
@@ -98,6 +100,14 @@ Para **cada host** por onde utilizadores autenticam (ex.: `www`, apex, previews 
 **Authorized redirect URIs**
 
 - `https://<host>/api/auth/oauth/google/callback`
+
+**Espelho na Vercel (produção):** copie a mesma lista de origins para `OAUTH_ALLOWED_PUBLIC_ORIGINS` (ex.: `https://www.flux-board.com,https://flux-board.com`).
+
+| Ambiente | JavaScript origins (exemplo) | Redirect URIs (exemplo) |
+|----------|------------------------------|-------------------------|
+| Produção `www` | `https://www.flux-board.com` | `https://www.flux-board.com/api/auth/oauth/google/callback` |
+| Produção apex | `https://flux-board.com` | `https://flux-board.com/api/auth/oauth/google/callback` |
+| Preview | `https://<deployment>.vercel.app` | `https://<deployment>.vercel.app/api/auth/oauth/google/callback` |
 
 O código monta o redirect com `googleRedirectUri(base)` → `{base}/api/auth/oauth/google/callback` (`lib/oauth/base-url.ts`). O `base` é o origin público do pedido ou `NEXT_PUBLIC_APP_URL` quando o hostname coincide.
 

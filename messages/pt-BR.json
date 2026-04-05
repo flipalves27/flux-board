@@ -56,7 +56,7 @@
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
       "invites": "Convites pendentes para novos membros.",
-      "orgAudit": "Convites aceites, entradas e outros eventos da organização (requer MongoDB).",
+      "orgAudit": "Convites aceites, entradas e outros eventos da organização.",
       "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
       "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
       "platformCommercial": "Preços de vitrine, planos no catálogo e sincronização Stripe.",
@@ -916,6 +916,9 @@
       "loadError": "Não foi possível carregar o painel.",
       "empty": "Sem dados.",
       "noMongo": "Conecte MongoDB para habilitar histórico e alertas automáticos.",
+      "noMongoPublic": "O histórico de alertas proativos não está disponível neste ambiente neste momento.",
+      "neverRunPublic": "Ainda não há verificações automáticas registadas.",
+      "cronHintPublic": "As verificações automáticas seguem um calendário configurado para o seu espaço de trabalho.",
       "health": {
         "ok": "Ativo",
         "review": "Verificar",
@@ -1468,6 +1471,7 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
+    "sessionIssueGeneric": "Não foi possível restaurar a sessão. Tente entrar novamente ou contacte o administrador da sua organização se o problema continuar.",
     "sessionDiag": {
       "title": "Não foi possível manter a sessão",
       "hint": "Envie o JSON (botão abaixo) ao suporte para cruzarmos com os logs do servidor. Não contém senha, e-mail nem cookies.",
@@ -1599,7 +1603,7 @@
     "filterInvites": "Convites aceites",
     "filterAll": "Todos os eventos",
     "linkInvites": "← Voltar aos convites",
-    "mongoDisabled": "O armazenamento de auditoria não está configurado (MongoDB). Neste ambiente os eventos não são guardados.",
+    "mongoDisabled": "O armazenamento de auditoria não está totalmente configurado. Neste ambiente os eventos podem não ser guardados.",
     "colWhen": "Quando",
     "colEvent": "Evento",
     "colActor": "Utilizador",

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { useFluxDiagnosticsStore, type FluxDiagEntry } from "@/stores/flux-diagnostics-store";
-import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabled } from "@/lib/flux-diagnostics-shared";
+import { FLUX_DIAG_STORAGE_KEY, readFluxDiagEnabledFromStorage, syncFluxDebugQueryParam } from "@/lib/flux-diagnostics-shared";
 import { isPlatformAdminSession } from "@/lib/rbac";
 
 const KINDS: Array<FluxDiagEntry["kind"] | "all"> = ["all", "react-boundary", "window", "unhandledrejection", "console", "navigation"];
@@ -25,7 +25,8 @@ export default function AdminTracerPage() {
   const [fluxDebugOn, setFluxDebugOn] = useState(false);
 
   useEffect(() => {
-    setFluxDebugOn(readFluxDiagEnabled());
+    syncFluxDebugQueryParam(true);
+    setFluxDebugOn(readFluxDiagEnabledFromStorage());
   }, []);
 
   useEffect(() => {

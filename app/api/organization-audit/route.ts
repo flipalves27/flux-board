@@ -6,6 +6,7 @@ import type { AuditResourceType } from "@/lib/audit-types";
 import { isMongoConfigured } from "@/lib/mongo";
 import { getUserById } from "@/lib/kv-users";
 import { ORG_INVITE_ACCEPTED_AUDIT_ACTION } from "@/lib/invite-audit";
+import { isPlatformAdminFromAuthPayload } from "@/lib/rbac";
 
 function parseActionParam(raw: string | null): string | undefined {
   const t = raw?.trim();
@@ -20,13 +21,14 @@ export async function GET(request: NextRequest) {
   const denied = ensureOrgManager(payload);
   if (denied) return denied;
 
+  const platformAdmin = isPlatformAdminFromAuthPayload(payload);
   const mongoConfigured = isMongoConfigured();
   if (!mongoConfigured) {
-    return NextResponse.json({
-      events: [],
-      nextCursor: null,
-      mongoConfigured: false,
-    });
+    return NextResponse.json(
+      platformAdmin
+        ? { events: [], nextCursor: null, mongoConfigured: false }
+        : { events: [], nextCursor: null }
+    );
   }
 
   try {
@@ -65,24 +67,31 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    const events = r.events.map((e) => ({
-      id: String(e._id),
-      at: e.at instanceof Date ? e.at.toISOString() : String(e.at),
-      action: e.action,
-      resourceType: (e as { resourceType?: string }).resourceType ?? "platform",
-      actorUserId: e.actorUserId ?? undefined,
-      actorName: e.actorUserId ? actorNames.get(e.actorUserId) : undefined,
-      resourceId: e.resourceId ?? undefined,
-      orgId: e.orgId ?? undefined,
-      route: e.route ?? undefined,
-      metadata: e.metadata ?? undefined,
-      ip: e.ip ?? undefined,
-    }));
+    const events = r.events.map((e) => {
+      const actorUserId = e.actorUserId ?? undefined;
+      const base = {
+        id: String(e._id),
+        at: e.at instanceof Date ? e.at.toISOString() : String(e.at),
+        action: e.action,
+        resourceType: (e as { resourceType?: string }).resourceType ?? "platform",
+        actorName: actorUserId ? actorNames.get(actorUserId) : undefined,
+        metadata: e.metadata ?? undefined,
+      };
+      if (!platformAdmin) return base;
+      return {
+        ...base,
+        actorUserId,
+        resourceId: e.resourceId ?? undefined,
+        orgId: e.orgId ?? undefined,
+        route: e.route ?? undefined,
+        ip: e.ip ?? undefined,
+      };
+    });
 
     return NextResponse.json({
       events,
       nextCursor: r.nextCursor,
-      mongoConfigured: true,
+      ...(platformAdmin ? { mongoConfigured: true } : {}),
     });
   } catch (err) {
     console.error("organization-audit GET:", err);

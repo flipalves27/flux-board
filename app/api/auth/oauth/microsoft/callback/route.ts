@@ -1,6 +1,7 @@
 import { MicrosoftEntraId, OAuth2RequestError } from "arctic";
 import { NextRequest, NextResponse } from "next/server";
 
+import { assertOAuthRequestHostAllowed } from "@/lib/oauth/allowed-public-origins";
 import { completeOAuthSignIn } from "@/lib/oauth/complete-sign-in";
 import { getOAuthCallbackRequestOrigin, getOAuthPublicBaseUrl, microsoftRedirectUri } from "@/lib/oauth/base-url";
 import { OAUTH_COOKIE_MICROSOFT } from "@/lib/oauth/constants";
@@ -13,6 +14,13 @@ import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
 export async function GET(req: NextRequest) {
   const clientId = process.env.AUTH_MICROSOFT_CLIENT_ID?.trim();
   const clientSecret = process.env.AUTH_MICROSOFT_CLIENT_SECRET?.trim();
+  const oauthActive = !!(clientId && clientSecret);
+  const hostDenied = assertOAuthRequestHostAllowed(req, oauthActive);
+  if (hostDenied) {
+    clearOAuthCookie(hostDenied, OAUTH_COOKIE_MICROSOFT);
+    return hostDenied;
+  }
+
   const base = getOAuthPublicBaseUrl(req);
 
   const rawCookie = req.cookies.get(OAUTH_COOKIE_MICROSOFT)?.value;

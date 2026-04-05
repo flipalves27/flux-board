@@ -9,6 +9,7 @@ import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-c
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
 import { SessionSupportDiagnostic } from "@/components/auth/session-support-diagnostic";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
@@ -226,12 +227,16 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {sessionDiagRef && (
+        {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
           <SessionSupportDiagnostic
             supportRef={sessionDiagRef.slice(0, 200)}
             failureKind={sessionDiagKind}
           />
-        )}
+        ) : sessionDiagRef ? (
+          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left">
+            <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{t("sessionIssueGeneric")}</p>
+          </div>
+        ) : null}
 
         {error && (
           <div className="bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">

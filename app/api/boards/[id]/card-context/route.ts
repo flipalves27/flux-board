@@ -20,6 +20,17 @@ import {
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
 import { isAnthropicApiConfigured } from "@/lib/org-ai-routing";
+import { includeLlmTelemetryInApiResponse } from "@/lib/rbac";
+
+type AuthPayload = NonNullable<Awaited<ReturnType<typeof getAuthFromRequest>>>;
+
+function cardContextJsonResponse(payload: AuthPayload, body: Record<string, unknown>) {
+  if (!includeLlmTelemetryInApiResponse(payload)) {
+    const { provider: _pr, model: _mo, llmDebug: _dbg, ...rest } = body;
+    return NextResponse.json(rest);
+  }
+  return NextResponse.json(body);
+}
 
 type CardContextDebug = {
   source: "ai" | "heuristic" | "cache";
@@ -162,7 +173,7 @@ export async function POST(
       const cached = readCachedContext(cacheKey);
       if (cached) {
         const source: CardContextDebug["source"] = cached.generatedWithAI ? "ai" : "heuristic";
-        return NextResponse.json({
+        return cardContextJsonResponse(payload, {
           ok: true,
           titulo: cached.titulo,
           descricao: cached.descricao,
@@ -196,7 +207,7 @@ export async function POST(
         errorMessage: "Plano atual sem acesso ao recurso de IA completo. Aplicado fallback estruturado.",
       };
       writeCachedContext(cacheKey, result);
-      return NextResponse.json({
+      return cardContextJsonResponse(payload, {
         ok: true,
         titulo: result.titulo,
         descricao: result.descricao,
@@ -267,7 +278,7 @@ export async function POST(
       errorMessage: result.errorMessage,
     };
 
-    return NextResponse.json({
+    return cardContextJsonResponse(payload, {
       ok: true,
       titulo: result.titulo,
       descricao: result.descricao,

@@ -56,7 +56,7 @@
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
       "invites": "Pending invites for new members.",
-      "orgAudit": "Accepted invites, sign-ins, and other org events (requires MongoDB).",
+      "orgAudit": "Accepted invites, sign-ins, and other organization events.",
       "rateLimitAbuse": "API rate-limit blocks (abuse).",
       "tracer": "Client-side error buffer (Flux diagnostics) for admins.",
       "platformCommercial": "Display pricing, catalog availability, and Stripe sync.",
@@ -916,6 +916,9 @@
       "loadError": "Could not load the panel.",
       "empty": "No data.",
       "noMongo": "Connect MongoDB to enable history and automatic alerts.",
+      "noMongoPublic": "Proactive alert history isn’t available in this environment right now.",
+      "neverRunPublic": "No automated checks have been recorded yet.",
+      "cronHintPublic": "Automated checks run on a schedule configured for your workspace.",
       "health": {
         "ok": "Active",
         "review": "Check",
@@ -1468,6 +1471,7 @@
       "login": "Sign in",
       "register": "Register"
     },
+    "sessionIssueGeneric": "We couldn’t restore your session. Try signing in again, or contact your workspace administrator if this keeps happening.",
     "sessionDiag": {
       "title": "We couldn’t keep your session",
       "hint": "Send the JSON (button below) to support so we can match it with server logs. It does not include your password, email, or cookies.",
@@ -1598,7 +1602,7 @@
     "filterInvites": "Accepted invites",
     "filterAll": "All events",
     "linkInvites": "← Back to invites",
-    "mongoDisabled": "Audit storage is not configured (MongoDB). Events are not recorded in this environment.",
+    "mongoDisabled": "Audit storage is not fully configured. Events may not be recorded in this environment.",
     "colWhen": "When",
     "colEvent": "Event",
     "colActor": "User",

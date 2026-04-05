@@ -159,17 +159,11 @@ export default function BoardsPage() {
   useEffect(() => {
     if (!isChecked) return;
     if (!user) {
-      const sp = new URLSearchParams();
-      if (sessionFailure?.supportRef) {
-        sp.set("sessionRef", sessionFailure.supportRef);
-        sp.set("sessionKind", sessionFailure.failureKind);
-      }
-      const q = sp.toString();
-      router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
+      router.replace(`${localeRoot}/login`);
       return;
     }
     loadBoards();
-  }, [isChecked, user, router, localeRoot, sessionFailure?.supportRef, sessionFailure?.failureKind]);
+  }, [isChecked, user, router, localeRoot]);
 
   useEffect(() => {
     if (!isChecked || !user) return;

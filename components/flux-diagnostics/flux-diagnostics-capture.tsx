@@ -2,14 +2,22 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 import { exposeFluxDiagnosticsOnWindow, useFluxDiagnosticsStore } from "@/stores/flux-diagnostics-store";
-import { readFluxDiagEnabled } from "@/lib/flux-diagnostics-shared";
+import {
+  clearFluxDiagStorage,
+  readFluxDiagEnabledFromStorage,
+  syncFluxDebugQueryParam,
+} from "@/lib/flux-diagnostics-shared";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 /**
  * Fica montado fora do Error Boundary para continuar registrando erros globais após crash de render.
  * Com fluxDebug: também espelha console.error no buffer (útil para mensagens do React em dev).
+ * Painel e persistência `?fluxDebug=1` apenas para platform_admin.
  */
 export function FluxDiagnosticsCapture() {
+  const { user, isChecked } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryKey = searchParams.toString();
@@ -21,6 +29,17 @@ export function FluxDiagnosticsCapture() {
   useEffect(() => {
     exposeFluxDiagnosticsOnWindow();
   }, []);
+
+  useEffect(() => {
+    if (!isChecked) return;
+    const platformAdmin = Boolean(user && isPlatformAdminSession(user));
+    if (!user || !platformAdmin) {
+      clearFluxDiagStorage();
+      syncFluxDebugQueryParam(false);
+      return;
+    }
+    syncFluxDebugQueryParam(true);
+  }, [isChecked, user, pathname, searchParams]);
 
   useEffect(() => {
     const touch = () => {
@@ -109,7 +128,8 @@ export function FluxDiagnosticsCapture() {
   }, []);
 
   useEffect(() => {
-    const enabled = readFluxDiagEnabled();
+    const platformAdmin = Boolean(isChecked && user && isPlatformAdminSession(user));
+    const enabled = platformAdmin && readFluxDiagEnabledFromStorage();
 
     if (!enabled) {
       if (origConsoleErrorRef.current) {
@@ -151,7 +171,7 @@ export function FluxDiagnosticsCapture() {
         console.error = origConsoleErrorRef.current;
       }
     };
-  }, [pathname, queryKey]);
+  }, [pathname, queryKey, isChecked, user]);
 
   return null;
 }

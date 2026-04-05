@@ -46,6 +46,40 @@ function isDocumentRequest(req: NextRequest) {
   return accept.includes("text/html");
 }
 
+/**
+ * Produção: opcionalmente redireciona pedidos HTML de hosts em SITE_HOST_ALIASES
+ * para SITE_CANONICAL_ORIGIN (308). Útil para apex → www mantendo ambos no OAuth Console.
+ */
+function tryCanonicalHostRedirect(req: NextRequest): NextResponse | null {
+  if (process.env.NODE_ENV !== "production") return null;
+  const canonicalRaw = process.env.SITE_CANONICAL_ORIGIN?.trim();
+  const aliasesRaw = process.env.SITE_HOST_ALIASES?.trim();
+  if (!canonicalRaw || !aliasesRaw || !isDocumentRequest(req)) return null;
+  try {
+    const canonicalUrl = new URL(canonicalRaw);
+    const aliases = new Set(
+      aliasesRaw
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const forwarded = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const hostHeader = forwarded || req.headers.get("host") || "";
+    const host = hostHeader.split(":")[0]!.toLowerCase();
+    if (!host || !aliases.has(host)) return null;
+    const canonicalHost = canonicalUrl.hostname.toLowerCase();
+    if (host === canonicalHost) return null;
+    const rawProto =
+      req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      (req.nextUrl.protocol === "https:" ? "https" : "http");
+    if (rawProto !== "https") return null;
+    const dest = new URL(req.nextUrl.pathname + req.nextUrl.search, canonicalUrl.origin);
+    return NextResponse.redirect(dest, 308);
+  } catch {
+    return null;
+  }
+}
+
 const intlMiddleware = createMiddleware(routing);
 
 function isEmbedDocumentPath(pathname: string) {
@@ -83,6 +117,9 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/")) {
     return handleApiRequest(req);
   }
+
+  const canonicalRedirect = tryCanonicalHostRedirect(req);
+  if (canonicalRedirect) return canonicalRedirect;
 
   if (isLikelyPublicStaticAsset(pathname)) {
     return applyNonCspSecurityHeaders(NextResponse.next());

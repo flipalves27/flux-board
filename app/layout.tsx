@@ -92,8 +92,8 @@ export default async function RootLayout({
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Suspense fallback={null}>
-            <FluxDiagnosticsRoot>
-              <AuthProvider>
+            <AuthProvider>
+              <FluxDiagnosticsRoot>
                 <OrgBrandingProvider>
                   <ToastProvider>
                     <ThemeProvider>
@@ -108,8 +108,8 @@ export default async function RootLayout({
                     </ThemeProvider>
                   </ToastProvider>
                 </OrgBrandingProvider>
-              </AuthProvider>
-            </FluxDiagnosticsRoot>
+              </FluxDiagnosticsRoot>
+            </AuthProvider>
           </Suspense>
         </NextIntlClientProvider>
       </body>

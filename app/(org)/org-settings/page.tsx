@@ -28,6 +28,7 @@ const CNAME_TARGET =
 export default function OrgSettingsPage() {
   const router = useRouter();
   const { user, getHeaders, isChecked } = useAuth();
+  const opsPlatformAdmin = Boolean(user && isPlatformAdminSession(user));
   const locale = useLocale();
   const tNav = useTranslations("navigation");
   const t = useTranslations("onboarding");
@@ -342,7 +343,7 @@ export default function OrgSettingsPage() {
                 </div>
               </div>
 
-              {planOverrideBlockedByStripe && (
+              {planOverrideBlockedByStripe && opsPlatformAdmin && (
                 <div className="mt-6 rounded-[var(--flux-rad)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-08)] p-4 space-y-2">
                   <h3 className="font-display font-bold text-sm text-[var(--flux-text)]">Plano manual (admin) — indisponível</h3>
                   <p className="text-xs text-[var(--flux-text-muted)]">
@@ -353,7 +354,17 @@ export default function OrgSettingsPage() {
                 </div>
               )}
 
-              {canAdminOverridePlan && (
+              {planOverrideBlockedByStripe && !opsPlatformAdmin && (
+                <div className="mt-6 rounded-[var(--flux-rad)] border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-08)] p-4 space-y-2">
+                  <h3 className="font-display font-bold text-sm text-[var(--flux-text)]">Plano e faturação</h3>
+                  <p className="text-xs text-[var(--flux-text-muted)]">
+                    O plano efetivo está ligado à subscrição de faturação. Para alterações, utilize a área de faturação ou contacte o
+                    suporte.
+                  </p>
+                </div>
+              )}
+
+              {canAdminOverridePlan && opsPlatformAdmin && (
                 <div className="mt-6 rounded-[var(--flux-rad)] border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-08)] p-4 space-y-2">
                   <h3 className="font-display font-bold text-sm text-[var(--flux-text)]">Plano comercial (admin)</h3>
                   <p className="text-xs text-[var(--flux-text-muted)]">
@@ -528,13 +539,21 @@ export default function OrgSettingsPage() {
                           />
                         </div>
                         <div className="text-xs text-[var(--flux-text-muted)] space-y-2">
-                          <p>
-                            <strong className="text-[var(--flux-text)]">SSL:</strong> adicione o hostname no painel Vercel (ou seu provedor) apontando CNAME para{" "}
-                            <code className="font-mono text-[var(--flux-text)]">{CNAME_TARGET}</code>.{" "}
-                            <a href="https://vercel.com/docs/domains/working-with-domains/add-a-domain" className="underline text-[var(--flux-secondary)]" target="_blank" rel="noreferrer">
-                              Documentação Vercel
-                            </a>
-                          </p>
+                          {opsPlatformAdmin ? (
+                            <p>
+                              <strong className="text-[var(--flux-text)]">SSL:</strong> adicione o hostname no painel Vercel (ou seu provedor) apontando CNAME para{" "}
+                              <code className="font-mono text-[var(--flux-text)]">{CNAME_TARGET}</code>.{" "}
+                              <a href="https://vercel.com/docs/domains/working-with-domains/add-a-domain" className="underline text-[var(--flux-secondary)]" target="_blank" rel="noreferrer">
+                                Documentação Vercel
+                              </a>
+                            </p>
+                          ) : (
+                            <p>
+                              <strong className="text-[var(--flux-text)]">SSL:</strong> no painel do seu fornecedor de DNS ou alojamento, aponte o hostname com um registo{" "}
+                              <strong>CNAME</strong> para{" "}
+                              <code className="font-mono text-[var(--flux-text)]">{CNAME_TARGET}</code>. Consulte a documentação do produto ou o suporte se precisar de ajuda com DNS.
+                            </p>
+                          )}
                           <p>
                             <strong className="text-[var(--flux-text)]">Verificação DNS:</strong> crie um registro{" "}
                             <strong>TXT</strong> no hostname acima com valor:

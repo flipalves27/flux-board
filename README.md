@@ -111,12 +111,16 @@ OAuth 2.0 + OIDC via rotas `/api/auth/oauth/google/*` e `/api/auth/oauth/microso
 - `AUTH_MICROSOFT_CLIENT_ID` / `AUTH_MICROSOFT_CLIENT_SECRET`
 - `AUTH_MICROSOFT_TENANT_ID` (opcional; padrão `common` para contas pessoais e escolares)
 
-**Base URL:** defina `NEXT_PUBLIC_APP_URL` com o mesmo esquema e host usados nos consoles OAuth (os redirect URIs devem coincidir).
+**Base URL:** defina `NEXT_PUBLIC_APP_URL` com o host canónico preferido (ex.: `https://www.flux-board.com`). O servidor alinha o `redirect_uri` ao host do pedido quando este difere da variável (www vs apex); registe **todos** os hosts reais nos provedores.
 
-**Redirect URIs registrados nos provedores:**
+**Produção — allowlist de origins:** `OAUTH_ALLOWED_PUBLIC_ORIGINS` deve listar exatamente os **Authorized JavaScript origins** (HTTPS) que usa em Google/Azure, por exemplo `https://www.flux-board.com,https://flux-board.com`. Com OAuth ativo em produção, a variável é obrigatória; hosts fora da lista recebem JSON `{"error":"oauth_host_not_allowed"}` (403) no start/callback em vez de um `redirect_uri` rejeitado pelo provedor.
 
-- `{NEXT_PUBLIC_APP_URL}/api/auth/oauth/google/callback`
-- `{NEXT_PUBLIC_APP_URL}/api/auth/oauth/microsoft/callback`
+**Redirect URIs registrados nos provedores (por cada host da allowlist):**
+
+- `https://<host>/api/auth/oauth/google/callback`
+- `https://<host>/api/auth/oauth/microsoft/callback`
+
+**Opcional — um só host para HTML:** em produção, `SITE_CANONICAL_ORIGIN` + `SITE_HOST_ALIASES` (CSV de hostnames) aplicam redirecionamento 308 de pedidos documento/HTML dos aliases para o origin canónico (ver `.env.example`). Não substitui a allowlist OAuth.
 
 **Exibir botões na tela de login (cliente):**
 

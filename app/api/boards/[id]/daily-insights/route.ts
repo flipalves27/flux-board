@@ -15,6 +15,7 @@ import {
   PlanGateError,
 } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
+import { includeLlmTelemetryInApiResponse } from "@/lib/rbac";
 
 type InsightActionItem = {
   titulo: string;
@@ -555,9 +556,6 @@ export async function POST(
       insight: llmResult.insight,
       generationMeta: {
         usedLlm: llmResult.generatedWithAI,
-        model: llmResult.generatedWithAI ? llmResult.model : undefined,
-        provider: llmResult.provider,
-        errorKind: llmResult.errorKind,
       },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
@@ -575,7 +573,10 @@ export async function POST(
       errorMessage: llmResult.errorMessage,
     };
 
-    return NextResponse.json({ ok: true, entry, llmDebug });
+    if (includeLlmTelemetryInApiResponse(payload)) {
+      return NextResponse.json({ ok: true, entry, llmDebug });
+    }
+    return NextResponse.json({ ok: true, entry });
   } catch (err) {
     console.error("Daily insights API error:", err);
     return NextResponse.json(
