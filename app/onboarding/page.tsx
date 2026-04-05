@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -45,16 +45,16 @@ const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 40_000;
 
 /**
- * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
- * `0` desativa. Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
+ * Atrasa opcionalmente o GET /api/boards (default `0` — após `isChecked` a sessão já foi validada).
+ * Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
  */
 const ONBOARDING_BOARDS_STAGGER_MS = (() => {
   const raw = process.env.NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS?.trim();
   if (raw === "0") return 0;
-  if (raw === undefined || raw === "") return 280;
+  if (raw === undefined || raw === "") return 0;
   const n = Number(raw);
   if (Number.isFinite(n) && n >= 0 && n <= 10_000) return Math.floor(n);
-  return 280;
+  return 0;
 })();
 
 function StepPill({
@@ -173,6 +173,11 @@ export default function OnboardingPage() {
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
   /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
   const onboardingInitRunIdRef = useRef(0);
+  /**
+   * Resolve após processar GET /api/boards (redirect, restaurar wizard, etc.).
+   * `createBoard` espera isto para não correr com a lista de boards ainda desconhecida.
+   */
+  const boardsReadyForCreateRef = useRef<Promise<void>>(Promise.resolve());
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
@@ -212,34 +217,62 @@ export default function OnboardingPage() {
     }
   }, [isChecked, user, router, localeRoot, sessionFailure]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isChecked || !user?.id) {
       setOnboardingInitSettled(false);
+      boardsReadyForCreateRef.current = Promise.resolve();
       return;
     }
 
+    if (!doneKey || !storageKey) {
+      boardsReadyForCreateRef.current = Promise.resolve();
+      return;
+    }
+
+    let gateDone = false;
+    let resolveGate: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      resolveGate = () => {
+        if (gateDone) return;
+        gateDone = true;
+        resolve();
+      };
+    });
+    boardsReadyForCreateRef.current = gate;
+
     const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
-    setOnboardingInitSettled(false);
-    (async () => {
+
+    if (onboardingBoardsRetryKey > 0) {
+      setOnboardingInitSettled(false);
+    }
+
+    const doneRaw = localStorage.getItem(doneKey);
+    const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
+
+    if (doneRaw === "1") {
+      router.replace(`${localeRoot}/boards`);
+      resolveGate();
+      return;
+    }
+
+    const needsStrictBoardsWait = Boolean(persisted?.boardId);
+
+    if (!needsStrictBoardsWait) {
+      setOnboardingInitSettled(true);
+    } else if (onboardingBoardsRetryKey === 0) {
+      setOnboardingInitSettled(false);
+    }
+
+    void (async () => {
       try {
         setInitError(null);
-        if (!doneKey || !storageKey) return;
-
-        const doneRaw = localStorage.getItem(doneKey);
-        if (doneRaw === "1") {
-          router.replace(`${localeRoot}/boards`);
-          return;
-        }
-
-        const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
 
         if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
           await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+          if (cancelled) return;
         }
-        if (cancelled) return;
 
-        // Always verify if user has boards already; onboarding is only for first board.
         const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
           const timeoutId = window.setTimeout(
             () => reject(new Error("onboarding_boards_timeout")),
@@ -270,15 +303,12 @@ export default function OnboardingPage() {
             setCardBucketKey((persisted.bucketOrder[0]?.key ?? "").toString());
             return;
           }
-          // User already has boards and no matching in-progress onboarding => skip wizard.
           localStorage.setItem(doneKey, "1");
           router.replace(`${localeRoot}/boards`);
           return;
         }
 
-        // No boards yet
         if (persisted?.boardId) {
-          // State exists but server has no board => restart wizard.
           if (cancelled) return;
           localStorage.removeItem(storageKey);
           setStep(1);
@@ -307,9 +337,10 @@ export default function OnboardingPage() {
               : tRef.current("errors.init");
         setInitError(msg);
       } finally {
-        if (cancelled) return;
-        if (runId !== onboardingInitRunIdRef.current) return;
-        setOnboardingInitSettled(true);
+        if (!cancelled && runId === onboardingInitRunIdRef.current && needsStrictBoardsWait) {
+          setOnboardingInitSettled(true);
+        }
+        resolveGate();
       }
     })();
 
@@ -374,6 +405,7 @@ export default function OnboardingPage() {
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
       if (!user) return;
+      await boardsReadyForCreateRef.current;
       setBusy(true);
       setInitError(null);
       try {
