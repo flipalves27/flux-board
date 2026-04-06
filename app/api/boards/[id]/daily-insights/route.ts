@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiErrorResponse, publicErrorMessage } from "@/lib/public-api-error";
 import { getAuthFromRequest } from "@/lib/auth";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { isCloudLlmConfigured, isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
@@ -429,7 +430,7 @@ async function llmInsight(args: {
       generatedWithAI: false,
       provider: "together.ai",
       errorKind: "network_error",
-      errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
+      errorMessage: publicErrorMessage(err, "Erro de rede ao chamar a IA.", "api/boards/[id]/daily-insights/route.ts"),
     };
   }
 }
@@ -579,9 +580,6 @@ export async function POST(
     return NextResponse.json({ ok: true, entry });
   } catch (err) {
     console.error("Daily insights API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "POST api/boards/[id]/daily-insights" });
   }
 }

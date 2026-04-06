@@ -135,6 +135,7 @@ export async function getBoardEffectiveRole(
     const db = await getDb();
     await ensureIndexes(db);
     const col = db.collection<BoardMember>(COL_BOARD_MEMBERS);
+    // Membro atual: índice unique { orgId, boardId, userId }. "open" vs "none": segundo find coberto por { orgId, boardId }.
     const member = await col.findOne({ orgId, boardId, userId } as never);
     if (member) return member.role as BoardRole;
     const anyMember = await col.findOne({ orgId, boardId } as never, { projection: { _id: 1 } });

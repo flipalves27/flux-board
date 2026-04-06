@@ -272,9 +272,11 @@ Se preferir não usar o bypass, defina **Protection** para **None** em Deploymen
   - `GET/POST /api/boards/[id]/automations/logs`
 - Guia técnico: [`docs/automation-builder-v1.md`](docs/automation-builder-v1.md)
 
-**Freemium (opcional):** defina `FLUX_MAX_BOARDS_PER_USER` (inteiro ≥ 1) para limitar boards por usuário não-admin. `FLUX_PRO_TENANT=true` (ou `1`) remove o teto. Também é aceito o prefixo público `NEXT_PUBLIC_FLUX_MAX_BOARDS_PER_USER` para o mesmo limite (útil em builds client-side).
+**Freemium (opcional):** defina `FLUX_MAX_BOARDS_PER_USER` (inteiro ≥ 1) para limitar boards por usuário não-admin. `FLUX_PRO_TENANT=true` (ou `1`) remove o teto. Estes valores são **só servidor** (sem `NEXT_PUBLIC_*`); limites aplicam-se nas APIs.
 
-**Quota calls/dia (opcional, Free):** defina `FLUX_FREE_CALLS_PER_DAY` (inteiro ≥ 1). Padrão: `3`. Quando exceder, o backend bloqueia chamadas que disparam IA (card context/daily insights) até o próximo dia.
+**Quota calls/dia (opcional, Free):** defina `FLUX_FREE_CALLS_PER_DAY` (inteiro ≥ 1). Padrão: `3`. Quando exceder, o backend bloqueia chamadas que disparam IA (card context/daily insights) até o próximo dia. Também só servidor.
+
+**Flux Docs / RAG (só servidor):** `FLUX_DOCS_ENABLED`, `FLUX_DOCS_RAG_ENABLED` (default ligado se omitidos).
 
 **Campo comercial por board:** `clientLabel` — texto curto (ex.: cliente, conta). Edição no cabeçalho do board; incluído no brief e no export JSON.
 

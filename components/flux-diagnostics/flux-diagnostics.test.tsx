@@ -37,7 +37,7 @@ vi.mock("@/context/auth-context", () => ({
     logout: async () => {},
     setAuth: () => {},
     getHeaders: () => ({}),
-    refreshSession: async () => {},
+    refreshSession: async () => null,
     switchOrganization: async () => false,
   }),
 }));

@@ -47,15 +47,20 @@ export async function buildSprintStoryPointsHistory(
   orgId: string,
   boards: BoardData[]
 ): Promise<SprintStoryPointsRow[]> {
+  const scrumBoards = boards.filter((b) => b.boardMethodology === "scrum");
+  const sprintLists = await Promise.all(
+    scrumBoards.map(async (b) => {
+      try {
+        return await listSprints(orgId, b.id);
+      } catch {
+        return [] as Awaited<ReturnType<typeof listSprints>>;
+      }
+    })
+  );
+
   const rows: SprintStoryPointsRow[] = [];
-  for (const b of boards) {
-    if (b.boardMethodology !== "scrum") continue;
-    let sprints: Awaited<ReturnType<typeof listSprints>>;
-    try {
-      sprints = await listSprints(orgId, b.id);
-    } catch {
-      continue;
-    }
+  scrumBoards.forEach((b, bi) => {
+    const sprints = sprintLists[bi] ?? [];
     const cards = Array.isArray(b.cards) ? b.cards : [];
     for (const s of sprints) {
       if (s.status !== "closed") continue;
@@ -70,7 +75,7 @@ export async function buildSprintStoryPointsHistory(
         goal: String(s.goal || "").trim(),
       });
     }
-  }
+  });
   rows.sort((a, b) => {
     const ta = a.endDate ? new Date(a.endDate).getTime() : 0;
     const tb = b.endDate ? new Date(b.endDate).getTime() : 0;

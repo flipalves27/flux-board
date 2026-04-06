@@ -4,6 +4,7 @@ import { createDoc, listDocsTree } from "@/lib/kv-docs";
 import { DocCreateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -42,6 +43,6 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ doc }, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/docs/route.ts" });
   }
 }

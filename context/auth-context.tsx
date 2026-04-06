@@ -10,14 +10,20 @@ import type { OrgMembershipRole, PlatformRole } from "@/lib/rbac";
 
 const LEGACY_AUTH_KEY = "flux_board_auth";
 
-/** Margem para cold start + Mongo; alinhado ao `maxDuration` da rota `GET /api/auth/session`. */
-const SESSION_VALIDATE_TIMEOUT_MS = 45_000;
+/**
+ * Teto do pedido ao `GET /api/auth/session` (cliente). O servidor usa wall ~25s (`FLUX_SESSION_VALIDATE_WALL_MS`);
+ * aqui fica ligeiramente acima para receber JSON de `server_timeout` em vez de abortar antes.
+ */
+const SESSION_VALIDATE_TIMEOUT_MS = 28_000;
 
-/** Após `ok: false` ou timeout na validação inicial, espera antes de re-tentar (cookies OAuth / GET `/api/auth/session`). ~15s total. */
-const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [500, 800, 1500, 2500, 4000, 5500] as const;
+/**
+ * Atrasos entre tentativas **só para falhas potencialmente transitórias** (rede, cold start, `server_timeout`).
+ * `no_cookies` / `token_invalid` / `user_not_found` não re-tentam — evita ~15s de espera inútil para visitantes ou tokens inválidos.
+ */
+const INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS = [320, 900, 1800] as const;
 
-/** Extra antes do delay normal quando o servidor devolveu `server_timeout` (evita rajadas inúteis). */
-const SERVER_TIMEOUT_RETRY_EXTRA_MS = 2_800;
+/** Extra quando o servidor devolveu `server_timeout` (evita rajadas inúteis). */
+const SERVER_TIMEOUT_RETRY_EXTRA_MS = 2_000;
 
 function sessionFailureFromValidateResult(
   result: ValidateResult
@@ -27,6 +33,12 @@ function sessionFailureFromValidateResult(
     supportRef: result.supportRef,
     failureKind: result.failureKind ?? "unknown",
   };
+}
+
+/** Falhas em que re-tentar o GET não altera o resultado (cookies em falta, JWT inválido, utilizador apagado). */
+function isDefinitiveSessionFailure(result: Extract<ValidateResult, { ok: false }>): boolean {
+  const k = result.failureKind;
+  return k === "no_cookies" || k === "token_invalid" || k === "user_not_found";
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -94,8 +106,8 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   setAuth: (user: AuthUser, remember?: boolean) => void;
   getHeaders: () => Record<string, string>;
-  /** Revalida cookies (ex.: após mudar papel admin no servidor). */
-  refreshSession: () => Promise<void>;
+  /** Revalida cookies (ex.: após mudar papel admin no servidor). Devolve o utilizador atual ou `null`. */
+  refreshSession: () => Promise<AuthUser | null>;
   /** Troca a organização ativa na sessão (várias orgs). */
   switchOrganization: (orgId: string) => Promise<boolean>;
 }
@@ -168,28 +180,30 @@ export function AuthProvider({
     return getApiHeaders(undefined);
   }, []);
 
-  const refreshSession = useCallback(async () => {
+  const refreshSession = useCallback(async (): Promise<AuthUser | null> => {
     const myGen = ++sessionValidationGenRef.current;
     try {
       const result = await withTimeout(fetchSessionValidate(), SESSION_VALIDATE_TIMEOUT_MS);
-      if (myGen !== sessionValidationGenRef.current) return;
+      if (myGen !== sessionValidationGenRef.current) return null;
       if (result.ok) {
+        const nextUser = sessionUserToAuthUser(result.user);
         setState({
-          user: sessionUserToAuthUser(result.user),
+          user: nextUser,
           isLoading: false,
           isChecked: true,
           sessionFailure: null,
         });
-      } else {
-        setState({
-          user: null,
-          isLoading: false,
-          isChecked: true,
-          sessionFailure: sessionFailureFromValidateResult(result),
-        });
+        return nextUser;
       }
+      setState({
+        user: null,
+        isLoading: false,
+        isChecked: true,
+        sessionFailure: sessionFailureFromValidateResult(result),
+      });
+      return null;
     } catch {
-      if (myGen !== sessionValidationGenRef.current) return;
+      if (myGen !== sessionValidationGenRef.current) return null;
       const supportRef =
         typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
           ? globalThis.crypto.randomUUID()
@@ -200,6 +214,7 @@ export function AuthProvider({
         isChecked: true,
         sessionFailure: { supportRef, failureKind: "client_timeout" },
       });
+      return null;
     }
   }, []);
 
@@ -265,7 +280,7 @@ export function AuthProvider({
           applyValidateResult(result);
           return;
         }
-        if (retryIndex < INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS.length) {
+        if (!isDefinitiveSessionFailure(result) && retryIndex < INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS.length) {
           let waitMs = INITIAL_SESSION_VALIDATE_RETRY_DELAYS_MS[retryIndex];
           if (result.failureKind === "server_timeout") waitMs += SERVER_TIMEOUT_RETRY_EXTRA_MS;
           await new Promise((r) => setTimeout(r, waitMs));

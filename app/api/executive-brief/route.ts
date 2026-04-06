@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, buildExecutiveBriefMarkdown } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest) {
       if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsBrief = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardListRowsByIds(boardIdsBrief, payload.orgId);
     const rows = boardsToPortfolioRows(boards);
     const generatedAt = new Date().toISOString();
     const userLabel = payload.username || payload.id;
@@ -36,9 +38,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Executive brief API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "GET api/executive-brief" });
   }
 }

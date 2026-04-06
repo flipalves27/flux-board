@@ -64,7 +64,7 @@ import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
 import { isScrumMethodology, type BoardMethodology } from "@/lib/board-methodology";
-import type { CardServiceClass, SubtaskData, SubtaskProgress } from "@/lib/schemas";
+import type { CardServiceClass, SprintData, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import {
   setBoardPersistenceHandler,
   useBoardStore,
@@ -80,7 +80,6 @@ import { useSprintStore } from "@/stores/sprint-store";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
-import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import { BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX, type BoardProductTourHandle } from "@/components/board/board-product-tour";
 import {
   DropdownMenu,
@@ -452,8 +451,7 @@ export default function BoardPage() {
   const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
   const [formOrigin, setFormOrigin] = useState("");
 
-  const authWaiting = !isChecked || !user;
-  const showBoardSkeleton = useMinimumSkeletonDuration(!authWaiting && loading);
+  const showBoardSkeleton = useMinimumSkeletonDuration(loading);
   const tourExpandFilters = tourStep === BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX;
 
   /** next/navigation `useRouter()` pode mudar identidade entre renders — evita re-disparar loadBoard (#185). */
@@ -485,7 +483,7 @@ export default function BoardPage() {
     const seq = ++loadSeqRef.current;
     setLoading(true);
     try {
-      const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}`, {
+      const r = await apiFetch(`/api/boards/${encodeURIComponent(boardId)}/bootstrap`, {
         cache: "no-store",
         headers: getHeadersRef.current(),
       });
@@ -500,8 +498,18 @@ export default function BoardPage() {
         return;
       }
       if (!r.ok) throw new Error("Erro ao carregar");
-      const d = await r.json();
+      const body = (await r.json()) as {
+        board?: BoardData & { name?: string; clientLabel?: string };
+        sprints?: SprintData[];
+      };
+      const d = body.board;
+      if (!d || typeof d !== "object") throw new Error("Erro ao carregar");
       if (seq !== loadSeqRef.current) return;
+      const sprints = Array.isArray(body.sprints) ? body.sprints : [];
+      useSprintStore.getState().setSprints(boardId, sprints);
+      useSprintStore
+        .getState()
+        .setActiveSprint(boardId, sprints.find((s) => s.status === "active") ?? null);
       setBoardName(d.name || "Board");
       const rawClient = typeof d.clientLabel === "string" ? d.clientLabel.trim() : "";
       setClientLabel(rawClient || null);
@@ -570,6 +578,16 @@ export default function BoardPage() {
   }, [boardId, locale]);
 
   useEffect(() => {
+    if (!boardId) {
+      routerRef.current.replace(`/${locale}/boards`);
+      return;
+    }
+    useKanbanUiStore.getState().resetForBoardSwitch();
+    useCopilotStore.getState().resetSessionUi();
+    loadBoard();
+  }, [boardId, locale, loadBoard]);
+
+  useEffect(() => {
     if (!isChecked) return;
     if (!user) {
       if (guestSessionGate === 0) {
@@ -580,14 +598,7 @@ export default function BoardPage() {
       return;
     }
     if (guestSessionGate !== 0) setGuestSessionGate(0);
-    if (!boardId) {
-      routerRef.current.replace(`/${locale}/boards`);
-      return;
-    }
-    useKanbanUiStore.getState().resetForBoardSwitch();
-    useCopilotStore.getState().resetSessionUi();
-    loadBoard();
-  }, [isChecked, user?.id, guestSessionGate, boardId, locale, loadBoard, refreshSession]);
+  }, [isChecked, user?.id, guestSessionGate, boardId, locale, refreshSession]);
 
   useEffect(() => {
     const id = boardId;
@@ -737,9 +748,6 @@ export default function BoardPage() {
     }
   }, [boardId, getHeaders, pushToast, t]);
 
-  if (authWaiting) {
-    return <BoardRouteLoadingFallback />;
-  }
   if (showBoardSkeleton || !hasBoardData) {
     return (
       <div className="min-h-screen">
@@ -869,7 +877,7 @@ export default function BoardPage() {
               </button>
 
               {/* Admin tools — collapsed into dropdown */}
-              {user.isAdmin && (
+              {user?.isAdmin && (
                 <>
                   <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
                   <DropdownMenu>
@@ -895,7 +903,7 @@ export default function BoardPage() {
                         </svg>
                         Template
                       </DropdownMenuItem>
-                      {isPlatformAdminSession(user) ? (
+                      {user && isPlatformAdminSession(user) ? (
                         <>
                           <DropdownMenuItem onSelect={() => router.push(`/${locale}/admin/tracer`)}>
                             <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>

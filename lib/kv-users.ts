@@ -305,10 +305,27 @@ export async function loadUserByIdFromStore(id: string, orgId: string): Promise<
 
 async function migrateUserCanonicalOrgRole(user: User): Promise<User> {
   if (user.id === "admin") return user;
-  const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
-  const teamGestor = await userIsActiveOrgTeamManager(user.orgId, user.id);
-  const canonical = resolveCanonicalOrgMembershipRole(user, teamGestor);
   const rawSlot = user.orgRole as string | undefined;
+
+  /** `listTeamMembers` só é necessário para elevar `membro` → `gestor` via Equipe (gestor org-scoped). */
+  const needsTeamGestorLookup = (() => {
+    if (rawSlot === "convidado" || rawSlot === "gestor" || rawSlot === "org_manager") return false;
+    if (user.isAdmin || user.isExecutive) return false;
+    if (rawSlot === "membro" || rawSlot === "org_member") return true;
+    const prelim = normalizeOrgMembershipRole(typeof rawSlot === "string" ? rawSlot : undefined, {
+      isAdmin: user.isAdmin,
+      isExecutive: user.isExecutive,
+    });
+    return prelim === "membro";
+  })();
+
+  let teamGestor = false;
+  if (needsTeamGestorLookup) {
+    const { userIsActiveOrgTeamManager } = await import("./org-team-gestor");
+    teamGestor = await userIsActiveOrgTeamManager(user.orgId, user.id);
+  }
+
+  const canonical = resolveCanonicalOrgMembershipRole(user, teamGestor);
   const needsPersist =
     rawSlot === "org_manager" ||
     rawSlot === "org_member" ||

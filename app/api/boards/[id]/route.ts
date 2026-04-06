@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, updateBoard, deleteBoard, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, updateBoard, deleteBoard, userCanAccessBoard, userCanAccessExistingBoard } from "@/lib/kv-boards";
 import { BoardUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import {
   expandBucketsWithInferredTransitionAliases,
   mergeBucketOrdersForWipResolve,
 } from "@/lib/board-bucket-resolve";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { validateBoardWip, validateBoardWipPutTransition, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
@@ -13,6 +14,7 @@ import { validateDodOnBoardPut } from "@/lib/board-scrum";
 import type { BucketConfig } from "@/app/board/[id]/page";
 import { inferLegacyBoardMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { listSprints, getActiveSprint } from "@/lib/kv-sprints";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 
 export const maxDuration = 60;
 
@@ -20,7 +22,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const route = "GET /api/boards/[id]";
+  const t0 = Date.now();
   const payload = await getAuthFromRequest(request);
+  logFluxApiPhase(route, "getAuthFromRequest", t0);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -31,16 +36,20 @@ export async function GET(
   }
   const boardId = requestedBoardId;
 
-  const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
-  if (!canAccess) {
+  const t1 = Date.now();
+  const board = await getBoard(boardId, payload.orgId);
+  logFluxApiPhase(route, "getBoard", t1);
+  if (!board) {
+    return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
+  }
+  const t2 = Date.now();
+  const allowed = await userCanAccessExistingBoard(board, payload.id, payload.orgId, payload.isAdmin);
+  logFluxApiPhase(route, "userCanAccessExistingBoard", t2);
+  if (!allowed) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
 
   try {
-    const board = await getBoard(boardId, payload.orgId);
-    if (!board) {
-      return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
-    }
     let boardMethodology: BoardMethodology = board.boardMethodology ?? "scrum";
     let inferredMethodology = false;
     if (!board.boardMethodology) {
@@ -61,13 +70,11 @@ export async function GET(
       boardMethodology,
       portal: stripPortalForClient(board.portal),
     };
+    logFluxApiPhase(route, "total", t0);
     return NextResponse.json(safe);
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }
 
@@ -284,10 +291,7 @@ export async function PUT(
     });
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }
 
@@ -314,9 +318,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }

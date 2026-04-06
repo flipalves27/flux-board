@@ -7,6 +7,7 @@ import {
   updateOrganization,
   type OrganizationPlan,
 } from "@/lib/kv-organizations";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { deleteOrganizationCascade } from "@/lib/org-delete-cascade";
 import { zodErrorToMessage } from "@/lib/schemas";
 import { insertAuditEvent } from "@/lib/audit-events";
@@ -35,9 +36,15 @@ export async function DELETE(
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Erro interno";
-    const status = msg.includes("não encontrada") ? 404 : msg.includes("padrão") || msg.includes("MongoDB") ? 400 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    console.error("platform-organizations DELETE:", err);
+    const raw = err instanceof Error ? err.message : "";
+    if (raw.includes("não encontrada")) {
+      return NextResponse.json({ error: "Organização não encontrada." }, { status: 404 });
+    }
+    if (raw.includes("padrão") || raw.includes("MongoDB")) {
+      return NextResponse.json({ error: "Não é possível eliminar esta organização." }, { status: 400 });
+    }
+    return publicApiErrorResponse(err, { context: "DELETE api/admin/platform-organizations/[id]" });
   }
 }
 
@@ -117,9 +124,6 @@ export async function PATCH(
     return NextResponse.json({ organization: org });
   } catch (err) {
     console.error("platform-organizations PATCH:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/admin/platform-organizations/[id]/route.ts" });
   }
 }

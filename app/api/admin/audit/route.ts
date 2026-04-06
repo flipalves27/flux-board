@@ -3,6 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { ensurePlatformAdmin } from "@/lib/api-authz";
 import { listAuditEventsPaginated } from "@/lib/audit-events";
 import type { AuditResourceType } from "@/lib/audit-types";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -57,9 +58,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ events, nextCursor: r.nextCursor });
   } catch (err) {
     console.error("admin audit GET:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/admin/audit/route.ts" });
   }
 }

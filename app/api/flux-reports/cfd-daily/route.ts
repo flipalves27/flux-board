@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsCfdShellByIds } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
@@ -19,6 +19,7 @@ import {
   normalizeCfdKeys,
   parseCfdDailyPeriod,
 } from "@/lib/cfd-daily-from-snapshots";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
       if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsCfd = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardsCfdShellByIds(boardIdsCfd, payload.orgId);
     const boardIds = boards.map((b) => b.id).filter(Boolean);
 
     const emptyNote =
@@ -104,9 +106,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("cfd-daily API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/cfd-daily/route.ts" });
   }
 }

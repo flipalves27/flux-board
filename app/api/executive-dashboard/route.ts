@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, getUserById } from "@/lib/kv-users";
-import { listBoardsForUser, type BoardData } from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, type BoardData } from "@/lib/kv-boards";
 import { boardsToPortfolioRows, aggregatePortfolio } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
@@ -14,6 +14,7 @@ import {
   buildWeeklyThroughputFromCopilot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { listObjectivesWithKeyResults, type OkrsKeyResult, type OkrsObjective } from "@/lib/kv-okrs";
 import {
   computeObjectiveProgressForOrg,
@@ -77,7 +78,8 @@ export async function GET(request: NextRequest) {
       throw err;
     }
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boardIdsExec = await getBoardIds(payload.id, payload.orgId, payload.seesAllBoardsInOrg);
+    const boards = await getBoardListRowsByIds(boardIdsExec, payload.orgId);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
 
@@ -271,9 +273,6 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     console.error("Executive dashboard API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/executive-dashboard/route.ts" });
   }
 }

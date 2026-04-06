@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -50,16 +50,16 @@ const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * Atrasa o primeiro GET /api/boards para reduzir competição com GET /api/auth/session no cold start.
- * `0` desativa. Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
+ * Atrasa opcionalmente o GET /api/boards (default `0` — após `isChecked` a sessão já foi validada).
+ * Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
  */
 const ONBOARDING_BOARDS_STAGGER_MS = (() => {
   const raw = process.env.NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS?.trim();
   if (raw === "0") return 0;
-  if (raw === undefined || raw === "") return 280;
+  if (raw === undefined || raw === "") return 0;
   const n = Number(raw);
   if (Number.isFinite(n) && n >= 0 && n <= 10_000) return Math.floor(n);
-  return 280;
+  return 0;
 })();
 
 function StepPill({
@@ -149,7 +149,7 @@ function safeParseJson<T>(value: string | null): T | null {
 export default function OnboardingPage() {
   const router = useRouter();
   useInviteJoinAcknowledgement();
-  const { user, getHeaders, isChecked, isLoading, sessionFailure } = useAuth();
+  const { user, getHeaders, isChecked, isLoading, sessionFailure, refreshSession } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
   const tRef = useRef(t);
@@ -173,7 +173,6 @@ export default function OnboardingPage() {
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
   const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
-  const [onboardingInitSettled, setOnboardingInitSettled] = useState(false);
   const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
   /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
@@ -184,12 +183,19 @@ export default function OnboardingPage() {
   const heroStorageKey = useMemo(() => (user ? getOnboardingFluxyHeroStorageKey(user.id) : null), [user]);
 
   const persistState = useCallback(
-    (next: Omit<PersistedWizardState, "step"> & { step: WizardStep }) => {
-      if (!user || !storageKey) return;
-      const payload = JSON.stringify(next);
-      localStorage.setItem(storageKey, payload);
+    (
+      next: Omit<PersistedWizardState, "step"> & { step: WizardStep },
+      wizardUserId?: string
+    ) => {
+      const uid = wizardUserId ?? user?.id;
+      if (!uid) return;
+      try {
+        localStorage.setItem(getOnboardingStateStorageKey(uid), JSON.stringify(next));
+      } catch {
+        /* ignore quota / private mode */
+      }
     },
-    [user, storageKey]
+    [user?.id]
   );
 
   const markDone = useCallback(() => {
@@ -217,62 +223,58 @@ export default function OnboardingPage() {
     }
   }, [isChecked, user, router, localeRoot, sessionFailure]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isChecked || !user?.id) {
-      setOnboardingInitSettled(false);
+      return;
+    }
+
+    if (!doneKey || !storageKey) {
       return;
     }
 
     const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
-    setOnboardingInitSettled(false);
-    (async () => {
+
+    const doneRaw = localStorage.getItem(doneKey);
+    const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
+
+    if (doneRaw === "1") {
+      router.replace(`${localeRoot}/boards`);
+      return;
+    }
+
+    void (async () => {
       try {
         setInitError(null);
-        if (!doneKey || !storageKey) return;
 
-        const doneRaw = localStorage.getItem(doneKey);
-        if (doneRaw === "1") {
-          router.replace(`${localeRoot}/boards`);
-          return;
+        if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
+          await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+          if (cancelled) return;
         }
 
-        const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
-
-        // Utilizadores não-admin não vêem boards de outros — são sempre novos no onboarding.
-        // Skip o fetch de boards para evitar 504 por MongoDB frio e liberar o UI imediatamente.
-        const isAdmin = user.seesAllBoardsInOrg || user.isAdmin;
-
         let boards: Array<{ id: string }> = [];
-        if (isAdmin) {
-          // Admins podem ter boards existentes de outros utilizadores → verificar no servidor.
-          if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
-            await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
-          }
+        try {
+          const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+            const timeoutId = window.setTimeout(
+              () => reject(new Error("onboarding_boards_timeout")),
+              ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+            );
+            void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+              .then((data) => {
+                window.clearTimeout(timeoutId);
+                resolve(data);
+              })
+              .catch((err) => {
+                window.clearTimeout(timeoutId);
+                reject(err);
+              });
+          });
+          boards = boardsPayload.boards ?? [];
+        } catch (fetchErr) {
           if (cancelled) return;
-          try {
-            const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
-              const timeoutId = window.setTimeout(
-                () => reject(new Error("onboarding_boards_timeout")),
-                ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
-              );
-              void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
-                .then((data) => {
-                  window.clearTimeout(timeoutId);
-                  resolve(data);
-                })
-                .catch((err) => {
-                  window.clearTimeout(timeoutId);
-                  reject(err);
-                });
-            });
-            boards = boardsPayload.boards ?? [];
-          } catch (fetchErr) {
-            if (cancelled) return;
-            if (runId !== onboardingInitRunIdRef.current) return;
-            console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
-            boards = [];
-          }
+          if (runId !== onboardingInitRunIdRef.current) return;
+          console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
+          boards = [];
         }
         // Para não-admin: boards = [] → prossegue direto ao onboarding sem round-trip ao servidor.
 
@@ -289,15 +291,12 @@ export default function OnboardingPage() {
             setCardBucketKey((persisted.bucketOrder[0]?.key ?? "").toString());
             return;
           }
-          // User already has boards and no matching in-progress onboarding => skip wizard.
           localStorage.setItem(doneKey, "1");
           router.replace(`${localeRoot}/boards`);
           return;
         }
 
-        // No boards yet
         if (persisted?.boardId) {
-          // State exists but server has no board => restart wizard.
           if (cancelled) return;
           localStorage.removeItem(storageKey);
           setStep(1);
@@ -325,10 +324,6 @@ export default function OnboardingPage() {
               ? e.message
               : tRef.current("errors.init");
         setInitError(msg);
-      } finally {
-        if (cancelled) return;
-        if (runId !== onboardingInitRunIdRef.current) return;
-        setOnboardingInitSettled(true);
       }
     })();
 
@@ -338,7 +333,7 @@ export default function OnboardingPage() {
   }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
 
   useEffect(() => {
-    if (!onboardingInitSettled || !heroStorageKey) {
+    if (!heroStorageKey) {
       setFluxyHeroOpen(false);
       return;
     }
@@ -356,7 +351,7 @@ export default function OnboardingPage() {
       return;
     }
     setFluxyHeroOpen(true);
-  }, [onboardingInitSettled, heroStorageKey, step, boardId]);
+  }, [heroStorageKey, step, boardId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -392,10 +387,18 @@ export default function OnboardingPage() {
 
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
-      if (!user) return;
       setBusy(true);
       setInitError(null);
       try {
+        let actor = user;
+        if (!actor) {
+          actor = await refreshSession();
+        }
+        if (!actor) {
+          setInitError(tRef.current("errors.needSession"));
+          return;
+        }
+
         const name = (nextBoardName || "").trim() || "Meu Board";
         const templateBuckets =
           wizardMethodology === "lean_six_sigma"
@@ -437,14 +440,17 @@ export default function OnboardingPage() {
         setCardBucketKey((templateBuckets[0]?.key ?? "").toString());
         setStep(2);
 
-        persistState({
-          step: 2,
-          boardId: board.id,
-          templateId: nextTemplateId,
-          boardName: name,
-          bucketOrder: templateBuckets,
-          columnsPersisted: true,
-        });
+        persistState(
+          {
+            step: 2,
+            boardId: board.id,
+            templateId: nextTemplateId,
+            boardName: name,
+            bucketOrder: templateBuckets,
+            columnsPersisted: true,
+          },
+          actor.id
+        );
       } catch (e) {
         const msg = e instanceof ApiError ? e.message : t("errors.createBoard");
         setInitError(msg);
@@ -452,7 +458,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user, wizardMethodology]
+    [getHeaders, persistState, refreshSession, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -569,8 +575,7 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
-  const step1ActionsDisabled =
-    busy || isLoading || !isChecked || !user || (!onboardingInitSettled && !initError);
+  const step1ActionsDisabled = busy;
 
   const loginHrefWithSessionDiag = useMemo(() => {
     const sp = new URLSearchParams();

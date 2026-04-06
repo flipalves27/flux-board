@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, listBoardsForUser, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, getBoardIds, getBoardListRowsByIds, userCanAccessBoard } from "@/lib/kv-boards";
 import { createDoc } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import {
@@ -11,6 +11,7 @@ import {
   makeDailyAiCallsRateLimitKey,
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
+import { publicErrorMessage } from "@/lib/public-api-error";
 import { logDocsMetric } from "@/lib/docs-metrics";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
@@ -156,7 +157,8 @@ export async function POST(request: NextRequest) {
       try {
         sendEvent("step", { id: "collect", label: "Coletando contexto do Flux", status: "running" });
 
-        const allBoards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+        const boardIdsDocs = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+        const allBoards = await getBoardListRowsByIds(boardIdsDocs, payload.orgId);
         let userContent = "";
         let defaultTitle = defaultTitleForFlow(flow, board, quarter);
         if (titleOverride) defaultTitle = titleOverride;
@@ -253,7 +255,7 @@ export async function POST(request: NextRequest) {
         });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro ao gerar documento.";
+        const message = publicErrorMessage(err, "Erro ao gerar documento.", "api/docs/generate-pipeline/route.ts");
         sendEvent("error", { message });
         try {
           controller.close();

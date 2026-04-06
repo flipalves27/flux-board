@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (!isMongoConfigured()) {
     return NextResponse.json(
-      { error: "Histórico e análise em segundo plano requerem MongoDB configurado (MONGODB_URI)." },
+      { error: "Histórico e análise em segundo plano não estão disponíveis neste ambiente." },
       { status: 503 }
     );
   }
@@ -49,9 +49,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     formData = await request.formData();
   } catch (e) {
-    const cause = e instanceof Error ? e.message : String(e);
+    console.error("[spec-plan/runs] formData", e);
     return NextResponse.json(
-      { error: "Não foi possível ler o formulário.", errorCode: "FORM_DATA_INVALID", cause },
+      { error: "Não foi possível ler o formulário.", errorCode: "FORM_DATA_INVALID" },
       { status: 400 }
     );
   }

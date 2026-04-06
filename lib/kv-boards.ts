@@ -120,6 +120,7 @@ async function ensureBoardIndexes(db: Db): Promise<void> {
   await ensureTenancyMigrationOnce();
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, ownerId: 1 });
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1 });
+  await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, _id: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ _id: 1, orgId: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ orgId: 1 });
   boardIndexesEnsured = true;
@@ -301,6 +302,289 @@ export async function getBoard(boardId: string, orgId: string): Promise<BoardDat
   return board?.orgId === orgId ? board : null;
 }
 
+/** Contagem canónica de boards da organização (documentos em `boards` com `orgId`). Alinhada ao limite de plano em `GET /api/boards`. */
+export async function countBoardsInOrg(orgId: string): Promise<number> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    return db.collection<BoardDoc>(COL_BOARDS).countDocuments({ orgId });
+  }
+  const { listUsers } = await import("./kv-users");
+  const users = await listUsers(orgId);
+  const store = await getStore();
+  const ids = new Set<string>();
+  for (const u of users) {
+    const list = ((await store.get<string[]>(userBoardsKey(u.id))) as string[]) || [];
+    for (const id of list) ids.add(id);
+  }
+  return ids.size;
+}
+
+export type BoardSummaryRow = Pick<BoardData, "id" | "name" | "boardMethodology">;
+
+/**
+ * Metadados mínimos por board (sem cards) — ex.: lista org-wide de sprints.
+ * Mantém a mesma ordenação que `boardIds`.
+ */
+export async function getBoardSummariesByIds(boardIds: string[], orgId: string): Promise<BoardSummaryRow[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .find(
+        { _id: { $in: boardIds }, orgId },
+        { projection: { _id: 1, name: 1, boardMethodology: 1 } }
+      )
+      .toArray();
+    const byId = new Map<string, BoardSummaryRow>();
+    for (const doc of docs) {
+      byId.set(doc._id, {
+        id: doc._id,
+        name: doc.name,
+        boardMethodology: doc.boardMethodology,
+      });
+    }
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardSummaryRow => Boolean(b));
+  }
+  const full = await getBoardsByIds(boardIds, orgId);
+  return full.map((b) => ({
+    id: b.id,
+    name: b.name,
+    boardMethodology: b.boardMethodology,
+  }));
+}
+
+/** Cards só com id/título/progress — busca org-wide (`cards-search`). */
+export async function getBoardsForCardSearchByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .aggregate<BoardDoc>([
+        { $match: { _id: { $in: boardIds }, orgId } },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            orgId: 1,
+            ownerId: 1,
+            cards: {
+              $map: {
+                input: { $ifNull: ["$cards", []] },
+                as: "c",
+                in: {
+                  id: "$$c.id",
+                  title: "$$c.title",
+                  progress: "$$c.progress",
+                },
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) byId.set(doc._id, boardDocToData(doc));
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
+  }
+  return getBoardsByIds(boardIds, orgId);
+}
+
+/** `config` + nomes — CFD diário / meta de colunas (sem cards). */
+export async function getBoardsCfdShellByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .find(
+        { _id: { $in: boardIds }, orgId },
+        { projection: { _id: 1, name: 1, orgId: 1, ownerId: 1, config: 1 } }
+      )
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) byId.set(doc._id, boardDocToData(doc));
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
+  }
+  const full = await getBoardsByIds(boardIds, orgId);
+  return full.map((b) => ({
+    id: b.id,
+    name: b.name,
+    ownerId: b.ownerId,
+    orgId: b.orgId,
+    config: b.config,
+  }));
+}
+
+const FLUX_REPORTS_CARD_PROJECTION_FIELDS = {
+  id: "$$c.id",
+  title: "$$c.title",
+  bucket: "$$c.bucket",
+  progress: "$$c.progress",
+  priority: "$$c.priority",
+  dueDate: "$$c.dueDate",
+  tags: "$$c.tags",
+  storyPoints: "$$c.storyPoints",
+  owner: "$$c.owner",
+  assignee: "$$c.assignee",
+  completedAt: "$$c.completedAt",
+  columnEnteredAt: "$$c.columnEnteredAt",
+  createdAt: "$$c.createdAt",
+  dorReady: "$$c.dorReady",
+} as const;
+
+/** Subconjunto de cards + metadados para `flux-reports` (evita anexos e campos pesados). */
+export async function getBoardsFluxReportsSliceByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .aggregate<BoardDoc>([
+        { $match: { _id: { $in: boardIds }, orgId } },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            orgId: 1,
+            ownerId: 1,
+            boardMethodology: 1,
+            clientLabel: 1,
+            lastUpdated: 1,
+            createdAt: 1,
+            config: 1,
+            cards: {
+              $map: {
+                input: { $ifNull: ["$cards", []] },
+                as: "c",
+                in: FLUX_REPORTS_CARD_PROJECTION_FIELDS,
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) byId.set(doc._id, boardDocToData(doc));
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
+  }
+  return getBoardsByIds(boardIds, orgId);
+}
+
+/** Copilot world snapshot org-wide: métricas de portfólio + dailies + `automationState` nos cards. */
+export async function getBoardsCopilotOrgSnapshotByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .aggregate<BoardDoc>([
+        { $match: { _id: { $in: boardIds }, orgId } },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            orgId: 1,
+            ownerId: 1,
+            boardMethodology: 1,
+            clientLabel: 1,
+            lastUpdated: 1,
+            dailyInsights: 1,
+            config: 1,
+            cards: {
+              $map: {
+                input: { $ifNull: ["$cards", []] },
+                as: "c",
+                in: {
+                  bucket: "$$c.bucket",
+                  priority: "$$c.priority",
+                  progress: "$$c.progress",
+                  dueDate: "$$c.dueDate",
+                  automationState: "$$c.automationState",
+                },
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    const byId = new Map<string, BoardData>();
+    for (const doc of docs) byId.set(doc._id, boardDocToData(doc));
+    return boardIds.map((id) => byId.get(id)).filter((b): b is BoardData => Boolean(b));
+  }
+  return getBoardsByIds(boardIds, orgId);
+}
+
+/** Boards LSS com cards mínimos para aging DMAIC (`flux-reports/lss`). */
+export async function getBoardsLssLeanSliceByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+  if (!boardIds.length) return [];
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const docs = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .aggregate<BoardDoc>([
+        {
+          $match: {
+            _id: { $in: boardIds },
+            orgId,
+            boardMethodology: "lean_six_sigma",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            orgId: 1,
+            ownerId: 1,
+            boardMethodology: 1,
+            clientLabel: 1,
+            createdAt: 1,
+            config: 1,
+            cards: {
+              $map: {
+                input: { $ifNull: ["$cards", []] },
+                as: "c",
+                in: {
+                  bucket: "$$c.bucket",
+                  progress: "$$c.progress",
+                  completedAt: "$$c.completedAt",
+                  columnEnteredAt: "$$c.columnEnteredAt",
+                  createdAt: "$$c.createdAt",
+                },
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    return docs.map((d) => boardDocToData(d));
+  }
+  const boards = await getBoardsByIds(boardIds, orgId);
+  return boards.filter((b) => b.boardMethodology === "lean_six_sigma");
+}
+
+/** RBAC quando o documento do board já foi carregado — evita segundo `getBoard` no handler. */
+export async function userCanAccessExistingBoard(
+  board: BoardData,
+  userId: string,
+  orgId: string,
+  seesAllBoardsFromAuth: boolean
+): Promise<boolean> {
+  if (board.ownerId === userId || seesAllBoardsFromAuth) return true;
+  if ((await getOrgWideTeamBoardAccess(orgId, userId)) !== null) return true;
+  const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
+  const role = await getBoardEffectiveRole(orgId, board.id, userId, false, false);
+  return roleCanRead(role);
+}
+
 export async function createBoard(
   orgId: string,
   userId: string,
@@ -465,11 +749,23 @@ export async function userCanAccessBoard(
   seesAllBoardsFromAuth: boolean,
   boardId: string
 ): Promise<boolean> {
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const doc = await db
+      .collection<BoardDoc>(COL_BOARDS)
+      .findOne({ _id: boardId, orgId }, { projection: { ownerId: 1 } });
+    if (!doc) return false;
+    if (doc.ownerId === userId || seesAllBoardsFromAuth) return true;
+    if ((await getOrgWideTeamBoardAccess(orgId, userId)) !== null) return true;
+    const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
+    const role = await getBoardEffectiveRole(orgId, boardId, userId, false, false);
+    return roleCanRead(role);
+  }
   const board = await getBoard(boardId, orgId);
   if (!board) return false;
   if (board.ownerId === userId || seesAllBoardsFromAuth) return true;
   if ((await getOrgWideTeamBoardAccess(orgId, userId)) !== null) return true;
-  // Board-level RBAC: check membership
   const { getBoardEffectiveRole, roleCanRead } = await import("./kv-board-members");
   const role = await getBoardEffectiveRole(orgId, boardId, userId, false, false);
   return roleCanRead(role);

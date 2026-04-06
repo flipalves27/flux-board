@@ -6,6 +6,7 @@ import {
   getOrganizationById,
   updateOrganization,
 } from "@/lib/kv-organizations";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
 import { getEffectiveTier, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
@@ -281,7 +282,7 @@ export async function PUT(request: NextRequest) {
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
     return NextResponse.json({ organization: org });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 400 });
+    return publicApiErrorResponse(err, { context: "api/organizations/me/route.ts", status: 400, fallbackMessage: "Pedido inválido. Tente novamente." });
   }
 }
 

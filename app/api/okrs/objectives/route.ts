@@ -5,6 +5,7 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { listObjectives, createObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("OKRs objectives GET error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/route.ts" });
   }
 }
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, objective }, { status: 201 });
   } catch (err) {
     console.error("OKRs objective POST error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/route.ts" });
   }
 }
 

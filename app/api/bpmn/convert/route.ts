@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { markdownToBpmnModel, xmlToBpmnModel } from "@/lib/bpmn-io";
 import { validateBpmnModel } from "@/lib/bpmn-types";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function POST(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const validation = validateBpmnModel(model);
     return NextResponse.json({ model, validation });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Falha ao converter BPMN." }, { status: 400 });
+    return publicApiErrorResponse(e, { context: "api/bpmn/convert/route.ts", status: 400, fallbackMessage: "Falha ao converter BPMN." });
   }
 }
 

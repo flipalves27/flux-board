@@ -3,8 +3,9 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { ensureOrgManager } from "@/lib/api-authz";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { listUsers } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { countBoardsInOrg } from "@/lib/kv-boards";
 import { describeDowngradeImpact } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export const runtime = "nodejs";
 
@@ -19,10 +20,10 @@ export async function GET(request: NextRequest) {
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
 
     const users = await listUsers(payload.orgId);
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardsCount = await countBoardsInOrg(payload.orgId);
 
     const impact = describeDowngradeImpact({
-      boardsCount: boards.length,
+      boardsCount,
       usersCount: users.length,
     });
 
@@ -35,9 +36,10 @@ export async function GET(request: NextRequest) {
       impact,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return publicApiErrorResponse(err, {
+      context: "GET api/billing/downgrade-impact",
+      status: 400,
+      fallbackMessage: "Não foi possível calcular o impacto.",
+    });
   }
 }

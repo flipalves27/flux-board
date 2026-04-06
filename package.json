@@ -20,6 +20,7 @@
     "governance:weekly": "node scripts/governance-metrics-report.mjs",
     "migrate:legacy-board-ids": "node scripts/migrate-legacy-board-ids.mjs",
     "migrate:reborn-boards": "node scripts/migrate-reborn-board-ids.mjs",
+    "mongo:explain-staging": "node scripts/flux-mongo-explain-staging.mjs",
     "mongo:clear-platform-stripe-price-ids": "node scripts/clear-platform-stripe-price-ids.mjs",
     "mongo:ensure-tenancy-migration": "node scripts/ensure-tenancy-migration.mjs",
     "validate:deploy": "npm run lint && npm run test && npm run build",

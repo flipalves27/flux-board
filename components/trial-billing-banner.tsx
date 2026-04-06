@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { apiPut } from "@/lib/api-client";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
-import { DOWNGRADE_GRACE_DAYS } from "@/lib/billing-limits";
+import { DOWNGRADE_GRACE_DAYS, TRIAL_DAYS } from "@/lib/billing-limits";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import { shouldHideOrgBillingNudges } from "@/lib/plan-ui-context";
 
@@ -90,7 +90,9 @@ export function TrialBillingBanner() {
   if (org.billingNotice?.kind === "trial_ended") {
     return (
       <div className="shrink-0 border-b border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
-        <p className="font-semibold">Seu trial de 14 dias terminou. O espaço passou para o plano Free.</p>
+        <p className="font-semibold">
+          Seu trial de {TRIAL_DAYS} dias terminou. O espaço passou para o plano Free.
+        </p>
         <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
           Recursos Pro desativados: {PRO_FEATURE_LABELS_PT.map((x) => x.label).join(", ")}.
         </p>

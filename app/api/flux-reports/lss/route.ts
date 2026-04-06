@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsLssLeanSliceByIds } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, canUseFeature, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
-import { buildFluxReportsLssPayload, filterLeanSixSigmaBoards, type FluxReportsLssPayload } from "@/lib/flux-reports-lss";
+import { buildFluxReportsLssPayload, type FluxReportsLssPayload } from "@/lib/flux-reports-lss";
 import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
 import { currentQuarterLabel } from "@/lib/quarter-label";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 /**
  * Relatório executivo Lean Six Sigma (DMAIC) — org-wide, boards com `boardMethodology === lean_six_sigma`.
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
       throw err;
     }
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
-    const lssBoards = filterLeanSixSigmaBoards(boards);
+    const boardIdsLss = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const lssBoards = await getBoardsLssLeanSliceByIds(boardIdsLss, payload.orgId);
     const lssIds = new Set(lssBoards.map((b) => b.id));
 
     let okrHints: FluxReportsLssPayload["okrHints"];
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       okrHints = hints.length ? hints.slice(0, 24) : undefined;
     }
 
-    const body = buildFluxReportsLssPayload(boards, { okrHints });
+    const body = buildFluxReportsLssPayload(lssBoards, { okrHints });
 
     return NextResponse.json(body, {
       headers: {
@@ -63,9 +64,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Flux reports LSS API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/lss/route.ts" });
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser } from "@/lib/kv-users";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { getBoardIds, getBoardsFluxReportsSliceByIds } from "@/lib/kv-boards";
 import { aggregatePortfolio, boardsToPortfolioRows } from "@/lib/portfolio-export-core";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
@@ -24,10 +24,12 @@ import {
   scrumDorReadySnapshot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { buildSprintStoryPointsHistory } from "@/lib/flux-reports-sprint-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 
 const NUM_WEEKS = 8;
 
@@ -40,7 +42,10 @@ function weekStartLabelFromMs(ms: number): string {
  * Agregação org-wide para Flux Reports (dashboard ao vivo).
  */
 export async function GET(request: NextRequest) {
+  const route = "GET /api/flux-reports";
+  const t0 = Date.now();
   const payload = await getAuthFromRequest(request);
+  logFluxApiPhase(route, "getAuthFromRequest", t0);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -55,7 +60,10 @@ export async function GET(request: NextRequest) {
       if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const tB = Date.now();
+    const boardIdsForReports = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardsFluxReportsSliceByIds(boardIdsForReports, payload.orgId);
+    logFluxApiPhase(route, "getBoardsFluxReportsSliceByIds", tB);
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
     const nowMs = Date.now();
@@ -147,6 +155,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    logFluxApiPhase(route, "total", t0);
     return NextResponse.json({
       schema: "flux-board.reports.v1",
       generatedAt,
@@ -184,9 +193,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Flux reports API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/route.ts" });
   }
 }

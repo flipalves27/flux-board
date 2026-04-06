@@ -33,7 +33,7 @@ Se `flux_access` / `flux_refresh` **não** aparecem, o problema está na respost
 
 ## 3. Rede na carga inicial de `/…/boards` (Server Action)
 
-O estado de auth vem de `GET /api/auth/session` (`fetchSessionValidate` em `lib/api-client.ts`), chamado no mount do `AuthProvider` (`context/auth-context.tsx`), com retries `[400, 500, 900, 1600, 2400]` ms após `ok: false` ou timeout (evita Server Action a competir com o POST de RSC na primeira carga).
+O estado de auth vem de `GET /api/auth/session` (`fetchSessionValidate` em `lib/api-client.ts`), chamado no mount do `AuthProvider` (`context/auth-context.tsx`). Re-tentativas com atrasos `[320, 900, 1800]` ms aplicam-se **só** a falhas potencialmente transitórias (`server_timeout`, `unknown`, timeout de cliente); `no_cookies`, `token_invalid` e `user_not_found` terminam de imediato (sem fila de ~15s).
 
 1. Abra **Network**, recarregue a página dos boards.
 2. Confirme um **GET** a `/api/auth/session` (mesmo origin) com header **`Cookie`** contendo `flux_access` / `flux_refresh` e resposta **200** JSON com `"ok":true` quando a sessão é válida.

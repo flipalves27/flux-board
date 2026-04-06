@@ -6,6 +6,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { listEmbeddingsForOrgBoards } from "@/lib/kv-card-dependencies";
 import { sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 const BodySchema = z.object({
   title: z.string().max(2000),
@@ -66,6 +67,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ matches });
   } catch (err) {
     console.error("card-similarity", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/card-similarity/route.ts" });
   }
 }
