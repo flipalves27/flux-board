@@ -41,8 +41,13 @@ type PersistedWizardState = {
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 
-/** Evita que o passo 1 fique com botões desativados se GET /api/boards não responder. */
-const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 40_000;
+/**
+ * Timeout para GET /api/boards no onboarding. Reduzido de 40s para 10s:
+ * - Falha rápido em vez de bloquear por 40s
+ * - Graceful degradation: se falhar, assume que não tem boards (caso comum para novos users)
+ * - Elimina bloqueio por MongoDB frio/lento.
+ */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Atrasa opcionalmente o GET /api/boards (default `0` — após `isChecked` a sessão já foi validada).
@@ -247,22 +252,31 @@ export default function OnboardingPage() {
           if (cancelled) return;
         }
 
-        const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
-          const timeoutId = window.setTimeout(
-            () => reject(new Error("onboarding_boards_timeout")),
-            ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
-          );
-          void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
-            .then((data) => {
-              window.clearTimeout(timeoutId);
-              resolve(data);
-            })
-            .catch((err) => {
-              window.clearTimeout(timeoutId);
-              reject(err);
-            });
-        });
-        const boards = boardsPayload.boards ?? [];
+        let boards: Array<{ id: string }> = [];
+        try {
+          const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+            const timeoutId = window.setTimeout(
+              () => reject(new Error("onboarding_boards_timeout")),
+              ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+            );
+            void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+              .then((data) => {
+                window.clearTimeout(timeoutId);
+                resolve(data);
+              })
+              .catch((err) => {
+                window.clearTimeout(timeoutId);
+                reject(err);
+              });
+          });
+          boards = boardsPayload.boards ?? [];
+        } catch (fetchErr) {
+          if (cancelled) return;
+          if (runId !== onboardingInitRunIdRef.current) return;
+          console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
+          boards = [];
+        }
+        // Para não-admin: boards = [] → prossegue direto ao onboarding sem round-trip ao servidor.
 
         if (boards.length > 0) {
           if (persisted?.boardId && boards.some((b) => b.id === persisted.boardId)) {
