@@ -3,36 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, ApiError } from "@/lib/api-client";
+import { apiGet } from "@/lib/api-client";
 import { IconGoals, IconClose } from "@/components/sidebar/icons";
+import {
+  computeOkrsProgress,
+  type OkrsKeyResultDefinition,
+  type OkrsObjectiveComputed,
+  type OkrsObjectiveDefinition,
+} from "@/lib/okr-engine";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 
-type Objective = {
-  id: string;
-  title: string;
-  quarter: string;
-  owner?: string;
-};
-
-type KeyResult = {
-  definition: {
-    id: string;
-    title: string;
-    target: number;
-    metricType: string;
-  };
-  current: number;
-  pct: number;
-  status: string;
-};
-
-type OkrData = {
+type OkrByBoardResponse = {
   ok: boolean;
   boardId: string;
   quarter: string | null;
   objectives: Array<{
-    objective: Objective;
-    keyResults: KeyResult[];
+    objective: Record<string, unknown> | null | undefined;
+    keyResults: unknown[];
   }>;
 };
 
@@ -42,10 +29,34 @@ type BoardGoalsModalProps = {
   onClose: () => void;
 };
 
+function buildObjectiveDefinitions(
+  objectives: OkrByBoardResponse["objectives"],
+  quarterFallback: string
+): OkrsObjectiveDefinition[] {
+  if (!Array.isArray(objectives)) return [];
+  return objectives.reduce<OkrsObjectiveDefinition[]>((acc, g) => {
+    const obj = g.objective;
+    if (!obj || typeof obj !== "object") return acc;
+    const id = obj.id;
+    if (typeof id !== "string" && typeof id !== "number") return acc;
+    const keyResults: OkrsKeyResultDefinition[] = Array.isArray(g.keyResults)
+      ? (g.keyResults as OkrsKeyResultDefinition[])
+      : [];
+    acc.push({
+      id: String(id),
+      title: String(obj.title ?? ""),
+      owner: (obj.owner as string | null | undefined) ?? null,
+      quarter: String(obj.quarter ?? quarterFallback),
+      keyResults,
+    });
+    return acc;
+  }, []);
+}
+
 export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalProps) {
   const t = useTranslations("navigation");
   const { user, isChecked, getHeaders } = useAuth();
-  const [data, setData] = useState<OkrData | null>(null);
+  const [computedObjectives, setComputedObjectives] = useState<OkrsObjectiveComputed[]>([]);
   const [loading, setLoading] = useState(false);
   const [projections, setProjections] = useState<Map<string, OkrKrProjection>>(new Map());
 
@@ -66,29 +77,70 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
 
       setLoading(true);
       try {
-        const [okrsRes, projRes] = await Promise.all([
-          apiGet<OkrData>(
-            `/api/okrs/by-board?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-            getHeaders()
+        const headers = getHeaders();
+        const quarterQ = encodeURIComponent(currentQuarter);
+        const boardIdQ = encodeURIComponent(boardId);
+
+        const [okrsOutcome, projOutcome, boardOutcome] = await Promise.allSettled([
+          apiGet<OkrByBoardResponse>(
+            `/api/okrs/by-board?boardId=${boardIdQ}&quarter=${quarterQ}`,
+            headers
           ),
           apiGet<{ projections?: OkrKrProjection[] }>(
-            `/api/okrs/projection?boardId=${encodeURIComponent(boardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-            getHeaders()
+            `/api/okrs/projection?boardId=${boardIdQ}&quarter=${quarterQ}`,
+            headers
+          ),
+          apiGet<{ cards?: unknown[]; config?: { bucketOrder?: Array<{ key?: string }> } }>(
+            `/api/boards/${boardIdQ}`,
+            headers
           ),
         ]);
 
-        if (!cancelled) {
-          setData(okrsRes);
-          if (Array.isArray(projRes?.projections)) {
-            const projMap = new Map<string, OkrKrProjection>();
-            for (const p of projRes.projections) {
-              projMap.set(p.keyResultId, p);
+        if (cancelled) return;
+
+        const objectivesDefs =
+          okrsOutcome.status === "fulfilled" &&
+          okrsOutcome.value?.ok &&
+          Array.isArray(okrsOutcome.value.objectives)
+            ? buildObjectiveDefinitions(okrsOutcome.value.objectives, currentQuarter)
+            : [];
+
+        let cards: Array<{ bucket?: string | null }> = [];
+        const bucketKeys = new Set<string>();
+        if (boardOutcome.status === "fulfilled" && boardOutcome.value) {
+          const board = boardOutcome.value;
+          const raw = Array.isArray(board.cards) ? board.cards : [];
+          cards = raw.map((c) => {
+            if (!c || typeof c !== "object") return {};
+            const o = c as Record<string, unknown>;
+            return { bucket: typeof o.bucket === "string" ? o.bucket : null };
+          });
+          const order = board.config?.bucketOrder;
+          if (Array.isArray(order)) {
+            for (const b of order) {
+              const k = typeof b?.key === "string" ? b.key : "";
+              if (k) bucketKeys.add(k);
             }
-            setProjections(projMap);
           }
         }
+
+        const computed = computeOkrsProgress({ cards, objectives: objectivesDefs, bucketKeys });
+        setComputedObjectives(computed);
+
+        if (projOutcome.status === "fulfilled" && Array.isArray(projOutcome.value?.projections)) {
+          const projMap = new Map<string, OkrKrProjection>();
+          for (const p of projOutcome.value.projections) {
+            if (p && typeof p.keyResultId === "string") projMap.set(p.keyResultId, p);
+          }
+          setProjections(projMap);
+        } else {
+          setProjections(new Map());
+        }
       } catch {
-        if (!cancelled) setData(null);
+        if (!cancelled) {
+          setComputedObjectives([]);
+          setProjections(new Map());
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -102,7 +154,7 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
 
   if (!isOpen) return null;
 
-  const hasObjectives = data && data.objectives && data.objectives.length > 0;
+  const hasObjectives = computedObjectives.length > 0;
 
   return (
     <>
@@ -157,34 +209,28 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
               </div>
             ) : (
               <div className="space-y-4 animate-[fadeIn_0.3s_ease]">
-                {data?.objectives?.map((item) => {
-                  const objective = item.objective;
-                  const keyResults = item.keyResults || [];
-                  const objectiveProgress = keyResults.length > 0
-                    ? Math.min(...keyResults.map((kr) => kr.pct))
-                    : 0;
+                {computedObjectives.map((row) => {
+                  const { objective, keyResults, objectiveCurrentPct } = row;
 
                   return (
                     <div
-                      key={objective?.id}
+                      key={objective.id}
                       className="rounded-[var(--flux-rad-md)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-primary-alpha-05)] p-4 hover:border-[var(--flux-primary-alpha-25)] transition-colors duration-200"
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="min-w-0 flex-1">
                           <h3 className="font-display font-semibold text-[var(--flux-text)] truncate">
-                            {objective?.title}
+                            {objective.title}
                           </h3>
                           <p className="text-xs text-[var(--flux-text-muted)] mt-1">
-                            {objective?.owner ? `Owner: ${objective.owner}` : "Sem dono"}
+                            {objective.owner ? `Owner: ${objective.owner}` : "Sem dono"}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <div className="font-display font-bold text-sm text-[var(--flux-text)]">
-                            {objectiveProgress}%
+                            {objectiveCurrentPct}%
                           </div>
-                          <div className="text-[10px] text-[var(--flux-text-muted)]">
-                            min dos KRs
-                          </div>
+                          <div className="text-[10px] text-[var(--flux-text-muted)]">min dos KRs</div>
                         </div>
                       </div>
 
@@ -192,7 +238,7 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
                       <div className="h-1.5 rounded-full bg-[var(--flux-chrome-alpha-08)] overflow-hidden mb-3">
                         <div
                           className="h-full bg-[var(--flux-primary)]"
-                          style={{ width: `${objectiveProgress}%` }}
+                          style={{ width: `${objectiveCurrentPct}%` }}
                         />
                       </div>
 
@@ -200,10 +246,11 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
                       {keyResults.length > 0 && (
                         <div className="space-y-2">
                           {keyResults.map((kr) => {
-                            const proj = projections.get(kr.definition.id);
+                            const krId = kr.definition.id;
+                            const proj = projections.get(krId);
                             return (
                               <div
-                                key={kr.definition.id}
+                                key={krId}
                                 className="rounded-md p-2.5 bg-[var(--flux-surface-elevated)] border border-[var(--flux-chrome-alpha-10)] hover:border-[var(--flux-chrome-alpha-20)] transition-colors duration-200"
                               >
                                 <div className="flex items-center justify-between gap-2">
@@ -239,10 +286,10 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
           </div>
 
           {/* Footer */}
-          {hasObjectives && data?.objectives && (
+          {hasObjectives && (
             <div className="border-t border-[var(--flux-border-subtle)] px-6 py-3 flex items-center justify-between bg-[var(--flux-surface-elevated)]">
               <p className="text-xs text-[var(--flux-text-muted)]">
-                {data.objectives.length} objetivo{data.objectives.length !== 1 ? "s" : ""} para este trimestre
+                {computedObjectives.length} objetivo{computedObjectives.length !== 1 ? "s" : ""} para este trimestre
               </p>
               <a
                 href="/okrs"
