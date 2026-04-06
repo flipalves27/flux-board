@@ -6,6 +6,7 @@ import { themeBootstrapInlineScript } from "@/lib/theme-storage";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AuthProvider } from "@/context/auth-context";
+import { getBootstrapSessionUser } from "@/lib/session-bootstrap";
 import { OrgBrandingProvider } from "@/context/org-branding-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { NavigationVariantProvider } from "@/context/navigation-variant-context";
@@ -74,6 +75,8 @@ export default async function RootLayout({
   const messages = await getMessages();
   const hdrs = await headers();
   const nonce = hdrs.get("x-nonce") ?? undefined;
+  // Bootstrap JWT-only (sem DB) — elimina "Confirmando a sessão…" no onboarding após OAuth.
+  const bootstrapUser = await getBootstrapSessionUser();
   return (
     <html
       lang={locale}
@@ -92,7 +95,7 @@ export default async function RootLayout({
       <body className="antialiased font-body bg-[var(--flux-surface-dark)] text-[var(--flux-text)]">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Suspense fallback={null}>
-            <AuthProvider>
+            <AuthProvider initialUser={bootstrapUser}>
               <FluxDiagnosticsRoot>
                 <OrgBrandingProvider>
                   <ToastProvider>
