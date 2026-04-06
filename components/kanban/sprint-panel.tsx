@@ -121,7 +121,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     } else {
       setBurndown(null);
     }
-  }, [boardId, selectedSprint?.id, selectedSprint?.status]);
+  }, [boardId, selectedSprint]);
 
   useEffect(() => {
     setAiPlan(null);

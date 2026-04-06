@@ -498,7 +498,7 @@ export function useBoardState({
   const handleTimelineOpenCard = useCallback((card: CardData) => {
     setModalCard(card);
     setModalMode("edit");
-  }, []);
+  }, [setModalCard, setModalMode]);
 
   const duplicateCard = useCallback(
     (cardId: string) => {
@@ -823,7 +823,7 @@ export function useBoardState({
       reader.readAsText(file, "UTF-8");
       e.target.value = "";
     },
-    [buckets, cards, csvImportMode, directions, priorities, progresses, pushToast, t]
+    [buckets, cards, csvImportMode, directions, priorities, progresses, pushToast, setCsvImportConfirm, t]
   );
 
   const confirmCsvImport = useCallback(() => {
@@ -893,7 +893,7 @@ export function useBoardState({
           ? t("csvImportConfirm.toasts.mergeSuccess", { count })
           : t("csvImportConfirm.toasts.replaceSuccess", { count }),
     });
-  }, [csvImportConfirm, pushToast, t, updateDb]);
+  }, [csvImportConfirm, pushToast, setCsvImportConfirm, t, updateDb]);
 
   const shouldIgnorePanStart = useCallback((target: EventTarget | null) => {
     const el = target as HTMLElement | null;

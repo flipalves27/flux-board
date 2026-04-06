@@ -104,7 +104,7 @@ export function useDailySession({
     setDailyStatusPhase("idle");
     setDailyHistoryExpandedId(null);
     setDailyHistoryCreatedCardsExpandedId(null);
-  }, []);
+  }, [t]);
 
   const startNewDaily = useCallback(() => {
     setDailyTab("entrada");
@@ -260,7 +260,7 @@ export function useDailySession({
     setDailyTranscript("");
     setDailyFileName(t("daily.defaults.noAttachment"));
     setDailySourceFileName("");
-  }, []);
+  }, [t]);
 
   const performDeleteDailyHistoryEntry = useCallback(
     (entryId: string) => {
@@ -295,7 +295,7 @@ export function useDailySession({
     setDailyDeleteConfirmId(null);
     performDeleteDailyHistoryEntry(entryId);
     pushToast({ kind: "success", title: t("daily.toasts.delete.success") });
-  }, [dailyDeleteConfirmId, performDeleteDailyHistoryEntry, pushToast]);
+  }, [dailyDeleteConfirmId, performDeleteDailyHistoryEntry, pushToast, t]);
 
   const slugDaily = useCallback(
     (value: string) =>
@@ -457,7 +457,7 @@ export function useDailySession({
         setDailyHistoryCreatedCardsExpandedId(entryId);
       }
     },
-    [dailyInsights, directions, pushToast, updateDb]
+    [dailyInsights, directions, pushToast, t, updateDb]
   );
 
   const buildDailyContextDoc = useCallback((entry: DailyInsightEntry) => {
@@ -573,7 +573,7 @@ export function useDailySession({
         pushToast({ kind: "error", title: t("daily.toasts.copy.error.couldNotCopy") });
       }
     },
-    [buildDailyContextDoc, pushToast]
+    [buildDailyContextDoc, pushToast, t]
   );
 
   const openDailyHistoryFromStatusEntry = useCallback((entryId: string) => {
@@ -897,7 +897,7 @@ export function useDailySession({
         setDailyHistoryExpandedId(entryId);
       }
     },
-    [dailyHistoryCreatedCardsExpandedId, dailyHistoryExpandedId]
+    [dailyHistoryExpandedId]
   );
 
   const onCollapseDailyHistoryExpanded = useCallback(() => {
@@ -968,7 +968,7 @@ export function useDailySession({
     } catch {
       // Se houver lixo no storage, ignora silenciosamente.
     }
-  }, []);
+  }, [t]);
 
   // Persistência incremental (reduz chance de perder progresso ao fechar/reabrir modal).
   useEffect(() => {

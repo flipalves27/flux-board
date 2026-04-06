@@ -307,6 +307,8 @@ function KanbanBoardLoaded({
     onAfterColumnReorder: collab.notifyColumnReorder,
   });
 
+  const { setModalCard, setModalMode, setDescModalCard, modalCard, modalMode } = board;
+
   const filters = useBoardFilters({
     cards: board.cards,
     buckets: board.buckets,
@@ -635,15 +637,15 @@ function KanbanBoardLoaded({
   }, [searchParamsKey, boardId, localeRoot, methodology]);
 
   useEffect(() => {
-    const card = board.modalCard;
-    if (!user?.id || board.modalMode !== "edit" || !card?.id) return;
+    const card = modalCard;
+    if (!user?.id || modalMode !== "edit" || !card?.id) return;
     registerRecentCard(user.id, {
       boardId,
       boardName,
       cardId: card.id,
       title: card.title || card.id,
     });
-  }, [user?.id, boardId, boardName, board.modalMode, board.modalCard?.id]);
+  }, [user?.id, boardId, boardName, modalMode, modalCard]);
 
   const anyConfirmOpen = Boolean(dailyDeleteConfirmId || board.csvImportConfirm);
 
@@ -686,19 +688,19 @@ function KanbanBoardLoaded({
     (id: string) => {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
       if (c) {
-        board.setModalCard(c);
-        board.setModalMode("edit");
+        setModalCard(c);
+        setModalMode("edit");
       }
     },
-    [board.setModalCard, board.setModalMode]
+    [setModalCard, setModalMode]
   );
 
   const onOpenDescById = useCallback(
     (id: string) => {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
-      if (c) board.setDescModalCard(c);
+      if (c) setDescModalCard(c);
     },
-    [board.setDescModalCard]
+    [setDescModalCard]
   );
 
   const onMergeDraftIntoExisting = useCallback(
@@ -720,9 +722,9 @@ function KanbanBoardLoaded({
         c.tags = [...tagSet].map((x) => String(x).trim()).filter(Boolean).slice(0, 20);
       });
       pushToast({ kind: "success", title: t("cardModal.duplicate.mergeToast") });
-      board.setModalCard(null);
+      setModalCard(null);
     },
-    [updateDb, pushToast, t, board.setModalCard]
+    [updateDb, pushToast, t, setModalCard]
   );
 
   const overlayProps = {
