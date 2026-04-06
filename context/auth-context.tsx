@@ -124,12 +124,29 @@ function clearLegacyStorage(): void {
   }
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isLoading: true,
-    isChecked: false,
-    sessionFailure: null,
+/**
+ * Falhas "suaves" de validação em background: não limpamos o utilizador bootstrapped
+ * porque o JWT ainda é válido — o servidor é que estava sobrecarregado/frio.
+ */
+const SOFT_FAILURE_KINDS: ReadonlySet<string> = new Set([
+  "server_timeout",
+  "client_timeout",
+  "unknown",
+]);
+
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  /** Utilizador pré-validado no servidor (bootstrap JWT sem DB). Elimina o "Confirmando a sessão…". */
+  initialUser?: AuthUser | null;
+}) {
+  const [state, setState] = useState<AuthState>(() => {
+    if (initialUser) {
+      return { user: initialUser, isLoading: false, isChecked: true, sessionFailure: null };
+    }
+    return { user: null, isLoading: true, isChecked: false, sessionFailure: null };
   });
 
   /** Incrementado em login/setAuth/logout e antes de operações de sessão — validações em voo ignoram resultado se a geração mudou. */
@@ -226,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
     const initialGen = sessionValidationGenRef.current;
+    const hasBootstrap = !!initialUser;
 
     const applyValidateResult = (result: ValidateResult) => {
       if (cancelled) return;
@@ -238,6 +256,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           sessionFailure: null,
         });
       } else {
+        // Se temos bootstrap e a falha é "suave" (servidor frio/timeout), mantemos o
+        // utilizador bootstrapped para não piscar a UI — a sessão pode ainda ser válida.
+        if (hasBootstrap && result.failureKind && SOFT_FAILURE_KINDS.has(result.failureKind)) {
+          setState((prev) => ({ ...prev, isLoading: false, isChecked: true, sessionFailure: null }));
+          return;
+        }
         setState({
           user: null,
           isLoading: false,
@@ -277,6 +301,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await runInitialValidate(retryIndex + 1);
           return;
         }
+        // Timeout total esgotado: se temos bootstrap, mantemos o utilizador.
+        if (hasBootstrap) {
+          setState((prev) => ({ ...prev, isLoading: false, isChecked: true, sessionFailure: null }));
+          return;
+        }
         const supportRef =
           typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
             ? globalThis.crypto.randomUUID()
@@ -295,7 +324,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -57,6 +57,10 @@ export async function createSessionTokensForCredentials(
   user: {
     id: string;
     username: string;
+    /** Incluído no JWT para bootstrap de sessão sem round-trip ao banco. */
+    name?: string;
+    /** Incluído no JWT para bootstrap de sessão sem round-trip ao banco. */
+    email?: string;
     isAdmin: boolean;
     isExecutive?: boolean;
     orgId: string;
@@ -68,6 +72,8 @@ export async function createSessionTokensForCredentials(
   const access = createToken({
     id: user.id,
     username: user.username,
+    ...(user.name ? { name: user.name } : {}),
+    ...(user.email ? { email: user.email } : {}),
     isAdmin: user.isAdmin,
     isExecutive: user.isExecutive,
     orgId: user.orgId,
@@ -90,6 +96,8 @@ export async function issueSessionForCredentials(
   user: {
     id: string;
     username: string;
+    name?: string;
+    email?: string;
     isAdmin: boolean;
     isExecutive?: boolean;
     orgId: string;
@@ -124,6 +132,8 @@ export async function rotateSessionFromRefreshPlain(refreshPlain: string): Promi
   const accessNew = createToken({
     id: user.id,
     username: user.username,
+    name: user.name,
+    email: user.email,
     isAdmin: user.id === "admin" || !!user.isAdmin,
     isExecutive: !!user.isExecutive,
     orgId: user.orgId,

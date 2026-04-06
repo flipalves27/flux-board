@@ -48,6 +48,13 @@ const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
  * - Elimina bloqueio por MongoDB frio/lento.
  */
 const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
+/**
+ * Timeout para GET /api/boards no onboarding. Reduzido de 40s para 10s:
+ * - Falha rápido em vez de bloquear por 40s
+ * - Graceful degradation: se falhar, assume que não tem boards (caso comum para novos users)
+ * - Elimina bloqueio por MongoDB frio/lento.
+ */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Atrasa opcionalmente o GET /api/boards (default `0` — após `isChecked` a sessão já foi validada).
