@@ -21,6 +21,7 @@ import { SidebarNavProvider } from "./sidebar-nav-context";
 import type { SidebarLayoutMode } from "./sidebar-nav-context";
 import { SidebarAgileRhythm } from "./sidebar-agile-rhythm";
 import { SidebarFooter } from "./sidebar-footer";
+import { SidebarGoals } from "./sidebar-goals";
 import { SidebarHeader } from "./sidebar-header";
 import { SidebarIntelligence } from "./sidebar-intelligence";
 import { SidebarQuickAccess } from "./sidebar-quick-access";
@@ -322,6 +323,7 @@ export function Sidebar() {
           />
           <nav className="flux-sidebar-nav-stack mx-1.5 mb-1 flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2.5">
             <SidebarQuickAccess />
+            <SidebarGoals />
             <SidebarAgileRhythm activeSprintCount={activeSprintCount} />
             <SidebarIntelligence
               user={user}
