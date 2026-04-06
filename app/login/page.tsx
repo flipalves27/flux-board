@@ -13,6 +13,7 @@ import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
 import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
 import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { FLUX_SESSION_FAILURE_STORAGE_KEY } from "@/lib/session-support-diagnostic";
 
 const OAUTH_ERROR_KEYS = new Set([
@@ -227,7 +228,7 @@ export default function LoginPage() {
         </div>
 
         {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
-          <SessionSupportDiagnostic
+          <SessionFailureCopyJsonButton
             supportRef={sessionDiagRef.slice(0, 200)}
             failureKind={sessionDiagKind}
           />

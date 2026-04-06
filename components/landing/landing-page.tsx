@@ -15,7 +15,6 @@ import { LandingFaqSection } from "./landing-faq-section";
 import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
 import { LandingFooter } from "./landing-footer";
 import { LandingFooterCta } from "./landing-footer-cta";
-import { LandingBetaBanner } from "./landing-beta-banner";
 import { LandingHeader } from "./landing-header";
 import { LandingHero } from "./landing-hero";
 import { LandingHow } from "./landing-how";
@@ -84,7 +83,6 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
              * Extra blocks (social proof, roadmap, trust, FAQ) stay below the core funnel for SEO and product narrative.
              */}
             <main id="landing-main" className="home-landing-stagger">
-              <LandingBetaBanner />
               <ScrollReveal delay={0}>
                 <LandingHero localeRoot={localeRoot} user={user} />
               </ScrollReveal>
