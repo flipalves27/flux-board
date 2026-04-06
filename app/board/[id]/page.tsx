@@ -58,6 +58,10 @@ const BoardExecutiveBriefModal = dynamic(
   () => import("@/components/kanban/board-executive-brief-modal").then((m) => ({ default: m.BoardExecutiveBriefModal })),
   { ssr: false }
 );
+const BoardGoalsModal = dynamic(
+  () => import("@/components/kanban/board-goals-modal").then((m) => ({ default: m.BoardGoalsModal })),
+  { ssr: false }
+);
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
@@ -441,6 +445,7 @@ export default function BoardPage() {
   const [anomalySettingsOpen, setAnomalySettingsOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [briefOpen, setBriefOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -876,6 +881,21 @@ export default function BoardPage() {
                 Sprint
               </button>
 
+              {/* Goals — Flux Goals/OKRs */}
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                onClick={() => setGoalsOpen(true)}
+                aria-label="Abrir Flux Goals"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8 8-4-4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2 2 1-1" />
+                </svg>
+                Goals
+              </button>
+
               {/* Admin tools — collapsed into dropdown */}
               {user?.isAdmin && (
                 <>
@@ -1040,6 +1060,8 @@ export default function BoardPage() {
       />
 
       <BoardEmbedModal open={embedOpen} onClose={() => setEmbedOpen(false)} boardId={boardId} getHeaders={getHeaders} />
+
+      <BoardGoalsModal boardId={boardId} isOpen={goalsOpen} onClose={() => setGoalsOpen(false)} />
 
       <BoardAnomalyNotificationsModal
         open={anomalySettingsOpen}
