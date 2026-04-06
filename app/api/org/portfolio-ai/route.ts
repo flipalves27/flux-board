@@ -15,6 +15,7 @@ import {
   buildOrgPortfolioRagBlock,
   type OkrRingSummary,
 } from "@/lib/org-portfolio-ai";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { listObjectivesWithKeyResults, type OkrsKeyResult, type OkrsObjective } from "@/lib/kv-okrs";
 import {
   computeObjectiveProgressForOrg,
@@ -194,9 +195,6 @@ Não invente números que não estejam no contexto. Versão de prompt: ${FLUX_LL
     });
   } catch (err) {
     console.error("org/portfolio-ai", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/org/portfolio-ai/route.ts" });
   }
 }

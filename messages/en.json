@@ -101,7 +101,7 @@
     "tabAudit": "Audit",
     "loading": "Loading…",
     "loadError": "Failed to load",
-    "kvWarning": "Without MongoDB, global listings are limited (dev mode). Set MONGODB_URI for full data.",
+    "kvWarning": "Without a persistent database (MongoDB) configured on the server, global listings are limited (dev mode). Ask your platform administrator to complete data configuration.",
     "searchUsers": "Search name, email, or username",
     "searchOrgs": "Search organization",
     "applySearch": "Apply",
@@ -926,7 +926,7 @@
       },
       "unread": "new",
       "lastRun": "Last run",
-      "neverRun": "No runs recorded yet. Configure cron at /api/cron/anomaly-check (x-cron-secret header).",
+      "neverRun": "No runs recorded yet. Check scheduling is configured by your platform administrator in the deployment environment.",
       "refresh": "Refresh",
       "markAllRead": "Mark all read",
       "runsTitle": "Check history",
@@ -939,7 +939,7 @@
       "showDiag": "View diagnostics (metrics)",
       "hideDiag": "Hide diagnostics",
       "suggested": "Suggested action",
-      "cronHint": "The daily job (e.g. Vercel Cron) calls GET /api/cron/anomaly-check with the same secret as your other crons. Weekly emails can include an optional summary of these alerts."
+      "cronHint": "The daily job runs on the server with secrets defined only in the deployment environment. Weekly emails can include an optional summary of these alerts."
     }
   },
   "executiveDashboard": {
@@ -1089,11 +1089,16 @@
   "landing": {
     "meta": {
       "title": "Flux Board — A living board to ship with clarity.",
-      "description": "Priorities and context in one place: Kanban, Flux Goals, Flux Reports, Flux Forms, and AI (Fluxy, Copilot) per plan. Start free; 14-day Pro/Business trial, no credit card.",
+      "description": "Priorities and context in one place: Kanban, Flux Goals, Flux Reports, Flux Forms, and AI (Fluxy, Copilot) per plan. Start free; 20-day Pro/Business trial, no credit card.",
       "productName": "Flux-Board",
       "jsonLdDescription": "Visual work platform with Kanban, OKRs, reporting, public forms, and in-flow AI — for teams that want predictability from idea to delivery."
     },
     "skipToContent": "Skip to main content",
+    "betaBanner": {
+      "badge": "Public beta",
+      "title": "Paid subscriptions and checkout will be enabled in {days} days.",
+      "description": "You are viewing a beta release. Capabilities, pricing presentation, and go-live timing may be refined before general availability. Early access helps us validate the product with teams like yours."
+    },
     "header": {
       "tagline": "Visible flow. Predictable delivery."
     },
@@ -1132,7 +1137,7 @@
           "label": "To your first board live"
         },
         "m2": {
-          "value": "14 days",
+          "value": "20 days",
           "label": "Pro/Business trial, no card"
         },
         "m3": {
@@ -1239,9 +1244,9 @@
       }
     },
     "cta": {
-      "trialChip": "14-day trial · No card",
+      "trialChip": "20-day trial · No card",
       "heading": "Bring this board to your team today",
-      "description": "Start free to explore; unlock Pro or Business with a 14-day trial and no card on file. One home for work that should not get lost in the noise.",
+      "description": "Start free to explore; unlock Pro or Business with a 20-day trial and no card on file. One home for work that should not get lost in the noise.",
       "pricingAnchor": "See pricing",
       "actions": {
         "loggedIn": "Continue in {appName}",
@@ -1335,7 +1340,7 @@
     "socialProof": {
       "ariaLabel": "Product highlights",
       "stat1": { "value": "3 min", "label": "to your first board live" },
-      "stat2": { "value": "14 days", "label": "Pro/Business trial, no card" },
+      "stat2": { "value": "20 days", "label": "Pro/Business trial, no card" },
       "stat3": { "value": "One", "label": "place for priority and context" },
       "stat4": { "value": "∞", "label": "boards when you need to scale" }
     },
@@ -1351,7 +1356,7 @@
       "monthly": "Monthly",
       "yearly": "Yearly",
       "yearlyTag": "−20%",
-      "trialNote": "14-day trial on Pro and Business plans. No credit card required.",
+      "trialNote": "20-day trial on Pro and Business plans. No credit card required.",
       "perSeatMonth": "/seat/month",
       "perSeatYearBilled": "/seat/month, billed annually",
       "forever": "forever",
@@ -1369,13 +1374,13 @@
           "name": "Pro",
           "badge": "Recommended",
           "desc": "For small teams that need AI, OKRs, and portfolio visibility.",
-          "cta": "Try Pro for 14 days",
+          "cta": "Try Pro for 20 days",
           "limits": "Unlimited boards · Up to 10 members · 50 AI calls/day"
         },
         "business": {
           "name": "Business",
           "desc": "For scaled operations: unlimited AI, full white-label, proactive alerts, and advanced governance.",
-          "cta": "Try Business for 14 days",
+          "cta": "Try Business for 20 days",
           "limits": "Unlimited boards · Up to 100 members · Unlimited AI"
         }
       },
@@ -1416,7 +1421,7 @@
       "q1": "What is included in the Free plan?",
       "a1": "The Free plan gives you up to 3 Kanban boards, 1 user, 3 AI calls per day, public templates, and a 90-day activity log. Perfect for exploring the workflow before scaling up.",
       "q2": "Can I try paid plans before subscribing?",
-      "a2": "Yes. Pro and Business include a 14-day trial with no credit card required. You get full access to all features of the chosen plan and only pay if you decide to continue.",
+      "a2": "Yes. Pro and Business include a 20-day trial with no credit card required. You get full access to all features of the chosen plan and only pay if you decide to continue.",
       "q3": "How does seat-based billing work?",
       "a3": "Each active member of your organization counts as one seat. You choose how many seats you need and can adjust as your team grows. Annual billing saves 20% compared to monthly.",
       "q4": "Can I upgrade or downgrade at any time?",
@@ -1475,6 +1480,7 @@
     "sessionDiag": {
       "title": "We couldn’t keep your session",
       "hint": "Send the JSON (button below) to support so we can match it with server logs. It does not include your password, email, or cookies.",
+      "copyHint": "The support reference is not shown on this page; use the button only if support asks for the JSON.",
       "kindLabel": "Type:",
       "copyJson": "Copy diagnostic (JSON)",
       "copied": "Copied.",
@@ -2020,7 +2026,7 @@
     "cardModal": {
       "intakeVision": {
         "badge": "Image → text",
-        "hint": "Upload a screenshot or mock; AI suggests a title and fills notes. Requires OPENAI_API_KEY on the server.",
+        "hint": "Upload a screenshot or mock; AI suggests a title and fills notes. Requires a vision model configured on the server.",
         "pick": "Choose image",
         "busy": "Analyzing image…",
         "apply": "Apply to card",
@@ -2496,7 +2502,7 @@
       "clearFilters": "Clear",
       "retentionHint": "Free plan: last {days} days.",
       "retentionPro": "Pro/Business: full history.",
-      "noMongo": "Activity history requires MongoDB (MONGODB_URI).",
+      "noMongo": "Activity history requires a persistent database configured on the server.",
       "actions": {
         "card_created": "Card created",
         "card_moved": "Card moved",
@@ -3419,7 +3425,7 @@
     "subtitle": "Shortcuts to intelligence features: portfolio, docs, forecasting, Copilot, sprint cockpit, and OKRs.",
     "governance": {
       "title": "Governance & agents",
-      "body": "Business tier: configurable autonomy levels, audit trail on agent runs (`agent_runs` in Mongo), and MCP hub on the roadmap. Daily digest e-mails use per-user idempotency per day."
+      "body": "Business tier: configurable autonomy levels, audit trail for agent runs, and MCP hub on the roadmap. Daily digest e-mails use per-user idempotency per day."
     },
     "cards": {
       "exec": {
@@ -3656,7 +3662,7 @@
     "cancelBackgroundTimeout": "The cancel request timed out. Check your connection and try again.",
     "cancelBackgroundError": "Could not request cancellation. Try again.",
     "startBackground": "Analyze in background",
-    "backgroundRequiresMongo": "Background runs and history need MongoDB (MONGODB_URI).",
+    "backgroundRequiresMongo": "Background runs and history need a persistent database on the server.",
     "previewTableView": "Table view",
     "previewCardView": "Card view",
     "regenerateMappingBackground": "Remap in background",

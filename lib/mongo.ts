@@ -50,17 +50,27 @@ export function isMongoConfigured(): boolean {
 }
 
 /**
- * Seleção de servidor / handshake: manter moderado; operações em si são limitadas por `socketTimeoutMS`.
+ * TCP + seleção de réplica / handshake TLS (`secureConnect`).
+ * Default 12s; em redes lentas ou VPN, subir com `MONGO_CONNECT_TIMEOUT_MS` (ex.: 30000).
+ * Se o erro persistir, o problema costuma ser firewall, IP não liberado no Atlas ou URI incorreta — aumentar só mascara.
  */
-const MONGO_TIMEOUT_MS = 12_000;
+function mongoConnectPhaseTimeoutMs(): number {
+  const raw = process.env.MONGO_CONNECT_TIMEOUT_MS?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 5_000 && n <= 90_000) return Math.floor(n);
+  }
+  return 12_000;
+}
 
 export async function getMongoClient(): Promise<MongoClient> {
   const uri = mongoUri();
   if (!uri) throw new Error("MONGODB_URI (or MONGO_URI) is not set");
   if (!globalForMongo._fluxBoardMongoClient) {
+    const tConnect = mongoConnectPhaseTimeoutMs();
     const client = new MongoClient(uri, {
-      serverSelectionTimeoutMS: MONGO_TIMEOUT_MS,
-      connectTimeoutMS: MONGO_TIMEOUT_MS,
+      serverSelectionTimeoutMS: tConnect,
+      connectTimeoutMS: tConnect,
       socketTimeoutMS: mongoSocketTimeoutMs(),
       maxPoolSize: mongoMaxPoolSize(),
       waitQueueTimeoutMS: mongoWaitQueueTimeoutMs(),
@@ -70,7 +80,11 @@ export async function getMongoClient(): Promise<MongoClient> {
       /** Evita abrir dezenas de handshakes em paralelo no mesmo tick (Atlas). */
       maxConnecting: 5,
     });
-    globalForMongo._fluxBoardMongoClient = client.connect();
+    const pending = client.connect();
+    globalForMongo._fluxBoardMongoClient = pending.catch((err) => {
+      globalForMongo._fluxBoardMongoClient = undefined;
+      throw err;
+    });
   }
   return globalForMongo._fluxBoardMongoClient;
 }

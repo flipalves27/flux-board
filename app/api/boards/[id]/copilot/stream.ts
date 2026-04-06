@@ -13,6 +13,7 @@ import { heuristicWeeklyBrief } from "./context-heuristics";
 import { callCopilotLlmModel } from "./llm";
 import type { CopilotAuthPayload, CopilotChatHistory } from "./types";
 import { SSE_CHUNK_DELAY_MS, SSE_CHUNK_SIZE } from "./config";
+import { clientSafeErrorText } from "@/lib/public-api-error";
 
 export function createCopilotSseStream(params: {
   payload: CopilotAuthPayload & { username: string; orgRole?: string };
@@ -155,7 +156,7 @@ export function createCopilotSseStream(params: {
         sendEvent("done", { ok: true });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro interno na Fluxy.";
+        const message = clientSafeErrorText(err, "Erro interno na Fluxy.");
         sendEvent("error", { message });
         try {
           controller.close();

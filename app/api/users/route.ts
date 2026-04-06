@@ -7,6 +7,7 @@ import { getOrganizationById } from "@/lib/kv-organizations";
 import { getUserCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { ensureOrgManager, ensureOrgTeamManager } from "@/lib/api-authz";
 import { deriveEffectiveRoles, isPlatformAdmin } from "@/lib/rbac";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -23,10 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ users });
   } catch (err) {
     console.error("Users API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "GET api/users" });
   }
 }
 
@@ -95,9 +93,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("Users API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "POST api/users" });
   }
 }

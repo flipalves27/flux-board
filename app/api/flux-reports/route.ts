@@ -24,6 +24,7 @@ import {
   scrumDorReadySnapshot,
   type CopilotChatDocLike,
 } from "@/lib/flux-reports-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { buildSprintStoryPointsHistory } from "@/lib/flux-reports-sprint-metrics";
 import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
@@ -192,9 +193,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Flux reports API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/route.ts" });
   }
 }

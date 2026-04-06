@@ -101,7 +101,7 @@
     "tabAudit": "Auditoria",
     "loading": "Carregando…",
     "loadError": "Erro ao carregar",
-    "kvWarning": "Sem MongoDB, as listagens globais são limitadas (modo desenvolvimento). Configure MONGODB_URI para dados completos.",
+    "kvWarning": "Sem base de dados persistente (MongoDB) configurada no servidor, as listagens globais ficam limitadas (modo desenvolvimento). Peça ao administrador da plataforma para completar a configuração de dados.",
     "searchUsers": "Pesquisar nome, e-mail ou utilizador",
     "searchOrgs": "Pesquisar organização",
     "applySearch": "Aplicar",
@@ -926,7 +926,7 @@
       },
       "unread": "novos",
       "lastRun": "Última execução",
-      "neverRun": "Nenhuma execução registrada ainda. Configure o cron em /api/cron/anomaly-check (header x-cron-secret).",
+      "neverRun": "Nenhuma execução registrada ainda. O agendamento de verificações é configurado pelo administrador da plataforma no ambiente de deploy.",
       "refresh": "Atualizar",
       "markAllRead": "Marcar como lidos",
       "runsTitle": "Histórico de checagens",
@@ -939,7 +939,7 @@
       "showDiag": "Ver diagnóstico (métricas)",
       "hideDiag": "Ocultar diagnóstico",
       "suggested": "Ação sugerida",
-      "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
+      "cronHint": "O job diário corre no servidor com segredos definidos só no ambiente de deploy. Relatórios semanais por e-mail podem incluir um resumo opcional destes alertas."
     }
   },
   "executiveDashboard": {
@@ -1089,11 +1089,16 @@
   "landing": {
     "meta": {
       "title": "Flux Board — Um quadro vivo para entregar com clareza.",
-      "description": "Prioridades e contexto num só lugar: Kanban, Flux Goals, Flux Reports, Flux Forms e IA (Fluxy, Copilot) conforme o plano. Comece grátis; trial de 14 dias no Pro/Business, sem cartão.",
+      "description": "Prioridades e contexto num só lugar: Kanban, Flux Goals, Flux Reports, Flux Forms e IA (Fluxy, Copilot) conforme o plano. Comece grátis; trial de 20 dias no Pro/Business, sem cartão.",
       "productName": "Flux-Board",
       "jsonLdDescription": "Plataforma de trabalho visual com Kanban, OKRs, relatórios, formulários públicos e IA no fluxo — para times que buscam previsibilidade da ideia à entrega."
     },
     "skipToContent": "Ir para o conteúdo principal",
+    "betaBanner": {
+      "badge": "Beta público",
+      "title": "A contratação de planos pagos e o checkout estarão disponíveis em {days} dias.",
+      "description": "A versão apresentada é beta. Funcionalidades, exibição de preços e datas de disponibilidade comercial podem ser ajustadas até a disponibilidade geral. O acesso antecipado nos ajuda a validar o produto com equipes como a sua."
+    },
     "header": {
       "tagline": "Fluxo visível. Entrega previsível."
     },
@@ -1132,7 +1137,7 @@
           "label": "Board no ar"
         },
         "m2": {
-          "value": "14 dias",
+          "value": "20 dias",
           "label": "Trial sem cartão"
         },
         "m3": {
@@ -1239,9 +1244,9 @@
       }
     },
     "cta": {
-      "trialChip": "Trial de 14 dias · Sem cartão",
+      "trialChip": "Trial de 20 dias · Sem cartão",
       "heading": "Leve este quadro para o seu time hoje",
-      "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 14 dias e sem cartão. Um lugar único para o trabalho que não pode se perder no ruído.",
+      "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 20 dias e sem cartão. Um lugar único para o trabalho que não pode se perder no ruído.",
       "pricingAnchor": "Ver preços",
       "actions": {
         "loggedIn": "Continuar no {appName}",
@@ -1335,7 +1340,7 @@
     "socialProof": {
       "ariaLabel": "Destaques do produto",
       "stat1": { "value": "3 min", "label": "até o primeiro quadro no ar" },
-      "stat2": { "value": "14 dias", "label": "trial Pro/Business, sem cartão" },
+      "stat2": { "value": "20 dias", "label": "trial Pro/Business, sem cartão" },
       "stat3": { "value": "Um", "label": "lugar para prioridade e contexto" },
       "stat4": { "value": "∞", "label": "quadros quando precisar escalar" }
     },
@@ -1351,7 +1356,7 @@
       "monthly": "Mensal",
       "yearly": "Anual",
       "yearlyTag": "−20%",
-      "trialNote": "Trial de 14 dias nos planos Pro e Business. Sem cartão de crédito.",
+      "trialNote": "Trial de 20 dias nos planos Pro e Business. Sem cartão de crédito.",
       "perSeatMonth": "/seat/mês",
       "perSeatYearBilled": "/seat/mês, cobrado anualmente",
       "forever": "para sempre",
@@ -1369,13 +1374,13 @@
           "name": "Pro",
           "badge": "Recomendado",
           "desc": "Para times pequenos que precisam de IA, OKRs e portfólio.",
-          "cta": "Testar Pro por 14 dias",
+          "cta": "Testar Pro por 20 dias",
           "limits": "Boards ilimitados · Até 10 membros · 50 chamadas IA/dia"
         },
         "business": {
           "name": "Business",
           "desc": "Para operações em escala: IA ilimitada, white-label completo, alertas proativos e governança avançada.",
-          "cta": "Testar Business por 14 dias",
+          "cta": "Testar Business por 20 dias",
           "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"
         }
       },
@@ -1416,7 +1421,7 @@
       "q1": "O que está incluído no plano Grátis?",
       "a1": "O plano Grátis dá acesso a até 3 boards Kanban, 1 usuário, 3 chamadas de IA por dia, templates públicos e log de atividade por 90 dias. Ideal para explorar o fluxo antes de escalar.",
       "q2": "Posso testar os planos pagos antes de assinar?",
-      "a2": "Sim. Pro e Business incluem um trial de 14 dias sem precisar de cartão de crédito. Você experimenta todas as funcionalidades do plano escolhido e só paga se decidir continuar.",
+      "a2": "Sim. Pro e Business incluem um trial de 20 dias sem precisar de cartão de crédito. Você experimenta todas as funcionalidades do plano escolhido e só paga se decidir continuar.",
       "q3": "Como funciona o faturamento por seat?",
       "a3": "Cada membro ativo da organização conta como um seat. Você escolhe quantos seats precisa e pode ajustar conforme o time cresce. O faturamento anual oferece 20% de desconto em relação ao mensal.",
       "q4": "Posso fazer upgrade ou downgrade a qualquer momento?",
@@ -1475,6 +1480,7 @@
     "sessionDiag": {
       "title": "Não foi possível manter a sessão",
       "hint": "Envie o JSON (botão abaixo) ao suporte para cruzarmos com os logs do servidor. Não contém senha, e-mail nem cookies.",
+      "copyHint": "O identificador de apoio não é mostrado nesta página; use o botão só se o suporte pedir o JSON.",
       "kindLabel": "Tipo:",
       "copyJson": "Copiar diagnóstico (JSON)",
       "copied": "Copiado.",
@@ -2025,7 +2031,7 @@
     "cardModal": {
       "intakeVision": {
         "badge": "Imagem → texto",
-        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer OPENAI_API_KEY no servidor.",
+        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer modelo de visão configurado no servidor.",
         "pick": "Escolher imagem",
         "busy": "Analisando imagem…",
         "apply": "Aplicar ao card",
@@ -2861,7 +2867,7 @@
       "clearFilters": "Limpar",
       "retentionHint": "Plano Free: últimos {days} dias.",
       "retentionPro": "Pro/Business: histórico completo.",
-      "noMongo": "O histórico de atividade requer MongoDB (MONGODB_URI).",
+      "noMongo": "O histórico de atividade requer base de dados persistente configurada no servidor.",
       "actions": {
         "card_created": "Card criado",
         "card_moved": "Card movido",
@@ -3424,7 +3430,7 @@
     "subtitle": "Atalhos para inteligência: portfólio, documentação, previsão, Copiloto, cockpit de sprint e OKRs.",
     "governance": {
       "title": "Governança e agentes",
-      "body": "Plano Business: níveis de autonomia, auditoria em `agent_runs` (Mongo) e hub MCP no roadmap. E-mails de resumo diário usam idempotência por usuário e dia."
+      "body": "Plano Business: níveis de autonomia, trilho de auditoria para execuções de agentes e hub MCP no roadmap. E-mails de resumo diário usam idempotência por utilizador e dia."
     },
     "cards": {
       "exec": {
@@ -3661,7 +3667,7 @@
     "cancelBackgroundTimeout": "O pedido de cancelamento demorou demais. Verifique a ligação e tente de novo.",
     "cancelBackgroundError": "Não foi possível pedir o cancelamento. Tente de novo.",
     "startBackground": "Analisar em segundo plano",
-    "backgroundRequiresMongo": "Segundo plano e histórico precisam de MongoDB (MONGODB_URI).",
+    "backgroundRequiresMongo": "Segundo plano e histórico precisam de base de dados persistente no servidor.",
     "previewTableView": "Vista em tabela",
     "previewCardView": "Vista em cards",
     "regenerateMappingBackground": "Remapear em segundo plano",

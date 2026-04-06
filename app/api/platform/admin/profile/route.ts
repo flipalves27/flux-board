@@ -3,6 +3,7 @@ import { getAuthFromRequest, hashPassword, verifyPassword } from "@/lib/auth";
 import { ensurePlatformAdmin } from "@/lib/api-authz";
 import { getUserById, updateUser } from "@/lib/kv-users";
 import { sanitizeText, PlatformAdminProfilePatchSchema, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export const runtime = "nodejs";
 
@@ -67,6 +68,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (err) {
     console.error("[platform admin profile]", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/platform/admin/profile/route.ts" });
   }
 }

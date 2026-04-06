@@ -7,6 +7,7 @@ import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { deleteKeyResult, getKeyResult, updateKeyResult } from "@/lib/kv-okrs";
 import { OkrsKeyResultUpdateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function PATCH(
   request: NextRequest,
@@ -83,7 +84,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, keyResult: kr });
   } catch (err) {
     console.error("OKRs key-result PATCH error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/key-results/[id]/route.ts" });
   }
 }
 
@@ -120,7 +121,7 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("OKRs key-result DELETE error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/key-results/[id]/route.ts" });
   }
 }
 

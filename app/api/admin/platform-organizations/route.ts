@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensurePlatformAdmin } from "@/lib/api-authz";
 import { listAllOrganizationsPaginated } from "@/lib/kv-organizations";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -22,9 +23,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(r);
   } catch (err) {
     console.error("platform-organizations GET:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/admin/platform-organizations/route.ts" });
   }
 }

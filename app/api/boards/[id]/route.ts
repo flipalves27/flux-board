@@ -6,6 +6,7 @@ import {
   expandBucketsWithInferredTransitionAliases,
   mergeBucketOrdersForWipResolve,
 } from "@/lib/board-bucket-resolve";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { validateBoardWip, validateBoardWipPutTransition, type WipCountCardLike } from "@/lib/board-wip";
 import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
@@ -73,10 +74,7 @@ export async function GET(
     return NextResponse.json(safe);
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }
 
@@ -293,10 +291,7 @@ export async function PUT(
     });
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }
 
@@ -323,9 +318,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Board API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/route.ts" });
   }
 }

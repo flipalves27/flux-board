@@ -5,6 +5,7 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { buildRollingWeekRanges } from "@/lib/flux-reports-metrics";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
   const payload = await getAuthFromRequest(request);
@@ -48,8 +49,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("OKRs projection API error:", err);
-    const msg = err instanceof Error ? err.message : "Erro interno";
-    const status = msg.includes("Sem permissão") ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    const raw = err instanceof Error ? err.message : "";
+    if (raw.includes("Sem permissão")) {
+      return NextResponse.json({ error: "Sem permissão para este recurso." }, { status: 403 });
+    }
+    return publicApiErrorResponse(err, { context: "GET api/okrs/projection" });
   }
 }

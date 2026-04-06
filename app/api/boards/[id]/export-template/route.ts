@@ -50,8 +50,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         snapshot = buildPriorityMatrixSnapshotFromBoard(board, selections);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot da matriz.";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      console.error("[export-template] priority matrix snapshot", e);
+      return NextResponse.json({ error: "Não foi possível montar o snapshot da matriz." }, { status: 400 });
     }
   } else if (kind === "bpmn") {
     try {
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
       snapshot = buildBpmnSnapshotFromModel(model as BpmnTemplateModel);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao montar snapshot BPMN.";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      console.error("[export-template] BPMN snapshot", e);
+      return NextResponse.json({ error: "Não foi possível montar o snapshot BPMN." }, { status: 400 });
     }
   } else {
     const rules = await getBoardAutomationRules(boardId, payload.orgId);

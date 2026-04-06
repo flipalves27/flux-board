@@ -8,6 +8,7 @@ import { denyPlan } from "@/lib/api-authz";
 import { buildFluxReportsLssPayload, type FluxReportsLssPayload } from "@/lib/flux-reports-lss";
 import { listObjectivesWithKeyResults } from "@/lib/kv-okrs";
 import { currentQuarterLabel } from "@/lib/quarter-label";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 /**
  * Relatório executivo Lean Six Sigma (DMAIC) — org-wide, boards com `boardMethodology === lean_six_sigma`.
@@ -63,9 +64,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Flux reports LSS API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/lss/route.ts" });
   }
 }

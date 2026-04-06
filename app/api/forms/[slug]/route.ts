@@ -8,6 +8,7 @@ import {
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
@@ -270,6 +271,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/forms/[slug]/route.ts" });
   }
 }

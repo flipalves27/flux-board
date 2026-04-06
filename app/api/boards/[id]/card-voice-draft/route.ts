@@ -5,6 +5,7 @@ import {
   llmVoiceTranscriptCardContext,
   type LlmCardContextResult,
 } from "@/lib/card-context-llm";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { CardVoiceDraftInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
@@ -176,9 +177,6 @@ export async function POST(
       },
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/card-voice-draft/route.ts" });
   }
 }

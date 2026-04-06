@@ -11,6 +11,7 @@ import {
   makeDailyAiCallsRateLimitKey,
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
+import { publicErrorMessage } from "@/lib/public-api-error";
 import { logDocsMetric } from "@/lib/docs-metrics";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest) {
         });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro ao gerar documento.";
+        const message = publicErrorMessage(err, "Erro ao gerar documento.", "api/docs/generate-pipeline/route.ts");
         sendEvent("error", { message });
         try {
           controller.close();

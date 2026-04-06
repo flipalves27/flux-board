@@ -7,6 +7,7 @@ import { getOrganizationById } from "@/lib/kv-organizations";
 import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
 import { denyPlan } from "@/lib/api-authz";
 import { maskPii } from "@/lib/pii-scan";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 /**
  * Export JSON do portfólio para integrações (BI, n8n, data warehouse).
@@ -65,9 +66,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Portfolio export API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "GET api/portfolio-export" });
   }
 }

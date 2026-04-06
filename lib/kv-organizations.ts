@@ -369,7 +369,7 @@ export async function createOrganization(params: {
   return org;
 }
 
-/** Novo signup sem convite: trial 14 dias com limites equivalentes ao Pro. */
+/** Novo signup sem convite: trial 20 dias com limites equivalentes ao Pro. */
 export async function createTrialOrganizationForSignup(ownerId: string, email: string): Promise<Organization> {
   const derived = deriveOrgFromEmail(email);
   return createOrganization({

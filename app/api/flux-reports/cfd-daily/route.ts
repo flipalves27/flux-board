@@ -19,6 +19,7 @@ import {
   normalizeCfdKeys,
   parseCfdDailyPeriod,
 } from "@/lib/cfd-daily-from-snapshots";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -105,9 +106,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("cfd-daily API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/flux-reports/cfd-daily/route.ts" });
   }
 }

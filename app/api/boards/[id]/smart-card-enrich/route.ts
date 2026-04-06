@@ -11,6 +11,7 @@ import {
   planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { searchDocs } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -419,9 +420,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ...normalized,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/smart-card-enrich/route.ts" });
   }
 }
