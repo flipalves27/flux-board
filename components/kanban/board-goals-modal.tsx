@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { IconGoals, IconClose } from "@/components/sidebar/icons";
-import { DataFadeIn } from "@/components/ui/data-fade-in";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 
 type Objective = {
@@ -157,7 +156,7 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
                 </div>
               </div>
             ) : (
-              <DataFadeIn className="space-y-4">
+              <div className="space-y-4 animate-[fadeIn_0.3s_ease]">
                 {data!.objectives.map((item) => {
                   const objective = item.objective;
                   const keyResults = item.keyResults;
@@ -235,7 +234,7 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
                     </div>
                   );
                 })}
-              </DataFadeIn>
+              </div>
             )}
           </div>
 
