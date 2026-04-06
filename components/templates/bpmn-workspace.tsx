@@ -870,6 +870,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
         return { ...e, points, waypoints: wps };
       })
       .filter(Boolean) as Array<{ id: string; points: Array<{ x: number; y: number }>; label?: string; waypoints: Array<{ x: number; y: number }> }>;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model.edges, nodesForEdges]);
 
   const connectPreviewLine = useMemo(() => {
