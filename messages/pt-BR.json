@@ -1,7 +1,6 @@
 {
   "navigation": {
     "boards": "Boards",
-    "goals": "Metas",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
     "fluxAiHub": "Hub de IA",
@@ -37,7 +36,6 @@
     "intelligenceBadgeLabel": "{count, plural, one {# execução ativa do spec-plan} other {# execuções ativas do spec-plan}}",
     "section": {
       "work": "Trabalho",
-      "goals": "Metas",
       "intelligence": "Inteligência",
       "org": "Organização",
       "commercial": "Plano e cobrança",
@@ -46,7 +44,6 @@
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
-      "goals": "Ver e gerenciar metas e objetivos do trimestre.",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
       "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",
       "dashboard": "Visão C-level: saúde do portfólio, OKRs, anomalias e tendência de throughput.",

@@ -226,15 +226,11 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {sessionDiagRef && isChecked ? (
-          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left space-y-2">
-            <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{t("sessionIssueGeneric")}</p>
-            <p className="text-[11px] text-[var(--flux-text-muted)] leading-snug">{t("sessionDiag.copyHint")}</p>
-            <SessionFailureCopyJsonButton
-              supportRef={sessionDiagRef.slice(0, 200)}
-              failureKind={sessionDiagKind}
-            />
-          </div>
+        {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
+          <SessionSupportDiagnostic
+            supportRef={sessionDiagRef.slice(0, 200)}
+            failureKind={sessionDiagKind}
+          />
         ) : null}
 
         {error && (
