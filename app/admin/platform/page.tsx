@@ -277,7 +277,7 @@ export default function PlatformAdminConsolePage() {
       }
       setLoading(false);
     })();
-  }, [isChecked, user, router, tab]);
+  }, [isChecked, loadAudit, loadOps, loadOrgs, loadUsers, router, tab, user]);
 
   function openEditOrg(o: OrgRow) {
     setFormOrg({

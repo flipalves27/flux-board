@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
@@ -44,19 +44,7 @@ export default function UsersPage() {
   const deleteUserInFlightRef = useRef(false);
   const { pushToast } = useToast();
 
-  useEffect(() => {
-    if (!isChecked || !user) {
-      router.replace("/login");
-      return;
-    }
-    if (!sessionCanManageOrgBilling(user)) {
-      router.replace("/boards");
-      return;
-    }
-    loadUsers();
-  }, [isChecked, user, router]);
-
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     try {
       const data = await apiGet<{ users: UserRow[] }>("/api/users", getHeaders());
       setUsers(data.users ?? []);
@@ -69,7 +57,19 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [getHeaders, router]);
+
+  useEffect(() => {
+    if (!isChecked || !user) {
+      router.replace("/login");
+      return;
+    }
+    if (!sessionCanManageOrgBilling(user)) {
+      router.replace("/boards");
+      return;
+    }
+    void loadUsers();
+  }, [isChecked, loadUsers, router, user]);
 
   function openNewModal() {
     setModalMode("new");

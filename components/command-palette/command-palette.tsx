@@ -542,7 +542,18 @@ export function CommandPalette() {
     }
 
     return fuse.search(q).map((r) => r.item);
-  }, [search, allItems, fuse, historyState, user, boardById, t, aiPlaceholder, boards]);
+  }, [
+    aiMode,
+    aiParsedItems,
+    allItems,
+    boardById,
+    boards,
+    fuse,
+    historyState,
+    search,
+    t,
+    user,
+  ]);
 
   const grouped = useMemo(() => {
     const order: PaletteCategory[] = ["history", "boards", "cards", "actions", "navigation"];

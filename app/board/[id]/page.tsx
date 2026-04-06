@@ -598,7 +598,7 @@ export default function BoardPage() {
       return;
     }
     if (guestSessionGate !== 0) setGuestSessionGate(0);
-  }, [isChecked, user?.id, guestSessionGate, boardId, locale, refreshSession]);
+  }, [boardId, guestSessionGate, isChecked, locale, refreshSession, user]);
 
   useEffect(() => {
     const id = boardId;
@@ -723,7 +723,7 @@ export default function BoardPage() {
         }
       }, 300);
     },
-    [boardId, getHeaders]
+    [boardId, getHeaders, pushToast]
   );
 
   useEffect(() => {

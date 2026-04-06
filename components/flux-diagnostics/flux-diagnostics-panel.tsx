@@ -31,11 +31,11 @@ export function FluxDiagnosticsPanel() {
     }
     syncFluxDebugQueryParam(true);
     setEnabled(readFluxDiagEnabledFromStorage());
-  }, [isChecked, user, pathname, queryKey]);
+  }, [isChecked, user]);
 
   useEffect(() => {
     sync();
-  }, [sync]);
+  }, [pathname, queryKey, sync]);
 
   const copyAll = async () => {
     const text = JSON.stringify(

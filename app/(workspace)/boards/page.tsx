@@ -237,7 +237,7 @@ export default function BoardsPage() {
     } catch {
       // ignore localStorage read errors
     }
-  }, [empty, isChecked, loading, router, user]);
+  }, [empty, isChecked, loading, localeRoot, router, user]);
 
   useEffect(() => {
     if (!user || boards.length === 0) return;

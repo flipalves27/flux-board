@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -27,19 +27,7 @@ export default function RateLimitAbusePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!isChecked || !user) {
-      router.replace("/login");
-      return;
-    }
-    if (!isPlatformAdminSession(user)) {
-      router.replace("/boards");
-      return;
-    }
-    void load();
-  }, [isChecked, user, router, days]);
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -58,7 +46,19 @@ export default function RateLimitAbusePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [days, getHeaders, router, t]);
+
+  useEffect(() => {
+    if (!isChecked || !user) {
+      router.replace("/login");
+      return;
+    }
+    if (!isPlatformAdminSession(user)) {
+      router.replace("/boards");
+      return;
+    }
+    void load();
+  }, [isChecked, load, router, user]);
 
   if (!isChecked || !user || !isPlatformAdminSession(user)) {
     return null;

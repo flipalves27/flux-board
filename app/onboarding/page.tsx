@@ -458,7 +458,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, refreshSession, user, wizardMethodology]
+    [getHeaders, persistState, refreshSession, t, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -490,7 +490,7 @@ export default function OnboardingPage() {
     } finally {
       setBusy(false);
     }
-  }, [boardId, boardName, bucketOrder, persistColumnsAlways, persistState, templateId]);
+  }, [boardId, boardName, bucketOrder, persistColumnsAlways, persistState, t, templateId]);
 
   const handleSkipStep2 = useCallback(async () => {
     await handleContinueStep2();
@@ -556,6 +556,7 @@ export default function OnboardingPage() {
     persistColumnsAlways,
     router,
     localeRoot,
+    t,
     user,
   ]);
 

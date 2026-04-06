@@ -40,7 +40,7 @@ export function KeyboardShortcutsModal({ open, onClose }: Props) {
     initialFocusRef: closeBtnRef,
   });
 
-  const patterns = useMemo(() => resolveHotkeyPatterns(), [open]);
+  const patterns = useMemo(() => resolveHotkeyPatterns(), []);
 
   const isApple =
     typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent);

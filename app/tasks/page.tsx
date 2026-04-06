@@ -61,7 +61,7 @@ export default function TasksPage() {
     if (!isChecked || !user) {
       router.replace(`${localeRoot}/login`);
     }
-  }, [isChecked, user, router]);
+  }, [isChecked, localeRoot, router, user]);
 
   useEffect(() => {
     if (!isChecked || !user) return;
