@@ -1225,12 +1225,6 @@ function KanbanBoardLoaded({
         directions={directions}
         directionCounts={board.directionCounts}
         totalWithDir={board.totalWithDir}
-        okrObjectivesLength={board.okrObjectives.length}
-        okrLoadError={board.okrLoadError}
-        okrProjectionError={board.okrProjectionError}
-        currentQuarter={board.currentQuarter}
-        okrsComputed={board.okrsComputed}
-        okrProjectionByKrId={board.okrProjectionByKrId}
         />
 
         <WipOverrideModal

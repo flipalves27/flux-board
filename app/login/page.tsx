@@ -232,10 +232,6 @@ export default function LoginPage() {
             supportRef={sessionDiagRef.slice(0, 200)}
             failureKind={sessionDiagKind}
           />
-        ) : sessionDiagRef ? (
-          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-3 mb-4 text-left">
-            <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed">{t("sessionIssueGeneric")}</p>
-          </div>
         ) : null}
 
         {error && (
