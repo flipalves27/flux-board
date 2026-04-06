@@ -171,7 +171,8 @@ function TagsCell({
   const tagsFingerprint = row.original.tags.join("\u0001");
   useEffect(() => {
     setV(row.original.tags.join(", "));
-  }, [row.original.id, tagsFingerprint]);
+    // tagsFingerprint: dependência estável vs. referência mutável do Immer (#185)
+  }, [row.original.id, row.original.tags, tagsFingerprint]);
   return (
     <input
       type="text"

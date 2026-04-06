@@ -11,36 +11,33 @@ import { DOWNGRADE_GRACE_DAYS, TRIAL_DAYS } from "@/lib/billing-limits";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import { shouldHideOrgBillingNudges } from "@/lib/plan-ui-context";
 
-function msUntil(iso: string | undefined | null): number | null {
-  if (!iso) return null;
-  const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return null;
-  return Math.max(0, t - Date.now());
-}
-
 export function TrialBillingBanner() {
   const { user, getHeaders } = useAuth();
   const ctx = useOrgBranding();
   const org = ctx?.org;
   const locale = useLocale();
   const localeRoot = `/${locale}`;
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
-    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
   const trialRemain = useMemo(() => {
     if (!org || org.plan !== "trial" || !org.trialEndsAt) return null;
-    return msUntil(org.trialEndsAt);
-  }, [org, tick]);
+    const end = new Date(org.trialEndsAt).getTime();
+    if (!Number.isFinite(end)) return null;
+    return Math.max(0, end - now);
+  }, [org, now]);
 
   const graceRemain = useMemo(() => {
     if (!org || org.plan !== "free" || !org.downgradeGraceEndsAt) return null;
-    return msUntil(org.downgradeGraceEndsAt);
-  }, [org, tick]);
+    const end = new Date(org.downgradeGraceEndsAt).getTime();
+    if (!Number.isFinite(end)) return null;
+    return Math.max(0, end - now);
+  }, [org, now]);
 
   const dismissNotice = useCallback(async () => {
     if (!user || !sessionCanManageOrgBilling(user)) return;

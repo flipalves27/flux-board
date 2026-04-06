@@ -103,8 +103,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     return () => {
-      timersRef.current.forEach((timerId) => window.clearTimeout(timerId));
-      timersRef.current.clear();
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- no unmount precisamos do Map atual, não snapshot do mount
+      const timers = timersRef.current;
+      timers.forEach((timerId) => window.clearTimeout(timerId));
+      timers.clear();
     };
   }, []);
 

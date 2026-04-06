@@ -83,6 +83,7 @@ export function WeeklyDigestEmail({
         <Container style={container}>
           {logoUrl && /^https?:\/\//i.test(logoUrl) ? (
             <Section style={{ marginBottom: 16, textAlign: "center" as const }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- React Email: sem next/image */}
               <img src={logoUrl} alt="" width={160} style={{ maxWidth: "100%", height: "auto" }} />
             </Section>
           ) : null}

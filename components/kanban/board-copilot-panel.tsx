@@ -351,7 +351,16 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
     return () => {
       cancelled = true;
     };
-  }, [open, boardId, getHeaders, pushToast]);
+  }, [
+    boardId,
+    getHeaders,
+    open,
+    pushToast,
+    setFreeDemoRemaining,
+    setLoadingHistory,
+    setMessages,
+    setTier,
+  ]);
 
   useEffect(() => {
     if (!open) return;

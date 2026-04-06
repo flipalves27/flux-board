@@ -32,7 +32,7 @@ export function BoardIncrementReviewModal({
 
   const [tab, setTab] = useState<"rolling" | "sprint">("rolling");
 
-  const cards = db?.cards ?? [];
+  const cards = useMemo(() => db?.cards ?? [], [db?.cards]);
   const portal = db?.portal;
 
   const rollingDone = useMemo(() => {

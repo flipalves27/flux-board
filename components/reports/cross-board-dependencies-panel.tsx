@@ -47,7 +47,7 @@ export function CrossBoardDependenciesPanel() {
       }
       return m.get(bid)!;
     };
-  }, [data?.nodes]);
+  }, []);
 
   const load = useCallback(async () => {
     const bid = boardFromUrl;
