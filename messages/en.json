@@ -1,7 +1,6 @@
 {
   "navigation": {
     "boards": "Boards",
-    "goals": "Goals",
     "reports": "Reports",
     "reportsProduct": "Flux Reports",
     "fluxAiHub": "AI hub",
@@ -37,7 +36,6 @@
     "intelligenceBadgeLabel": "{count, plural, one {# active spec-plan run} other {# active spec-plan runs}}",
     "section": {
       "work": "Work",
-      "goals": "Goals",
       "intelligence": "Intelligence",
       "org": "Organization",
       "commercial": "Plan & billing",
@@ -46,7 +44,6 @@
     },
     "hints": {
       "boards": "Kanban boards — daily work and columns.",
-      "goals": "View and manage quarterly goals and objectives.",
       "reports": "Org-wide BI with charts and Explain (AI) on each metric.",
       "fluxAiHub": "Map of AI features: reports, docs, sprint cockpit, OKRs, and Copilot on boards.",
       "dashboard": "C-level portfolio health, OKRs, anomalies, and throughput trend.",
