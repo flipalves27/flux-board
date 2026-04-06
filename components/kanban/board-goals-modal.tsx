@@ -157,25 +157,25 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
               </div>
             ) : (
               <div className="space-y-4 animate-[fadeIn_0.3s_ease]">
-                {data!.objectives.map((item) => {
+                {data?.objectives?.map((item) => {
                   const objective = item.objective;
-                  const keyResults = item.keyResults;
+                  const keyResults = item.keyResults || [];
                   const objectiveProgress = keyResults.length > 0
                     ? Math.min(...keyResults.map((kr) => kr.pct))
                     : 0;
 
                   return (
                     <div
-                      key={objective.id}
+                      key={objective?.id}
                       className="rounded-[var(--flux-rad-md)] border border-[var(--flux-primary-alpha-15)] bg-[var(--flux-primary-alpha-05)] p-4 hover:border-[var(--flux-primary-alpha-25)] transition-colors duration-200"
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="min-w-0 flex-1">
                           <h3 className="font-display font-semibold text-[var(--flux-text)] truncate">
-                            {objective.title}
+                            {objective?.title}
                           </h3>
                           <p className="text-xs text-[var(--flux-text-muted)] mt-1">
-                            {objective.owner ? `Owner: ${objective.owner}` : "Sem dono"}
+                            {objective?.owner ? `Owner: ${objective.owner}` : "Sem dono"}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
@@ -239,10 +239,10 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
           </div>
 
           {/* Footer */}
-          {hasObjectives && (
+          {hasObjectives && data?.objectives && (
             <div className="border-t border-[var(--flux-border-subtle)] px-6 py-3 flex items-center justify-between bg-[var(--flux-surface-elevated)]">
               <p className="text-xs text-[var(--flux-text-muted)]">
-                {data!.objectives.length} objetivo{data!.objectives.length !== 1 ? "s" : ""} para este trimestre
+                {data.objectives.length} objetivo{data.objectives.length !== 1 ? "s" : ""} para este trimestre
               </p>
               <a
                 href="/okrs"
