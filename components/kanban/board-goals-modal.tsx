@@ -178,7 +178,7 @@ export function BoardGoalsModal({ boardId, isOpen, onClose }: BoardGoalsModalPro
               </div>
               <div>
                 <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">
-                  {t("goals") || "Goals"}
+                  {t("goals")}
                 </h2>
                 <p className="text-xs text-[var(--flux-text-muted)]">{currentQuarter}</p>
               </div>
