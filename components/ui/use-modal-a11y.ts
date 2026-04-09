@@ -95,5 +95,6 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
       document.removeEventListener("keydown", onKeyDownCapture, true);
       lastFocusedElRef.current?.focus?.();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 }

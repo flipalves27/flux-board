@@ -35,11 +35,13 @@ export function TrialBillingBanner() {
   const trialRemain = useMemo(() => {
     if (!org || org.plan !== "trial" || !org.trialEndsAt) return null;
     return msUntil(org.trialEndsAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org, tick]);
 
   const graceRemain = useMemo(() => {
     if (!org || org.plan !== "free" || !org.downgradeGraceEndsAt) return null;
     return msUntil(org.downgradeGraceEndsAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org, tick]);
 
   const dismissNotice = useCallback(async () => {

@@ -99,6 +99,7 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     } finally {
       setLoading(boardId, false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
   useEffect(() => {
@@ -121,7 +122,8 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
     } else {
       setBurndown(null);
     }
-  }, [boardId, selectedSprint]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardId, selectedSprint?.id, selectedSprint?.status]);
 
   useEffect(() => {
     setAiPlan(null);

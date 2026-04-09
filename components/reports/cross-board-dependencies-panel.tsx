@@ -47,6 +47,7 @@ export function CrossBoardDependenciesPanel() {
       }
       return m.get(bid)!;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.nodes]);
 
   const load = useCallback(async () => {
