@@ -72,7 +72,7 @@ function BpmnToolbarInner({ getHeaders }: Props) {
         background: "var(--bpmn-toolbar-bg)",
         minHeight: presentMode ? 48 : 52,
         padding: presentMode ? "8px 16px" : "10px 16px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+        boxShadow: "var(--flux-bpmn-toolbar-drop-shadow)",
         borderBottom: "1px solid var(--flux-border-default)",
       }}
     >

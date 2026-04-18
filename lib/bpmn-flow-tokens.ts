@@ -5,22 +5,52 @@ export const BPMN_FLOW_EDGE_STYLES: Record<
   BpmnEdgeKind,
   { stroke: string; dash?: string; marker: string; width: number }
 > = {
-  default:    { stroke: "#607D8B", marker: "#607D8B", width: 2 },
-  primary:    { stroke: "#7CB342", marker: "#7CB342", width: 2.5 },
-  rework:     { stroke: "#EF5350", marker: "#EF5350", width: 2, dash: "6 4" },
-  cross_lane: { stroke: "#00897B", marker: "#00897B", width: 3, dash: "8 5" },
-  system:     { stroke: "#42A5F5", marker: "#42A5F5", width: 2 },
+  default: { stroke: "var(--flux-bpmn-flow-default)", marker: "var(--flux-bpmn-flow-default)", width: 2 },
+  primary: { stroke: "var(--flux-bpmn-flow-primary)", marker: "var(--flux-bpmn-flow-primary)", width: 2.5 },
+  rework: { stroke: "var(--flux-bpmn-flow-rework)", marker: "var(--flux-bpmn-flow-rework)", width: 2, dash: "6 4" },
+  cross_lane: {
+    stroke: "var(--flux-bpmn-flow-cross-lane)",
+    marker: "var(--flux-bpmn-flow-cross-lane)",
+    width: 3,
+    dash: "8 5",
+  },
+  system: { stroke: "var(--flux-bpmn-flow-system)", marker: "var(--flux-bpmn-flow-system)", width: 2 },
 };
 
 export const BPMN_TASK_VARIANT_STYLES: Record<
   BpmnSemanticVariant,
   { accent: string; badgeBg: string; bg: string; borderStyle: "solid" | "dashed" }
 > = {
-  default: { accent: "#00897B", badgeBg: "#00897B", bg: "rgba(255,255,255,0.96)", borderStyle: "solid" },
-  delivered: { accent: "#7CB342", badgeBg: "#7CB342", bg: "rgba(241,248,233,0.98)", borderStyle: "solid" },
-  automation: { accent: "#00ACC1", badgeBg: "#00ACC1", bg: "rgba(224,247,252,0.98)", borderStyle: "solid" },
-  pain: { accent: "#EF5350", badgeBg: "#EF5350", bg: "rgba(255,235,238,0.98)", borderStyle: "solid" },
-  system: { accent: "#5C6BC0", badgeBg: "#5C6BC0", bg: "rgba(232,234,246,0.95)", borderStyle: "dashed" },
+  default: {
+    accent: "var(--flux-bpmn-teal-accent)",
+    badgeBg: "var(--flux-bpmn-teal-accent)",
+    bg: "color-mix(in srgb, white 96%, transparent)",
+    borderStyle: "solid",
+  },
+  delivered: {
+    accent: "var(--flux-bpmn-green-400)",
+    badgeBg: "var(--flux-bpmn-green-400)",
+    bg: "color-mix(in srgb, var(--flux-bpmn-prop-mint) 98%, transparent)",
+    borderStyle: "solid",
+  },
+  automation: {
+    accent: "var(--flux-bpmn-cyan-accent)",
+    badgeBg: "var(--flux-bpmn-cyan-accent)",
+    bg: "color-mix(in srgb, var(--flux-bpmn-prop-cyan-tint) 98%, transparent)",
+    borderStyle: "solid",
+  },
+  pain: {
+    accent: "var(--flux-bpmn-pain-red)",
+    badgeBg: "var(--flux-bpmn-pain-red)",
+    bg: "color-mix(in srgb, var(--flux-bpmn-prop-rose) 98%, transparent)",
+    borderStyle: "solid",
+  },
+  system: {
+    accent: "var(--flux-bpmn-indigo-accent)",
+    badgeBg: "var(--flux-bpmn-indigo-accent)",
+    bg: "color-mix(in srgb, var(--flux-bpmn-system-task-bg) 95%, transparent)",
+    borderStyle: "dashed",
+  },
 };
 
 /** Normaliza token legado `reborn` (persistido) para `delivered`. */

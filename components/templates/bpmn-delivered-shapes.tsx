@@ -4,11 +4,36 @@ import type { BpmnNodeType } from "@/lib/bpmn-types";
 
 /** Cores e tamanhos do design system BPMN — eventos e gateways. */
 const EV = {
-  start: { bg: "#C8E6C9", border: "#43A047", fg: "#2E7D32", glyph: "▶" as const },
-  end: { bg: "#FFCDD2", border: "#E53935", fg: "#C62828", glyph: "⬛" as const },
-  msg: { bg: "#BBDEFB", border: "#1E88E5", fg: "#1565C0", glyph: "✉" as const },
-  intermediate: { bg: "#FFF9C4", border: "#F9A825", fg: "#F57F17", glyph: "◎" as const },
-  timer: { bg: "#E1F5FE", border: "#039BE5", fg: "#0277BD", glyph: "⏱" as const },
+  start: {
+    bg: "var(--flux-bpmn-event-start-bg)",
+    border: "var(--flux-bpmn-event-start-border)",
+    fg: "var(--flux-bpmn-event-start-fg)",
+    glyph: "▶" as const,
+  },
+  end: {
+    bg: "var(--flux-bpmn-delivered-end-bg)",
+    border: "var(--flux-bpmn-delivered-end-border)",
+    fg: "var(--flux-bpmn-delivered-end-fg)",
+    glyph: "⬛" as const,
+  },
+  msg: {
+    bg: "var(--flux-bpmn-event-message-bg)",
+    border: "var(--flux-bpmn-event-message-border)",
+    fg: "var(--flux-bpmn-event-message-fg)",
+    glyph: "✉" as const,
+  },
+  intermediate: {
+    bg: "var(--flux-bpmn-event-intermediate-bg)",
+    border: "var(--flux-bpmn-event-intermediate-border)",
+    fg: "var(--flux-bpmn-event-intermediate-fg)",
+    glyph: "◎" as const,
+  },
+  timer: {
+    bg: "var(--flux-bpmn-event-timer-bg)",
+    border: "var(--flux-bpmn-event-timer-border)",
+    fg: "var(--flux-bpmn-event-timer-fg)",
+    glyph: "⏱" as const,
+  },
 };
 
 type EventPaletteStyle = (typeof EV)[keyof typeof EV];
@@ -38,7 +63,7 @@ export function DeliveredEventGlyph({ nodeType, size = 42, className = "" }: Eve
   const p = eventPalette(nodeType);
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-extrabold shadow-[0_3px_12px_rgba(26,39,68,0.1)] ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-full font-extrabold shadow-[0_3px_12px_var(--flux-bpmn-task-shadow-soft)] ${className}`}
       style={{
         width: size,
         height: size,
@@ -66,17 +91,20 @@ export function DeliveredGatewayGlyph({ nodeType, size = 40, className = "" }: G
   return (
     <div className={`relative flex items-center justify-center ${className}`} style={{ width: size + 16, height: size + 16 }}>
       <div
-        className="flex items-center justify-center shadow-[0_3px_12px_rgba(26,39,68,0.1)]"
+        className="flex items-center justify-center shadow-[0_3px_12px_var(--flux-bpmn-task-shadow-soft)]"
         style={{
           width: size,
           height: size,
-          background: "#FFE082",
-          border: "3px solid #FFB300",
+          background: "var(--flux-bpmn-gateway-bg)",
+          border: "3px solid var(--flux-bpmn-semantic-gateway)",
           borderRadius: 4,
           transform: "rotate(45deg)",
         }}
       >
-        <span className="font-extrabold not-italic" style={{ transform: "rotate(-45deg)", color: "#1A2744", fontSize: size * 0.38 }}>
+        <span
+          className="font-extrabold not-italic"
+          style={{ transform: "rotate(-45deg)", color: "var(--flux-bpmn-surface-label)", fontSize: size * 0.38 }}
+        >
           {g}
         </span>
       </div>

@@ -411,18 +411,18 @@ export function FluxyAvatar({
         </>
       ) : (
         <>
-          <circle cx="232" cy="270" r="8" fill="#fff" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+          <circle cx="232" cy="270" r="8" fill="var(--flux-text-on-primary)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
           <circle
             cx={isPointing ? 234 : isError ? 230 : 233}
             cy={isError ? 271 : 269}
             r="4.5"
             fill="var(--flux-fluxy-eye)"
           />
-          <circle cx={isPointing ? 235 : 234} cy="267" r="1.5" fill="#fff" />
+          <circle cx={isPointing ? 235 : 234} cy="267" r="1.5" fill="var(--flux-text-on-primary)" />
 
-          <circle cx="268" cy="270" r="8" fill="#fff" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
+          <circle cx="268" cy="270" r="8" fill="var(--flux-text-on-primary)" stroke="var(--flux-fluxy-fur-dark)" strokeWidth="1" />
           <circle cx={isPointing ? 270 : isError ? 266 : 269} cy={isError ? 271 : 269} r="4.5" fill="var(--flux-fluxy-eye)" />
-          <circle cx={isPointing ? 271 : 270} cy="267" r="1.5" fill="#fff" />
+          <circle cx={isPointing ? 271 : 270} cy="267" r="1.5" fill="var(--flux-text-on-primary)" />
         </>
       )}
 

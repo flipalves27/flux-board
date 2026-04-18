@@ -362,13 +362,13 @@ export function EisenhowerWorkspace({ getHeaders, isAdmin }: Props) {
         }
         @keyframes eisCardLift {
           0% {
-            box-shadow: 0 0 0 0 rgba(76, 127, 255, 0);
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--flux-eisen-lift) 0%, transparent);
           }
           35% {
-            box-shadow: 0 0 0 4px rgba(76, 127, 255, 0.15);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--flux-eisen-lift) 15%, transparent);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(76, 127, 255, 0);
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--flux-eisen-lift) 0%, transparent);
           }
         }
         @media (prefers-reduced-motion: reduce) {

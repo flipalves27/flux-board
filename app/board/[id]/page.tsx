@@ -7,7 +7,8 @@ import dynamic from "next/dynamic";
 import { useShallow } from "zustand/react/shallow";
 
 import { useAuth } from "@/context/auth-context";
-import { Header } from "@/components/header";
+import { Header } from "@/components/header-v2-shim";
+import { BoardFilterChips } from "@/components/board/board-filter-chips";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import type { PortalClientState } from "@/components/kanban/board-portal-modal";
 
@@ -781,6 +782,9 @@ export default function BoardPage() {
             backLabel={t("backToBoards")}
           >
             <div className="flex items-center justify-end gap-1.5 flex-wrap">
+              <div className="flex w-full basis-full min-w-0 pb-1 pt-0.5 md:hidden">
+                <BoardFilterChips boardId={boardId} hidePriorities />
+              </div>
               {/* Presence */}
               <BoardPresenceAvatars />
 

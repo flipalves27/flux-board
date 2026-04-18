@@ -66,11 +66,11 @@ const BPMN_STENCILS: BpmnStencil[] = [
   { type: "message_event", label: "Mensagem",         hint: "Recebe / envia mensagem",   category: "events",  width: 44, height: 44 },
   { type: "end_event",     label: "Fim",              hint: "Fim do processo",           category: "events",  width: 44, height: 44 },
   // Tasks – 5 variantes visuais
-  { type: "task", label: "Tarefa — Padrão",      hint: "Tarefa manual / padrão",             category: "tasks", width: 160, height: 60, semanticVariant: "default",    accentColor: "#00897B" },
-  { type: "task", label: "Tarefa — Implementada",hint: "Já implementado / entregue",          category: "tasks", width: 160, height: 60, semanticVariant: "delivered",     accentColor: "#7CB342" },
-  { type: "task", label: "Tarefa — Automação",  hint: "Integração via API / sistêmica",       category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
-  { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor identificado", category: "tasks", width: 160, height: 60, semanticVariant: "pain",       accentColor: "#EF5350" },
-  { type: "task", label: "Tarefa — Sistema",    hint: "Ação de sistema / serviço externo",    category: "tasks", width: 160, height: 60, semanticVariant: "system",     accentColor: "#42A5F5" },
+  { type: "task", label: "Tarefa — Padrão", hint: "Tarefa manual / padrão", category: "tasks", width: 160, height: 60, semanticVariant: "default", accentColor: "var(--flux-bpmn-teal-accent)" },
+  { type: "task", label: "Tarefa — Implementada", hint: "Já implementado / entregue", category: "tasks", width: 160, height: 60, semanticVariant: "delivered", accentColor: "var(--flux-bpmn-green-400)" },
+  { type: "task", label: "Tarefa — Automação", hint: "Integração via API / sistêmica", category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "var(--flux-bpmn-cyan-accent)" },
+  { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor identificado", category: "tasks", width: 160, height: 60, semanticVariant: "pain", accentColor: "var(--flux-bpmn-pain-red)" },
+  { type: "task", label: "Tarefa — Sistema", hint: "Ação de sistema / serviço externo", category: "tasks", width: 160, height: 60, semanticVariant: "system", accentColor: "var(--flux-bpmn-flow-system)" },
   // Gateways
   { type: "exclusive_gateway", label: "XOR — Exclusivo", hint: "Decisão única (Sim/Não)",   category: "gateways", width: 56, height: 56 },
   { type: "parallel_gateway",  label: "AND — Paralelo",  hint: "Execução paralela",         category: "gateways", width: 56, height: 56 },
@@ -122,8 +122,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     version: "bpmn-2.0-lite",
     name: "Novo diagrama BPMN",
     lanes: [
-      { id: "solicitante",   label: "Solicitante",    y: 12,  height: 160, gradient: ["#00695C","#00897B"] },
-      { id: "processamento", label: "Processamento",  y: 192, height: 160, gradient: ["#1565C0","#42A5F5"] },
+      { id: "solicitante", label: "Solicitante", y: 12, height: 160, gradient: ["var(--flux-bpmn-teal-900)", "var(--flux-bpmn-teal-accent)"] },
+      { id: "processamento", label: "Processamento", y: 192, height: 160, gradient: ["var(--flux-bpmn-blue-800)", "var(--flux-bpmn-blue-400)"] },
     ],
     nodes: [
       { id: "start_1", type: "start_event",       label: "Início",               x: 130, y: 60,  laneId: "solicitante",   width: 44,  height: 44 },
@@ -220,14 +220,13 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
 
   const canPublish = useMemo(() => isAdmin && boardId.trim().length > 0 && !!model, [isAdmin, boardId, model]);
 
-  function colorWithAlpha(hex: string, alpha: number): string {
-    const normalized = hex.replace("#", "");
-    if (normalized.length !== 6) return hex;
-    const r = Number.parseInt(normalized.slice(0, 2), 16);
-    const g = Number.parseInt(normalized.slice(2, 4), 16);
-    const b = Number.parseInt(normalized.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  function colorWithAlpha(base: string, alpha: number): string {
+    const pct = Math.round(alpha * 100);
+    return `color-mix(in srgb, ${base} ${pct}%, transparent)`;
   }
+
+  const bpmnGridLineFine = "color-mix(in srgb, var(--flux-primary) 12%, transparent)";
+  const bpmnGridLineBold = "color-mix(in srgb, var(--flux-primary) 22%, transparent)";
 
   function paletteForType(type: string): string {
     const spec = getBpmnVisualSpec(type);
@@ -1231,7 +1230,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
   return (
     <div className={`${barlow.className} bpmn-workspace flex min-h-0 flex-1 flex-col gap-3 overflow-hidden`}>
       <header
-        className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[0_4px_20px_rgba(13,11,26,0.55)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
+        className={`flex flex-wrap items-center gap-2 rounded-xl px-3 shadow-[var(--flux-bpmn-workspace-chrome-shadow)] sm:gap-3 sm:px-4 ${presentMode ? "min-h-[48px] py-2" : "min-h-[52px] py-2.5"}`}
         style={{ background: "var(--bpmn-toolbar-bg)" }}
       >
         <span className={`${barlowCondensed.className} text-[22px] font-extrabold uppercase tracking-[2px] text-white`}>
@@ -1287,7 +1286,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             type="button"
             aria-pressed={showEdges}
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              showEdges ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              showEdges ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_var(--flux-primary-alpha-40)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setShowEdges((v) => !v)}
           >
@@ -1296,7 +1295,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              legendExpanded ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              legendExpanded ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_var(--flux-primary-alpha-40)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             aria-pressed={legendExpanded}
             onClick={() => setLegendExpanded((v) => !v)}
@@ -1306,7 +1305,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             className={`rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
-              presentMode ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_rgba(108,92,231,0.4)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              presentMode ? "border-[var(--flux-primary)] bg-[var(--flux-primary)] text-white shadow-[0_0_12px_var(--flux-primary-alpha-40)]" : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
             onClick={() => setPresentMode((v) => !v)}
           >
@@ -1349,7 +1348,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
           <button
             type="button"
             disabled={savingBoard || !boardId.trim()}
-            className="rounded-lg border border-[var(--flux-primary)] bg-[var(--flux-primary)] px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_0_12px_rgba(108,92,231,0.35)] transition hover:bg-[var(--flux-primary-light)] disabled:opacity-50"
+            className="rounded-lg border border-[var(--flux-primary)] bg-[var(--flux-primary)] px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_0_12px_var(--flux-primary-alpha-35)] transition hover:bg-[var(--flux-primary-light)] disabled:opacity-50"
             onClick={async () => {
               if (!boardId.trim()) return;
               setSavingBoard(true);
@@ -1433,14 +1432,14 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     setDraggingType(stencil.type);
                   }}
                   onDragEnd={() => { setDraggingType(""); setIsCanvasDropActive(false); setDragPreview(null); }}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-[#00897B]/50 dark:border-slate-600 dark:bg-slate-900"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-[var(--flux-bpmn-teal-accent)]/50 dark:border-slate-600 dark:bg-slate-900"
                 >
                   {stencil.category === "events" ? (
                     <DeliveredStencilEventIcon type={stencil.type as BpmnNodeType} />
                   ) : stencil.category === "gateways" ? (
                     <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                   ) : (
-                    <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} />
+                    <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "var(--flux-bpmn-teal-accent)" }} />
                   )}
                 </button>
               ))}
@@ -1501,7 +1500,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                                 ) : stencil.category === "gateways" ? (
                                   <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                                 ) : stencil.category === "dados" && stencil.type === "annotation" ? (
-                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
+                                  <span
+                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[var(--flux-bpmn-annotation-bg)]"
+                                    style={{ borderLeftColor: "var(--flux-bpmn-semantic-gateway)" }}
+                                  >
                                     <span className="text-[14px]">✎</span>
                                   </span>
                                 ) : stencil.category === "dados" && stencil.type === "system_box" ? (
@@ -1514,7 +1516,11 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                                   </span>
                                 ) : (
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] shadow-sm">
-                                    <span className="h-6 w-1.5 rounded-full" style={{ background: stencil.accentColor ?? "#6C5CE7" }} aria-hidden />
+                                    <span
+                                      className="h-6 w-1.5 rounded-full"
+                                      style={{ background: stencil.accentColor ?? "var(--flux-bpmn-prop-border)" }}
+                                      aria-hidden
+                                    />
                                   </span>
                                 )}
                               </span>
@@ -1598,7 +1604,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   Remover selecionado
                 </button>
               ) : null}
-              <p className="text-[11px] text-[#546E7A] dark:text-slate-400">{model.nodes.length} nós • {model.edges.length} fluxos</p>
+              <p className="text-[11px] text-[var(--flux-bpmn-slate-caption)] dark:text-slate-400">
+                {model.nodes.length} nós • {model.edges.length} fluxos
+              </p>
             </>
           )}
         </aside>
@@ -1712,7 +1720,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
             }}
             onPointerLeave={onCanvasPointerUp}
             className={`relative min-h-0 flex-1 cursor-crosshair overflow-hidden rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-dark)] shadow-inner transition ${
-              isCanvasDropActive ? "border-[var(--flux-primary)]/60 shadow-[0_0_0_2px_rgba(108,92,231,0.18)]" : ""
+              isCanvasDropActive ? "border-[var(--flux-primary)]/60 shadow-[0_0_0_2px_var(--flux-primary-alpha-18)]" : ""
             } ${isPanning ? "cursor-grabbing" : ""}`}
           >
             {/* Grid background — contained inside overflow:hidden, never bleeds outside */}
@@ -1720,8 +1728,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-[inherit]"
               style={{
-                backgroundImage:
-                  "linear-gradient(to right, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(108,92,231,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(108,92,231,0.22) 1px, transparent 1px)",
+                backgroundImage: `linear-gradient(to right, ${bpmnGridLineFine} 1px, transparent 1px), linear-gradient(to bottom, ${bpmnGridLineFine} 1px, transparent 1px), linear-gradient(to right, ${bpmnGridLineBold} 1px, transparent 1px), linear-gradient(to bottom, ${bpmnGridLineBold} 1px, transparent 1px)`,
                 backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px, ${GRID_SIZE * 5 * zoom}px ${GRID_SIZE * 5 * zoom}px`,
                 backgroundPosition: `${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px ${((pan.y % (GRID_SIZE * zoom)) + GRID_SIZE * zoom) % (GRID_SIZE * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px, ${((pan.x % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px ${((pan.y % (GRID_SIZE * 5 * zoom)) + GRID_SIZE * 5 * zoom) % (GRID_SIZE * 5 * zoom)}px`,
               }}
@@ -1738,23 +1745,29 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                 const top = lane.y ?? 12 + i * 140;
                 const h = lane.height ?? 128;
                 const defaultGradients = [
-                  "linear-gradient(180deg,#558B2F,#7CB342)",
-                  "linear-gradient(180deg,#00695C,#00897B)",
-                  "linear-gradient(180deg,#1565C0,#42A5F5)",
-                  "linear-gradient(180deg,#5E35B1,#7E57C2)",
-                  "linear-gradient(180deg,#E65100,#FF9800)",
+                  "linear-gradient(180deg, var(--flux-bpmn-green-800), var(--flux-bpmn-green-400))",
+                  "linear-gradient(180deg, var(--flux-bpmn-teal-900), var(--flux-bpmn-teal-accent))",
+                  "linear-gradient(180deg, var(--flux-bpmn-blue-800), var(--flux-bpmn-blue-400))",
+                  "linear-gradient(180deg, var(--flux-bpmn-purple-800), var(--flux-bpmn-purple-400))",
+                  "linear-gradient(180deg, var(--flux-bpmn-orange-900), var(--flux-bpmn-orange-400))",
                 ];
                 const grad = lane.gradient
                   ? `linear-gradient(180deg,${lane.gradient[0]},${lane.gradient[1]})`
                   : defaultGradients[i % 5];
                 const tint = [
-                  "rgba(124,179,66,.06)",
-                  "rgba(0,137,123,.04)",
-                  "rgba(66,165,245,.04)",
-                  "rgba(126,87,194,.04)",
-                  "rgba(255,179,0,.04)",
+                  "color-mix(in srgb, var(--flux-bpmn-green-400) 6%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-teal-accent) 4%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-blue-400) 4%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-purple-400) 4%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-semantic-gateway) 4%, transparent)",
                 ][i % 5];
-                const border = ["rgba(124,179,66,.2)", "rgba(0,137,123,.15)", "rgba(66,165,245,.15)", "rgba(126,87,194,.15)", "rgba(255,179,0,.15)"][i % 5];
+                const border = [
+                  "color-mix(in srgb, var(--flux-bpmn-green-400) 20%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-teal-accent) 15%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-blue-400) 15%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-purple-400) 15%, transparent)",
+                  "color-mix(in srgb, var(--flux-bpmn-semantic-gateway) 15%, transparent)",
+                ][i % 5];
                 const isDraggingThisLane = laneDrag?.laneId === lane.id;
                 const isHovered = hoveredLaneId === lane.id;
                 return (
@@ -1764,10 +1777,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     style={{
                       top,
                       height: h,
-                      border: `2px solid ${isDraggingThisLane ? "rgba(56,189,248,0.6)" : border}`,
+                      border: `2px solid ${isDraggingThisLane ? "color-mix(in srgb, var(--flux-chart-edge-selected) 60%, transparent)" : border}`,
                       background: tint,
                       borderRadius: 6,
-                      boxShadow: isDraggingThisLane ? "0 8px 28px rgba(0,0,0,0.18)" : undefined,
+                      boxShadow: isDraggingThisLane ? "var(--flux-bpmn-lane-drag-shadow)" : undefined,
                       zIndex: isDraggingThisLane ? 5 : 1,
                       transition: isDraggingThisLane ? "none" : "box-shadow 150ms",
                     }}
@@ -1879,7 +1892,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       <button
                         type="button"
                         title="Excluir swim lane"
-                        className="absolute flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#EF5350] text-[11px] font-bold text-white shadow-md transition hover:bg-[#C62828] hover:scale-110"
+                        className="absolute flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[var(--flux-bpmn-pain-red)] text-[11px] font-bold text-white shadow-md transition hover:bg-[var(--flux-bpmn-pain-red-dark)] hover:scale-110"
                         style={{ top: 6, left: 6, zIndex: 20, lineHeight: 1 }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1942,8 +1955,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     {/* Tag badge */}
                     {lane.tag ? (
                       <span
-                        className="absolute left-[68px] top-[10px] max-w-[min(360px,65%)] truncate rounded px-2.5 py-0.5 text-[12px] font-bold text-[#1A2744]"
-                        style={{ background: "rgba(255,255,255,0.92)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", letterSpacing: "0.5px" }}
+                        className="absolute left-[68px] top-[10px] max-w-[min(360px,65%)] truncate rounded px-2.5 py-0.5 text-[12px] font-bold text-[var(--flux-bpmn-surface-label)]"
+                        style={{
+                          background: "var(--flux-bpmn-tag-pill-bg)",
+                          boxShadow: "var(--flux-bpmn-tag-pill-shadow)",
+                          letterSpacing: "0.5px",
+                        }}
                       >
                         {lane.tag}
                       </span>
@@ -1976,13 +1993,13 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                     markerHeight={BPMN_VISUAL_TOKENS.sequenceArrowSize}
                     orient="auto-start-reverse"
                   >
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(56,189,248,0.95)" />
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--flux-bpmn-marker-preview-fill)" />
                   </marker>
                 </defs>
                 {edgesWithPoints.map((edge) => {
                   const kind = (edge as { kind?: BpmnEdgeKind }).kind ?? "default";
                   const style = BPMN_FLOW_EDGE_STYLES[kind];
-                  const strokeSelected = selectedEdgeId === edge.id ? "#38bdf8" : style.stroke;
+                  const strokeSelected = selectedEdgeId === edge.id ? "var(--flux-chart-edge-selected)" : style.stroke;
                   const w = style.width;
                   const dash = style.dash;
                   const pts = edge.points;
@@ -2039,8 +2056,8 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                           cx={wp.x}
                           cy={wp.y}
                           r={4.5}
-                          fill="rgba(56,189,248,0.95)"
-                          stroke="rgba(255,255,255,0.9)"
+                          fill="var(--flux-bpmn-marker-preview-fill)"
+                          stroke="var(--flux-bpmn-waypoint-stroke)"
                           strokeWidth={1}
                           className="pointer-events-auto cursor-move"
                           onPointerDown={(ev) => {
@@ -2079,7 +2096,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         { x: connectPreviewLine.x2, y: connectPreviewLine.y2 },
                       ])}
                       fill="none"
-                      stroke="rgba(56,189,248,0.95)"
+                      stroke="var(--flux-chart-edge-selected)"
                       strokeWidth={BPMN_VISUAL_TOKENS.connectorStroke}
                       strokeDasharray="6 4"
                       markerEnd="url(#bpmnArrowHeadPreview)"
@@ -2215,10 +2232,10 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       ? "transform 80ms ease-out, opacity 80ms ease-out"
                       : "transform 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms ease",
                     boxShadow: isDraggingThis
-                      ? "0 12px 36px rgba(13,11,26,0.55), 0 4px 12px rgba(13,11,26,0.35)"
+                      ? "var(--flux-bpmn-node-drag-shadow)"
                       : selectedNodeSet.has(node.id) || selectedNodeId === node.id
-                        ? "0 4px 16px rgba(108,92,231,0.30)"
-                        : "0 3px 12px rgba(13,11,26,0.28)",
+                        ? "var(--flux-bpmn-node-selected-shadow)"
+                        : "var(--flux-bpmn-node-default-shadow)",
                   }}
                   title={node.tooltip || "Duplo clique para editar · Arraste para mover"}
                 >
@@ -2230,9 +2247,9 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         style={{
                           borderLeft: `5px ${BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].borderStyle} ${node.borderColor ?? BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].accent}`,
                           backgroundColor: node.bgColor ?? BPMN_TASK_VARIANT_STYLES[resolveBpmnTaskVariant(node.semanticVariant as string | undefined)].bg,
-                          borderTop: "1px solid rgba(108,92,231,0.12)",
-                          borderRight: "1px solid rgba(108,92,231,0.12)",
-                          borderBottom: "1px solid rgba(108,92,231,0.12)",
+                          borderTop: "1px solid var(--flux-bpmn-task-hairline)",
+                          borderRight: "1px solid var(--flux-bpmn-task-hairline)",
+                          borderBottom: "1px solid var(--flux-bpmn-task-hairline)",
                           borderTopRightRadius: 10,
                           borderBottomRightRadius: 10,
                           minWidth: 160,
@@ -2252,7 +2269,15 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       {node.painBadge ? (
                         <span
                           className="pointer-events-none absolute flex items-center justify-center rounded-full border-2 border-white font-extrabold text-white"
-                          style={{ top: -10, right: -10, width: 26, height: 26, fontSize: 12, background: "#EF5350", boxShadow: "0 2px 8px rgba(239,83,80,.45)" }}
+                          style={{
+                            top: -10,
+                            right: -10,
+                            width: 26,
+                            height: 26,
+                            fontSize: 12,
+                            background: "var(--flux-bpmn-pain-red)",
+                            boxShadow: "0 2px 8px var(--flux-bpmn-pain-glow)",
+                          }}
                         >
                           {node.painBadge}
                         </span>
@@ -2288,12 +2313,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       >{node.label}</span>
                     </div>
                   ) : node.type === "annotation" ? (
-                    /* Annotation: bg #FFFDE7, border-left 4px solid #FFB300 */
+                    /* Annotation default: annotation bg + gateway accent border */
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col justify-center px-3"
                       style={{
                         background: node.bgColor ?? "var(--flux-surface-elevated)",
-                        borderLeft: `4px solid ${node.borderColor ?? "#FFB300"}`,
+                        borderLeft: `4px solid ${node.borderColor ?? "var(--flux-bpmn-semantic-gateway)"}`,
                         borderRadius: "0 10px 10px 0",
                       }}
                     >
@@ -2304,7 +2329,7 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                       {node.subtitle && <span className="mt-0.5 text-[10px] text-[var(--flux-text-muted)]">{node.subtitle}</span>}
                     </div>
                   ) : node.type === "system_box" ? (
-                    /* System Box: bg #E8EAF6, border 2px dashed #5C6BC0 */
+                    /* System box: elevated surface + dashed accent */
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-3"
                       style={{
@@ -2431,7 +2456,12 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                         <button type="button" className="btn-secondary flex-1 text-xs" onClick={() => setInlineEditNodeId(null)}>
                           Cancelar
                         </button>
-                        <button type="button" className="btn-secondary flex-1 text-xs" style={{ background: "var(--flux-primary)", color: "#fff" }} onClick={commitInlineEdit}>
+                        <button
+                          type="button"
+                          className="btn-secondary flex-1 text-xs"
+                          style={{ background: "var(--flux-primary)", color: "var(--flux-text-on-primary)" }}
+                          onClick={commitInlineEdit}
+                        >
                           OK
                         </button>
                       </div>
@@ -2747,14 +2777,31 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.labelColor ?? "#F0EEFF"}
+                      value={
+                        /^#[0-9a-fA-F]{6}$/i.test((selectedNode.labelColor ?? "").trim())
+                          ? (selectedNode.labelColor ?? "").trim()
+                          : "#" + "F0EEFF"
+                      }
                       onChange={(e) => updateSelectedNode({ labelColor: e.target.value })}
                       className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor do texto (Ctrl+Shift+T)"
                     />
                     <div className="flex gap-1">
-                      {["#F0EEFF","#FFFFFF","#A29BFE","#FF6B6B","#74B9FF"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ labelColor: c })} />
+                      {[
+                        "var(--flux-text)",
+                        "var(--flux-text-on-primary)",
+                        "var(--flux-bpmn-prop-lavender)",
+                        "var(--flux-danger)",
+                        "var(--flux-info)",
+                      ].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          title={c}
+                          className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110"
+                          style={{ background: c }}
+                          onClick={() => updateSelectedNode({ labelColor: c })}
+                        />
                       ))}
                     </div>
                     {selectedNode.labelColor !== undefined && (
@@ -2768,14 +2815,32 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.bgColor ?? "#221F3A"}
+                      value={
+                        /^#[0-9a-fA-F]{6}$/i.test((selectedNode.bgColor ?? "").trim())
+                          ? (selectedNode.bgColor ?? "").trim()
+                          : "#" + "221F3A"
+                      }
                       onChange={(e) => updateSelectedNode({ bgColor: e.target.value })}
                       className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor de fundo"
                     />
                     <div className="flex gap-1">
-                      {["#221F3A","#2D2952","#1A1730","#F1F8E9","#E0F7FA","#FFEBEE"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ bgColor: c })} />
+                      {[
+                        "var(--flux-bpmn-prop-bg)",
+                        "var(--flux-bpmn-prop-bg-alt)",
+                        "var(--flux-bpmn-prop-bg-deep)",
+                        "var(--flux-bpmn-prop-mint)",
+                        "var(--flux-bpmn-prop-cyan-tint)",
+                        "var(--flux-bpmn-prop-rose)",
+                      ].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          title={c}
+                          className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110"
+                          style={{ background: c }}
+                          onClick={() => updateSelectedNode({ bgColor: c })}
+                        />
                       ))}
                     </div>
                     {selectedNode.bgColor !== undefined && (
@@ -2789,14 +2854,32 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
                   <div className="flex items-center gap-1.5">
                     <input
                       type="color"
-                      value={selectedNode.borderColor ?? "#6C5CE7"}
+                      value={
+                        /^#[0-9a-fA-F]{6}$/i.test((selectedNode.borderColor ?? "").trim())
+                          ? (selectedNode.borderColor ?? "").trim()
+                          : "#" + "6C5CE7"
+                      }
                       onChange={(e) => updateSelectedNode({ borderColor: e.target.value })}
                       className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
                       title="Cor da borda / acento"
                     />
                     <div className="flex gap-1">
-                      {["#6C5CE7","#A29BFE","#00D2D3","#FF6B6B","#74B9FF","#FFD93D"].map((c) => (
-                        <button key={c} type="button" title={c} className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110" style={{ background: c }} onClick={() => updateSelectedNode({ borderColor: c })} />
+                      {[
+                        "var(--flux-bpmn-prop-border)",
+                        "var(--flux-bpmn-prop-lavender)",
+                        "var(--flux-secondary)",
+                        "var(--flux-danger)",
+                        "var(--flux-info)",
+                        "var(--flux-warning)",
+                      ].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          title={c}
+                          className="h-5 w-5 rounded-full border-2 border-[var(--flux-border-subtle)] shadow-sm transition hover:scale-110"
+                          style={{ background: c }}
+                          onClick={() => updateSelectedNode({ borderColor: c })}
+                        />
                       ))}
                     </div>
                     {selectedNode.borderColor !== undefined && (

@@ -13,15 +13,18 @@ function DataObjectNodeInner({ data, selected }: NodeProps & { data: BpmnNodeDat
           background: data.bgColor ?? "var(--flux-surface-card)",
           border: `1px solid ${data.borderColor ?? "var(--flux-border-subtle)"}`,
           borderRadius: 4,
-          boxShadow: selected
-            ? "0 0 0 2px rgba(108,92,231,0.35), 0 3px 12px rgba(26,39,68,0.1)"
-            : "0 2px 8px rgba(26,39,68,0.08)",
+          boxShadow: selected ? "var(--flux-bpmn-data-shadow-selected)" : "var(--flux-bpmn-data-shadow)",
           transition: "box-shadow 150ms ease",
         }}
       >
         <svg width="20" height="24" viewBox="0 0 20 24" fill="none" className="shrink-0" aria-hidden>
-          <path d="M0 2C0 0.9 0.9 0 2 0H13L20 7V22C20 23.1 19.1 24 18 24H2C0.9 24 0 23.1 0 22V2Z" fill="var(--flux-surface-elevated)" stroke="#90A4AE" strokeWidth="1.2" />
-          <path d="M13 0V5C13 6.1 13.9 7 15 7H20" fill="none" stroke="#90A4AE" strokeWidth="1.2" />
+          <path
+            d="M0 2C0 0.9 0.9 0 2 0H13L20 7V22C20 23.1 19.1 24 18 24H2C0.9 24 0 23.1 0 22V2Z"
+            fill="var(--flux-surface-elevated)"
+            stroke="var(--flux-bpmn-semantic-artifact)"
+            strokeWidth="1.2"
+          />
+          <path d="M13 0V5C13 6.1 13.9 7 15 7H20" fill="none" stroke="var(--flux-bpmn-semantic-artifact)" strokeWidth="1.2" />
         </svg>
         <span
           className="text-center font-bold leading-tight"

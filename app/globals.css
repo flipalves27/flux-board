@@ -36,6 +36,166 @@
   --flux-danger: #FF6B6B;
   --flux-info: #74B9FF;
 
+  /*
+   * Diagram / BPMN / OAuth — literals live here so TSX stays `var(--flux-*)`-only
+   * (see eslint `lint:flux-colors` / flux/no-literal-colors).
+   */
+  --flux-oauth-google-blue: #4285f4;
+  --flux-oauth-google-green: #34a853;
+  --flux-oauth-google-yellow: #fbbc05;
+  --flux-oauth-google-red: #ea4335;
+  --flux-oauth-ms-red: #f25022;
+  --flux-oauth-ms-cyan: #00a4ef;
+  --flux-oauth-ms-green: #7fba00;
+  --flux-oauth-ms-yellow: #ffb900;
+
+  --flux-collab-cursor-0: #6c5ce7;
+  --flux-collab-cursor-1: #00b894;
+  --flux-collab-cursor-2: #fdcb6e;
+  --flux-collab-cursor-3: #e17055;
+  --flux-collab-cursor-4: #0984e3;
+  --flux-collab-cursor-5: #e84393;
+  --flux-collab-cursor-6: #00cec9;
+  --flux-collab-cursor-7: #fab1a0;
+  --flux-collab-cursor-8: #a29bfe;
+  --flux-collab-cursor-9: #55efc4;
+
+  --flux-kg-node-2: #0ea5e9;
+  --flux-kg-node-3: #f59e0b;
+  --flux-kg-node-4: #10b981;
+  --flux-kg-node-5: #ef4444;
+  --flux-kg-node-6: #ec4899;
+  --flux-kg-node-7: #6366f1;
+  --flux-kg-node-8: #14b8a6;
+  --flux-kg-node-9: #f97316;
+
+  --flux-mock-window-red: #ff5f57;
+  --flux-mock-window-yellow: #ffbd2e;
+  --flux-mock-window-green: #28c840;
+
+  --flux-template-preset-0: #6c5ce7;
+  --flux-template-preset-1: #00b894;
+  --flux-template-preset-2: #0984e3;
+  --flux-template-preset-3: #fdcb6e;
+  --flux-template-preset-4: #e17055;
+  --flux-template-preset-5: #a29bfe;
+  --flux-template-preset-6: #636e72;
+  --flux-template-preset-7: #00cec9;
+
+  --flux-export-chart-canvas: #141418;
+
+  --flux-chart-edge-selected: #38bdf8;
+  --flux-eisen-lift: #4c7fff;
+
+  --flux-bpmn-flow-default: #607d8b;
+  --flux-bpmn-flow-primary: #7cb342;
+  --flux-bpmn-flow-rework: #ef5350;
+  --flux-bpmn-flow-cross-lane: #00897b;
+  --flux-bpmn-flow-system: #42a5f5;
+
+  --flux-bpmn-semantic-event-start: #43a047;
+  --flux-bpmn-semantic-event-intermediate: #f9a825;
+  --flux-bpmn-semantic-event-end: #e53935;
+  --flux-bpmn-semantic-task: #00897b;
+  --flux-bpmn-semantic-gateway: #ffb300;
+  --flux-bpmn-semantic-artifact: #90a4ae;
+  --flux-bpmn-semantic-invalid: #ef5350;
+  --flux-bpmn-semantic-selected: #4db6ac;
+
+  --flux-bpmn-event-start-bg: #c8e6c9;
+  --flux-bpmn-event-start-border: #43a047;
+  --flux-bpmn-event-start-fg: #2e7d32;
+  --flux-bpmn-event-end-bg: #c8e6c9;
+  --flux-bpmn-event-end-border: #2e7d32;
+  --flux-bpmn-event-end-fg: #2e7d32;
+  --flux-bpmn-event-message-bg: #bbdefb;
+  --flux-bpmn-event-message-border: #1e88e5;
+  --flux-bpmn-event-message-fg: #1565c0;
+  --flux-bpmn-event-timer-bg: #e1f5fe;
+  --flux-bpmn-event-timer-border: #039be5;
+  --flux-bpmn-event-timer-fg: #0277bd;
+  --flux-bpmn-event-intermediate-bg: #fff9c4;
+  --flux-bpmn-event-intermediate-border: #f9a825;
+  --flux-bpmn-event-intermediate-fg: #f57f17;
+
+  --flux-bpmn-teal-900: #00695c;
+  --flux-bpmn-teal-accent: #00897b;
+  --flux-bpmn-blue-800: #1565c0;
+  --flux-bpmn-blue-400: #42a5f5;
+  --flux-bpmn-purple-800: #5e35b1;
+  --flux-bpmn-purple-400: #7e57c2;
+  --flux-bpmn-orange-900: #e65100;
+  --flux-bpmn-orange-400: #ff9800;
+  --flux-bpmn-green-800: #558b2f;
+  --flux-bpmn-green-400: #7cb342;
+  --flux-bpmn-cyan-accent: #00acc1;
+  --flux-bpmn-indigo-accent: #5c6bc0;
+  --flux-bpmn-violet-accent: #7e57c2;
+  --flux-bpmn-pain-red: #ef5350;
+  --flux-bpmn-pain-red-dark: #c62828;
+  --flux-bpmn-gateway-bg: #ffe082;
+  --flux-bpmn-annotation-bg: #fffde7;
+  --flux-bpmn-system-box-border: #5c6bc0;
+  --flux-bpmn-system-task-bg: #e8eaf6;
+  --flux-bpmn-surface-tooltip: #1a2744;
+  --flux-bpmn-tooltip-shadow: 0 8px 24px color-mix(in srgb, black 30%, transparent);
+  --flux-bpmn-workspace-chrome-shadow: 0 4px 20px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent);
+  --flux-bpmn-node-drag-shadow: 0 12px 36px color-mix(in srgb, var(--flux-surface-dark) 55%, transparent),
+    0 4px 12px color-mix(in srgb, var(--flux-surface-dark) 35%, transparent);
+  --flux-bpmn-node-selected-shadow: 0 4px 16px var(--flux-bpmn-task-shadow-selected);
+  --flux-bpmn-node-default-shadow: 0 3px 12px color-mix(in srgb, var(--flux-surface-dark) 28%, transparent);
+  --flux-bpmn-lane-drag-shadow: 0 8px 28px color-mix(in srgb, black 18%, transparent);
+  --flux-bpmn-waypoint-stroke: color-mix(in srgb, white 90%, transparent);
+  --flux-bpmn-surface-label: #1a2744;
+  --flux-bpmn-slate-caption: #546e7a;
+  --flux-bpmn-teal-sheet: #b2dfdb;
+  --flux-bpmn-amber-accent: #fb8c00;
+  --flux-bpmn-amber-50: #fffbeb;
+
+  --flux-bpmn-delivered-end-bg: #ffcdd2;
+  --flux-bpmn-delivered-end-border: #e53935;
+  --flux-bpmn-delivered-end-fg: #c62828;
+  --flux-bpmn-legend-start-bg: #e8f5e9;
+  --flux-bpmn-legend-end-border: #c62828;
+
+  --flux-bpmn-prop-label: #f0eeff;
+  --flux-bpmn-prop-bg: #221f3a;
+  --flux-bpmn-prop-bg-alt: #2d2952;
+  --flux-bpmn-prop-bg-deep: #1a1730;
+  --flux-bpmn-prop-mint: #f1f8e9;
+  --flux-bpmn-prop-cyan-tint: #e0f7fa;
+  --flux-bpmn-prop-rose: #ffebee;
+  --flux-bpmn-prop-border: #6c5ce7;
+  --flux-bpmn-prop-lavender: #a29bfe;
+
+  --flux-bpmn-grid-dots: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-minimap-mask: color-mix(in srgb, var(--flux-primary) 8%, transparent);
+  --flux-minimap-mask-dark: color-mix(in srgb, black 55%, transparent);
+  --flux-bpmn-toolbar-drop-shadow: 0 4px 20px color-mix(in srgb, black 12%, transparent);
+  --flux-bpmn-marker-preview-fill: color-mix(in srgb, var(--flux-chart-edge-selected) 95%, transparent);
+
+  --flux-bpmn-task-hairline: color-mix(in srgb, var(--flux-primary) 12%, transparent);
+  --flux-bpmn-task-shadow-selected: color-mix(in srgb, var(--flux-primary) 30%, transparent);
+  --flux-bpmn-task-shadow-soft: color-mix(in srgb, var(--flux-bpmn-surface-tooltip) 10%, transparent);
+  --flux-bpmn-pain-glow: color-mix(in srgb, var(--flux-bpmn-pain-red) 45%, transparent);
+
+  --flux-bpmn-edge-label-bg: color-mix(in srgb, white 92%, transparent);
+  --flux-bpmn-edge-label-shadow: color-mix(in srgb, black 8%, transparent);
+
+  --flux-bpmn-event-selected-glow: 0 0 0 3px color-mix(in srgb, var(--flux-primary) 35%, transparent),
+    0 3px 12px var(--flux-bpmn-task-shadow-soft);
+  --flux-bpmn-gateway-shadow-selected: var(--flux-bpmn-event-selected-glow);
+  --flux-bpmn-gateway-shadow: 0 3px 12px var(--flux-bpmn-task-shadow-soft);
+  --flux-bpmn-data-shadow-selected: 0 0 0 2px color-mix(in srgb, var(--flux-primary) 35%, transparent),
+    0 3px 12px var(--flux-bpmn-task-shadow-soft);
+  --flux-bpmn-data-shadow: 0 2px 8px color-mix(in srgb, var(--flux-bpmn-surface-tooltip) 8%, transparent);
+  --flux-bpmn-label-pill-bg: color-mix(in srgb, white 90%, transparent);
+  --flux-bpmn-tag-input-bg: color-mix(in srgb, white 95%, transparent);
+  --flux-bpmn-tag-pill-bg: color-mix(in srgb, white 92%, transparent);
+  --flux-bpmn-tag-pill-shadow: 0 1px 4px var(--flux-bpmn-edge-label-shadow);
+  --flux-bpmn-tag-placeholder-bg: color-mix(in srgb, white 70%, transparent);
+  --flux-bpmn-lane-swatch-shadow: 0 1px 4px color-mix(in srgb, black 15%, transparent);
+
   /* Fluxy mascot SVG only (matches prototype palette) */
   --flux-fluxy-fur: #5840dd;
   --flux-fluxy-fur-dark: #4530c0;
@@ -114,6 +274,13 @@
     0 32px 96px -24px color-mix(in srgb, black 65%, transparent),
     0 0 120px -40px color-mix(in srgb, var(--flux-primary) 35%, transparent);
   --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  /* Tiered elevation (UX v2) — aliases over legacy names */
+  --flux-shadow-0: var(--flux-shadow-inset-hairline);
+  --flux-shadow-1: var(--flux-shadow-sm);
+  --flux-shadow-2: var(--flux-shadow-md);
+  --flux-shadow-3: var(--flux-shadow-lg);
+  --flux-shadow-4: var(--flux-shadow-xl);
+  --flux-shadow-glow: var(--flux-shadow-primary-soft);
 
   /* Gradients & panels */
   --flux-gradient-panel-sheen: linear-gradient(
@@ -227,8 +394,9 @@
   --flux-backdrop-scrim-strong: color-mix(in srgb, black 50%, transparent);
 
   /*
-   * Stacking scale — use Tailwind z-[var(--flux-z-…)] so overlays stay predictable.
-   * See docs/ux-execution-baseline.md for QA checklist.
+   * Stacking — seven layers (doc UX v2): 1 base · 2 app content · 3 raised · 4 sticky ·
+   * 5 overlay/drawers · 6 modals/panels · 7 command + peak (toasts, tooltips).
+   * Use Tailwind `z-[var(--flux-z-…)]`. Values preserve legacy ordering (QA: modal, command, dock).
    */
   --flux-z-app-shell-bg: 0;
   --flux-z-app-shell-content: 1;
@@ -237,6 +405,8 @@
   --flux-z-sidebar-drawer: 50;
   --flux-z-board-summary-dock: 80;
   --flux-z-board-canvas: 120;
+  /** UX v2 sticky workbar — between sticky chrome and mobile overlays */
+  --flux-z-workbar: 145;
   /** Fluxy dock (canto inferior esquerdo) — acima do canvas, abaixo do tour e do painel do copiloto */
   --flux-z-board-fluxy-dock: 438;
   /** Widget Fluxy FAQ na landing (fixo no viewport) */
@@ -261,6 +431,8 @@
   --flux-z-anomaly-modal: 260;
   --flux-z-modal-base: 300;
   --flux-z-modal-members: 320;
+  --flux-z-modal-backdrop: 298;
+  --flux-z-modal: 305;
   --flux-z-dep-graph: 350;
   --flux-z-modal-feature: 400;
   --flux-z-dropdown: 400;
@@ -2010,6 +2182,12 @@
   .card-modal-content {
     animation: cardModalPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
+  .card-modal-backdrop-v2 {
+    animation: cardModalBackdropInV2 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .card-modal-content-v2 {
+    animation: cardModalPanelInV2 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
@@ -2066,6 +2244,28 @@
     opacity: 1;
     transform: scale(1) translateY(0);
     filter: blur(0);
+  }
+}
+
+@keyframes cardModalBackdropInV2 {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardModalPanelInV2 {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -3262,6 +3462,25 @@
   }
 }
 
+@layer components {
+  .flux-motion-instant {
+    transition-duration: var(--flux-motion-duration-instant);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-fast {
+    transition-duration: var(--flux-motion-duration-fast);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-base {
+    transition-duration: var(--flux-motion-duration-base);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-slow {
+    transition-duration: var(--flux-motion-duration-slow);
+    transition-timing-function: var(--flux-motion-ease-out);
+  }
+}
+
 @layer utilities {
   .fluxy-ui-bounce-in {
     animation: fluxy-bounce-in 0.35s ease;
@@ -3282,6 +3501,13 @@
     --flux-motion-duration-slow: 0.01ms;
     --flux-motion-list-enter-duration: 0.01ms;
     --flux-skeleton-pulse-duration: 0.01ms;
+  }
+
+  .flux-motion-instant,
+  .flux-motion-fast,
+  .flux-motion-base,
+  .flux-motion-slow {
+    transition-duration: 0.01ms !important;
   }
 
   .fluxy-ui-bounce-in,

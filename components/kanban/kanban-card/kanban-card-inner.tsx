@@ -17,6 +17,7 @@ import { AiBlockedHintBadge, RiskScoreBadge } from "./kanban-card-badges";
 import { KanbanCardToolbar } from "./kanban-card-toolbar";
 import { KanbanCardBody } from "./kanban-card-body";
 import { KanbanCardShell } from "./kanban-card-shell";
+import { useCardSwipeActions } from "./use-card-swipe-actions";
 
 const EMPTY_SPRINTS_LIST: SprintData[] = [];
 
@@ -255,6 +256,11 @@ function KanbanCardInner({
   const handleEdit = useCallback(() => onEdit(cardId), [cardId, onEdit]);
   const handleDelete = useCallback(() => onDelete(cardId), [cardId, onDelete]);
   const handleOpenDesc = useCallback(() => onOpenDesc?.(cardId), [cardId, onOpenDesc]);
+
+  const swipe = useCardSwipeActions({
+    onSwipeRight: () => handleOpenDesc(),
+    onSwipeLeft: () => handleEdit(),
+  });
   const handleSetDir = useCallback((dir: string) => onSetDirection(cardId, dir), [cardId, onSetDirection]);
 
   const handleCardClick = useCallback(
@@ -438,6 +444,8 @@ function KanbanCardInner({
       <div
         ref={cardRef}
         className="relative flex flex-col min-w-0"
+        onTouchStart={swipe.onTouchStart}
+        onTouchEnd={swipe.onTouchEnd}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onPointerDown={onCardPointerDown}

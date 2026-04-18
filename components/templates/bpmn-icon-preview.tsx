@@ -13,13 +13,9 @@ function isRotatedShape(type: string): boolean {
   return getBpmnVisualSpec(type).shape === "diamond";
 }
 
-function colorWithAlpha(hex: string, alpha: number): string {
-  const normalized = hex.replace("#", "");
-  if (normalized.length !== 6) return hex;
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function colorWithAlpha(base: string, alpha: number): string {
+  const pct = Math.round(alpha * 100);
+  return `color-mix(in srgb, ${base} ${pct}%, transparent)`;
 }
 
 export function BpmnIconPreview() {

@@ -13,7 +13,9 @@
     "lint:flux-colors": "eslint --quiet -c eslint.flux-colors.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "lint:onda4-tokens": "eslint -c eslint.onda4.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "lint:onda4:fluxy-omnibar": "eslint -c eslint.onda4.config.mjs \"components/fluxy/fluxy-omnibar.tsx\" \"components/fluxy/omnibar/**/*.tsx\"",
+    "lint:flux-tokens": "eslint -c eslint.flux-tokens.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "migrate:alpha-tokens": "node scripts/migrate-alpha-tokens.mjs",
+    "migrate:z-index-tokens": "node scripts/migrate-z-index-tokens.mjs",
     "migrate:shadow-tokens": "node scripts/migrate-shadow-tokens.mjs",
     "test": "vitest run",
     "security:audit": "node scripts/security-audit.mjs",
@@ -33,6 +35,7 @@
     "test:coverage:llm-utils": "vitest run lib/llm-utils.test.ts --coverage",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:ux-v2": "vitest run components/command components/shell lib/ux-v2-flags.test.ts",
     "knip": "knip"
   },
   "dependencies": {

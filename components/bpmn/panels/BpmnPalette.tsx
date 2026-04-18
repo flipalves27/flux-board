@@ -26,16 +26,61 @@ const STENCILS: Stencil[] = [
   { type: "message_event", label: "Mensagem", hint: "Recebe / envia mensagem", category: "events", width: 44, height: 44 },
   { type: "end_event", label: "Fim", hint: "Fim do processo", category: "events", width: 44, height: 44 },
 
-  { type: "task", label: "Tarefa — Padrão", hint: "Tarefa manual / padrão", category: "tasks", width: 160, height: 60, semanticVariant: "default", accentColor: "#00897B" },
-  { type: "task", label: "Tarefa — Implementada", hint: "Já implementado / entregue", category: "tasks", width: 160, height: 60, semanticVariant: "delivered", accentColor: "#7CB342" },
-  { type: "task", label: "Tarefa — Automação", hint: "Integração via API / sistêmica", category: "tasks", width: 160, height: 60, semanticVariant: "automation", accentColor: "#00ACC1" },
-  { type: "task", label: "Tarefa — Pain Point", hint: "Retrabalho / ponto de dor", category: "tasks", width: 160, height: 60, semanticVariant: "pain", accentColor: "#EF5350" },
-  { type: "task", label: "Tarefa — Sistema", hint: "Ação de sistema / serviço externo", category: "tasks", width: 160, height: 60, semanticVariant: "system", accentColor: "#42A5F5" },
-  { type: "user_task", label: "User Task", hint: "Tarefa do usuário", category: "tasks", width: 160, height: 60, accentColor: "#00897B" },
-  { type: "service_task", label: "Service Task", hint: "Tarefa de serviço", category: "tasks", width: 160, height: 60, accentColor: "#00ACC1" },
-  { type: "script_task", label: "Script Task", hint: "Tarefa de script", category: "tasks", width: 160, height: 60, accentColor: "#5C6BC0" },
-  { type: "call_activity", label: "Call Activity", hint: "Chamada a subprocesso", category: "tasks", width: 160, height: 60, accentColor: "#7E57C2" },
-  { type: "sub_process", label: "Sub-processo", hint: "Subprocesso expandível", category: "tasks", width: 160, height: 60, accentColor: "#00897B" },
+  {
+    type: "task",
+    label: "Tarefa — Padrão",
+    hint: "Tarefa manual / padrão",
+    category: "tasks",
+    width: 160,
+    height: 60,
+    semanticVariant: "default",
+    accentColor: "var(--flux-bpmn-teal-accent)",
+  },
+  {
+    type: "task",
+    label: "Tarefa — Implementada",
+    hint: "Já implementado / entregue",
+    category: "tasks",
+    width: 160,
+    height: 60,
+    semanticVariant: "delivered",
+    accentColor: "var(--flux-bpmn-green-400)",
+  },
+  {
+    type: "task",
+    label: "Tarefa — Automação",
+    hint: "Integração via API / sistêmica",
+    category: "tasks",
+    width: 160,
+    height: 60,
+    semanticVariant: "automation",
+    accentColor: "var(--flux-bpmn-cyan-accent)",
+  },
+  {
+    type: "task",
+    label: "Tarefa — Pain Point",
+    hint: "Retrabalho / ponto de dor",
+    category: "tasks",
+    width: 160,
+    height: 60,
+    semanticVariant: "pain",
+    accentColor: "var(--flux-bpmn-pain-red)",
+  },
+  {
+    type: "task",
+    label: "Tarefa — Sistema",
+    hint: "Ação de sistema / serviço externo",
+    category: "tasks",
+    width: 160,
+    height: 60,
+    semanticVariant: "system",
+    accentColor: "var(--flux-bpmn-flow-system)",
+  },
+  { type: "user_task", label: "User Task", hint: "Tarefa do usuário", category: "tasks", width: 160, height: 60, accentColor: "var(--flux-bpmn-teal-accent)" },
+  { type: "service_task", label: "Service Task", hint: "Tarefa de serviço", category: "tasks", width: 160, height: 60, accentColor: "var(--flux-bpmn-cyan-accent)" },
+  { type: "script_task", label: "Script Task", hint: "Tarefa de script", category: "tasks", width: 160, height: 60, accentColor: "var(--flux-bpmn-indigo-accent)" },
+  { type: "call_activity", label: "Call Activity", hint: "Chamada a subprocesso", category: "tasks", width: 160, height: 60, accentColor: "var(--flux-bpmn-violet-accent)" },
+  { type: "sub_process", label: "Sub-processo", hint: "Subprocesso expandível", category: "tasks", width: 160, height: 60, accentColor: "var(--flux-bpmn-teal-accent)" },
 
   { type: "exclusive_gateway", label: "XOR — Exclusivo", hint: "Decisão única (Sim/Não)", category: "gateways", width: 56, height: 56 },
   { type: "parallel_gateway", label: "AND — Paralelo", hint: "Execução paralela", category: "gateways", width: 56, height: 56 },
@@ -98,7 +143,7 @@ function BpmnPaletteInner() {
               draggable
               title={stencil.label}
               onDragStart={(e) => onDragStart(e, stencil)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm hover:border-[#00897B]/50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm hover:border-[var(--flux-bpmn-teal-accent)]/50"
               style={{ borderColor: "var(--flux-border-default)", background: "var(--flux-surface-card)" }}
             >
               {stencil.category === "events" ? (
@@ -106,7 +151,7 @@ function BpmnPaletteInner() {
               ) : stencil.category === "gateways" ? (
                 <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
               ) : (
-                <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "#00897B" }} />
+                <span className="h-5 w-1 rounded-full" style={{ background: stencil.accentColor ?? "var(--flux-bpmn-teal-accent)" }} />
               )}
             </button>
           ))}
@@ -174,7 +219,10 @@ function BpmnPaletteInner() {
                         ) : stencil.category === "gateways" ? (
                           <DeliveredStencilGatewayIcon type={stencil.type as BpmnNodeType} />
                         ) : stencil.category === "dados" && stencil.type === "annotation" ? (
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[#FFFDE7]" style={{ borderLeftColor: "#FFB300" }}>
+                          <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0_6px_6px_0] border-l-4 bg-[var(--flux-bpmn-annotation-bg)]"
+                            style={{ borderLeftColor: "var(--flux-bpmn-semantic-gateway)" }}
+                          >
                             <span className="text-[14px]">✎</span>
                           </span>
                         ) : stencil.category === "dados" && stencil.type === "system_box" ? (
@@ -187,7 +235,11 @@ function BpmnPaletteInner() {
                           </span>
                         ) : (
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-elevated)] shadow-sm">
-                            <span className="h-6 w-1.5 rounded-full" style={{ background: stencil.accentColor ?? "#6C5CE7" }} aria-hidden />
+                            <span
+                              className="h-6 w-1.5 rounded-full"
+                              style={{ background: stencil.accentColor ?? "var(--flux-bpmn-prop-border)" }}
+                              aria-hidden
+                            />
                           </span>
                         )}
                       </span>
@@ -223,7 +275,12 @@ function BpmnPaletteInner() {
           onClick={addLane}
         >
           <span className="flex items-center gap-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md" style={{ background: "linear-gradient(180deg, #00695C, #00897B)" }}>
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+              style={{
+                background: "linear-gradient(180deg, var(--flux-bpmn-teal-900), var(--flux-bpmn-teal-accent))",
+              }}
+            >
               <span className="text-[10px] font-extrabold text-white" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>▤</span>
             </span>
             <span className="min-w-0 flex-1">
@@ -248,7 +305,7 @@ function BpmnPaletteInner() {
                   style={{
                     background: lane.gradient
                       ? `linear-gradient(180deg, ${lane.gradient[0]}, ${lane.gradient[1]})`
-                      : "linear-gradient(180deg, #00695C, #00897B)",
+                      : "linear-gradient(180deg, var(--flux-bpmn-teal-900), var(--flux-bpmn-teal-accent))",
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[var(--flux-text)]">

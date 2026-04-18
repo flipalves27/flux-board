@@ -8,7 +8,7 @@ import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-c
 import { useSidebarLayoutOptional } from "@/context/sidebar-layout-context";
 import { useNavigationVariant } from "@/context/navigation-variant-context";
 
-interface HeaderProps {
+export interface HeaderProps {
   title?: string;
   /** Linha secundária (ex.: rótulo do cliente no board). */
   titleLine2?: string;
@@ -17,6 +17,8 @@ interface HeaderProps {
   backHref?: string;
   backLabel?: string;
   children?: React.ReactNode;
+  /** When true, removes outer sticky positioning (e.g. header rendered inside UX v2 Workbar). */
+  embedded?: boolean;
 }
 
 function IconMenu({ className }: { className?: string }) {
@@ -42,6 +44,7 @@ export function Header({
   backHref,
   backLabel = "← Boards",
   children,
+  embedded = false,
 }: HeaderProps) {
   const { user } = useAuth();
   const t = useTranslations("header");
@@ -57,7 +60,7 @@ export function Header({
 
   return (
     <header
-      className={`sticky top-0 z-[var(--flux-z-header-sticky)] flux-glass-surface rounded-none border-x-0 border-t-0 flux-depth-2 ${
+      className={`${embedded ? "relative z-0" : "sticky top-0 z-[var(--flux-z-header-sticky)]"} flux-glass-surface rounded-none border-x-0 border-t-0 flux-depth-2 ${
         isMinimalNav ? "border-b-[var(--flux-glass-surface-border)]" : "border-b-[var(--flux-glass-elevated-border)]"
       }`}
     >

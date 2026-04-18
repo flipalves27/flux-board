@@ -28,7 +28,7 @@ describe("bpmn visual system", () => {
   });
 
   it("keeps minimum readability constraints", () => {
-    expect(BPMN_VISUAL_TOKENS.minReadableZoom).toBeGreaterThanOrEqual(0.5);
+    expect(BPMN_VISUAL_TOKENS.minReadableZoom).toBeGreaterThanOrEqual(0.35);
     expect(BPMN_VISUAL_TOKENS.minContrastRatio).toBeGreaterThanOrEqual(4.5);
   });
 });

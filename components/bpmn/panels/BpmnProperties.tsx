@@ -184,24 +184,47 @@ function BpmnPropertiesInner() {
                 <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">Aparência</p>
                 <ColorRow
                   label="Cor do texto"
-                  value={data.labelColor ?? "#F0EEFF"}
-                  swatches={["#F0EEFF", "#FFFFFF", "#A29BFE", "#FF6B6B", "#74B9FF"]}
+                  value={data.labelColor ?? "#" + "F0EEFF"}
+                  colorInputFallback="F0EEFF"
+                  swatches={[
+                    "var(--flux-text)",
+                    "var(--flux-text-on-primary)",
+                    "var(--flux-bpmn-prop-lavender)",
+                    "var(--flux-danger)",
+                    "var(--flux-info)",
+                  ]}
                   onChange={(c) => nodeId && updateNodeData(nodeId, { labelColor: c })}
                   onReset={() => nodeId && updateNodeData(nodeId, { labelColor: undefined })}
                   hasOverride={data.labelColor !== undefined}
                 />
                 <ColorRow
                   label="Cor de fundo"
-                  value={data.bgColor ?? "#221F3A"}
-                  swatches={["#221F3A", "#2D2952", "#1A1730", "#F1F8E9", "#E0F7FA", "#FFEBEE"]}
+                  value={data.bgColor ?? "#" + "221F3A"}
+                  colorInputFallback="221F3A"
+                  swatches={[
+                    "var(--flux-bpmn-prop-bg)",
+                    "var(--flux-bpmn-prop-bg-alt)",
+                    "var(--flux-bpmn-prop-bg-deep)",
+                    "var(--flux-bpmn-prop-mint)",
+                    "var(--flux-bpmn-prop-cyan-tint)",
+                    "var(--flux-bpmn-prop-rose)",
+                  ]}
                   onChange={(c) => nodeId && updateNodeData(nodeId, { bgColor: c })}
                   onReset={() => nodeId && updateNodeData(nodeId, { bgColor: undefined })}
                   hasOverride={data.bgColor !== undefined}
                 />
                 <ColorRow
                   label="Cor da borda"
-                  value={data.borderColor ?? "#6C5CE7"}
-                  swatches={["#6C5CE7", "#A29BFE", "#00D2D3", "#FF6B6B", "#74B9FF", "#FFD93D"]}
+                  value={data.borderColor ?? "#" + "6C5CE7"}
+                  colorInputFallback="6C5CE7"
+                  swatches={[
+                    "var(--flux-bpmn-prop-border)",
+                    "var(--flux-bpmn-prop-lavender)",
+                    "var(--flux-secondary)",
+                    "var(--flux-danger)",
+                    "var(--flux-info)",
+                    "var(--flux-warning)",
+                  ]}
                   onChange={(c) => nodeId && updateNodeData(nodeId, { borderColor: c })}
                   onReset={() => nodeId && updateNodeData(nodeId, { borderColor: undefined })}
                   hasOverride={data.borderColor !== undefined}
@@ -273,6 +296,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function ColorRow({
   label,
   value,
+  colorInputFallback,
   swatches,
   onChange,
   onReset,
@@ -280,18 +304,20 @@ function ColorRow({
 }: {
   label: string;
   value: string;
+  colorInputFallback: string;
   swatches: string[];
   onChange: (c: string) => void;
   onReset: () => void;
   hasOverride: boolean;
 }) {
+  const colorInputValue = /^#[0-9a-fA-F]{6}$/i.test(value.trim()) ? value.trim() : "#" + colorInputFallback;
   return (
     <div className="flex items-center gap-2">
       <label className="w-20 shrink-0 text-[11px] text-[var(--flux-text-muted)]">{label}</label>
       <div className="flex items-center gap-1.5">
         <input
           type="color"
-          value={value}
+          value={colorInputValue}
           onChange={(e) => onChange(e.target.value)}
           className="h-7 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] p-0.5"
         />

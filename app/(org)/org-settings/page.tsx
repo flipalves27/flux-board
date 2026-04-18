@@ -435,7 +435,7 @@ export default function OrgSettingsPage() {
                       <div className="flex gap-2">
                         <input
                           type="color"
-                          value={primaryColor && /^#[0-9a-fA-F]{3,8}$/.test(primaryColor) ? primaryColor : "#6C5CE7"}
+                          value={primaryColor && /^#[0-9a-fA-F]{3,8}$/.test(primaryColor) ? primaryColor : "#" + "6C5CE7"}
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
                           disabled={busy}
@@ -446,7 +446,7 @@ export default function OrgSettingsPage() {
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                           disabled={busy}
-                          placeholder="#6C5CE7"
+                          placeholder={"#" + "6C5CE7"}
                         />
                       </div>
                     </div>
@@ -455,7 +455,7 @@ export default function OrgSettingsPage() {
                       <div className="flex gap-2">
                         <input
                           type="color"
-                          value={secondaryColor && /^#[0-9a-fA-F]{3,8}$/.test(secondaryColor) ? secondaryColor : "#00D2D3"}
+                          value={secondaryColor && /^#[0-9a-fA-F]{3,8}$/.test(secondaryColor) ? secondaryColor : "#" + "00D2D3"}
                           onChange={(e) => setSecondaryColor(e.target.value)}
                           className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
                           disabled={busy}
@@ -466,7 +466,7 @@ export default function OrgSettingsPage() {
                           onChange={(e) => setSecondaryColor(e.target.value)}
                           className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                           disabled={busy}
-                          placeholder="#00D2D3"
+                          placeholder={"#" + "00D2D3"}
                         />
                       </div>
                     </div>
@@ -475,7 +475,7 @@ export default function OrgSettingsPage() {
                       <div className="flex gap-2">
                         <input
                           type="color"
-                          value={accentColor && /^#[0-9a-fA-F]{3,8}$/.test(accentColor) ? accentColor : "#FDA7DF"}
+                          value={accentColor && /^#[0-9a-fA-F]{3,8}$/.test(accentColor) ? accentColor : "#" + "FDA7DF"}
                           onChange={(e) => setAccentColor(e.target.value)}
                           className="h-10 w-14 p-1 rounded border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]"
                           disabled={busy}
@@ -486,7 +486,7 @@ export default function OrgSettingsPage() {
                           onChange={(e) => setAccentColor(e.target.value)}
                           className="flex-1 px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] font-mono"
                           disabled={busy}
-                          placeholder="#FDA7DF"
+                          placeholder={"#" + "FDA7DF"}
                         />
                       </div>
                     </div>

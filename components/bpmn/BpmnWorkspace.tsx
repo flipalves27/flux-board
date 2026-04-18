@@ -267,7 +267,7 @@ function BpmnWorkspaceInner({ getHeaders, isAdmin }: Props) {
                 variant={BackgroundVariant.Dots}
                 gap={GRID_SIZE}
                 size={1.2}
-                color="var(--bpmn-dots-color, rgba(108,92,231,0.18))"
+                color="var(--bpmn-dots-color, var(--flux-bpmn-grid-dots))"
               />
               <MiniMap
                 style={{
@@ -277,7 +277,7 @@ function BpmnWorkspaceInner({ getHeaders, isAdmin }: Props) {
                   border: "1px solid var(--flux-border-subtle)",
                   background: "var(--flux-surface-card)",
                 }}
-                maskColor="rgba(108,92,231,0.08)"
+                maskColor="var(--flux-minimap-mask)"
                 nodeColor={(n) =>
                   selectedNodeIds.includes(n.id)
                     ? "var(--flux-primary)"

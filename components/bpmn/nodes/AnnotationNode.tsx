@@ -10,13 +10,11 @@ function AnnotationNodeInner({ data, selected }: NodeProps & { data: BpmnNodeDat
       <div
         className="flex h-full flex-col justify-center px-3 py-2"
         style={{
-          background: data.bgColor ?? "#FFFDE7",
-          borderLeft: `4px solid ${data.borderColor ?? "#FFB300"}`,
+          background: data.bgColor ?? "var(--flux-bpmn-annotation-bg)",
+          borderLeft: `4px solid ${data.borderColor ?? "var(--flux-bpmn-semantic-gateway)"}`,
           borderRadius: "0 10px 10px 0",
           maxWidth: 190,
-          boxShadow: selected
-            ? "0 0 0 2px rgba(108,92,231,0.35), 0 3px 12px rgba(26,39,68,0.1)"
-            : "0 3px 12px rgba(26,39,68,0.1)",
+          boxShadow: selected ? "var(--flux-bpmn-data-shadow-selected)" : "var(--flux-bpmn-gateway-shadow)",
           transition: "box-shadow 150ms ease",
         }}
       >

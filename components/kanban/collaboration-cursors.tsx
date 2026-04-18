@@ -5,8 +5,16 @@ import { useBoardCollabStore } from "@/stores/board-collab-store";
 import { useAuth } from "@/context/auth-context";
 
 const CURSOR_COLORS = [
-  "#6c5ce7", "#00b894", "#fdcb6e", "#e17055", "#0984e3",
-  "#e84393", "#00cec9", "#fab1a0", "#a29bfe", "#55efc4",
+  "var(--flux-collab-cursor-0)",
+  "var(--flux-collab-cursor-1)",
+  "var(--flux-collab-cursor-2)",
+  "var(--flux-collab-cursor-3)",
+  "var(--flux-collab-cursor-4)",
+  "var(--flux-collab-cursor-5)",
+  "var(--flux-collab-cursor-6)",
+  "var(--flux-collab-cursor-7)",
+  "var(--flux-collab-cursor-8)",
+  "var(--flux-collab-cursor-9)",
 ];
 
 function hashToColor(id: string): string {

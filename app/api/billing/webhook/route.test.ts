@@ -14,7 +14,7 @@ describe("POST /api/billing/webhook", () => {
   });
 
   it("returns 200 with handled true on success", async () => {
-    vi.mocked(handleStripeWebhook).mockResolvedValue({ handled: true });
+    vi.mocked(handleStripeWebhook).mockResolvedValue({ handled: true, status: 200 });
     const req = new NextRequest("http://localhost/api/billing/webhook", {
       method: "POST",
       body: "{}",
