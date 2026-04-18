@@ -1,0 +1,29 @@
+name: UX v2 guardrails
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "app/globals.css"
+      - "components/shell/**"
+      - "components/command/**"
+      - "eslint.flux-tokens.config.mjs"
+      - "eslint-rules/flux-z-index-tokens.mjs"
+      - "eslint-rules/flux-shadow-tokens.mjs"
+
+jobs:
+  ux-v2-checks:
+    runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: github-actions-ci-jwt-secret-placeholder-min-32
+      ADMIN_INITIAL_PASSWORD: github-actions-ci-admin-bootstrap-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint:flux-tokens
+      # Strict `tsc --noEmit` across the whole repo is tracked in main CI once test typings are aligned.
+      - run: npm run test

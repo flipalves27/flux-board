@@ -8,6 +8,7 @@ import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-c
 import { useTheme } from "@/context/theme-context";
 import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { apiGet, ApiError } from "@/lib/api-client";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
@@ -26,6 +27,7 @@ import { SidebarIntelligence } from "./sidebar-intelligence";
 import { SidebarQuickAccess } from "./sidebar-quick-access";
 import { SidebarWorkspace } from "./sidebar-workspace";
 import { SidebarOrgSwitcher } from "./sidebar-org-switcher";
+import { SidebarZoneCollapsible } from "./sidebar-zone-collapsible";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -48,7 +50,8 @@ export function Sidebar() {
 
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
   const [activeSprintCount, setActiveSprintCount] = useState<number | null>(null);
-  const [specScopePlannerEnabled, setSpecScopePlannerEnabled] = useState(false);
+  const orgFeatures = useOrgFeaturesOptional();
+  const specScopePlannerEnabled = Boolean(orgFeatures?.data?.spec_ai_scope_planner);
   const specPlanActiveCount = useSpecPlanActiveStore((s) => s.active.length);
 
   const localeSegment = pathname.split("/")[1];
@@ -127,31 +130,6 @@ export function Sidebar() {
           return;
         }
         setActiveSprintCount(null);
-      }
-    }
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [isChecked, user?.orgId, getHeaders]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      if (!isChecked || !user?.orgId) {
-        setSpecScopePlannerEnabled(false);
-        return;
-      }
-      try {
-        const data = await apiGet<{ spec_ai_scope_planner?: boolean }>("/api/org/features", getHeaders());
-        if (!cancelled) setSpecScopePlannerEnabled(Boolean(data?.spec_ai_scope_planner));
-      } catch (e) {
-        if (cancelled) return;
-        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-          setSpecScopePlannerEnabled(false);
-          return;
-        }
-        setSpecScopePlannerEnabled(false);
       }
     }
     void run();
@@ -322,15 +300,23 @@ export function Sidebar() {
             closeMobile={closeMobile}
             switchOrganization={switchOrganization}
           />
-          <nav className="flux-sidebar-nav-stack mx-1.5 mb-1 flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2.5">
-            <SidebarQuickAccess />
-            <SidebarAgileRhythm activeSprintCount={activeSprintCount} />
-            <SidebarIntelligence
-              user={user}
-              specScopePlannerEnabled={specScopePlannerEnabled}
-              specPlanActiveCount={specPlanActiveCount}
-            />
-            <SidebarWorkspace user={user} activeInvites={activeInvites} />
+          <nav className="flux-sidebar-nav-stack mx-1.5 mb-1 flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-2.5">
+            <SidebarZoneCollapsible title={t("zones.quick")} defaultOpen>
+              <SidebarQuickAccess />
+            </SidebarZoneCollapsible>
+            <SidebarZoneCollapsible title={t("zones.rhythm")} defaultOpen>
+              <SidebarAgileRhythm activeSprintCount={activeSprintCount} />
+            </SidebarZoneCollapsible>
+            <SidebarZoneCollapsible title={t("zones.intelligence")} defaultOpen>
+              <SidebarIntelligence
+                user={user}
+                specScopePlannerEnabled={specScopePlannerEnabled}
+                specPlanActiveCount={specPlanActiveCount}
+              />
+            </SidebarZoneCollapsible>
+            <SidebarZoneCollapsible title={t("zones.workspace")} defaultOpen>
+              <SidebarWorkspace user={user} activeInvites={activeInvites} />
+            </SidebarZoneCollapsible>
           </nav>
 
           <SidebarFooter

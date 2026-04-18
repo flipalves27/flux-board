@@ -58,6 +58,12 @@ const config: Config = {
         "flux-3xl": ["var(--flux-text-3xl)", { lineHeight: "1.2" }],
       },
       boxShadow: {
+        "flux-0": "var(--flux-shadow-0)",
+        "flux-1": "var(--flux-shadow-1)",
+        "flux-2": "var(--flux-shadow-2)",
+        "flux-3": "var(--flux-shadow-3)",
+        "flux-4": "var(--flux-shadow-4)",
+        "flux-glow": "var(--flux-shadow-glow)",
         "flux-sm": "var(--flux-shadow-sm)",
         "flux-md": "var(--flux-shadow-md)",
         "flux-lg": "var(--flux-shadow-lg)",
@@ -65,12 +71,14 @@ const config: Config = {
         "flux-drag": "var(--flux-shadow-drag)",
       },
       transitionDuration: {
-        "flux-fast": "150ms",
-        "flux-normal": "250ms",
-        "flux-slow": "400ms",
+        "flux-instant": "var(--flux-motion-duration-instant)",
+        "flux-fast": "var(--flux-motion-duration-fast)",
+        "flux-normal": "var(--flux-motion-duration-base)",
+        "flux-slow": "var(--flux-motion-duration-slow)",
       },
       transitionTimingFunction: {
-        "flux-standard": "var(--flux-ease-standard)",
+        "flux-standard": "var(--flux-motion-ease-standard)",
+        "flux-out": "var(--flux-motion-ease-out)",
       },
       screens: {
         "flux-xs": "400px",

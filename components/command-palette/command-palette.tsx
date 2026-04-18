@@ -125,7 +125,15 @@ function historyEntryToItem(h: HistoryPaletteEntry): PaletteItem {
   };
 }
 
-export function CommandPalette() {
+type CommandPaletteProps = {
+  /** UX v2 unified layer: Cmd+K opens palette even when Fluxy omnibar is enabled (omnibar is merged into this shell). */
+  unifiedCommand?: boolean;
+  /** `sheet` = bottom sheet on small viewports; `dialog` = centered (legacy). */
+  commandLayout?: "dialog" | "sheet";
+};
+
+export function CommandPalette(props?: CommandPaletteProps) {
+  const { unifiedCommand = false, commandLayout = "dialog" } = props ?? {};
   const router = useRouter();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
@@ -175,7 +183,7 @@ export function CommandPalette() {
         const target = e.target as HTMLElement | null;
         if (target?.closest?.("[data-skip-command-palette]")) return;
         e.preventDefault();
-        if (onda4.enabled && onda4.omnibar) {
+        if (onda4.enabled && onda4.omnibar && !unifiedCommand) {
           e.preventDefault();
           return;
         }
@@ -184,7 +192,7 @@ export function CommandPalette() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onda4.enabled, onda4.omnibar]);
+  }, [onda4.enabled, onda4.omnibar, unifiedCommand]);
 
   useEffect(() => {
     const onFluxy = () => setOpen(true);
@@ -642,6 +650,11 @@ export function CommandPalette() {
 
   if (!isChecked || !user) return null;
 
+  const sheetContentClass =
+    "fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-3 flux-motion-standard max-md:left-0 max-md:right-0 max-md:top-auto max-md:bottom-0 max-md:h-[min(72vh,560px)] max-md:max-h-[min(85dvh,620px)] max-md:w-full max-md:translate-x-0 max-md:rounded-b-none max-md:rounded-t-[var(--flux-rad-lg)] max-md:border-b-0 max-md:shadow-[var(--flux-shadow-modal-depth)]";
+  const dialogContentClass =
+    "fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-3 flux-motion-standard";
+
   return (
     <Command.Dialog
       open={open}
@@ -649,8 +662,9 @@ export function CommandPalette() {
       shouldFilter={false}
       label={t("ariaLabel")}
       overlayClassName="fixed inset-0 z-[var(--flux-z-command-backdrop)] bg-black/50 backdrop-blur-[var(--flux-glass-backdrop-blur)]"
-      contentClassName="fixed left-1/2 top-[min(18vh,160px)] z-[var(--flux-z-command-content)] w-[min(560px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-3 flux-motion-standard"
+      contentClassName={commandLayout === "sheet" ? sheetContentClass : dialogContentClass}
     >
+      <div data-testid="flux-command-dialog" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="border-b border-[var(--flux-chrome-alpha-08)] px-3 py-2">
         <div className="flex items-center gap-2">
           <svg
@@ -725,6 +739,7 @@ export function CommandPalette() {
 
       <div className="border-t border-[var(--flux-chrome-alpha-08)] px-3 py-2 text-[10px] text-[var(--flux-text-muted)]">
         {t("footer")}
+      </div>
       </div>
     </Command.Dialog>
   );

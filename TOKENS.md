@@ -75,6 +75,14 @@ Wired in [`app/layout.tsx`](app/layout.tsx) (`next/font/google`) and [`tailwind.
 
 Tailwind: `shadow-flux-md`, `shadow-flux-drag`, …
 
+Tiered aliases (UX v2): `--flux-shadow-0` … `--flux-shadow-4`, `--flux-shadow-glow` (see `:root` in `app/globals.css`). Tailwind: `shadow-flux-1` … `shadow-flux-4`, `shadow-flux-glow`.
+
+---
+
+## Z-index (`--flux-z-*`)
+
+Seven documented layers in `app/globals.css` (base → peak). Prefer **only** tokens such as `--flux-z-kanban-modal-stack`, `--flux-z-command-content`, `--flux-z-workbar`, etc., via `z-[var(--flux-z-…)]`. Migration helper: `npm run migrate:z-index-tokens`.
+
 ---
 
 ## Motion
@@ -87,6 +95,17 @@ Tailwind: `shadow-flux-md`, `shadow-flux-drag`, …
 | `--flux-transition-slow`     | `400ms` + standard ease |
 | `--flux-skeleton-pulse-duration` | Skeleton pulse cycle (`1.35s` + standard ease) |
 | `--flux-data-fade-duration` | Real-content fade-in after load (`200ms` + standard ease) |
+
+### Motion tiers (UX v2)
+
+| Tier | CSS duration token | Utility class |
+|------|--------------------|---------------|
+| instant | `--flux-motion-duration-instant` | `.flux-motion-instant` |
+| fast | `--flux-motion-duration-fast` | `.flux-motion-fast` |
+| base | `--flux-motion-duration-base` | `.flux-motion-base` |
+| slow | `--flux-motion-duration-slow` | `.flux-motion-slow` |
+
+Easing: `--flux-motion-ease-standard`, `--flux-motion-ease-out`. Tailwind: `duration-flux-fast`, `duration-flux-normal`, `ease-flux-standard`, `ease-flux-out`. Reduced motion: `prefers-reduced-motion` collapses durations in `:root` and disables motion utilities where noted.
 
 Tailwind: `duration-flux-fast`, `ease-flux-standard`, etc. Skeleton pulse uses global classes `flux-animate-skeleton-pulse` and `flux-animate-data-fade-in` (see `app/globals.css`).
 
@@ -162,6 +181,7 @@ Marketing, authenticated shell, login, onboarding, embed, and the board share th
 ## Linting
 
 - **ESLint** (`npm run lint:flux-colors`, rule `flux/no-literal-colors`): blocks `#[hex]` and `rgb()/rgba()` inside string literals in `app/`, `components/`, `context/` (excludes `emails/` and `*.test.*`). Config: [`eslint.flux-colors.config.mjs`](eslint.flux-colors.config.mjs); rule implementation: [`eslint-rules/flux-no-literal-colors.mjs`](eslint-rules/flux-no-literal-colors.mjs).
+- **UX v2 tokens** (`npm run lint:flux-tokens`): warns on raw `z-[…]` (non `--flux-z-*`) and very long arbitrary `shadow-[0_…]` strings. Config: [`eslint.flux-tokens.config.mjs`](eslint.flux-tokens.config.mjs).
 - **Stylelint** (`npm run lint:css`): `function-disallowed-list` for `rgb`/`rgba`/`hsl` on all CSS **except** `app/globals.css`, where tokens are defined.
 
 ---

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
+import { OrgFeaturesContext } from "@/context/org-features-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import type { Onda4UiFlags } from "@/lib/onda4-flags";
 
@@ -13,10 +14,20 @@ const defaultFlags: Onda4UiFlags = {
 };
 
 export function useOnda4Flags(): Onda4UiFlags {
+  const orgFeaturesCtx = useContext(OrgFeaturesContext);
   const { user, isChecked, getHeaders } = useAuth();
   const [flags, setFlags] = useState<Onda4UiFlags>(defaultFlags);
 
   useEffect(() => {
+    const fromProvider = orgFeaturesCtx?.data?.ui?.onda4;
+    if (fromProvider) {
+      setFlags(fromProvider);
+      return;
+    }
+    if (orgFeaturesCtx) {
+      return;
+    }
+
     let cancelled = false;
     async function run() {
       if (!isChecked || !user?.orgId) {
@@ -47,7 +58,7 @@ export function useOnda4Flags(): Onda4UiFlags {
     return () => {
       cancelled = true;
     };
-  }, [isChecked, user?.orgId, getHeaders]);
+  }, [orgFeaturesCtx, orgFeaturesCtx?.data, isChecked, user?.orgId, getHeaders]);
 
-  return flags;
+  return orgFeaturesCtx?.data?.ui?.onda4 ?? flags;
 }

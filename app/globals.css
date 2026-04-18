@@ -114,6 +114,13 @@
     0 32px 96px -24px color-mix(in srgb, black 65%, transparent),
     0 0 120px -40px color-mix(in srgb, var(--flux-primary) 35%, transparent);
   --flux-shadow-logo-underlay: 0 2px 8px color-mix(in srgb, var(--flux-primary) 25%, transparent);
+  /* Tiered elevation (UX v2) — aliases over legacy names */
+  --flux-shadow-0: var(--flux-shadow-inset-hairline);
+  --flux-shadow-1: var(--flux-shadow-sm);
+  --flux-shadow-2: var(--flux-shadow-md);
+  --flux-shadow-3: var(--flux-shadow-lg);
+  --flux-shadow-4: var(--flux-shadow-xl);
+  --flux-shadow-glow: var(--flux-shadow-primary-soft);
 
   /* Gradients & panels */
   --flux-gradient-panel-sheen: linear-gradient(
@@ -227,8 +234,9 @@
   --flux-backdrop-scrim-strong: color-mix(in srgb, black 50%, transparent);
 
   /*
-   * Stacking scale — use Tailwind z-[var(--flux-z-…)] so overlays stay predictable.
-   * See docs/ux-execution-baseline.md for QA checklist.
+   * Stacking — seven layers (doc UX v2): 1 base · 2 app content · 3 raised · 4 sticky ·
+   * 5 overlay/drawers · 6 modals/panels · 7 command + peak (toasts, tooltips).
+   * Use Tailwind `z-[var(--flux-z-…)]`. Values preserve legacy ordering (QA: modal, command, dock).
    */
   --flux-z-app-shell-bg: 0;
   --flux-z-app-shell-content: 1;
@@ -237,6 +245,8 @@
   --flux-z-sidebar-drawer: 50;
   --flux-z-board-summary-dock: 80;
   --flux-z-board-canvas: 120;
+  /** UX v2 sticky workbar — between sticky chrome and mobile overlays */
+  --flux-z-workbar: 145;
   /** Fluxy dock (canto inferior esquerdo) — acima do canvas, abaixo do tour e do painel do copiloto */
   --flux-z-board-fluxy-dock: 438;
   /** Widget Fluxy FAQ na landing (fixo no viewport) */
@@ -261,6 +271,8 @@
   --flux-z-anomaly-modal: 260;
   --flux-z-modal-base: 300;
   --flux-z-modal-members: 320;
+  --flux-z-modal-backdrop: 298;
+  --flux-z-modal: 305;
   --flux-z-dep-graph: 350;
   --flux-z-modal-feature: 400;
   --flux-z-dropdown: 400;
@@ -2010,6 +2022,12 @@
   .card-modal-content {
     animation: cardModalPanelIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
+  .card-modal-backdrop-v2 {
+    animation: cardModalBackdropInV2 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .card-modal-content-v2 {
+    animation: cardModalPanelInV2 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
@@ -2066,6 +2084,28 @@
     opacity: 1;
     transform: scale(1) translateY(0);
     filter: blur(0);
+  }
+}
+
+@keyframes cardModalBackdropInV2 {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardModalPanelInV2 {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -3262,6 +3302,25 @@
   }
 }
 
+@layer components {
+  .flux-motion-instant {
+    transition-duration: var(--flux-motion-duration-instant);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-fast {
+    transition-duration: var(--flux-motion-duration-fast);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-base {
+    transition-duration: var(--flux-motion-duration-base);
+    transition-timing-function: var(--flux-motion-ease-standard);
+  }
+  .flux-motion-slow {
+    transition-duration: var(--flux-motion-duration-slow);
+    transition-timing-function: var(--flux-motion-ease-out);
+  }
+}
+
 @layer utilities {
   .fluxy-ui-bounce-in {
     animation: fluxy-bounce-in 0.35s ease;
@@ -3282,6 +3341,13 @@
     --flux-motion-duration-slow: 0.01ms;
     --flux-motion-list-enter-duration: 0.01ms;
     --flux-skeleton-pulse-duration: 0.01ms;
+  }
+
+  .flux-motion-instant,
+  .flux-motion-fast,
+  .flux-motion-base,
+  .flux-motion-slow {
+    transition-duration: 0.01ms !important;
   }
 
   .fluxy-ui-bounce-in,

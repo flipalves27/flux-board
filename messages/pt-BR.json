@@ -79,6 +79,12 @@
       "closeNavigation": "Fechar navegação",
       "navigationPanel": "Menu principal"
     },
+    "zones": {
+      "quick": "Acesso rápido",
+      "rhythm": "Cadência",
+      "intelligence": "Inteligência",
+      "workspace": "Workspace"
+    },
     "variant": {
       "aurora": "Aurora",
       "minimal": "Clean",
@@ -413,6 +419,7 @@
   },
   "commandPalette": {
     "ariaLabel": "Paleta de comandos",
+    "openFromMobileHeader": "Abrir busca de comandos",
     "placeholder": "Buscar boards, cards, ações…",
     "empty": "Nenhum resultado.",
     "footer": "↑↓ navegar · Enter abrir · 1–9 atalho · Esc fechar",

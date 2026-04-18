@@ -3,6 +3,7 @@ import type { Db } from "mongodb";
 import { DEFAULT_ORG_ID } from "./org-constants";
 import { maxBoardsPerUser } from "./commercial-plan";
 import type { OrgBranding } from "./org-branding";
+import type { UxV2Features } from "@/types/ux-v2-features";
 import { addDaysIso, getFreeMaxBoards, getFreeMaxUsers, getPaidMaxBoards, getProMaxUsers, TRIAL_DAYS } from "./billing-limits";
 
 export type BillingNotice =
@@ -20,6 +21,8 @@ export type OrgUiOnda4Settings = {
 
 export type OrgUiSettings = {
   onda4?: OrgUiOnda4Settings;
+  /** UX v2 rollout — partial overrides; see `resolveUxV2Flags`. */
+  uxV2?: Partial<UxV2Features>;
 };
 
 export type OrgAiSettings = {

@@ -15,6 +15,7 @@ import {
 } from "react";
 import { useTranslations as useCollabTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import { useBoardCollabStore } from "@/stores/board-collab-store";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -251,6 +252,8 @@ export function CardModalLayout() {
   const subtasksTargetCardId = mode === "new" ? generatedCardId : card.id;
   const tCollab = useCollabTranslations("board.collab");
   const { user } = useAuth();
+  const orgFeatures = useOrgFeaturesOptional();
+  const cardModalV2 = Boolean(orgFeatures?.data?.ux_v2_card_modal_v2);
   const connectionId = useBoardCollabStore((s) => s.connectionId);
   const clientId = useBoardCollabStore((s) => s.clientId);
   const cardLocks = useBoardCollabStore((s) => s.cardLocks);
@@ -445,7 +448,9 @@ export function CardModalLayout() {
   ];
 
   return (
-    <div className="card-modal-backdrop fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center">
+    <div
+      className={`${cardModalV2 ? "card-modal-backdrop-v2" : "card-modal-backdrop"} fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center`}
+    >
       <div
         className="absolute inset-0 bg-[var(--flux-backdrop-scrim)] backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
         aria-hidden
@@ -453,7 +458,7 @@ export function CardModalLayout() {
       />
       <div ref={dragWrapRef} className="relative z-[1] max-h-full max-w-full">
         <div
-          className="card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] card-modal-content"
+          className={`card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] ${cardModalV2 ? "card-modal-content-v2" : "card-modal-content"}`}
           onClick={(e) => e.stopPropagation()}
           ref={dialogRef}
           role="dialog"
