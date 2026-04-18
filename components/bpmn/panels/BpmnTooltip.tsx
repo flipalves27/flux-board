@@ -39,8 +39,8 @@ function BpmnTooltipInner({ text, x, y, visible }: Props) {
       <div
         className="rounded-[9px] px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-white"
         style={{
-          background: "#1A2744",
-          boxShadow: "0 8px 24px rgba(0,0,0,.3)",
+          background: "var(--flux-bpmn-surface-tooltip)",
+          boxShadow: "var(--flux-bpmn-tooltip-shadow)",
           maxWidth: 280,
         }}
       >

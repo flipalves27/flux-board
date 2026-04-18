@@ -125,7 +125,7 @@ function OrthogonalEdgeInner(props: EdgeProps) {
         id={id}
         path={path}
         style={{
-          stroke: selected ? "#38bdf8" : style.stroke,
+          stroke: selected ? "var(--flux-chart-edge-selected)" : style.stroke,
           strokeWidth: selected ? style.width + 0.5 : style.width,
           strokeDasharray: style.dash,
           fill: "none",
@@ -145,9 +145,9 @@ function OrthogonalEdgeInner(props: EdgeProps) {
             <span
               className="rounded px-1.5 py-0.5 text-center text-[10px] font-bold leading-tight"
               style={{
-                background: "rgba(255,255,255,0.92)",
-                color: selected ? "#38bdf8" : style.stroke,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                background: "var(--flux-bpmn-edge-label-bg)",
+                color: selected ? "var(--flux-chart-edge-selected)" : style.stroke,
+                boxShadow: "0 1px 3px var(--flux-bpmn-edge-label-shadow)",
               }}
             >
               {labelText}

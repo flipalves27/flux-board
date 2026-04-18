@@ -48,15 +48,15 @@ export type BoardKnowledgeGraphPanelProps = {
 
 const COLUMN_PALETTE = [
   "var(--flux-primary)",
-  "var(--flux-secondary, #8b5cf6)",
-  "#0ea5e9",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#ec4899",
-  "#6366f1",
-  "#14b8a6",
-  "#f97316",
+  "var(--flux-secondary)",
+  "var(--flux-kg-node-2)",
+  "var(--flux-kg-node-3)",
+  "var(--flux-kg-node-4)",
+  "var(--flux-kg-node-5)",
+  "var(--flux-kg-node-6)",
+  "var(--flux-kg-node-7)",
+  "var(--flux-kg-node-8)",
+  "var(--flux-kg-node-9)",
 ];
 
 function truncate(s: string, max: number) {
@@ -90,11 +90,11 @@ const nodeTypes: NodeTypes = { card: CardNode };
 function edgeColor(type: KGEdge["type"]) {
   switch (type) {
     case "duplicate_risk":
-      return "var(--flux-danger, #ef4444)";
+      return "var(--flux-danger)";
     case "dependency":
-      return "var(--flux-warning, #f59e0b)";
+      return "var(--flux-warning)";
     default:
-      return "var(--flux-text-muted, #94a3b8)";
+      return "var(--flux-text-muted)";
   }
 }
 
@@ -221,7 +221,7 @@ function buildGraph(
       opacity: 0.6 + e.similarity * 0.4,
     },
     label: e.type === "duplicate_risk" ? "⚠ dup" : undefined,
-    labelStyle: { fontSize: 9, fill: "var(--flux-danger, #ef4444)" },
+    labelStyle: { fontSize: 9, fill: "var(--flux-danger)" },
   }));
 
   return { rfNodes, rfEdges };
@@ -372,7 +372,7 @@ export function BoardKnowledgeGraphPanel({
 
           {error && !loading && (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <p className="text-sm text-[var(--flux-danger,#ef4444)]">
+              <p className="text-sm text-[var(--flux-danger)]">
                 {t("board.knowledgeGraph.error")}
               </p>
               <button
@@ -426,7 +426,7 @@ export function BoardKnowledgeGraphPanel({
                   minZoom={0.2}
                   maxZoom={3}
                   proOptions={{ hideAttribution: true }}
-                  className="bg-[var(--flux-surface-base,#0f1117)]"
+                  className="bg-[var(--flux-surface-dark)]"
                 >
                   <Background gap={24} size={1} color="var(--flux-chrome-alpha-08)" />
                   <Controls
@@ -434,8 +434,8 @@ export function BoardKnowledgeGraphPanel({
                     className="!bg-[var(--flux-surface-card)] !border-[var(--flux-border-default)] !shadow-lg [&_button]:!border-[var(--flux-border-muted)] [&_button]:!bg-[var(--flux-surface-elevated)] [&_button]:text-[var(--flux-text)] [&_button:hover]:!bg-[var(--flux-surface-hover)]"
                   />
                   <MiniMap
-                    nodeColor={(n) => (n.data as { color: string }).color ?? "#64748b"}
-                    maskColor="rgba(0,0,0,0.55)"
+                    nodeColor={(n) => (n.data as { color: string }).color ?? "var(--flux-bpmn-flow-default)"}
+                    maskColor="var(--flux-minimap-mask-dark)"
                     className="!bg-[var(--flux-surface-elevated)] !border-[var(--flux-border-default)]"
                   />
                 </ReactFlow>

@@ -23,9 +23,9 @@ export function KanbanMock({ liveViewLabel, cols }: KanbanMockProps) {
       <div className="mb-0 flex items-center justify-between gap-2 border-b border-[var(--flux-primary-alpha-10)] px-0 pb-3 pt-0.5">
         <span className="min-w-0 truncate font-display text-[11px] font-semibold text-[var(--flux-text)] sm:text-xs">{liveViewLabel}</span>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-          <span className="h-2 w-2 rounded-full bg-[#ffbd2e]" />
-          <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+          <span className="h-2 w-2 rounded-full bg-[var(--flux-mock-window-red)]" />
+          <span className="h-2 w-2 rounded-full bg-[var(--flux-mock-window-yellow)]" />
+          <span className="h-2 w-2 rounded-full bg-[var(--flux-mock-window-green)]" />
         </div>
       </div>
       <div className="grid min-w-0 grid-cols-3 gap-1.5 pt-4 max-[400px]:gap-1.5 sm:gap-2.5 md:gap-3">

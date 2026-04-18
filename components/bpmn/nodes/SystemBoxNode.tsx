@@ -11,11 +11,9 @@ function SystemBoxNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData
         className="flex h-full flex-col items-center justify-center gap-1 px-3 py-2"
         style={{
           background: data.bgColor ?? "var(--flux-surface-elevated)",
-          border: `2px dashed ${data.borderColor ?? "#5C6BC0"}`,
+          border: `2px dashed ${data.borderColor ?? "var(--flux-bpmn-system-box-border)"}`,
           borderRadius: 10,
-          boxShadow: selected
-            ? "0 0 0 2px rgba(108,92,231,0.35), 0 3px 12px rgba(26,39,68,0.1)"
-            : "0 3px 12px rgba(26,39,68,0.1)",
+          boxShadow: selected ? "var(--flux-bpmn-data-shadow-selected)" : "var(--flux-bpmn-gateway-shadow)",
           transition: "box-shadow 150ms ease",
         }}
       >

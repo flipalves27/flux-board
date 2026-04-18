@@ -48,7 +48,7 @@ export function FluxBrandMark({ platformName, logoUrl, variant = "app", classNam
         // eslint-disable-next-line @next/next/no-img-element
         <img src={trimmed} alt="" className="max-h-[85%] max-w-[85%] object-contain" />
       ) : (
-        <span className="text-[#0f0d1e]">{initials}</span>
+        <span className="text-[var(--flux-surface-dark)]">{initials}</span>
       )}
     </div>
   );

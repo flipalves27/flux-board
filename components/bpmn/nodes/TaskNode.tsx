@@ -17,15 +17,13 @@ function TaskNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData }) {
         style={{
           borderLeft: `5px ${vs.borderStyle} ${data.borderColor ?? vs.accent}`,
           backgroundColor: data.bgColor ?? vs.bg,
-          borderTop: "1px solid rgba(108,92,231,0.12)",
-          borderRight: "1px solid rgba(108,92,231,0.12)",
-          borderBottom: "1px solid rgba(108,92,231,0.12)",
+          borderTop: "1px solid var(--flux-bpmn-task-hairline)",
+          borderRight: "1px solid var(--flux-bpmn-task-hairline)",
+          borderBottom: "1px solid var(--flux-bpmn-task-hairline)",
           borderRadius: "0 10px 10px 0",
           borderTopLeftRadius: 10,
           borderBottomLeftRadius: 10,
-          boxShadow: selected
-            ? "0 4px 16px rgba(108,92,231,0.30)"
-            : "0 3px 12px rgba(26,39,68,0.10)",
+          boxShadow: selected ? "0 4px 16px var(--flux-bpmn-task-shadow-selected)" : "0 3px 12px var(--flux-bpmn-task-shadow-soft)",
         }}
       />
 
@@ -49,8 +47,8 @@ function TaskNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData }) {
             width: 26,
             height: 26,
             fontSize: 12,
-            background: "#EF5350",
-            boxShadow: "0 2px 8px rgba(239,83,80,.45)",
+            background: "var(--flux-bpmn-pain-red)",
+            boxShadow: "0 2px 8px var(--flux-bpmn-pain-glow)",
           }}
         >
           {data.painBadge}

@@ -141,18 +141,38 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
 
           <CollapsibleGroup id={`${baseId}-tasks`} title="Tarefas">
             <ul className="space-y-1.5">
-              <LegendTaskRow swatchClass="bg-[#F1F8E9] border-2 border-[#7CB342]" label={labels.tasks[0] ?? ""} onChange={(v) => updateRow("tasks", 0, v)} />
-              <LegendTaskRow swatchClass="bg-[#E0F7FA] border-2 border-[#00ACC1]" label={labels.tasks[1] ?? ""} onChange={(v) => updateRow("tasks", 1, v)} />
-              <LegendTaskRow swatchClass="bg-white border-2 border-[#00897B]" label={labels.tasks[2] ?? ""} onChange={(v) => updateRow("tasks", 2, v)} />
-              <LegendTaskRow swatchClass="bg-[#FFEBEE] border-2 border-[#EF5350]" label={labels.tasks[3] ?? ""} onChange={(v) => updateRow("tasks", 3, v)} />
-              <LegendTaskRow swatchClass="bg-[#E8EAF6] border-2 border-dashed border-[#5C6BC0]" label={labels.tasks[4] ?? ""} onChange={(v) => updateRow("tasks", 4, v)} />
+              <LegendTaskRow
+                swatchClass="bg-[var(--flux-bpmn-prop-mint)] border-2 border-[var(--flux-bpmn-green-400)]"
+                label={labels.tasks[0] ?? ""}
+                onChange={(v) => updateRow("tasks", 0, v)}
+              />
+              <LegendTaskRow
+                swatchClass="bg-[var(--flux-bpmn-prop-cyan-tint)] border-2 border-[var(--flux-bpmn-cyan-accent)]"
+                label={labels.tasks[1] ?? ""}
+                onChange={(v) => updateRow("tasks", 1, v)}
+              />
+              <LegendTaskRow
+                swatchClass="bg-white border-2 border-[var(--flux-bpmn-teal-accent)]"
+                label={labels.tasks[2] ?? ""}
+                onChange={(v) => updateRow("tasks", 2, v)}
+              />
+              <LegendTaskRow
+                swatchClass="bg-[var(--flux-bpmn-prop-rose)] border-2 border-[var(--flux-bpmn-pain-red)]"
+                label={labels.tasks[3] ?? ""}
+                onChange={(v) => updateRow("tasks", 3, v)}
+              />
+              <LegendTaskRow
+                swatchClass="bg-[var(--flux-bpmn-system-task-bg)] border-2 border-dashed border-[var(--flux-bpmn-indigo-accent)]"
+                label={labels.tasks[4] ?? ""}
+                onChange={(v) => updateRow("tasks", 4, v)}
+              />
             </ul>
           </CollapsibleGroup>
 
           <CollapsibleGroup id={`${baseId}-gw`} title="Gateways">
             <ul className="space-y-1.5">
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rotate-45 rounded-[2px] border-2 border-[#FFB300] bg-[#FFE082]" aria-hidden />
+                <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rotate-45 rounded-[2px] border-2 border-[var(--flux-bpmn-semantic-gateway)] bg-[var(--flux-bpmn-gateway-bg)]" aria-hidden />
                 <input
                   type="text"
                   value={labels.gateways[0] ?? ""}
@@ -162,7 +182,7 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden>
-                  <span className="inline-block h-3 w-3 rotate-45 rounded-[1px] border border-[#00897B] bg-[#B2DFDB]/90" />
+                  <span className="inline-block h-3 w-3 rotate-45 rounded-[1px] border border-[var(--flux-bpmn-teal-accent)] bg-[var(--flux-bpmn-teal-sheet)]/90" />
                 </span>
                 <input
                   type="text"
@@ -176,9 +196,9 @@ export function BpmnLegend({ className = "", expanded, onToggleExpanded }: Props
 
           <CollapsibleGroup id={`${baseId}-flows`} title="Fluxos">
             <ul className="space-y-1.5">
-              <LegendLine color="#7CB342" dashed={false} label={labels.flows[0] ?? ""} onChange={(v) => updateRow("flows", 0, v)} />
-              <LegendLine color="#00897B" dashed label={labels.flows[1] ?? ""} onChange={(v) => updateRow("flows", 1, v)} />
-              <LegendLine color="#EF5350" dashed label={labels.flows[2] ?? ""} onChange={(v) => updateRow("flows", 2, v)} />
+              <LegendLine color="var(--flux-bpmn-green-400)" dashed={false} label={labels.flows[0] ?? ""} onChange={(v) => updateRow("flows", 0, v)} />
+              <LegendLine color="var(--flux-bpmn-teal-accent)" dashed label={labels.flows[1] ?? ""} onChange={(v) => updateRow("flows", 1, v)} />
+              <LegendLine color="var(--flux-bpmn-pain-red)" dashed label={labels.flows[2] ?? ""} onChange={(v) => updateRow("flows", 2, v)} />
             </ul>
           </CollapsibleGroup>
 
@@ -275,18 +295,24 @@ function LegendEventRow({
 }) {
   const swatchNode =
     swatch === "start" ? (
-      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#43A047] bg-[#E8F5E9]" aria-hidden>
-        <span className="text-[8px] font-bold text-[#2E7D32]">▶</span>
+      <span
+        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[var(--flux-bpmn-event-start-border)] bg-[var(--flux-bpmn-legend-start-bg)]"
+        aria-hidden
+      >
+        <span className="text-[8px] font-bold text-[var(--flux-bpmn-event-start-fg)]">▶</span>
       </span>
     ) : swatch === "end" ? (
       <span
-        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[3px] border-[#C62828]"
+        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[3px] border-[var(--flux-bpmn-legend-end-border)]"
         style={{ background: "var(--flux-surface-card)" }}
         aria-hidden
       />
     ) : (
-      <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#FB8C00] bg-amber-50" aria-hidden>
-        <span className="h-2 w-2 rounded-full bg-[#FB8C00]" />
+      <span
+        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[var(--flux-bpmn-amber-accent)] bg-[var(--flux-bpmn-amber-50)]"
+        aria-hidden
+      >
+        <span className="h-2 w-2 rounded-full bg-[var(--flux-bpmn-amber-accent)]" />
       </span>
     );
 

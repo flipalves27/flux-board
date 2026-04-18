@@ -126,7 +126,7 @@ export function CycleTimeScatterPanel({ points }: { points: CycleTimeScatterPoin
       const cssCard = getComputedStyle(document.documentElement).getPropertyValue("--flux-surface-card").trim();
       const canvas = await html2canvas(el, {
         scale: 2,
-        backgroundColor: cssCard && cssCard !== "" ? cssCard : "#141418",
+        backgroundColor: cssCard && cssCard !== "" ? cssCard : "var(--flux-export-chart-canvas)",
         logging: false,
       });
       const url = canvas.toDataURL("image/png");

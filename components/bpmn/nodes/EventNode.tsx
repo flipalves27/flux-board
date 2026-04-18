@@ -5,11 +5,37 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { BpmnNodeData } from "@/stores/bpmn-store";
 
 const EV_PALETTE: Record<string, { bg: string; border: string; fg: string; glyph: string; thick?: boolean }> = {
-  start_event: { bg: "#C8E6C9", border: "#43A047", fg: "#2E7D32", glyph: "▶" },
-  end_event: { bg: "#C8E6C9", border: "#2E7D32", fg: "#2E7D32", glyph: "⬛", thick: true },
-  message_event: { bg: "#BBDEFB", border: "#1E88E5", fg: "#1565C0", glyph: "✉" },
-  timer_event: { bg: "#E1F5FE", border: "#039BE5", fg: "#0277BD", glyph: "⏱" },
-  intermediate_event: { bg: "#FFF9C4", border: "#F9A825", fg: "#F57F17", glyph: "◎" },
+  start_event: {
+    bg: "var(--flux-bpmn-event-start-bg)",
+    border: "var(--flux-bpmn-event-start-border)",
+    fg: "var(--flux-bpmn-event-start-fg)",
+    glyph: "▶",
+  },
+  end_event: {
+    bg: "var(--flux-bpmn-event-end-bg)",
+    border: "var(--flux-bpmn-event-end-border)",
+    fg: "var(--flux-bpmn-event-end-fg)",
+    glyph: "⬛",
+    thick: true,
+  },
+  message_event: {
+    bg: "var(--flux-bpmn-event-message-bg)",
+    border: "var(--flux-bpmn-event-message-border)",
+    fg: "var(--flux-bpmn-event-message-fg)",
+    glyph: "✉",
+  },
+  timer_event: {
+    bg: "var(--flux-bpmn-event-timer-bg)",
+    border: "var(--flux-bpmn-event-timer-border)",
+    fg: "var(--flux-bpmn-event-timer-fg)",
+    glyph: "⏱",
+  },
+  intermediate_event: {
+    bg: "var(--flux-bpmn-event-intermediate-bg)",
+    border: "var(--flux-bpmn-event-intermediate-border)",
+    fg: "var(--flux-bpmn-event-intermediate-fg)",
+    glyph: "◎",
+  },
 };
 
 function EventNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData }) {
@@ -28,9 +54,7 @@ function EventNodeInner({ data, selected }: NodeProps & { data: BpmnNodeData }) 
           border: `${isEnd ? 4 : 3}px solid ${data.borderColor ?? palette.border}`,
           color: palette.fg,
           fontSize: size * 0.36,
-          boxShadow: selected
-            ? "0 0 0 3px rgba(108,92,231,0.35), 0 3px 12px rgba(26,39,68,0.1)"
-            : "0 3px 12px rgba(26,39,68,0.1)",
+          boxShadow: selected ? "var(--flux-bpmn-event-selected-glow)" : "0 3px 12px var(--flux-bpmn-task-shadow-soft)",
           transition: "box-shadow 150ms ease, transform 150ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >

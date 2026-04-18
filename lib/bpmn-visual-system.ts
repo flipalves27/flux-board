@@ -32,14 +32,14 @@ export const BPMN_VISUAL_TOKENS = {
   minLabelWidth: 56,
   minContrastRatio: 4.5,
   semanticPalette: {
-    eventStart: "#43A047",
-    eventIntermediate: "#F9A825",
-    eventEnd: "#E53935",
-    task: "#00897B",
-    gateway: "#FFB300",
-    artifact: "#90A4AE",
-    invalid: "#EF5350",
-    selected: "#4DB6AC",
+    eventStart: "var(--flux-bpmn-semantic-event-start)",
+    eventIntermediate: "var(--flux-bpmn-semantic-event-intermediate)",
+    eventEnd: "var(--flux-bpmn-semantic-event-end)",
+    task: "var(--flux-bpmn-semantic-task)",
+    gateway: "var(--flux-bpmn-semantic-gateway)",
+    artifact: "var(--flux-bpmn-semantic-artifact)",
+    invalid: "var(--flux-bpmn-semantic-invalid)",
+    selected: "var(--flux-bpmn-semantic-selected)",
   },
 } as const;
 

@@ -24,8 +24,8 @@ function SwimLaneNodeInner(props: NodeProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const laneModelId = data.laneModelId ?? "";
-  const gradFrom = data.gradientFrom ?? "#00695C";
-  const gradTo = data.gradientTo ?? "#00897B";
+  const gradFrom = data.gradientFrom ?? "var(--flux-bpmn-teal-900)";
+  const gradTo = data.gradientTo ?? "var(--flux-bpmn-teal-accent)";
   const gradient = `linear-gradient(180deg, ${gradFrom}, ${gradTo})`;
 
   const onStartEdit = useCallback(() => {
@@ -132,16 +132,16 @@ function SwimLaneNodeInner(props: NodeProps) {
               }}
               onBlur={onFinishTagEdit}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-3 top-2.5 z-10 max-w-[280px] rounded px-2 py-0.5 text-[12px] font-bold text-[#1A2744] shadow-sm outline-none ring-2 ring-[var(--flux-primary)]/40"
-              style={{ background: "rgba(255,255,255,0.95)", pointerEvents: "auto" }}
+              className="absolute left-3 top-2.5 z-10 max-w-[280px] rounded px-2 py-0.5 text-[12px] font-bold text-[var(--flux-bpmn-surface-label)] shadow-sm outline-none ring-2 ring-[var(--flux-primary)]/40"
+              style={{ background: "var(--flux-bpmn-tag-input-bg)", pointerEvents: "auto" }}
               placeholder="Tag da raia (ex: AS-IS — Área)"
             />
           ) : data.laneTag ? (
             <span
-              className="absolute left-3 top-2.5 z-10 max-w-[min(360px,65%)] cursor-pointer truncate rounded px-2.5 py-0.5 text-[12px] font-bold text-[#1A2744] transition hover:ring-2 hover:ring-[var(--flux-primary)]/30"
+              className="absolute left-3 top-2.5 z-10 max-w-[min(360px,65%)] cursor-pointer truncate rounded px-2.5 py-0.5 text-[12px] font-bold text-[var(--flux-bpmn-surface-label)] transition hover:ring-2 hover:ring-[var(--flux-primary)]/30"
               style={{
-                background: "rgba(255,255,255,0.92)",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                background: "var(--flux-bpmn-tag-pill-bg)",
+                boxShadow: "var(--flux-bpmn-tag-pill-shadow)",
                 letterSpacing: "0.5px",
                 pointerEvents: "auto",
               }}
@@ -156,7 +156,7 @@ function SwimLaneNodeInner(props: NodeProps) {
             <button
               type="button"
               className="absolute left-3 top-2.5 z-10 rounded px-2 py-0.5 text-[11px] font-semibold text-[var(--flux-text-muted)] opacity-50 transition hover:opacity-90 hover:ring-1 hover:ring-[var(--flux-primary)]/30"
-              style={{ background: "rgba(255,255,255,0.7)", pointerEvents: "auto" }}
+              style={{ background: "var(--flux-bpmn-tag-placeholder-bg)", pointerEvents: "auto" }}
               onClick={(e) => {
                 e.stopPropagation();
                 onStartTagEdit();
@@ -212,7 +212,8 @@ function SwimLaneNodeInner(props: NodeProps) {
                   style={{
                     background: `linear-gradient(180deg, ${g[0]}, ${g[1]})`,
                     borderColor: gradFrom === g[0] && gradTo === g[1] ? "white" : "transparent",
-                    boxShadow: gradFrom === g[0] && gradTo === g[1] ? "0 0 0 2px var(--flux-primary)" : "0 1px 4px rgba(0,0,0,0.15)",
+                    boxShadow:
+                      gradFrom === g[0] && gradTo === g[1] ? "0 0 0 2px var(--flux-primary)" : "var(--flux-bpmn-lane-swatch-shadow)",
                   }}
                   onClick={() => onColorSelect(g)}
                 />
