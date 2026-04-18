@@ -10,6 +10,18 @@ export type BillingNotice =
   | { kind: "downgrade_grace_ended"; at: string };
 
 /** Preferências de IA (plano Business: modelo Claude e jobs em lote). */
+/** Preferências de UI / rollout (Onda 4). */
+export type OrgUiOnda4Settings = {
+  enabled?: boolean;
+  omnibar?: boolean;
+  dailyBriefing?: boolean;
+  anomalyToasts?: boolean;
+};
+
+export type OrgUiSettings = {
+  onda4?: OrgUiOnda4Settings;
+};
+
 export type OrgAiSettings = {
   /** Modelo Anthropic (ex.: claude-3-5-sonnet-20241022). */
   anthropicModel?: string;
@@ -49,6 +61,8 @@ export interface Organization {
   billingCancellationFeedback?: { reason: string; at: string };
   /** IA: modelo Claude, delegação e preferências de batch (Business). */
   aiSettings?: OrgAiSettings;
+  /** UI / feature rollout (ex.: Onda 4). */
+  ui?: OrgUiSettings;
   createdAt: string;
 }
 
@@ -454,6 +468,7 @@ export async function updateOrganization(
       | "stripeSeats"
       | "branding"
       | "aiSettings"
+      | "ui"
     >
   >
 ): Promise<Organization | null> {
@@ -502,6 +517,7 @@ export async function updateOrganizationWithUnset(
       | "stripeSeats"
       | "branding"
       | "aiSettings"
+      | "ui"
     >
   >,
   unsetKeys: (keyof Organization)[]

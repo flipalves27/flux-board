@@ -14,6 +14,10 @@ const CommandPalette = dynamic(
   () => import("@/components/command-palette/command-palette").then((m) => m.CommandPalette),
   { ssr: false }
 );
+const FluxyOmnibar = dynamic(() => import("@/components/fluxy/fluxy-omnibar").then((m) => m.FluxyOmnibar), { ssr: false });
+const FluxyProactiveNudge = dynamic(() => import("@/components/fluxy/fluxy-proactive-nudge").then((m) => m.FluxyProactiveNudge), {
+  ssr: false,
+});
 const CeremonyPlanningModal = dynamic(() => import("@/components/ceremonies/ceremony-planning-modal"), {
   ssr: false,
 });
@@ -56,6 +60,8 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <WorkspaceFluxyDock />
+      <FluxyOmnibar />
+      <FluxyProactiveNudge />
       <CommandPalette />
       <GlobalHotkeys />
       <CeremonyRetroModal getHeaders={getHeaders} />

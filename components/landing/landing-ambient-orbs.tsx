@@ -6,7 +6,6 @@ export function LandingAmbientOrbs({ className = "" }: { className?: string }) {
     <div className={`landing-v3-orbs ${className}`.trim()} aria-hidden>
       <div className="landing-v3-orb landing-v3-orb--1" />
       <div className="landing-v3-orb landing-v3-orb--2" />
-      <div className="landing-v3-orb landing-v3-orb--3" />
     </div>
   );
 }

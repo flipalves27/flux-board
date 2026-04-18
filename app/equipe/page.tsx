@@ -26,12 +26,13 @@ const ROLE_OPTIONS: Array<{ value: TeamMember["role"]; label: string }> = [
   { value: "guest", label: "Convidado" },
 ];
 const PAGE_SIZES = [10, 25, 50] as const;
-type TeamTab = "membros" | "funcoes" | "acessos";
+type TeamTab = "visao" | "membros" | "capacidade" | "permissoes";
 
-const VALID_TABS = new Set<TeamTab>(["membros", "funcoes", "acessos"]);
+const VALID_TABS = new Set<TeamTab>(["visao", "membros", "capacidade", "permissoes"]);
 const VALID_TEAM_ROLES = new Set<TeamMember["role"]>(["team_manager", "member", "guest"]);
 
 function parseTeamTab(raw: string | null): TeamTab {
+  if (raw === "funcoes" || raw === "acessos") return "permissoes";
   return raw && VALID_TABS.has(raw as TeamTab) ? (raw as TeamTab) : "membros";
 }
 
@@ -289,9 +290,10 @@ export default function TeamPage() {
         {!hideInlineTabs ? (
           <div className="mb-5 flex flex-wrap gap-2">
             {([
+              { key: "visao", label: "Visão" },
               { key: "membros", label: "Membros" },
-              { key: "funcoes", label: "Funções" },
-              { key: "acessos", label: "Acessos" },
+              { key: "capacidade", label: "Capacidade" },
+              { key: "permissoes", label: "Permissões" },
             ] as Array<{ key: TeamTab; label: string }>).map((item) => (
               <button
                 key={item.key}
@@ -306,6 +308,24 @@ export default function TeamPage() {
                 {item.label}
               </button>
             ))}
+          </div>
+        ) : null}
+
+        {tab === "visao" ? (
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Visão da equipe</h3>
+            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
+              {members.length} vínculo(s) · {boards.length} board(s) no espaço.
+            </p>
+          </div>
+        ) : null}
+
+        {tab === "capacidade" ? (
+          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Capacidade</h3>
+            <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
+              Planeamento de capacidade por papel e sprint será ligado ao cockpit de sprints nas próximas entregas.
+            </p>
           </div>
         ) : null}
 
@@ -570,35 +590,34 @@ export default function TeamPage() {
           </>
         ) : null}
 
-        {tab === "funcoes" ? (
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
-            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Funções e responsabilidades</h3>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--flux-text-muted)]">
-              <li><strong className="text-[var(--flux-text)]">Gestor</strong>: gerencia vínculos e níveis no contexto EQUIPE.</li>
-              <li><strong className="text-[var(--flux-text)]">Membro</strong>: executa cards e pode ser responsável.</li>
-              <li><strong className="text-[var(--flux-text)]">Convidado</strong>: leitura/acompanhamento.</li>
-            </ul>
-          </div>
-        ) : null}
-
-        {tab === "acessos" ? (
-          <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
-            <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Acessos por escopo</h3>
-            <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
-              Visão resumida dos vínculos por organização e por board.
-            </p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] p-3">
-                <p className="text-xs text-[var(--flux-text-muted)]">Vínculos em organização</p>
-                <p className="mt-1 text-xl font-semibold text-[var(--flux-text)]">
-                  {members.filter((m) => !m.boardId).length}
-                </p>
-              </div>
-              <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] p-3">
-                <p className="text-xs text-[var(--flux-text-muted)]">Vínculos por board</p>
-                <p className="mt-1 text-xl font-semibold text-[var(--flux-text)]">
-                  {members.filter((m) => !!m.boardId).length}
-                </p>
+        {tab === "permissoes" ? (
+          <div className="space-y-4">
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+              <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Funções e responsabilidades</h3>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--flux-text-muted)]">
+                <li>
+                  <strong className="text-[var(--flux-text)]">Gestor</strong>: gerencia vínculos e níveis no contexto EQUIPE.
+                </li>
+                <li>
+                  <strong className="text-[var(--flux-text)]">Membro</strong>: executa cards e pode ser responsável.
+                </li>
+                <li>
+                  <strong className="text-[var(--flux-text)]">Convidado</strong>: leitura/acompanhamento.
+                </li>
+              </ul>
+            </div>
+            <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/35 p-4 sm:p-5">
+              <h3 className="font-display text-sm font-semibold text-[var(--flux-text)]">Acessos por escopo</h3>
+              <p className="mt-1 text-xs text-[var(--flux-text-muted)]">Visão resumida dos vínculos por organização e por board.</p>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] p-3">
+                  <p className="text-xs text-[var(--flux-text-muted)]">Vínculos em organização</p>
+                  <p className="mt-1 text-xl font-semibold text-[var(--flux-text)]">{members.filter((m) => !m.boardId).length}</p>
+                </div>
+                <div className="rounded-lg border border-[var(--flux-chrome-alpha-10)] p-3">
+                  <p className="text-xs text-[var(--flux-text-muted)]">Vínculos por board</p>
+                  <p className="mt-1 text-xl font-semibold text-[var(--flux-text)]">{members.filter((m) => !!m.boardId).length}</p>
+                </div>
               </div>
             </div>
           </div>

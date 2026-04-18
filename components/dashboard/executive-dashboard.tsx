@@ -225,8 +225,8 @@ export function ExecutiveDashboard() {
         </div>
 
         <DataFadeIn active key={data.generatedAt} className="space-y-6">
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-6 lg:col-span-1">
+          <section className="portfolio-bento-hero grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-6 lg:col-span-5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                 {t("health.title")}
               </p>
@@ -265,7 +265,7 @@ export function ExecutiveDashboard() {
               </ul>
             </div>
 
-            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4 lg:col-span-2">
+            <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4 lg:col-span-7">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
                 {t("kpis.title")}
               </p>
@@ -309,7 +309,14 @@ export function ExecutiveDashboard() {
             )}
           </section>
 
-          <PortfolioAiPanel data={data} />
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="xl:col-span-8">
+              <PortfolioAiPanel data={data} />
+            </div>
+            <div className="flux-surface-2 hidden p-4 text-xs leading-relaxed text-[var(--flux-text-muted)] xl:col-span-4 xl:block">
+              Narrativa da semana fica ao lado do painel de IA para leitura executiva rápida (layout bento Onda 4).
+            </div>
+          </div>
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-4">

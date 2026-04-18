@@ -2205,6 +2205,28 @@
     -webkit-backdrop-filter: blur(var(--flux-glass-backdrop-blur));
   }
 
+  /* Onda 4 — tiers de superfície (preferir a componente `FluxSurface`). */
+  .flux-surface-1 {
+    background: color-mix(in srgb, var(--flux-surface-card) 92%, transparent);
+    border: 1px solid var(--flux-border-muted);
+    border-radius: var(--flux-rad-lg);
+    box-shadow: var(--flux-shadow-sm);
+  }
+  .flux-surface-2 {
+    background: color-mix(in srgb, var(--flux-surface-elevated) 88%, transparent);
+    border: 1px solid var(--flux-border-subtle);
+    border-radius: var(--flux-rad-lg);
+    box-shadow: var(--flux-shadow-md);
+  }
+  .flux-surface-3 {
+    background: var(--flux-glass-surface-bg);
+    border: 1px solid var(--flux-glass-surface-border);
+    border-radius: var(--flux-rad-xl);
+    box-shadow: var(--flux-glass-surface-shadow);
+    backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--flux-glass-backdrop-blur));
+  }
+
   /* Modal de card — tema claro: painel sólido e sombra explícita (glass + depth-3 ficavam lavados) */
   [data-theme="light"] .card-modal-shell.flux-glass-elevated {
     background: var(--flux-surface-card);

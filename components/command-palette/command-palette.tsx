@@ -14,6 +14,7 @@ import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem }
 import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { isPlatformAdminSession, sessionCanManageMembersAndBilling, sessionCanManageOrgBilling } from "@/lib/rbac";
+import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
 
 type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
@@ -128,6 +129,7 @@ export function CommandPalette() {
   const router = useRouter();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
+  const onda4 = useOnda4Flags();
   const { user, getHeaders, isChecked } = useAuth();
   const userRef = useRef(user);
   userRef.current = user;
@@ -173,11 +175,21 @@ export function CommandPalette() {
         const target = e.target as HTMLElement | null;
         if (target?.closest?.("[data-skip-command-palette]")) return;
         e.preventDefault();
+        if (onda4.enabled && onda4.omnibar) {
+          e.preventDefault();
+          return;
+        }
         setOpen((o) => !o);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [onda4.enabled, onda4.omnibar]);
+
+  useEffect(() => {
+    const onFluxy = () => setOpen(true);
+    window.addEventListener("flux-open-command-palette", onFluxy);
+    return () => window.removeEventListener("flux-open-command-palette", onFluxy);
   }, []);
 
   const boardById = useMemo(() => {

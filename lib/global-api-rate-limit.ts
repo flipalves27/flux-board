@@ -18,6 +18,7 @@ export type RateLimitCategory = "ai" | "authenticated" | "public" | "skipped";
 const SKIP_PATH_PREFIXES = ["/api/internal/rate-limit-check", "/api/billing/webhook"];
 
 const AI_PATH_TESTS: RegExp[] = [
+  /^\/api\/fluxy\/classify$/,
   /^\/api\/workspace\/fluxy-chat$/,
   /^\/api\/boards\/[^/]+\/copilot$/,
   /^\/api\/boards\/[^/]+\/nlq$/,

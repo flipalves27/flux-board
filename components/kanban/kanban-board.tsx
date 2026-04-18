@@ -27,6 +27,10 @@ import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
 import { BoardFilterBar, BoardPriorityButtons } from "./board-filter-bar";
 import { BoardIntelligenceRow } from "./board-intelligence-row";
+import { BoardDailyBriefing } from "./board-daily-briefing";
+import { AnomalyToastStack } from "./anomaly-toast-stack";
+import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
+import { useFluxyOmnibarStore } from "@/stores/fluxy-omnibar-store";
 import { BoardFlowHealthPanel } from "./board-flow-health-panel";
 import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
 import { buildFlowInsightChips } from "@/lib/board-flow-insights";
@@ -149,6 +153,7 @@ function KanbanBoardLoaded({
   const routerRef = useRef(router);
   routerRef.current = router;
   const { user } = useAuth();
+  const onda4 = useOnda4Flags();
   const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
   const updateDb = useBoardStore((s) => s.updateDb);
@@ -235,6 +240,10 @@ function KanbanBoardLoaded({
   }, []);
 
   const [nlqExpanded, setNlqExpanded] = useState(false);
+
+  useEffect(() => {
+    if (onda4.enabled && onda4.omnibar) setNlqExpanded(false);
+  }, [onda4.enabled, onda4.omnibar]);
 
   const methodology = db.boardMethodology ?? "scrum";
 
@@ -376,8 +385,14 @@ function KanbanBoardLoaded({
       e.preventDefault();
       setFocusMode((prev) => !prev);
     };
+    if (onda4.enabled && onda4.omnibar) {
+      m["/"] = (e) => {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("flux-open-fluxy-omnibar", { detail: {} }));
+      };
+    }
     return m;
-  }, [boardId, hotkeyPatterns, localeRoot, searchInputRef]);
+  }, [boardId, hotkeyPatterns, localeRoot, searchInputRef, onda4.enabled, onda4.omnibar]);
 
   useHotkeys(boardHotkeyBindings);
 
@@ -454,6 +469,7 @@ function KanbanBoardLoaded({
     const cardId = q.get("card");
     const newCard = q.get("newCard");
     const copilot = q.get("copilot");
+    const copilotQ = q.get("q");
     const flowHealth = q.get("flowHealth");
     const sprintPanel = q.get("sprintPanel");
     const sprintCoach = q.get("sprintCoach");
@@ -587,6 +603,13 @@ function KanbanBoardLoaded({
     }
     if (copilot === "1") {
       useCopilotStore.getState().setOpen(true);
+      if (copilotQ && copilotQ.trim()) {
+        try {
+          useCopilotStore.getState().setDraft(decodeURIComponent(copilotQ.trim()));
+        } catch {
+          useCopilotStore.getState().setDraft(copilotQ.trim());
+        }
+      }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
       return;
     }
@@ -776,7 +799,7 @@ function KanbanBoardLoaded({
           buckets={board.buckets}
         />
         {/* --- NLQ Dock: compact / expanded -------------------------------- */}
-        {nlqExpanded ? (
+        {nlqExpanded && !(onda4.enabled && onda4.omnibar) ? (
           <div className="relative">
             <BoardNlqDock
               boardId={boardId}
@@ -860,14 +883,19 @@ function KanbanBoardLoaded({
               <BoardPriorityButtons boardId={boardId} />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setNlqExpanded(true)}
-              className="ml-auto rounded-md border border-[var(--flux-chrome-alpha-12)] p-1.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)] transition-colors"
-              aria-label={t("board.nlqCompact.expand")}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-            </button>
+            {!(onda4.enabled && onda4.omnibar) ? (
+              <button
+                type="button"
+                onClick={() => setNlqExpanded(true)}
+                className="ml-auto rounded-md border border-[var(--flux-chrome-alpha-12)] p-1.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)] transition-colors"
+                aria-label={t("board.nlqCompact.expand")}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+              </button>
+            ) : null}
 
             <div className="relative shrink-0 w-[min(100%,180px)] sm:w-[200px]">
               <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[var(--flux-text-muted)] opacity-50 text-xs select-none" aria-hidden>⌕</span>
@@ -885,6 +913,14 @@ function KanbanBoardLoaded({
         )}
 
         <BoardFilterBar boardId={boardId} hidePriorities />
+
+        {onda4.enabled && onda4.omnibar ? (
+          <div className="border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1.5 text-[10px] text-[var(--flux-text-muted)] sm:px-5">
+            Onda 4: NLQ compacto foi integrado à Omnibar Fluxy (⌘K ou /). Painéis de fluxo, cadência e carga continuam pelos atalhos do board.
+          </div>
+        ) : null}
+        <BoardDailyBriefing boardId={boardId} />
+        <AnomalyToastStack boardId={boardId} />
 
         {/* --- Intelligence Row: collapsible ------------------------------- */}
         {intelligenceExpanded ? (
@@ -904,6 +940,12 @@ function KanbanBoardLoaded({
               getHeaders={getHeaders}
               onOpenWorkloadBalance={() => setWorkloadBalanceOpen(true)}
               onOpenKnowledgeGraph={() => setKnowledgeGraphOpen(true)}
+              onda4Omnibar={onda4.enabled && onda4.omnibar}
+              onAskFluxy={() => {
+                const seed = `Resumir riscos e WIP deste board (${boardName})`;
+                useFluxyOmnibarStore.getState().setPendingSeed(seed);
+                window.dispatchEvent(new CustomEvent("flux-open-fluxy-omnibar", { detail: { seed } }));
+              }}
             />
             <button
               type="button"

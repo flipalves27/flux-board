@@ -6,11 +6,17 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from 
 import { denyPlan } from "@/lib/api-authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { buildExecutiveBriefAiUserPrompt, type ExecutiveBriefCardSlice } from "@/lib/board-executive-brief-ai";
+import {
+  buildDailyArrivalBriefPrompt,
+  buildExecutiveBriefAiUserPrompt,
+  type ExecutiveBriefCardSlice,
+} from "@/lib/board-executive-brief-ai";
 import { hashCacheKey, getAiTextCache, setAiTextCache } from "@/lib/ai-completion-cache";
 import { FLUX_LLM_PROMPT_VERSION } from "@/lib/prompt-versions";
+import { assertOnda4Enabled } from "@/lib/onda4-flags";
 
 const CACHE_TTL_SEC = 6 * 60 * 60;
+const CACHE_TTL_DAILY_SEC = 45 * 60;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const payload = await getAuthFromRequest(request);
@@ -39,6 +45,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     throw err;
   }
 
+  const briefTypeRaw = request.nextUrl.searchParams.get("brief_type")?.trim() || "executive";
+  const briefType = briefTypeRaw === "daily_arrival" ? "daily_arrival" : "executive";
+  if (briefType === "daily_arrival") {
+    try {
+      assertOnda4Enabled(org);
+    } catch (e) {
+      const status = (e as Error & { status?: number }).status ?? 403;
+      return NextResponse.json({ error: "Daily briefing indisponível para esta organização." }, { status });
+    }
+  }
+
   const rl = await rateLimit({
     key: `exec-brief-ai:${payload.orgId}:${boardId}`,
     limit: 12,
@@ -58,6 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     boardId,
     board.lastUpdated ?? "",
     FLUX_LLM_PROMPT_VERSION,
+    briefType,
   ]);
   const cached = await getAiTextCache(cacheKey);
   if (cached) {
@@ -65,21 +83,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       markdown: cached,
       cached: true,
       promptVersion: FLUX_LLM_PROMPT_VERSION,
+      briefType,
     });
   }
 
-  const userPrompt = buildExecutiveBriefAiUserPrompt({
-    name: board.name ?? "Board",
-    cards: (board.cards ?? []) as ExecutiveBriefCardSlice[],
-  });
+  const userPrompt =
+    briefType === "daily_arrival"
+      ? buildDailyArrivalBriefPrompt({
+          name: board.name ?? "Board",
+          cards: (board.cards ?? []) as ExecutiveBriefCardSlice[],
+        })
+      : buildExecutiveBriefAiUserPrompt({
+          name: board.name ?? "Board",
+          cards: (board.cards ?? []) as ExecutiveBriefCardSlice[],
+        });
 
   const res = await runOrgLlmChat({
     org,
     orgId: payload.orgId,
-    feature: "board_executive_brief_ai",
+    feature: briefType === "daily_arrival" ? "board_executive_brief_daily_arrival" : "board_executive_brief_ai",
     mode: "batch",
     messages: [{ role: "user", content: userPrompt }],
-    options: { maxTokens: 900, temperature: 0.35 },
+    options:
+      briefType === "daily_arrival"
+        ? { maxTokens: 500, temperature: 0.35 }
+        : { maxTokens: 900, temperature: 0.35 },
   });
 
   if (!res.ok) {
@@ -90,12 +118,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const markdown = (res.assistantText ?? "").trim() || "_Sem conteúdo._";
-  await setAiTextCache(cacheKey, markdown, CACHE_TTL_SEC);
+  await setAiTextCache(cacheKey, markdown, briefType === "daily_arrival" ? CACHE_TTL_DAILY_SEC : CACHE_TTL_SEC);
 
   return NextResponse.json({
     markdown,
     cached: false,
     promptVersion: FLUX_LLM_PROMPT_VERSION,
     model: res.model,
+    briefType,
   });
 }
