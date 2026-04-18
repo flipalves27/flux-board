@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import {
+  IconBoards,
   IconDocs,
   IconExecutiveDashboard,
-  IconFluxAiHub,
   IconGoals,
   IconReports,
   IconSpecScope,
@@ -67,40 +67,42 @@ export function SidebarIntelligence({
           />
         ),
       },
-      {
-        path: "/ai",
-        order: 1,
-        node: (
-          <SidebarNavLink
-            key="intel-ai"
-            trackPath="/ai"
-            path="/ai"
-            hint={t("hints.fluxAiHub")}
-            icon={<IconFluxAiHub className="h-4 w-4 shrink-0" />}
-            label={t("fluxAiHub")}
-            sublabel={t("fluxAiHubProduct")}
-          />
-        ),
-      },
+      ...(user && sessionCanManageOrgBilling(user)
+        ? ([
+            {
+              path: "/portfolio",
+              order: 1,
+              node: (
+                <SidebarNavLink
+                  key="intel-portfolio"
+                  trackPath="/portfolio"
+                  path="/portfolio"
+                  hint={t("hints.portfolio")}
+                  icon={<IconExecutiveDashboard className="h-4 w-4 shrink-0" />}
+                  label={t("portfolio")}
+                  sublabel={t("portfolioProduct")}
+                />
+              ),
+            },
+          ] satisfies IntelLinkDef[])
+        : ([
+            {
+              path: "/boards",
+              order: 1,
+              node: (
+                <SidebarNavLink
+                  key="intel-boards"
+                  trackPath="/boards"
+                  path="/boards"
+                  hint={t("hints.boards")}
+                  icon={<IconBoards className="h-4 w-4 shrink-0" />}
+                  label={t("boards")}
+                  sublabel={t("boards")}
+                />
+              ),
+            },
+          ] satisfies IntelLinkDef[])),
     ];
-
-    if (user && sessionCanManageOrgBilling(user)) {
-      base.push({
-        path: "/dashboard",
-        order: 2,
-        node: (
-          <SidebarNavLink
-            key="intel-dashboard"
-            trackPath="/dashboard"
-            path="/dashboard"
-            hint={t("hints.dashboard")}
-            icon={<IconExecutiveDashboard className="h-4 w-4 shrink-0" />}
-            label={t("dashboard")}
-            sublabel={t("dashboardProduct")}
-          />
-        ),
-      });
-    }
 
     base.push(
       {

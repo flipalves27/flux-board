@@ -217,11 +217,13 @@ export function Sidebar() {
   const isActive = (href: string) => {
     if (href === "/boards") return normalizedPath === "/boards";
     if (href === "/reports") return normalizedPath === "/reports";
-    if (href === "/ai") return normalizedPath === "/ai";
-    if (href === "/dashboard") return normalizedPath === "/dashboard";
+    if (href === "/ai") return normalizedPath === "/ai" || normalizedPath === "/portfolio";
+    if (href === "/dashboard") return normalizedPath === "/dashboard" || normalizedPath === "/portfolio";
+    if (href === "/portfolio") return normalizedPath === "/portfolio";
     if (href === "/okrs") return normalizedPath === "/okrs";
     if (href === "/templates") return normalizedPath.startsWith("/templates");
-    if (href === "/tasks") return normalizedPath.startsWith("/tasks");
+    if (href === "/tasks") return normalizedPath.startsWith("/tasks") || normalizedPath.startsWith("/routines");
+    if (href === "/routines") return normalizedPath.startsWith("/routines");
     if (href === "/my-work") return normalizedPath.startsWith("/my-work");
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/docs") return normalizedPath.startsWith("/docs");

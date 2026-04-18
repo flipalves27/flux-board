@@ -25,7 +25,7 @@ export default function FluxAiHubPage() {
   }
 
   const cards = [
-    { href: `${localeRoot}/dashboard`, key: "exec" as const },
+    { href: `${localeRoot}/portfolio`, key: "exec" as const },
     { href: `${localeRoot}/docs`, key: "docs" as const },
     { href: `${localeRoot}/reports`, key: "forecast" as const },
     { href: `${localeRoot}/boards`, key: "copilot" as const },

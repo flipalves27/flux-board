@@ -22,6 +22,7 @@ import {
   dueDateFromLeadStats,
   leadTimeStatsFromSimilarConcluded,
   pickSimilarCardRefs,
+  type SimilarCardRef,
 } from "@/lib/smart-card-enrich";
 import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
 import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
@@ -136,6 +137,7 @@ Responda em JSON válido:
 const PRIORITIES = new Set(["Urgente", "Importante", "Média"]);
 
 function normalizeResponse(args: {
+  similarRefs: SimilarCardRef[];
   boardBuckets: string[];
   labelPalette: string[];
   allowedDirections: string[];
@@ -187,6 +189,13 @@ function normalizeResponse(args: {
       : "Fallback offline: prioridade padrão (Média).";
   }
 
+  const suggestedLinks = args.similarRefs.slice(0, 8).map((c) => ({
+    cardId: c.id,
+    title: c.title.slice(0, 200),
+    bucket: c.bucket,
+    progress: c.progress,
+  }));
+
   return {
     bucketKey,
     priority,
@@ -197,6 +206,7 @@ function normalizeResponse(args: {
     dueDate: args.dueDate,
     dueExplanationKey: args.dueExplanationKey,
     similarSampleCount: args.similarSampleCount,
+    suggestedLinks,
   };
 }
 
@@ -327,6 +337,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (planBlocksAi) {
       const normalized = normalizeResponse({
+        similarRefs: similar,
         boardBuckets: boardBuckets.length ? boardBuckets : [fallbackFirstBucket],
         labelPalette,
         allowedDirections,
@@ -356,6 +367,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
         if (!rlDaily.allowed) {
           const normalized = normalizeResponse({
+            similarRefs: similar,
             boardBuckets: boardBuckets.length ? boardBuckets : [fallbackFirstBucket],
             labelPalette,
             allowedDirections,
@@ -400,6 +412,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const normalized = normalizeResponse({
+      similarRefs: similar,
       boardBuckets: boardBuckets.length ? boardBuckets : [fallbackFirstBucket],
       labelPalette,
       allowedDirections,

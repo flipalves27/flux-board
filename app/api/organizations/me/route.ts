@@ -7,7 +7,7 @@ import {
   updateOrganization,
 } from "@/lib/kv-organizations";
 import { publicApiErrorResponse } from "@/lib/public-api-error";
-import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema } from "@/lib/schemas";
+import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema, OrgUiSettingsUpdateSchema } from "@/lib/schemas";
 import { getEffectiveTier, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
 import {
@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
       /** Novo checkout só quando não há assinatura ativa; senão usar Portal Stripe. */
       allowStripeCheckout: shouldAllowStripeCheckoutForOrg(org),
       aiSettings: org.aiSettings ?? null,
+      ui: org.ui ?? null,
     },
   });
 }
@@ -78,11 +79,12 @@ export async function PUT(request: NextRequest) {
   const hasBranding = body && typeof body === "object" && "branding" in body;
   const dismissBillingNotice = body?.dismissBillingNotice === true;
   const hasAiSettings = body && typeof body === "object" && "aiSettings" in body;
+  const hasUi = body && typeof body === "object" && "ui" in body;
   const hasPlan = body && typeof body === "object" && "plan" in body && body.plan !== undefined;
 
   const needsBillingAdmin = dismissBillingNotice || hasPlan;
   const needsOrgManager =
-    name !== undefined || slug !== undefined || hasBranding || hasAiSettings;
+    name !== undefined || slug !== undefined || hasBranding || hasAiSettings || hasUi;
   if (needsBillingAdmin) {
     const deniedBa = ensureOrgManager(payload);
     if (deniedBa) return deniedBa;
@@ -93,7 +95,7 @@ export async function PUT(request: NextRequest) {
   }
   if (!needsBillingAdmin && !needsOrgManager) {
     return NextResponse.json(
-      { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `plan` ou `dismissBillingNotice`." },
+      { error: "Informe `name`, `slug`, `branding`, `aiSettings`, `ui`, `plan` ou `dismissBillingNotice`." },
       { status: 400 }
     );
   }
@@ -234,6 +236,25 @@ export async function PUT(request: NextRequest) {
       aiSettingsPatch = next;
     }
 
+    let uiPatch: Organization["ui"] | undefined;
+    if (hasUi) {
+      const parsed = OrgUiSettingsUpdateSchema.safeParse((body as { ui?: unknown }).ui ?? {});
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
+      }
+      const prevUi = current.ui ?? {};
+      const prevOnda = prevUi.onda4 ?? {};
+      const nextOnda = { ...prevOnda };
+      const o = parsed.data.onda4;
+      if (o) {
+        if (o.enabled !== undefined) nextOnda.enabled = o.enabled;
+        if (o.omnibar !== undefined) nextOnda.omnibar = o.omnibar;
+        if (o.dailyBriefing !== undefined) nextOnda.dailyBriefing = o.dailyBriefing;
+        if (o.anomalyToasts !== undefined) nextOnda.anomalyToasts = o.anomalyToasts;
+      }
+      uiPatch = { ...prevUi, onda4: Object.keys(nextOnda).length ? nextOnda : prevOnda };
+    }
+
     let planPatch: Organization["plan"] | undefined;
     if (hasPlan) {
       if (!allowAdminPlanOverrideFromEnv()) {
@@ -277,6 +298,7 @@ export async function PUT(request: NextRequest) {
       ...(brandingPatch !== undefined ? { branding: brandingPatch } : {}),
       ...(dismissBillingNotice ? { billingNotice: null } : {}),
       ...(aiSettingsPatch !== undefined ? { aiSettings: aiSettingsPatch } : {}),
+      ...(uiPatch !== undefined ? { ui: uiPatch } : {}),
       ...(planPatch !== undefined ? { plan: planPatch } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });

@@ -27,6 +27,9 @@ import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardNlqDock } from "./board-nlq-dock";
 import { BoardFilterBar, BoardPriorityButtons } from "./board-filter-bar";
 import { BoardIntelligenceRow } from "./board-intelligence-row";
+import { BoardDailyBriefing } from "./board-daily-briefing";
+import { AnomalyToastStack } from "./anomaly-toast-stack";
+import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
 import { BoardFlowHealthPanel } from "./board-flow-health-panel";
 import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
 import { buildFlowInsightChips } from "@/lib/board-flow-insights";
@@ -149,6 +152,7 @@ function KanbanBoardLoaded({
   const routerRef = useRef(router);
   routerRef.current = router;
   const { user } = useAuth();
+  const onda4 = useOnda4Flags();
   const { pushToast } = useToast();
   const db = useBoardStore((s) => s.db)!;
   const updateDb = useBoardStore((s) => s.updateDb);
@@ -885,6 +889,14 @@ function KanbanBoardLoaded({
         )}
 
         <BoardFilterBar boardId={boardId} hidePriorities />
+
+        {onda4.enabled && onda4.omnibar ? (
+          <div className="border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1.5 text-[10px] text-[var(--flux-text-muted)] sm:px-5">
+            Onda 4: chips compactos + Fluxy (⌘⇧K). Painéis de fluxo, cadência e carga continuam disponíveis pelos atalhos do board.
+          </div>
+        ) : null}
+        <BoardDailyBriefing boardId={boardId} />
+        <AnomalyToastStack boardId={boardId} />
 
         {/* --- Intelligence Row: collapsible ------------------------------- */}
         {intelligenceExpanded ? (

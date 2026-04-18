@@ -180,6 +180,12 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    const onFluxy = () => setOpen(true);
+    window.addEventListener("flux-open-command-palette", onFluxy);
+    return () => window.removeEventListener("flux-open-command-palette", onFluxy);
+  }, []);
+
   const boardById = useMemo(() => {
     const m = new Map<string, BoardRow>();
     for (const b of boards) m.set(b.id, b);

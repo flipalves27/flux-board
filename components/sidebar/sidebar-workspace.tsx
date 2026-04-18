@@ -10,7 +10,6 @@ import {
   IconShield,
   IconTeam,
   IconTracer,
-  IconUsers,
 } from "./icons";
 import { SidebarNavLink } from "./sidebar-nav-link";
 import { SidebarSectionTitle } from "./sidebar-section-title";
@@ -44,13 +43,6 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
           ) : null}
           {sessionCanManageOrgBilling(user) ? (
             <>
-              <SidebarNavLink
-                path="/users"
-                hint={t("hints.users")}
-                icon={<IconUsers className="h-4 w-4 shrink-0" />}
-                label={t("users")}
-                sublabel={t("userDirectory")}
-              />
               <SidebarNavLink
                 path="/org-invites"
                 hint={

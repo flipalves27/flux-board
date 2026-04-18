@@ -630,6 +630,21 @@ export const OrgAiSettingsUpdateSchema = z
   })
   .strict();
 
+export const OrgOnda4UiPatchSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    omnibar: z.boolean().optional(),
+    dailyBriefing: z.boolean().optional(),
+    anomalyToasts: z.boolean().optional(),
+  })
+  .strict();
+
+export const OrgUiSettingsUpdateSchema = z
+  .object({
+    onda4: OrgOnda4UiPatchSchema.optional(),
+  })
+  .strict();
+
 export const PortalBoardUpdateSchema = z
   .object({
     enabled: z.boolean().optional(),

@@ -13,10 +13,10 @@ export function SidebarAgileRhythm({ activeSprintCount }: SidebarAgileRhythmProp
   return (
     <div className="flex flex-col gap-1" data-flux-sidebar-zone="agile-rhythm">
       <SidebarNavLink
-        path="/tasks"
-        hint={t("hints.tasks")}
+        path="/routines"
+        hint={t("hints.routines")}
         icon={<IconTasks className="h-4 w-4 shrink-0" />}
-        label={t("tasks")}
+        label={t("routines")}
       />
       <SidebarNavLink
         path="/my-work"

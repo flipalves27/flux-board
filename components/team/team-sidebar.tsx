@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const links = [
+  { href: "/equipe?tab=visao", label: "Visão", tab: "visao" },
   { href: "/equipe?tab=membros", label: "Membros", tab: "membros" },
-  { href: "/equipe?tab=funcoes", label: "Funções", tab: "funcoes" },
-  { href: "/equipe?tab=acessos", label: "Acessos", tab: "acessos" },
+  { href: "/equipe?tab=capacidade", label: "Capacidade", tab: "capacidade" },
+  { href: "/equipe?tab=permissoes", label: "Permissões", tab: "permissoes" },
 ];
 
 export function TeamSidebar() {
@@ -20,7 +21,9 @@ export function TeamSidebar() {
       <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.13em] text-[var(--flux-text-muted)]">Equipe</p>
       <nav className="space-y-1.5">
         {links.map((l) => {
-          const active = normalized.startsWith("/equipe") && l.tab === tab;
+          const active =
+            normalized.startsWith("/equipe") &&
+            (l.tab === tab || (l.tab === "permissoes" && (tab === "funcoes" || tab === "acessos")));
           return (
             <Link
               key={l.href}

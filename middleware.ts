@@ -71,7 +71,9 @@ const AUTH_DOCUMENT_FIRST_SEGMENTS = new Set([
   "equipe",
   "users",
   "dashboard",
+  "portfolio",
   "tasks",
+  "routines",
   "templates",
   "reports",
   "docs",
@@ -123,6 +125,46 @@ function authDocumentCookieRedirect(req: NextRequest): NextResponse | null {
  * Produção: opcionalmente redireciona pedidos HTML de hosts em SITE_HOST_ALIASES
  * para SITE_CANONICAL_ORIGIN (308). Útil para apex → www mantendo ambos no OAuth Console.
  */
+/** Redirects permanentes Onda 4 — bookmarks e SEO estáveis (§ compatibilidade URL). */
+function tryLegacyAppRouteRedirects(req: NextRequest): NextResponse | null {
+  if (!isDocumentRequest(req)) return null;
+  const pathname = req.nextUrl.pathname;
+  const norm = pathname.replace(/\/+$/, "") || "/";
+
+  const unlocalized: Record<string, { path: string; tabMembros?: boolean }> = {
+    "/ai": { path: `/${routing.defaultLocale}/portfolio` },
+    "/dashboard": { path: `/${routing.defaultLocale}/portfolio` },
+    "/tasks": { path: `/${routing.defaultLocale}/routines` },
+    "/users": { path: `/${routing.defaultLocale}/equipe`, tabMembros: true },
+  };
+  const hit = unlocalized[norm];
+  if (hit) {
+    const u = new URL(hit.path, req.url);
+    req.nextUrl.searchParams.forEach((v, k) => u.searchParams.set(k, v));
+    if (hit.tabMembros) u.searchParams.set("tab", "membros");
+    return NextResponse.redirect(u, 308);
+  }
+
+  for (const loc of routing.locales) {
+    const prefix = `/${loc}`;
+    const pairs: Array<{ from: string; to: string; tabMembros?: boolean }> = [
+      { from: `${prefix}/ai`, to: `${prefix}/portfolio` },
+      { from: `${prefix}/dashboard`, to: `${prefix}/portfolio` },
+      { from: `${prefix}/tasks`, to: `${prefix}/routines` },
+      { from: `${prefix}/users`, to: `${prefix}/equipe`, tabMembros: true },
+    ];
+    for (const { from, to, tabMembros } of pairs) {
+      if (norm === from) {
+        const u = new URL(to, req.url);
+        req.nextUrl.searchParams.forEach((v, k) => u.searchParams.set(k, v));
+        if (tabMembros) u.searchParams.set("tab", "membros");
+        return NextResponse.redirect(u, 308);
+      }
+    }
+  }
+  return null;
+}
+
 function tryCanonicalHostRedirect(req: NextRequest): NextResponse | null {
   if (process.env.NODE_ENV !== "production") return null;
   const canonicalRaw = process.env.SITE_CANONICAL_ORIGIN?.trim();
@@ -193,6 +235,9 @@ export async function middleware(req: NextRequest) {
 
   const canonicalRedirect = tryCanonicalHostRedirect(req);
   if (canonicalRedirect) return canonicalRedirect;
+
+  const legacyRedirect = tryLegacyAppRouteRedirects(req);
+  if (legacyRedirect) return applyNonCspSecurityHeaders(legacyRedirect);
 
   const authRedirect = authDocumentCookieRedirect(req);
   if (authRedirect) return applyNonCspSecurityHeaders(authRedirect);
