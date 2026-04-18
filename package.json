@@ -12,6 +12,7 @@
     "lint:css": "stylelint \"app/**/*.css\"",
     "lint:flux-colors": "eslint --quiet -c eslint.flux-colors.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
     "lint:onda4-tokens": "eslint -c eslint.onda4.config.mjs \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"context/**/*.{ts,tsx}\"",
+    "lint:onda4:fluxy-omnibar": "eslint -c eslint.onda4.config.mjs \"components/fluxy/fluxy-omnibar.tsx\" \"components/fluxy/omnibar/**/*.tsx\"",
     "migrate:alpha-tokens": "node scripts/migrate-alpha-tokens.mjs",
     "migrate:shadow-tokens": "node scripts/migrate-shadow-tokens.mjs",
     "test": "vitest run",

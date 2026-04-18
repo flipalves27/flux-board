@@ -80,6 +80,18 @@ export function BoardDailyBriefing({ boardId }: Props) {
             {md}
           </div>
         )}
+        {onda4.omnibar ? (
+          <button
+            type="button"
+            className="mt-2 text-[10px] font-semibold text-[var(--flux-primary-light)] hover:underline"
+            onClick={() => {
+              const seed = "Aprofundar o briefing de hoje com o copiloto";
+              window.dispatchEvent(new CustomEvent("flux-open-fluxy-omnibar", { detail: { seed } }));
+            }}
+          >
+            Abrir na Omnibar Fluxy
+          </button>
+        ) : null}
       </FluxSurface>
     </div>
   );

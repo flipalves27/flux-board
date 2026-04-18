@@ -40,9 +40,23 @@ export function FluxyProactiveNudge() {
     <div className="pointer-events-auto fixed bottom-[max(6.5rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-[var(--flux-z-command-content)] hidden max-w-[min(320px,88vw)] rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-subtle)] bg-[var(--flux-surface-card)] p-3 text-xs shadow-[var(--flux-shadow-lg)] md:block">
       <p className="font-semibold text-[var(--flux-text)]">{nudge.title}</p>
       <p className="mt-1 text-[var(--flux-text-muted)] leading-relaxed">{nudge.body}</p>
-      <button type="button" className="mt-2 text-[var(--flux-primary-light)] hover:underline" onClick={() => setNudge(null)}>
-        Dispensar
-      </button>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="text-[var(--flux-primary-light)] hover:underline"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("flux-open-fluxy-omnibar", { detail: { seed: nudge?.title ?? "Ajuda Fluxy" } })
+            );
+            setNudge(null);
+          }}
+        >
+          Abrir Omnibar
+        </button>
+        <button type="button" className="text-[var(--flux-text-muted)] hover:underline" onClick={() => setNudge(null)}>
+          Dispensar
+        </button>
+      </div>
     </div>
   );
 }

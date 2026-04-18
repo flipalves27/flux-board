@@ -20,6 +20,9 @@ export type BoardIntelligenceRowProps = {
   getHeaders?: () => Record<string, string>;
   onOpenWorkloadBalance?: () => void;
   onOpenKnowledgeGraph?: () => void;
+  /** Onda 4: abre Omnibar com contexto do board. */
+  onda4Omnibar?: boolean;
+  onAskFluxy?: () => void;
 };
 
 function chipLabel(
@@ -66,6 +69,8 @@ export function BoardIntelligenceRow({
   getHeaders,
   onOpenWorkloadBalance,
   onOpenKnowledgeGraph,
+  onda4Omnibar,
+  onAskFluxy,
 }: BoardIntelligenceRowProps) {
   const t = useTranslations("kanban");
 
@@ -157,6 +162,15 @@ export function BoardIntelligenceRow({
               className="rounded-lg border border-[var(--flux-chrome-alpha-14)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
             >
               {t("board.knowledgeGraph.open")}
+            </button>
+          ) : null}
+          {onda4Omnibar && onAskFluxy ? (
+            <button
+              type="button"
+              onClick={onAskFluxy}
+              className="rounded-lg border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-08)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-primary-light)] hover:border-[var(--flux-primary)]"
+            >
+              Perguntar à Fluxy
             </button>
           ) : null}
         </div>
