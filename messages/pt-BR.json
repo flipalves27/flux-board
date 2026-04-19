@@ -1157,7 +1157,14 @@
           "value": "∞",
           "label": "Boards para escalar"
         }
-      }
+      },
+      "trustPills": {
+        "trial": "Trial 20 dias",
+        "noCard": "Sem cartão",
+        "ai": "IA integrada"
+      },
+      "livePill": "Ao vivo",
+      "aiPill": "IA no board"
     },
     "kanbanMock": {
       "liveView": "Live View",

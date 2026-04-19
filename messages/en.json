@@ -1157,7 +1157,14 @@
           "value": "∞",
           "label": "Boards when you need to scale"
         }
-      }
+      },
+      "trustPills": {
+        "trial": "20-day trial",
+        "noCard": "No credit card",
+        "ai": "AI built-in"
+      },
+      "livePill": "Live",
+      "aiPill": "AI on board"
     },
     "kanbanMock": {
       "liveView": "Live View",
