@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     format,
     userId: payload.id,
     isAdmin: Boolean(payload.isAdmin),
-    planGateCtx,
+    planGateCtx: gateCtx,
   });
   return NextResponse.json({ retro });
 }
