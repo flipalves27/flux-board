@@ -9,6 +9,7 @@ import {
   makeDailyAiCallsRateLimitKey,
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
+import type { RetroFormat } from "@/lib/ceremony-retrospective";
 import { getSprint } from "@/lib/kv-sprints";
 import { generateRetrospective } from "@/lib/ceremony-retrospective";
 import { rateLimit } from "@/lib/rate-limit";
@@ -43,6 +44,24 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
 
-  const retro = await generateRetrospective({ sprint, board, org });
+  let format: RetroFormat = "classic";
+  try {
+    const body = (await request.json()) as { format?: string };
+    if (body?.format === "start-stop-continue" || body?.format === "4ls" || body?.format === "classic") {
+      format = body.format;
+    }
+  } catch {
+    // body opcional
+  }
+
+  const retro = await generateRetrospective({
+    sprint,
+    board,
+    org,
+    format,
+    userId: payload.id,
+    isAdmin: Boolean(payload.isAdmin),
+    planGateCtx,
+  });
   return NextResponse.json({ retro });
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
@@ -21,6 +22,11 @@ function toolButtonClass(active: boolean) {
 }
 
 export function BoardDesktopToolsRail() {
+  const params = useParams();
+  const router = useRouter();
+  const locale = useLocale();
+  const boardId = Array.isArray(params?.id) ? params.id[0] ?? "" : (params?.id as string) ?? "";
+
   const tRail = useTranslations("kanban.board.desktopToolsRail");
   const tActivity = useTranslations("kanban.activity");
   const tExecution = useTranslations("kanban.executionInsights");
@@ -102,6 +108,11 @@ export function BoardDesktopToolsRail() {
   const onDailyClick = useCallback(() => {
     openBoardDesktopDaily();
   }, []);
+
+  const onIntelligenceClick = useCallback(() => {
+    if (!boardId) return;
+    router.push(`/${locale}/board/${encodeURIComponent(boardId)}/intelligence`);
+  }, [boardId, locale, router]);
 
   const onHandleClick = useCallback(() => {
     setPinned((p) => {
@@ -214,6 +225,24 @@ export function BoardDesktopToolsRail() {
         </button>
 
         <div className="mx-auto my-1 w-6 border-t border-[var(--flux-chrome-alpha-12)]" />
+
+        <button
+          type="button"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={onIntelligenceClick}
+          disabled={!boardId}
+          aria-label={tRail("intelligenceBoard")}
+        >
+          <span className={toolButtonClass(false)}>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" strokeLinecap="round" />
+                <circle cx="12" cy="12" r="4" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{tRail("intelligenceBoard")}</span>
+          </span>
+        </button>
 
         <button
           type="button"

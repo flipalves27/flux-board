@@ -131,6 +131,8 @@ export interface KanbanBoardProps {
   productTourExpandFilters?: boolean;
   /** Quando false, polling remoto não sobrescreve o board (ex.: salvando). */
   allowExternalMerge?: boolean;
+  /** Bootstrap completo do board (ex.: após IA alterar cards no servidor). */
+  reloadBoardFromServer?: () => Promise<void>;
 }
 
 function KanbanBoardLoaded({
@@ -142,6 +144,7 @@ function KanbanBoardLoaded({
   directions,
   productTourExpandFilters,
   allowExternalMerge = true,
+  reloadBoardFromServer,
 }: KanbanBoardProps) {
   const t = useTranslations("kanban");
   const tView = useTranslations("kanban.board.timeline");
@@ -318,6 +321,16 @@ function KanbanBoardLoaded({
   });
 
   const { setModalCard, setModalMode, setDescModalCard, modalCard, modalMode } = board;
+
+  const onBoardReloaded = useCallback(
+    async (cardId: string) => {
+      if (!reloadBoardFromServer) return;
+      await reloadBoardFromServer();
+      const fresh = useBoardStore.getState().db?.cards.find((c) => c.id === cardId);
+      if (fresh) setModalCard(fresh);
+    },
+    [reloadBoardFromServer, setModalCard]
+  );
 
   const filters = useBoardFilters({
     cards: board.cards,
@@ -776,6 +789,7 @@ function KanbanBoardLoaded({
     confirmDeleteCancelRef,
     dailyDialogRef,
     dailyCloseRef,
+    onBoardReloaded,
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
@@ -913,7 +927,7 @@ function KanbanBoardLoaded({
           </div>
         )}
 
-        <BoardFilterBar boardId={boardId} hidePriorities />
+        <BoardFilterBar boardId={boardId} hidePriorities getHeaders={getHeaders} />
 
         {onda4.enabled && onda4.omnibar ? (
           <div className="border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1.5 text-[10px] text-[var(--flux-text-muted)] sm:px-5">

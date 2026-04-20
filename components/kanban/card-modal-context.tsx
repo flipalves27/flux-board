@@ -73,6 +73,8 @@ export interface CardModalProps {
   onOpenExistingCard?: (cardId: string) => void;
   /** Anexa o rascunho atual ao card indicado e fecha o modal. */
   onMergeDraftIntoExisting?: (targetCardId: string, payload: { title: string; description: string; tags: string[] }) => void;
+  /** Após mutações no servidor (ex.: IA), recarrega o board e reabre o mesmo card com dados frescos. */
+  onBoardReloaded?: (cardId: string) => Promise<void>;
   definitionOfDone?: BoardDefinitionOfDone;
   /** Colunas consideradas “feito” para validação DoD (resolvido no pai). */
   doneBucketKeys: string[];
@@ -199,6 +201,7 @@ export type CardModalContextValue = {
 
   openExistingCard?: (cardId: string) => void;
   mergeDraftIntoExistingCard?: (targetCardId: string) => void;
+  onBoardReloaded?: (cardId: string) => Promise<void>;
 
   t: (key: string, values?: Record<string, string | number>) => string;
   pushToast: ReturnType<typeof useToast>["pushToast"];
@@ -232,6 +235,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     onDelete,
     onOpenExistingCard,
     onMergeDraftIntoExisting,
+    onBoardReloaded,
     definitionOfDone,
     doneBucketKeys,
     completedProgressLabel = "Concluída",
@@ -1133,6 +1137,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       closeBtnRef,
       openExistingCard: onOpenExistingCard ? openExistingCard : undefined,
       mergeDraftIntoExistingCard: onMergeDraftIntoExisting ? mergeDraftIntoExistingCard : undefined,
+      onBoardReloaded,
       t,
       pushToast,
     }),
@@ -1207,6 +1212,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       confirmDeleteOpen,
       onOpenExistingCard,
       onMergeDraftIntoExisting,
+      onBoardReloaded,
       openExistingCard,
       mergeDraftIntoExistingCard,
       t,

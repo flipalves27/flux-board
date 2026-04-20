@@ -2048,6 +2048,50 @@
     "clientLabel": "Conta"
   },
   "kanban": {
+    "ceremony": {
+      "retroModal": {
+        "title": "Retrospectiva assistida pela Fluxy",
+        "format": "Modelo",
+        "statusDraft": "Rascunho",
+        "statusFinal": "Finalizada",
+        "loading": "Gerando com IA…",
+        "regenerate": "Regenerar",
+        "markFinal": "Marcar como finalizada",
+        "markDraft": "Voltar para rascunho"
+      }
+    },
+    "fluxIntelligence": {
+      "title": "Flux Intelligence",
+      "backToBoard": "Voltar ao board",
+      "tabInsights": "Insights",
+      "tabDeps": "Dependências",
+      "tabDecisions": "Decisões",
+      "loading": "Carregando…",
+      "loadError": "Não foi possível carregar os dados.",
+      "insightsHint": "Sinais locais (sem custo de IA em tempo real). Ideal para revisão diária com o time.",
+      "depsHint": "Mapa a partir de `blockedBy` nos cards — vermelho: dependência ativa; verde: bloqueador concluído.",
+      "newDecision": "Nova decisão",
+      "fieldTitle": "Título",
+      "fieldContext": "Contexto",
+      "fieldDecision": "Decisão tomada",
+      "saveDecision": "Registrar decisão",
+      "similarTitle": "Decisões similares (texto)",
+      "history": "Histórico",
+      "noDecisions": "Nenhuma decisão registrada ainda.",
+      "saveError": "Não foi possível salvar.",
+      "generatedAt": "Gerado em"
+    },
+    "backlogPrioritize": {
+      "title": "Prioridade do backlog (Fluxy)",
+      "justify": "Gerar justificativas em texto (IA, plano pago)",
+      "run": "Calcular ordem",
+      "loading": "Calculando…",
+      "error": "Falha ao priorizar.",
+      "empty": "Clique em calcular. Cards do primeiro bucket (backlog) entram na fila.",
+      "close": "Fechar",
+      "apply": "Aplicar ordem no board",
+      "open": "Prioridade IA"
+    },
     "cardModal": {
       "intakeVision": {
         "badge": "Imagem → texto",
@@ -2421,7 +2465,18 @@
         "generate": "Gerar contexto",
         "openPanel": "Abrir painel",
         "needTitleDesc": "Preencha título e descrição na aba Detalhes para habilitar a geração.",
-        "lastResult": "Último resultado"
+        "lastResult": "Último resultado",
+        "epicSectionTitle": "Épico e assignee",
+        "epicSectionHint": "Decomponha o épico em cards no backlog ou gere um briefing de onboarding para quem está assignado (requer plano com IA).",
+        "decomposeEpic": "Decompor épico",
+        "decomposeEpicBusy": "Decompondo…",
+        "assigneeBriefing": "Gerar briefing do assignee",
+        "assigneeBriefingBusy": "Gerando briefing…",
+        "needSavedCard": "Salve o card antes — a decomposição só funciona em cards já existentes no quadro.",
+        "needAssignee": "Defina um assignee na aba Detalhes para gerar o briefing.",
+        "decomposeSuccess": "Épico decomposto — o quadro foi atualizado.",
+        "briefingSuccess": "Briefing do assignee salvo no card.",
+        "epicActionsError": "Não foi possível concluir a ação."
       }
     },
     "addColumnModal": {
@@ -2808,7 +2863,8 @@
       "aiHints": {
         "unblockAssist": "IA pode ajudar a desbloquear",
         "refineAvailable": "Refinamento com IA disponível",
-        "enrichButton": "Enriquecer com IA"
+        "enrichButton": "Enriquecer com IA",
+        "fluxyGenerated": "Gerado pela Fluxy"
       },
       "serviceClass": {
         "expedite": "Expedite",
@@ -3178,7 +3234,8 @@
         "handlePin": "Fixar faixa de ferramentas aberta",
         "handleUnpin": "Soltar faixa de ferramentas",
         "copilotOpen": "Abrir Fluxy",
-        "copilotClose": "Fechar Fluxy"
+        "copilotClose": "Fechar Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
       },
       "nlq": {
         "label": "Consulta inteligente",

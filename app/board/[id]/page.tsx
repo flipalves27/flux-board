@@ -224,6 +224,12 @@ export interface CardData {
   matrixWeight?: number;
   /** Faixa de prioridade visual derivada do peso da matriz. */
   matrixWeightBand?: "low" | "medium" | "high" | "critical";
+  /** Card pai quando criado por decomposição de épico (Fluxy). */
+  epicParentId?: string | null;
+  /** Histórias geradas automaticamente pela Fluxy. */
+  createdByFluxy?: boolean;
+  /** Briefing contextual ao ser assignado (onboarding inteligente). */
+  fluxyAssigneeBriefing?: string;
 }
 
 export interface BucketConfig {
@@ -1028,6 +1034,7 @@ export default function BoardPage() {
             directions={DIRECTIONS}
             productTourExpandFilters={tourExpandFilters}
             allowExternalMerge={saveStatus !== "saving"}
+            reloadBoardFromServer={loadBoard}
           />
         </div>
       </DataFadeIn>
