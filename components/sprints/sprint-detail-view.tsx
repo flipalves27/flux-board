@@ -14,8 +14,10 @@ import { Header } from "@/components/header";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { SprintFormDrawer } from "@/components/sprints/sprint-form-drawer";
+import { VelocityOraclePanel } from "@/components/sprints/velocity-oracle-panel";
+import { AiRetrospectivePanel } from "@/components/sprints/ai-retrospective-panel";
 
-type TabId = "overview" | "scope" | "metrics" | "history" | "ceremonies";
+type TabId = "overview" | "scope" | "metrics" | "history" | "ceremonies" | "oracle" | "retro";
 
 type Props = {
   boardId: string;
@@ -175,6 +177,8 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
     { id: "metrics", label: t("tabs.metrics") },
     { id: "history", label: t("tabs.history") },
     { id: "ceremonies", label: t("tabs.ceremonies") },
+    { id: "oracle", label: "⟁ Oracle" },
+    { id: "retro", label: "◈ Retro IA" },
   ];
 
   return (
@@ -203,6 +207,18 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link
+              href={`${localeRoot}/sprints/${encodeURIComponent(boardId)}/${encodeURIComponent(sprintId)}/command-center`}
+              className="rounded-lg border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-08)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-18)]"
+            >
+              ✦ {tc("commandCenter.pretitle")}
+            </Link>
+            <Link
+              href={`${localeRoot}/board/${encodeURIComponent(boardId)}/releases`}
+              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            >
+              ⏱ Releases
+            </Link>
             <button type="button" className="btn-primary px-3 py-2 text-xs" onClick={() => setDrawerOpen(true)}>
               {t("edit")}
             </button>
@@ -439,6 +455,19 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
               {tc("ceremony.retro")}
             </button>
           </section>
+        ) : null}
+
+        {tab === "oracle" ? (
+          <VelocityOraclePanel boardId={boardId} sprintId={sprintId} getHeaders={getHeaders} />
+        ) : null}
+
+        {tab === "retro" ? (
+          <AiRetrospectivePanel
+            boardId={boardId}
+            sprintId={sprintId}
+            sprintName={overview.sprint?.name}
+            getHeaders={getHeaders}
+          />
         ) : null}
       </div>
 
