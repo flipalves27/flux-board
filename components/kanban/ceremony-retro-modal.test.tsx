@@ -49,6 +49,22 @@ vi.mock("@/components/ui/use-modal-a11y", () => ({
   useModalA11y: vi.fn(),
 }));
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => {
+    const map: Record<string, string> = {
+      title: "Retrospectiva Fluxy",
+      format: "Modelo",
+      statusDraft: "Rascunho",
+      statusFinal: "Finalizada",
+      loading: "Analisando sprint com IA…",
+      regenerate: "Regenerar com IA",
+      markFinal: "Marcar como finalizada",
+      markDraft: "Voltar para rascunho",
+    };
+    return map[key] ?? key;
+  },
+}));
+
 // ---------------------------------------------------------------------------
 // Import depois dos mocks
 // ---------------------------------------------------------------------------
@@ -123,12 +139,11 @@ describe("CeremonyRetroModal — correções React #185", () => {
     });
   });
 
-  it("marca itens gerados por IA com badge 'IA'", async () => {
+  it("marca itens gerados por IA com badge Fluxy", async () => {
     renderModal();
 
     await waitFor(() => {
-      // wentWell[0] e actions[0] têm aiGenerated: true
-      const iaBadges = screen.getAllByText("IA");
+      const iaBadges = screen.getAllByText(/Fluxy/);
       expect(iaBadges.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -160,7 +175,7 @@ describe("CeremonyRetroModal — correções React #185", () => {
 
   it("re-renderização por mudança externa do store não causa loop", async () => {
     renderModal();
-    await waitFor(() => screen.getByText("Retrospectiva IA"));
+    await waitFor(() => screen.getByText("Retrospectiva Fluxy"));
 
     let renderCount = 0;
     const orig = useCeremonyStore.subscribe(() => { renderCount++; });

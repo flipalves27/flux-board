@@ -74,6 +74,8 @@ export type KanbanBoardOverlaysProps = {
   ) => void;
   /** Após excluir vários cards (confirmação). */
   onCardsBatchDeleted?: () => void;
+  /** Recarrega o board no servidor e ressincroniza o card aberto no modal (mutações só-API). */
+  onBoardReloaded?: (cardId: string) => Promise<void>;
   definitionOfDone?: BoardDefinitionOfDone;
   doneBucketKeys: string[];
   boardMethodology: BoardMethodology;
@@ -138,6 +140,7 @@ export function KanbanBoardOverlays({
   onOpenExistingCard,
   onMergeDraftIntoExisting,
   onCardsBatchDeleted,
+  onBoardReloaded,
   definitionOfDone,
   doneBucketKeys,
   boardMethodology,
@@ -217,6 +220,7 @@ export function KanbanBoardOverlays({
           }}
           onOpenExistingCard={onOpenExistingCard}
           onMergeDraftIntoExisting={onMergeDraftIntoExisting}
+          onBoardReloaded={onBoardReloaded}
         />
       )}
 

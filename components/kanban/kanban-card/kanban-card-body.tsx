@@ -176,6 +176,14 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
         <span className="font-display font-bold text-sm text-[var(--flux-text)] leading-tight flex-1 min-w-0">
           {card.title}
         </span>
+        {card.createdByFluxy ? (
+          <span
+            className="shrink-0 rounded-md border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-1 py-0.5 text-[9px] font-bold text-[var(--flux-primary-light)]"
+            title={t("card.aiHints.fluxyGenerated")}
+          >
+            🤖
+          </span>
+        ) : null}
         {showAiRefineHint && (
           <AiRefineHintBadge tooltip={t("card.aiHints.refineAvailable")} />
         )}
