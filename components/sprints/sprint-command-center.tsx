@@ -408,7 +408,7 @@ function computeSignals(opts: {
     level = "danger";
   } else if (opts.scopeDrift > 0.1) {
     items.push({ key: "scopeDriftHigh", severity: "warning" });
-    if (level !== "danger") level = "warning";
+    level = "warning";
   }
 
   if (opts.timeProgress > 0.65 && opts.commitmentRatio < 0.4) {
@@ -416,7 +416,7 @@ function computeSignals(opts: {
     level = "danger";
   } else if (opts.timeProgress > 0.4 && opts.commitmentRatio < 0.25) {
     items.push({ key: "lowCommitment", severity: "warning" });
-    if (level !== "danger") level = "warning";
+    level = "warning";
   }
 
   if (opts.daysLeft <= 1 && opts.commitmentRatio < 0.85) {
