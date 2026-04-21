@@ -29,7 +29,7 @@ export async function GET(
 
   const [board, sprint] = await Promise.all([
     getBoard(boardId, payload.orgId),
-    getSprint(boardId, sprintId),
+    getSprint(payload.orgId, sprintId),
   ]);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
   if (!sprint) return NextResponse.json({ error: "Sprint não encontrada" }, { status: 404 });

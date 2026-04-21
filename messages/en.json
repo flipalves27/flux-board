@@ -3311,6 +3311,14 @@
         "copilotClose": "Close Fluxy",
         "intelligenceBoard": "Flux Intelligence"
       },
+      "desktopToolsRail": {
+        "handleTitle": "Hover to reveal tools, or click to keep the strip pinned open",
+        "handlePin": "Pin tools strip open",
+        "handleUnpin": "Unpin tools strip",
+        "copilotOpen": "Open Fluxy",
+        "copilotClose": "Close Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
+      },
       "nlq": {
         "label": "Smart board query",
         "showPanel": "Show smart query",

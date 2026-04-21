@@ -3316,6 +3316,14 @@
         "copilotClose": "Fechar Fluxy",
         "intelligenceBoard": "Flux Intelligence"
       },
+      "desktopToolsRail": {
+        "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
+        "handlePin": "Fixar faixa de ferramentas aberta",
+        "handleUnpin": "Soltar faixa de ferramentas",
+        "copilotOpen": "Abrir Fluxy",
+        "copilotClose": "Fechar Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
+      },
       "nlq": {
         "label": "Consulta inteligente",
         "showPanel": "Mostrar consulta inteligente",

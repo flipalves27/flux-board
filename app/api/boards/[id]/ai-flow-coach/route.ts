@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
-    assertFeatureAllowed(org, "ai_insights", gateCtx);
+    assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
@@ -31,11 +31,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const locale = body.locale ?? "pt-BR";
 
   const cards = (Array.isArray(board.cards) ? board.cards : []) as Parameters<typeof computeFlowCoachInsights>[0];
-  const columns = (board.config?.bucketOrder ?? []).map((c: Record<string, unknown>) => ({
-    key: String(c.key ?? c.label ?? ""),
-    label: String(c.label ?? c.key ?? ""),
-    wipLimit: typeof c.wipLimit === "number" ? c.wipLimit : undefined,
-  }));
+  const rawBuckets = board.config?.bucketOrder ?? [];
+  const columns = (Array.isArray(rawBuckets) ? rawBuckets : []).map((c) => {
+    const col = c as Record<string, unknown>;
+    return {
+      key: String(col.key ?? col.label ?? ""),
+      label: String(col.label ?? col.key ?? ""),
+      wipLimit: typeof col.wipLimit === "number" ? col.wipLimit : undefined,
+    };
+  });
 
   const result = computeFlowCoachInsights(cards, columns, { boardName: board.name, locale });
 
