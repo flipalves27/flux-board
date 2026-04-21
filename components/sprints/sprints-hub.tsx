@@ -326,6 +326,12 @@ export function SprintsHub({ getHeaders }: Props) {
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Link
+              href={`${localeRoot}/sprints/${encodeURIComponent(primaryActive.boardId)}/${encodeURIComponent(primaryActive.id)}/command-center`}
+              className="rounded-lg bg-gradient-to-r from-[var(--flux-primary)] to-[var(--flux-accent)] px-3 py-2 text-xs font-semibold text-white shadow-flux-md hover:opacity-95"
+            >
+              ✦ {t("commandCenter.pretitle")}
+            </Link>
+            <Link
               href={`${localeRoot}/sprints/${encodeURIComponent(primaryActive.boardId)}/${encodeURIComponent(primaryActive.id)}`}
               className="rounded-lg bg-[var(--flux-primary)] px-3 py-2 text-xs font-semibold text-white hover:opacity-95"
             >
@@ -336,6 +342,12 @@ export function SprintsHub({ getHeaders }: Props) {
               className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
             >
               {t("openBoard")}
+            </Link>
+            <Link
+              href={`${localeRoot}/board/${encodeURIComponent(primaryActive.boardId)}/releases`}
+              className="rounded-lg border border-[var(--flux-accent-alpha-25)] bg-[var(--flux-accent-alpha-08)] px-3 py-2 text-xs font-semibold text-[var(--flux-accent)] hover:bg-[var(--flux-accent-alpha-18)]"
+            >
+              ⏱ Releases
             </Link>
             <button
               type="button"

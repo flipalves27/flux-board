@@ -370,6 +370,85 @@
       "nameRequired": "Indique o nome da sprint.",
       "boardRequired": "Escolha um board.",
       "reviewSave": "Confirme os dados e clique em Guardar."
+    },
+    "commandCenter": {
+      "pretitle": "Command center",
+      "aria": "Painel de controle da sprint",
+      "loading": "Carregando command center…",
+      "errorTitle": "Não foi possível abrir o command center",
+      "error": {
+        "load": "Erro ao carregar dados da sprint.",
+        "notfound": "Sprint não encontrada.",
+        "upgrade": "Recurso disponível em planos pagos."
+      },
+      "breadcrumb": {
+        "sprints": "Sprints",
+        "detail": "Detalhe",
+        "commandCenter": "Command center"
+      },
+      "health": "Saúde",
+      "metrics": {
+        "commitment": "Commitment",
+        "timeLeft": "Tempo restante",
+        "timeLeftCaption": "de {total}d totais",
+        "scopeDrift": "Drift de escopo",
+        "scopeDriftCaption": "+{added} / -{removed}",
+        "velocity": "Velocity",
+        "velocityCaption": "capacidade planejada {capacity}",
+        "velocityCaptionEmpty": "capacidade não definida"
+      },
+      "burndown": {
+        "title": "Burndown",
+        "legend": "ideal × real"
+      },
+      "signals": {
+        "title": "Sinais",
+        "msg": {
+          "scopeDriftHigh": "Drift de escopo elevado — renegocie itens antes da review.",
+          "lowCommitment": "Commitment abaixo do ritmo de tempo — ajuste o plano ou remova itens.",
+          "burningTooFast": "Queima acima do ideal — boa! Considere trazer itens priorizados.",
+          "runningOutOfTime": "Sprint próxima do fim com itens pendentes — decida escopo de corte.",
+          "onTrack": "Sprint em ritmo saudável.",
+          "earlyDays": "Começando a sprint — fixe um daily e revise a meta."
+        }
+      },
+      "release": {
+        "empty": "Sem release vinculada",
+        "manage": "Gerir releases"
+      },
+      "actions": {
+        "openDetail": "Abrir detalhe",
+        "openBoard": "Abrir board"
+      }
+    },
+    "timeline": {
+      "title": "Linha do tempo das sprints",
+      "subtitle": "Velocity, entregas e releases encadeadas ao longo do histórico.",
+      "empty": "Nenhuma sprint registrada ainda.",
+      "legend": {
+        "closed": "encerrada",
+        "review": "revisão",
+        "active": "ativa",
+        "release": "release"
+      },
+      "status": {
+        "planning": "Plan",
+        "active": "Ativa",
+        "review": "Revisão",
+        "closed": "Encerrada"
+      },
+      "detail": {
+        "title": "Detalhe da sprint",
+        "noGoal": "Sem meta registrada.",
+        "commitment": "Commit",
+        "scope": "Escopo",
+        "done": "Concluídos",
+        "open": "Abrir sprint",
+        "fullHistory": "Histórico completo",
+        "cardsTitle": "Cards do escopo",
+        "releasesTitle": "Releases vinculadas",
+        "reconstructedHint": "Histórico anterior ao snapshot — detalhes reconstruídos do board atual."
+      }
     }
   },
   "ceremonies": {
@@ -3825,5 +3904,119 @@
       "bpmn": "BPMN",
       "matrix": "Matriz"
     }
+  },
+  "releases": {
+    "pretitle": "Controle de versões",
+    "title": "Releases",
+    "subtitle": "Gerencie versões, changelogs e deploys conectados a sprints e cards.",
+    "loading": "Carregando releases…",
+    "newRelease": "Nova release",
+    "openHistory": "Histórico de sprints",
+    "emptyTitle": "Nenhuma release ainda",
+    "emptyDescription": "Crie sua primeira release a partir de uma sprint concluída — o Flux sugere a versão e gera o changelog com IA.",
+    "selectHint": "Selecione uma release ao lado para ver detalhes, notas e timeline.",
+    "upgradeTitle": "Releases exigem plano pago",
+    "upgradeDescription": "O módulo de versões compartilha a feature de Sprint Engine. Faça upgrade para habilitar.",
+    "upgradeCta": "Ver planos",
+    "rollbackPrompt": "Descreva o motivo do rollback:",
+    "error": {
+      "load": "Não foi possível carregar as releases.",
+      "auth": "Sessão expirada.",
+      "notfound": "Release não encontrada.",
+      "upgrade": "Recurso disponível em planos pagos."
+    },
+    "filters": {
+      "allEnv": "Todos ambientes",
+      "allStatus": "Todos status"
+    },
+    "statuses": {
+      "draft": "Rascunho",
+      "planned": "Planejada",
+      "in_review": "Em revisão",
+      "staging": "Staging",
+      "released": "Publicada",
+      "rolled_back": "Revertida"
+    },
+    "flow": {
+      "title": "Fluxo de release",
+      "rollback": "Rollback",
+      "step": {
+        "draft": "Rascunho",
+        "planned": "Planejada",
+        "in_review": "Revisão",
+        "staging": "Staging",
+        "released": "Produção"
+      }
+    },
+    "form": {
+      "createTitle": "Nova release",
+      "editTitle": "Editar release",
+      "subtitle": "A versão pode ser sugerida automaticamente a partir da última sprint encerrada.",
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "saveError": "Falha ao salvar.",
+      "suggest": "Sugerir",
+      "suggestTitle": "Sugerir versão, tipo e changelog com base nos sprints.",
+      "suggestError": "Não foi possível gerar sugestão.",
+      "version": "Versão",
+      "name": "Nome",
+      "summary": "Resumo",
+      "versionType": "Tipo",
+      "status": "Status",
+      "environment": "Ambiente",
+      "sprints": "Sprints vinculados",
+      "noSprints": "Nenhum sprint disponível neste board.",
+      "changelog": "Changelog (preview)",
+      "notes": "Notas da release",
+      "notesPlaceholder": "Suas notas em markdown. Se vazio, usamos as notas geradas pela IA.",
+      "deploymentRef": "Referência de deploy",
+      "plannedAt": "Data prevista",
+      "tags": "Tags",
+      "tagsPlaceholder": "beta, hotfix (separadas por vírgula)",
+      "types": {
+        "major": "Major (quebra compatibilidade)",
+        "minor": "Minor (novas features)",
+        "patch": "Patch (correções)",
+        "hotfix": "Hotfix (emergencial)"
+      },
+      "statuses": {
+        "draft": "Rascunho",
+        "planned": "Planejada",
+        "in_review": "Em revisão",
+        "staging": "Staging",
+        "released": "Publicada",
+        "rolled_back": "Revertida"
+      }
+    },
+    "detail": {
+      "edit": "Editar",
+      "generate": "Gerar notas com IA",
+      "generating": "Gerando…",
+      "changelog": "Changelog",
+      "notes": "Release notes",
+      "notesHuman": "Notas humanas",
+      "notesAi": "Geradas por IA",
+      "timeline": "Linha do tempo",
+      "kpi": {
+        "cards": "Cards",
+        "cardsCaption": "entregues nesta release",
+        "sprints": "Sprints",
+        "risks": "Riscos",
+        "risksCaption": "mapeados"
+      },
+      "events": {
+        "created": "Release criada",
+        "planned": "Planejada",
+        "review": "Entrou em revisão",
+        "staged": "Movida para staging",
+        "released": "Publicada",
+        "rolled_back": "Rollback",
+        "edited": "Editada",
+        "ai_notes_generated": "Notas geradas por IA"
+      }
+    }
   }
 }
+

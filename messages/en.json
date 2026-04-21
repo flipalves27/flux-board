@@ -370,6 +370,85 @@
       "nameRequired": "Enter a sprint name.",
       "boardRequired": "Choose a board.",
       "reviewSave": "Confirm the data and click Save."
+    },
+    "commandCenter": {
+      "pretitle": "Command center",
+      "aria": "Sprint command center",
+      "loading": "Loading command center…",
+      "errorTitle": "Command center unavailable",
+      "error": {
+        "load": "Failed to load sprint data.",
+        "notfound": "Sprint not found.",
+        "upgrade": "Feature available on paid plans."
+      },
+      "breadcrumb": {
+        "sprints": "Sprints",
+        "detail": "Detail",
+        "commandCenter": "Command center"
+      },
+      "health": "Health",
+      "metrics": {
+        "commitment": "Commitment",
+        "timeLeft": "Time left",
+        "timeLeftCaption": "of {total}d total",
+        "scopeDrift": "Scope drift",
+        "scopeDriftCaption": "+{added} / -{removed}",
+        "velocity": "Velocity",
+        "velocityCaption": "planned capacity {capacity}",
+        "velocityCaptionEmpty": "capacity not set"
+      },
+      "burndown": {
+        "title": "Burndown",
+        "legend": "ideal × actual"
+      },
+      "signals": {
+        "title": "Signals",
+        "msg": {
+          "scopeDriftHigh": "High scope drift — renegotiate items before review.",
+          "lowCommitment": "Commitment below time pace — adjust plan or remove items.",
+          "burningTooFast": "Burning ahead of ideal — consider pulling prioritized items.",
+          "runningOutOfTime": "Sprint close to end with pending items — decide scope cut.",
+          "onTrack": "Sprint is pacing healthily.",
+          "earlyDays": "Sprint starting — fix a daily cadence and review the goal."
+        }
+      },
+      "release": {
+        "empty": "No linked release",
+        "manage": "Manage releases"
+      },
+      "actions": {
+        "openDetail": "Open detail",
+        "openBoard": "Open board"
+      }
+    },
+    "timeline": {
+      "title": "Sprints timeline",
+      "subtitle": "Velocity, deliveries and releases chained through history.",
+      "empty": "No sprints recorded yet.",
+      "legend": {
+        "closed": "closed",
+        "review": "review",
+        "active": "active",
+        "release": "release"
+      },
+      "status": {
+        "planning": "Plan",
+        "active": "Active",
+        "review": "Review",
+        "closed": "Closed"
+      },
+      "detail": {
+        "title": "Sprint detail",
+        "noGoal": "No goal set.",
+        "commitment": "Commit",
+        "scope": "Scope",
+        "done": "Done",
+        "open": "Open sprint",
+        "fullHistory": "Full history",
+        "cardsTitle": "Scope cards",
+        "releasesTitle": "Linked releases",
+        "reconstructedHint": "Older than snapshot support — details reconstructed from the current board."
+      }
     }
   },
   "ceremonies": {
@@ -3819,6 +3898,119 @@
       "scrum": "Scrum",
       "bpmn": "BPMN",
       "matrix": "Matrix"
+    }
+  },
+  "releases": {
+    "pretitle": "Version control",
+    "title": "Releases",
+    "subtitle": "Manage versions, changelogs and deploys linked to sprints and cards.",
+    "loading": "Loading releases…",
+    "newRelease": "New release",
+    "openHistory": "Sprint history",
+    "emptyTitle": "No releases yet",
+    "emptyDescription": "Create your first release from a closed sprint — Flux suggests the version and generates the changelog with AI.",
+    "selectHint": "Pick a release on the left to see details, notes and timeline.",
+    "upgradeTitle": "Releases require a paid plan",
+    "upgradeDescription": "The releases module shares the Sprint Engine feature. Upgrade to enable.",
+    "upgradeCta": "See plans",
+    "rollbackPrompt": "Describe the rollback reason:",
+    "error": {
+      "load": "Failed to load releases.",
+      "auth": "Session expired.",
+      "notfound": "Release not found.",
+      "upgrade": "Feature available on paid plans."
+    },
+    "filters": {
+      "allEnv": "All environments",
+      "allStatus": "All statuses"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "planned": "Planned",
+      "in_review": "In review",
+      "staging": "Staging",
+      "released": "Released",
+      "rolled_back": "Rolled back"
+    },
+    "flow": {
+      "title": "Release flow",
+      "rollback": "Rollback",
+      "step": {
+        "draft": "Draft",
+        "planned": "Planned",
+        "in_review": "Review",
+        "staging": "Staging",
+        "released": "Production"
+      }
+    },
+    "form": {
+      "createTitle": "New release",
+      "editTitle": "Edit release",
+      "subtitle": "Version can be auto-suggested from the latest closed sprint.",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saveError": "Save failed.",
+      "suggest": "Suggest",
+      "suggestTitle": "Suggest version, type and changelog from sprint scope.",
+      "suggestError": "Could not generate a suggestion.",
+      "version": "Version",
+      "name": "Name",
+      "summary": "Summary",
+      "versionType": "Type",
+      "status": "Status",
+      "environment": "Environment",
+      "sprints": "Linked sprints",
+      "noSprints": "No sprints available on this board.",
+      "changelog": "Changelog (preview)",
+      "notes": "Release notes",
+      "notesPlaceholder": "Your notes in markdown. If empty, the AI-generated notes are used.",
+      "deploymentRef": "Deployment ref",
+      "plannedAt": "Planned date",
+      "tags": "Tags",
+      "tagsPlaceholder": "beta, hotfix (comma separated)",
+      "types": {
+        "major": "Major (breaks compatibility)",
+        "minor": "Minor (new features)",
+        "patch": "Patch (fixes)",
+        "hotfix": "Hotfix (emergency)"
+      },
+      "statuses": {
+        "draft": "Draft",
+        "planned": "Planned",
+        "in_review": "In review",
+        "staging": "Staging",
+        "released": "Released",
+        "rolled_back": "Rolled back"
+      }
+    },
+    "detail": {
+      "edit": "Edit",
+      "generate": "Generate AI notes",
+      "generating": "Generating…",
+      "changelog": "Changelog",
+      "notes": "Release notes",
+      "notesHuman": "Human notes",
+      "notesAi": "AI generated",
+      "timeline": "Timeline",
+      "kpi": {
+        "cards": "Cards",
+        "cardsCaption": "delivered in this release",
+        "sprints": "Sprints",
+        "risks": "Risks",
+        "risksCaption": "mapped"
+      },
+      "events": {
+        "created": "Release created",
+        "planned": "Planned",
+        "review": "Moved to review",
+        "staged": "Moved to staging",
+        "released": "Released",
+        "rolled_back": "Rolled back",
+        "edited": "Edited",
+        "ai_notes_generated": "AI notes generated"
+      }
     }
   }
 }

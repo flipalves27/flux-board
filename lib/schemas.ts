@@ -1272,3 +1272,128 @@ export const ProgramIncrementSchema = z.object({
 
 export type ProgramIncrementData = z.infer<typeof ProgramIncrementSchema>;
 
+// -----------------------
+// Release / Version Management
+// -----------------------
+
+export const ReleaseChangeKindSchema = z.enum([
+  "feat",
+  "fix",
+  "chore",
+  "perf",
+  "docs",
+  "refactor",
+  "breaking",
+]);
+export type ReleaseChangeKind = z.infer<typeof ReleaseChangeKindSchema>;
+
+export const ReleaseChangelogEntrySchema = z.object({
+  kind: ReleaseChangeKindSchema,
+  title: z.string().trim().min(1).max(240),
+  cardId: z.string().trim().max(200).nullable().default(null),
+  authorId: z.string().trim().max(200).nullable().default(null),
+});
+export type ReleaseChangelogEntry = z.infer<typeof ReleaseChangelogEntrySchema>;
+
+export const ReleaseRiskSeveritySchema = z.enum(["low", "medium", "high", "critical"]);
+export type ReleaseRiskSeverity = z.infer<typeof ReleaseRiskSeveritySchema>;
+
+export const ReleaseRiskSchema = z.object({
+  severity: ReleaseRiskSeveritySchema,
+  title: z.string().trim().min(1).max(200),
+  mitigation: z.string().trim().max(500).default(""),
+});
+export type ReleaseRisk = z.infer<typeof ReleaseRiskSchema>;
+
+export const ReleaseTimelineEventSchema = z.object({
+  at: z.string().trim().max(80),
+  kind: z.enum([
+    "created",
+    "planned",
+    "review",
+    "staged",
+    "released",
+    "rolled_back",
+    "edited",
+    "ai_notes_generated",
+  ]),
+  by: z.string().trim().max(200).default(""),
+  note: z.string().trim().max(500).default(""),
+});
+export type ReleaseTimelineEvent = z.infer<typeof ReleaseTimelineEventSchema>;
+
+export const ReleaseVersionTypeSchema = z.enum(["major", "minor", "patch", "hotfix"]);
+export type ReleaseVersionType = z.infer<typeof ReleaseVersionTypeSchema>;
+
+export const ReleaseEnvironmentSchema = z.enum(["dev", "staging", "production"]);
+export type ReleaseEnvironment = z.infer<typeof ReleaseEnvironmentSchema>;
+
+export const ReleaseStatusSchema = z.enum([
+  "draft",
+  "planned",
+  "in_review",
+  "staging",
+  "released",
+  "rolled_back",
+]);
+export type ReleaseStatus = z.infer<typeof ReleaseStatusSchema>;
+
+export const ReleaseDataSchema = z.object({
+  id: z.string().trim().min(1).max(200),
+  orgId: z.string().trim().min(1).max(200),
+  boardId: z.string().trim().min(1).max(200),
+  version: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(1).max(200),
+  summary: z.string().trim().max(1000).default(""),
+  versionType: ReleaseVersionTypeSchema.default("minor"),
+  status: ReleaseStatusSchema.default("draft"),
+  environment: ReleaseEnvironmentSchema.default("production"),
+  sprintIds: z.array(z.string().trim().max(200)).max(40).default([]),
+  cardIds: z.array(z.string().trim().max(200)).max(500).default([]),
+  changelog: z.array(ReleaseChangelogEntrySchema).max(200).default([]),
+  aiNotes: z.string().trim().max(6000).default(""),
+  humanNotes: z.string().trim().max(6000).default(""),
+  healthScore: z.number().min(0).max(100).nullable().default(null),
+  risks: z.array(ReleaseRiskSchema).max(40).default([]),
+  timeline: z.array(ReleaseTimelineEventSchema).max(120).default([]),
+  deploymentRef: z.string().trim().max(400).default(""),
+  previousReleaseId: z.string().trim().max(200).nullable().default(null),
+  plannedAt: z.string().trim().max(80).nullable().default(null),
+  releasedAt: z.string().trim().max(80).nullable().default(null),
+  rolledBackAt: z.string().trim().max(80).nullable().default(null),
+  rollbackReason: z.string().trim().max(500).default(""),
+  tags: z.array(z.string().trim().max(60)).max(20).default([]),
+  createdBy: z.string().trim().max(200).default(""),
+  createdAt: z.string().trim().max(80),
+  updatedAt: z.string().trim().max(80),
+});
+export type ReleaseData = z.infer<typeof ReleaseDataSchema>;
+
+export const ReleaseCreateSchema = z.object({
+  version: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(1).max(200),
+  summary: z.string().trim().max(1000).optional(),
+  versionType: ReleaseVersionTypeSchema.optional(),
+  status: ReleaseStatusSchema.optional(),
+  environment: ReleaseEnvironmentSchema.optional(),
+  sprintIds: z.array(z.string().trim().max(200)).max(40).optional(),
+  cardIds: z.array(z.string().trim().max(200)).max(500).optional(),
+  changelog: z.array(ReleaseChangelogEntrySchema).max(200).optional(),
+  aiNotes: z.string().trim().max(6000).optional(),
+  humanNotes: z.string().trim().max(6000).optional(),
+  risks: z.array(ReleaseRiskSchema).max(40).optional(),
+  deploymentRef: z.string().trim().max(400).optional(),
+  previousReleaseId: z.string().trim().max(200).nullable().optional(),
+  plannedAt: z.string().trim().max(80).nullable().optional(),
+  tags: z.array(z.string().trim().max(60)).max(20).optional(),
+});
+export type ReleaseCreateInput = z.infer<typeof ReleaseCreateSchema>;
+
+export const ReleaseUpdateSchema = ReleaseCreateSchema.partial().extend({
+  healthScore: z.number().min(0).max(100).nullable().optional(),
+  releasedAt: z.string().trim().max(80).nullable().optional(),
+  rolledBackAt: z.string().trim().max(80).nullable().optional(),
+  rollbackReason: z.string().trim().max(500).optional(),
+});
+export type ReleaseUpdateInput = z.infer<typeof ReleaseUpdateSchema>;
+

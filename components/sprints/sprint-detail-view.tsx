@@ -203,6 +203,18 @@ export function SprintDetailView({ boardId, sprintId, getHeaders }: Props) {
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link
+              href={`${localeRoot}/sprints/${encodeURIComponent(boardId)}/${encodeURIComponent(sprintId)}/command-center`}
+              className="rounded-lg border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-08)] px-3 py-2 text-xs font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-18)]"
+            >
+              ✦ {tc("commandCenter.pretitle")}
+            </Link>
+            <Link
+              href={`${localeRoot}/board/${encodeURIComponent(boardId)}/releases`}
+              className="rounded-lg border border-[var(--flux-chrome-alpha-12)] px-3 py-2 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            >
+              ⏱ Releases
+            </Link>
             <button type="button" className="btn-primary px-3 py-2 text-xs" onClick={() => setDrawerOpen(true)}>
               {t("edit")}
             </button>
