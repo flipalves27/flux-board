@@ -50,7 +50,7 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
         apiGet<{ sprints: SprintData[] }>(
           `/api/boards/${encodeURIComponent(boardId)}/sprints`,
           getHeaders()
-        ).catch(() => ({ sprints: [] })),
+        ).catch(() => ({ sprints: [] as SprintData[] })),
       ]);
       setReleases(relData.releases ?? []);
       setSprints(sprintData.sprints ?? []);

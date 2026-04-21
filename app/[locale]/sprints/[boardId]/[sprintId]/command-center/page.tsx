@@ -47,11 +47,11 @@ export default function SprintCommandCenterPage() {
         apiGet<{ sprints: SprintData[] }>(
           `/api/boards/${encodeURIComponent(boardId)}/sprints`,
           getHeaders()
-        ).catch(() => ({ sprints: [] })),
+        ).catch(() => ({ sprints: [] as SprintData[] })),
         apiGet<{ releases: ReleaseData[] }>(
           `/api/boards/${encodeURIComponent(boardId)}/releases`,
           getHeaders()
-        ).catch(() => ({ releases: [] })),
+        ).catch(() => ({ releases: [] as ReleaseData[] })),
       ]);
       setOverview(ov);
       setBoardName(boardData.board?.name ?? "");
