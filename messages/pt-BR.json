@@ -1691,6 +1691,14 @@
         "dailyButton": "Daily IA",
         "searchPlaceholder": "Buscar... (/) "
       },
+      "desktopToolsRail": {
+        "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
+        "handlePin": "Fixar faixa de ferramentas aberta",
+        "handleUnpin": "Soltar faixa de ferramentas",
+        "copilotOpen": "Abrir Fluxy",
+        "copilotClose": "Fechar Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
+      },
       "nlq": {
         "label": "Consulta inteligente",
         "showPanel": "Mostrar consulta inteligente",
@@ -1777,6 +1785,19 @@
       "deleteSelected": "Deletar selecionados",
       "clearHint": "Esc para limpar",
       "draggingCount": "Movendo {count} cards"
+    }
+  },
+  "aiFlowCoach": {
+    "pretitle": "Board Intelligence",
+    "title": "AI Flow Coach",
+    "error": "Não foi possível gerar o diagnóstico.",
+    "refresh": "Atualizar",
+    "generatedAt": "Gerado às {time}",
+    "scoreLabel": {
+      "excellent": "Excelente",
+      "good": "Bom",
+      "fair": "Razoável",
+      "poor": "Crítico"
     }
   }
 }

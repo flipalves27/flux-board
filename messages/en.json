@@ -1690,6 +1690,14 @@
         "dailyButton": "Daily AI",
         "searchPlaceholder": "Search... (/)"
       },
+      "desktopToolsRail": {
+        "handleTitle": "Hover to reveal tools, or click to keep the strip pinned open",
+        "handlePin": "Pin tools strip open",
+        "handleUnpin": "Unpin tools strip",
+        "copilotOpen": "Open Fluxy",
+        "copilotClose": "Close Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
+      },
       "nlq": {
         "label": "Smart board query",
         "showPanel": "Show smart query",
@@ -1776,6 +1784,19 @@
       "deleteSelected": "Delete selected",
       "clearHint": "Esc to clear",
       "draggingCount": "Moving {count} cards"
+    }
+  },
+  "aiFlowCoach": {
+    "pretitle": "Board Intelligence",
+    "title": "AI Flow Coach",
+    "error": "Could not generate the diagnosis.",
+    "refresh": "Refresh",
+    "generatedAt": "Generated at {time}",
+    "scoreLabel": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Critical"
     }
   }
 }

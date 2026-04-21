@@ -27,6 +27,7 @@ type ActivityApiResponse = {
 type BoardActivityPanelProps = {
   boardId: string;
   getHeaders: () => Record<string, string>;
+  hideDesktopFab?: boolean;
 };
 
 function initials(name: string): string {
@@ -52,7 +53,7 @@ function formatWhen(iso: string, locale: string): string {
   }
 }
 
-export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelProps) {
+export function BoardActivityPanel({ boardId, getHeaders, hideDesktopFab = false }: BoardActivityPanelProps) {
   const t = useTranslations("kanban.activity");
   const locale = useLocale();
   const copilotOpen = useCopilotStore((s) => s.open);
@@ -150,7 +151,7 @@ export function BoardActivityPanel({ boardId, getHeaders }: BoardActivityPanelPr
     <>
       <button
         type="button"
-        className={`fixed z-[469] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[168px]`}
+        className={`${hideDesktopFab ? "md:hidden " : ""}fixed z-[469] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[168px]`}
         onClick={onOpenToggle}
         aria-expanded={open}
         aria-label={open ? t("fabClose") : t("fabOpen")}

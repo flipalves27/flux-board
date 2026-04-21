@@ -10,6 +10,7 @@ import { useAuth } from "@/context/auth-context";
 import { useBoardStore } from "@/stores/board-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { registerRecentCard } from "@/lib/recent-cards";
+import { registerBoardDesktopDailyOpener } from "@/lib/board-desktop-daily-bridge";
 import { useToast } from "@/context/toast-context";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
@@ -228,6 +229,11 @@ function KanbanBoardLoaded({
   );
 
   const { dailyOpen, openDailyModal, closeDailyModal, dailyDeleteConfirmId } = board.dailySession;
+
+  useEffect(() => {
+    registerBoardDesktopDailyOpener(openDailyModal);
+    return () => registerBoardDesktopDailyOpener(null);
+  }, [openDailyModal]);
 
   useEffect(() => {
     const cardId = searchParams.get("card");
@@ -538,6 +544,7 @@ function KanbanBoardLoaded({
         <BoardExecutionInsightsPanel
           executionInsights={board.executionInsights}
           t={t}
+          hideDesktopFab
           onOpenCard={(card) => {
             board.setModalCard(card);
             board.setModalMode("edit");

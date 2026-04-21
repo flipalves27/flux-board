@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -27,6 +28,11 @@ import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 import { BoardRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
 import { BoardProductTour, type BoardProductTourHandle } from "@/components/board/board-product-tour";
 import { BoardPresenceAvatars } from "@/components/kanban/board-presence-avatars";
+
+const BoardDesktopToolsRail = dynamic(
+  () => import("@/components/kanban/board-desktop-tools-rail").then((m) => ({ default: m.BoardDesktopToolsRail })),
+  { ssr: false }
+);
 
 const FILTER_LABELS = [
   "Comercial",
@@ -537,9 +543,11 @@ export default function BoardPage() {
         }}
       />
 
-      <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} />
+      <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
-      <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} />
+      <BoardActivityPanel boardId={boardId} getHeaders={getHeaders} hideDesktopFab />
+
+      <BoardDesktopToolsRail />
 
       <BoardProductTour
         ref={tourRef}

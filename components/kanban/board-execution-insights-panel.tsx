@@ -18,12 +18,14 @@ type BoardExecutionInsightsPanelProps = {
   executionInsights: BoardExecutionInsightsPayload;
   t: (key: string, values?: Record<string, string | number>) => string;
   onOpenCard: (card: CardData) => void;
+  hideDesktopFab?: boolean;
 };
 
 export function BoardExecutionInsightsPanel({
   executionInsights,
   t,
   onOpenCard,
+  hideDesktopFab = false,
 }: BoardExecutionInsightsPanelProps) {
   const tFab = useTranslations("kanban.executionInsights");
   const copilotOpen = useCopilotStore((s) => s.open);
@@ -46,7 +48,7 @@ export function BoardExecutionInsightsPanel({
     <>
       <button
         type="button"
-        className={`fixed z-[468] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[224px]`}
+        className={`${hideDesktopFab ? "md:hidden " : ""}fixed z-[468] transition-all duration-200 active:scale-[0.98] ${fabRight} top-[224px]`}
         onClick={onOpenToggle}
         aria-expanded={open}
         aria-label={open ? tFab("fabClose") : tFab("fabOpen")}
