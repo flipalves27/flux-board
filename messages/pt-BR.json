@@ -4017,6 +4017,65 @@
         "ai_notes_generated": "Notas geradas por IA"
       }
     }
+  },
+  "aiFlowCoach": {
+    "pretitle": "Board Intelligence",
+    "title": "AI Flow Coach",
+    "error": "Não foi possível gerar o diagnóstico.",
+    "refresh": "Atualizar",
+    "generatedAt": "Gerado às {time}",
+    "scoreLabel": {
+      "excellent": "Excelente",
+      "good": "Bom",
+      "fair": "Razoável",
+      "poor": "Crítico"
+    }
+  },
+  "velocityOracle": {
+    "pretitle": "Previsão Preditiva",
+    "title": "Velocity Oracle",
+    "daysLeft": "Dias restantes",
+    "noData": "Dados insuficientes para previsão.",
+    "error": "Não foi possível carregar a previsão.",
+    "forecastTitle": "Previsão Monte Carlo",
+    "riskTitle": "Cards de maior risco",
+    "scenarioTitle": "Simulação What-If",
+    "removeCards": "Remover cards do escopo",
+    "capacity": "Capacidade do time",
+    "applyScenario": "Simular",
+    "reset": "Resetar",
+    "metrics": {
+      "total": "Total",
+      "done": "Concluídos",
+      "remaining": "Restantes"
+    },
+    "prob": {
+      "impossible": "Improvável",
+      "unlikely": "Pouco provável",
+      "possible": "Possível",
+      "likely": "Provável",
+      "almost_certain": "Quase certo"
+    }
+  },
+  "aiRetrospective": {
+    "pretitle": "Retrospectiva Inteligente",
+    "title": "AI Retrospective",
+    "error": "Não foi possível gerar a retrospectiva.",
+    "generate": "Gerar retrospectiva",
+    "regenerate": "Regenerar",
+    "generating": "Gerando…",
+    "copyMd": "Exportar MD",
+    "emptyHint": "Clique em Gerar para criar uma retrospectiva inteligente com análise de padrões.",
+    "wentWell": "O que foi bem",
+    "improvements": "O que melhorar",
+    "actions": "Ações prioritárias",
+    "metrics": {
+      "completion": "Conclusão",
+      "carryover": "Carregados",
+      "blockers": "Bloqueios",
+      "vsPrev": "vs. anterior",
+      "cycleTime": "Tempo ciclo"
+    }
   }
 }
 

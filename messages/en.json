@@ -4012,5 +4012,64 @@
         "ai_notes_generated": "AI notes generated"
       }
     }
+  },
+  "aiFlowCoach": {
+    "pretitle": "Board Intelligence",
+    "title": "AI Flow Coach",
+    "error": "Could not generate board diagnosis.",
+    "refresh": "Refresh",
+    "generatedAt": "Generated at {time}",
+    "scoreLabel": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Critical"
+    }
+  },
+  "velocityOracle": {
+    "pretitle": "Predictive Forecast",
+    "title": "Velocity Oracle",
+    "daysLeft": "Days left",
+    "noData": "Insufficient data to forecast.",
+    "error": "Could not load forecast.",
+    "forecastTitle": "Monte Carlo Forecast",
+    "riskTitle": "Highest risk cards",
+    "scenarioTitle": "What-If Simulation",
+    "removeCards": "Remove cards from scope",
+    "capacity": "Team capacity",
+    "applyScenario": "Simulate",
+    "reset": "Reset",
+    "metrics": {
+      "total": "Total",
+      "done": "Done",
+      "remaining": "Remaining"
+    },
+    "prob": {
+      "impossible": "Unlikely",
+      "unlikely": "Low chance",
+      "possible": "Possible",
+      "likely": "Likely",
+      "almost_certain": "Almost certain"
+    }
+  },
+  "aiRetrospective": {
+    "pretitle": "Smart Retrospective",
+    "title": "AI Retrospective",
+    "error": "Could not generate retrospective.",
+    "generate": "Generate retrospective",
+    "regenerate": "Regenerate",
+    "generating": "Generating…",
+    "copyMd": "Export MD",
+    "emptyHint": "Click Generate to create an intelligent retrospective with pattern analysis.",
+    "wentWell": "What went well",
+    "improvements": "What to improve",
+    "actions": "Priority actions",
+    "metrics": {
+      "completion": "Completion",
+      "carryover": "Carried over",
+      "blockers": "Blockers",
+      "vsPrev": "vs. previous",
+      "cycleTime": "Cycle time"
+    }
   }
 }

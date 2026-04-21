@@ -8,6 +8,8 @@ import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
 import { openBoardDesktopDaily } from "@/lib/board-desktop-daily-bridge";
 import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
+import { useAuth } from "@/context/auth-context";
+import { AiFlowCoachPanel } from "@/components/board/ai-flow-coach-panel";
 
 const RAIL_LEAVE_MS = 320;
 const LS_PINNED_KEY = "flux:desktop-tools-rail-pinned";
@@ -45,6 +47,8 @@ export function BoardDesktopToolsRail() {
   const setExecutionOpen = useBoardExecutionInsightsStore((s) => s.setOpen);
 
   const setCopilotOpen = useCopilotStore((s) => s.setOpen);
+  const { getHeaders } = useAuth();
+  const [flowCoachOpen, setFlowCoachOpen] = useState(false);
 
   const [pinned, setPinned] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -226,6 +230,24 @@ export function BoardDesktopToolsRail() {
 
         <div className="mx-auto my-1 w-6 border-t border-[var(--flux-chrome-alpha-12)]" />
 
+        {/* AI Flow Coach */}
+        <button
+          type="button"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={() => setFlowCoachOpen(true)}
+          disabled={!boardId}
+          aria-label="AI Flow Coach"
+        >
+          <span className={toolButtonClass(flowCoachOpen)}
+            style={flowCoachOpen ? {} : { background: "linear-gradient(135deg, color-mix(in srgb,var(--flux-primary) 14%,var(--flux-surface-mid)) 0%, var(--flux-surface-mid) 80%)" }}
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)] text-[13px] font-bold">
+              ✦
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">Flow Coach</span>
+          </span>
+        </button>
+
         <button
           type="button"
           className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
@@ -285,5 +307,13 @@ export function BoardDesktopToolsRail() {
         </button>
       </div>
     </div>
+
+    <AiFlowCoachPanel
+      boardId={boardId}
+      open={flowCoachOpen}
+      onClose={() => setFlowCoachOpen(false)}
+      getHeaders={getHeaders}
+      locale={locale}
+    />
   );
 }
