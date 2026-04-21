@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import dynamic from "next/dynamic";
 import { useShallow } from "zustand/react/shallow";
 
 import { useAuth } from "@/context/auth-context";

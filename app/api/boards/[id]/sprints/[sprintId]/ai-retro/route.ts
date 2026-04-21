@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const org = await getOrganizationById(payload.orgId);
   const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
-    assertFeatureAllowed(org, "ai_insights", gateCtx);
+    assertFeatureAllowed(org, "retro_facilitator", gateCtx);
   } catch (err) {
     if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const [board, sprint] = await Promise.all([
     getBoard(boardId, payload.orgId),
-    getSprint(boardId, sprintId),
+    getSprint(payload.orgId, sprintId),
   ]);
   if (!board) return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
   if (!sprint) return NextResponse.json({ error: "Sprint não encontrada" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const body = await request.json().catch(() => ({})) as { locale?: string };
   const locale = body.locale ?? "pt-BR";
 
-  const allSprints = await listSprints(boardId);
+  const allSprints = await listSprints(payload.orgId, boardId);
   const sortedPrev = allSprints
     .filter((s) => s.id !== sprintId && s.endDate)
     .sort((a, b) => new Date(b.endDate!).getTime() - new Date(a.endDate!).getTime());
