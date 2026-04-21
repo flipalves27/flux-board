@@ -49,7 +49,7 @@ export function KeyboardShortcutsModal({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[530] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[var(--flux-z-shortcuts-modal)] flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();

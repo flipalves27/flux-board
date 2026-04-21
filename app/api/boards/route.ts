@@ -1,65 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import {
-  getBoardIds,
-  getBoardsByIds,
-  createBoard,
-  ensureBoardReborn,
-  getDefaultBoardData,
-  getBoardRebornId,
-} from "@/lib/kv-boards";
+import { getBoardIds, getBoardListRowsByIds, createBoard, countBoardsInOrg } from "@/lib/kv-boards";
 import {
   computeBoardPortfolio,
   type PortfolioBoardLike,
 } from "@/lib/board-portfolio-metrics";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { ensureAdminUser } from "@/lib/kv-users";
+import { deriveEffectiveRoles, isOrgConvidado, isPlatformAdmin } from "@/lib/rbac";
 import { BoardCreateSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { getBoardCap } from "@/lib/plan-gates";
+import { getBoardCap, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import { getPublishedTemplateById } from "@/lib/kv-templates";
 import { createBoardFromTemplateSnapshot } from "@/lib/template-import";
 import type { BoardTemplateSnapshot } from "@/lib/template-types";
 import type { AutomationRule } from "@/lib/automation-types";
+import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
+import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
+import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
+export const maxDuration = 60;
+
+function corsHeaders(request: NextRequest) {
+  return boardsApiCorsHeaders(request);
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders() });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
 }
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const route = "GET /api/boards";
+  const t0 = Date.now();
+  const payload = await getAuthFromRequest(request);
+  logFluxApiPhase(route, "getAuthFromRequest", t0);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   try {
-    await ensureAdminUser();
+    const t1 = Date.now();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
+    logFluxApiPhase(route, "getOrganizationById", t1);
 
+    const t2 = Date.now();
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
-    const boardRows = await getBoardsByIds(boardIds, payload.orgId);
+    logFluxApiPhase(route, "getBoardIds(userView)", t2);
+    if (
+      process.env.FLUX_LOG_EMPTY_BOARD_LIST === "1" &&
+      boardIds.length === 0 &&
+      !payload.isAdmin
+    ) {
+      console.warn("[api/boards] empty board list for non-admin", {
+        orgId: payload.orgId,
+        userId: payload.id,
+      });
+    }
+
+    const t3 = Date.now();
+    const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);
+    logFluxApiPhase(route, "getBoardListRowsByIds", t3);
     const boards = boardRows.map((b) => ({
       id: b.id,
       name: b.name,
       ownerId: b.ownerId,
       clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
       lastUpdated: b.lastUpdated,
+      boardMethodology: b.boardMethodology,
       portfolio: computeBoardPortfolio(b as PortfolioBoardLike),
     }));
 
-    const rebornId = getBoardRebornId(payload.orgId);
-    // Contagem de boards deve ser por organização (não apenas pelo usuário).
-    const orgBoardIds = await getBoardIds(payload.id, payload.orgId, true);
-    const currentCount = orgBoardIds.filter((id) => id !== rebornId).length;
-    const cap = getBoardCap(org);
+    // Contagem alinhada a documentos `boards` com este orgId (limite de plano / billing).
+    const t4 = Date.now();
+    const currentCount = await countBoardsInOrg(payload.orgId);
+    logFluxApiPhase(route, "countBoardsInOrg", t4);
+    const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     const isPro = cap === null;
 
     const plan =
@@ -69,18 +84,16 @@ export async function GET(request: NextRequest) {
         currentCount,
         atLimit: cap !== null && currentCount >= cap,
       };
-    return NextResponse.json({ boards, plan });
+    logFluxApiPhase(route, "total", t0);
+    return NextResponse.json({ boards, plan }, { headers: corsHeaders(request) });
   } catch (err) {
     console.error("Boards API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/route.ts" });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -88,7 +101,11 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
-    await ensureBoardReborn(payload.orgId, org?.ownerId ?? payload.id, getDefaultBoardData);
+
+    const roleCtx = deriveEffectiveRoles(payload);
+    if (isOrgConvidado(roleCtx) && !isPlatformAdmin(roleCtx)) {
+      return NextResponse.json({ error: "Convidados não podem criar boards." }, { status: 403 });
+    }
 
     const body = await request.json();
     const parsed = BoardCreateSchema.safeParse(body);
@@ -103,11 +120,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Use apenas templateId ou templateSnapshot, não ambos." }, { status: 400 });
     }
 
-    const rebornId = getBoardRebornId(payload.orgId);
-    const cap = getBoardCap(org);
+    const cap = getBoardCap(org, planGateCtxFromAuthPayload(payload));
     if (cap !== null) {
-      const existingIds = await getBoardIds(payload.id, payload.orgId, true);
-      const currentCount = existingIds.filter((id) => id !== rebornId).length;
+      const currentCount = await countBoardsInOrg(payload.orgId);
       if (currentCount >= cap) {
         return NextResponse.json(
           { error: `Limite do plano: no máximo ${cap} board(s) por organização.` },
@@ -116,6 +131,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const methodology = parsed.data.boardMethodology;
     let board;
     if (templateId) {
       const tpl = await getPublishedTemplateById(templateId);
@@ -125,21 +141,17 @@ export async function POST(request: NextRequest) {
       const snap = tpl.snapshot;
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...snap,
+        boardMethodology: snap.boardMethodology ?? methodology,
         automations: Array.isArray(snap.automations) ? (snap.automations as AutomationRule[]) : [],
       });
     } else if (rawSnap) {
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...rawSnap,
+        boardMethodology: rawSnap.boardMethodology ?? methodology,
         automations: Array.isArray(rawSnap.automations) ? (rawSnap.automations as AutomationRule[]) : [],
       });
     } else {
-      board = await createBoard(payload.orgId, payload.id, name, {
-        version: "2.0",
-        cards: [],
-        config: { bucketOrder: [], collapsedColumns: [] },
-        mapaProducao: [],
-        dailyInsights: [],
-      });
+      board = await createBoard(payload.orgId, payload.id, name, initialBoardPayloadForMethodology(methodology));
     }
     return NextResponse.json(
       {
@@ -148,15 +160,13 @@ export async function POST(request: NextRequest) {
           name: board.name,
           ownerId: board.ownerId,
           lastUpdated: board.lastUpdated,
+          boardMethodology: board.boardMethodology ?? methodology,
         },
       },
-      { status: 201 }
+      { status: 201, headers: corsHeaders(request) }
     );
   } catch (err) {
     console.error("Boards API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/boards/route.ts" });
   }
 }

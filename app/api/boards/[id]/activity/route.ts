@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { listBoardActivity, parseBoardActivityAction } from "@/lib/kv-board-activity";
 import { isMongoConfigured } from "@/lib/mongo";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { getBoardActivityRetentionDays } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 function parseIsoDate(raw: string | null, label: string): Date | undefined {
   if (!raw) return undefined;
@@ -16,7 +17,7 @@ function parseIsoDate(raw: string | null, label: string): Date | undefined {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -26,14 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
@@ -67,7 +61,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     from = parseIsoDate(url.searchParams.get("from"), "Data inicial");
     to = parseIsoDate(url.searchParams.get("to"), "Data final");
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Datas inválidas" }, { status: 400 });
+    return publicApiErrorResponse(e, { context: "api/boards/[id]/activity/route.ts", status: 400, fallbackMessage: "Datas inválidas." });
   }
 
   if (actionRaw && !action) {

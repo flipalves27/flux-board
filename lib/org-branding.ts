@@ -22,6 +22,12 @@ export const DEFAULT_PLATFORM_NAME = "Flux-Board";
 
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
+function adminSuperpowersEnabled(): boolean {
+  const raw = process.env.FLUX_ADMIN_SUPERPOWERS?.trim().toLowerCase();
+  if (raw == null || raw === "") return false;
+  return !(raw === "0" || raw === "false" || raw === "off" || raw === "no");
+}
+
 /** Máximo ~2 MiB por asset em base64 (logo / favicon). */
 export const BRANDING_ASSET_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -32,12 +38,20 @@ export function sanitizeHexColor(input: string | undefined | null): string | und
   return t;
 }
 
-export function orgBrandingAllowsTheming(org: { plan: string } | null | undefined): boolean {
+export function orgBrandingAllowsTheming(
+  org: { plan: string } | null | undefined,
+  opts?: { isOrgAdmin?: boolean }
+): boolean {
+  if (opts?.isOrgAdmin && adminSuperpowersEnabled()) return true;
   if (!org) return false;
   return org.plan === "pro" || org.plan === "business" || org.plan === "trial";
 }
 
-export function orgBrandingAllowsCustomDomain(org: { plan: string } | null | undefined): boolean {
+export function orgBrandingAllowsCustomDomain(
+  org: { plan: string } | null | undefined,
+  opts?: { isOrgAdmin?: boolean }
+): boolean {
+  if (opts?.isOrgAdmin && adminSuperpowersEnabled()) return true;
   if (!org) return false;
   return org.plan === "business";
 }

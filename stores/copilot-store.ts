@@ -13,10 +13,21 @@ export type CopilotMessage = {
   meta?: Record<string, unknown>;
 };
 
+export type FluxyBoardDockIntent = {
+  expandSala: boolean;
+  contextCardId: string | null;
+  highlightMessageId: string | null;
+  focusComposer: boolean;
+};
+
 type CopilotStoreState = {
   open: boolean;
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
+
+  fluxyBoardDock: FluxyBoardDockIntent | null;
+  setFluxyBoardDock: (v: FluxyBoardDockIntent | null) => void;
+  consumeFluxyBoardDock: () => FluxyBoardDockIntent | null;
 
   loadingHistory: boolean;
   setLoadingHistory: (v: boolean) => void;
@@ -52,10 +63,18 @@ const devEnabled = process.env.NODE_ENV === "development";
 
 export const useCopilotStore = create<CopilotStoreState>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       open: false,
       setOpen: (open) => set({ open }),
       toggleOpen: () => set((s) => ({ open: !s.open })),
+
+      fluxyBoardDock: null,
+      setFluxyBoardDock: (v) => set({ fluxyBoardDock: v }),
+      consumeFluxyBoardDock: () => {
+        const cur = get().fluxyBoardDock;
+        set({ fluxyBoardDock: null });
+        return cur;
+      },
 
       loadingHistory: false,
       setLoadingHistory: (loadingHistory) => set({ loadingHistory }),
@@ -99,6 +118,7 @@ export const useCopilotStore = create<CopilotStoreState>()(
           voiceListening: false,
           voiceInterim: "",
           voiceError: null,
+          fluxyBoardDock: null,
         }),
     }),
     { name: "FluxCopilot", enabled: devEnabled }

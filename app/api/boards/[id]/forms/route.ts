@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, updateBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { IntakeFormUpsertSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { normalizeFormSlug } from "@/lib/forms-intake";
 import { upsertIntakeFormIndex } from "@/lib/kv-intake-forms";
-
-function resolveBoardId(requestedBoardId: string, orgId: string): string {
-  if (requestedBoardId !== "b_reborn") return requestedBoardId;
-  return getBoardRebornId(orgId);
-}
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: requestedBoardId } = await params;
@@ -19,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório." }, { status: 400 });
   }
 
-  const boardId = resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = requestedBoardId;
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) return NextResponse.json({ error: "Sem permissão para este board." }, { status: 403 });
 
@@ -30,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: requestedBoardId } = await params;
@@ -38,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório." }, { status: 400 });
   }
 
-  const boardId = resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = requestedBoardId;
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) return NextResponse.json({ error: "Sem permissão para este board." }, { status: 403 });
 
@@ -85,6 +81,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
     return NextResponse.json({ ok: true, intakeForm: (board as any).intakeForm });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/forms/route.ts" });
   }
 }

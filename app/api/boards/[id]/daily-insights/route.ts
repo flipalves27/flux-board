@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiErrorResponse, publicErrorMessage } from "@/lib/public-api-error";
 import { getAuthFromRequest } from "@/lib/auth";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import { isCloudLlmConfigured, isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
@@ -11,8 +12,11 @@ import {
   getDailyAiCallsCap,
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
   PlanGateError,
 } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
+import { includeLlmTelemetryInApiResponse } from "@/lib/rbac";
 
 type InsightActionItem = {
   titulo: string;
@@ -426,7 +430,7 @@ async function llmInsight(args: {
       generatedWithAI: false,
       provider: "together.ai",
       errorKind: "network_error",
-      errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
+      errorMessage: publicErrorMessage(err, "Erro de rede ao chamar a IA.", "api/boards/[id]/daily-insights/route.ts"),
     };
   }
 }
@@ -435,7 +439,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -446,12 +450,11 @@ export async function POST(
   }
 
   const org = await getOrganizationById(payload.orgId);
+  const gateCtx = planGateCtxFromAuthPayload(payload);
   try {
-    assertFeatureAllowed(org, "daily_insights");
+    assertFeatureAllowed(org, "daily_insights", gateCtx);
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     throw err;
   }
 
@@ -514,7 +517,7 @@ export async function POST(
     });
 
     // Quota de "calls/dia" apenas quando vamos de fato disparar IA via Together.ai.
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     const llmCloudEnabled =
       (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
       Boolean(process.env.ANTHROPIC_API_KEY);
@@ -554,9 +557,6 @@ export async function POST(
       insight: llmResult.insight,
       generationMeta: {
         usedLlm: llmResult.generatedWithAI,
-        model: llmResult.generatedWithAI ? llmResult.model : undefined,
-        provider: llmResult.provider,
-        errorKind: llmResult.errorKind,
       },
     };
     const dailyInsights = [entry, ...current].slice(0, 20);
@@ -574,12 +574,12 @@ export async function POST(
       errorMessage: llmResult.errorMessage,
     };
 
-    return NextResponse.json({ ok: true, entry, llmDebug });
+    if (includeLlmTelemetryInApiResponse(payload)) {
+      return NextResponse.json({ ok: true, entry, llmDebug });
+    }
+    return NextResponse.json({ ok: true, entry });
   } catch (err) {
     console.error("Daily insights API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "POST api/boards/[id]/daily-insights" });
   }
 }

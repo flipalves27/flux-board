@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -137,9 +137,8 @@ export function BoardDesktopToolsRail() {
   }, []);
 
   return (
-    <>
     <div
-      className={`max-md:hidden fixed z-[472] bottom-6 top-auto flex flex-row-reverse items-end gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
+      className={`max-md:hidden fixed z-[var(--flux-z-board-tools-rail)] bottom-6 top-auto flex flex-row-reverse items-end gap-1.5 pl-1 ${fabRight} motion-safe:transition-[right] motion-safe:duration-200`}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
@@ -243,7 +242,7 @@ export function BoardDesktopToolsRail() {
             style={flowCoachOpen ? {} : { background: "linear-gradient(135deg, color-mix(in srgb,var(--flux-primary) 14%,var(--flux-surface-mid)) 0%, var(--flux-surface-mid) 80%)" }}
           >
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)] text-[13px] font-bold">
-              {"\u2726"}
+              ✦
             </span>
             <span className="text-[11px] font-semibold whitespace-nowrap">Flow Coach</span>
           </span>
@@ -316,6 +315,5 @@ export function BoardDesktopToolsRail() {
       getHeaders={getHeaders}
       locale={locale}
     />
-    </>
   );
 }

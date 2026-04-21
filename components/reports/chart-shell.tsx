@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { apiPost, ApiError } from "@/lib/api-client";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { ReportsChartHeader } from "@/components/reports/reports-chart-header";
 
 export function ChartShell({
   title,
@@ -12,12 +13,15 @@ export function ChartShell({
   children,
   chartId,
   explainPayload,
+  explainApiPath = "/api/flux-reports/explain",
 }: {
   title: string;
   hint?: string;
   children: React.ReactNode;
   chartId: string;
   explainPayload: unknown;
+  /** Ex.: `/api/flux-reports/lss/explain` para relatório Lean Six Sigma. */
+  explainApiPath?: string;
 }) {
   const t = useTranslations("reports");
   const { getHeaders } = useAuth();
@@ -40,7 +44,7 @@ export function ChartShell({
         model?: string;
         provider?: string;
       }>(
-        "/api/flux-reports/explain",
+        explainApiPath,
         {
           chartId,
           chartTitle: title,
@@ -60,15 +64,14 @@ export function ChartShell({
     } finally {
       setBusy(false);
     }
-  }, [chartId, explainPayload, getHeaders, title, t]);
+  }, [chartId, explainApiPath, explainPayload, getHeaders, title, t]);
 
   return (
     <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{title}</h3>
-          {hint ? <p className="mt-1 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">{hint}</p> : null}
-        </div>
+      <ReportsChartHeader
+        title={title}
+        hint={hint}
+        action={
         <button
           type="button"
           onClick={explain}
@@ -77,7 +80,8 @@ export function ChartShell({
         >
           {busy ? t("explaining") : t("explain")}
         </button>
-      </div>
+        }
+      />
       {children}
       {err ? <p className="mt-3 text-xs text-[var(--flux-danger)]">{err}</p> : null}
       {narrative ? (

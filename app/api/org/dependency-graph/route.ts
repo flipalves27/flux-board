@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
-import { listBoardsForUser } from "@/lib/kv-boards";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
+import { getBoardIds, getBoardsForCardSearchByIds } from "@/lib/kv-boards";
 import { listCrossDependencyLinksForOrg } from "@/lib/kv-card-dependencies";
 import { isMongoConfigured } from "@/lib/mongo";
 
@@ -13,7 +14,7 @@ const MAX_NODES = 200;
  * scope=board: apenas links que tocam boardId. scope=org: todos os links da org (respeitando acesso aos boards).
  */
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const org = await getOrganizationById(payload.orgId);
-    assertFeatureAllowed(org, "portfolio_export");
+    assertFeatureAllowed(org, "portfolio_export", planGateCtxFromAuthPayload(payload));
 
     const { searchParams } = new URL(request.url);
     const scope = (searchParams.get("scope") || "board") as "board" | "org";
@@ -31,7 +32,8 @@ export async function GET(request: NextRequest) {
     const minConfidence = Number(searchParams.get("minConfidence") || "0");
     const minC = Number.isFinite(minConfidence) ? minConfidence : 0;
 
-    const boards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+    const boardIdsDep = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+    const boards = await getBoardsForCardSearchByIds(boardIdsDep, payload.orgId);
     const accessible = new Set(boards.map((b) => b.id));
 
     let links = await listCrossDependencyLinksForOrg(payload.orgId, { minConfidence: minC });
@@ -96,9 +98,7 @@ export async function GET(request: NextRequest) {
       edges,
     });
   } catch (err) {
-    if (err instanceof PlanGateError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
+    if (err instanceof PlanGateError) return denyPlan(err);
     console.error("dependency-graph GET:", err);
     return NextResponse.json({ error: "Erro ao montar grafo." }, { status: 500 });
   }

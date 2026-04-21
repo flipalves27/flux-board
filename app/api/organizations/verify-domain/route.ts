@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { getOrganizationById, updateOrganization } from "@/lib/kv-organizations";
 import { orgBrandingAllowsCustomDomain } from "@/lib/org-branding";
 import { verifyFluxTxtRecord } from "@/lib/org-domain-dns";
 
 /** POST — admin confirma registro TXT no DNS para o domínio configurado. */
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const org = await getOrganizationById(payload.orgId);
   if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });

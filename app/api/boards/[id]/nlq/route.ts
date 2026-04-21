@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { sanitizeText } from "@/lib/schemas";
+import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { executeNlqPlan, parseNlqWithLlm, tryNlqHeuristic } from "@/lib/board-nlq";
 import type { CopilotChatDocLike } from "@/lib/flux-reports-metrics";
 import { getDb, isMongoConfigured } from "@/lib/mongo";
@@ -9,20 +10,12 @@ import { getBoardNlqRecentQueries, pushBoardNlqRecentQuery } from "@/lib/kv-boar
 
 export const runtime = "nodejs";
 
-async function resolveBoardIdParam(requestedBoardId: string, orgId: string): Promise<string> {
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
-  return boardId;
+function resolveBoardIdParam(requestedBoardId: string): string {
+  return requestedBoardId;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -32,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  const boardId = await resolveBoardIdParam(requestedId, payload.orgId);
+  const boardId = resolveBoardIdParam(requestedId);
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
@@ -48,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
@@ -58,14 +51,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
 
-  const boardId = await resolveBoardIdParam(requestedId, payload.orgId);
+  const boardId = resolveBoardIdParam(requestedId);
   const canAccess = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!canAccess) {
     return NextResponse.json({ error: "Sem permissão para este board" }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => ({}))) as { query?: string };
-  const query = sanitizeText(body.query ?? "").trim().slice(0, 500);
+  const rawQuery = sanitizeText(body.query ?? "").trim().slice(0, 500);
+  const query = guardUserPromptForLlm(rawQuery).text;
   if (!query) {
     return NextResponse.json({ error: "Consulta é obrigatória." }, { status: 400 });
   }

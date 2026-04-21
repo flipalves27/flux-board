@@ -1,0 +1,19 @@
+{
+  "name": "Flux Board",
+  "short_name": "Flux",
+  "description": "Plataforma inteligente de gestão de projetos com Kanban, IA e colaboração em tempo real",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f0d1e",
+  "theme_color": "#6c5ce7",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

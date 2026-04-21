@@ -1,8 +1,5 @@
 {
   "framework": "nextjs",
-  "rewrites": [
-    { "source": "/resumo-reborn", "destination": "/resumo-reborn.html" }
-  ],
   "crons": [
     {
       "path": "/api/cron/automations",
@@ -11,6 +8,14 @@
     {
       "path": "/api/cron/anomaly-check",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/sprint-burndown",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/daily-digest",
+      "schedule": "30 11 * * *"
     }
   ]
 }

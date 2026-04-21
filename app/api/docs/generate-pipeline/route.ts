@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, listBoardsForUser, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, getBoardIds, getBoardListRowsByIds, userCanAccessBoard } from "@/lib/kv-boards";
 import { createDoc } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import {
@@ -9,7 +9,9 @@ import {
   getDailyAiCallsWindowMs,
   getEffectiveTier,
   makeDailyAiCallsRateLimitKey,
+  planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
+import { publicErrorMessage } from "@/lib/public-api-error";
 import { logDocsMetric } from "@/lib/docs-metrics";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
@@ -63,11 +65,12 @@ const SYS: Record<DocsGenerationFlow, string> = {
 };
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const org = await getOrganizationById(payload.orgId);
-  if (!canUseFeature(org, "flux_docs_rag")) {
+  const gateCtx = planGateCtxFromAuthPayload(payload);
+  if (!canUseFeature(org, "flux_docs_rag", gateCtx)) {
     return NextResponse.json({ error: "RAG / Flux Docs indisponível no plano atual." }, { status: 403 });
   }
 
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
   const board = await getBoard(boardId, payload.orgId);
   if (!board) return NextResponse.json({ error: "Board não encontrado." }, { status: 404 });
 
-  if (flow === "okr_progress" && !canUseFeature(org, "okr_engine")) {
+  if (flow === "okr_progress" && !canUseFeature(org, "okr_engine", gateCtx)) {
     return NextResponse.json({ error: "OKRs disponíveis apenas em planos com Flux Goals." }, { status: 403 });
   }
 
@@ -116,10 +119,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const tier = getEffectiveTier(org);
+  const tier = getEffectiveTier(org, gateCtx);
   const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
   if (tier === "free" && togetherEnabled) {
-    const cap = getDailyAiCallsCap(org);
+    const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
       const rlDaily = await rateLimit({
@@ -154,7 +157,8 @@ export async function POST(request: NextRequest) {
       try {
         sendEvent("step", { id: "collect", label: "Coletando contexto do Flux", status: "running" });
 
-        const allBoards = await listBoardsForUser(payload.id, payload.orgId, payload.isAdmin);
+        const boardIdsDocs = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
+        const allBoards = await getBoardListRowsByIds(boardIdsDocs, payload.orgId);
         let userContent = "";
         let defaultTitle = defaultTitleForFlow(flow, board, quarter);
         if (titleOverride) defaultTitle = titleOverride;
@@ -251,7 +255,7 @@ export async function POST(request: NextRequest) {
         });
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro ao gerar documento.";
+        const message = publicErrorMessage(err, "Erro ao gerar documento.", "api/docs/generate-pipeline/route.ts");
         sendEvent("error", { message });
         try {
           controller.close();

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { AiModelHint } from "@/components/ai-model-hint";
 
@@ -45,7 +46,8 @@ function severityDot(sev: string): string {
 
 export function ProactiveAiPanel() {
   const t = useTranslations("reports.proactive");
-  const { getHeaders } = useAuth();
+  const { getHeaders, user } = useAuth();
+  const showOpsTelemetry = Boolean(user && isPlatformAdminSession(user));
   const [data, setData] = useState<AnomalyInsightsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,9 @@ export function ProactiveAiPanel() {
     return (
       <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-5">
         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">{t("title")}</h3>
-        <p className="mt-2 text-sm text-[var(--flux-text-muted)]">{t("noMongo")}</p>
+        <p className="mt-2 text-sm text-[var(--flux-text-muted)]">
+          {showOpsTelemetry ? t("noMongo") : t("noMongoPublic")}
+        </p>
       </section>
     );
   }
@@ -153,7 +157,9 @@ export function ProactiveAiPanel() {
               {t("lastRun")}: <span className="text-[var(--flux-text)]">{fmtTime(data.health.lastRunAt)}</span>
             </p>
           ) : (
-            <p className="mt-2 text-xs text-[var(--flux-warning)]">{t("neverRun")}</p>
+            <p className="mt-2 text-xs text-[var(--flux-warning)]">
+              {showOpsTelemetry ? t("neverRun") : t("neverRunPublic")}
+            </p>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
@@ -226,9 +232,9 @@ export function ProactiveAiPanel() {
                             <span className="font-semibold text-[var(--flux-text)]">{t("suggested")}: </span>
                             {a.suggestedAction}
                           </p>
-                          {(a.suggestedActionModel || a.suggestedActionProvider) && (
+                          {showOpsTelemetry && (a.suggestedActionModel || a.suggestedActionProvider) ? (
                             <AiModelHint model={a.suggestedActionModel} provider={a.suggestedActionProvider} />
-                          )}
+                          ) : null}
                         </div>
                       ) : null}
                       {a.boardName ? (
@@ -236,17 +242,21 @@ export function ProactiveAiPanel() {
                           {t("board")}: {a.boardName}
                         </p>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setExpanded((x) => (x === a.id ? null : a.id))}
-                        className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)] hover:underline"
-                      >
-                        {expanded === a.id ? t("hideDiag") : t("showDiag")}
-                      </button>
-                      {expanded === a.id ? (
-                        <pre className="mt-2 max-h-32 overflow-auto rounded border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-30)] p-2 text-[10px] leading-relaxed text-[var(--flux-secondary-light)]">
-                          {JSON.stringify(a.diagnostics, null, 2)}
-                        </pre>
+                      {showOpsTelemetry ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setExpanded((x) => (x === a.id ? null : a.id))}
+                            className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)] hover:underline"
+                          >
+                            {expanded === a.id ? t("hideDiag") : t("showDiag")}
+                          </button>
+                          {expanded === a.id ? (
+                            <pre className="mt-2 max-h-32 overflow-auto rounded border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-30)] p-2 text-[10px] leading-relaxed text-[var(--flux-secondary-light)]">
+                              {JSON.stringify(a.diagnostics, null, 2)}
+                            </pre>
+                          ) : null}
+                        </>
                       ) : null}
                     </div>
                   </div>
@@ -258,7 +268,7 @@ export function ProactiveAiPanel() {
       </div>
 
       <p className="mt-4 border-t border-[var(--flux-chrome-alpha-10)] pt-3 text-[11px] leading-relaxed text-[var(--flux-text-muted)]">
-        {t("cronHint")}
+        {showOpsTelemetry ? t("cronHint") : t("cronHintPublic")}
       </p>
     </section>
   );

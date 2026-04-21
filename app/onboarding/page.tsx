@@ -1,6 +1,7 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
@@ -8,16 +9,23 @@ import { useSensor, useSensors, PointerSensor, KeyboardSensor } from "@dnd-kit/c
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/auth-context";
-import { apiGet, apiPost, apiPut, ApiError } from "@/lib/api-client";
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "@/lib/api-client";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { Header } from "@/components/header";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
+import { OnboardingFluxyHero } from "@/components/onboarding/onboarding-fluxy-hero";
 import {
   DEFAULT_TEMPLATE_ID,
   ONBOARDING_TEMPLATES,
   type BucketConfig,
   type TemplateId,
   getOnboardingDoneStorageKey,
+  getOnboardingFluxyHeroStorageKey,
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
+import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
+import { nextBoardCardId } from "@/lib/card-id";
+import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -32,6 +40,27 @@ type PersistedWizardState = {
 
 const PRIORITIES = ["Urgente", "Importante", "Média"] as const;
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
+
+/**
+ * Timeout para GET /api/boards no onboarding. Reduzido de 40s para 10s:
+ * - Falha rápido em vez de bloquear por 40s
+ * - Graceful degradation: se falhar, assume que não tem boards (caso comum para novos users)
+ * - Elimina bloqueio por MongoDB frio/lento.
+ */
+const ONBOARDING_BOARDS_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * Atrasa opcionalmente o GET /api/boards (default `0` — após `isChecked` a sessão já foi validada).
+ * Override: NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS.
+ */
+const ONBOARDING_BOARDS_STAGGER_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_FLUX_ONBOARDING_BOARDS_STAGGER_MS?.trim();
+  if (raw === "0") return 0;
+  if (raw === undefined || raw === "") return 0;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 10_000) return Math.floor(n);
+  return 0;
+})();
 
 function StepPill({
   index,
@@ -119,9 +148,12 @@ function safeParseJson<T>(value: string | null): T | null {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, getHeaders, isChecked } = useAuth();
+  useInviteJoinAcknowledgement();
+  const { user, getHeaders, isChecked, isLoading, sessionFailure, refreshSession } = useAuth();
   const locale = useLocale();
   const t = useTranslations("onboarding");
+  const tRef = useRef(t);
+  tRef.current = t;
   const localeRoot = `/${locale}`;
 
   const [step, setStep] = useState<WizardStep>(1);
@@ -140,17 +172,30 @@ export default function OnboardingPage() {
   const [cardBucketKey, setCardBucketKey] = useState<string>("");
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
+  const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
+  const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
+  const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
+  /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
+  const onboardingInitRunIdRef = useRef(0);
 
   const storageKey = useMemo(() => (user ? getOnboardingStateStorageKey(user.id) : null), [user]);
   const doneKey = useMemo(() => (user ? getOnboardingDoneStorageKey(user.id) : null), [user]);
+  const heroStorageKey = useMemo(() => (user ? getOnboardingFluxyHeroStorageKey(user.id) : null), [user]);
 
   const persistState = useCallback(
-    (next: Omit<PersistedWizardState, "step"> & { step: WizardStep }) => {
-      if (!user || !storageKey) return;
-      const payload = JSON.stringify(next);
-      localStorage.setItem(storageKey, payload);
+    (
+      next: Omit<PersistedWizardState, "step"> & { step: WizardStep },
+      wizardUserId?: string
+    ) => {
+      const uid = wizardUserId ?? user?.id;
+      if (!uid) return;
+      try {
+        localStorage.setItem(getOnboardingStateStorageKey(uid), JSON.stringify(next));
+      } catch {
+        /* ignore quota / private mode */
+      }
     },
-    [user, storageKey]
+    [user?.id]
   );
 
   const markDone = useCallback(() => {
@@ -166,25 +211,72 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isChecked || !user) return;
+    if (!isChecked) return;
+    if (!user) {
+      const sp = new URLSearchParams();
+      if (sessionFailure?.supportRef) {
+        sp.set("sessionRef", sessionFailure.supportRef);
+        sp.set("sessionKind", sessionFailure.failureKind);
+      }
+      const q = sp.toString();
+      router.replace(`${localeRoot}/login${q ? `?${q}` : ""}`);
+    }
+  }, [isChecked, user, router, localeRoot, sessionFailure]);
 
+  useLayoutEffect(() => {
+    if (!isChecked || !user?.id) {
+      return;
+    }
+
+    if (!doneKey || !storageKey) {
+      return;
+    }
+
+    const runId = ++onboardingInitRunIdRef.current;
     let cancelled = false;
-    (async () => {
+
+    const doneRaw = localStorage.getItem(doneKey);
+    const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
+
+    if (doneRaw === "1") {
+      router.replace(`${localeRoot}/boards`);
+      return;
+    }
+
+    void (async () => {
       try {
         setInitError(null);
-        if (!doneKey || !storageKey) return;
 
-        const doneRaw = localStorage.getItem(doneKey);
-        if (doneRaw === "1") {
-          router.replace(`${localeRoot}/boards`);
-          return;
+        if (ONBOARDING_BOARDS_STAGGER_MS > 0) {
+          await new Promise((r) => setTimeout(r, ONBOARDING_BOARDS_STAGGER_MS));
+          if (cancelled) return;
         }
 
-        const persisted = safeParseJson<PersistedWizardState>(localStorage.getItem(storageKey));
-
-        // Always verify if user has boards already; onboarding is only for first board.
-        const boardsPayload = await apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders());
-        const boards = boardsPayload.boards ?? [];
+        let boards: Array<{ id: string }> = [];
+        try {
+          const boardsPayload = await new Promise<{ boards: Array<{ id: string }> }>((resolve, reject) => {
+            const timeoutId = window.setTimeout(
+              () => reject(new Error("onboarding_boards_timeout")),
+              ONBOARDING_BOARDS_FETCH_TIMEOUT_MS
+            );
+            void apiGet<{ boards: Array<{ id: string }> }>("/api/boards", getHeaders())
+              .then((data) => {
+                window.clearTimeout(timeoutId);
+                resolve(data);
+              })
+              .catch((err) => {
+                window.clearTimeout(timeoutId);
+                reject(err);
+              });
+          });
+          boards = boardsPayload.boards ?? [];
+        } catch (fetchErr) {
+          if (cancelled) return;
+          if (runId !== onboardingInitRunIdRef.current) return;
+          console.warn("[onboarding] Fetch de boards (admin) falhou, continuando:", fetchErr);
+          boards = [];
+        }
+        // Para não-admin: boards = [] → prossegue direto ao onboarding sem round-trip ao servidor.
 
         if (boards.length > 0) {
           if (persisted?.boardId && boards.some((b) => b.id === persisted.boardId)) {
@@ -199,15 +291,12 @@ export default function OnboardingPage() {
             setCardBucketKey((persisted.bucketOrder[0]?.key ?? "").toString());
             return;
           }
-          // User already has boards and no matching in-progress onboarding => skip wizard.
           localStorage.setItem(doneKey, "1");
           router.replace(`${localeRoot}/boards`);
           return;
         }
 
-        // No boards yet
         if (persisted?.boardId) {
-          // State exists but server has no board => restart wizard.
           if (cancelled) return;
           localStorage.removeItem(storageKey);
           setStep(1);
@@ -228,7 +317,12 @@ export default function OnboardingPage() {
         loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof ApiError ? e.message : t("errors.init");
+        const msg =
+          e instanceof Error && e.message === "onboarding_boards_timeout"
+            ? tRef.current("errors.initTimeout")
+            : e instanceof ApiError
+              ? e.message
+              : tRef.current("errors.init");
         setInitError(msg);
       }
     })();
@@ -236,7 +330,28 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user, isChecked, localeRoot]);
+  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
+
+  useEffect(() => {
+    if (!heroStorageKey) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    if (step !== 1 || boardId !== null) {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    try {
+      if (localStorage.getItem(heroStorageKey) === "1") {
+        setFluxyHeroOpen(false);
+        return;
+      }
+    } catch {
+      setFluxyHeroOpen(false);
+      return;
+    }
+    setFluxyHeroOpen(true);
+  }, [heroStorageKey, step, boardId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -272,24 +387,50 @@ export default function OnboardingPage() {
 
   const createBoardAndPersistTemplate = useCallback(
     async (nextTemplateId: TemplateId, nextBoardName: string) => {
-      if (!user) return;
       setBusy(true);
       setInitError(null);
       try {
+        let actor = user;
+        if (!actor) {
+          actor = await refreshSession();
+        }
+        if (!actor) {
+          setInitError(tRef.current("errors.needSession"));
+          return;
+        }
+
         const name = (nextBoardName || "").trim() || "Meu Board";
-        const templateBuckets = ONBOARDING_TEMPLATES[nextTemplateId].buckets;
+        const templateBuckets =
+          wizardMethodology === "lean_six_sigma"
+            ? defaultBucketOrderLeanSixSigma()
+            : ONBOARDING_TEMPLATES[nextTemplateId].buckets;
 
         const { board } = await apiPost<{ board: { id: string; name: string } }>(
           "/api/boards",
-          { name },
+          { name, boardMethodology: wizardMethodology },
           getHeaders()
         );
 
-        await apiPut(
-          `/api/boards/${encodeURIComponent(board.id)}`,
-          { config: { bucketOrder: templateBuckets, collapsedColumns: [] } },
-          getHeaders()
-        );
+        try {
+          await apiPut(
+            `/api/boards/${encodeURIComponent(board.id)}`,
+            {
+              boardMethodology: wizardMethodology,
+              config: { bucketOrder: templateBuckets, collapsedColumns: [] },
+            },
+            getHeaders()
+          );
+        } catch (putErr) {
+          try {
+            await apiDelete(`/api/boards/${encodeURIComponent(board.id)}`, getHeaders());
+          } catch (delErr) {
+            console.error("[onboarding] rollback DELETE /api/boards failed after PUT error", {
+              boardId: board.id,
+              delErr,
+            });
+          }
+          throw putErr;
+        }
 
         setBoardId(board.id);
         setTemplateId(nextTemplateId);
@@ -299,14 +440,17 @@ export default function OnboardingPage() {
         setCardBucketKey((templateBuckets[0]?.key ?? "").toString());
         setStep(2);
 
-        persistState({
-          step: 2,
-          boardId: board.id,
-          templateId: nextTemplateId,
-          boardName: name,
-          bucketOrder: templateBuckets,
-          columnsPersisted: true,
-        });
+        persistState(
+          {
+            step: 2,
+            boardId: board.id,
+            templateId: nextTemplateId,
+            boardName: name,
+            bucketOrder: templateBuckets,
+            columnsPersisted: true,
+          },
+          actor.id
+        );
       } catch (e) {
         const msg = e instanceof ApiError ? e.message : t("errors.createBoard");
         setInitError(msg);
@@ -314,7 +458,7 @@ export default function OnboardingPage() {
         setBusy(false);
       }
     },
-    [getHeaders, persistState, user]
+    [getHeaders, persistState, refreshSession, user, wizardMethodology]
   );
 
   const handleSkipStep1 = useCallback(async () => {
@@ -370,7 +514,8 @@ export default function OnboardingPage() {
       const cards = Array.isArray(board.cards) ? board.cards : [];
 
       const bucketCardsCount = cards.filter((c) => (c as any)?.bucket === cardBucketKey).length;
-      const cardId = `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const existingIds = cards.map((c) => String((c as { id?: string }).id || ""));
+      const cardId = nextBoardCardId(existingIds);
 
       const newCard = {
         id: cardId,
@@ -430,8 +575,30 @@ export default function OnboardingPage() {
   const title =
     step === 1 ? t("titles.step1") : step === 2 ? t("titles.step2") : t("titles.step3");
 
+  const step1ActionsDisabled = busy;
+
+  const loginHrefWithSessionDiag = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (sessionFailure?.supportRef) {
+      sp.set("sessionRef", sessionFailure.supportRef);
+      sp.set("sessionKind", sessionFailure.failureKind);
+    }
+    const q = sp.toString();
+    return `${localeRoot}/login${q ? `?${q}` : ""}`;
+  }, [localeRoot, sessionFailure]);
+
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="relative min-h-[100dvh] overflow-x-hidden">
+      <FluxAppBackdrop />
+      {/* Fora de `z-[1]`: o hero usa z-index alto; dentro do contexto z-1 ficaria sempre abaixo do Fluxy dock (z~438). */}
+      {heroStorageKey ? (
+        <OnboardingFluxyHero
+          open={fluxyHeroOpen}
+          onDismiss={() => setFluxyHeroOpen(false)}
+          storageKey={heroStorageKey}
+        />
+      ) : null}
+      <div className="relative z-[1]">
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="flex items-center gap-2">
           <StepPill index={1} current={step} label={t("steps.pill1")} />
@@ -440,7 +607,11 @@ export default function OnboardingPage() {
         </div>
       </Header>
 
-      <main className="max-w-[980px] mx-auto px-6 py-10">
+      <main className="mx-auto max-w-[980px] px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-6 sm:py-10 md:px-8">
+        <div className="mb-6 flex items-center gap-3 rounded-[var(--flux-rad-lg)] border border-[var(--flux-secondary-alpha-28)] bg-[linear-gradient(90deg,var(--flux-primary-alpha-10),var(--flux-secondary-alpha-08))] px-4 py-3">
+          <FluxyAvatar state="waving" size="compact" className="shrink-0" />
+          <p className="text-sm leading-snug text-[var(--flux-text)]">{t("fluxyHint")}</p>
+        </div>
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display font-bold text-xl text-[var(--flux-text)]">{title}</h2>
@@ -455,8 +626,32 @@ export default function OnboardingPage() {
         </div>
 
         {initError && (
-          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm">
-            {initError}
+          <div className="mb-4 bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm space-y-2">
+            <p>{initError}</p>
+            {step === 1 && user ? (
+              <button
+                type="button"
+                className="btn-secondary text-[var(--flux-text)]"
+                onClick={() => {
+                  setInitError(null);
+                  setOnboardingBoardsRetryKey((k) => k + 1);
+                }}
+              >
+                {t("buttons.retryInit")}
+              </button>
+            ) : null}
+          </div>
+        )}
+
+        {step === 1 && isChecked && !user && sessionFailure && (
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--flux-rad)] border border-[var(--flux-danger-alpha-30)] bg-[var(--flux-danger-alpha-12)] p-4 text-sm text-[var(--flux-text)]">
+            <p className="text-[var(--flux-danger)] leading-relaxed">{t("step1.sessionInvalid")}</p>
+            <Link
+              href={loginHrefWithSessionDiag}
+              className="btn-primary self-start text-center no-underline"
+            >
+              {t("step1.signInAgain")}
+            </Link>
           </div>
         )}
 
@@ -471,10 +666,54 @@ export default function OnboardingPage() {
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
                     placeholder={t("placeholders.boardName")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
+
+                <div className="mt-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)] mb-2">
+                    {t("fields.methodology")}
+                  </p>
+                  <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("scrum")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "scrum"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyScrum")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("kanban")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "kanban"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyKanban")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setWizardMethodology("lean_six_sigma")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        wizardMethodology === "lean_six_sigma"
+                          ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                          : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                      }`}
+                    >
+                      {t("fields.methodologyLss")}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="mt-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
@@ -482,7 +721,7 @@ export default function OnboardingPage() {
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(ONBOARDING_TEMPLATES) as TemplateId[]).map((tid) => {
-                      const t = ONBOARDING_TEMPLATES[tid];
+                      const tpl = ONBOARDING_TEMPLATES[tid];
                       const isSelected = tid === templateId;
                       return (
                         <button
@@ -499,11 +738,11 @@ export default function OnboardingPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="font-display font-bold text-[var(--flux-text)]">{t.title}</p>
-                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{t.buckets.length} col.</span>
+                            <p className="font-display font-bold text-[var(--flux-text)]">{tpl.title}</p>
+                            <span className="text-[10px] font-mono text-[var(--flux-text-muted)]">{tpl.buckets.length} col.</span>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {t.buckets.slice(0, 3).map((b) => (
+                            {tpl.buckets.slice(0, 3).map((b) => (
                               <span
                                 key={b.key}
                                 className="inline-flex items-center gap-2 rounded-full border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-chrome-alpha-04)] px-2 py-0.5 text-[11px] text-[var(--flux-text-muted)]"
@@ -512,8 +751,8 @@ export default function OnboardingPage() {
                                 {b.label}
                               </span>
                             ))}
-                            {t.buckets.length > 3 && (
-                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{t.buckets.length - 3}</span>
+                            {tpl.buckets.length > 3 && (
+                              <span className="text-[11px] text-[var(--flux-text-muted)]">+{tpl.buckets.length - 3}</span>
                             )}
                           </div>
                         </button>
@@ -548,23 +787,35 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={busy}
-                    onClick={() => handleSkipStep1()}
-                  >
-                    {t("buttons.skip")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={busy}
-                    onClick={() => handleContinueStep1()}
-                  >
-                    {busy ? t("buttons.creating") : t("buttons.continue")}
-                  </button>
+                <div className="mt-5 flex flex-col items-end gap-2">
+                  {step1ActionsDisabled && !user && (!isChecked || isLoading) ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.checkingSession")}
+                    </p>
+                  ) : null}
+                  {step1ActionsDisabled && user && !initError ? (
+                    <p className="max-w-md text-right text-xs text-[var(--flux-text-muted)] leading-relaxed">
+                      {t("step1.preparing")}
+                    </p>
+                  ) : null}
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleSkipStep1()}
+                    >
+                      {t("buttons.skip")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={step1ActionsDisabled}
+                      onClick={() => void handleContinueStep1()}
+                    >
+                      {busy ? t("buttons.creating") : t("buttons.continue")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -629,7 +880,7 @@ export default function OnboardingPage() {
                   value={cardTitle}
                   onChange={(e) => setCardTitle(e.target.value)}
                   placeholder={t("placeholders.cardTitle")}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                   autoFocus
                 />
@@ -642,7 +893,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardBucketKey}
                   onChange={(e) => setCardBucketKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {bucketOrder.map((b) => (
@@ -660,7 +911,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardPriority}
                   onChange={(e) => setCardPriority(e.target.value as (typeof PRIORITIES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PRIORITIES.map((p) => (
@@ -678,7 +929,7 @@ export default function OnboardingPage() {
                 <select
                   value={cardProgress}
                   onChange={(e) => setCardProgress(e.target.value as (typeof PROGRESSES)[number])}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)]"
                   disabled={busy}
                 >
                   {PROGRESSES.map((p) => (
@@ -698,7 +949,7 @@ export default function OnboardingPage() {
                   onChange={(e) => setCardDesc(e.target.value)}
                   placeholder={t("placeholders.cardDescriptionOptional")}
                   rows={4}
-                  className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+                  className="flux-input w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]"
                   disabled={busy}
                 />
               </div>
@@ -726,6 +977,7 @@ export default function OnboardingPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

@@ -43,6 +43,19 @@ Tailwind: `p-flux-6`, `gap-flux-4`, etc.
 
 Base `html` font size remains **14px** (`--flux-text-base`). Tailwind: `text-flux-sm`, `text-flux-lg`, …
 
+Root `body` sets **`line-height: 1.6`** for readable body copy.
+
+### Font families (Next.js + Tailwind)
+
+| Role    | CSS variable      | Tailwind      | Google font      |
+|---------|-------------------|---------------|------------------|
+| Display | `--font-display`  | `font-display`| Sora             |
+| Body    | `--font-body`     | `font-body`   | Instrument Sans  |
+| Mono    | `--font-mono`     | `font-mono`   | JetBrains Mono   |
+| Fluxy   | `--font-fluxy`    | `font-fluxy`  | Space Grotesk    |
+
+Wired in [`app/layout.tsx`](app/layout.tsx) (`next/font/google`) and [`tailwind.config.ts`](tailwind.config.ts) (`theme.extend.fontFamily`).
+
 ---
 
 ## Elevation (`--flux-shadow-*`)
@@ -62,6 +75,14 @@ Base `html` font size remains **14px** (`--flux-text-base`). Tailwind: `text-flu
 
 Tailwind: `shadow-flux-md`, `shadow-flux-drag`, …
 
+Tiered aliases (UX v2): `--flux-shadow-0` … `--flux-shadow-4`, `--flux-shadow-glow` (see `:root` in `app/globals.css`). Tailwind: `shadow-flux-1` … `shadow-flux-4`, `shadow-flux-glow`.
+
+---
+
+## Z-index (`--flux-z-*`)
+
+Seven documented layers in `app/globals.css` (base → peak). Prefer **only** tokens such as `--flux-z-kanban-modal-stack`, `--flux-z-command-content`, `--flux-z-workbar`, etc., via `z-[var(--flux-z-…)]`. Migration helper: `npm run migrate:z-index-tokens`.
+
 ---
 
 ## Motion
@@ -74,6 +95,17 @@ Tailwind: `shadow-flux-md`, `shadow-flux-drag`, …
 | `--flux-transition-slow`     | `400ms` + standard ease |
 | `--flux-skeleton-pulse-duration` | Skeleton pulse cycle (`1.35s` + standard ease) |
 | `--flux-data-fade-duration` | Real-content fade-in after load (`200ms` + standard ease) |
+
+### Motion tiers (UX v2)
+
+| Tier | CSS duration token | Utility class |
+|------|--------------------|---------------|
+| instant | `--flux-motion-duration-instant` | `.flux-motion-instant` |
+| fast | `--flux-motion-duration-fast` | `.flux-motion-fast` |
+| base | `--flux-motion-duration-base` | `.flux-motion-base` |
+| slow | `--flux-motion-duration-slow` | `.flux-motion-slow` |
+
+Easing: `--flux-motion-ease-standard`, `--flux-motion-ease-out`. Tailwind: `duration-flux-fast`, `duration-flux-normal`, `ease-flux-standard`, `ease-flux-out`. Reduced motion: `prefers-reduced-motion` collapses durations in `:root` and disables motion utilities where noted.
 
 Tailwind: `duration-flux-fast`, `ease-flux-standard`, etc. Skeleton pulse uses global classes `flux-animate-skeleton-pulse` and `flux-animate-data-fade-in` (see `app/globals.css`).
 
@@ -92,6 +124,8 @@ Media queries cannot use CSS variables. Align with Tailwind (see `tailwind.confi
 | `2xl`| 1536px |
 
 Optional narrow utility: `flux-xs` → **400px** (`max-[400px]:…` / custom `screens.flux-xs`).
+
+**Mobile layout vs. Tailwind `md`:** `SidebarLayoutProvider` treats **≤767px** as mobile and **≥1024px** as desktop, with tablet between. In CSS, mirror that split with **`max-md:`** (below 768px) for drawer/hamburger behavior so it stays aligned with JS. The interval 768–1023px is tablet-only in both.
 
 ---
 
@@ -113,9 +147,41 @@ Theme-aware **chrome** tints (white mist on dark, ink mist on light): `--flux-ch
 
 ---
 
+## Visual identity v2 (shared classes in `globals.css`)
+
+Marketing, authenticated shell, login, onboarding, embed, and the board share the same design tokens. Reusable **`@layer components`** classes:
+
+| Class | Role |
+|-------|------|
+| `.flux-aurora-bg` | Static radial underlay; add three `.flux-aurora-blob` spans (`--a`, `--b`, `--c`) for `fluxAuroraFloat` (16s, staggered delays). Use `.flux-aurora-bg--subtle` in dense UI (sidebar shell, login). |
+| `.flux-grid-overlay` | 56px grid, primary ~3.5% `color-mix`, radial mask, ~0.4 opacity; light theme overrides in `[data-theme="light"]`. Optional `.flux-grid-overlay--dense` for the app shell. |
+| `.flux-glass-card` / `.flux-glass-card--elevated` | Glass panels: **blur 16px**, **saturate 1.3**, hover lift + primary glow; reduced-motion drops transform / softens blur. |
+| `.flux-btn-shimmer` | CTA sheen (alias of `.landing-btn-shimmer`). |
+| `.btn-accent` | Gradient **primary → accent-dark** with shadow. |
+| `.flux-input` | Focus ring: `border-color: var(--flux-primary)` and `box-shadow: var(--flux-input-focus-shadow)` (see `:root`). |
+| `.flux-sidebar-nav-stack` | Sidebar nav pill: blurred, bordered stack. |
+| `.flux-mobile-header-bar` | Mobile header: **blur 16px**, **saturate 1.3**. |
+| `.flux-kanban-card` | Base Kanban card surface; combine with `.flux-kanban-card--done` / `--overdue` / `--blocked` / `--ai`. |
+
+**Z-index:** `--flux-z-app-shell-bg` and `--flux-z-app-shell-content` layer aurora + grid under scroll content in the authenticated shell.
+
+**`--flux-board-mesh`:** Radial spots aligned to ~**20% / 80% / 50%** (horizontal) for continuity with the landing aurora.
+
+**`--flux-glass-backdrop-blur`:** **16px** (glass utilities and cards).
+
+### QA checklist (themes & motion)
+
+- Toggle **`[data-theme="light"]`** on: landing, board, login, settings-style pages, reports.
+- **Org branding:** with a custom `--flux-primary`, check aurora/grid contrast and sidebar readability.
+- **`prefers-reduced-motion: reduce`:** aurora blobs and hero aurora should not run heavy motion; glass may use lighter blur.
+- **Focus:** visible focus on `.flux-input` and global `:focus-visible` chrome.
+
+---
+
 ## Linting
 
 - **ESLint** (`npm run lint:flux-colors`, rule `flux/no-literal-colors`): blocks `#[hex]` and `rgb()/rgba()` inside string literals in `app/`, `components/`, `context/` (excludes `emails/` and `*.test.*`). Config: [`eslint.flux-colors.config.mjs`](eslint.flux-colors.config.mjs); rule implementation: [`eslint-rules/flux-no-literal-colors.mjs`](eslint-rules/flux-no-literal-colors.mjs).
+- **UX v2 tokens** (`npm run lint:flux-tokens`): warns on raw `z-[…]` (non `--flux-z-*`) and very long arbitrary `shadow-[0_…]` strings. Config: [`eslint.flux-tokens.config.mjs`](eslint.flux-tokens.config.mjs).
 - **Stylelint** (`npm run lint:css`): `function-disallowed-list` for `rgb`/`rgba`/`hsl` on all CSS **except** `app/globals.css`, where tokens are defined.
 
 ---

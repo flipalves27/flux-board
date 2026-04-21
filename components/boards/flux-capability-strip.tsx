@@ -64,11 +64,55 @@ const ICONS: Record<ItemKey, ComponentType<{ className?: string }>> = {
   reports: IconChart,
 };
 
-export function FluxCapabilityStrip() {
+export function FluxCapabilityStrip({ compact }: { compact?: boolean } = {}) {
   const t = useTranslations("boards.capabilityStrip");
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const items: ItemKey[] = ["triage", "copilot", "timeline", "portal", "automations", "reports"];
+
+  if (compact) {
+    return (
+      <section
+        className="mb-4 flex items-center gap-2 overflow-x-auto rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-14)] bg-[linear-gradient(135deg,var(--flux-primary-alpha-07),var(--flux-secondary-alpha-04))] px-3 py-2"
+        aria-labelledby="flux-capability-title-compact"
+      >
+        <h3 id="flux-capability-title-compact" className="shrink-0 font-display text-xs font-bold text-[var(--flux-text)]">
+          {t("title")}
+        </h3>
+        <span className="mx-1 h-4 w-px shrink-0 bg-[var(--flux-chrome-alpha-12)]" aria-hidden />
+        <ul className="flex items-center gap-1.5">
+          {items.map((key) => {
+            const Icon = ICONS[key];
+            const isReports = key === "reports";
+            const chip = (
+              <div
+                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${
+                  isReports
+                    ? "border-[var(--flux-primary-alpha-30)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)] hover:border-[var(--flux-primary-alpha-45)]"
+                    : "border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)]/80 text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-22)] hover:text-[var(--flux-text)]"
+                }`}
+                title={t(`${key}.hint`)}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="whitespace-nowrap text-[11px] font-semibold">{t(`${key}.name`)}</span>
+              </div>
+            );
+
+            if (isReports) {
+              return (
+                <li key={key}>
+                  <Link href={`${localeRoot}/reports`} className="block outline-none focus-visible:ring-2 focus-visible:ring-[var(--flux-primary)] rounded-full">
+                    {chip}
+                  </Link>
+                </li>
+              );
+            }
+            return <li key={key}>{chip}</li>;
+          })}
+        </ul>
+      </section>
+    );
+  }
 
   return (
     <section

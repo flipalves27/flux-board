@@ -99,7 +99,7 @@ export function BoardAnomalyNotificationsModal({ open, onClose, boardId, initial
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[260] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[var(--flux-z-anomaly-modal)] flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
       <div
         ref={dialogRef}
         role="dialog"

@@ -1,27 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
-import { boardRealtimeHub } from "@/lib/board-realtime-hub";
+import { userCanAccessBoard } from "@/lib/kv-boards";
+import type {
+  BoardRealtimeEnvelopeV1,
+  DragMoveSsePayload,
+  DragOverKind,
+} from "@/lib/board-realtime-envelope";
+import { boardRealtimeHub, cardLockCanApply } from "@/lib/board-realtime-hub";
+import { publishOrDeliverBoardEvent } from "@/lib/board-realtime-redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const encoder = new TextEncoder();
 
-async function resolveBoardId(
-  requestedBoardId: string,
-  orgId: string
-): Promise<string | null> {
+function resolveBoardId(requestedBoardId: string): string | null {
   if (!requestedBoardId || requestedBoardId === "boards") return null;
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
-  return boardId;
+  return requestedBoardId;
 }
 
 function parseSseQuery(req: NextRequest): { clientId: string | null; columnKey: string | null } {
@@ -35,23 +30,87 @@ type PostBody = {
   clientId?: string;
   connectionId?: string;
   columnKey?: string | null;
-  action?: "heartbeat" | "card_move" | "column_reorder" | "lock" | "unlock";
+  action?:
+    | "heartbeat"
+    | "card_move"
+    | "column_reorder"
+    | "lock"
+    | "unlock"
+    | "drag_start"
+    | "drag_move"
+    | "drag_end";
   buckets?: Array<{ bucketKey: string; orderedCardIds: string[] }>;
   bucketKeys?: string[];
   cardId?: string;
+  cardIds?: unknown;
+  overKind?: unknown;
+  bucketKey?: unknown;
+  slotIndex?: unknown;
+  overCardId?: unknown;
 };
+
+const MAX_DRAG_CARDS = 50;
+const MAX_ID_LEN = 200;
+
+function normalizeDragCardIds(raw: unknown): string[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  if (raw.length > MAX_DRAG_CARDS) return null;
+  const out: string[] = [];
+  for (const x of raw) {
+    const s = typeof x === "string" ? x.trim() : "";
+    if (!s) return null;
+    if (s.length > MAX_ID_LEN) return null;
+    out.push(s);
+  }
+  return out;
+}
+
+function parseDragOverKind(raw: unknown): DragOverKind | null {
+  if (raw === "bucket" || raw === "slot" || raw === "card") return raw;
+  return null;
+}
+
+function validateDragMovePayload(body: PostBody, fromUserId: string): DragMoveSsePayload | null {
+  const overKind = parseDragOverKind(body.overKind);
+  if (!overKind) return null;
+
+  const bucketKeyRaw = body.bucketKey;
+  const slotRaw = body.slotIndex;
+  const overCardRaw = body.overCardId;
+
+  if (overKind === "bucket") {
+    const bucketKey =
+      typeof bucketKeyRaw === "string" ? bucketKeyRaw.trim().slice(0, MAX_ID_LEN) : "";
+    if (!bucketKey) return null;
+    return { fromUserId, overKind: "bucket", bucketKey };
+  }
+
+  if (overKind === "slot") {
+    const bucketKey =
+      typeof bucketKeyRaw === "string" ? bucketKeyRaw.trim().slice(0, MAX_ID_LEN) : "";
+    if (!bucketKey) return null;
+    const slotIndex = typeof slotRaw === "number" && Number.isFinite(slotRaw) ? Math.floor(slotRaw) : NaN;
+    if (slotIndex < 0 || slotIndex > 1_000_000) return null;
+    return { fromUserId, overKind: "slot", bucketKey, slotIndex };
+  }
+
+  const overCardId =
+    typeof overCardRaw === "string" ? overCardRaw.trim().slice(0, MAX_ID_LEN) : "";
+  if (!overCardId) return null;
+  return { fromUserId, overKind: "card", overCardId };
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { id: requestedBoardId } = await params;
-  const boardId = await resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = resolveBoardId(requestedBoardId);
   if (!boardId) {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
@@ -131,13 +190,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { id: requestedBoardId } = await params;
-  const boardId = await resolveBoardId(requestedBoardId, payload.orgId);
+  const boardId = resolveBoardId(requestedBoardId);
   if (!boardId) {
     return NextResponse.json({ error: "ID do board é obrigatório" }, { status: 400 });
   }
@@ -182,9 +241,7 @@ export async function POST(
     return NextResponse.json({ ok: true });
   }
 
-  if (!connectionId) {
-    return NextResponse.json({ error: "connectionId é obrigatório para esta ação" }, { status: 400 });
-  }
+  const excludeConnectionId = connectionId.trim() ? connectionId : undefined;
 
   const displayName =
     (request.headers.get("x-flux-display-name") || "").trim() || payload.username;
@@ -202,10 +259,14 @@ export async function POST(
     if (normalized.length === 0) {
       return NextResponse.json({ error: "buckets inválido" }, { status: 400 });
     }
-    boardRealtimeHub.broadcastCardMove(boardId, connectionId, {
-      fromUserId: payload.id,
-      buckets: normalized,
-    });
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "card_move",
+      boardId,
+      ...(excludeConnectionId ? { excludeConnectionId } : {}),
+      payload: { fromUserId: payload.id, buckets: normalized },
+    };
+    await publishOrDeliverBoardEvent(env);
     return NextResponse.json({ ok: true });
   }
 
@@ -214,11 +275,67 @@ export async function POST(
     if (bucketKeys.length === 0) {
       return NextResponse.json({ error: "bucketKeys inválido" }, { status: 400 });
     }
-    boardRealtimeHub.broadcastColumnReorder(boardId, connectionId, {
-      fromUserId: payload.id,
-      bucketKeys,
-    });
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "column_reorder",
+      boardId,
+      ...(excludeConnectionId ? { excludeConnectionId } : {}),
+      payload: { fromUserId: payload.id, bucketKeys },
+    };
+    await publishOrDeliverBoardEvent(env);
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "drag_start") {
+    const cardIds = normalizeDragCardIds(body.cardIds);
+    if (!cardIds) {
+      return NextResponse.json({ error: "cardIds inválido" }, { status: 400 });
+    }
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "drag_start",
+      boardId,
+      ...(excludeConnectionId ? { excludeConnectionId } : {}),
+      payload: {
+        fromUserId: payload.id,
+        ...(excludeConnectionId ? { fromConnectionId: excludeConnectionId } : {}),
+        cardIds,
+      },
+    };
+    await publishOrDeliverBoardEvent(env);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "drag_move") {
+    const move = validateDragMovePayload(body, payload.id);
+    if (!move) {
+      return NextResponse.json({ error: "drag_move inválido" }, { status: 400 });
+    }
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "drag_move",
+      boardId,
+      ...(excludeConnectionId ? { excludeConnectionId } : {}),
+      payload: move,
+    };
+    await publishOrDeliverBoardEvent(env);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "drag_end") {
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "drag_end",
+      boardId,
+      ...(excludeConnectionId ? { excludeConnectionId } : {}),
+      payload: { fromUserId: payload.id },
+    };
+    await publishOrDeliverBoardEvent(env);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!connectionId.trim()) {
+    return NextResponse.json({ error: "connectionId é obrigatório para lock/unlock" }, { status: 400 });
   }
 
   if (action === "lock" || action === "unlock") {
@@ -227,16 +344,23 @@ export async function POST(
       return NextResponse.json({ error: "cardId é obrigatório" }, { status: 400 });
     }
     const userName = displayName;
-    const r = boardRealtimeHub.setCardLock(boardId, {
+    const lockPayload = {
       cardId,
       userId: payload.id,
       userName,
       clientId,
       locked: action === "lock",
-    });
-    if (!r.ok) {
+    };
+    if (!cardLockCanApply(boardId, lockPayload)) {
       return NextResponse.json({ ok: false, conflict: true }, { status: 409 });
     }
+    const env: BoardRealtimeEnvelopeV1 = {
+      v: 1,
+      type: "card_lock",
+      boardId,
+      payload: lockPayload,
+    };
+    await publishOrDeliverBoardEvent(env);
     return NextResponse.json({ ok: true });
   }
 

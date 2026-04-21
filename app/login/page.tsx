@@ -7,18 +7,32 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding, usePlatformDisplayName } from "@/context/org-branding-context";
 import { loginAction, registerAction } from "@/app/actions/auth";
+import { OAuthProviderButtons } from "@/components/auth/oauth-provider-buttons";
+import { SessionFailureCopyJsonButton } from "@/components/auth/session-support-diagnostic";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
+import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
+import { appendJoinedViaInviteQuery } from "@/lib/invite-join-feedback";
+import { sanitizeOAuthReturnPath } from "@/lib/oauth/safe-redirect";
+import { isPlatformAdminSession } from "@/lib/rbac";
+import { FLUX_SESSION_FAILURE_STORAGE_KEY } from "@/lib/session-support-diagnostic";
 
-function FluxLogoIcon({ className = "w-8 h-8" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 44 44" fill="none" className={className} aria-hidden>
-      <path d="M8 32L16 20L24 26L36 10" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M30 10H36V16" stroke="var(--flux-text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="20" r="2.5" fill="var(--flux-accent-alpha-80)" />
-      <circle cx="24" cy="26" r="2.5" fill="var(--flux-secondary-alpha-80)" />
-      <path d="M8 36H36" stroke="var(--flux-chrome-alpha-30)" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  );
-}
+const OAUTH_ERROR_KEYS = new Set([
+  "oauth_denied",
+  "oauth_invalid",
+  "oauth_state",
+  "oauth_profile",
+  "oauth_exchange",
+  "oauth_email_unverified",
+  "oauth_no_email",
+  "oauth_account_conflict",
+  "oauth_invite_invalid",
+  "oauth_invite_owner_conflict",
+  "oauth_invite_platform_admin",
+  "oauth_plan_limit",
+  "oauth_consume_failed",
+  "oauth_not_configured",
+  "rate_limited",
+]);
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,15 +44,75 @@ export default function LoginPage() {
   const orgBranding = useOrgBranding();
   const logoUrl = orgBranding?.effectiveBranding?.logoUrl?.trim();
   const localeRoot = `/${locale}`;
+  const sessionRef = searchParams.get("sessionRef")?.trim();
+  const sessionKindFromUrl = searchParams.get("sessionKind")?.trim() || "unknown";
   const inviteCode = searchParams.get("invite") ?? undefined;
+  const safeRedirect = sanitizeOAuthReturnPath(searchParams.get("redirect") ?? undefined);
+  const postLoginPath = safeRedirect ?? `${localeRoot}/boards`;
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [suppressAutoRedirect, setSuppressAutoRedirect] = useState(false);
+  const [storedSessionDiag, setStoredSessionDiag] = useState<{
+    supportRef: string;
+    failureKind: string;
+  } | null>(null);
 
   useEffect(() => {
-    if (isChecked && user && !suppressAutoRedirect) router.replace(`${localeRoot}/boards`);
-  }, [isChecked, user, router, suppressAutoRedirect]);
+    if (inviteCode) setActiveTab("login");
+  }, [inviteCode]);
+
+  useEffect(() => {
+    if (sessionRef) {
+      try {
+        sessionStorage.removeItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(FLUX_SESSION_FAILURE_STORAGE_KEY);
+      const p = JSON.parse(raw) as { supportRef?: string; failureKind?: string };
+      if (typeof p.supportRef === "string" && p.supportRef.length > 0) {
+        setStoredSessionDiag({
+          supportRef: p.supportRef.slice(0, 200),
+          failureKind: typeof p.failureKind === "string" ? p.failureKind : "unknown",
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [sessionRef]);
+
+  useEffect(() => {
+    const oauthErr = searchParams.get("error");
+    if (oauthErr && OAUTH_ERROR_KEYS.has(oauthErr)) {
+      const key = `oauth.errors.${oauthErr}` as
+        | "oauth.errors.oauth_denied"
+        | "oauth.errors.oauth_invalid"
+        | "oauth.errors.oauth_state"
+        | "oauth.errors.oauth_profile"
+        | "oauth.errors.oauth_exchange"
+        | "oauth.errors.oauth_email_unverified"
+        | "oauth.errors.oauth_no_email"
+        | "oauth.errors.oauth_account_conflict"
+        | "oauth.errors.oauth_invite_invalid"
+        | "oauth.errors.oauth_invite_owner_conflict"
+        | "oauth.errors.oauth_invite_platform_admin"
+        | "oauth.errors.oauth_plan_limit"
+        | "oauth.errors.oauth_consume_failed"
+        | "oauth.errors.oauth_not_configured"
+        | "oauth.errors.rate_limited";
+      setError(t(key));
+    }
+  }, [searchParams, t]);
+
+  useEffect(() => {
+    if (isChecked && user && !suppressAutoRedirect) router.replace(postLoginPath);
+  }, [isChecked, user, router, suppressAutoRedirect, postLoginPath]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,11 +127,13 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await loginAction(userInput, pwd, remember);
+      const result = await loginAction(userInput, pwd, remember, inviteCode);
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
-        router.replace(`${localeRoot}/boards`);
+        const next =
+          inviteCode?.trim() ? appendJoinedViaInviteQuery(postLoginPath) : postLoginPath;
+        router.replace(next);
       } else {
         setError(result.error);
       }
@@ -90,7 +166,10 @@ export default function LoginPage() {
       if (result.ok) {
         setSuppressAutoRedirect(true);
         login(result.user, remember);
-        router.replace(`${localeRoot}/onboarding`);
+        const onboardingPath = `${localeRoot}/onboarding`;
+        const next =
+          inviteCode?.trim() ? appendJoinedViaInviteQuery(onboardingPath) : onboardingPath;
+        router.replace(next);
       } else {
         setError(result.error);
       }
@@ -106,41 +185,21 @@ export default function LoginPage() {
     setError("");
   };
 
-  if (!isChecked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)]">
-        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
-      </div>
-    );
-  }
-
   const inputClass =
-    "w-full px-3 py-2.5 rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none transition-colors";
+    "flux-input min-h-10 w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)]";
   const labelClass =
     "block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 uppercase tracking-wide font-display";
-  const btnClass =
-    "w-full py-2.5 rounded-[var(--flux-rad)] font-semibold bg-[var(--flux-primary)] text-white hover:bg-[var(--flux-primary-light)] disabled:opacity-60 disabled:cursor-not-allowed transition-all font-display";
+  const submitClass = "flux-marketing-btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60";
+
+  const sessionDiagRef = sessionRef ?? storedSessionDiag?.supportRef;
+  const sessionDiagKind = sessionRef ? sessionKindFromUrl : (storedSessionDiag?.failureKind ?? "unknown");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--flux-surface-dark)]">
-      <div className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-xl)] shadow-[var(--flux-shadow-login-panel)] w-full max-w-[400px] p-8">
+    <div className="auth-public-shell relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-[var(--flux-surface-dark)] pl-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+      <FluxAppBackdrop variant="immersive" />
+      <div className="flux-glass-card auth-glass-panel relative z-[1] w-full max-w-[400px] p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div
-            className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden"
-            style={{
-              background: logoUrl
-                ? "var(--flux-surface-elevated)"
-                : "linear-gradient(135deg, var(--flux-primary), var(--flux-primary-dark))",
-              boxShadow: logoUrl ? "none" : "0 8px 32px var(--flux-primary-alpha-40)",
-            }}
-          >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="max-h-8 max-w-[36px] object-contain" />
-            ) : (
-              <FluxLogoIcon className="w-5 h-5" />
-            )}
-          </div>
+          <FluxBrandMark platformName={platformName} logoUrl={logoUrl} variant="auth" className="flex-shrink-0" />
           <div>
             <h1 className="font-display font-bold text-xl text-[var(--flux-text)] tracking-tight">
               {platformName}
@@ -151,36 +210,47 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex gap-1 mb-6 bg-[var(--flux-surface-elevated)] rounded-[var(--flux-rad)] p-1">
+        <div className="flux-marketing-segmented mb-6 w-full">
           <button
             type="button"
             onClick={() => switchTab("login")}
-            className={`flex-1 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display ${
-              activeTab === "login"
-                ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn ${activeTab === "login" ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("tabs.login")}
           </button>
           <button
             type="button"
             onClick={() => switchTab("register")}
-            className={`flex-1 py-2 rounded-[var(--flux-rad-sm)] font-semibold text-sm transition-all font-display ${
-              activeTab === "register"
-                ? "bg-[var(--flux-primary)] text-white shadow-sm"
-                : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-            }`}
+            className={`flux-marketing-segmented__btn ${activeTab === "register" ? "flux-marketing-segmented__btn--active" : ""}`}
           >
             {t("tabs.register")}
           </button>
         </div>
+
+        {sessionDiagRef && isChecked && user && isPlatformAdminSession(user) ? (
+          <SessionFailureCopyJsonButton
+            supportRef={sessionDiagRef.slice(0, 200)}
+            failureKind={sessionDiagKind}
+          />
+        ) : null}
 
         {error && (
           <div className="bg-[var(--flux-danger-alpha-12)] border border-[var(--flux-danger-alpha-30)] text-[var(--flux-danger)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
             {error}
           </div>
         )}
+
+        {inviteCode && (
+          <div className="border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] p-3 rounded-[var(--flux-rad)] text-sm mb-4">
+            {t("inviteBanner")}
+          </div>
+        )}
+
+        <OAuthProviderButtons
+          locale={locale}
+          invite={inviteCode}
+          redirect={safeRedirect}
+        />
 
         {activeTab === "login" && (
           <form onSubmit={handleLogin} className="space-y-4">
@@ -208,7 +278,7 @@ export default function LoginPage() {
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
               <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.login")}</span>
             </label>
-            <button type="submit" disabled={loading} className={btnClass}>
+            <button type="submit" disabled={loading} className={submitClass}>
               {t("actions.login")}
             </button>
           </form>
@@ -250,7 +320,7 @@ export default function LoginPage() {
               <input name="remember" type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--flux-primary)]" />
               <span className="text-sm text-[var(--flux-text-muted)]">{t("remember.register")}</span>
             </label>
-            <button type="submit" disabled={loading} className={btnClass}>
+            <button type="submit" disabled={loading} className={submitClass}>
               {t("actions.register")}
             </button>
           </form>

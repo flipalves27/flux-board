@@ -58,9 +58,9 @@ export default function EmbedWidgetPage() {
     : "—";
 
   return (
-    <div className="min-h-[200px] bg-[var(--flux-surface-card)] text-[var(--flux-text)] rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] p-4 shadow-[var(--flux-shadow-embed-widget)]">
+    <div className="min-h-[200px] min-w-0 overflow-x-hidden bg-[var(--flux-surface-card)] text-[var(--flux-text)] rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-20)] p-4 shadow-[var(--flux-shadow-embed-widget)]">
       {loading && !data && (
-        <div className="space-y-3 animate-pulse">
+        <div className="space-y-3 motion-safe:animate-pulse">
           <div className="h-4 w-1/3 rounded bg-[var(--flux-chrome-alpha-08)]" />
           <div className="h-10 w-full rounded bg-[var(--flux-chrome-alpha-06)]" />
           <div className="h-3 w-2/3 rounded bg-[var(--flux-chrome-alpha-05)]" />

@@ -83,14 +83,14 @@ function parseIsoMsMaybe(raw: string | null | undefined): number | null {
 }
 
 /**
- * Início do ciclo no fluxo: `createdAt` do card (entrada típica na primeira coluna), ou `columnEnteredAt` se não houver criação registrada.
+ * Início do ciclo no fluxo: prefere `columnEnteredAt` (entrada na coluna atual); senão `createdAt` do card.
  */
 export function parseCardFlowStartMs(card: unknown, board: BoardData): number | null {
-  const created = parseCardCreatedMs(card, board);
-  if (created !== null) return created;
   if (!card || typeof card !== "object") return null;
   const c = card as Record<string, unknown>;
-  return parseIsoMsMaybe(typeof c.columnEnteredAt === "string" ? c.columnEnteredAt : null);
+  const col = parseIsoMsMaybe(typeof c.columnEnteredAt === "string" ? c.columnEnteredAt : null);
+  if (col !== null) return col;
+  return parseCardCreatedMs(card, board);
 }
 
 export type CycleTimeScatterPoint = {
@@ -507,6 +507,60 @@ export function averageLeadTimeDays(boards: BoardData[]): number | null {
   if (daysList.length === 0) return null;
   const sum = daysList.reduce((a, b) => a + b, 0);
   return Math.round((sum / daysList.length) * 10) / 10;
+}
+
+/** Média de dias de ciclo (concluídos) usando o mesmo proxy que o scatter: início via criação ou `columnEnteredAt`. */
+export function averageApproxCycleTimeDays(boards: BoardData[]): number | null {
+  const pts = buildCycleTimeScatterPoints(boards);
+  if (pts.length === 0) return null;
+  const sum = pts.reduce((a, p) => a + p.cycleDays, 0);
+  return Math.round((sum / pts.length) * 10) / 10;
+}
+
+const BLOCKER_TAG_RE = /bloque|block|imped/i;
+
+/** Cards em aberto com tag de bloqueio — primeira tag que casa o padrão (cluster simples). */
+export function buildBlockerTagDistribution(boards: BoardData[], limit = 14): Array<{ tag: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const board of boards) {
+    const cards = Array.isArray(board.cards) ? board.cards : [];
+    for (const card of cards) {
+      if (!card || typeof card !== "object") continue;
+      const rec = card as Record<string, unknown>;
+      if (String(rec.progress || "") === "Concluída") continue;
+      const tags = Array.isArray(rec.tags) ? (rec.tags as unknown[]).map((t) => String(t || "").trim()) : [];
+      const blocker = tags.find((t) => t && BLOCKER_TAG_RE.test(t));
+      if (!blocker) continue;
+      const key = blocker.slice(0, 60);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([tag, count]) => ({ tag, count }));
+}
+
+/** Itens com Definition of Ready preenchido (Scrum) — taxa = ready / eligible. */
+export function scrumDorReadySnapshot(boards: BoardData[]): { eligible: number; ready: number } {
+  let eligible = 0;
+  let ready = 0;
+  for (const board of boards) {
+    if (board.boardMethodology !== "scrum") continue;
+    const cards = Array.isArray(board.cards) ? board.cards : [];
+    for (const card of cards) {
+      if (!card || typeof card !== "object") continue;
+      const rec = card as Record<string, unknown>;
+      if (String(rec.progress || "") === "Concluída") continue;
+      const dr = rec.dorReady;
+      if (!dr || typeof dr !== "object") continue;
+      eligible++;
+      const o = dr as Record<string, unknown>;
+      const ok = ["titleOk", "acceptanceOk", "depsOk", "sizedOk"].every((k) => o[k] === true);
+      if (ok) ready++;
+    }
+  }
+  return { eligible, ready };
 }
 
 export { boardsToPortfolioRows };

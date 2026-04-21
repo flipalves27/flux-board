@@ -1,4 +1,16 @@
 import type { ThemePreference } from "./theme-storage";
+import type { OrgMembershipRole, PlatformRole } from "./rbac";
+
+/** Categoria opaca para suporte (sem PII). O servidor regista o mesmo `supportRef` nos logs. */
+export type SessionValidateFailureKind =
+  | "no_cookies"
+  | "token_invalid"
+  | "user_not_found"
+  | "unknown"
+  /** Resposta da rota `GET /api/auth/session` quando a validação excedeu o teto (Mongo lento / rede). */
+  | "server_timeout"
+  /** Gerado no cliente quando a validação expira (não aparece nos logs do servidor). */
+  | "client_timeout";
 
 export type ValidateResult =
   | {
@@ -8,11 +20,22 @@ export type ValidateResult =
         username: string;
         name: string;
         email: string;
+        /** @deprecated Igual a `seesAllBoardsInOrg`. */
         isAdmin: boolean;
+        seesAllBoardsInOrg: boolean;
         isExecutive?: boolean;
         orgId: string;
+        platformRole: PlatformRole;
+        orgRole: OrgMembershipRole;
         themePreference?: ThemePreference;
         boardProductTourCompleted?: boolean;
+        /** @deprecated Alinhado a gestor ou admin da plataforma. */
+        isOrgTeamManager?: boolean;
       };
     }
-  | { ok: false };
+  | {
+      ok: false;
+      /** Correlação com `[flux-session-validate]` nos logs da Vercel (exceto `client_timeout`). */
+      supportRef?: string;
+      failureKind?: SessionValidateFailureKind;
+    };

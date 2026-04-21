@@ -8,17 +8,28 @@ import { accessTokenExpiresSeconds, refreshCookieMaxAgeSec } from "./session-ttl
 
 export { ACCESS_COOKIE, REFRESH_COOKIE };
 
+/** Domínio compartilhado para cookies de sessão (ex.: "flux-board.com").
+ *  Quando definido, o cookie é válido para o domínio e todos os subdomínios,
+ *  eliminando o problema www vs apex. */
+function cookieDomainOption(): { domain: string } | Record<string, never> {
+  const d = process.env.AUTH_COOKIE_DOMAIN?.trim();
+  return d ? { domain: d } : {};
+}
+
 export function authCookieBase(): {
   httpOnly: true;
   secure: boolean;
   sameSite: "lax";
   path: string;
+  domain?: string;
 } {
+  /** Sem `AUTH_COOKIE_DOMAIN`, cookies permanecem host-only (adequado p.ex. a localhost). */
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    ...cookieDomainOption(),
   };
 }
 

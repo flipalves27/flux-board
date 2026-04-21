@@ -7,6 +7,7 @@ export const WEBHOOK_EVENT_TYPES = [
   "anomaly.triggered",
   "form.submitted",
   "okr.progress_changed",
+  "sprint.closed",
 ] as const;
 
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];

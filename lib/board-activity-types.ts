@@ -6,6 +6,11 @@ export const BOARD_ACTIVITY_ACTIONS = [
   "column.added",
   "column.removed",
   "board.settings_changed",
+  "message.sent",
+  "message.mentioned",
+  "message.replied",
+  "message.fluxy_interpreted",
+  "message.fluxy_action_applied",
 ] as const;
 
 export type BoardActivityAction = (typeof BOARD_ACTIVITY_ACTIONS)[number];

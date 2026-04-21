@@ -33,7 +33,7 @@ function severityRing(sev: string): string {
 }
 
 export function AnomalyNotificationBell() {
-  const { user, getHeaders } = useAuth();
+  const { user, getHeaders, isChecked, isLoading, refreshSession } = useAuth();
   const locale = useLocale();
   const t = useTranslations("header.anomalyBell");
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function AnomalyNotificationBell() {
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!isChecked || !user) return;
     setErr(null);
     try {
       const res = await apiGet<RecentPayload>("/api/anomaly-alerts/recent?limit=14", getHeaders());
@@ -56,6 +56,12 @@ export function AnomalyNotificationBell() {
         setPlanBlocked(true);
         return;
       }
+      if (e instanceof ApiError && e.status === 401) {
+        setData(null);
+        setErr(null);
+        await refreshSession();
+        return;
+      }
       if (e instanceof ApiError) {
         setErr(e.message);
       } else {
@@ -63,19 +69,45 @@ export function AnomalyNotificationBell() {
       }
       setData(null);
     }
-  }, [getHeaders, user, t]);
+  }, [getHeaders, user, isChecked, refreshSession, t]);
 
   useEffect(() => {
-    load();
-    const id = window.setInterval(() => load(), 60_000);
-    return () => window.clearInterval(id);
-  }, [load]);
+    if (!isChecked || !user || isLoading) return;
+
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      void load();
+    };
+
+    let idleHandle: number | undefined;
+    let fallbackTimeout: number | undefined;
+    if (typeof window.requestIdleCallback === "function") {
+      idleHandle = window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      fallbackTimeout = window.setTimeout(run, 0) as unknown as number;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (!cancelled) void load();
+    }, 60_000) as unknown as number;
+
+    return () => {
+      cancelled = true;
+      if (idleHandle !== undefined && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (fallbackTimeout !== undefined) window.clearTimeout(fallbackTimeout);
+      window.clearInterval(intervalId);
+    };
+  }, [isChecked, user, isLoading, load]);
 
   useEffect(() => {
+    if (!isChecked || !user) return;
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [load]);
+  }, [isChecked, user, load]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,7 +119,7 @@ export function AnomalyNotificationBell() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  if (!user || planBlocked) return null;
+  if (!isChecked || isLoading || !user || planBlocked) return null;
 
   const unread = data?.unreadCount ?? 0;
   const showBadge = data?.mongo && unread > 0;
@@ -100,7 +132,7 @@ export function AnomalyNotificationBell() {
           setOpen((v) => !v);
           if (!open) load();
         }}
-        className="relative flex h-9 w-9 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-05)] text-[var(--flux-text)] transition-colors hover:bg-[var(--flux-chrome-alpha-10)]"
+        className="relative flex h-9 w-9 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-15)] bg-[var(--flux-chrome-alpha-05)] text-[var(--flux-text)] flux-motion-standard transition-colors hover:bg-[var(--flux-chrome-alpha-10)] motion-safe:active:scale-[0.94]"
         aria-expanded={open}
         aria-label={t("ariaLabel")}
       >
@@ -115,7 +147,7 @@ export function AnomalyNotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-[250] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] border border-[var(--flux-secondary-alpha-28)] bg-[var(--flux-surface-card)] shadow-[var(--flux-shadow-lg)]">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[var(--flux-z-anomaly-bell-popover)] w-[min(100vw-24px,380px)] rounded-[var(--flux-rad)] flux-glass-elevated flux-depth-2">
           <div className="flex items-center justify-between gap-2 border-b border-[var(--flux-chrome-alpha-10)] px-3 py-2">
             <span className="text-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("title")}</span>
             <Link

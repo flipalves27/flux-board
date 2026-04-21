@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["coverage/**", "**/*.test.ts", "**/*.test.tsx", "e2e/**", "scripts/apply-flux-tokens.mjs"],
+  "ignoreDependencies": ["eslint-config-next", "postcss", "@vitest/coverage-v8"],
+  "rules": {
+    "exports": "off",
+    "types": "off"
+  }
+}

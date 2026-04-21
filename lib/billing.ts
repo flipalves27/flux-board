@@ -1,6 +1,18 @@
+/**
+ * Stripe — modelo de sincronização
+ *
+ * - Webhook (`handleStripeWebhook`): `customer.subscription.created|updated|deleted` e `checkout.session.completed`
+ *   (redundância). Eventos `subscription.*` com status `incomplete` são ignorados até o pagamento confirmar (evita rebaixar o plano).
+ *   Outros eventos (ex. `invoice.payment_failed`) retornam 200 com `ignored_event_type` — o estado do produto
+ *   segue o objeto subscription em `updated` (ex. status `past_due` não é `active`/`trialing`, então tratamos como inativo).
+ * - **Um line item principal**: tier e seats vêm de `subscription.items.data[0]` (`metadata.plan`, IDs ativos/legados em
+ *   `lib/platform-commercial-settings.ts`, fallback `STRIPE_PRICE_ID_*` no env). Add-ons exigiriam iterar itens ou metadata adicional.
+ * - Checkout cobre Pro e Business; plano manual na org (admin) só free/trial/pro/business.
+ */
 import Stripe from "stripe";
 import type { NextRequest } from "next/server";
 
+import { routing } from "@/i18n";
 import {
   getOrganizationById,
   updateOrganization,
@@ -18,8 +30,10 @@ import {
   getProMaxUsers,
   PAUSE_BILLING_DAYS,
 } from "./billing-limits";
+import { getEffectiveStripePriceIds, resolveBillingPlanFromStripeSubscription } from "./platform-commercial-settings";
 
-type BillingPlan = Exclude<Organization["plan"], "free" | "trial">; // pro | business
+/** Planos cobrados via Stripe: Pro e Business. */
+type BillingPlan = "pro" | "business";
 
 function readEnv(name: string): string {
   const v = process.env[name];
@@ -38,12 +52,11 @@ function appBaseUrl(): string {
   return withProto.replace(/\/+$/, "");
 }
 
-function getStripePriceIds() {
-  const pro = process.env.STRIPE_PRICE_ID_PRO;
-  const business = process.env.STRIPE_PRICE_ID_BUSINESS;
-  if (!pro) throw new Error("Missing env var: STRIPE_PRICE_ID_PRO");
-  if (!business) throw new Error("Missing env var: STRIPE_PRICE_ID_BUSINESS");
-  return { pro, business };
+/** Locale prefix para URLs de retorno do Checkout (pt-BR | en). */
+export function resolveCheckoutLocale(locale: string | undefined): string {
+  const allowed = new Set<string>(routing.locales as readonly string[]);
+  if (locale && allowed.has(locale)) return locale;
+  return routing.defaultLocale;
 }
 
 let stripeSingleton: Stripe | null = null;
@@ -53,12 +66,18 @@ function stripe(): Stripe {
   return stripeSingleton;
 }
 
+export type CheckoutBillingInterval = "month" | "year";
+
 export async function createCheckoutSession(input: {
   orgId: string;
   plan: BillingPlan;
   seats: number;
+  /** Mensal (Stripe default) ou anual (`STRIPE_PRICE_ID_*_ANNUAL`). */
+  interval?: CheckoutBillingInterval;
+  /** next-intl locale — usado nos defaults de success/cancel quando env não sobrescreve. */
+  locale?: string;
 }): Promise<{ url: string; sessionId: string }> {
-  const { pro: proPriceId, business: businessPriceId } = getStripePriceIds();
+  const ids = await getEffectiveStripePriceIds();
 
   const org = await getOrganizationById(input.orgId);
   if (!org) throw new Error("Organization não encontrada");
@@ -72,21 +91,39 @@ export async function createCheckoutSession(input: {
     if (seats > cap) throw new Error(`Tier Pro comporta até ${cap} usuário(s).`);
   }
 
-  const priceId = plan === "pro" ? proPriceId : businessPriceId;
+  const wantYear = input.interval === "year";
+  let priceId: string;
+  if (plan === "pro") {
+    priceId = wantYear && ids.proAnnual ? ids.proAnnual : ids.pro;
+    if (wantYear && !ids.proAnnual) {
+      console.warn("[billing] STRIPE_PRICE_ID_PRO_ANNUAL ausente — usando preço mensal.");
+      priceId = ids.pro;
+    }
+  } else {
+    priceId = wantYear && ids.businessAnnual ? ids.businessAnnual : ids.business;
+    if (wantYear && !ids.businessAnnual) {
+      console.warn("[billing] STRIPE_PRICE_ID_BUSINESS_ANNUAL ausente — usando preço mensal.");
+      priceId = ids.business;
+    }
+  }
   const customerId = org.stripeCustomerId;
 
   const owner = await getUserById(org.ownerId, org._id).catch(() => null);
   const customerEmail = owner?.email || undefined;
 
+  const loc = resolveCheckoutLocale(input.locale);
   const successUrl =
-    process.env.STRIPE_CHECKOUT_SUCCESS_URL || `${appBaseUrl()}/boards?billing=success`;
+    process.env.STRIPE_CHECKOUT_SUCCESS_URL ||
+    `${appBaseUrl()}/${loc}/billing/checkout/return?result=success`;
   const cancelUrl =
-    process.env.STRIPE_CHECKOUT_CANCEL_URL || `${appBaseUrl()}/boards?billing=cancel`;
+    process.env.STRIPE_CHECKOUT_CANCEL_URL ||
+    `${appBaseUrl()}/${loc}/billing/checkout/return?result=cancel`;
 
   const metadata: Record<string, string> = {
     orgId: input.orgId,
     plan,
     seats: String(seats),
+    billingInterval: wantYear ? "year" : "month",
   };
 
   const session = await stripe().checkout.sessions.create({
@@ -96,7 +133,7 @@ export async function createCheckoutSession(input: {
       ? `${successUrl}&session_id={CHECKOUT_SESSION_ID}`
       : `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl,
-    allow_promotion_codes: false,
+    allow_promotion_codes: true,
     customer: customerId || undefined,
     customer_email: customerEmail,
     subscription_data: {
@@ -171,17 +208,6 @@ function isoFromUnixSeconds(s: number | null | undefined): string | undefined {
   return new Date(s * 1000).toISOString();
 }
 
-function resolveBillingTierFromSubscription(subscription: Stripe.Subscription): BillingPlan | null {
-  const metaPlan = subscription.metadata?.plan;
-  if (metaPlan === "pro" || metaPlan === "business") return metaPlan;
-
-  const { pro: proPriceId, business: businessPriceId } = getStripePriceIds();
-  const priceId = subscription.items.data?.[0]?.price?.id;
-  if (!priceId) return null;
-  if (priceId === proPriceId) return "pro";
-  if (priceId === businessPriceId) return "business";
-  return null;
-}
 
 async function applySubscriptionStateToOrganization(params: {
   orgId: string;
@@ -209,6 +235,7 @@ async function applySubscriptionStateToOrganization(params: {
       const nextSeats = typeof seats === "number" ? Math.min(seats, cap) : cap;
       next.maxUsers = nextSeats;
     } else {
+      // business (Stripe)
       next.maxUsers = typeof seats === "number" ? seats : getBusinessMaxUsers();
     }
   } else {
@@ -232,36 +259,150 @@ async function applySubscriptionStateToOrganization(params: {
   }
 }
 
-export async function handleStripeWebhook(request: NextRequest): Promise<{ handled: boolean }> {
+type CheckoutSessionWebhookApplyResult =
+  | { tag: "applied" }
+  | { tag: "webhook_ignore"; reason: string }
+  | { tag: "webhook_error"; reason: string };
+
+/** Mesma lógica que `checkout.session.completed` no webhook (idempotente). */
+async function applyCheckoutSessionCompletedWebhook(
+  session: Stripe.Checkout.Session
+): Promise<CheckoutSessionWebhookApplyResult> {
+  if (session.mode !== "subscription") {
+    return { tag: "webhook_ignore", reason: "ignored_event_type" };
+  }
+  const orgId = session.metadata?.orgId;
+  if (!orgId) {
+    return { tag: "webhook_error", reason: "missing_org_id_metadata" };
+  }
+  const subRef = session.subscription;
+  const subId = typeof subRef === "string" ? subRef : subRef && typeof subRef === "object" ? subRef.id : null;
+  if (!subId) {
+    return { tag: "webhook_error", reason: "missing_subscription_on_session" };
+  }
+
+  const subscription = await stripe().subscriptions.retrieve(subId);
+  if (subscription.status === "incomplete") {
+    return { tag: "webhook_ignore", reason: "ignored_subscription_incomplete" };
+  }
+
+  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const tier = await resolveBillingPlanFromStripeSubscription(subscription, session.metadata);
+  if (!tier) {
+    return { tag: "webhook_error", reason: "unmapped_tier" };
+  }
+
+  await applySubscriptionStateToOrganization({
+    orgId,
+    subscription,
+    tier,
+    isActive,
+  });
+  return { tag: "applied" };
+}
+
+export type ReconcileCheckoutSessionResult =
+  | { status: "synced" }
+  | { status: "pending"; reason: "subscription_incomplete" }
+  | { status: "error"; httpStatus: number; reason: string };
+
+/**
+ * Após o redirect do Checkout, aplica o plano na org usando `session_id` da URL.
+ * Complementa o webhook (útil quando o webhook ainda não chegou ou falhou na configuração).
+ */
+export async function reconcileOrganizationFromStripeCheckoutSessionId(
+  checkoutSessionId: string,
+  expectedOrgId: string
+): Promise<ReconcileCheckoutSessionResult> {
+  if (!/^cs_[a-zA-Z0-9_]+$/.test(checkoutSessionId)) {
+    return { status: "error", httpStatus: 400, reason: "invalid_session_id" };
+  }
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe().checkout.sessions.retrieve(checkoutSessionId);
+  } catch {
+    return { status: "error", httpStatus: 404, reason: "session_not_found" };
+  }
+  if (session.metadata?.orgId !== expectedOrgId) {
+    return { status: "error", httpStatus: 403, reason: "session_org_mismatch" };
+  }
+  if (session.mode !== "subscription") {
+    return { status: "error", httpStatus: 400, reason: "not_subscription_checkout" };
+  }
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+    return { status: "error", httpStatus: 409, reason: "checkout_not_paid" };
+  }
+
+  const r = await applyCheckoutSessionCompletedWebhook(session);
+  if (r.tag === "applied") {
+    return { status: "synced" };
+  }
+  if (r.tag === "webhook_ignore" && r.reason === "ignored_subscription_incomplete") {
+    return { status: "pending", reason: "subscription_incomplete" };
+  }
+  if (r.tag === "webhook_error") {
+    return { status: "error", httpStatus: 400, reason: r.reason };
+  }
+  return { status: "error", httpStatus: 400, reason: r.reason };
+}
+
+export async function handleStripeWebhook(
+  request: NextRequest
+): Promise<{ handled: boolean; status: number; reason?: string }> {
   const sig = request.headers.get("stripe-signature");
-  if (!sig) return { handled: false };
+  if (!sig) return { handled: false, status: 400, reason: "missing_signature" };
 
   const rawBody = await request.text();
-  const event = stripe().webhooks.constructEvent(rawBody, sig, readEnv("STRIPE_WEBHOOK_SECRET"));
+  let event: Stripe.Event;
+  try {
+    event = stripe().webhooks.constructEvent(rawBody, sig, readEnv("STRIPE_WEBHOOK_SECRET"));
+  } catch {
+    return { handled: false, status: 400, reason: "invalid_signature" };
+  }
 
   const type = event.type;
+
+  if (type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const r = await applyCheckoutSessionCompletedWebhook(session);
+    if (r.tag === "applied") {
+      return { handled: true, status: 200 };
+    }
+    if (r.tag === "webhook_error") {
+      return { handled: false, status: 400, reason: r.reason };
+    }
+    if (r.reason === "ignored_subscription_incomplete") {
+      return { handled: true, status: 200, reason: r.reason };
+    }
+    return { handled: false, status: 200, reason: r.reason };
+  }
+
   if (!["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(type)) {
-    return { handled: false };
+    return { handled: false, status: 200, reason: "ignored_event_type" };
   }
 
   const subscription = event.data.object as Stripe.Subscription;
   const orgId = subscription.metadata?.orgId;
-  if (!orgId) return { handled: false };
+  if (!orgId) return { handled: false, status: 400, reason: "missing_org_id_metadata" };
 
   if (type === "customer.subscription.deleted") {
-    const tier = resolveBillingTierFromSubscription(subscription) ?? "pro";
+    const tier = (await resolveBillingPlanFromStripeSubscription(subscription)) ?? "pro";
     await applySubscriptionStateToOrganization({
       orgId,
       subscription,
       tier,
       isActive: false,
     });
-    return { handled: true };
+    return { handled: true, status: 200 };
+  }
+
+  if (subscription.status === "incomplete") {
+    return { handled: true, status: 200, reason: "ignored_subscription_incomplete" };
   }
 
   const isActive = subscription.status === "active" || subscription.status === "trialing";
-  const tier = resolveBillingTierFromSubscription(subscription);
-  if (!tier) return { handled: false };
+  const tier = await resolveBillingPlanFromStripeSubscription(subscription);
+  if (!tier) return { handled: false, status: 400, reason: "unmapped_tier" };
 
   await applySubscriptionStateToOrganization({
     orgId,
@@ -270,5 +411,20 @@ export async function handleStripeWebhook(request: NextRequest): Promise<{ handl
     isActive,
   });
 
-  return { handled: true };
+  return { handled: true, status: 200 };
+}
+
+/**
+ * Resposta JSON para o cliente em /api/billing/*: não repassa mensagens brutas da Stripe
+ * (podem conter IDs de preço / produto configurados no env).
+ */
+export function billingErrorMessageForClient(err: unknown): string {
+  if (!(err instanceof Error)) return "Erro ao processar cobrança.";
+  const m = err.message;
+  if (
+    /no such price|resource_missing|invalid_request|No such customer|No such subscription|No such coupon/i.test(m)
+  ) {
+    return "Operação indisponível. Revise a configuração Stripe no servidor (Price IDs e chaves) e tente novamente.";
+  }
+  return m;
 }

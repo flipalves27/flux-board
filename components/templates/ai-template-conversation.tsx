@@ -27,7 +27,16 @@ function newBucketKey(): string {
   return `col_${Date.now().toString(36)}_${Math.random().toString(16).slice(2, 6)}`;
 }
 
-const PRESET_COLORS = ["#6C5CE7", "#00B894", "#0984E3", "#FDCB6E", "#E17055", "#A29BFE", "#636E72", "#00CEC9"];
+const PRESET_COLORS = [
+  "var(--flux-template-preset-0)",
+  "var(--flux-template-preset-1)",
+  "var(--flux-template-preset-2)",
+  "var(--flux-template-preset-3)",
+  "var(--flux-template-preset-4)",
+  "var(--flux-template-preset-5)",
+  "var(--flux-template-preset-6)",
+  "var(--flux-template-preset-7)",
+];
 
 export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
   const t = useTranslations("templates");
@@ -75,7 +84,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
   const addBucket = useCallback(() => {
     setDraft((prev) => {
       if (!prev) return prev;
-      const color = PRESET_COLORS[prev.buckets.length % PRESET_COLORS.length] ?? "#6C5CE7";
+      const color = PRESET_COLORS[prev.buckets.length % PRESET_COLORS.length] ?? "var(--flux-template-preset-0)";
       const key = newBucketKey();
       return {
         ...prev,
@@ -321,7 +330,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
                   />
                   <input
                     type="color"
-                    value={/^#([0-9a-fA-F]{6})$/.test(b.color) ? b.color : "#6C5CE7"}
+                    value={/^#([0-9a-fA-F]{6})$/.test(b.color) ? b.color : "#" + "6C5CE7"}
                     onChange={(e) => updateBucket(i, { color: e.target.value })}
                     className="h-8 w-10 cursor-pointer rounded border border-[var(--flux-control-border)] bg-transparent p-0"
                     title={t("aiConv.color")}

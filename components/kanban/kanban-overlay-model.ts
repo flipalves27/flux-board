@@ -1,6 +1,8 @@
 import type { RefObject } from "react";
-import type { BoardData } from "@/app/board/[id]/page";
+import type { BoardData, BoardDefinitionOfDone } from "@/app/board/[id]/page";
+import type { BoardMethodology } from "@/lib/board-methodology";
 import type { DailyInsightsPanelProps } from "./DailyInsightsPanel";
+import type { VoiceToBoardSuggestion } from "@/lib/daily-voice-extract";
 import type { KanbanBoardOverlaysProps } from "./kanban-board-overlays";
 
 type BoardState = {
@@ -72,6 +74,7 @@ type BoardState = {
     dailyDeleteConfirmId: string | null;
     cancelDeleteDailyHistoryEntry: () => void;
     confirmDeleteDailyHistoryEntry: () => void;
+    voiceToBoardSuggestions: VoiceToBoardSuggestion[];
   };
 };
 
@@ -84,21 +87,43 @@ export function buildKanbanOverlayModel(args: {
   progresses: KanbanBoardOverlaysProps["progresses"];
   directions: KanbanBoardOverlaysProps["directions"];
   mapaProducao: BoardData["mapaProducao"];
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
+  boardMethodology: BoardMethodology;
   board: BoardState;
   dailyOpen: boolean;
+  openCardById: (cardId: string) => void;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
   addColumnInputRef: RefObject<HTMLInputElement | null>;
   confirmDeleteDialogRef: RefObject<HTMLDivElement | null>;
   confirmDeleteCancelRef: RefObject<HTMLButtonElement | null>;
   dailyDialogRef: RefObject<HTMLDivElement | null>;
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
+  onBoardReloaded?: KanbanBoardOverlaysProps["onBoardReloaded"];
 }): KanbanBoardOverlaysProps {
-  const { board, dailyOpen, boardName, boardId, getHeaders, priorities, progresses, directions, mapaProducao, t } =
-    args;
+  const {
+    board,
+    dailyOpen,
+    boardName,
+    boardId,
+    getHeaders,
+    priorities,
+    progresses,
+    directions,
+    mapaProducao,
+    definitionOfDone,
+    doneBucketKeys,
+    boardMethodology,
+    t,
+    openCardById,
+    onBoardReloaded,
+  } = args;
   const d = board.dailySession;
 
   const dailyPanelProps: DailyInsightsPanelProps = {
+    boardId,
     boardName,
+    getHeaders,
     dailyTab: d.dailyTab,
     dailyGenerating: d.dailyGenerating,
     dailyStatusPhase: d.dailyStatusPhase,
@@ -140,6 +165,8 @@ export function buildKanbanOverlayModel(args: {
     onCreateCardsFromInsight: d.onCreateCardsFromInsight,
     onDeleteDailyHistoryEntry: d.requestDeleteDailyHistoryEntry,
     onExpandDailyHistoryCreatedCards: d.expandDailyHistoryCreatedCards,
+    voiceToBoardSuggestions: d.voiceToBoardSuggestions,
+    onOpenCardFromVoice: openCardById,
   };
 
   return {
@@ -185,5 +212,9 @@ export function buildKanbanOverlayModel(args: {
     confirmCsvImport: board.confirmCsvImport,
     dailyOpen,
     dailyPanelProps,
+    definitionOfDone,
+    doneBucketKeys,
+    boardMethodology,
+    onBoardReloaded,
   };
 }

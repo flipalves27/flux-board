@@ -1,7 +1,9 @@
 import { getDb, isMongoConfigured } from "./mongo";
 import type { Db } from "mongodb";
+import { DEFAULT_ORG_ID } from "./org-constants";
 import { maxBoardsPerUser } from "./commercial-plan";
 import type { OrgBranding } from "./org-branding";
+import type { UxV2Features } from "@/types/ux-v2-features";
 import { addDaysIso, getFreeMaxBoards, getFreeMaxUsers, getPaidMaxBoards, getProMaxUsers, TRIAL_DAYS } from "./billing-limits";
 
 export type BillingNotice =
@@ -9,6 +11,20 @@ export type BillingNotice =
   | { kind: "downgrade_grace_ended"; at: string };
 
 /** Preferências de IA (plano Business: modelo Claude e jobs em lote). */
+/** Preferências de UI / rollout (Onda 4). */
+export type OrgUiOnda4Settings = {
+  enabled?: boolean;
+  omnibar?: boolean;
+  dailyBriefing?: boolean;
+  anomalyToasts?: boolean;
+};
+
+export type OrgUiSettings = {
+  onda4?: OrgUiOnda4Settings;
+  /** UX v2 rollout — partial overrides; see `resolveUxV2Flags`. */
+  uxV2?: Partial<UxV2Features>;
+};
+
 export type OrgAiSettings = {
   /** Modelo Anthropic (ex.: claude-3-5-sonnet-20241022). */
   anthropicModel?: string;
@@ -18,12 +34,14 @@ export type OrgAiSettings = {
   claudeUserIds?: string[];
 };
 
+export type OrganizationPlan = "free" | "trial" | "pro" | "business";
+
 export interface Organization {
   _id: string; // "org_xxxxx"
   name: string;
   slug: string; // URL-friendly
   ownerId: string; // quem criou
-  plan: "free" | "trial" | "pro" | "business";
+  plan: OrganizationPlan;
   maxUsers: number;
   maxBoards: number;
   /** Fim do trial (signup); aplicado com downgrade lazy para Free. */
@@ -33,7 +51,7 @@ export interface Organization {
   downgradeFromTier?: "pro" | "business";
   /** Avisos in-app (ex.: trial encerrado). */
   billingNotice?: BillingNotice | null;
-  /** White-label (Enterprise): logo, cores, favicon; domínio customizado em plano Business. */
+  /** White-label: logo, cores, favicon; domínio customizado em plano Business. */
   branding?: OrgBranding;
   // Billing (Stripe)
   stripeCustomerId?: string;
@@ -46,11 +64,37 @@ export interface Organization {
   billingCancellationFeedback?: { reason: string; at: string };
   /** IA: modelo Claude, delegação e preferências de batch (Business). */
   aiSettings?: OrgAiSettings;
+  /** UI / feature rollout (ex.: Onda 4). */
+  ui?: OrgUiSettings;
   createdAt: string;
 }
 
 const COL_ORGS = "organizations";
-const DEFAULT_ORG_ID = "org_default";
+/** Marca migrações idempotentes já aplicadas (evita `updateMany` em coleções inteiras a cada pedido, ex. serverless). */
+const COL_APP_MIGRATIONS = "app_migrations";
+/** Documento `_id` em `app_migrations` quando o backfill de `orgId` terminou (ver script `mongo:ensure-tenancy-migration`). */
+export const TENANCY_ORGID_BACKFILL_MIGRATION_ID = "tenancy_orgid_backfill_v1" as const;
+
+/**
+ * Documentos Mongo antigos podem ter `plan: "enterprise"` — tratamos como Business em memória.
+ */
+export function hydrateOrganization(doc: Organization): Organization {
+  const rawPlan = String(doc.plan ?? "");
+  const plan: OrganizationPlan =
+    rawPlan === "enterprise"
+      ? "business"
+      : rawPlan === "free" || rawPlan === "trial" || rawPlan === "pro" || rawPlan === "business"
+        ? rawPlan
+        : "free";
+  const rawDf = doc.downgradeFromTier as string | undefined;
+  let downgradeFromTier = doc.downgradeFromTier;
+  if (rawDf === "enterprise") downgradeFromTier = "business";
+  if (plan === doc.plan && downgradeFromTier === doc.downgradeFromTier) return doc;
+  const next: Organization = { ...doc, plan };
+  if (downgradeFromTier !== undefined) next.downgradeFromTier = downgradeFromTier;
+  else delete next.downgradeFromTier;
+  return next;
+}
 
 const DEFAULT_MAX_BOARDS = (() => {
   const cap = maxBoardsPerUser();
@@ -115,9 +159,9 @@ export async function ensureDefaultOrganization(ownerId: string): Promise<Organi
     if (Object.keys(patch).length > 0) {
       await col.updateOne({ _id: DEFAULT_ORG_ID }, { $set: patch });
       const updated = await col.findOne({ _id: DEFAULT_ORG_ID });
-      if (updated) return updated;
+      if (updated) return hydrateOrganization(updated as Organization);
     }
-    return doc;
+    return hydrateOrganization(doc as Organization);
   }
 
   const toInsert: Organization = {
@@ -141,6 +185,10 @@ export async function ensureTenancyMigrationForExistingData(ownerId: string): Pr
   if (!isMongoConfigured()) return;
 
   const db = await getDb();
+  const migrations = db.collection<{ _id: string; completedAt?: string }>(COL_APP_MIGRATIONS);
+  const already = await migrations.findOne({ _id: TENANCY_ORGID_BACKFILL_MIGRATION_ID });
+  if (already) return;
+
   // Garante que a default exista antes de atualizar referências.
   await ensureDefaultOrganization(ownerId);
 
@@ -163,6 +211,22 @@ export async function ensureTenancyMigrationForExistingData(ownerId: string): Pr
       { $or: [{ orgId: { $exists: false } }, { orgId: null }] },
       { $set: { orgId: DEFAULT_ORG_ID } }
     );
+
+  await migrations.updateOne(
+    { _id: TENANCY_ORGID_BACKFILL_MIGRATION_ID },
+    { $set: { completedAt: new Date().toISOString() } },
+    { upsert: true }
+  );
+}
+
+/** Verificação barata (só `findOne`) — útil em jobs de deploy e diagnóstico. */
+export async function isTenancyOrgIdBackfillApplied(): Promise<boolean> {
+  if (!isMongoConfigured()) return true;
+  const db = await getDb();
+  const doc = await db
+    .collection<{ _id: string }>(COL_APP_MIGRATIONS)
+    .findOne({ _id: TENANCY_ORGID_BACKFILL_MIGRATION_ID });
+  return Boolean(doc);
 }
 
 function slugify(input: string): string {
@@ -189,6 +253,7 @@ function makeOrgId(): string {
 
 /** Downgrades lazy: trial expirado → Free; grace de downgrade pago → limites Free. */
 async function applyBillingTransitionIfNeeded(doc: Organization): Promise<Organization> {
+  doc = hydrateOrganization(doc);
   if (!isMongoConfigured()) return doc;
   const now = Date.now();
   let needsTrialExpiry = false;
@@ -236,7 +301,7 @@ async function applyBillingTransitionIfNeeded(doc: Organization): Promise<Organi
   }
 
   const next = await col.findOne({ _id: doc._id });
-  return next ?? doc;
+  return hydrateOrganization((next ?? doc) as Organization);
 }
 
 export async function createOrganization(params: {
@@ -321,7 +386,7 @@ export async function createOrganization(params: {
   return org;
 }
 
-/** Novo signup sem convite: trial 14 dias com limites equivalentes ao Pro. */
+/** Novo signup sem convite: trial 20 dias com limites equivalentes ao Pro. */
 export async function createTrialOrganizationForSignup(ownerId: string, email: string): Promise<Organization> {
   const derived = deriveOrgFromEmail(email);
   return createOrganization({
@@ -352,7 +417,7 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ _id: orgId });
   if (!doc) return null;
-  return applyBillingTransitionIfNeeded(doc);
+  return applyBillingTransitionIfNeeded(doc as Organization);
 }
 
 /** Resolve organização pelo host white-label (CNAME → Vercel). Host sem porta, lower-case. */
@@ -367,7 +432,7 @@ export async function getOrganizationByCustomDomain(host: string): Promise<Organ
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
   const doc = await col.findOne({ "branding.customDomain": h });
-  return doc || null;
+  return doc ? hydrateOrganization(doc as Organization) : null;
 }
 
 export async function findOtherOrgWithCustomDomain(domain: string, excludeOrgId: string): Promise<Organization | null> {
@@ -379,7 +444,8 @@ export async function findOtherOrgWithCustomDomain(domain: string, excludeOrgId:
   const db = await getDb();
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
-  return (await col.findOne({ _id: { $ne: excludeOrgId }, "branding.customDomain": d })) || null;
+  const o = await col.findOne({ _id: { $ne: excludeOrgId }, "branding.customDomain": d });
+  return o ? hydrateOrganization(o as Organization) : null;
 }
 
 export async function updateOrganization(
@@ -405,6 +471,7 @@ export async function updateOrganization(
       | "stripeSeats"
       | "branding"
       | "aiSettings"
+      | "ui"
     >
   >
 ): Promise<Organization | null> {
@@ -453,6 +520,7 @@ export async function updateOrganizationWithUnset(
       | "stripeSeats"
       | "branding"
       | "aiSettings"
+      | "ui"
     >
   >,
   unsetKeys: (keyof Organization)[]
@@ -474,5 +542,90 @@ export async function updateOrganizationOwner(orgId: string, ownerId: string): P
   await ensureOrgIndexes(db);
   const col = db.collection<Organization>(COL_ORGS);
   await col.updateOne({ _id: orgId }, { $set: { ownerId } });
+}
+
+const COL_USERS_REF = "users";
+
+function escapeOrgRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export type OrganizationListRow = Organization & { memberCount: number };
+
+/**
+ * Lista organizações com contagem de membros. Requer MongoDB para dados completos.
+ * Sem Mongo: devolve apenas a organização default com contagem via KV.
+ */
+export async function listAllOrganizationsPaginated(params: {
+  limit: number;
+  cursor?: string | null;
+  q?: string;
+}): Promise<{ organizations: OrganizationListRow[]; nextCursor: string | null; storage: "mongo" | "kv" }> {
+  const limit = Math.min(Math.max(1, params.limit || 50), 200);
+  const q = (params.q || "").trim();
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureOrgIndexes(db);
+    const col = db.collection<Organization>(COL_ORGS);
+    const parts: Record<string, unknown>[] = [];
+    if (params.cursor) parts.push({ _id: { $gt: params.cursor } });
+    if (q) {
+      const rx = new RegExp(escapeOrgRegex(q), "i");
+      parts.push({ $or: [{ name: rx }, { slug: rx }, { _id: rx }] });
+    }
+    const match = parts.length === 0 ? {} : parts.length === 1 ? parts[0] : { $and: parts };
+
+    const rows = await col
+      .aggregate([
+        { $match: match },
+        { $sort: { _id: 1 } },
+        { $limit: limit + 1 },
+        {
+          $lookup: {
+            from: COL_USERS_REF,
+            localField: "_id",
+            foreignField: "orgId",
+            as: "_m",
+          },
+        },
+        { $addFields: { memberCount: { $size: "$_m" } } },
+        { $project: { _m: 0 } },
+      ])
+      .toArray();
+
+    const hasMore = rows.length > limit;
+    const slice = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor =
+      hasMore && slice.length ? (slice[slice.length - 1] as Organization)._id : null;
+    return {
+      organizations: slice.map((doc) => {
+        const raw = doc as Organization & { memberCount: number };
+        return {
+          ...hydrateOrganization(raw),
+          memberCount: raw.memberCount ?? 0,
+        };
+      }),
+      nextCursor,
+      storage: "mongo",
+    };
+  }
+
+  const { listUsers } = await import("./kv-users");
+  const members = await listUsers(DEFAULT_ORG_ID);
+  const base = { _id: DEFAULT_ORG_ID, ...DEFAULT_ORG_DOC } as Organization;
+  const h = hydrateOrganization(base);
+  if (q) {
+    const n = q.toLowerCase();
+    const hay = `${h.name} ${h.slug} ${h._id}`.toLowerCase();
+    if (!hay.includes(n)) {
+      return { organizations: [], nextCursor: null, storage: "kv" };
+    }
+  }
+  return {
+    organizations: [{ ...h, memberCount: members.length }],
+    nextCursor: null,
+    storage: "kv",
+  };
 }
 

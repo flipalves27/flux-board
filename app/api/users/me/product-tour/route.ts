@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { ensureAdminUser, updateUser } from "@/lib/kv-users";
 import { ProductTourPatchSchema, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function PATCH(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
@@ -29,9 +30,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (err) {
     console.error("User product tour API error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 500 }
-    );
+    return publicApiErrorResponse(err, { context: "api/users/me/product-tour/route.ts" });
   }
 }

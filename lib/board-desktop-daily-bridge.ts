@@ -1,4 +1,4 @@
-﻿type DailyOpener = () => void;
+type DailyOpener = () => void;
 
 let registeredOpener: DailyOpener | null = null;
 

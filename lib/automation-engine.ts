@@ -4,6 +4,7 @@ import { getBoardAutomationRules } from "./kv-automations";
 import { getUserById } from "./kv-users";
 import { classifyCardWithTogether, generateExecutiveBriefTogether } from "./automation-ai";
 import { sendAutomationEmail } from "./automation-email";
+import { appendAutomationExecutionLog } from "./kv-automation-logs";
 
 export function normalizeTag(s: string): string {
   return String(s || "")
@@ -264,6 +265,16 @@ export async function runSyncAutomationsOnBoardPut(args: {
       if (JSON.stringify(next) !== JSON.stringify(cur)) {
         byId.set(id, next);
         changed = true;
+        await appendAutomationExecutionLog({
+          orgId: args.orgId,
+          boardId: args.boardId,
+          ruleId: rule.id,
+          triggerType: rule.trigger.type,
+          actionType: rule.action.type,
+          cardId: id,
+          status: "success",
+          message: "Triggered on board PUT flow.",
+        });
       }
     }
     cards = cards.map((c) => byId.get(String((c as { id?: string })?.id)) || c);
@@ -303,6 +314,16 @@ export async function runFormSubmissionAutomations(args: {
     if (JSON.stringify(next) !== JSON.stringify(card)) {
       card = next;
       changed = true;
+      await appendAutomationExecutionLog({
+        orgId,
+        boardId: args.board.id,
+        ruleId: rule.id,
+        triggerType: rule.trigger.type,
+        actionType: rule.action.type,
+        cardId: args.cardId,
+        status: "success",
+        message: "Triggered on form submission flow.",
+      });
     }
   }
   if (!changed) return null;
@@ -364,6 +385,16 @@ export async function runCronAutomationsForBoard(board: BoardData): Promise<Boar
       });
       cards[i] = markRuleFired(next, rule.id);
       changed = true;
+      await appendAutomationExecutionLog({
+        orgId: board.orgId,
+        boardId: board.id,
+        ruleId: rule.id,
+        triggerType: rule.trigger.type,
+        actionType: rule.action.type,
+        cardId: String(c.id || ""),
+        status: "success",
+        message: "Triggered on cron (card stuck) flow.",
+      });
     }
   }
 
@@ -386,6 +417,16 @@ export async function runCronAutomationsForBoard(board: BoardData): Promise<Boar
         });
         cards[i] = markRuleFired(c, rule.id);
         changed = true;
+        await appendAutomationExecutionLog({
+          orgId: board.orgId,
+          boardId: board.id,
+          ruleId: rule.id,
+          triggerType: rule.trigger.type,
+          actionType: rule.action.type,
+          cardId: String(c.id || ""),
+          status: "success",
+          message: "Triggered on cron (due date) flow.",
+        });
       }
     }
   }
@@ -409,6 +450,16 @@ export async function runCronAutomationsForBoard(board: BoardData): Promise<Boar
           text: gen.text,
         });
         changed = true;
+        await appendAutomationExecutionLog({
+          orgId: board.orgId,
+          boardId: board.id,
+          ruleId: rule.id,
+          triggerType: rule.trigger.type,
+          actionType: rule.action.type,
+          cardId: null,
+          status: "success",
+          message: "Triggered on cron (board completion threshold).",
+        });
       }
     }
   }

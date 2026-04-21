@@ -10,6 +10,7 @@ import {
   getOrganizationInvitesOnboardingDoneStorageKey,
   getOrganizationOnboardingDoneStorageKey,
 } from "@/lib/onboarding";
+import { canManageOrganization, deriveEffectiveRoles } from "@/lib/rbac";
 
 export default function OrganizationOnboardingPage() {
   const router = useRouter();
@@ -33,8 +34,7 @@ export default function OrganizationOnboardingPage() {
       return;
     }
 
-    // Se não for org-admin, pula as etapas de org/invites.
-    if (!user.isAdmin) {
+    if (!canManageOrganization(deriveEffectiveRoles(user))) {
       try {
         localStorage.setItem(getOrganizationOnboardingDoneStorageKey(user.id), "1");
         localStorage.setItem(getOrganizationInvitesOnboardingDoneStorageKey(user.id), "1");
@@ -99,7 +99,7 @@ export default function OrganizationOnboardingPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title={t("header.title")} backHref={`${localeRoot}/boards`} backLabel={t("header.backLabel")}>
         <div className="text-xs text-[var(--flux-text-muted)]">
           {t("steps.pill1")} / {t("steps.pill2")} / {t("steps.pill3")}

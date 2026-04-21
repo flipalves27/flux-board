@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuthFromRequest } from "./auth";
 import { getOrganizationById } from "./kv-organizations";
-import { getEffectiveTier } from "./plan-gates";
+import { getEffectiveTier, planGateCtxFromAuthPayload } from "./plan-gates";
 import { logRateLimitAbuse } from "./rate-limit-abuse";
 import { rateLimitHeadersFromResult, slidingRateLimitConsume } from "./sliding-rate-limit";
 
@@ -18,9 +18,12 @@ export type RateLimitCategory = "ai" | "authenticated" | "public" | "skipped";
 const SKIP_PATH_PREFIXES = ["/api/internal/rate-limit-check", "/api/billing/webhook"];
 
 const AI_PATH_TESTS: RegExp[] = [
+  /^\/api\/fluxy\/classify$/,
+  /^\/api\/workspace\/fluxy-chat$/,
   /^\/api\/boards\/[^/]+\/copilot$/,
   /^\/api\/boards\/[^/]+\/nlq$/,
   /^\/api\/boards\/[^/]+\/card-context$/,
+  /^\/api\/boards\/[^/]+\/card-voice-draft$/,
   /^\/api\/boards\/[^/]+\/daily-insights$/,
   /^\/api\/boards\/[^/]+\/automations\/interpret$/,
   /^\/api\/boards\/[^/]+\/transcribe$/,
@@ -88,7 +91,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     return { ok: true, category: "skipped", headers: {} };
   }
 
-  const payload = getAuthFromRequest(buildAuthRequest(input.authHeader, input.cookieHeader));
+  const payload = await getAuthFromRequest(buildAuthRequest(input.authHeader, input.cookieHeader));
   const ip = input.clientIp || "unknown";
 
   let category: RateLimitCategory;
@@ -100,7 +103,7 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
     category = "ai";
     if (payload) {
       orgForMessage = await getOrganizationById(payload.orgId);
-      const tier = getEffectiveTier(orgForMessage);
+      const tier = getEffectiveTier(orgForMessage, planGateCtxFromAuthPayload(payload));
       limit = tier === "free" ? RL_AI_FREE_PER_MIN : RL_AI_PRO_PER_MIN;
       key = `mw:sliding:ai:user:${payload.id}:org:${payload.orgId}`;
     } else {
@@ -137,7 +140,11 @@ export async function runGlobalApiRateLimit(input: GlobalApiRateLimitInput): Pro
       "Retry-After": String(retry),
     };
     const tierLabel =
-      category === "ai" && payload ? (getEffectiveTier(orgForMessage) === "free" ? "Free" : "Pro/Business") : "";
+      category === "ai" && payload
+        ? getEffectiveTier(orgForMessage, planGateCtxFromAuthPayload(payload)) === "free"
+          ? "Free"
+          : "Pro/Business"
+        : "";
     const message =
       category === "ai"
         ? `Limite de requisições de IA atingido (${limit}/min${tierLabel ? `, plano ${tierLabel}` : ""}). Tente novamente em ${retry}s.`

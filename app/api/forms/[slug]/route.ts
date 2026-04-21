@@ -8,10 +8,12 @@ import {
   getDailyAiCallsWindowMs,
   makeDailyAiCallsRateLimitKey,
 } from "@/lib/plan-gates";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
+import { nextBoardCardId } from "@/lib/card-id";
 
 type BoardCard = {
   id: string;
@@ -23,6 +25,7 @@ type BoardCard = {
   tags: string[];
   direction: string | null;
   dueDate: string | null;
+  assigneeId?: string | null;
   order: number;
 };
 
@@ -43,17 +46,28 @@ function safePublicForm(board: any) {
   };
 }
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+const FORM_NOT_FOUND_MSG = "Formulário não encontrado.";
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params;
   const slug = normalizeFormSlug(rawSlug);
   if (!slug) return NextResponse.json({ error: "Slug inválido." }, { status: 400 });
 
+  const ip = getClientIpFromHeaders(request.headers);
+  const rlGet = await rateLimit({ key: `forms:get:${slug}:${ip}`, limit: 60, windowMs: 60_000 });
+  if (!rlGet.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "Retry-After": String(rlGet.retryAfterSeconds) } }
+    );
+  }
+
   const index = await getIntakeFormIndexBySlug(slug);
-  if (!index || !index.enabled) return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 });
+  if (!index || !index.enabled) return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
 
   const board = await getBoard(index.boardId, index.orgId);
   if (!board || !(board as any).intakeForm?.enabled) {
-    return NextResponse.json({ error: "Formulário indisponível." }, { status: 404 });
+    return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
   }
 
   return NextResponse.json({ form: safePublicForm(board) });
@@ -74,12 +88,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const index = await getIntakeFormIndexBySlug(slug);
-  if (!index || !index.enabled) return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 });
+  if (!index || !index.enabled) return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
 
   const board = await getBoard(index.boardId, index.orgId);
   const form = (board as any)?.intakeForm;
   if (!board || !form?.enabled || normalizeFormSlug(String(form.slug || "")) !== slug) {
-    return NextResponse.json({ error: "Formulário indisponível." }, { status: 404 });
+    return NextResponse.json({ error: FORM_NOT_FOUND_MSG }, { status: 404 });
   }
 
   try {
@@ -200,7 +214,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const order = existingCards.filter((c) => c.bucket === targetBucket).length;
     const card: BoardCard = {
-      id: `FORM-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase(),
+      id: nextBoardCardId(existingCards.map((c) => c.id)),
       bucket: targetBucket,
       priority: classifier.priority || String(form.defaultPriority || "Média"),
       progress: String(form.defaultProgress || "Não iniciado"),
@@ -219,6 +233,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       tags: [...mergedTags].map((t) => String(t).trim()).filter(Boolean).slice(0, 20),
       direction: null,
       dueDate: null,
+      assigneeId: (board as any).config?.cardRules?.requireAssignee ? String((board as any).ownerId || "") : null,
       order,
     };
 
@@ -256,6 +271,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/forms/[slug]/route.ts" });
   }
 }

@@ -7,7 +7,9 @@ import { useAuth } from "@/context/auth-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { apiPut } from "@/lib/api-client";
 import { PRO_FEATURE_LABELS_PT } from "@/lib/plan-gates";
-import { DOWNGRADE_GRACE_DAYS } from "@/lib/billing-limits";
+import { DOWNGRADE_GRACE_DAYS, TRIAL_DAYS } from "@/lib/billing-limits";
+import { sessionCanManageOrgBilling } from "@/lib/rbac";
+import { shouldHideOrgBillingNudges } from "@/lib/plan-ui-context";
 
 function msUntil(iso: string | undefined | null): number | null {
   if (!iso) return null;
@@ -41,7 +43,7 @@ export function TrialBillingBanner() {
   }, [org, tick]);
 
   const dismissNotice = useCallback(async () => {
-    if (!user?.isAdmin) return;
+    if (!user || !sessionCanManageOrgBilling(user)) return;
     setDismissing(true);
     try {
       await apiPut<{ organization: unknown }>(
@@ -55,9 +57,13 @@ export function TrialBillingBanner() {
     } finally {
       setDismissing(false);
     }
-  }, [user?.isAdmin, getHeaders, ctx]);
+  }, [user, getHeaders, ctx]);
 
   if (!user || !org) return null;
+
+  if (shouldHideOrgBillingNudges(user)) return null;
+
+  const canManageBilling = sessionCanManageOrgBilling(user);
 
   if (org.plan === "trial" && org.trialEndsAt && trialRemain !== null && trialRemain > 0) {
     const d = Math.floor(trialRemain / (24 * 60 * 60 * 1000));
@@ -69,7 +75,7 @@ export function TrialBillingBanner() {
         <span className="text-[var(--flux-text-muted)]">
           restam {d}d {h}h
         </span>
-        {user.isAdmin ? (
+        {canManageBilling ? (
           <>
             {" · "}
             <Link href={`${localeRoot}/billing`} className="font-semibold text-[var(--flux-primary-light)] underline-offset-2 hover:underline">
@@ -84,12 +90,14 @@ export function TrialBillingBanner() {
   if (org.billingNotice?.kind === "trial_ended") {
     return (
       <div className="shrink-0 border-b border-[var(--flux-gold-alpha-35)] bg-[var(--flux-gold-alpha-08)] px-4 py-3 text-sm text-[var(--flux-text)]">
-        <p className="font-semibold">Seu trial de 14 dias terminou. O espaço passou para o plano Free.</p>
+        <p className="font-semibold">
+          Seu trial de {TRIAL_DAYS} dias terminou. O espaço passou para o plano Free.
+        </p>
         <p className="mt-1 text-xs text-[var(--flux-text-muted)]">
           Recursos Pro desativados: {PRO_FEATURE_LABELS_PT.map((x) => x.label).join(", ")}.
         </p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-          {user.isAdmin ? (
+          {canManageBilling ? (
             <>
               <Link href={`${localeRoot}/billing`} className="btn-primary text-xs py-1.5 px-3">
                 Ver planos
@@ -104,7 +112,7 @@ export function TrialBillingBanner() {
               </button>
             </>
           ) : (
-            <span className="text-xs text-[var(--flux-text-muted)]">Peça ao admin para fazer upgrade.</span>
+            <span className="text-xs text-[var(--flux-text-muted)]">Peça ao administrador da organização para fazer upgrade.</span>
           )}
         </div>
       </div>
@@ -120,7 +128,7 @@ export function TrialBillingBanner() {
         <span className="text-[var(--flux-text-muted)]">
           ~{days} dia(s) para exportar dados antes dos limites Free
         </span>
-        {user.isAdmin ? (
+        {canManageBilling ? (
           <>
             {" · "}
             <Link href={`${localeRoot}/billing`} className="font-semibold text-[var(--flux-secondary)] underline-offset-2 hover:underline">
@@ -136,7 +144,7 @@ export function TrialBillingBanner() {
     return (
       <div className="shrink-0 border-b border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-elevated)] px-4 py-2 text-center text-xs text-[var(--flux-text-muted)]">
         Limites do plano Free aplicados.
-        {user.isAdmin ? (
+        {canManageBilling ? (
           <>
             {" "}
             <button

@@ -3,17 +3,10 @@ import { isMongoConfigured, getDb } from "@/lib/mongo";
 import { runCronAutomationsForBoard } from "@/lib/automation-engine";
 import { getBoard } from "@/lib/kv-boards";
 import { rateLimit } from "@/lib/rate-limit";
-
-function requireCronSecret(request: NextRequest): boolean {
-  const required = process.env.AUTOMATION_CRON_SECRET || process.env.WEEKLY_DIGEST_SECRET;
-  if (!required) return true;
-  const header = request.headers.get("x-cron-secret");
-  if (!header) return false;
-  return header === required;
-}
+import { verifyCronSecret } from "@/lib/cron-secret";
 
 export async function GET(request: NextRequest) {
-  if (!requireCronSecret(request)) {
+  if (!verifyCronSecret(request, ["AUTOMATION_CRON_SECRET", "CRON_MASTER_SECRET", "WEEKLY_DIGEST_SECRET"])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

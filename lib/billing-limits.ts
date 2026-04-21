@@ -1,6 +1,6 @@
 /** Limites compartilhados entre billing, KV e gates (sem inicializar Stripe). */
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 20;
 export const DOWNGRADE_GRACE_DAYS = 7;
 /** Pausa de cobrança oferecida no fluxo de cancelamento (dias). */
 export const PAUSE_BILLING_DAYS = 30;

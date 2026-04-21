@@ -3,35 +3,74 @@
     "boards": "Boards",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
+    "fluxAiHub": "Hub de IA",
+    "fluxAiHubProduct": "Fluxy e atalhos",
+    "portfolio": "Portfólio",
+    "portfolioProduct": "Saúde do portfólio e IA",
+    "routines": "Rotinas",
     "dashboard": "Executivo",
     "dashboardProduct": "Saúde do portfólio",
     "okrs": "Flux Goals",
+    "goals": "Metas",
     "discovery": "Discovery",
     "templates": "Templates",
     "tasks": "Minhas tarefas",
+    "myWork": "My Work",
     "users": "Usuários",
     "organization": "Organização",
+    "activeOrganization": "Organização ativa",
     "billing": "Billing",
     "invites": "Convites",
+    "orgAudit": "Registo de atividade",
     "rateLimitAbuse": "Rate limit",
+    "tracer": "Tracer",
+    "platformCommercial": "Planos (plataforma)",
+    "platformAdminConsole": "Administração da plataforma",
+    "platformAdminConsoleProduct": "Organizações, utilizadores e auditoria",
+    "sprints": "Sprints",
+    "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
+    "docs": "Flux Docs",
+    "specScopePlanner": "Escopo por documento",
+    "specScopePlannerProduct": "Business+ · IA",
+    "teamWorkspace": "Time e estrutura",
+    "userDirectory": "Cadastro e acessos",
+    "copilot": "Copiloto",
+    "copilotSublabelOnBoard": "Assistente deste quadro",
+    "copilotSublabelPickBoard": "Abra um quadro para usar",
+    "intelligenceBadgeLabel": "{count, plural, one {# execução ativa do spec-plan} other {# execuções ativas do spec-plan}}",
     "section": {
-      "flow": "Fluxo",
-      "intelligence": "Inteligência",
-      "organization": "Espaço da org"
+      "work": "Trabalho",
+      "intelligence": "Visão",
+      "org": "Organização",
+      "commercial": "Plano e cobrança",
+      "admin": "Admin",
+      "platformOps": "Plataforma"
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
+      "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",
+      "portfolio": "Portfólio executivo: saúde agregada, OKRs, anomalias e throughput.",
       "dashboard": "Visão C-level: saúde do portfólio, OKRs, anomalias e tendência de throughput.",
+      "routines": "Rotinas com lembretes (Pro/Business).",
       "okrs": "Objetivos e resultados-chave por trimestre.",
       "discovery": "Iniciativas e discoverys em formato de board.",
       "templates": "Showcase de templates públicos e importação com um clique.",
       "tasks": "Rotinas com lembretes (Pro/Business).",
+      "myWork": "Dashboard pessoal com cards atribuídos, workload e sugestões de prioridade IA.",
       "users": "Membros e permissões da organização.",
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
       "invites": "Convites pendentes para novos membros.",
-      "rateLimitAbuse": "Bloqueios por limite de API (abuso)."
+      "orgAudit": "Convites aceites, entradas e outros eventos da organização.",
+      "rateLimitAbuse": "Bloqueios por limite de API (abuso).",
+      "tracer": "Buffer de erros no cliente (diagnóstico Flux) para admins.",
+      "platformCommercial": "Preços de vitrine, planos no catálogo e sincronização Stripe.",
+      "platformAdminConsole": "Organizações, todos os utilizadores e auditoria (só administrador da plataforma).",
+      "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
+      "docs": "Documentos, RAG e geração com IA.",
+      "specScopePlanner": "Importe uma especificação técnica e gere cards no board com IA (Scrum, Kanban ou LSS).",
+      "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."
     },
     "menu": {
       "expand": "Expandir menu",
@@ -39,6 +78,18 @@
       "openNavigation": "Abrir navegação",
       "closeNavigation": "Fechar navegação",
       "navigationPanel": "Menu principal"
+    },
+    "zones": {
+      "quick": "Acesso rápido",
+      "rhythm": "Cadência",
+      "intelligence": "Inteligência",
+      "workspace": "Workspace"
+    },
+    "variant": {
+      "aurora": "Aurora",
+      "minimal": "Clean",
+      "toggleTooltip": "Estilo do menu: alternar entre Aurora (profundidade) e Clean (minimalista).",
+      "cycleTooltip": "Estilo do menu: {current}. Clique para alternar Aurora e Clean."
     },
     "theme": {
       "light": "Tema claro",
@@ -54,12 +105,406 @@
     },
     "logout": "Sair"
   },
+  "platformAdmin": {
+    "title": "Administração da plataforma",
+    "subtitle": "Visão global de organizações, utilizadores e eventos de auditoria.",
+    "tabUsers": "Todos os utilizadores",
+    "tabOrgs": "Organizações",
+    "tabAudit": "Auditoria",
+    "loading": "Carregando…",
+    "loadError": "Erro ao carregar",
+    "kvWarning": "Sem base de dados persistente (MongoDB) configurada no servidor, as listagens globais ficam limitadas (modo desenvolvimento). Peça ao administrador da plataforma para completar a configuração de dados.",
+    "searchUsers": "Pesquisar nome, e-mail ou utilizador",
+    "searchOrgs": "Pesquisar organização",
+    "applySearch": "Aplicar",
+    "newUser": "Novo utilizador",
+    "colName": "Nome",
+    "colEmail": "E-mail",
+    "colOrg": "Organização",
+    "colOrgId": "ID da organização",
+    "colRole": "Papel na org",
+    "colPlatform": "Plataforma",
+    "colActions": "Ações",
+    "colOrgName": "Organização",
+    "colSlug": "Slug",
+    "colPlan": "Plano",
+    "colMembers": "Membros",
+    "colWhen": "Quando",
+    "colAction": "Evento",
+    "colActor": "Ator",
+    "colResource": "Recurso",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "create": "Criar",
+    "loadMore": "Carregar mais",
+    "saved": "Guardado",
+    "error": "Erro",
+    "editOrgTitle": "Editar organização",
+    "editUserTitle": "Editar utilizador",
+    "newPassword": "Nova senha",
+    "password": "Senha",
+    "fillRequired": "Preencha os campos obrigatórios.",
+    "passwordMin": "A senha deve ter pelo menos 8 caracteres.",
+    "userCreated": "Utilizador criado",
+    "userDeleted": "Utilizador removido",
+    "deleteUserTitle": "Excluir utilizador",
+    "deleteUserConfirm": "Excluir {name} permanentemente?",
+    "deleteOrgTitle": "Excluir organização",
+    "deleteOrgConfirm": "Excluir {name} e todos os dados associados (utilizadores, boards, convites, etc.)? Esta ação não pode ser desfeita.",
+    "orgDeleted": "Organização excluída",
+    "requestTimeout": "O pedido demorou demais. Verifique a ligação ou tente de novo."
+  },
+  "sprints": {
+    "title": "Sprints",
+    "subtitle": "Sprints de todos os boards aos quais você tem acesso.",
+    "loading": "Carregando…",
+    "loadError": "Não foi possível carregar os sprints.",
+    "authError": "Sessão expirada.",
+    "upgradeRequired": "Sprints disponíveis em planos pagos.",
+    "upgradeTitle": "Central de sprints exige plano pago",
+    "upgradeCta": "Ver planos",
+    "activeSprint": "Sprint ativo",
+    "openBoard": "Abrir board",
+    "openDetail": "Abrir sprint",
+    "newSprint": "Nova sprint",
+    "duplicate": "Duplicar",
+    "delete": "Excluir",
+    "confirmDelete": "Excluir esta sprint? Esta ação não pode ser desfeita.",
+    "duplicateSuffix": "cópia",
+    "filterSearch": "Buscar",
+    "filterBoard": "Board",
+    "filterAll": "Todos",
+    "filterStatus": "Status",
+    "sortLabel": "Ordenar",
+    "sortUpdated": "Atualização",
+    "sortName": "Nome",
+    "emptyFiltered": "Nenhum sprint com estes filtros.",
+    "allSprints": "Todos os sprints",
+    "empty": "Nenhum sprint ainda.",
+    "col": {
+      "name": "Sprint",
+      "board": "Board",
+      "method": "Método",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "status": {
+      "planning": "Planejamento",
+      "active": "Ativo",
+      "review": "Revisão",
+      "closed": "Encerrado"
+    },
+    "ceremony": {
+      "planning": "Planejamento",
+      "standup": "Daily",
+      "review": "Review",
+      "retro": "Retrospectiva"
+    },
+    "hubFocus": "Foco",
+    "hubModeScrum": "Scrum",
+    "hubModeKanban": "Kanban",
+    "hubCadenceHintScrum": "Ciclo de sprint, cerimônias e a lista abaixo.",
+    "hubCadenceHintKanban": "Execute cerimônias de cadência Kanban em um board (Business+).",
+    "cadencePickBoard": "Board para cadência",
+    "panel": {
+      "planningCeremony": "Cerimônia de planejamento",
+      "applyAiMerge": "Mesclar sugestão IA",
+      "applyAiReplace": "Substituir pelo IA",
+      "closePanelAria": "Fechar painel Sprint",
+      "boardHistory": "Histórico de sprints do board",
+      "boardHistoryShort": "Histórico"
+    },
+    "backlog": {
+      "title": "Itens do sprint",
+      "hint": "Comprometa cards não concluídos. Em sprint ativo, mudanças refletem escopo e métricas.",
+      "readOnlyHint": "Sprint em revisão ou encerrado — escopo não pode ser editado aqui.",
+      "boardMismatch": "Abra este board para carregar os cards e gerenciar o backlog.",
+      "committed": "No sprint",
+      "emptyCommitted": "Nenhum card no sprint ainda.",
+      "doneInSprint": "concluído",
+      "remove": "Remover",
+      "addSearch": "Incluir cards",
+      "addPlaceholder": "Buscar por título ou ID…",
+      "add": "Incluir",
+      "noMatches": "Nenhum card encontrado."
+    },
+    "detail": {
+      "loading": "Carregando sprint…",
+      "loadError": "Não foi possível carregar o detalhe da sprint.",
+      "retry": "Tentar de novo",
+      "notFound": "Sprint não encontrada.",
+      "backHub": "Voltar à central de sprints",
+      "boardLink": "Board",
+      "cadenceTimebox": "Timebox (Scrum)",
+      "cadenceContinuous": "Fluxo contínuo (Kanban)",
+      "edit": "Editar",
+      "tabs": {
+        "overview": "Visão geral",
+        "scope": "Escopo",
+        "metrics": "Métricas",
+        "history": "Histórico e IA",
+        "ceremonies": "Cerimônias"
+      },
+      "goalTitle": "Meta da sprint",
+      "noGoal": "Sem meta definida.",
+      "commitmentNote": "Nota de compromisso",
+      "plannedCapacity": "Capacidade planejada",
+      "velocity": "Velocity",
+      "programIncrement": "Program Increment (ID)",
+      "tags": "Tags",
+      "wipPolicy": "Política WIP",
+      "scopeTitle": "Cards no escopo",
+      "doneTitle": "Concluídos (done)",
+      "addedMidTitle": "Adicionados no meio",
+      "removedTitle": "Removidos",
+      "emptyScope": "Nenhum card no escopo.",
+      "emptyDone": "Nenhum card marcado como concluído na sprint.",
+      "emptyAddedMid": "Nenhum card adicionado no meio da sprint.",
+      "emptyRemoved": "Nenhum card removido do escopo.",
+      "noBurndown": "Burndown indisponível (defina datas de início e fim e cards no escopo).",
+      "ideal": "Ideal",
+      "actual": "Real",
+      "timelineTitle": "Linha do tempo",
+      "emptyTimeline": "Sem eventos derivados ainda.",
+      "timeline": {
+        "created": "Sprint criada",
+        "burndown": "{date}: {n} cards restantes (snapshot)",
+        "addedMid": "{count} cards adicionados no meio da sprint",
+        "removed": "{count} cards removidos do escopo",
+        "done": "{count} cards na lista de concluídos",
+        "column": "«{title}» entrou em «{col}»"
+      },
+      "aiTitle": "Pergunte à sprint (IA)",
+      "aiHint": "Perguntas sobre escopo, burndown e mudanças registradas nos dados da sprint.",
+      "aiPlaceholder": "Ex.: O que entrou no meio da sprint?",
+      "aiAsk": "Perguntar",
+      "aiLoading": "Gerando…",
+      "aiError": "Não foi possível obter resposta da IA.",
+      "aiSuggestions": {
+        "q1": "O que entrou no meio da sprint?",
+        "q2": "Quais cards ainda estão em progresso no escopo?",
+        "q3": "Resuma o estado do burndown."
+      },
+      "confirmDelete": "Excluir esta sprint permanentemente?",
+      "cardMissing": "Card ausente no board",
+      "reconstructedHint": "Os dados dos cards foram reconstruídos a partir do board atual; esta sprint foi encerrada antes do armazenamento de snapshots de escopo."
+    },
+    "history": {
+      "pageTitle": "Histórico de sprints",
+      "subtitle": "Linha do tempo, velocity e exportações deste board.",
+      "loading": "Carregando histórico…",
+      "loadError": "Não foi possível carregar o histórico de sprints.",
+      "retry": "Tentar de novo",
+      "backBoard": "Voltar ao board",
+      "openHub": "Central de sprints",
+      "openActive": "Abrir sprint ativo",
+      "createSprint": "Nova sprint",
+      "closedCount": "{count, plural, one {# sprint encerrada} other {# sprints encerradas}}",
+      "lastClosed": "Último encerramento",
+      "noneClosed": "Nenhuma sprint encerrada ainda.",
+      "chartTitle": "Velocity (sprints encerradas)",
+      "chartEmpty": "Encerre uma sprint para ver a velocity aqui.",
+      "filterStatus": "Status",
+      "filterAll": "Todos",
+      "sortLabel": "Ordenar",
+      "sortEndDate": "Data de fim",
+      "sortName": "Nome",
+      "sortVelocity": "Velocity",
+      "searchPlaceholder": "Buscar sprint ou títulos de cards…",
+      "exportJson": "Exportar JSON",
+      "exportCsv": "Exportar CSV",
+      "compare": "Comparar duas sprints",
+      "compareOpen": "Comparar",
+      "compareTitle": "Comparar sprints",
+      "comparePickA": "Primeira sprint",
+      "comparePickB": "Segunda sprint",
+      "compareRun": "Mostrar comparação",
+      "compareScope": "Cards no escopo",
+      "compareDone": "Concluídos",
+      "compareCarryover": "Carryover",
+      "compareVelocity": "Velocity",
+      "compareGoal": "Meta",
+      "compareTags": "Tags",
+      "snapshotBadge": "Snapshot",
+      "legacyBadge": "Reconstruído",
+      "openDetail": "Abrir sprint",
+      "heroCtaBoard": "Board",
+      "printFriendly": "Imprimir / modo leitura",
+      "hubBoardHistory": "Histórico de sprints do board",
+      "hubBoardHistoryHint": "Linha do tempo e exportações para o board filtrado."
+    },
+    "form": {
+      "titleCreate": "Nova sprint",
+      "titleEdit": "Editar sprint",
+      "close": "Fechar",
+      "step": "Passo {current} de {total}",
+      "fieldBoard": "Board",
+      "fieldName": "Nome",
+      "fieldGoal": "Meta",
+      "fieldStart": "Início",
+      "fieldEnd": "Fim",
+      "fieldCadence": "Tipo de cadência",
+      "cadenceTimebox": "Timebox (Scrum)",
+      "cadenceContinuous": "Fluxo contínuo (Kanban)",
+      "fieldReviewCadence": "Dias entre reviews (Kanban)",
+      "fieldWip": "Política WIP / notas",
+      "fieldCapacity": "Capacidade planejada",
+      "fieldCommitment": "Nota de compromisso",
+      "fieldPi": "ID do Program Increment",
+      "fieldTags": "Tags (vírgula)",
+      "tagsPlaceholder": "ex.: equipe-alpha, q1",
+      "fieldCustomKey": "Campo personalizado (chave)",
+      "fieldCustomVal": "Valor",
+      "planningAiTitle": "Sugestão de escopo (IA)",
+      "planningAiCta": "Gerar sugestão de planejamento",
+      "planningAiCreateHint": "Guarde a sprint primeiro para usar a sugestão IA de planejamento no board.",
+      "aiLoading": "Analisando…",
+      "aiError": "Falha na sugestão IA.",
+      "back": "Voltar",
+      "next": "Avançar",
+      "save": "Guardar",
+      "saving": "A guardar…",
+      "saveError": "Não foi possível guardar.",
+      "nameRequired": "Indique o nome da sprint.",
+      "boardRequired": "Escolha um board.",
+      "reviewSave": "Confirme os dados e clique em Guardar."
+    },
+    "commandCenter": {
+      "pretitle": "Command center",
+      "aria": "Painel de controle da sprint",
+      "loading": "Carregando command center…",
+      "errorTitle": "Não foi possível abrir o command center",
+      "error": {
+        "load": "Erro ao carregar dados da sprint.",
+        "notfound": "Sprint não encontrada.",
+        "upgrade": "Recurso disponível em planos pagos."
+      },
+      "breadcrumb": {
+        "sprints": "Sprints",
+        "detail": "Detalhe",
+        "commandCenter": "Command center"
+      },
+      "health": "Saúde",
+      "metrics": {
+        "commitment": "Commitment",
+        "timeLeft": "Tempo restante",
+        "timeLeftCaption": "de {total}d totais",
+        "scopeDrift": "Drift de escopo",
+        "scopeDriftCaption": "+{added} / -{removed}",
+        "velocity": "Velocity",
+        "velocityCaption": "capacidade planejada {capacity}",
+        "velocityCaptionEmpty": "capacidade não definida"
+      },
+      "burndown": {
+        "title": "Burndown",
+        "legend": "ideal × real"
+      },
+      "signals": {
+        "title": "Sinais",
+        "msg": {
+          "scopeDriftHigh": "Drift de escopo elevado — renegocie itens antes da review.",
+          "lowCommitment": "Commitment abaixo do ritmo de tempo — ajuste o plano ou remova itens.",
+          "burningTooFast": "Queima acima do ideal — boa! Considere trazer itens priorizados.",
+          "runningOutOfTime": "Sprint próxima do fim com itens pendentes — decida escopo de corte.",
+          "onTrack": "Sprint em ritmo saudável.",
+          "earlyDays": "Começando a sprint — fixe um daily e revise a meta."
+        }
+      },
+      "release": {
+        "empty": "Sem release vinculada",
+        "manage": "Gerir releases"
+      },
+      "actions": {
+        "openDetail": "Abrir detalhe",
+        "openBoard": "Abrir board"
+      }
+    },
+    "timeline": {
+      "title": "Linha do tempo das sprints",
+      "subtitle": "Velocity, entregas e releases encadeadas ao longo do histórico.",
+      "empty": "Nenhuma sprint registrada ainda.",
+      "legend": {
+        "closed": "encerrada",
+        "review": "revisão",
+        "active": "ativa",
+        "release": "release"
+      },
+      "status": {
+        "planning": "Plan",
+        "active": "Ativa",
+        "review": "Revisão",
+        "closed": "Encerrada"
+      },
+      "detail": {
+        "title": "Detalhe da sprint",
+        "noGoal": "Sem meta registrada.",
+        "commitment": "Commit",
+        "scope": "Escopo",
+        "done": "Concluídos",
+        "open": "Abrir sprint",
+        "fullHistory": "Histórico completo",
+        "cardsTitle": "Cards do escopo",
+        "releasesTitle": "Releases vinculadas",
+        "reconstructedHint": "Histórico anterior ao snapshot — detalhes reconstruídos do board atual."
+      }
+    }
+  },
+  "ceremonies": {
+    "planningTitle": "Planejamento do sprint",
+    "planningSubtitle": "Capacidade, sugestão IA e dica Monte Carlo.",
+    "standupTitle": "Daily assíncrono",
+    "standupSubtitle": "O que fez, o que fará, impedimentos — visível no board.",
+    "close": "Fechar",
+    "loading": "Carregando…",
+    "error": "Algo deu errado.",
+    "members": "Membros",
+    "weekdays": "Dias úteis no sprint",
+    "capacity": "Capacidade aproximada (pts)",
+    "committed": "Cards no sprint",
+    "overCommitted": "Mais cards que a capacidade aproximada — considere reduzir escopo.",
+    "aiSuggest": "Sugestão IA",
+    "aiLoading": "Analisando…",
+    "aiError": "Não foi possível carregar a sugestão IA.",
+    "monteCarloHint": "Monte Carlo (reamostragem de throughput semanal)",
+    "p85": "Throughput p85 (itens)",
+    "didYesterday": "Ontem / feito",
+    "willToday": "Hoje / farei",
+    "blockers": "Impedimentos",
+    "saveStandup": "Salvar",
+    "saving": "Salvando…",
+    "teamToday": "Time hoje",
+    "emptyStandup": "Nenhuma entrada nesta data.",
+    "cadenceTitle": "Cadência Kanban",
+    "cadenceType": "Tipo de cerimônia",
+    "cadenceRun": "Executar",
+    "cadenceRunning": "Executando…",
+    "cadenceError": "Não foi possível executar a cadência.",
+    "cadenceSummary": "Resumo",
+    "cadenceInsights": "Insights",
+    "cadenceActions": "Próximas ações",
+    "cadenceMetrics": "Métricas de fluxo",
+    "cadenceMetricCycle": "Ciclo médio (dias)",
+    "cadenceMetricThroughput": "Throughput (14 dias)",
+    "cadenceMetricBlocked": "Cards com sinal de bloqueio",
+    "cadenceMetricOldest": "Card ativo mais antigo",
+    "cadenceWipByColumn": "WIP por coluna (progresso)",
+    "cadenceReportsLink": "Ver relatórios do board",
+    "closeCadencePanelAria": "Fechar painel de cadência Kanban",
+    "scrumPlaybookTitle": "Boas práticas Scrum (referência)",
+    "scrumPlaybookBody": "Definition of Ready: critérios claros antes de entrar no sprint. Definition of Done: incremento testável e entregue. Time-box: planejamento, daily, review e retrospectiva mantêm o ritmo. Use o backlog abaixo para compromisso explícito do que entra no sprint.",
+    "planningBacklogIntro": "Backlog comprometido — ajuste o escopo antes de iniciar o sprint."
+  },
   "commandPalette": {
     "ariaLabel": "Paleta de comandos",
+    "openFromMobileHeader": "Abrir busca de comandos",
     "placeholder": "Buscar boards, cards, ações…",
     "empty": "Nenhum resultado.",
     "footer": "↑↓ navegar · Enter abrir · 1–9 atalho · Esc fechar",
     "aiComingSoon": "Comandos em linguagem natural (/ai) serão integrados quando o Copilot com function calling estiver pronto.",
+    "aiHint": "Digite um comando em linguagem natural após /ai (ex: 'mova cards urgentes para Em andamento', 'abrir dashboard')",
+    "aiAction": "Ação IA",
     "groups": {
       "recent": "Recentes",
       "boards": "Boards",
@@ -77,7 +522,16 @@
     "actions": {
       "newBoard": "Criar board",
       "createCardIn": "Criar card em {board}",
-      "copilot": "Abrir Copiloto"
+      "copilot": "Abrir Copiloto",
+      "flowHealth": "Saúde do fluxo — {board}",
+      "sprintPanel": "Abrir painel Sprint — {board}",
+      "sprintCoach": "Coach de sprint (IA) — {board}",
+      "standup": "Iniciar standup — {board}",
+      "scrumSettings": "Scrum e DoD — {board}",
+      "incrementReview": "Incremento / review — {board}",
+      "boardSprintHistory": "Histórico de sprints do board — {board}",
+      "kanbanCadence": "Cadência Kanban — {board}",
+      "lssAssist": "Assistente Lean Six Sigma — {board}"
     },
     "nav": {
       "boards": "Boards",
@@ -87,11 +541,67 @@
       "discovery": "Discovery",
       "templates": "Templates",
       "tasks": "Minhas tarefas",
+      "myWork": "My Work",
+      "marketplace": "Template Marketplace",
+      "sprints": "Sprints",
+      "docs": "Flux Docs",
       "users": "Usuários",
+      "team": "Equipe",
       "orgSettings": "Config. da organização",
       "billing": "Cobrança",
       "invites": "Convites",
-      "rateLimit": "Rate limit (abuso)"
+      "rateLimit": "Rate limit (abuso)",
+      "tracer": "Tracer (diagnóstico)",
+      "platformCommercial": "Planos da plataforma (admin)",
+      "platformAdmin": "Administração da plataforma"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnóstico Flux",
+    "openAria": "Abrir diagnóstico Flux",
+    "openButton": "Diagnóstico ({count})",
+    "copy": "Copiar",
+    "clear": "Limpar",
+    "close": "Fechar",
+    "sessionTrace": "Trace da sessão",
+    "persist": "Persistir:",
+    "empty": "Nenhum evento ainda.",
+    "version": "Versão"
+  },
+  "adminTracer": {
+    "title": "Tracer — diagnóstico",
+    "subtitle": "Visualização somente leitura do mesmo buffer do painel flutuante (?fluxDebug=1). Exporte JSON para compartilhar com engenharia.",
+    "howTo": "Como capturar",
+    "hintFluxDebug": "Ative o buffer com",
+    "hintOr": "ou",
+    "hintFloating": "Painel flutuante + DevTools:",
+    "fluxDebugStatus": "Flag do buffer",
+    "fluxDebugOn": "ligado (?fluxDebug ou localStorage)",
+    "fluxDebugOff": "desligado (eventos ainda podem ser registrados pelos handlers globais)",
+    "filterKind": "Tipo:",
+    "search": "Busca:",
+    "searchPlaceholder": "mensagem, rota, stack…",
+    "copyJson": "Copiar JSON",
+    "clear": "Limpar buffer",
+    "sessionTrace": "Trace da sessão",
+    "count": "Exibindo",
+    "empty": "Nenhuma entrada com o filtro atual.",
+    "copyEntry": "Copiar JSON da entrada",
+    "selectPrompt": "Selecione uma entrada à esquerda.",
+    "detail": {
+      "at": "Horário (UTC)",
+      "message": "Mensagem",
+      "route": "Rota",
+      "href": "URL",
+      "locale": "Locale",
+      "appVersion": "Versão do app",
+      "traceId": "Trace id",
+      "severity": "Severidade",
+      "hints": "Dicas",
+      "docs": "Documentação",
+      "stack": "Stack",
+      "componentStack": "Component stack",
+      "extra": "Extra"
     }
   },
   "hotkeys": {
@@ -109,7 +619,8 @@
     "escape": "Fechar diálogo ou paleta (quando estiver aberto)",
     "newCard": "Novo card (board atual)",
     "toggleFilters": "Alternar filtros e barra de busca",
-    "focusSearch": "Focar busca do board"
+    "focusSearch": "Focar busca do board",
+    "focusMode": "Alternar modo foco"
   },
   "rateLimitAbuse": {
     "title": "Abuso — rate limit",
@@ -130,6 +641,65 @@
   },
   "templates": {
     "title": "Templates & showcase",
+    "matrixBadge": "Matriz",
+    "matrixGridBadge": "Matriz 4×4",
+    "createSectionTitle": "Criar novo modelo",
+    "createModeAi": "Com IA",
+    "createModeMatrix": "Matriz de priorização",
+    "createModeBpmn": "BPMN",
+    "bpmnBadge": "BPMN",
+    "matrixSectionTitle": "Matriz de priorização",
+    "matrixSectionHint": "Grade 4×4 com dois eixos de nível (como em priorização visual de mercado): arraste os cards do board para as células. Publicar no showcase exige administrador.",
+    "matrixSectionCta": "Abrir sessão exclusiva da Matriz 4x4",
+    "bpmnSectionTitle": "Modelo BPMN",
+    "bpmnSectionHint": "Workspace dedicado para BPMN com importação/exportação em Markdown e BPMN XML.",
+    "bpmnSectionCta": "Abrir workspace BPMN",
+    "matrixExclusive": {
+      "title": "Matriz 4x4",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva da Matriz 4x4",
+      "hint": "Contexto dedicado para priorizar, criar tarefas e publicar templates com menos ruído visual."
+    },
+    "bpmnExclusive": {
+      "title": "Workspace BPMN",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva BPMN",
+      "hint": "Importe, valide, edite e publique templates BPMN com foco em modelagem de processos."
+    },
+    "matrixPanel": {
+      "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
+      "selectBoard": "Board de origem",
+      "openPublish": "Configurar e publicar template",
+      "loadingBoards": "Carregando boards…",
+      "noBoards": "Nenhum board disponível. Crie um board antes de publicar.",
+      "nonAdmin": "Somente administradores podem publicar templates no showcase.",
+      "nonAdminHint": "Você ainda pode importar templates de matriz já publicados na lista abaixo (selo Matriz) ou pedir a um administrador da organização para publicar."
+    },
+    "matrixWorkspace": {
+      "intro": "Visualize e posicione cards em uma grade 4×4: eixo vertical e horizontal representam níveis (baixo → alto). O degradê segue a diagonal prioridade crescente, alinhado a referências comuns de matrizes de priorização.",
+      "bestPracticeHint": "Boas práticas: alinhe impacto no eixo vertical e esforço/complexidade no horizontal; itens de alto impacto e baixo esforço tendem a prioridade máxima.",
+      "loadingCards": "Carregando cards do board…",
+      "gridAria": "Matriz de priorização quatro por quatro",
+      "level": "Nível",
+      "axisHorizontalLow": "Baixo",
+      "axisHorizontalHigh": "Alto",
+      "axisVerticalHigh": "Alto",
+      "axisVerticalLow": "Baixo",
+      "poolTitle": "Cards disponíveis (arraste para a grade)",
+      "openBoardCta": "Abrir board",
+      "poolEmpty": "Todos os cards estão na grade ou não há cards neste board.",
+      "dragHint": "Arraste um card da lista para uma célula, entre células ou de volta à lista para remover da grade.",
+      "quickTaskTitle": "Criar tarefa rápida para esta matriz",
+      "quickTaskPlaceholder": "Ex.: Revisar proposta comercial enterprise",
+      "quickTaskCta": "Criar tarefa",
+      "quickTaskHint": "A tarefa é criada no board selecionado e já fica pronta para arrastar para a matriz.",
+      "savingTask": "Salvando…",
+      "deleteTask": "Excluir",
+      "deleteTaskConfirm": "Excluir esta tarefa do board?",
+      "taskGenericError": "Não foi possível salvar a tarefa no board selecionado.",
+      "publishCta": "Publicar como template",
+      "publishHint": "Abre o assistente com título, categoria e o layout atual da grade."
+    },
     "subtitle": "Importe colunas, rótulos e automações sem cards. Premium com repasse 70/30 ao criador.",
     "loading": "Carregando catálogo…",
     "loadError": "Não foi possível carregar os templates.",
@@ -178,9 +748,36 @@
     },
     "premium": "Premium",
     "free": "Grátis",
+    "deleteTemplate": {
+      "cta": "Excluir template",
+      "deleting": "Excluindo…",
+      "confirm": "Deseja excluir este template publicado?",
+      "success": "Template excluído com sucesso.",
+      "error": "Não foi possível excluir o template."
+    },
     "exportModal": {
       "title": "Publicar como template",
       "hint": "Exporta colunas, automações e rótulos (sem cards). Visível no showcase.",
+      "hintMatrix": "Matriz Eisenhower em quatro colunas; inclua cópias dos cards escolhidos (sem vínculo com o board de origem após importar).",
+      "hintGrid4Publish": "Defina título e categoria do template. O layout 4×4 e as posições dos cards vêm do workspace de matriz.",
+      "grid4Summary": "{count, plural, one {# card posicionado na grade} other {# cards posicionados na grade}}",
+      "templateKind": "Tipo de template",
+      "templateKindKanban": "Kanban (estrutura)",
+      "templateKindMatrix": "Matriz de priorização",
+      "templateKindBpmn": "Modelo de processo BPMN",
+      "sourceBoard": "Board de origem",
+      "loadingCards": "Carregando cards…",
+      "noCards": "Nenhum card neste board.",
+      "cardSearch": "Buscar por título ou ID…",
+      "cardsHeading": "Incluir cards e quadrante",
+      "boardLoadError": "Não foi possível carregar o board.",
+      "publishError": "Erro ao publicar.",
+      "quadrants": {
+        "do_first": "Urgente e importante",
+        "schedule": "Importante, não urgente",
+        "delegate": "Urgente, não importante",
+        "eliminate": "Nem urgente nem importante"
+      },
       "fieldTitle": "Título",
       "titlePlaceholder": "Meu pipeline de vendas",
       "fieldDesc": "Descrição",
@@ -201,7 +798,7 @@
         "marketing": "Marketing",
         "customer_success": "Customer Success",
         "support": "Suporte",
-        "insurance_warranty": "Seguro / Garantia"
+        "insurance_warranty": "Operações / garantia de processo"
       }
     }
   },
@@ -209,6 +806,34 @@
     "badge": "Flux Reports",
     "title": "BI self-service com narrativa IA",
     "subtitle": "Dashboard ao vivo com dados agregados dos boards da organização. Use Explicar em cada gráfico para gerar uma narrativa executiva.",
+    "hub": {
+      "tabs": {
+        "overview": "Visão geral",
+        "kanban": "Fluxo Kanban",
+        "scrum": "Scrum",
+        "lss": "Lean Six Sigma"
+      },
+      "leadCycleNote": "Lead time aproxima criação → conclusão. Cycle time prefere entrada na coluna (`columnEnteredAt`) → conclusão quando o card registra movimentação.",
+      "blockersTitle": "Tags de bloqueio (em aberto)",
+      "dorReadyTitle": "Definition of Ready (Scrum)",
+      "dorReadyHint": "Cards Scrum não concluídos com todos os itens DoR marcados vs. cards com DoR iniciado.",
+      "sprintVelocityTitle": "Sprints fechados — story points entregues",
+      "sprintsLink": "Hub de sprints",
+      "forecastUnavailable": "Forecast indisponível: sem board base no heatmap.",
+      "lssBlurb": "Carga DMAIC, aging, conclusões, Pareto por tags e capacidade de processo (heurística).",
+      "lssCta": "Abrir visão executiva LSS",
+      "chapters": {
+        "label": "Ir para",
+        "insights": "Insights",
+        "kpis": "KPIs",
+        "outlook": "Previsão da sprint",
+        "cfd": "Fluxo",
+        "deps": "Dependências",
+        "cycle": "Cycle time",
+        "sentiment": "Clima"
+      }
+    },
+    "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
     "loadError": "Não foi possível carregar os relatórios.",
     "empty": "Sem dados.",
@@ -223,6 +848,7 @@
       "boards": "Boards",
       "avgRisk": "Risco médio (índice)",
       "avgLead": "Lead time médio (aprox.)",
+      "avgCycleApprox": "Cycle time médio (aprox.)",
       "atRiskBoards": "Boards em atenção (risco < 48)"
     },
     "cfdTabs": {
@@ -291,6 +917,60 @@
       "cards": "Cards",
       "sentimentScore": "Clima médio"
     },
+    "lss": {
+      "badge": "Lean Six Sigma",
+      "title": "Portfólio executivo DMAIC",
+      "subtitle": "Visão C-level dos boards LSS: carga por fase, risco de aging, conclusões e vínculos com OKRs.",
+      "backToReports": "Voltar ao Flux Reports",
+      "generatedAt": "Atualizado em",
+      "loadError": "Não foi possível carregar o relatório LSS.",
+      "upgradeHint": "Este relatório exige plano Business ou superior. Faça upgrade para liberar analytics executivos Lean Six Sigma.",
+      "emptyNoLssBoards": "Ainda não há boards Lean Six Sigma nesta organização.",
+      "emptyNoLssBoardsHint": "Crie um board com metodologia \"Lean Six Sigma\" (DMAIC) para ver as métricas de portfólio aqui.",
+      "kpi": {
+        "lssBoards": "Boards LSS",
+        "openWip": "WIP em aberto (itens)",
+        "atRiskWip": "WIP em risco",
+        "atRiskHint": "Itens abertos com aging ≥ {days} dias",
+        "done8w": "Concluídos (8 semanas)"
+      },
+      "okrBridgeTitle": "OKRs ligados a boards LSS",
+      "charts": {
+        "dmaicOpen": "Em aberto por fase DMAIC",
+        "weeklyDone": "Conclusões semanais (boards LSS)",
+        "agingOpen": "Aging do WIP em aberto",
+        "tagPareto": "Pareto — tags no trabalho LSS aberto",
+        "individualsSpc": "Gráfico de indivíduos (cycle time, estilo XmR)",
+        "capability": "Índices de capacidade (heurística)"
+      },
+      "hints": {
+        "dmaicOpen": "Cards não concluídos por coluna atual (chave do bucket).",
+        "weeklyDone": "Cards marcados como concluídos com data de conclusão em cada semana móvel.",
+        "agingOpen": "Dias desde criação do card ou entrada na coluna — distribuição de todos os itens abertos.",
+        "tagPareto": "Frequência de cada label em cards não concluídos nos boards LSS.",
+        "individualsSpc": "Últimos concluídos: dias de ciclo com limites via amplitude móvel (visão didática; não substitui programa formal de SPC/MSA).",
+        "capability": "Cp/Cpk frente a um LSE especulativo = P95 × 1,25 da mesma amostra — para discussão, não como spec contratual."
+      },
+      "paretoEmpty": "Sem tags em itens LSS abertos para ranquear.",
+      "spcEmpty": "Precisamos de mais conclusões LSS com datas para traçar limites.",
+      "tollgateTitle": "Tollgates DMAIC",
+      "tollgateBody": "Entre fases, alinhe com o sponsor: VOC & charter (Define), linha base & plano de medição (Measure), causas verificadas (Analyze), piloto & benefícios (Improve), plano de controle & plano de reação (Control).",
+      "sipocHint": "Use o assistente LSS na fase Define para rascunhar SIPOC, ou guarde um rascunho SIPOC no board quando o campo estiver disponível.",
+      "capabilitySample": "Amostra: {n} | Média: {mean} d | LSE*: {usl} d",
+      "capabilityCpk": "Cp {cp} · Cpk {cpk}",
+      "series": {
+        "openCards": "Cards em aberto",
+        "completed": "Concluídos"
+      },
+      "portfolioTitle": "Portfólio de boards",
+      "portfolioHint": "Ordenado por WIP em risco e aging máximo.",
+      "table": {
+        "board": "Board",
+        "open": "Abertos",
+        "atRisk": "Em risco",
+        "maxAge": "Age máx."
+      }
+    },
     "sprint": {
       "title": "Planejamento preditivo de sprint",
       "hint": "Monte Carlo leve (1000 simulações): bootstrap do throughput semanal (Copilot) ou, na falta dele, distribuição empírica de tempos de ciclo (entrada na coluna → conclusão). Requer ≥4 semanas de janelas e throughput ou ≥8 conclusões com ciclo registrado.",
@@ -328,6 +1008,9 @@
       "loadError": "Não foi possível carregar o painel.",
       "empty": "Sem dados.",
       "noMongo": "Conecte MongoDB para habilitar histórico e alertas automáticos.",
+      "noMongoPublic": "O histórico de alertas proativos não está disponível neste ambiente neste momento.",
+      "neverRunPublic": "Ainda não há verificações automáticas registadas.",
+      "cronHintPublic": "As verificações automáticas seguem um calendário configurado para o seu espaço de trabalho.",
       "health": {
         "ok": "Ativo",
         "review": "Verificar",
@@ -335,7 +1018,7 @@
       },
       "unread": "novos",
       "lastRun": "Última execução",
-      "neverRun": "Nenhuma execução registrada ainda. Configure o cron em /api/cron/anomaly-check (header x-cron-secret).",
+      "neverRun": "Nenhuma execução registrada ainda. O agendamento de verificações é configurado pelo administrador da plataforma no ambiente de deploy.",
       "refresh": "Atualizar",
       "markAllRead": "Marcar como lidos",
       "runsTitle": "Histórico de checagens",
@@ -348,7 +1031,7 @@
       "showDiag": "Ver diagnóstico (métricas)",
       "hideDiag": "Ocultar diagnóstico",
       "suggested": "Ação sugerida",
-      "cronHint": "O job diário (ex.: Vercel Cron) chama GET /api/cron/anomaly-check com o mesmo segredo dos outros crons. Relatórios semanais por email podem incluir um resumo opcional destes alertas."
+      "cronHint": "O job diário corre no servidor com segredos definidos só no ambiente de deploy. Relatórios semanais por e-mail podem incluir um resumo opcional destes alertas."
     }
   },
   "executiveDashboard": {
@@ -395,11 +1078,76 @@
       "risk": "Risco",
       "throughput": "Throughput",
       "cards": "Cards"
+    },
+    "portfolioAi": {
+      "badge": "Portfólio · IA",
+      "title": "Assistente de portfólio (multi-board)",
+      "subtitle": "Cruza métricas dos boards com OKRs e documentação interna (RAG) para responder perguntas estratégicas.",
+      "heatmapTitle": "Mapa de calor por board",
+      "heatmapEmpty": "Nenhum board com cards para exibir.",
+      "colBoard": "Board",
+      "colRisk": "Risco",
+      "colThroughput": "Throughput",
+      "colPrev": "Prev.",
+      "assistantTitle": "Pergunte ao assistente",
+      "placeholder": "Ex.: Onde estão os maiores conflitos de prioridade entre times?",
+      "send": "Enviar",
+      "sending": "Gerando…",
+      "replyLabel": "Resposta",
+      "error": "Não foi possível gerar a resposta.",
+      "chip1": "Quais boards mais comprometem as metas do trimestre?",
+      "chip2": "Resuma riscos cruzando throughput e OKRs.",
+      "chip3": "Onde focar esforço nas próximas duas semanas?"
     }
   },
   "appShell": {
     "routineReminder": "Lembrete de rotina",
-    "dueLabel": "Prazo:"
+    "dueLabel": "Prazo:",
+    "workspaceFluxy": {
+      "fabAria": "Abrir painel de ajuda da Fluxy",
+      "fabLabel": "Fluxy",
+      "fabHint": "Dicas e atalhos",
+      "restore": "Fluxy",
+      "restoreAria": "Mostrar atalho da Fluxy",
+      "hideDock": "Ocultar atalho",
+      "panelTitle": "Fluxy",
+      "panelSubtitle": "Ajuda rápida no workspace",
+      "intro": "Sou a assistente do Flux-Board. Aqui você encontra atalhos para as áreas principais e um resumo do que posso fazer por você.",
+      "boardHint": "Em um board aberto, falo sobre os cards, métricas e automações do quadro — use o atalho da Fluxy no canto do quadro para o chat completo com IA.",
+      "linksHeading": "Ir para",
+      "linksNavAria": "Atalhos do workspace",
+      "linkBoards": "Boards",
+      "linkReports": "Relatórios",
+      "linkDocs": "Documentos",
+      "linkOrgSettings": "Organização",
+      "close": "Fechar",
+      "closeBackdrop": "Fechar painel",
+      "loadingChat": "Carregando conversa…",
+      "emptyChatLead": "Pergunte sobre o Flux-Board, navegação ou boas práticas. Em um board aberto, a Fluxy usa o contexto dos seus cards.",
+      "chatPlaceholder": "Escreva sua mensagem…",
+      "chatPlaceholderSprint": "Pergunte sobre esta sprint…",
+      "emptyChatLeadSprint": "Está com uma sprint em foco: posso responder com base nos dados dessa sprint (escopo, burndown e linha do tempo derivada).",
+      "send": "Enviar",
+      "generating": "Fluxy está pensando…",
+      "roleUser": "Você",
+      "roleAssistant": "Fluxy",
+      "demoTitle": "Demo: {count} mensagens restantes",
+      "demoBody": "No plano Free há um limite de mensagens com IA no workspace; abra um board para o assistente com contexto completo.",
+      "toastErrorTitle": "Fluxy",
+      "streamError": "Não foi possível concluir a resposta.",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+        "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+        "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+        "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+        "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+        "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+        "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+        "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+        "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
+      }
+    }
   },
   "toasts": {
     "kinds": {
@@ -412,10 +1160,12 @@
   },
   "confirmDialog": {
     "confirm": "Confirmar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "processing": "A processar…"
   },
   "header": {
     "userFallback": "Usuário",
+    "openNavigation": "Abrir navegação",
     "anomalyBell": {
       "ariaLabel": "Alertas de anomalia",
       "title": "Alertas",
@@ -429,77 +1179,108 @@
     }
   },
   "landing": {
+    "meta": {
+      "title": "Flux Board — Um quadro vivo para entregar com clareza.",
+      "description": "Prioridades e contexto num só lugar: Kanban, Flux Goals, Flux Reports, Flux Forms e IA (Fluxy, Copilot) conforme o plano. Comece grátis; trial de 20 dias no Pro/Business, sem cartão.",
+      "productName": "Flux-Board",
+      "jsonLdDescription": "Plataforma de trabalho visual com Kanban, OKRs, relatórios, formulários públicos e IA no fluxo — para times que buscam previsibilidade da ideia à entrega."
+    },
+    "skipToContent": "Ir para o conteúdo principal",
+    "betaBanner": {
+      "badge": "Beta público",
+      "title": "A contratação de planos pagos e o checkout estarão disponíveis em {days} dias.",
+      "description": "A versão apresentada é beta. Funcionalidades, exibição de preços e datas de disponibilidade comercial podem ser ajustadas até a disponibilidade geral. O acesso antecipado nos ajuda a validar o produto com equipes como a sua."
+    },
     "header": {
-      "tagline": "Operações comerciais com clareza."
+      "tagline": "Fluxo visível. Entrega previsível."
     },
     "nav": {
       "why": "Por que {appName}",
       "platform": "Plataforma",
-      "how": "Como funciona"
+      "spotlight": "IA no board",
+      "how": "Como funciona",
+      "pricing": "Preços",
+      "trust": "Segurança",
+      "openMenu": "Abrir menu de navegação",
+      "closeMenu": "Fechar",
+      "mainLabel": "Navegação do site"
     },
     "actions": {
       "openDashboardLoggedIn": "Abrir painel",
       "signIn": "Entrar",
-      "getStarted": "Começar"
+      "getStarted": "Começar grátis"
     },
     "hero": {
-      "chip": "Gestão visual · Pronto para IA · B2B",
+      "chip": "Fluxo visual · IA no trabalho · Metas · Relatórios · Forms",
       "title": {
-        "before": "O board onde",
-        "highlight": "vendas e operações",
-        "after": "andam no mesmo ritmo."
+        "line1": "O quadro onde o time enxerga",
+        "highlight": "o que importa — e entrega"
       },
-      "description": "{appName} reúne Kanban profissional, insights do dia a dia e visibilidade do portfólio — para equipes que precisam de entregas previsíveis e velocidade nas conversas com clientes e liderança.",
+      "description": "Cartões com contexto, prioridade explícita e leituras prontas para decidir. Flux Goals, Flux Reports e Flux Forms no mesmo lugar, com Fluxy e Copilot para acelerar dúvidas e próximos passos.",
       "primary": {
         "loggedIn": "Ir para meus boards",
-        "loggedOut": "Criar conta e testar"
+        "loggedOut": "Criar board grátis"
       },
-      "secondary": "Veja o que a plataforma faz",
-      "quickLine": "Adoção rápida da equipe · Experiência responsiva · Evolui com discovery, deals e rotinas integrados ao fluxo",
-      "stats": {
-        "priority": {
-          "label": "Prioridade",
-          "value": "Explícito"
+      "secondaryPlatform": "Ver plataforma",
+      "fluxyPeekLabel": "Fluxy no seu board",
+      "metrics": {
+        "m1": {
+          "value": "3 min",
+          "label": "Board no ar"
         },
-        "context": {
-          "label": "Contexto",
-          "value": "Por card"
+        "m2": {
+          "value": "20 dias",
+          "label": "Trial sem cartão"
         },
-        "portfolio": {
-          "label": "Portfólio",
-          "value": "Visível"
+        "m3": {
+          "value": "∞",
+          "label": "Boards para escalar"
         }
-      }
+      },
+      "trustPills": {
+        "trial": "Trial 20 dias",
+        "noCard": "Sem cartão",
+        "ai": "IA integrada"
+      },
+      "livePill": "Ao vivo",
+      "aiPill": "IA no board"
     },
     "kanbanMock": {
-      "liveView": "Visão ao vivo",
+      "liveView": "Live View",
       "columns": {
-        "prospecting": "Prospecção",
-        "proposal": "Proposta",
-        "closing": "Fechamento"
+        "backlog": "Backlog",
+        "inProgress": "Em andamento",
+        "done": "Entregue"
+      },
+      "tags": {
+        "high": "Alta",
+        "inReview": "Em revisão",
+        "done": "Pronto"
       }
     },
     "why": {
-      "heading": "Feito para equipes que vivem por entrega e resultados",
-      "description": "Mais do que um Kanban bonito: uma camada operacional que conecta o trabalho do dia a dia com a forma como o negócio enxerga o progresso — de cada card até a visão do portfólio."
+      "sectionBadge": "Por que Flux Board",
+      "heading": "Menos caça ao status. Mais entrega contínua.",
+      "description": "Quando o trabalho vive só em mensagens, a prioridade some. Aqui o board é a fonte da verdade — com contexto rico e ritmo visível para todo o time."
     },
     "pillars": {
       "commercialPace": {
-        "title": "Kanban no ritmo comercial",
-        "description": "Colunas claras, prioridades visíveis e um fluxo feito para vendas, operações e produto — sem perder o que realmente fecha negócios."
+        "title": "Kanban alinhado a como vocês realmente trabalham",
+        "description": "Colunas e WIP no ritmo do seu fluxo — triagem, execução ou suporte. Todos enxergam a mesma fila de valor."
       },
       "insights": {
-        "title": "Inteligência no board, não em planilhas soltas",
-        "description": "Insights diários, contexto mais rico nos cards e uma base pronta para priorização e recomendações — menos reuniões de alinhamento, mais execução."
+        "title": "Contexto no card — decisão no lugar certo",
+        "description": "Campos estruturados e insights diários reduzem reuniões só para “atualizar status” e deixam a próxima ação óbvia."
       },
       "executiveView": {
-        "title": "Visão executiva e do portfólio em um só lugar",
-        "description": "Métricas do portfólio nos boards, exports quando você precisa e caminhos para briefings — a mesma fonte de verdade para o time de campo e para a liderança."
+        "title": "Relatórios e portfólio sem planilha paralela",
+        "description": "Consolide boards, exporte quando precisar e mostre progresso com números que batem com o trabalho real nos cards."
       }
     },
     "platform": {
-      "heading": "Tudo o que já existe na {appName}",
-      "description": "Funcionalidades que refletem o produto de hoje — insights, contexto, portfólio, discovery e rotinas — em uma experiência coesa.",
+      "sectionBadge": "Plataforma",
+      "heading": "Uma plataforma para operar o fluxo inteiro",
+      "description": "Da entrada de pedidos ao fechamento do ciclo: relatórios, OKRs, forms, discovery e alertas — no que o time já usa no dia a dia.",
       "actions": {
         "openPlatform": "Abrir a plataforma"
       }
@@ -507,89 +1288,324 @@
     "capabilities": {
       "dailyInsights": {
         "name": "Insights diários",
-        "detail": "Leia o progresso do board para manter o ritmo e identificar gargalos cedo."
+        "detail": "Veja como seu board está andando—mantenha o ritmo e pegue gargalos cedo."
       },
       "contextOnCards": {
         "name": "Contexto nos cards",
-        "detail": "Informações estruturadas por card para decisões mais rápidas e consistentes."
+        "detail": "Campos estruturados em cada card para o time decidir do mesmo jeito, mais rápido."
       },
       "executiveBrief": {
         "name": "Brief executivo",
-        "detail": "Suporte para condensar o que importa para a gestão e acompanhar de forma estratégica."
+        "detail": "Condense o que a liderança precisa sem recontar a história em outro lugar."
       },
       "portfolioAndMetrics": {
         "name": "Portfólio e métricas",
-        "detail": "Indicadores consolidados e exports quando você precisa apresentar resultados."
+        "detail": "Consolidações e exports quando você precisa mostrar como a entrega está indo."
+      },
+      "fluxGoals": {
+        "name": "Flux Goals (OKRs)",
+        "detail": "Objetivos e resultados-chave ligados ao trabalho nos boards—estratégia e execução no mesmo ciclo."
+      },
+      "fluxForms": {
+        "name": "Flux Forms",
+        "detail": "Links públicos de intake que viram pedidos estruturados no board certo—menos inbox, menos pedido perdido."
+      },
+      "fluxReports": {
+        "name": "Flux Reports",
+        "detail": "Painéis executivos e tendências para a liderança ler saúde e fluxo sem recontar a história em outro lugar."
       },
       "discoveryAndDeals": {
-        "name": "Discovery e deals",
-        "detail": "Espaço para explorar hipóteses e acompanhar oportunidades com contexto em tempo real."
+        "name": "Discovery e entregas",
+        "detail": "Da ideia à conclusão: hipóteses, pedidos e itens de trabalho com o mesmo contexto vivo nos cards."
       },
       "routinesAndAlerts": {
         "name": "Rotinas e alertas",
-        "detail": "Lembretes de rotina incorporados ao fluxo para que nada crítico passe."
+        "detail": "Sinais no fluxo para perceber desvios de throughput, WIP e lead time antes que virem surpresa na retrospectiva."
       }
     },
     "how": {
-      "heading": "Do caos ao ritmo em três passos",
-      "description": "Onboarding enxuto, padrões fortes. Seu time adota em horas — e mantém o ritmo por semanas."
+      "sectionBadge": "Como funciona",
+      "heading": "Três passos para um ritmo sustentável",
+      "description": "No ar em minutos — padrões claros ajudam o time a manter cadência semana após semana."
     },
     "steps": {
       "step1": {
-        "title": "Centralize o fluxo",
-        "text": "Crie boards alinhados ao seu funil ou modelo de operações. Todo mundo enxerga a mesma imagem de prioridades."
+        "title": "Modele o fluxo num só lugar",
+        "text": "Colunas e limites que espelham como o trabalho entra, anda e sai — todos veem a mesma prioridade."
       },
       "step2": {
-        "title": "Enriqueça com contexto",
-        "text": "Use descrições, contexto por card e insights para transformar tarefas em decisões informadas."
+        "title": "Enriqueça cada card",
+        "text": "Descrição, campos e leituras automáticas transformam tarefas em decisões que qualquer pessoa pode retomar depois."
       },
       "step3": {
-        "title": "Escale com clareza",
-        "text": "Métricas, exports e uma visão executiva suportam o crescimento sem perder padrões de execução."
-      }
-    },
-    "audiences": {
-      "heading": "Quem aproveita mais",
-      "sales": {
-        "title": "Vendas e customer success",
-        "text": "Pipeline visível, próximos passos claros e comunicação alinhada ao cliente."
-      },
-      "operations": {
-        "title": "Operações e projetos",
-        "text": "Entrega previsível com priorização explícita e menos retrabalho entre times."
-      },
-      "leadership": {
-        "title": "Liderança e PMO",
-        "text": "Leituras rápidas de portfólio e suporte a briefings sem precisar lidar com uma dúzia de ferramentas."
+        "title": "Escale com governança leve",
+        "text": "Métricas, exports e visão executiva acompanham o crescimento sem perder o fio do que está no board."
       }
     },
     "cta": {
-      "heading": "Traga clareza sobre como seu time trabalha",
-      "description": "Uma base comercial sólida: visuais modernos, recursos alinhados ao dia a dia de vendas e operações e espaço para crescer com IA e integrações.",
+      "trialChip": "Trial de 20 dias · Sem cartão",
+      "heading": "Leve este quadro para o seu time hoje",
+      "description": "Comece grátis para explorar; desbloqueie Pro ou Business com trial de 20 dias e sem cartão. Um lugar único para o trabalho que não pode se perder no ruído.",
+      "pricingAnchor": "Ver preços",
       "actions": {
         "loggedIn": "Continuar no {appName}",
         "loggedOutPrimary": "Começar grátis",
-        "loggedOutSecondary": "Explore os pilares"
+        "loggedOutSecondary": "Ver IA no board"
       }
     },
     "footer": {
-      "copyright": "© {year} {appName} — Organize o fluxo. Entregue o que importa.",
+      "copyright": "© {year} {appName} — Fluxo visível. Entrega previsível.",
       "signIn": "Entrar",
-      "features": "Recursos"
+      "features": "Recursos",
+      "pricing": "Preços",
+      "docs": "Docs",
+      "status": "Status",
+      "faq": "FAQ",
+      "templates": "Templates",
+      "columnProduct": "Produto",
+      "columnPlatform": "Plataforma"
+    },
+    "midCta": {
+      "heading": "Sinta o fluxo num quadro que acompanha a entrega",
+      "description": "Crie um board, traga o time e mantenha decisões onde o contexto está — não espalhado em threads e anexos.",
+      "primaryLoggedIn": "Ir para meus boards",
+      "primaryLoggedOut": "Começar grátis",
+      "secondary": "Comparar planos"
+    },
+    "trust": {
+      "sectionBadge": "Segurança",
+      "heading": "Seus dados, sua tranquilidade",
+      "intro": "Pensado para equipes que precisam de previsibilidade e controle sobre onde o trabalho e os dados moram.",
+      "bullet1": "Tráfego cifrado (HTTPS) e autenticação moderna (OAuth 2.0 + JWT) no app web.",
+      "bullet2": "Multi-tenant por design: cada organização com seus boards e dados isolados.",
+      "bullet3": "Documentação cobre recursos, limites por plano e boas práticas de uso.",
+      "docsCta": "Ver documentação"
+    },
+    "roadmap": {
+      "heading": "O que vem na sequência — e em qual plano entra",
+      "description": "Roteiro vivo: cada item mostra a capacidade e o tier que a desbloqueia.",
+      "items": {
+        "sprint_engine": {
+          "title": "Sprint Engine e painel unificado",
+          "detail": "Planejamento, execução e fechamento de sprint com hub dedicado, previsões e fluxo de backlog."
+        },
+        "ceremonies": {
+          "title": "Cerimônias Scrum/Kanban com IA",
+          "detail": "Planning, standup, review e retrospectiva com sugestões orientadas por contexto do board."
+        },
+        "dependency_graph_visual": {
+          "title": "Mapa visual de dependências",
+          "detail": "Dependências cross-board com análise de vínculo para reduzir bloqueios e atrasos."
+        },
+        "flux_docs_rag": {
+          "title": "Flux Docs + RAG no contexto do card",
+          "detail": "Base de conhecimento com busca semântica para enriquecer decisões no fluxo."
+        },
+        "anomaly_email": {
+          "title": "Anomalias proativas e alertas",
+          "detail": "Detecção de desvio em throughput, WIP e lead time com notificações e ação sugerida."
+        }
+      }
+    },
+    "spotlight": {
+      "sectionAria": "Destaques do produto",
+      "sectionBadge": "Destaques",
+      "heading": "IA que acelera decisão — sem tirar você do fluxo",
+      "description": "Copilot, metas e alertas atuam sobre o contexto do board para resumir, projetar e chamar atenção onde importa.",
+      "copilot": {
+        "title": "Board Copilot",
+        "body": "Pergunte em linguagem natural, peça resumos e identifique gargalos sem sair do quadro — a Fluxy usa o contexto dos cards para sugerir próximos passos.",
+        "sampleLabel": "Copilot ›",
+        "sampleQuestion": "Quais cards estão bloqueados há mais de 3 dias?",
+        "fluxyBadge": "Fluxy IA",
+        "answerBadge": "Fluxy responde",
+        "sampleAnswer": "3 cards bloqueados: \"API Gateway\" (5d), \"Deploy Pipeline\" (4d), \"Schema Migration\" (3d). Sugiro escalar com o tech lead."
+      },
+      "okr": {
+        "title": "OKR Engine",
+        "body": "Objetivos e Key Results conectados aos cards do board. Acompanhe o progresso em tempo real, com projeção de entrega e alertas de desvio.",
+        "demoObjective": "Objetivo Q1",
+        "demoKr": "Key Result 1",
+        "barObjLabel": "OBJ",
+        "barKrLabel": "KR1"
+      },
+      "anomaly": {
+        "title": "Detecção de anomalias",
+        "body": "Monitore throughput, WIP e lead time com alertas por e-mail e webhook para agir antes do desvio virar crise.",
+        "alert1": "WIP acima do limite em \"Em andamento\"",
+        "alert2": "Lead time subiu 40% esta semana"
+      }
+    },
+    "socialProof": {
+      "ariaLabel": "Destaques do produto",
+      "stat1": { "value": "3 min", "label": "até o primeiro quadro no ar" },
+      "stat2": { "value": "20 dias", "label": "trial Pro/Business, sem cartão" },
+      "stat3": { "value": "Um", "label": "lugar para prioridade e contexto" },
+      "stat4": { "value": "∞", "label": "quadros quando precisar escalar" }
+    },
+    "pricing": {
+      "sectionBadge": "Preços",
+      "tiers": {
+        "free": "Free",
+        "pro": "Pro",
+        "business": "Business"
+      },
+      "heading": "Planos para cada etapa do crescimento",
+      "description": "Comece grátis e evolua quando o time precisar de IA, OKRs e governança — preços claros por seat.",
+      "monthly": "Mensal",
+      "yearly": "Anual",
+      "yearlyTag": "−20%",
+      "trialNote": "Trial de 20 dias nos planos Pro e Business. Sem cartão de crédito.",
+      "perSeatMonth": "/seat/mês",
+      "perSeatYearBilled": "/seat/mês, cobrado anualmente",
+      "forever": "para sempre",
+      "customPrice": "Sob consulta",
+      "customSub": "preço personalizado",
+      "tierUnavailable": "Indisponível no catálogo no momento.",
+      "plans": {
+        "free": {
+          "name": "Free",
+          "desc": "Para quem está começando a organizar o fluxo sem custo.",
+          "cta": "Criar conta grátis",
+          "limits": "3 boards · 1 usuário · 3 chamadas IA/dia"
+        },
+        "pro": {
+          "name": "Pro",
+          "badge": "Recomendado",
+          "desc": "Para times pequenos que precisam de IA, OKRs e portfólio.",
+          "cta": "Testar Pro por 20 dias",
+          "limits": "Boards ilimitados · Até 10 membros · 50 chamadas IA/dia"
+        },
+        "business": {
+          "name": "Business",
+          "desc": "Para operações em escala: IA ilimitada, white-label completo, alertas proativos e governança avançada.",
+          "cta": "Testar Business por 20 dias",
+          "limits": "Boards ilimitados · Até 100 membros · IA ilimitada"
+        }
+      },
+      "features": {
+        "kanban": "Kanban drag & drop completo",
+        "templates": "Templates de board com IA",
+        "csvExport": "Exportação CSV",
+        "activityLog90": "Log de atividade (90 dias)",
+        "activityLogUnlimited": "Log de atividade (ilimitado)",
+        "commandPalette": "Paleta de comandos + atalhos",
+        "forms": "Flux Forms (intake público)",
+        "executiveBrief": "Executive Brief",
+        "cardContext": "Card Context (IA)",
+        "dailyInsights": "Daily Insights",
+        "copilot": "Board Copilot (chat IA)",
+        "okrEngine": "OKR Engine",
+        "fluxDocs": "Flux Docs + RAG",
+        "portfolioExport": "Portfolio Export",
+        "riskScore": "Risk Score (IA)",
+        "logoOnly": "Branding com logo própria",
+        "anomalyEmail": "Alertas de anomalia por e-mail",
+        "whiteLabelFull": "White-label completo",
+        "workloadBalancer": "Balanceador de carga",
+        "orgChat": "Chat da organização",
+        "webhooksUnlimited": "Webhooks ilimitados",
+        "retroFacilitator": "Facilitador de retrospectiva",
+        "copilotTools": "Copilot Tools customizadas",
+        "anomalyWebhook": "Webhooks de anomalia",
+        "dedicatedSupport": "Suporte dedicado + SLA"
+      },
+      "allFree": "Tudo do Free, mais:",
+      "allPro": "Tudo do Pro, mais:",
+      "allBusiness": "Tudo do Business, mais:"
+    },
+    "faq": {
+      "sectionBadge": "Perguntas",
+      "heading": "Perguntas frequentes",
+      "q1": "O que está incluído no plano Grátis?",
+      "a1": "O plano Grátis dá acesso a até 3 boards Kanban, 1 usuário, 3 chamadas de IA por dia, templates públicos e log de atividade por 90 dias. Ideal para explorar o fluxo antes de escalar.",
+      "q2": "Posso testar os planos pagos antes de assinar?",
+      "a2": "Sim. Pro e Business incluem um trial de 20 dias sem precisar de cartão de crédito. Você experimenta todas as funcionalidades do plano escolhido e só paga se decidir continuar.",
+      "q3": "Como funciona o faturamento por seat?",
+      "a3": "Cada membro ativo da organização conta como um seat. Você escolhe quantos seats precisa e pode ajustar conforme o time cresce. O faturamento anual oferece 20% de desconto em relação ao mensal.",
+      "q4": "Posso fazer upgrade ou downgrade a qualquer momento?",
+      "a4": "Sim. Upgrades têm efeito imediato com crédito proporcional. Downgrades entram em vigor no final do ciclo atual, com 7 dias de graça para ajustar boards e usuários.",
+      "q5": "O que é o Board Copilot?",
+      "a5": "Um assistente de IA conversacional embutido no board. Faça perguntas em linguagem natural sobre os cards, peça resumos, identifique gargalos e execute ações — tudo sem sair da visão Kanban.",
+      "q6": "Posso exportar dados e consolidar vários boards?",
+      "a6": "Sim. Nos planos superiores você conta com exportações e visão de portfólio para acompanhar o conjunto do trabalho sem manter planilhas paralelas.",
+      "q7": "Como funcionam os limites de IA e o uso dos meus dados?",
+      "a7": "Os limites por plano aparecem na tabela de preços e na documentação. A IA usa o contexto do seu workspace para resumir e sugerir — não utilizamos seus dados para treinar modelos públicos."
+    },
+    "fluxyChat": {
+      "fabTitle": "Falar com a Fluxy",
+      "fabSubtitle": "IA assistente do board",
+      "title": "Pergunte à Fluxy",
+      "subtitle": "Respostas diretas do nosso FAQ",
+      "subtitleLlm": "Claude quando configurado — FAQ como fallback",
+      "emptyHintLlm": "Pergunte sobre planos, Copilot ou segurança. As respostas usam Claude se o servidor estiver configurado; senão usamos o FAQ abaixo.",
+      "quickAsk1": "Quais planos e trials existem?",
+      "quickAsk2": "Como funciona o Copilot do board?",
+      "quickAsk3": "Como meus dados são usados com IA?",
+      "rateLimited": "Muitas mensagens desta rede. Tente novamente em alguns minutos.",
+      "placeholder": "Ex.: trial, preços, Copilot…",
+      "send": "Enviar",
+      "open": "Abrir Fluxy",
+      "close": "Fechar painel",
+      "minimize": "Minimizar",
+      "emptyHint": "As respostas vêm só do FAQ abaixo — sem inventar informações.",
+      "noMatch": "Não encontrei uma correspondência clara no FAQ. Abra a seção de perguntas frequentes ou reformule com outras palavras.",
+      "seeFaq": "Ver no FAQ",
+      "suggestionsIntro": "Perguntas frequentes:",
+      "you": "Você",
+      "fluxy": "Fluxy",
+      "visualState": {
+        "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+        "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+        "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+        "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+        "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+        "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+        "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+        "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+        "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+        "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
+      }
     }
   },
   "login": {
     "loading": "Carregando...",
-    "subtitle": "Organize o fluxo. Entregue o que importa.",
+    "subtitle": "Entre para ver o fluxo do seu time com clareza.",
     "tabs": {
       "login": "Entrar",
       "register": "Cadastrar"
     },
+    "sessionIssueGeneric": "Não foi possível restaurar a sessão. Tente entrar novamente ou contacte o administrador da sua organização se o problema continuar.",
+    "sessionDiag": {
+      "title": "Não foi possível manter a sessão",
+      "hint": "Envie o JSON (botão abaixo) ao suporte para cruzarmos com os logs do servidor. Não contém senha, e-mail nem cookies.",
+      "copyHint": "O identificador de apoio não é mostrado nesta página; use o botão só se o suporte pedir o JSON.",
+      "kindLabel": "Tipo:",
+      "copyJson": "Copiar diagnóstico (JSON)",
+      "copied": "Copiado.",
+      "kinds": {
+        "no_cookies": "Sem cookies de sessão no pedido ao servidor.",
+        "token_invalid": "Token inválido ou renovação da sessão falhou.",
+        "user_not_found": "Utilizador não encontrado para o token atual.",
+        "unknown": "Erro desconhecido no servidor.",
+        "client_timeout": "A validação demorou demais no navegador (pode não haver log correspondente no servidor).",
+        "server_timeout": "O servidor não concluiu a validação a tempo (Mongo/rede lenta). Procure `[api/auth/session] validate wall timeout` nos logs."
+      }
+    },
+    "inviteBanner": "Você está entrando com um convite. Se já tiver conta, use a aba Entrar ou Google/Microsoft — o convite será aplicado ao e-mail certo.",
     "errors": {
       "missingCredentials": "Preencha usuário e senha.",
       "connection": "Erro de conexão. Tente novamente.",
       "missingAllFields": "Preencha todos os campos.",
-      "passwordTooShort": "Senha deve ter pelo menos 4 caracteres."
+      "passwordTooShort": "Senha deve ter pelo menos 8 caracteres.",
+      "oauthPasswordOnly": "Esta conta usa login social. Use Google ou Microsoft.",
+      "inviteInvalid": "Convite inválido, expirado ou não corresponde ao e-mail desta conta.",
+      "invitePlanLimit": "Limite de usuários do plano da organização atingido.",
+      "inviteConsumeFailed": "Não foi possível aplicar o convite. Tente novamente.",
+      "inviteOwnerConflict": "Sua conta é titular de outra organização. Para aceitar o convite, use outro e-mail ou transfira a titularidade antes.",
+      "invitePlatformAdmin": "Esta conta não pode ser associada por convite.",
+      "inviteOAuthConflict": "Conflito ao vincular o login social. Tente outro provedor ou fale com o suporte.",
+      "registerUseLoginForInvite": "Já existe conta com este e-mail. Use a aba Entrar (ou Google/Microsoft) com o mesmo e-mail para aceitar o convite."
     },
     "fields": {
       "userOrEmail": "Usuário ou E-mail",
@@ -602,7 +1618,7 @@
       "password": "••••••••",
       "name": "Seu nome completo",
       "email": "seu@email.com",
-      "passwordMin": "Mínimo 4 caracteres"
+      "passwordMin": "Mínimo 8 caracteres"
     },
     "remember": {
       "login": "Manter conectado (gravar no navegador)",
@@ -612,9 +1628,105 @@
       "login": "Entrar",
       "register": "Cadastrar"
     },
-    "rememberAfter": {}
+    "rememberAfter": {},
+    "oauth": {
+      "continueGoogle": "Continuar com Google",
+      "continueMicrosoft": "Continuar com Microsoft",
+      "redirecting": "Redirecionando…",
+      "divider": "ou continue com e-mail",
+      "ariaGoogle": "Continuar com conta Google",
+      "ariaMicrosoft": "Continuar com conta Microsoft",
+      "errors": {
+        "generic": "Não foi possível concluir o login com Google ou Microsoft. Tente novamente.",
+        "oauth_denied": "Login cancelado.",
+        "oauth_invalid": "Resposta de login inválida. Tente novamente.",
+        "oauth_state": "Sessão expirada. Tente entrar novamente.",
+        "oauth_profile": "Não foi possível ler seu perfil no provedor.",
+        "oauth_exchange": "Não foi possível concluir o login no provedor.",
+        "oauth_email_unverified": "Seu e-mail não está verificado no provedor.",
+        "oauth_no_email": "Nenhum e-mail foi retornado para esta conta.",
+        "oauth_account_conflict": "Este e-mail já está vinculado a outra conta neste provedor.",
+        "oauth_invite_invalid": "Convite inválido ou expirado.",
+        "oauth_invite_owner_conflict": "Sua conta é titular de outra organização. Use outro e-mail ou transfira a titularidade para aceitar o convite.",
+        "oauth_invite_platform_admin": "Esta conta não pode ser associada por convite.",
+        "oauth_plan_limit": "Limite de usuários do plano da organização atingido.",
+        "oauth_consume_failed": "Não foi possível aplicar o convite. Tente novamente.",
+        "oauth_not_configured": "Login social não está configurado no servidor.",
+        "rate_limited": "Muitas tentativas. Aguarde e tente novamente."
+      }
+    },
+    "inviteJoined": {
+      "title": "Bem-vindo à organização",
+      "description": "O convite foi aceito. Você já faz parte da equipe neste espaço de trabalho."
+    }
+  },
+  "orgInvites": {
+    "subtitle": "Gerencie convites da sua organização.",
+    "loading": "Carregando…",
+    "empty": "Nenhum convite encontrado.",
+    "guestEmail": "E-mail do convidado",
+    "orgLevel": "Nível na org",
+    "generate": "Gerar convite",
+    "generating": "Aguarde…",
+    "inviteLink": "Link de convite",
+    "copy": "Copiar",
+    "linkCopied": "Link copiado.",
+    "inviteCreated": "Convite gerado.",
+    "inviteExpired": "Convite expirado.",
+    "invalidEmail": "Informe um e-mail válido.",
+    "filterActive": "Ativos ({count})",
+    "filterUsed": "Usados ({count})",
+    "filterExpired": "Expirados ({count})",
+    "filterAll": "Todos ({count})",
+    "colEmail": "E-mail",
+    "colLevel": "Nível",
+    "colExpires": "Expira",
+    "colStatus": "Status",
+    "colActivated": "Ativado em",
+    "colMember": "Quem entrou",
+    "colActions": "Ações",
+    "statusActive": "Ativo",
+    "statusUsed": "Convite usado",
+    "statusExpired": "Expirado",
+    "memberLine": "{name} · {email}",
+    "memberUnknown": "ID do utilizador: {id}",
+    "expire": "Expirar",
+    "roleGestor": "Gestor",
+    "roleMembro": "Membro",
+    "roleConvidado": "Convidado",
+    "loadError": "Erro ao carregar convites.",
+    "createFailed": "Não foi possível gerar o convite.",
+    "expireFailed": "Não foi possível expirar o convite.",
+    "auditLogLink": "Abrir registo de atividade (convites e mais)"
+  },
+  "orgAudit": {
+    "title": "Atividade da organização",
+    "subtitle": "Eventos recentes de auditoria da organização ativa.",
+    "loading": "Carregando…",
+    "empty": "Nenhum evento nesta vista.",
+    "loadError": "Não foi possível carregar a atividade.",
+    "loadMore": "Carregar mais",
+    "filterInvites": "Convites aceites",
+    "filterAll": "Todos os eventos",
+    "linkInvites": "← Voltar aos convites",
+    "mongoDisabled": "O armazenamento de auditoria não está totalmente configurado. Neste ambiente os eventos podem não ser guardados.",
+    "colWhen": "Quando",
+    "colEvent": "Evento",
+    "colActor": "Utilizador",
+    "colDetail": "Detalhe",
+    "actionInviteAccepted": "Convite aceite",
+    "actionLoginSuccess": "Sessão iniciada",
+    "metaInvitedEmail": "E-mail convidado: {email}"
   },
   "onboarding": {
+    "fluxyHint": "Sou a Fluxy — quando seu quadro estiver pronto, estarei no canto para tirar dúvidas sobre o board e sugerir atalhos.",
+    "fluxyHero": {
+      "kicker": "Bem-vindo",
+      "title": "Que bom te ver aqui!",
+      "body": "Sou a Fluxy, a assistente de IA do Flux-Board. Estou com você para organizar o trabalho, tirar dúvidas sobre o board e sugerir atalhos quando precisar.",
+      "intro": "Vamos criar seu primeiro quadro em poucos passos — pode personalizar tudo depois.",
+      "cta": "Começar"
+    },
     "dragReorderAria": "Arrastar para reordenar",
     "header": {
       "title": "Onboarding",
@@ -637,12 +1749,18 @@
     },
     "errors": {
       "init": "Erro ao iniciar onboarding.",
+      "initTimeout": "A lista de boards demorou demais. Verifique a ligação e tente novamente.",
+      "needSession": "Não foi possível confirmar sua sessão. Atualize a página ou faça login novamente.",
       "createBoard": "Erro ao criar board.",
       "saveColumns": "Erro ao salvar colunas.",
       "createCard": "Erro ao criar card."
     },
     "fields": {
       "boardName": "Nome do board",
+      "methodology": "Metodologia do quadro",
+      "methodologyScrum": "Scrum — sprints e cerimônias",
+      "methodologyKanban": "Kanban — fluxo e cadências",
+      "methodologyLss": "Lean Six Sigma — DMAIC",
       "template": "Template",
       "cardTitle": "Título",
       "column": "Coluna",
@@ -664,7 +1782,14 @@
       "continue": "Continuar",
       "creating": "Criando…",
       "saving": "Salvando…",
-      "createCard": "Criar card"
+      "createCard": "Criar card",
+      "retryInit": "Tentar novamente"
+    },
+    "step1": {
+      "preparing": "Verificando sua conta e seus boards… Os botões ficam ativos em instantes.",
+      "checkingSession": "Confirmando a sessão…",
+      "sessionInvalid": "A sessão não pôde ser validada (servidor ou base de dados indisponível). Corrija o ambiente ou entre de novo.",
+      "signInAgain": "Ir para o login"
     },
     "step2": {
       "reorderTitle": "Arraste para reordenar",
@@ -694,6 +1819,10 @@
   "boards": {
     "pageTitle": "Meus boards",
     "pageSubtitle": "Busque, filtre e abra seus boards. Métricas e portfólio ficam abaixo para consulta quando precisar.",
+    "tabs": {
+      "myBoards": "Meus boards",
+      "analytics": "Analytics"
+    },
     "sections": {
       "search": "Buscar e filtrar",
       "snapshot": "Visão rápida",
@@ -741,6 +1870,11 @@
       },
       "boardNameLabel": "Nome do Board",
       "boardNamePlaceholder": "Ex: Backlog Principal",
+      "methodologyLabel": "Metodologia",
+      "methodologyScrum": "Scrum",
+      "methodologyKanban": "Kanban",
+      "methodologyLss": "Lean Six Sigma",
+      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. Kanban: fluxo contínuo, WIP e cadências de serviço. Lean Six Sigma: projeto DMAIC (Define–Measure–Analyze–Improve–Control) com assistente de artefatos.",
       "cancel": "Cancelar",
       "create": "Criar",
       "save": "Salvar"
@@ -783,7 +1917,16 @@
     }
   },
   "board": {
+    "backToBoards": "Boards",
+    "boardSettings": {
+      "open": "Configurações"
+    },
     "clientLabelInHeader": "Cliente: {label}",
+    "persistence": {
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "error": "Falha ao salvar"
+    },
     "loading": "Carregando board...",
     "anomalyAlerts": {
       "open": "Alertas",
@@ -871,7 +2014,26 @@
       "pollingHint": "Tempo real indisponível; o board é atualizado periodicamente.",
       "remoteLock": "Card sendo editado por {name}"
     },
+    "copilotNudges": {
+      "toggleLabel": "Sugestões ({count})",
+      "expand": "Mostrar sugestões do quadro",
+      "collapse": "Ocultar sugestões",
+      "dismiss": "Dispensar sugestão",
+      "coachTitle": "Coach de WIP — próximos passos",
+      "coachSubtitle": "Com base em limites, carga e bloqueios deste quadro."
+    },
     "productTour": {
+      "fluxyWelcome": {
+        "title": "Olá! Eu sou a Fluxy",
+        "body": "Vou te guiar por este quadro em poucos passos: colunas, cards, a assistente Fluxy no canto e os atalhos úteis. Quando estiver pronto, começamos o tour.",
+        "startTour": "Começar tour"
+      },
+      "fluxyCelebrate": {
+        "kicker": "Tour concluído",
+        "title": "Parabéns!",
+        "body": "Você concluiu o tour guiado — agora está pronto para tocar o trabalho com mais confiança. A Fluxy continua por aqui sempre que precisar de ajuda neste quadro.",
+        "cta": "Começar a usar o quadro"
+      },
       "skip": "Pular tour",
       "start": "Tour guiado",
       "redo": "Refazer tour",
@@ -896,8 +2058,8 @@
           "body": "Arraste o card para outra coluna para mudar o estágio. A ordem dentro da coluna também pode ser ajustada arrastando."
         },
         "copilot": {
-          "title": "Copiloto IA",
-          "body": "Abra o Copiloto para perguntas em linguagem natural sobre o board, métricas e próximos passos."
+          "title": "Fluxy — assistente do quadro",
+          "body": "No desktop, abra pelo ícone no trilho à direita (canto inferior). No mobile, use o menu flutuante de ferramentas. A Fluxy usa o contexto deste Kanban."
         },
         "daily": {
           "title": "Daily Insights",
@@ -908,6 +2070,17 @@
           "body": "Em Relatórios você vê métricas agregadas da organização, gráficos e narrativa sobre o desempenho."
         }
       }
+    },
+    "executiveBrief": {
+      "title": "Brief Executivo (IA)",
+      "menuItem": "Brief Executivo IA",
+      "generating": "Gerando brief…",
+      "error": "Não foi possível gerar o brief executivo.",
+      "cached": "cache",
+      "copy": "Copiar",
+      "download": "Baixar .md",
+      "close": "Fechar",
+      "generatedBy": "Gerado por {model}"
     },
     "portal": {
       "open": "Portal do cliente",
@@ -922,7 +2095,7 @@
       "regenerateToken": "Gerar novo link",
       "regenerateHint": "O link anterior deixa de funcionar.",
       "passwordNew": "Nova senha",
-      "passwordPlaceholder": "Mínimo 4 caracteres",
+      "passwordPlaceholder": "Mínimo 8 caracteres",
       "removePassword": "Remover senha atual",
       "columns": "Colunas visíveis no portal",
       "columnsHint": "Todas selecionadas = mostrar todas as colunas com itens.",
@@ -954,7 +2127,80 @@
     "clientLabel": "Conta"
   },
   "kanban": {
+    "ceremony": {
+      "retroModal": {
+        "title": "Retrospectiva assistida pela Fluxy",
+        "format": "Modelo",
+        "statusDraft": "Rascunho",
+        "statusFinal": "Finalizada",
+        "loading": "Gerando com IA…",
+        "regenerate": "Regenerar",
+        "markFinal": "Marcar como finalizada",
+        "markDraft": "Voltar para rascunho"
+      }
+    },
+    "fluxIntelligence": {
+      "title": "Flux Intelligence",
+      "backToBoard": "Voltar ao board",
+      "tabInsights": "Insights",
+      "tabDeps": "Dependências",
+      "tabDecisions": "Decisões",
+      "loading": "Carregando…",
+      "loadError": "Não foi possível carregar os dados.",
+      "insightsHint": "Sinais locais (sem custo de IA em tempo real). Ideal para revisão diária com o time.",
+      "depsHint": "Mapa a partir de `blockedBy` nos cards — vermelho: dependência ativa; verde: bloqueador concluído.",
+      "newDecision": "Nova decisão",
+      "fieldTitle": "Título",
+      "fieldContext": "Contexto",
+      "fieldDecision": "Decisão tomada",
+      "saveDecision": "Registrar decisão",
+      "similarTitle": "Decisões similares (texto)",
+      "history": "Histórico",
+      "noDecisions": "Nenhuma decisão registrada ainda.",
+      "saveError": "Não foi possível salvar.",
+      "generatedAt": "Gerado em"
+    },
+    "backlogPrioritize": {
+      "title": "Prioridade do backlog (Fluxy)",
+      "justify": "Gerar justificativas em texto (IA, plano pago)",
+      "run": "Calcular ordem",
+      "loading": "Calculando…",
+      "error": "Falha ao priorizar.",
+      "empty": "Clique em calcular. Cards do primeiro bucket (backlog) entram na fila.",
+      "close": "Fechar",
+      "apply": "Aplicar ordem no board",
+      "open": "Prioridade IA"
+    },
     "cardModal": {
+      "intakeVision": {
+        "badge": "Imagem → texto",
+        "hint": "Envie um print ou mock; a IA sugere título e preenche observações. Requer modelo de visão configurado no servidor.",
+        "pick": "Escolher imagem",
+        "busy": "Analisando imagem…",
+        "apply": "Aplicar ao card",
+        "error": "Não foi possível analisar a imagem."
+      },
+      "intakeVoice": {
+        "badge": "Fluxy · voz",
+        "hint": "Fale, cole texto ou envie um áudio; a Fluxy monta título e descrição (mesmo recurso de contexto do card).",
+        "listening": "Ouvindo…",
+        "speakPrompt": "Fale perto do microfone…",
+        "micStart": "Falar",
+        "micStop": "Parar",
+        "pastePlaceholder": "Transcrição ou notas (até 4000 caracteres)…",
+        "generate": "Gerar card",
+        "busy": "Gerando…",
+        "transcribeBusy": "Transcrevendo…",
+        "pickAudio": "Áudio",
+        "success": "Rascunho aplicado — revise antes de salvar.",
+        "error": "Não foi possível gerar o card agora.",
+        "transcribeError": "Não foi possível transcrever o áudio.",
+        "transcribeEmpty": "A transcrição do áudio veio vazia.",
+        "transcribeSuccess": "Áudio transcrito — revise e clique em Gerar card se quiser.",
+        "voiceNotSupported": "Reconhecimento de voz não suportado neste navegador.",
+        "voiceMicError": "Erro no microfone. Verifique permissões e tente de novo.",
+        "voiceStartError": "Não foi possível iniciar o microfone."
+      },
       "smartEnrich": {
         "badge": "Sugestão IA",
         "accept": "Aceitar",
@@ -973,6 +2219,33 @@
         "mergeWith": "Mesclar com este card",
         "createAnyway": "Criar mesmo assim",
         "mergeToast": "Conteúdo mesclado no card existente."
+      },
+      "methodology": {
+        "scrum": {
+          "title": "Scrum — estimativa e sprint",
+          "description": "Story points em Fibonacci para velocity; vincule o card a sprints em planejamento ou ativos."
+        },
+        "kanban": {
+          "title": "Kanban — classe de serviço",
+          "description": "Define como o item é tratado no fluxo (classes de serviço). O limite WIP da coluna aparece como referência."
+        },
+        "storyPoints": "Story points",
+        "storyPointsUnset": "Sem estimativa",
+        "sprintsTitle": "Sprints",
+        "sprintNeedSave": "Salve o card com um ID válido antes de vincular a um sprint.",
+        "noSprints": "Nenhum sprint ainda — crie um no painel Sprint.",
+        "inSprint": "No sprint",
+        "inSprintReadonly": "No sprint (somente leitura)",
+        "sprintPatchError": "Não foi possível atualizar o vínculo com o sprint.",
+        "serviceClass": "Classe de serviço",
+        "serviceClassUnset": "Não definida (usa heurísticas no card)",
+        "serviceClassValues": {
+          "expedite": "Expedite",
+          "fixed_date": "Data fixa",
+          "standard": "Padrão",
+          "intangible": "Intangível"
+        },
+        "wipHint": "Limite WIP desta coluna: {limit}."
       },
       "toasts": {
         "missingTitle": "Informe o título.",
@@ -1030,6 +2303,37 @@
           "title": "Dependências",
           "description": "Cards que precisam estar prontos antes deste (bloqueado por)."
         },
+        "dor": {
+          "title": "Refinamento (Definition of Ready)",
+          "description": "Marque o que está pronto antes de puxar o item para o sprint.",
+          "summaryKanban": "Definition of Ready (opcional)"
+        },
+        "dod": {
+          "title": "Definition of Done",
+          "description": "Checklist do board — obrigatória para concluir quando a regra estiver ativa."
+        },
+        "refinementReadiness": {
+          "title": "Prontidão para refinamento",
+          "description": "Score heurístico 0–100: descrição, aceite, estimativa, dependências e histórico. Complementa o refinamento por IA abaixo.",
+          "label": "Score de prontidão",
+          "hintHigh": "Bom candidato a sprint.",
+          "hintMid": "Bom caminho — ainda há lacunas.",
+          "hintLow": "Precisa de refinamento antes do commitment."
+        },
+        "refineAi": {
+          "title": "Refinamento de backlog (IA)",
+          "description": "Sugestões de critérios de aceite, riscos e dependências — revise antes de adotar.",
+          "cta": "Gerar sugestões",
+          "loading": "Analisando card…",
+          "apply": "Anexar à descrição",
+          "appliedToast": "Conteúdo anexado ao bloco Observações.",
+          "error": "Não foi possível gerar o refinamento.",
+          "empty": "Informe título e descrição primeiro."
+        },
+        "unblock": {
+          "title": "Assistente de desbloqueio (IA)",
+          "description": "Próximos passos sugeridos para resolver dependências (usa limites de IA da org)."
+        },
         "labels": {
           "title": "Rótulos",
           "description": "Marque tags existentes ou crie novas para este board."
@@ -1050,7 +2354,7 @@
       "fields": {
         "id": {
           "label": "ID",
-          "placeholder": "Ex: DI-700"
+          "placeholder": "Ex: 0001"
         },
         "column": {
           "label": "Coluna"
@@ -1071,6 +2375,17 @@
         "dueDate": {
           "label": "Data de Conclusão"
         },
+        "assignee": {
+          "label": "Responsável",
+          "unassigned": "Sem responsável",
+          "selected": "selecionado",
+          "clear": "Limpar",
+          "placeholder": "Buscar membro por nome ou ID…",
+          "meShortcut": "Eu",
+          "loading": "Carregando membros…",
+          "emptyFilter": "Nenhum membro encontrado para este filtro.",
+          "hint": "Selecione um membro do board sem precisar informar ID."
+        },
         "direction": {
           "label": "Direcionamento",
           "none": "Nenhum"
@@ -1082,23 +2397,35 @@
           "noMatch": "Nenhum card corresponde à busca.",
           "hint": "Marque os cards predecessores. As linhas aparecem na Timeline."
         },
+        "dor": {
+          "titleOk": "Título claro",
+          "acceptanceOk": "Critérios de aceite alinhados",
+          "depsOk": "Dependências mapeadas",
+          "sizedOk": "Dimensionado / estimável"
+        },
         "newLabel": {
           "srLabel": "Novo rótulo",
           "placeholder": "Novo rótulo"
         }
       },
+      "unblock": {
+        "cta": "Sugerir plano de desbloqueio",
+        "loading": "Gerando…"
+      },
       "buttons": {
         "createLabel": "+ Criar",
         "delete": "Excluir",
         "cancel": "Cancelar",
-        "save": "Salvar"
+        "save": "Salvar",
+        "aiWriter": "Escrever com IA"
       },
       "tooltips": {
         "deleteLabel": "Excluir rótulo \"{label}\"",
         "deleteLabelAria": "Excluir rótulo {label}"
       },
       "aria": {
-        "close": "Fechar"
+        "close": "Fechar",
+        "dragHandle": "Arrastar para mover o modal — duplo clique para recentralizar"
       },
       "options": {
         "priority": {
@@ -1113,7 +2440,7 @@
         }
       },
       "aiContext": {
-        "title": "Contexto IA do Card",
+        "title": "Fluxy — contexto do card",
         "boardLabel": "Board: {boardName}",
         "boardFallback": "Board",
         "close": "Fechar",
@@ -1159,8 +2486,12 @@
       },
       "tabLoading": "Carregando…",
       "tabsNavAria": "Seções do card",
+      "moreTabs": "Mais",
       "tabs": {
         "edit": "Detalhes",
+        "subtasks": "Subtasks",
+        "comments": "Comentários",
+        "fluxyMessages": "Mensagens Fluxy",
         "ai": "IA",
         "links": "Links",
         "docs": "Docs",
@@ -1213,7 +2544,18 @@
         "generate": "Gerar contexto",
         "openPanel": "Abrir painel",
         "needTitleDesc": "Preencha título e descrição na aba Detalhes para habilitar a geração.",
-        "lastResult": "Último resultado"
+        "lastResult": "Último resultado",
+        "epicSectionTitle": "Épico e assignee",
+        "epicSectionHint": "Decomponha o épico em cards no backlog ou gere um briefing de onboarding para quem está assignado (requer plano com IA).",
+        "decomposeEpic": "Decompor épico",
+        "decomposeEpicBusy": "Decompondo…",
+        "assigneeBriefing": "Gerar briefing do assignee",
+        "assigneeBriefingBusy": "Gerando briefing…",
+        "needSavedCard": "Salve o card antes — a decomposição só funciona em cards já existentes no quadro.",
+        "needAssignee": "Defina um assignee na aba Detalhes para gerar o briefing.",
+        "decomposeSuccess": "Épico decomposto — o quadro foi atualizado.",
+        "briefingSuccess": "Briefing do assignee salvo no card.",
+        "epicActionsError": "Não foi possível concluir a ação."
       }
     },
     "addColumnModal": {
@@ -1222,6 +2564,11 @@
         "rename": "Renomear coluna"
       },
       "placeholder": "Ex: Backlog, Em progresso...",
+      "wipLabel": "Limite WIP (opcional)",
+      "wipPlaceholder": "ex.: 5 — vazio = sem limite",
+      "policyLabel": "Política da coluna (como usamos esta coluna)",
+      "policyPlaceholder": "Nota curta para o time (opcional)",
+      "wipInvalid": "WIP deve ser um número inteiro entre 1 e 999.",
       "cancel": "Cancelar",
       "save": "Salvar",
       "create": "Criar"
@@ -1283,22 +2630,22 @@
         },
         "susep": {
           "name": "SUSEP",
-          "description": "Consulta ao órgão regulador do setor de seguros para verificação do status e da regularidade do corretor, assegurando que apenas corretores habilitados operem na plataforma."
+          "description": "Consulta a registos públicos de autorização e regularidade profissional (órgão regulador), garantindo que apenas parceiros habilitados operem nos fluxos críticos."
         },
         "serasa": {
           "name": "SERASA",
-          "description": "Análise de crédito e saúde financeira do Segurado e do Tomador via parceiro especializado, suportando decisões de subscrição e mitigação de risco."
+          "description": "Análise de crédito e indicadores financeiros via parceiro especializado, apoiando due diligence, concessão de acesso e decisões de risco em cadastros."
         }
       },
       "executiveView": {
         "badge": "VISÃO EXECUTIVA",
         "title": "Mapa de Produção — {appName}",
-        "description": "Visão consolidada do que já está em produção: linhas de negócio e validações integradas (SERPRO, SUSEP, SERASA) realizadas em cada fluxo."
+        "description": "Visão consolidada do que já está em produção: linhas de negócio e checagens integradas (SERPRO, SUSEP, SERASA) aplicadas em cada fluxo."
       },
       "sections": {
         "integrations": {
           "title": "Validações integradas",
-          "description": "Consultas automáticas realizadas pela plataforma para garantir conformidade e apoio à subscrição."
+          "description": "Consultas automáticas realizadas pela plataforma para garantir conformidade regulatória e integridade de cadastro."
         },
         "inProduction": {
           "title": "Cadastros em Produção",
@@ -1352,6 +2699,14 @@
         "generateAndCardsButton": {
           "generating": "Gerando e criando cards…",
           "idle": "Gerar insights + criar cards"
+        },
+        "voiceToBoard": {
+          "title": "Voz → quadro (cards detectados)",
+          "hint": "Correspondência heurística entre transcrição e títulos dos cards. Abra o card para atualizar status ou bloqueios.",
+          "match": "Match ~{pct}%",
+          "hintBlocker": "Possível bloqueio mencionado perto do título",
+          "hintDone": "Possível conclusão mencionada",
+          "openCard": "Abrir card"
         }
       },
       "status": {
@@ -1574,18 +2929,49 @@
         "description": "Ver descrição",
         "copyCardId": "Copiar ID do card"
       },
+      "completeMove": {
+        "tooltip": "Concluir ou mover de coluna",
+        "menuTitle": "Mover para qual coluna?"
+      },
       "actions": {
         "copy": "Copiar"
       },
       "direction": {
         "heading": "Direcionamento"
       },
+      "aiHints": {
+        "unblockAssist": "IA pode ajudar a desbloquear",
+        "refineAvailable": "Refinamento com IA disponível",
+        "enrichButton": "Enriquecer com IA",
+        "fluxyGenerated": "Gerado pela Fluxy"
+      },
+      "serviceClass": {
+        "expedite": "Expedite",
+        "datebound": "Prazo curto",
+        "blocked": "Bloqueado",
+        "prioritize": "Priorizar",
+        "intangible": "Intangível"
+      },
+      "predictiveDelivery": {
+        "estimate": "Est.",
+        "late": "Atrasado"
+      },
       "quickActions": {
         "copyTitleSuffix": "(cópia)",
         "priorityTooltip": "Alterar prioridade",
         "moveTooltip": "Mover para coluna",
         "duplicateTooltip": "Duplicar card",
+        "pinToTopTooltip": "Ir para o topo da coluna (ordem do backlog)",
         "deleteTooltip": "Excluir card"
+      },
+      "sprintMenu": {
+        "tooltip": "Sprint",
+        "title": "Sprint",
+        "addToPlanning": "Incluir em: {name}",
+        "addToActive": "Incluir no sprint ativo ({name})",
+        "alreadyIn": "Já está neste sprint",
+        "removeFrom": "Remover de: {name}",
+        "empty": "Nenhum sprint em planejamento ou ativo. Abra o painel Sprint."
       }
     },
     "column": {
@@ -1594,12 +2980,22 @@
       "dragAriaLabel": "Coluna {label}. {count} card(s). Arraste para reorganizar.",
       "dropRegionAriaLabel": "Coluna {label}. Área para soltar cards.",
       "tourEmptyCardHint": "Nenhum card ainda — use + acima para criar o primeiro.",
+      "emptyHint": "Sem cards — solte cards aqui ou adicione um novo",
+      "addCardButton": "Adicionar card",
+      "flowInsights": {
+        "blockedChip": "{count} bloqueado(s)",
+        "overdueChip": "{count} atrasado(s)",
+        "blockedTooltip": "Cards abertos com dependência bloqueada nesta coluna: {count}.",
+        "overdueTooltip": "Cards abertos com data de conclusão vencida nesta coluna: {count}."
+      },
       "tooltips": {
         "newCard": "Novo card",
         "renameColumn": "Renomear coluna",
         "expandColumn": "Expandir coluna",
         "collapseColumn": "Recolher coluna",
-        "deleteColumn": "Excluir coluna"
+        "deleteColumn": "Excluir coluna",
+        "wipExceeded": "Acima do limite WIP desta coluna — reduza WIP ou retire cards (Kanban).",
+        "policy": "Política da coluna"
       }
     },
     "directions": {
@@ -1626,15 +3022,20 @@
       "clearFilters": "Limpar",
       "retentionHint": "Plano Free: últimos {days} dias.",
       "retentionPro": "Pro/Business: histórico completo.",
-      "noMongo": "O histórico de atividade requer MongoDB (MONGODB_URI).",
+      "noMongo": "O histórico de atividade requer base de dados persistente configurada no servidor.",
       "actions": {
-        "card.created": "Card criado",
-        "card.moved": "Card movido",
-        "card.updated": "Card atualizado",
-        "card.deleted": "Card excluído",
-        "column.added": "Coluna adicionada",
-        "column.removed": "Coluna removida",
-        "board.settings_changed": "Configurações do board"
+        "card_created": "Card criado",
+        "card_moved": "Card movido",
+        "card_updated": "Card atualizado",
+        "card_deleted": "Card excluído",
+        "column_added": "Coluna adicionada",
+        "column_removed": "Coluna removida",
+        "board_settings_changed": "Configurações do board",
+        "message_sent": "Mensagem Fluxy enviada",
+        "message_mentioned": "Menção em mensagem Fluxy",
+        "message_replied": "Resposta em mensagem Fluxy",
+        "message_fluxy_interpreted": "Fluxy interpretou a mensagem",
+        "message_fluxy_action_applied": "Fluxy aplicou ação no card"
       }
     },
     "executionInsights": {
@@ -1649,12 +3050,14 @@
         "toggleGroupAria": "Visualização do board",
         "viewKanban": "Kanban",
         "viewTimeline": "Timeline",
-        "viewKanbanTooltip": "Colunas (Kanban)",
-        "viewTableTooltip": "Tabela — ordenar e editar em linha",
-        "viewTimelineTooltip": "Linha do tempo (prazos)",
-        "viewKanbanAria": "Visualização Kanban em colunas",
-        "viewTableAria": "Visualização em tabela",
-        "viewTimelineAria": "Visualização em linha do tempo",
+        "viewKanbanTooltip": "Kanban (K): cards em colunas",
+        "viewTableTooltip": "Tabela (T): ordenar e editar em linhas",
+        "viewTimelineTooltip": "Linha do tempo (TL): cards por prazo",
+        "viewKanbanAria": "Alternar para visualização Kanban em colunas",
+        "viewTableAria": "Alternar para visualização em tabela",
+        "viewTimelineAria": "Alternar para linha do tempo",
+        "viewEisenhowerTooltip": "Eisenhower (E): urgente x importante",
+        "viewEisenhowerAria": "Alternar para matriz Eisenhower",
         "groupByAria": "Agrupar linhas da timeline",
         "groupByLabel": "Eixo Y",
         "groupFlat": "Lista",
@@ -1673,6 +3076,7 @@
         "colDue": "Prazo",
         "colColumn": "Coluna",
         "colTags": "Tags",
+        "colEstDelivery": "Previsão",
         "emptyTitle": "Nenhum card corresponde aos filtros",
         "emptyHint": "Ajuste filtros ou busca — as mesmas regras do Kanban se aplicam aqui."
       },
@@ -1681,6 +3085,12 @@
         "showTooltip": "Mostrar filtros",
         "title": "Filtros",
         "priorityLabel": "Prioridade",
+        "matrixWeightLabel": "Peso da matriz",
+        "matrixWeightAll": "Todos",
+        "matrixWeightCriticalHigh": "Apenas critical/high",
+        "matrixWeightHighPlus": "High+",
+        "matrixWeightMediumPlus": "Medium+",
+        "matrixWeightCriticalOnly": "Só critical",
         "allLabel": "Todas",
         "shortcutTitle": "Atalho: tecla F",
         "focusModeOn": "Foco do dia: ON",
@@ -1689,7 +3099,222 @@
         "labelsButton": "Rótulos",
         "mapButton": "Mapa de Produção",
         "dailyButton": "Daily IA",
-        "searchPlaceholder": "Buscar... (/) "
+        "searchPlaceholder": "Buscar... (/) ",
+        "sprintOnly": "Só cards do sprint",
+        "sprintAll": "Mostrar todos os cards",
+        "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
+        "sprintProgress": "{done} de {total} no sprint"
+      },
+      "productGoalStrip": {
+        "label": "Meta do produto",
+        "emptyGoal": "Nenhuma meta ainda — defina em Scrum e DoD.",
+        "backlogBadge": "Backlog: {column}",
+        "incrementReview": "Incremento / review",
+        "editScrum": "Scrum e DoD",
+        "accountBrief": "Brief da conta (IA)",
+        "briefLoading": "Gerando brief…",
+        "briefError": "Não foi possível gerar o brief.",
+        "briefRefresh": "Atualizar",
+        "briefClose": "Fechar"
+      },
+      "scrumSettings": {
+        "title": "Scrum no Kanban — meta do produto e Definition of Done",
+        "titleAgile": "Metodologia ágil — Product Goal e Definition of Done",
+        "methodologyLabel": "Metodologia do quadro",
+        "methodologyScrum": "Scrum",
+        "methodologyKanban": "Kanban",
+        "methodologyLss": "Lean Six Sigma",
+        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Lean Six Sigma organiza melhoria em DMAIC. Sair de Scrum para Kanban ou LSS não é permitido com sprint ativo.",
+        "refScrumGuide": "Scrum Guide",
+        "refKanbanGuide": "Kanban Guide for Scrum Teams",
+        "closeAria": "Fechar",
+        "productGoal": "Meta do produto (Product Goal)",
+        "productGoalPlaceholder": "Qual resultado este board busca para o cliente ou produto?",
+        "backlogColumn": "Coluna de product backlog",
+        "backlogAuto": "Automático (nome Backlog ou primeira coluna)",
+        "backlogHint": "Nesta coluna, a ordem dos cards (de cima para baixo) é a prioridade do backlog — arraste para ranquear.",
+        "dodEnabled": "Ativar checklist Definition of Done nos cards",
+        "dodEnforce": "Impedir mover para coluna “feito” ou marcar concluído sem marcar todos os itens",
+        "dodEnforceHint": "Ative para validar o checklist no servidor e no arrastar-soltar — não só no editor do card.",
+        "wipEnforcementLabel": "Limites WIP",
+        "wipEnforcementStrict": "Rigoroso — ultrapassar o limite exige justificativa pontual",
+        "wipEnforcementSoft": "Flexível — limites são orientativos; a contagem não bloqueia movimentação",
+        "dodItems": "Itens do DoD (um por linha)",
+        "dodPlaceholder": "Testes passando\nDocumentação atualizada\nAceite do stakeholder",
+        "doneColumns": "Colunas que contam como concluído",
+        "doneColumnsHint": "Deixe todas desmarcadas para detectar pelo nome (ex.: Concluído, Done, Produção).",
+        "cancel": "Cancelar",
+        "save": "Salvar"
+      },
+      "wipOverride": {
+        "title": "Acima do limite WIP",
+        "body": "Este movimento ultrapassa o limite WIP da coluna. Informe uma justificativa breve para continuar — ela é enviada uma vez no próximo salvamento.",
+        "reasonLabel": "Justificativa",
+        "reasonPlaceholder": "ex.: Bridge de incidente — excesso temporário",
+        "reasonHint": "Mínimo de 8 caracteres. Dica: use WIP “flexível” nas configurações de metodologia se os limites forem só orientativos.",
+        "cancel": "Cancelar",
+        "confirm": "Mover com justificativa"
+      },
+      "lss": {
+        "dmaicFocus": "Foco DMAIC",
+        "openAssist": "Assistente LSS",
+        "phases": {
+          "define": "Define",
+          "measure": "Measure",
+          "analyze": "Analyze",
+          "improve": "Improve",
+          "control": "Control",
+          "unknown": "Geral"
+        },
+        "checklist": {
+          "define": "Carta do projeto, problema mensurável, escopo e stakeholders.",
+          "measure": "Plano de medição, baseline e definição operacional da métrica Y.",
+          "analyze": "Hipóteses de causa raiz e validação com dados.",
+          "improve": "Contramedidas, piloto e critérios de sucesso.",
+          "control": "Plano de controle, padronização e reação a desvios."
+        }
+      },
+      "lssAssist": {
+        "title": "Assistente Lean Six Sigma",
+        "closeAria": "Fechar",
+        "close": "Fechar",
+        "copy": "Copiar resultado",
+        "generate": "Gerar",
+        "generating": "Gerando…",
+        "errorGeneric": "Não foi possível gerar. Tente novamente.",
+        "modeLabel": "Artefato",
+        "contextLabel": "Contexto (opcional)",
+        "contextPlaceholder": "Descreva o processo, problema ou dados disponíveis…",
+        "cardIdLabel": "Card de referência (opcional)",
+        "cardIdNone": "Nenhum",
+        "modes": {
+          "project_charter": "Carta do projeto",
+          "sipoc": "SIPOC",
+          "voc_ctq": "VOC e CTQ",
+          "measurement_plan": "Plano de medição",
+          "root_cause": "Causa raiz",
+          "improvement_ideas": "Ideias de melhoria",
+          "control_plan": "Plano de controle"
+        },
+        "tierStandard": "Artefatos DMAIC",
+        "tierPremium": "C-level e auditoria (Business+)",
+        "premiumBadge": "Premium",
+        "premiumLocked": "Faça upgrade para Business para liberar narrativa para steering, FMEA, hipótese/teste executivo, interpretação de gráfico de controle e checklist de prontidão para auditoria DMAIC.",
+        "premiumModes": {
+          "steering_narrative": "Narrativa para comitê / steering",
+          "fmea_draft": "Rascunho FMEA",
+          "hypothesis_test_exec": "Hipótese e teste (executivo)",
+          "control_chart_interpretation": "Interpretação de gráfico de controle",
+          "dmaic_audit_readiness": "Prontidão para auditoria DMAIC"
+        }
+      },
+      "incrementReview": {
+        "title": "Incremento — o que foi entregue",
+        "closeAria": "Fechar",
+        "tabRolling": "Últimos 14 dias",
+        "tabSprint": "Sprint ativo",
+        "copyMarkdown": "Copiar em Markdown",
+        "copied": "Copiado para a área de transferência.",
+        "copyFailed": "Não foi possível copiar.",
+        "empty": "Nenhum card concluído nesta visão.",
+        "exportTitleRolling": "## Entregues (últimos 14 dias)",
+        "exportTitleSprint": "## Entregues no sprint — {name}",
+        "portalHint": "Visão somente leitura:",
+        "close": "Fechar"
+      },
+      "fluxyCopilot": {
+        "tabChat": "Chat",
+        "tabSala": "Sala Fluxy",
+        "salaFooterHint": "Use o compositor na aba Sala Fluxy acima para mensagens e notificações.",
+        "salaTitle": "Sala Fluxy",
+        "salaExpand": "Abrir",
+        "salaCollapse": "Ocultar",
+        "salaSummaryEmpty": "Sala Fluxy do board pronta para encaminhamentos.",
+        "salaSummaryWithCounts": "{count} mensagens recentes e {mentions} menções roteadas.",
+        "salaQuickTitle": "Resumo rápido",
+        "salaQuickDesc": "Use o ID do card abaixo para ações na sala do board. Menções e políticas da Fluxy usam esse contexto.",
+        "salaContextPlaceholder": "ID do card (opcional)",
+        "salaComposerPlaceholder": "Encaminhar para sala Fluxy… (@nome, /bloquear, avisa o responsável)",
+        "salaNoMessages": "Nenhuma mensagem ainda.",
+        "chipBlocked": "Marcar como bloqueado",
+        "chipDelay": "Pedir confirmação",
+        "chipNudge": "Cobrar atualização",
+        "chipNotifyAssignee": "Notificar responsável",
+        "chipNotifyBlocked": "Notificar bloqueio",
+        "notifyPipelineHint": "Com Fluxy ativa, pedidos como «avisa o responsável» podem gerar notificações push aos destinatários inferidos (com confirmação quando necessário).",
+        "notifyConfirmTitle": "Confirmar notificações",
+        "notifyConfirmBody": "A Fluxy vai notificar as pessoas listadas. Quer enviar?",
+        "notifyConfirmCancel": "Cancelar",
+        "notifyConfirmSend": "Enviar notificações",
+        "intentNone": "Sem ação",
+        "badgeConfirmation": "Confirmação",
+        "ctaApply": "Aplicar ajuste",
+        "ctaAskConfirm": "Pedir confirmação",
+        "needCardIdForCtas": "Informe o ID do card acima para usar os botões nesta mensagem.",
+        "sendAsMember": "Membro",
+        "sendAsFluxy": "Fluxy",
+        "suggestionNotifyAssignee": "Abrir Sala Fluxy e pedir para notificar o responsável",
+        "suggestionNotifyBlocked": "Notificar o responsável sobre bloqueio (Sala Fluxy)",
+        "title": "Fluxy",
+        "subtitle": "Assistente do quadro",
+        "fabOpen": "Abrir Fluxy",
+        "fabClose": "Fechar Fluxy",
+        "close": "Fechar",
+        "roleUser": "Você",
+        "roleAssistant": "Fluxy",
+        "roleTool": "Ferramenta",
+        "loadingHistory": "Carregando histórico…",
+        "generating": "Fluxy está pensando na resposta…",
+        "emptyIntro": "Pergunte sobre o quadro, peça resumos ou ações. Algumas ideias:",
+        "emptyTipNlq": "Buscas estruturadas: use /query (ex.: «/query cards urgentes sem dono»).",
+        "emptyTipVoice": "Use o microfone ou peça para mover cards e ajustar prioridade.",
+        "emptyTipWeekly": "Experimente: «Quais cards estão parados há mais de 5 dias?» ou um brief da semana.",
+        "insightsHeading": "No quadro agora",
+        "insightTotal": "{count} cards no quadro.",
+        "insightBlocked": "{count} com bloqueio — considere notificar responsáveis pela Sala Fluxy.",
+        "insightOverdue": "{count} com vencimento passado — vale revisar prioridade.",
+        "insightInProgress": "{count} em andamento.",
+        "insightUrgent": "{count} marcados como urgentes.",
+        "demoTitle": "Modo demo: {count} mensagem(ns) restante(s).",
+        "demoBody": "Faça upgrade para Pro/Business para a Fluxy sem limite e automações com IA.",
+        "micSpeak": "Falar com a Fluxy",
+        "micStop": "Parar microfone",
+        "listening": "Ouvindo… fale agora",
+        "stopRecording": "Parar",
+        "placeholder": "Pergunte ou peça uma ação…",
+        "hintFooter": "Dica: use voz ou comandos como «mova o card X para Em Execução».",
+        "toastErrorTitle": "Fluxy",
+        "streamErrorFallback": "Erro na Fluxy.",
+        "voiceNotSupported": "Seu navegador não suporta reconhecimento de voz (Web Speech API).",
+        "voiceMicError": "Não foi possível capturar o áudio. Verifique o microfone e tente de novo.",
+        "voiceStartError": "Não foi possível iniciar o microfone.",
+        "visualState": {
+          "idle": { "emoji": "✨", "label": "Idle", "desc": "Esperando por você…" },
+          "thinking": { "emoji": "🧠", "label": "Pensando", "desc": "Processando sua ideia…" },
+          "talking": { "emoji": "💬", "label": "Falando", "desc": "Tenho algo pra te contar!" },
+          "celebrating": { "emoji": "🎉", "label": "Comemorando", "desc": "Sprint completo! Uhu!" },
+          "waving": { "emoji": "👋", "label": "Oi!", "desc": "Prazer em te conhecer!" },
+          "sleeping": { "emoji": "😴", "label": "Dormindo", "desc": "Zzz… me acorda quando precisar" },
+          "error": { "emoji": "⚠️", "label": "Deu problema", "desc": "Não deu pra concluir — tenta de novo." },
+          "loading": { "emoji": "⏳", "label": "Carregando", "desc": "Buscando sua conversa…" },
+          "pointing": { "emoji": "👉", "label": "Olha aqui", "desc": "Repara no canto que estou indicando." },
+          "love": { "emoji": "💜", "label": "Amei", "desc": "Valeu — ajudou bastante!" }
+        }
+      },
+      "fluxyDock": {
+        "openAssistant": "Abrir a Fluxy — dúvidas sobre o quadro",
+        "hideDock": "Ocultar atalho da Fluxy",
+        "restore": "Fluxy",
+        "restoreAria": "Mostrar atalho da assistente Fluxy no quadro",
+        "chipLabel": "Dúvidas do quadro"
+      },
+      "desktopToolsRail": {
+        "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
+        "handlePin": "Fixar faixa de ferramentas aberta",
+        "handleUnpin": "Soltar faixa de ferramentas",
+        "copilotOpen": "Abrir Fluxy",
+        "copilotClose": "Fechar Fluxy",
+        "intelligenceBoard": "Flux Intelligence"
       },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
@@ -1730,12 +3355,112 @@
         "import": "Importar",
         "export": "Exportar"
       },
+      "mobileTools": {
+        "openMenu": "Ferramentas do board",
+        "closeMenu": "Fechar ferramentas",
+        "menuLabel": "Ferramentas do board",
+        "copilot": "Fluxy",
+        "insights": "Insights de execução",
+        "activity": "Atividade",
+        "daily": "IA do dia"
+      },
       "stats": {
         "totalLabel": "Total",
         "inProgressLabel": "Em andamento",
         "overdueLabel": "Atrasados",
         "dueSoonLabel": "Vence em 3d",
         "completedRateLabel": "Taxa concluída"
+      },
+      "intelligence": {
+        "riskShort": "Risco {n}",
+        "flowShort": "Fluxo {n}",
+        "chips": {
+          "wip": "WIP estourado em {columns} coluna(s) · {cards} cards",
+          "blocked": "{count} card(s) bloqueado(s)",
+          "stagnant": "{count} card(s) parado(s) há {days}d+ na coluna",
+          "overdue": "{count} card(s) atrasado(s)",
+          "risk": "Risco de portfólio {score}",
+          "flow": "Índice de fluxo {score}"
+        },
+        "clearFocus": "Limpar filtro de insights",
+        "openFlowHealth": "Saúde do fluxo",
+        "sprintCoach": "Coach de sprint",
+        "cadence": "Cadência",
+        "openCopilot": "Copilot",
+        "workloadBalance": "Carga",
+        "workloadTitle": "Equilíbrio de Carga",
+        "workloadHint": "Análise IA da distribuição de cards entre membros com sugestões de rebalanceamento.",
+        "workloadClose": "Fechar",
+        "workloadError": "Não foi possível carregar o balanceamento de carga.",
+        "workloadRetry": "Tentar novamente",
+        "workloadMembers": "Membros do time",
+        "workloadEmpty": "Nenhum responsável encontrado nos cards.",
+        "workloadSuggestions": "Sugestões de rebalanceamento",
+        "workloadRefresh": "Atualizar análise"
+      },
+      "healthScore": {
+        "label": "Saúde",
+        "unavailable": "Score de saúde indisponível"
+      },
+      "intelligenceCollapse": {
+        "label": "Inteligência",
+        "expand": "Expandir linha de inteligência",
+        "collapse": "Recolher linha de inteligência"
+      },
+      "detailChrome": {
+        "expand": "Meta, sprint e matriz",
+        "expandAria": "Mostrar meta do produto, barra de sprint e filtros de peso da matriz",
+        "collapse": "Recolher meta, sprint e peso da matriz",
+        "activeMatrixBadge": "Matriz: {filter}"
+      },
+      "nlqCompact": {
+        "expand": "Abrir busca NLQ",
+        "collapse": "Recolher dock NLQ"
+      },
+      "flowHealth": {
+        "title": "Saúde do fluxo",
+        "close": "Fechar",
+        "portfolio": "Sinais de portfólio",
+        "risk": "Índice de risco: {n}",
+        "throughput": "Índice de fluxo: {n}",
+        "predictability": "Previsibilidade: {n}",
+        "wipOk": "Todas as colunas respeitam o WIP configurado.",
+        "wipBreached": "Pelo menos uma coluna excede o limite WIP.",
+        "stagnantHeading": "Parado na coluna (5+ dias)",
+        "blockedHeading": "Cards bloqueados",
+        "overdueHeading": "Atrasados",
+        "overdueCount": "{count} card(s) aberto(s) com prazo vencido.",
+        "none": "Nada por aqui agora.",
+        "loading": "Carregando nota do CFD…",
+        "cfdHint": "O CFD da org fica em Flux Reports (plano / portfólio).",
+        "cfdGated": "Histórico CFD exige acesso a portfólio ou snapshots do cron.",
+        "openReports": "Abrir Flux Reports"
+      },
+      "knowledgeGraph": {
+        "title": "Grafo de Conhecimento",
+        "open": "Grafo",
+        "empty": "Dados insuficientes para gerar o grafo.",
+        "loading": "Gerando grafo…",
+        "retry": "Tentar novamente",
+        "error": "Não foi possível carregar o grafo."
+      },
+      "automationSuggestions": {
+        "title": "Sugestões de Automação",
+        "badge": "{count, plural, one {# sugestão} other {# sugestões}}",
+        "apply": "Aplicar",
+        "dismiss": "Dispensar",
+        "confidence": "Confiança",
+        "noSuggestions": "Nenhum padrão detectado ainda"
+      },
+      "sprintCoach": {
+        "title": "Coach de sprint (IA)",
+        "refresh": "Atualizar",
+        "loading": "Carregando insight…",
+        "empty": "Nenhuma sugestão retornada.",
+        "error": "Não foi possível carregar o coach.",
+        "capacity": "Capacidade",
+        "okrs": "Notas de OKR",
+        "recommendedIds": "IDs de cards sugeridos"
       },
       "summary": {
         "totalLabel": "Total",
@@ -1751,6 +3476,25 @@
       },
       "newCard": {
         "defaultDescription": "Sem descrição."
+      },
+      "standupSummary": {
+        "title": "Resumo do Standup",
+        "generate": "Gerar Resumo",
+        "generating": "Gerando...",
+        "impediments": "Impedimentos",
+        "suggestedCards": "Cards Sugeridos",
+        "createCard": "Criar Card",
+        "copy": "Copiar",
+        "copied": "Copiado!",
+        "error": "Não foi possível gerar o resumo"
+      },
+      "focusMode": {
+        "enter": "Modo Foco",
+        "exit": "Sair do Foco",
+        "timer": "Timer",
+        "start": "Iniciar",
+        "pause": "Pausar",
+        "reset": "Reiniciar"
       },
       "dnd": {
         "screenReaderInstructions": {
@@ -1775,7 +3519,23 @@
           },
           "dragCancel": "Arrasto cancelado."
         }
+      },
+      "remoteDrag": {
+        "multiCardHint": "A mover {count} cards"
       }
+    },
+    "cardTemplates": {
+      "saveAsTemplate": "Salvar como Template",
+      "templateName": "Nome do template",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "createFromTemplate": "A partir de template",
+      "blankCard": "Card em branco",
+      "pickTemplate": "Escolher template",
+      "noTemplates": "Nenhum template ainda",
+      "noTemplatesHint": "Salve um card como template para reutilizar depois",
+      "delete": "Excluir template",
+      "saved": "Template salvo!"
     },
     "batchSelection": {
       "toolbarAriaLabel": "Ações em lote nos cards selecionados",
@@ -1785,6 +3545,485 @@
       "deleteSelected": "Deletar selecionados",
       "clearHint": "Esc para limpar",
       "draggingCount": "Movendo {count} cards"
+    }
+  },
+  "myWork": {
+    "title": "My Work",
+    "stats": {
+      "assigned": "Atribuídos",
+      "inProgress": "Em andamento",
+      "blocked": "Bloqueados",
+      "overdue": "Atrasados",
+      "dueSoon": "Vence em breve",
+      "completedWeek": "Concluídos (7d)"
+    },
+    "prioritized": "Sugestão de prioridade (IA)",
+    "empty": "Nenhum card atribuído a você no momento.",
+    "error": "Não foi possível carregar seu workload."
+  },
+  "deliveryForecast": {
+    "title": "Previsão de Entrega",
+    "monteCarlo": "Simulação Monte Carlo",
+    "p50": "50% chance",
+    "p85": "85% chance",
+    "p95": "95% chance",
+    "monteNarrative": "Use p50 como mediana; p85 ≈ alta confiança para zerar o escopo aberto; p95 quando precisar de folga extra (datas fixas ou compliance).",
+    "daysUnit": "dias",
+    "riskCards": "Cards com maior risco",
+    "riskScore": "Risco",
+    "throughputForecast": "Previsão de Throughput",
+    "sprintHealth": "Saúde do Sprint",
+    "healthy": "Saudável",
+    "atRisk": "Em risco",
+    "critical": "Crítico",
+    "scopeCreep": "Scope creep",
+    "whatIfTitle": "Cenário “e se?”",
+    "whatIfHint": "Ajuste escopo e capacidade; opcionalmente descreva em linguagem natural.",
+    "removeItems": "Remover itens do escopo",
+    "capacityMul": "Capacidade (throughput)",
+    "nlPlaceholder": "Ex.: remover 3 itens e 20% mais capacidade",
+    "runScenario": "Aplicar cenário",
+    "scenarioLoading": "Calculando…",
+    "baseline": "Baseline",
+    "scenarioLabel": "Cenário",
+    "explanation": "Leitura",
+    "scenarioError": "Não foi possível calcular o cenário."
+  },
+  "fluxAiHub": {
+    "title": "IA no Flux",
+    "subtitle": "Atalhos para inteligência: portfólio, documentação, previsão, Copiloto, cockpit de sprint e OKRs.",
+    "governance": {
+      "title": "Governança e agentes",
+      "body": "Plano Business: níveis de autonomia, trilho de auditoria para execuções de agentes e hub MCP no roadmap. E-mails de resumo diário usam idempotência por utilizador e dia."
+    },
+    "cards": {
+      "exec": {
+        "badge": "Gestão",
+        "title": "Dashboard executivo",
+        "desc": "Heatmap multi-board e assistente de portfólio."
+      },
+      "docs": {
+        "badge": "RAG",
+        "title": "Flux Docs",
+        "desc": "Base documental usada pelo Copiloto e pelo assistente de portfólio."
+      },
+      "forecast": {
+        "badge": "Previsão",
+        "title": "Relatórios e cenários",
+        "desc": "Monte Carlo, throughput e simulador “e se?” no Flux Reports."
+      },
+      "copilot": {
+        "badge": "Quadro",
+        "title": "Copiloto",
+        "desc": "Abra um board e use o Copiloto no painel lateral."
+      },
+      "sprintCockpit": {
+        "badge": "Scrum",
+        "title": "Cockpit de sprint",
+        "desc": "Checklist guiado: planejamento, daily, review e retro nos seus boards."
+      },
+      "okrs": {
+        "badge": "Estratégia",
+        "title": "Flux Goals (OKRs)",
+        "desc": "Ligue execução aos KRs; futura auto-priorização usa essa malha."
+      }
+    }
+  },
+  "sprintCockpit": {
+    "title": "Cockpit de sprint",
+    "subtitle": "Guia leve para rodar o ciclo Scrum com as ferramentas que você já tem no Flux-Board.",
+    "back": "Voltar aos sprints",
+    "footer": "Use o planejamento e as cerimônias em cada board; esta página mantém a sequência visível para o time.",
+    "steps": {
+      "planning": {
+        "title": "Sprint planning",
+        "desc": "Backlog do board + planning AI para dimensionar e puxar o escopo certo."
+      },
+      "daily": {
+        "title": "Daily",
+        "desc": "Daily IA, transcrição por voz e coach de WIP no quadro ao vivo."
+      },
+      "review": {
+        "title": "Review",
+        "desc": "Increment review e delivery forecast para demonstrar o que de fato entrou."
+      },
+      "retro": {
+        "title": "Retro",
+        "desc": "Insights de sentimento e fluxo; experimentos viram cards Kaizen."
+      }
+    }
+  },
+  "docsPage": {
+    "title": "Flux Docs",
+    "headerBack": "← Boards",
+    "newDocTitle": "Novo documento",
+    "empty": {
+      "title": "Nenhum documento selecionado",
+      "subtitle": "Escolha um documento na árvore à esquerda ou crie um novo para começar.",
+      "step1": "Use Novo ou + subdoc na barra lateral para criar documentos e hierarquia.",
+      "step2": "Edite o título e o corpo; o conteúdo é salvo automaticamente após você pausar a digitação.",
+      "step3": "Abra Gerar com IA acima para criar rascunhos a partir do board, Daily ou OKRs."
+    },
+    "hint": {
+      "title": "Como usar o Flux Docs",
+      "expand": "Mostrar dicas",
+      "collapse": "Ocultar dicas",
+      "step1": "Organize documentos na árvore à esquerda (raiz e subdocumentos).",
+      "step2": "Use a busca acima para encontrar títulos e trechos rapidamente.",
+      "step3": "Na aba Editar, use a barra de formatação; na Visualizar, veja o Markdown renderizado.",
+      "step4": "Importe arquivos .md ou exporte o documento atual; Salvar agora envia imediatamente ao servidor."
+    },
+    "aiBanner": {
+      "body": "Dica: use “Gerar com IA” no topo desta página para gerar relatórios a partir do board e salvá-los como documento.",
+      "dismiss": "Entendi"
+    },
+    "save": {
+      "idle": "",
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "error": "Erro ao salvar",
+      "now": "Salvar agora",
+      "lastUpdated": "Última atualização: {date}"
+    },
+    "import": "Importar .md",
+    "importConfirm": "Substituir todo o conteúdo atual pelo arquivo importado?",
+    "export": "Exportar .md",
+    "delete": "Excluir",
+    "tab": {
+      "edit": "Editar",
+      "preview": "Visualizar"
+    },
+    "titlePlaceholder": "Título do documento",
+    "editorPlaceholder": "Comece a escrever… Use a barra acima para títulos, listas, tabelas e links.",
+    "cardBlock": {
+      "expandToEdit": "Abra o bloco para carregar o editor de formatação."
+    },
+    "previewEmpty": "Nada para visualizar ainda.",
+    "shortcuts": {
+      "title": "Atalhos do teclado",
+      "bold": "Negrito: Ctrl+B (Windows) ou ⌘B (Mac)",
+      "italic": "Itálico: Ctrl+I ou ⌘I",
+      "undo": "Desfazer: Ctrl+Z ou ⌘Z"
+    },
+    "toolbar": {
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "strike": "Riscado",
+      "code": "Código inline",
+      "h1": "Título 1",
+      "h2": "Título 2",
+      "h3": "Título 3",
+      "bulletList": "Lista com marcadores",
+      "orderedList": "Lista numerada",
+      "taskList": "Lista de tarefas",
+      "blockquote": "Citação",
+      "codeBlock": "Bloco de código",
+      "horizontalRule": "Linha horizontal",
+      "link": "Link",
+      "linkPrompt": "URL do link (vazio remove o link)",
+      "table": "Inserir tabela 3×3",
+      "undo": "Desfazer",
+      "redo": "Refazer"
+    },
+    "sidebar": {
+      "label": "Flux Docs",
+      "new": "Novo",
+      "subdoc": "+ subdoc"
+    },
+    "search": {
+      "placeholder": "Buscar documentos…",
+      "empty": "Nenhum resultado."
+    }
+  },
+  "specPlanPage": {
+    "title": "Planejamento de escopo por documento",
+    "headerBack": "← Boards",
+    "upgradeTitle": "Recurso Business+",
+    "upgradeBody": "Faça upgrade do plano para importar especificações e gerar cards com IA alinhados a Scrum, Kanban ou Lean Six Sigma.",
+    "goBilling": "Ver planos",
+    "privacyNote": "O texto do documento é enviado ao provedor de IA para análise. Revise os cards antes de aplicar.",
+    "stepBoard": "Board",
+    "stepSource": "Documento",
+    "stepMethod": "Metodologia",
+    "stepProcess": "Análise",
+    "stepPreview": "Revisão",
+    "pickBoard": "Selecione o board de destino",
+    "boardPlaceholder": "Escolha um board…",
+    "loadBoardsError": "Não foi possível carregar os boards.",
+    "fileLabel": "Arquivo (.pdf ou .docx)",
+    "pasteLabel": "Ou cole o texto / Markdown",
+    "pastePlaceholder": "Cole aqui trechos da especificação…",
+    "methodScrum": "Scrum",
+    "methodKanban": "Kanban",
+    "methodLss": "Lean Six Sigma",
+    "methodHintScrum": "Histórias, critérios de aceite e story points.",
+    "methodHintKanban": "Fluxo de valor, classes de serviço e itens pequenos.",
+    "methodHintLss": "Fases DMAIC, hipóteses e métricas.",
+    "startAnalysis": "Iniciar análise com IA",
+    "startingAnalysis": "A iniciar…",
+    "persistenceLoading": "Ainda a confirmar se o histórico em segundo plano está disponível para este board. Aguarde um momento e tente de novo.",
+    "persistenceLoadingShort": "A preparar…",
+    "removeSelectedFile": "Remover ficheiro",
+    "startAnalysisPrimary": "Iniciar análise (em segundo plano)",
+    "followLiveOnPage": "Acompanhar ao vivo nesta página",
+    "streamInterruptWarning": "Se sair ou fechar este separador, a análise nesta página pode parar. Use o botão principal para uma execução em segundo plano que continua depois de sair.",
+    "secondRunModalTitle": "Já existe uma análise em curso",
+    "secondRunModalBody": "Já há uma análise em progresso neste board. Iniciar outra pode consumir cota adicional. Quer continuar mesmo assim?",
+    "secondRunModalCancel": "Cancelar",
+    "secondRunModalConfirm": "Iniciar mesmo assim",
+    "secondRunConflictServer": "Já existe uma análise em curso neste board.",
+    "activeRunBannerTitle": "Tem análise em curso — escolha o board para retomar",
+    "activeRunResumeLink": "Retomar em “{board}”",
+    "regenerateMappingLive": "Remapear ao vivo nesta página",
+    "timelineTitle": "O que a IA está fazendo",
+    "phaseParse": "Leitura do documento",
+    "phaseChunks": "Divisão em trechos",
+    "phaseEmbeddings": "Vetores (embeddings)",
+    "phaseRetrieval": "Recuperação semântica",
+    "phaseOutline": "Estrutura e requisitos",
+    "phaseWorkItems": "Itens de trabalho",
+    "phaseCards": "Mapeamento em cards",
+    "statusPending": "Aguardando",
+    "statusRunning": "Em execução",
+    "statusDone": "Concluído",
+    "statusError": "Erro",
+    "previewTitle": "Cards sugeridos",
+    "previewCount": "{count, plural, one {# card} other {# cards}}",
+    "colTitle": "Título",
+    "colBucket": "Coluna",
+    "colPriority": "Prioridade",
+    "colTags": "Tags",
+    "colRationale": "Motivo",
+    "removeRow": "Remover",
+    "applyCards": "Aplicar ao board",
+    "applying": "Aplicando…",
+    "applySuccess": "Cards criados no board.",
+    "applyError": "Não foi possível aplicar.",
+    "openBoard": "Abrir board",
+    "regenerateMapping": "Regenerar só o mapeamento",
+    "acceptCheck": "Revisei as sugestões e confirmo que posso aplicá-las a este board.",
+    "noInputError": "Envie um arquivo ou cole texto.",
+    "streamError": "Falha no fluxo de análise.",
+    "fileTooLarge": "Arquivo acima do limite permitido.",
+    "outlineStats": "{sections} seções · {requirements} requisitos",
+    "methodologyBlockLabel": "Metodologia",
+    "openAnalysisPanel": "Painel de acompanhamento",
+    "errorOpenPanelHint": "Abrir painel para ver o log e os detalhes técnicos completos.",
+    "docReadCharSummary": "{count, number} caracteres extraídos",
+    "technicalLogTitle": "Detalhes técnicos (log)",
+    "privacyHistoryNote": "As execuções podem ficar guardadas no histórico deste board (requer MongoDB). Pode voltar mais tarde e retomar o estado.",
+    "tabs": {
+      "configure": "Configurar",
+      "progress": "Progresso",
+      "review": "Revisão",
+      "history": "Histórico"
+    },
+    "sticky": {
+      "idle": "Pronto para analisar.",
+      "analyzingSync": "Análise em curso nesta sessão.",
+      "analyzingBackground": "Análise em segundo plano — pode sair desta página.",
+      "cancelRequested": "Cancelamento pedido — a aguardar o servidor parar a análise.",
+      "cancelSending": "A enviar pedido de cancelamento…",
+      "runSyncFailed": "Não foi possível sincronizar esta execução (rede ou board incorreto). Confirme o board ou recarregue a página."
+    },
+    "cancelBackground": "Pedir cancelamento",
+    "cancelBackgroundSending": "A cancelar…",
+    "cancelBackgroundTimeout": "O pedido de cancelamento demorou demais. Verifique a ligação e tente de novo.",
+    "cancelBackgroundError": "Não foi possível pedir o cancelamento. Tente de novo.",
+    "startBackground": "Analisar em segundo plano",
+    "backgroundRequiresMongo": "Segundo plano e histórico precisam de base de dados persistente no servidor.",
+    "previewTableView": "Vista em tabela",
+    "previewCardView": "Vista em cards",
+    "regenerateMappingBackground": "Remapear em segundo plano",
+    "reviewEmpty": "Sem cards ainda. Inicie uma análise ou restaure uma execução do histórico.",
+    "historyTitle": "Histórico de execuções",
+    "historyLoading": "A carregar…",
+    "historyEmpty": "Nenhuma execução guardada neste board.",
+    "historyRestore": "Restaurar na revisão",
+    "historyDelete": "Excluir",
+    "historyDeleteConfirm": "Excluir esta execução permanentemente?",
+    "historyDeleteYes": "Sim, excluir",
+    "historyDeleteNo": "Cancelar",
+    "historyLoadError": "Não foi possível carregar o histórico.",
+    "historyDeleteError": "Não foi possível excluir.",
+    "stepperFriendly": {
+      "parse": "Lemos o PDF, DOCX ou o texto colado para a IA trabalhar em cima do conteúdo.",
+      "chunks": "O texto é dividido em blocos para embeddings e para encontrar os trechos mais relevantes.",
+      "embeddings": "Os trechos são convertidos em vetores para compreensão semântica.",
+      "retrieval": "Escolhemos o que melhor responde a perguntas sobre requisitos, riscos e escopo.",
+      "outline": "A IA organiza secções e requisitos-chave antes de sugerir trabalho.",
+      "work": "Geramos um rascunho de itens alinhado à metodologia. Em PDFs longos esta etapa pode levar vários minutos — o processo continua em curso.",
+      "cards": "Mapeamos tudo às colunas do board com títulos, prioridades e tags sugeridas."
+    },
+    "analysisModal": {
+      "title": "Acompanhamento da análise",
+      "subtitle": "Leitura do documento, recuperação semântica e fases de IA",
+      "close": "Fechar",
+      "trackingTitle": "Progresso das etapas",
+      "status": {
+        "busy": "Em execução…",
+        "done": "Concluído",
+        "error": "Falha",
+        "idle": "Aguardando início"
+      },
+      "docReadTitle": "Documento lido",
+      "docFileName": "Arquivo",
+      "docKind": "Tipo",
+      "docCharCount": "Caracteres extraídos",
+      "docPageCount": "Páginas",
+      "docWarnings": "Avisos",
+      "errorBlockTitle": "Erro",
+      "errorDetailToggle": "Ver resposta técnica completa",
+      "logTitle": "Log detalhado",
+      "logClear": "Limpar log",
+      "logEmpty": "O log será preenchido conforme os eventos da análise.",
+      "logEvents": {
+        "started": "Sessão de análise iniciada.",
+        "documentParsed": "Leitura do documento concluída: {fileName} ({chars} caracteres).",
+        "chunksReady": "Texto dividido em {count} trechos (tamanho médio {avgSize} caracteres; amostragem: {truncated}).",
+        "embeddingsReady": "Embeddings: {count} vetores (modelo: {model}). {status}",
+        "embeddingsFailed": "Falha ao gerar embeddings — usando trecho truncado no outline.",
+        "embedRunOk": "Serviço de embeddings respondeu.",
+        "embedRunFailed": "Falha no serviço de embeddings.",
+        "retrievalReady": "Recuperação semântica: {chunksUsed} trecho(s) no contexto (fallback: {fallback}).",
+        "outlineReady": "Outline e requisitos-chave gerados.",
+        "workItemsLlmStarted": "A gerar itens de trabalho (prompt com ~{chars} caracteres). PDFs grandes podem demorar vários minutos nesta fase.",
+        "workItemsReady": "Rascunho de itens de trabalho recebido.",
+        "methodologyApplied": "Metodologia aplicada ao rascunho.",
+        "cardsLlmStarted": "Mapeamento em cards: chamada à IA em curso ({count} itens, ~{chars} caracteres no prompt). Especificações grandes podem demorar nesta etapa.",
+        "bucketMapping": "Mapeamento sugerido para colunas do board.",
+        "cardsPreview": "Preview de {count} card(s) recebido.",
+        "streamError": "Erro no fluxo: {message}",
+        "httpError": "Resposta HTTP {status}: {message}"
+      }
+    }
+  },
+  "templateMarketplace": {
+    "title": "Template Marketplace",
+    "search": "Buscar templates...",
+    "useTemplate": "Usar template",
+    "downloads": "downloads",
+    "empty": "Nenhum template publicado ainda.",
+    "publish": "Publicar template",
+    "categories": {
+      "all": "Todos",
+      "kanban": "Kanban",
+      "scrum": "Scrum",
+      "bpmn": "BPMN",
+      "matrix": "Matriz"
+    }
+  },
+  "releases": {
+    "pretitle": "Controle de versões",
+    "title": "Releases",
+    "subtitle": "Gerencie versões, changelogs e deploys conectados a sprints e cards.",
+    "loading": "Carregando releases…",
+    "newRelease": "Nova release",
+    "openHistory": "Histórico de sprints",
+    "emptyTitle": "Nenhuma release ainda",
+    "emptyDescription": "Crie sua primeira release a partir de uma sprint concluída — o Flux sugere a versão e gera o changelog com IA.",
+    "selectHint": "Selecione uma release ao lado para ver detalhes, notas e timeline.",
+    "upgradeTitle": "Releases exigem plano pago",
+    "upgradeDescription": "O módulo de versões compartilha a feature de Sprint Engine. Faça upgrade para habilitar.",
+    "upgradeCta": "Ver planos",
+    "rollbackPrompt": "Descreva o motivo do rollback:",
+    "error": {
+      "load": "Não foi possível carregar as releases.",
+      "auth": "Sessão expirada.",
+      "notfound": "Release não encontrada.",
+      "upgrade": "Recurso disponível em planos pagos."
+    },
+    "filters": {
+      "allEnv": "Todos ambientes",
+      "allStatus": "Todos status"
+    },
+    "statuses": {
+      "draft": "Rascunho",
+      "planned": "Planejada",
+      "in_review": "Em revisão",
+      "staging": "Staging",
+      "released": "Publicada",
+      "rolled_back": "Revertida"
+    },
+    "flow": {
+      "title": "Fluxo de release",
+      "rollback": "Rollback",
+      "step": {
+        "draft": "Rascunho",
+        "planned": "Planejada",
+        "in_review": "Revisão",
+        "staging": "Staging",
+        "released": "Produção"
+      }
+    },
+    "form": {
+      "createTitle": "Nova release",
+      "editTitle": "Editar release",
+      "subtitle": "A versão pode ser sugerida automaticamente a partir da última sprint encerrada.",
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "saveError": "Falha ao salvar.",
+      "suggest": "Sugerir",
+      "suggestTitle": "Sugerir versão, tipo e changelog com base nos sprints.",
+      "suggestError": "Não foi possível gerar sugestão.",
+      "version": "Versão",
+      "name": "Nome",
+      "summary": "Resumo",
+      "versionType": "Tipo",
+      "status": "Status",
+      "environment": "Ambiente",
+      "sprints": "Sprints vinculados",
+      "noSprints": "Nenhum sprint disponível neste board.",
+      "changelog": "Changelog (preview)",
+      "notes": "Notas da release",
+      "notesPlaceholder": "Suas notas em markdown. Se vazio, usamos as notas geradas pela IA.",
+      "deploymentRef": "Referência de deploy",
+      "plannedAt": "Data prevista",
+      "tags": "Tags",
+      "tagsPlaceholder": "beta, hotfix (separadas por vírgula)",
+      "types": {
+        "major": "Major (quebra compatibilidade)",
+        "minor": "Minor (novas features)",
+        "patch": "Patch (correções)",
+        "hotfix": "Hotfix (emergencial)"
+      },
+      "statuses": {
+        "draft": "Rascunho",
+        "planned": "Planejada",
+        "in_review": "Em revisão",
+        "staging": "Staging",
+        "released": "Publicada",
+        "rolled_back": "Revertida"
+      }
+    },
+    "detail": {
+      "edit": "Editar",
+      "generate": "Gerar notas com IA",
+      "generating": "Gerando…",
+      "changelog": "Changelog",
+      "notes": "Release notes",
+      "notesHuman": "Notas humanas",
+      "notesAi": "Geradas por IA",
+      "timeline": "Linha do tempo",
+      "kpi": {
+        "cards": "Cards",
+        "cardsCaption": "entregues nesta release",
+        "sprints": "Sprints",
+        "risks": "Riscos",
+        "risksCaption": "mapeados"
+      },
+      "events": {
+        "created": "Release criada",
+        "planned": "Planejada",
+        "review": "Entrou em revisão",
+        "staged": "Movida para staging",
+        "released": "Publicada",
+        "rolled_back": "Rollback",
+        "edited": "Editada",
+        "ai_notes_generated": "Notas geradas por IA"
+      }
     }
   },
   "aiFlowCoach": {
@@ -1799,5 +4038,52 @@
       "fair": "Razoável",
       "poor": "Crítico"
     }
+  },
+  "velocityOracle": {
+    "pretitle": "Previsão Preditiva",
+    "title": "Velocity Oracle",
+    "daysLeft": "Dias restantes",
+    "noData": "Dados insuficientes para previsão.",
+    "error": "Não foi possível carregar a previsão.",
+    "forecastTitle": "Previsão Monte Carlo",
+    "riskTitle": "Cards de maior risco",
+    "scenarioTitle": "Simulação What-If",
+    "removeCards": "Remover cards do escopo",
+    "capacity": "Capacidade do time",
+    "applyScenario": "Simular",
+    "reset": "Resetar",
+    "metrics": {
+      "total": "Total",
+      "done": "Concluídos",
+      "remaining": "Restantes"
+    },
+    "prob": {
+      "impossible": "Improvável",
+      "unlikely": "Pouco provável",
+      "possible": "Possível",
+      "likely": "Provável",
+      "almost_certain": "Quase certo"
+    }
+  },
+  "aiRetrospective": {
+    "pretitle": "Retrospectiva Inteligente",
+    "title": "AI Retrospective",
+    "error": "Não foi possível gerar a retrospectiva.",
+    "generate": "Gerar retrospectiva",
+    "regenerate": "Regenerar",
+    "generating": "Gerando…",
+    "copyMd": "Exportar MD",
+    "emptyHint": "Clique em Gerar para criar uma retrospectiva inteligente com análise de padrões.",
+    "wentWell": "O que foi bem",
+    "improvements": "O que melhorar",
+    "actions": "Ações prioritárias",
+    "metrics": {
+      "completion": "Conclusão",
+      "carryover": "Carregados",
+      "blockers": "Bloqueios",
+      "vsPrev": "vs. anterior",
+      "cycleTime": "Tempo ciclo"
+    }
   }
 }
+

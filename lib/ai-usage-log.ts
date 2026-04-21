@@ -37,6 +37,10 @@ export function estimateLlmCostUsd(params: {
   return Math.round((inCost + outCost) * 1_000_000) / 1_000_000;
 }
 
+/**
+ * Convenção Onda 4: preferir prefixo `onda4_` em novas features para dashboards de custo,
+ * exceto quando o endpoint já loga um nome estável legado (`board_executive_brief_ai`, etc.).
+ */
 export type AiUsageLogInput = {
   orgId: string;
   userId?: string | null;
@@ -45,6 +49,8 @@ export type AiUsageLogInput = {
   model: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Versão de prompt / política de servidor (rastreio). */
+  promptFluxVersion?: string;
 };
 
 export async function logAiUsage(entry: AiUsageLogInput): Promise<void> {
@@ -72,6 +78,9 @@ export async function logAiUsage(entry: AiUsageLogInput): Promise<void> {
       inputTokens,
       outputTokens,
       estimatedCostUsd,
+      ...(entry.promptFluxVersion
+        ? { promptFluxVersion: entry.promptFluxVersion.slice(0, 40) }
+        : {}),
       createdAt: new Date().toISOString(),
     });
   } catch (e) {

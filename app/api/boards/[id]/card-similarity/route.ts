@@ -3,9 +3,10 @@ import { z } from "zod";
 import { findSimilarBoardCards } from "@/lib/card-duplicate-similarity";
 import { fetchTextEmbeddings } from "@/lib/embeddings-together";
 import { getAuthFromRequest } from "@/lib/auth";
-import { getBoard, getBoardRebornId, userCanAccessBoard } from "@/lib/kv-boards";
+import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { listEmbeddingsForOrgBoards } from "@/lib/kv-card-dependencies";
 import { sanitizeText, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 const BodySchema = z.object({
   title: z.string().max(2000),
@@ -14,20 +15,13 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id: requestedBoardId } = await params;
   if (!requestedBoardId) return NextResponse.json({ error: "Board inválido." }, { status: 400 });
 
-  let boardId = requestedBoardId;
-  if (requestedBoardId === "b_reborn") {
-    const scopedRebornId = getBoardRebornId(payload.orgId);
-    if (scopedRebornId !== requestedBoardId) {
-      const scopedBoard = await getBoard(scopedRebornId, payload.orgId);
-      if (scopedBoard) boardId = scopedRebornId;
-    }
-  }
+  const boardId = requestedBoardId;
 
   const can = await userCanAccessBoard(payload.id, payload.orgId, payload.isAdmin, boardId);
   if (!can) return NextResponse.json({ error: "Acesso negado ao board." }, { status: 403 });
@@ -73,6 +67,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ matches });
   } catch (err) {
     console.error("card-similarity", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/boards/[id]/card-similarity/route.ts" });
   }
 }

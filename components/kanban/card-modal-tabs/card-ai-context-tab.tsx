@@ -1,8 +1,12 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { useCardModal } from "@/components/kanban/card-modal-context";
 import { CardModalSection } from "@/components/kanban/card-modal-section";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
+import { apiPost, ApiError, getApiHeaders } from "@/lib/api-client";
+
+type EpicAction = "idle" | "decompose" | "briefing";
 
 export default function CardAiContextTab({ cardId: _cardId }: CardModalTabBaseProps) {
   const {
@@ -15,7 +19,68 @@ export default function CardAiContextTab({ cardId: _cardId }: CardModalTabBasePr
     aiContextBusinessSummary,
     aiContextObjective,
     t,
+    boardId,
+    getHeaders,
+    mode,
+    selfId,
+    assigneeId,
+    onBoardReloaded,
+    pushToast,
   } = useCardModal();
+
+  const [epicAction, setEpicAction] = useState<EpicAction>("idle");
+
+  const canPersistServerCard = mode === "edit" && Boolean(selfId.trim());
+  const canBriefing = canPersistServerCard && Boolean(assigneeId.trim());
+  const epicBusy = epicAction !== "idle";
+
+  const runDecomposeEpic = useCallback(async () => {
+    if (!canPersistServerCard || epicBusy) return;
+    setEpicAction("decompose");
+    try {
+      await apiPost(
+        `/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(selfId)}/decompose-epic`,
+        {},
+        getApiHeaders(getHeaders())
+      );
+      pushToast({ kind: "success", title: t("cardModal.aiTab.decomposeSuccess") });
+      await onBoardReloaded?.(selfId);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : t("cardModal.aiTab.epicActionsError");
+      pushToast({ kind: "error", title: msg });
+    } finally {
+      setEpicAction("idle");
+    }
+  }, [boardId, canPersistServerCard, epicBusy, getHeaders, onBoardReloaded, pushToast, selfId, t]);
+
+  const runAssigneeBriefing = useCallback(async () => {
+    if (!canBriefing || epicBusy) return;
+    setEpicAction("briefing");
+    try {
+      await apiPost(
+        `/api/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(selfId)}/assignee-briefing`,
+        { assigneeId: assigneeId.trim() },
+        getApiHeaders(getHeaders())
+      );
+      pushToast({ kind: "success", title: t("cardModal.aiTab.briefingSuccess") });
+      await onBoardReloaded?.(selfId);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : t("cardModal.aiTab.epicActionsError");
+      pushToast({ kind: "error", title: msg });
+    } finally {
+      setEpicAction("idle");
+    }
+  }, [
+    assigneeId,
+    boardId,
+    canBriefing,
+    epicBusy,
+    getHeaders,
+    onBoardReloaded,
+    pushToast,
+    selfId,
+    t,
+  ]);
 
   return (
     <div className="space-y-5">
@@ -40,6 +105,33 @@ export default function CardAiContextTab({ cardId: _cardId }: CardModalTabBasePr
         </div>
         {!aiContextCanGenerate ? (
           <p className="text-xs text-[var(--flux-danger)]/90">{t("cardModal.aiTab.needTitleDesc")}</p>
+        ) : null}
+      </CardModalSection>
+
+      <CardModalSection title={t("cardModal.aiTab.epicSectionTitle")} description={t("cardModal.aiTab.epicSectionHint")}>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button
+            type="button"
+            onClick={runDecomposeEpic}
+            disabled={!canPersistServerCard || epicBusy}
+            className="btn-secondary disabled:opacity-45 disabled:pointer-events-none"
+          >
+            {epicAction === "decompose" ? t("cardModal.aiTab.decomposeEpicBusy") : t("cardModal.aiTab.decomposeEpic")}
+          </button>
+          <button
+            type="button"
+            onClick={runAssigneeBriefing}
+            disabled={!canBriefing || epicBusy}
+            className="btn-secondary disabled:opacity-45 disabled:pointer-events-none"
+          >
+            {epicAction === "briefing" ? t("cardModal.aiTab.assigneeBriefingBusy") : t("cardModal.aiTab.assigneeBriefing")}
+          </button>
+        </div>
+        {!canPersistServerCard ? (
+          <p className="text-xs text-[var(--flux-text-muted)] pt-1">{t("cardModal.aiTab.needSavedCard")}</p>
+        ) : null}
+        {canPersistServerCard && !assigneeId.trim() ? (
+          <p className="text-xs text-[var(--flux-text-muted)] pt-1">{t("cardModal.aiTab.needAssignee")}</p>
         ) : null}
       </CardModalSection>
 

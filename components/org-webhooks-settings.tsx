@@ -196,8 +196,8 @@ export function OrgWebhooksSettings() {
         <h3 className="font-display font-bold text-lg text-[var(--flux-text)] mb-1">Webhooks (Zapier-ready)</h3>
         <p className="text-sm text-[var(--flux-text-muted)] mb-4">
           Envie eventos para URLs externas com corpo JSON assinado (HMAC-SHA256). Retentativas: 10s, 60s e 300s após
-          falhas. Configure um cron em <code className="font-mono text-xs">/api/cron/webhook-deliveries</code> com{" "}
-          <code className="font-mono text-xs">x-cron-secret</code> para processar retries em produção.
+          falhas. O reenvio em produção depende de agendamento no servidor; o administrador da plataforma configura-o no
+          ambiente de deploy (não partilhe segredos de cron em texto copiável).
         </p>
 
         <div className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)]/40 p-4 space-y-3">

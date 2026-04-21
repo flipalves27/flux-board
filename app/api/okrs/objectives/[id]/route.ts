@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { deleteObjective, getObjective, updateObjective } from "@/lib/kv-okrs";
 import { OkrsObjectiveUpdateSchema, zodErrorToMessage } from "@/lib/schemas";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id } = await params;
@@ -17,10 +19,11 @@ export async function PATCH(
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
@@ -33,7 +36,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, objective });
   } catch (err) {
     console.error("OKRs objective PATCH error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/[id]/route.ts" });
   }
 }
 
@@ -48,7 +51,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id } = await params;
@@ -56,10 +59,11 @@ export async function DELETE(
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtxDel = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtxDel);
     } catch (err) {
-      if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
@@ -69,7 +73,7 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("OKRs objective DELETE error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/okrs/objectives/[id]/route.ts" });
   }
 }
 

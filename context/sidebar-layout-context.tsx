@@ -14,6 +14,7 @@ type SidebarLayoutContextValue = {
 
 const SidebarLayoutContext = createContext<SidebarLayoutContextValue | null>(null);
 
+/** Mobile = max-width 767px — same band as Tailwind `max-md:` (below 768px). */
 function resolveLayout(): SidebarLayoutMode {
   if (typeof window === "undefined") return "desktop";
   if (window.matchMedia("(max-width: 767px)").matches) return "mobile";

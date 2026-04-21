@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header";
 import { apiGet, ApiError } from "@/lib/api-client";
+import { isPlatformAdminSession } from "@/lib/rbac";
 
 type AbuseRow = {
   identifier: string;
@@ -31,7 +32,7 @@ export default function RateLimitAbusePage() {
       router.replace("/login");
       return;
     }
-    if (!user.isAdmin) {
+    if (!isPlatformAdminSession(user)) {
       router.replace("/boards");
       return;
     }
@@ -59,7 +60,7 @@ export default function RateLimitAbusePage() {
     }
   }
 
-  if (!isChecked || !user?.isAdmin) {
+  if (!isChecked || !user || !isPlatformAdminSession(user)) {
     return null;
   }
 

@@ -1,7 +1,9 @@
 "use client";
 
 import type { RefObject } from "react";
-import type { BoardData, CardData } from "@/app/board/[id]/page";
+import { useEffect, useState } from "react";
+import type { BoardData, BoardDefinitionOfDone, CardData } from "@/app/board/[id]/page";
+import type { BoardMethodology } from "@/lib/board-methodology";
 import { useBoardStore } from "@/stores/board-store";
 import { CardModal } from "./card-modal";
 import { DescModal } from "./desc-modal";
@@ -9,6 +11,7 @@ import { DailyInsightsPanel, type DailyInsightsPanelProps } from "./DailyInsight
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MapaProducaoSection } from "./mapa-producao-section";
 import type { ConfirmDeleteState } from "@/stores/ui-store";
+import { useToast } from "@/context/toast-context";
 
 type KanbanT = (key: string, values?: Record<string, string | number>) => string;
 
@@ -48,7 +51,7 @@ export type KanbanBoardOverlaysProps = {
   setNewColumnName: (v: string) => void;
   editingColumnKey: string | null;
   setEditingColumnKey: (v: string | null) => void;
-  saveColumn: () => void;
+  saveColumn: (opts?: { wipLimit?: number | null; policy?: string | null }) => void;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
   addColumnInputRef: RefObject<HTMLInputElement | null>;
   confirmDelete: ConfirmDeleteState;
@@ -71,7 +74,25 @@ export type KanbanBoardOverlaysProps = {
   ) => void;
   /** Após excluir vários cards (confirmação). */
   onCardsBatchDeleted?: () => void;
+  /** Recarrega o board no servidor e ressincroniza o card aberto no modal (mutações só-API). */
+  onBoardReloaded?: (cardId: string) => Promise<void>;
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
+  boardMethodology: BoardMethodology;
 };
+
+function parseWipDraft(
+  draft: string,
+  editing: boolean
+): { ok: true; value: number | null | undefined } | { ok: false } {
+  const t = draft.trim();
+  if (t === "") {
+    return { ok: true, value: editing ? null : undefined };
+  }
+  const n = Number.parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 999) return { ok: false };
+  return { ok: true, value: n };
+}
 
 export function KanbanBoardOverlays({
   t,
@@ -119,7 +140,38 @@ export function KanbanBoardOverlays({
   onOpenExistingCard,
   onMergeDraftIntoExisting,
   onCardsBatchDeleted,
+  onBoardReloaded,
+  definitionOfDone,
+  doneBucketKeys,
+  boardMethodology,
 }: KanbanBoardOverlaysProps) {
+  const { pushToast } = useToast();
+  const [columnWipDraft, setColumnWipDraft] = useState("");
+  const [columnPolicyDraft, setColumnPolicyDraft] = useState("");
+
+  useEffect(() => {
+    if (!addColumnOpen) return;
+    if (editingColumnKey) {
+      const b = buckets.find((x) => x.key === editingColumnKey);
+      setColumnWipDraft(typeof b?.wipLimit === "number" ? String(b.wipLimit) : "");
+      const pol = (b as { policy?: string } | undefined)?.policy;
+      setColumnPolicyDraft(typeof pol === "string" ? pol : "");
+    } else {
+      setColumnWipDraft("");
+      setColumnPolicyDraft("");
+    }
+  }, [addColumnOpen, editingColumnKey, buckets]);
+
+  const submitColumn = () => {
+    const parsed = parseWipDraft(columnWipDraft, Boolean(editingColumnKey));
+    if (!parsed.ok) {
+      pushToast({ kind: "error", title: t("addColumnModal.wipInvalid") });
+      return;
+    }
+    saveColumn({ wipLimit: parsed.value, policy: columnPolicyDraft.trim() ? columnPolicyDraft : null });
+    setColumnWipDraft("");
+    setColumnPolicyDraft("");
+  };
   const updateDb = useBoardStore((s) => s.updateDb);
 
   return (
@@ -139,6 +191,9 @@ export function KanbanBoardOverlays({
           onCreateLabel={createLabel}
           onDeleteLabel={deleteLabel}
           peerCards={cards.filter((c) => c.id && c.id !== modalCard.id)}
+          definitionOfDone={definitionOfDone}
+          doneBucketKeys={doneBucketKeys}
+          boardMethodology={boardMethodology}
           onClose={() => setModalCard(null)}
           onSave={(updated) => {
             updateDb((d) => {
@@ -165,6 +220,7 @@ export function KanbanBoardOverlays({
           }}
           onOpenExistingCard={onOpenExistingCard}
           onMergeDraftIntoExisting={onMergeDraftIntoExisting}
+          onBoardReloaded={onBoardReloaded}
         />
       )}
 
@@ -195,8 +251,12 @@ export function KanbanBoardOverlays({
 
       {addColumnOpen && (
         <div
-          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[400] flex items-center justify-center"
-          onClick={() => setAddColumnOpen(false)}
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-feature)] flex items-center justify-center"
+          onClick={() => {
+            setAddColumnOpen(false);
+            setColumnWipDraft("");
+            setColumnPolicyDraft("");
+          }}
         >
           <div
             className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
@@ -214,11 +274,32 @@ export function KanbanBoardOverlays({
               type="text"
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && saveColumn()}
+              onKeyDown={(e) => e.key === "Enter" && submitColumn()}
               placeholder={t("addColumnModal.placeholder")}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
               autoFocus
               ref={addColumnInputRef}
+            />
+            <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.wipLabel")}</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={columnWipDraft}
+              onChange={(e) => setColumnWipDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitColumn()}
+              placeholder={t("addColumnModal.wipPlaceholder")}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              aria-label={t("addColumnModal.wipLabel")}
+            />
+            <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.policyLabel")}</label>
+            <textarea
+              value={columnPolicyDraft}
+              onChange={(e) => setColumnPolicyDraft(e.target.value)}
+              placeholder={t("addColumnModal.policyPlaceholder")}
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px]"
+              aria-label={t("addColumnModal.policyLabel")}
             />
             <div className="flex gap-3 justify-end pt-2">
               <button
@@ -227,12 +308,14 @@ export function KanbanBoardOverlays({
                   setAddColumnOpen(false);
                   setNewColumnName("");
                   setEditingColumnKey(null);
+                  setColumnWipDraft("");
+                  setColumnPolicyDraft("");
                 }}
                 className="btn-secondary"
               >
                 {t("addColumnModal.cancel")}
               </button>
-              <button type="button" onClick={saveColumn} className="btn-primary">
+              <button type="button" onClick={submitColumn} className="btn-primary">
                 {editingColumnKey ? t("addColumnModal.save") : t("addColumnModal.create")}
               </button>
             </div>
@@ -241,7 +324,7 @@ export function KanbanBoardOverlays({
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[400] flex items-center justify-center">
+        <div className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-feature)] flex items-center justify-center">
           <div
             className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] text-center shadow-xl"
             ref={confirmDeleteDialogRef}

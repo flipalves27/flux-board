@@ -9,6 +9,7 @@ export const ANOMALY_NOTIFY_KIND_OPTIONS = [
   "okr_drift",
   "overdue_cascade",
   "cross_board_blocker_overdue",
+  "scope_creep",
 ] as const satisfies readonly AnomalyKind[];
 
 export type AnomalyNotifyKind = (typeof ANOMALY_NOTIFY_KIND_OPTIONS)[number];

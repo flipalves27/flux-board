@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { ensureOrgManager } from "@/lib/api-authz";
 import { updateOrganization } from "@/lib/kv-organizations";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export const runtime = "nodejs";
 
@@ -13,9 +15,10 @@ const REASONS = [
 ] as const;
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (!payload.isAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
   const reasonRaw = typeof body?.reason === "string" ? body.reason.trim().slice(0, 500) : "";
@@ -32,9 +35,10 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    return publicApiErrorResponse(err, {
+      context: "POST api/billing/cancellation-feedback",
+      status: 400,
+      fallbackMessage: "Não foi possível guardar o feedback.",
+    });
   }
 }

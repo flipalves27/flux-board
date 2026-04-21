@@ -9,6 +9,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /** Doc v2 aliases — map to the same CSS vars as `flux.*` */
+        primary: "var(--primary, var(--flux-primary))",
+        secondary: "var(--secondary, var(--flux-secondary))",
+        accent: "var(--accent, var(--flux-accent))",
+        surface: {
+          base: "var(--bg-base, var(--flux-surface-dark))",
+          raised: "var(--bg-raised, var(--flux-surface-mid))",
+          card: "var(--bg-card, var(--flux-surface-card))",
+        },
         flux: {
           primary: "var(--flux-primary)",
           "primary-light": "var(--flux-primary-light)",
@@ -49,6 +58,12 @@ const config: Config = {
         "flux-3xl": ["var(--flux-text-3xl)", { lineHeight: "1.2" }],
       },
       boxShadow: {
+        "flux-0": "var(--flux-shadow-0)",
+        "flux-1": "var(--flux-shadow-1)",
+        "flux-2": "var(--flux-shadow-2)",
+        "flux-3": "var(--flux-shadow-3)",
+        "flux-4": "var(--flux-shadow-4)",
+        "flux-glow": "var(--flux-shadow-glow)",
         "flux-sm": "var(--flux-shadow-sm)",
         "flux-md": "var(--flux-shadow-md)",
         "flux-lg": "var(--flux-shadow-lg)",
@@ -56,19 +71,26 @@ const config: Config = {
         "flux-drag": "var(--flux-shadow-drag)",
       },
       transitionDuration: {
-        "flux-fast": "150ms",
-        "flux-normal": "250ms",
-        "flux-slow": "400ms",
+        "flux-instant": "var(--flux-motion-duration-instant)",
+        "flux-fast": "var(--flux-motion-duration-fast)",
+        "flux-normal": "var(--flux-motion-duration-base)",
+        "flux-slow": "var(--flux-motion-duration-slow)",
       },
       transitionTimingFunction: {
-        "flux-standard": "var(--flux-ease-standard)",
+        "flux-standard": "var(--flux-motion-ease-standard)",
+        "flux-out": "var(--flux-motion-ease-out)",
       },
       screens: {
         "flux-xs": "400px",
+        /** Doc breakpoints — align QA with design spec (Tailwind `md`/`lg` match 768 / 1024). */
+        "doc-md": "768px",
+        "doc-lg": "1024px",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Outfit", "sans-serif"],
-        body: ["var(--font-body)", "DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Outfit", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
+        fluxy: ["var(--font-fluxy)", "Space Grotesk", "sans-serif"],
       },
     },
   },

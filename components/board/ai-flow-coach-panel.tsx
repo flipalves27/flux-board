@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -14,11 +14,11 @@ type Props = {
 };
 
 const CATEGORY_ICON: Record<string, string> = {
-  flow: "\u21bb",
-  risk: "\u26a0",
-  opportunity: "\u2191",
-  team: "\u25ce",
-  quality: "\u25c7",
+  flow: "⟳",
+  risk: "⚠",
+  opportunity: "↑",
+  team: "◎",
+  quality: "◈",
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -75,7 +75,7 @@ function InsightCard({ insight, t }: { insight: CoachInsight; t: ReturnType<type
           className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[13px] font-bold"
           style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
-          {CATEGORY_ICON[insight.category] ?? "\u00b7"}
+          {CATEGORY_ICON[insight.category] ?? "·"}
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-semibold leading-tight text-[var(--flux-text)]">
@@ -91,10 +91,10 @@ function InsightCard({ insight, t }: { insight: CoachInsight; t: ReturnType<type
                 {insight.metric.value}
               </span>
               {insight.metric.trend === "up" && (
-                <span className="text-[10px] text-[var(--flux-danger)]">{"\u2191"}</span>
+                <span className="text-[10px] text-[var(--flux-danger)]">↑</span>
               )}
               {insight.metric.trend === "down" && (
-                <span className="text-[10px] text-[var(--flux-success)]">{"\u2193"}</span>
+                <span className="text-[10px] text-[var(--flux-success)]">↓</span>
               )}
             </div>
           )}
@@ -103,7 +103,7 @@ function InsightCard({ insight, t }: { insight: CoachInsight; t: ReturnType<type
           className="shrink-0 text-[10px] text-[var(--flux-text-muted)] transition-transform duration-150"
           style={{ transform: open ? "rotate(180deg)" : "none" }}
         >
-          {"\u25be"}
+          ▾
         </span>
       </div>
       {open && (
@@ -153,7 +153,7 @@ export function AiFlowCoachPanel({ boardId, open, onClose, getHeaders, locale = 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex justify-end" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[var(--flux-z-modal)] flex justify-end" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <aside className="relative z-10 flex h-full w-full max-w-sm flex-col overflow-hidden bg-[var(--flux-surface-elevated)] shadow-[var(--flux-shadow-modal-depth)]">
         {/* Header gradient */}
@@ -201,7 +201,7 @@ export function AiFlowCoachPanel({ boardId, open, onClose, getHeaders, locale = 
             onClick={onClose}
             className="absolute right-4 top-4 rounded-[var(--flux-rad-sm)] px-2 py-1 text-xs text-[var(--flux-text-muted)] hover:bg-[var(--flux-chrome-alpha-06)]"
           >
-            {"\u2715"}
+            ✕
           </button>
         </div>
 
@@ -209,7 +209,7 @@ export function AiFlowCoachPanel({ boardId, open, onClose, getHeaders, locale = 
         {result?.llmSummary && (
           <div className="mx-4 mb-3 rounded-xl border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-06)] px-4 py-3">
             <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--flux-text-secondary)]">
-              <span className="shrink-0 text-[var(--flux-primary-light)] text-[14px] leading-none">{"\u2726"}</span>
+              <span className="shrink-0 text-[var(--flux-primary-light)] text-[14px] leading-none">✦</span>
               {result.llmSummary}
             </p>
           </div>

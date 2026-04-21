@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { assertFeatureAllowed, PlanGateError } from "@/lib/plan-gates";
+import { assertFeatureAllowed, planGateCtxFromAuthPayload, PlanGateError } from "@/lib/plan-gates";
+import { denyPlan } from "@/lib/api-authz";
 import { buildRollingWeekRanges } from "@/lib/flux-reports-metrics";
 import { loadOkrProjectionsForBoard } from "@/lib/okr-projection-load";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 export async function GET(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
+  const payload = await getAuthFromRequest(request);
   if (!payload) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   try {
     const org = await getOrganizationById(payload.orgId);
+    const gateCtx = planGateCtxFromAuthPayload(payload);
     try {
-      assertFeatureAllowed(org, "okr_engine");
+      assertFeatureAllowed(org, "okr_engine", gateCtx);
     } catch (err) {
-      if (err instanceof PlanGateError) return NextResponse.json({ error: err.message }, { status: err.status });
+      if (err instanceof PlanGateError) return denyPlan(err);
       throw err;
     }
 
@@ -46,8 +49,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("OKRs projection API error:", err);
-    const msg = err instanceof Error ? err.message : "Erro interno";
-    const status = msg.includes("Sem permissão") ? 403 : 500;
-    return NextResponse.json({ error: msg }, { status });
+    const raw = err instanceof Error ? err.message : "";
+    if (raw.includes("Sem permissão")) {
+      return NextResponse.json({ error: "Sem permissão para este recurso." }, { status: 403 });
+    }
+    return publicApiErrorResponse(err, { context: "GET api/okrs/projection" });
   }
 }

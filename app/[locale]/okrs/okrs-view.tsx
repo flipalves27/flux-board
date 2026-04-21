@@ -147,7 +147,20 @@ export default function OkrsView() {
 
     setOkrFetchBusy(true);
     try {
-      const board = await apiGet<any>(`/api/boards/${encodeURIComponent(selectedBoardId)}`, getHeaders());
+      const quarterQ = encodeURIComponent(currentQuarter);
+      const boardIdQ = encodeURIComponent(selectedBoardId);
+      const [board, okrsRes, objectivesR] = await Promise.all([
+        apiGet<any>(`/api/boards/${boardIdQ}`, getHeaders()),
+        apiGet<OkrByBoardResponse>(
+          `/api/okrs/by-board?boardId=${boardIdQ}&quarter=${quarterQ}`,
+          getHeaders()
+        ),
+        apiGet<{ ok: boolean; quarter: string | null; objectives: Array<any> }>(
+          `/api/okrs/objectives?quarter=${quarterQ}`,
+          getHeaders()
+        ),
+      ]);
+
       const cards = Array.isArray(board?.cards) ? (board.cards as any[]) : [];
       const keys = new Set<string>(
         Array.isArray(board?.config?.bucketOrder)
@@ -157,10 +170,6 @@ export default function OkrsView() {
       setBoardCards(cards);
       setBucketKeys(keys);
 
-      const okrsRes = await apiGet<OkrByBoardResponse>(
-        `/api/okrs/by-board?boardId=${encodeURIComponent(selectedBoardId)}&quarter=${encodeURIComponent(currentQuarter)}`,
-        getHeaders()
-      );
       const defs: OkrsObjectiveDefinition[] = Array.isArray(okrsRes?.objectives)
         ? okrsRes.objectives.reduce<OkrsObjectiveDefinition[]>((acc, g) => {
             const obj = g.objective;
@@ -178,7 +187,8 @@ export default function OkrsView() {
         : [];
       setOkrObjectives(defs);
 
-      await refreshObjectivesForQuarter(currentQuarter);
+      const objList = Array.isArray(objectivesR?.objectives) ? objectivesR.objectives : [];
+      setObjectivesList(objList.map((o: any) => ({ id: String(o.id), title: String(o.title || "") })));
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Erro ao carregar OKRs";
       pushToast({ kind: "error", title: msg });
@@ -368,7 +378,7 @@ export default function OkrsView() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Flux Goals (OKRs)" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
 
       {showDataSkeleton ? (
@@ -376,7 +386,7 @@ export default function OkrsView() {
       ) : (
         <DataFadeIn active key={`${selectedBoardId}-${currentQuarter}`}>
           <main className="max-w-[1300px] mx-auto px-6 py-7 grid grid-cols-1 xl:grid-cols-[1fr,420px] gap-6">
-        <section className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5">
+        <section className="bg-[var(--bg-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad-lg)] p-5 shadow-[var(--flux-shadow-sm)]">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <h2 className="font-display font-bold text-lg text-[var(--flux-text)]">OKRs do trimestre</h2>
             <div className="text-xs text-[var(--flux-text-muted)] text-right max-w-[280px]">
@@ -651,7 +661,7 @@ export default function OkrsView() {
           )}
         </section>
 
-        <aside className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad-lg)] p-5 space-y-5">
+        <aside className="bg-[var(--bg-card)] border border-[var(--flux-border-subtle)] rounded-[var(--flux-rad-lg)] p-5 space-y-5 shadow-[var(--flux-shadow-sm)]">
           <section>
             <h3 className="font-display font-bold text-base text-[var(--flux-text)]">Criar Objective</h3>
             <p className="text-sm text-[var(--flux-text-muted)] mt-1">

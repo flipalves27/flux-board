@@ -11,6 +11,8 @@ type ConfirmDialogProps = {
   confirmText?: string;
   cancelText?: string;
   intent?: "danger" | "primary";
+  /** Desativa os botões e evita fechar durante operações assíncronas (ex.: DELETE). */
+  busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -22,6 +24,7 @@ export function ConfirmDialog({
   confirmText,
   cancelText,
   intent = "primary",
+  busy = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -33,7 +36,10 @@ export function ConfirmDialog({
 
   useModalA11y({
     open,
-    onClose: onCancel,
+    onClose: () => {
+      if (busy) return;
+      onCancel();
+    },
     containerRef: panelRef,
     initialFocusRef: cancelBtnRef,
   });
@@ -42,9 +48,10 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-[500] flex items-center justify-center"
+      className="fixed inset-0 bg-black/60 z-[var(--flux-z-modal-critical)] flex items-center justify-center"
       role="presentation"
       onMouseDown={(e) => {
+        if (busy) return;
         if (e.target === e.currentTarget) onCancel();
       }}
     >
@@ -63,15 +70,20 @@ export function ConfirmDialog({
         {description && <p className="text-sm text-[var(--flux-text-muted)] mb-4">{description}</p>}
 
         <div className="flex gap-3 justify-end pt-2 border-t border-[var(--flux-chrome-alpha-08)] mt-4">
-          <button ref={cancelBtnRef} type="button" onClick={onCancel} className="btn-secondary">
+          <button ref={cancelBtnRef} type="button" onClick={onCancel} disabled={busy} className="btn-secondary">
             {resolvedCancelText}
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            disabled={busy}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!busy) onConfirm();
+            }}
             className={intent === "danger" ? "btn-danger-solid" : "btn-primary"}
           >
-            {resolvedConfirmText}
+            {busy ? t("processing") : resolvedConfirmText}
           </button>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { listEmbeddingsForOrgBoards } from "@/lib/kv-card-dependencies";
 import { sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { normalizeFormSlug } from "@/lib/forms-intake";
+import { publicApiErrorResponse } from "@/lib/public-api-error";
 
 const BodySchema = z.object({
   title: z.string().max(2000),
@@ -76,6 +77,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ matches });
   } catch (err) {
     console.error("forms similar-cards", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Erro interno" }, { status: 500 });
+    return publicApiErrorResponse(err, { context: "api/forms/[slug]/similar-cards/route.ts" });
   }
 }

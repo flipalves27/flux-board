@@ -10,8 +10,8 @@ import {
 
 export function BoardsRouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery />
+    <div className="min-h-screen">
+      <Header />
       <main className="mx-auto max-w-[1200px] px-6 py-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="h-7 w-40 rounded-[var(--flux-rad-sm)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
@@ -29,7 +29,7 @@ export function BoardsRouteLoadingFallback() {
 
 export function BoardRouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Board">
         <div className="flex flex-wrap justify-end gap-2">
           <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
@@ -43,13 +43,18 @@ export function BoardRouteLoadingFallback() {
 
 export function ReportsRouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
-      <Header hideDiscovery />
+    <div className="min-h-screen">
+      <Header />
       <main className="mx-auto max-w-[1200px] px-6 py-8">
-        <div className="mb-6 space-y-2">
+        <div className="mb-6 space-y-2 rounded-[var(--flux-rad-lg)] flux-glass-surface flux-depth-1 p-5">
           <div className="h-3 w-28 rounded bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           <div className="h-7 w-64 max-w-full rounded bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           <div className="h-4 max-w-3xl rounded bg-[var(--flux-chrome-alpha-10)] flux-animate-skeleton-pulse" />
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+            <div className="h-16 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-08)] flux-animate-skeleton-pulse" />
+          </div>
         </div>
         <SkeletonTable rows={5} />
       </main>
@@ -95,7 +100,7 @@ export function OkrsPageContentSkeleton() {
 
 export function OkrsRouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)]">
+    <div className="min-h-screen">
       <Header title="Flux Goals (OKRs)" />
       <OkrsPageContentSkeleton />
     </div>

@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PublicPortalPayload } from "@/lib/portal-public";
+import { FluxAppBackdrop } from "@/components/ui/flux-app-backdrop";
 
 type ApiLocked = {
   locked: true;
@@ -112,16 +113,21 @@ export default function PublicPortalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)] px-4" style={cssVars}>
-        <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
+      <div
+        className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+        style={cssVars}
+      >
+        <FluxAppBackdrop />
+        <p className="relative z-[1] text-[var(--flux-text-muted)]">{t("loading")}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--flux-surface-dark)] px-4">
-        <p className="text-[var(--flux-danger)] text-center max-w-md">{error}</p>
+      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-8">
+        <FluxAppBackdrop />
+        <p className="relative z-[1] text-[var(--flux-danger)] text-center max-w-md">{error}</p>
       </div>
     );
   }
@@ -131,10 +137,11 @@ export default function PublicPortalPage() {
     const logo = preview.branding.logoUrl;
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center bg-[var(--flux-surface-dark)] px-4 py-12"
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-[max(1rem,env(safe-area-inset-left,0px))] py-12 pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
         style={cssVars}
       >
-        <div className="w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
+        <FluxAppBackdrop />
+        <div className="relative z-[1] w-full max-w-md rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-8 shadow-[var(--shadow-md)]">
           <div className="flex flex-col items-center gap-3 text-center mb-6">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -158,14 +165,14 @@ export default function PublicPortalPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                className="min-h-11 w-full rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-35)] bg-[var(--flux-surface-mid)] px-3 py-2 text-sm text-[var(--flux-text)]"
               />
             </div>
             {unlockError ? <p className="text-sm text-[var(--flux-danger)]">{unlockError}</p> : null}
             <button
               type="submit"
               disabled={unlocking || !password.trim()}
-              className="w-full btn-primary py-2.5"
+              className="btn-primary min-h-11 w-full py-2.5"
               style={{ background: "var(--portal-primary, var(--flux-primary))" }}
             >
               {unlocking ? "…" : t("unlock")}
@@ -183,9 +190,14 @@ export default function PublicPortalPage() {
   const logo = data.branding.logoUrl;
 
   return (
-    <div className="min-h-screen bg-[var(--flux-surface-dark)] pb-16" style={cssVars}>
-      <header className="border-b border-[var(--flux-portal-chrome-15)] bg-[var(--flux-surface-mid)]/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-6xl px-4 py-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+    <div
+      className="relative min-h-[100dvh] overflow-x-hidden pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))]"
+      style={cssVars}
+    >
+      <FluxAppBackdrop />
+      <div className="relative z-[1]">
+      <header className="border-b border-[var(--flux-portal-chrome-15)] bg-[var(--flux-surface-mid)]/80 backdrop-blur-sm pt-[env(safe-area-inset-top,0px)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-[max(1rem,env(safe-area-inset-left,0px))] py-6 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -220,7 +232,7 @@ export default function PublicPortalPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-[max(1rem,env(safe-area-inset-left,0px))] py-8 pr-[max(1rem,env(safe-area-inset-right,0px))]">
         {data.cards.length === 0 ? (
           <p className="text-center text-[var(--flux-text-muted)] py-16">{t("noCards")}</p>
         ) : (
@@ -270,9 +282,10 @@ export default function PublicPortalPage() {
         )}
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 py-2 text-center text-[10px] text-[var(--flux-text-muted)] bg-[var(--flux-surface-dark)]/90 border-t border-[var(--flux-portal-chrome-10)]">
+      <footer className="fixed bottom-0 left-0 right-0 z-[2] border-t border-[var(--flux-portal-chrome-10)] bg-[var(--flux-surface-dark)]/90 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] text-center text-[10px] text-[var(--flux-text-muted)]">
         {t("readOnly")} · {footerBrand}
       </footer>
+      </div>
     </div>
   );
 }
@@ -280,7 +293,7 @@ export default function PublicPortalPage() {
 function MetricPill({ label, value, accent }: { label: string; value: string | number; accent: string }) {
   return (
     <div
-      className="rounded-[var(--flux-rad)] px-3 py-2 min-w-[100px] border border-[var(--flux-portal-chrome-20)] bg-[var(--flux-surface-card)]"
+      className="flex min-h-11 min-w-[100px] flex-col justify-center rounded-[var(--flux-rad)] border border-[var(--flux-portal-chrome-20)] bg-[var(--flux-surface-card)] px-3 py-2"
       style={{ boxShadow: `0 0 0 1px ${accent}22` }}
     >
       <p className="text-[10px] uppercase tracking-wider text-[var(--flux-text-muted)]">{label}</p>

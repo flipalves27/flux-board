@@ -6,8 +6,12 @@ import type { CardData, DailyCreatedCard, DailyInsightEntry } from "@/app/board/
 import { useBoardStore } from "@/stores/board-store";
 import { useKanbanUiStore } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
+import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { useTranslations } from "next-intl";
 import { getDailyActionSuggestions, getDailyCreateSuggestions } from "../daily-utils";
+import { extractVoiceToBoardSuggestions } from "@/lib/daily-voice-extract";
+import { nextBoardCardId } from "@/lib/card-id";
 import type {
   DailyLog,
   DailyStatusPhase,
@@ -30,6 +34,7 @@ type DailySessionState = {
   historySearchQuery: string;
 };
 
+const EMPTY_INSIGHTS: DailyInsightEntry[] = [];
 const DAILY_SESSION_STORAGE_KEY = "flux.daily-ia.session.v1";
 const DAILY_SESSION_MAX_TRANSCRIPT_CHARS = 15000;
 const DAILY_SESSION_MAX_JSON_CHARS = 120000;
@@ -46,11 +51,13 @@ export function useDailySession({
   directions: string[];
 }) {
   const { pushToast } = useToast();
+  const { user } = useAuth();
+  const showAiTelemetry = Boolean(user && isPlatformAdminSession(user));
   const t = useTranslations("kanban");
 
   const db = useBoardStore((s) => s.db);
   const updateDb = useBoardStore((s) => s.updateDb);
-  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : [];
+  const dailyInsights = Array.isArray(db?.dailyInsights) ? db.dailyInsights : EMPTY_INSIGHTS;
 
   const dailyOpen = useKanbanUiStore((s) => s.dailyOpen);
 
@@ -75,6 +82,16 @@ export function useDailySession({
   const dailyAbortControllerRef = useRef<AbortController | null>(null);
   const dailyInFlightRef = useRef(false);
 
+  const voiceToBoardSuggestions = useMemo(() => {
+    const cards = Array.isArray(db?.cards) ? db.cards : [];
+    if (!dailyTranscript.trim()) return [];
+    return extractVoiceToBoardSuggestions(
+      dailyTranscript,
+      cards.map((c) => ({ id: c.id, title: c.title })),
+      { minScore: 0.28, limit: 8 }
+    );
+  }, [dailyTranscript, db?.cards]);
+
   const closeDailyModal = useCallback(() => {
     useKanbanUiStore.getState().setDailyOpen(false);
   }, []);
@@ -87,7 +104,7 @@ export function useDailySession({
     setDailyStatusPhase("idle");
     setDailyHistoryExpandedId(null);
     setDailyHistoryCreatedCardsExpandedId(null);
-  }, []);
+  }, [t]);
 
   const startNewDaily = useCallback(() => {
     setDailyTab("entrada");
@@ -243,7 +260,7 @@ export function useDailySession({
     setDailyTranscript("");
     setDailyFileName(t("daily.defaults.noAttachment"));
     setDailySourceFileName("");
-  }, []);
+  }, [t]);
 
   const performDeleteDailyHistoryEntry = useCallback(
     (entryId: string) => {
@@ -278,7 +295,7 @@ export function useDailySession({
     setDailyDeleteConfirmId(null);
     performDeleteDailyHistoryEntry(entryId);
     pushToast({ kind: "success", title: t("daily.toasts.delete.success") });
-  }, [dailyDeleteConfirmId, performDeleteDailyHistoryEntry, pushToast]);
+  }, [dailyDeleteConfirmId, performDeleteDailyHistoryEntry, pushToast, t]);
 
   const slugDaily = useCallback(
     (value: string) =>
@@ -331,6 +348,7 @@ export function useDailySession({
           "Backlog";
 
         const nextOrderByBucket: Record<string, number> = {};
+        const usedCardIds = new Set(d.cards.map((c) => c.id));
         const created: CardData[] = [];
         const createdCardsPayload: DailyCreatedCard[] = [];
         let createdCount = 0;
@@ -356,15 +374,17 @@ export function useDailySession({
 
           const directionLower = String(s.direcionamento || "").toLowerCase();
           const direction = directions.map((d) => d.toLowerCase()).includes(directionLower) ? directionLower : null;
+          const generatedCardId = alreadyExists ? "" : nextBoardCardId(usedCardIds);
+          if (generatedCardId) usedCardIds.add(generatedCardId);
 
           const cardPayload: DailyCreatedCard = {
-            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : `AI-${Date.now()}-${idx + 1}`,
+            cardId: alreadyExists ? `EXISTENTE-${idx + 1}` : generatedCardId,
             title: s.titulo,
             bucket: bucketKey,
             priority: s.prioridade,
             progress: s.progresso,
             desc: s.descricao || "Criado automaticamente a partir da Daily IA.",
-            tags: s.tags?.length ? s.tags : ["Reborn"],
+            tags: s.tags?.length ? s.tags : ["Geral"],
             direction,
             dueDate: s.dataConclusao || null,
             createdAt: nowIso,
@@ -437,7 +457,7 @@ export function useDailySession({
         setDailyHistoryCreatedCardsExpandedId(entryId);
       }
     },
-    [dailyInsights, directions, pushToast, updateDb]
+    [dailyInsights, directions, pushToast, t, updateDb]
   );
 
   const buildDailyContextDoc = useCallback((entry: DailyInsightEntry) => {
@@ -455,7 +475,7 @@ export function useDailySession({
       `Resumo Daily IA${dt ? ` - ${dt}` : ""}`,
       "",
       generatedWithAi
-        ? `Texto aprimorado por IA${modelName ? ` (${modelName})` : ""}`
+        ? `Texto aprimorado por IA${showAiTelemetry && modelName ? ` (${modelName})` : ""}`
         : "Texto estruturado automaticamente",
       "",
       `Arquivo de origem: ${String(entry?.sourceFileName || "Transcrição colada no modal")}`,
@@ -516,7 +536,7 @@ export function useDailySession({
     ];
 
     return blocks.join("\n");
-  }, []);
+  }, [showAiTelemetry]);
 
   const downloadDailyContextDoc = useCallback(
     (entry: DailyInsightEntry) => {
@@ -553,7 +573,7 @@ export function useDailySession({
         pushToast({ kind: "error", title: t("daily.toasts.copy.error.couldNotCopy") });
       }
     },
-    [buildDailyContextDoc, pushToast]
+    [buildDailyContextDoc, pushToast, t]
   );
 
   const openDailyHistoryFromStatusEntry = useCallback((entryId: string) => {
@@ -615,10 +635,14 @@ export function useDailySession({
             timestamp: new Date().toISOString(),
             status: "error" as DailyLogStatus,
             message: String(data?.error || t("daily.logs.generate.errorFallback")),
-            errorKind: data?.llmDebug?.errorKind,
-            errorMessage: data?.llmDebug?.errorMessage,
-            provider: data?.llmDebug?.provider,
-            model: data?.llmDebug?.model,
+            ...(showAiTelemetry
+              ? {
+                  errorKind: data?.llmDebug?.errorKind,
+                  errorMessage: data?.llmDebug?.errorMessage,
+                  provider: data?.llmDebug?.provider,
+                  model: data?.llmDebug?.model,
+                }
+              : {}),
           } as DailyLog,
           ...prev,
         ].slice(0, 50));
@@ -638,17 +662,19 @@ export function useDailySession({
         createCardsFromInsight(String(data.entry.id), data.entry as DailyInsightEntry);
       }
 
-      const modelName = String(data?.llmDebug?.model || data?.entry?.generationMeta?.model || "").trim();
-      const providerName = String(
-        data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || ""
-      ).trim();
+      const modelName = showAiTelemetry
+        ? String(data?.llmDebug?.model || data?.entry?.generationMeta?.model || "").trim()
+        : "";
+      const providerName = showAiTelemetry
+        ? String(data?.llmDebug?.provider || data?.entry?.generationMeta?.provider || "").trim()
+        : "";
       const generatedWithAI = Boolean(
         data?.llmDebug?.generatedWithAI ?? data?.entry?.generationMeta?.usedLlm
       );
-      const errorKind = String(
-        data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || ""
-      ).trim();
-      const errorMessage = String(data?.llmDebug?.errorMessage || "").trim();
+      const errorKind = showAiTelemetry
+        ? String(data?.llmDebug?.errorKind || data?.entry?.generationMeta?.errorKind || "").trim()
+        : "";
+      const errorMessage = showAiTelemetry ? String(data?.llmDebug?.errorMessage || "").trim() : "";
       const hasRealLlmFailure = Boolean(errorKind) || !generatedWithAI;
       const insightResumo = String(data?.entry?.insight?.resumo || "").trim();
 
@@ -661,8 +687,9 @@ export function useDailySession({
           message: generatedWithAI
             ? t("daily.logs.generate.success.aiModelGenerated")
             : t("daily.logs.generate.success.heuristic"),
-          model: modelName || undefined,
-          provider: providerName || undefined,
+          ...(showAiTelemetry
+            ? { model: modelName || undefined, provider: providerName || undefined }
+            : {}),
           resultSnippet: insightResumo
             ? `${t("daily.logs.generate.resultSnippetPrefix")} ${insightResumo.slice(0, 200)}${
                 insightResumo.length > 200 ? "..." : ""
@@ -674,13 +701,19 @@ export function useDailySession({
               {
                 timestamp: new Date().toISOString(),
                 status: "error" as DailyLogStatus,
-                  message: `${t("daily.logs.generate.error.integrationFailure.prefix")}${providerName ? ` (${providerName})` : ""}${
-                    modelName ? ` - ${t("daily.logs.generate.error.integrationFailure.modelLabel")}: ${modelName}` : ""
-                  }${errorKind ? ` [${errorKind}]` : ""}. ${t("daily.logs.generate.error.integrationFailure.heuristicSuffix")}`,
-                errorKind,
-                errorMessage: errorMessage || undefined,
-                provider: providerName || undefined,
-                model: modelName || undefined,
+                message: showAiTelemetry
+                  ? `${t("daily.logs.generate.error.integrationFailure.prefix")}${providerName ? ` (${providerName})` : ""}${
+                      modelName ? ` - ${t("daily.logs.generate.error.integrationFailure.modelLabel")}: ${modelName}` : ""
+                    }${errorKind ? ` [${errorKind}]` : ""}. ${t("daily.logs.generate.error.integrationFailure.heuristicSuffix")}`
+                  : t("daily.logs.generate.error.integrationFailure.heuristicSuffix"),
+                ...(showAiTelemetry
+                  ? {
+                      errorKind,
+                      errorMessage: errorMessage || undefined,
+                      provider: providerName || undefined,
+                      model: modelName || undefined,
+                    }
+                  : {}),
               } as DailyLog,
             ] as DailyLog[])
           : []),
@@ -724,7 +757,17 @@ export function useDailySession({
         }
       }
     }
-  }, [boardId, createCardsFromInsight, dailySourceFileName, dailyTranscript, getHeaders, pushToast, updateDb]);
+  }, [
+    boardId,
+    createCardsFromInsight,
+    dailySourceFileName,
+    dailyTranscript,
+    getHeaders,
+    pushToast,
+    showAiTelemetry,
+    t,
+    updateDb,
+  ]);
 
   const onGenerateDailyInsightAndCreateCards = useCallback(() => {
     void onGenerateDailyInsight({ alsoCreateCards: true });
@@ -854,7 +897,7 @@ export function useDailySession({
         setDailyHistoryExpandedId(entryId);
       }
     },
-    [dailyHistoryCreatedCardsExpandedId, dailyHistoryExpandedId]
+    [dailyHistoryExpandedId]
   );
 
   const onCollapseDailyHistoryExpanded = useCallback(() => {
@@ -925,7 +968,7 @@ export function useDailySession({
     } catch {
       // Se houver lixo no storage, ignora silenciosamente.
     }
-  }, []);
+  }, [t]);
 
   // Persistência incremental (reduz chance de perder progresso ao fechar/reabrir modal).
   useEffect(() => {
@@ -1046,6 +1089,8 @@ export function useDailySession({
     requestDeleteDailyHistoryEntry,
     cancelDeleteDailyHistoryEntry,
     confirmDeleteDailyHistoryEntry,
+
+    voiceToBoardSuggestions,
   };
 }
 

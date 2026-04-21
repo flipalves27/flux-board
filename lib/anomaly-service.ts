@@ -22,6 +22,7 @@ import {
   detectOverdueCascade,
   detectStagnationCluster,
   detectThroughputDrop,
+  detectScopeCreepForBoards,
   detectWipExplosionForBoard,
   type AnomalyAlertPayload,
   type WipByBucket,
@@ -351,6 +352,8 @@ export async function runAnomalyCheckForOrg(args: {
   const quarter = currentQuarterLabel();
   const okrProj = await loadOkrProjectionsForOrgQuarter({ orgId, quarter, boards, nowMs });
   alerts.push(...detectOkrDrift(okrProj).slice(0, 8));
+
+  alerts.push(...detectScopeCreepForBoards({ boards, nowMs }).slice(0, 12));
 
   await upsertDailySnapshots({ db, orgId, day, boards, todayMs: nowMs });
 

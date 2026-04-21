@@ -13,8 +13,22 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import type { CardData, BucketConfig, CardLink, CardDocRef } from "@/app/board/[id]/page";
+import type {
+  CardData,
+  BucketConfig,
+  CardLink,
+  CardDocRef,
+  CardDorReady,
+  BoardDefinitionOfDone,
+} from "@/app/board/[id]/page";
+import type { BoardMethodology } from "@/lib/board-methodology";
+import { computeSubtaskProgress, type CardServiceClass, type SubtaskData } from "@/lib/schemas";
+import { useBoardStore } from "@/stores/board-store";
+import { assertDodAllowsCompleting } from "@/lib/board-scrum";
+import { nextBoardCardId } from "@/lib/card-id";
 import { useToast } from "@/context/toast-context";
+import { useAuth } from "@/context/auth-context";
+import { isPlatformAdminSession } from "@/lib/rbac";
 import { useTranslations } from "next-intl";
 import {
   createEmptyDescriptionBlocks,
@@ -59,6 +73,14 @@ export interface CardModalProps {
   onOpenExistingCard?: (cardId: string) => void;
   /** Anexa o rascunho atual ao card indicado e fecha o modal. */
   onMergeDraftIntoExisting?: (targetCardId: string, payload: { title: string; description: string; tags: string[] }) => void;
+  /** Após mutações no servidor (ex.: IA), recarrega o board e reabre o mesmo card com dados frescos. */
+  onBoardReloaded?: (cardId: string) => Promise<void>;
+  definitionOfDone?: BoardDefinitionOfDone;
+  /** Colunas consideradas “feito” para validação DoD (resolvido no pai). */
+  doneBucketKeys: string[];
+  completedProgressLabel?: string;
+  /** Scrum vs Kanban — campos condicionais no formulário. */
+  boardMethodology?: BoardMethodology;
 }
 
 export type CardModalContextValue = {
@@ -82,6 +104,7 @@ export type CardModalContextValue = {
 
   id: string;
   setId: (v: string) => void;
+  generatedCardId: string;
   title: string;
   setTitle: (v: string) => void;
   descBlocks: Record<string, string>;
@@ -94,6 +117,8 @@ export type CardModalContextValue = {
   setProgress: (v: string) => void;
   dueDate: string;
   setDueDate: (v: string) => void;
+  assigneeId: string;
+  setAssigneeId: (v: string) => void;
   blockedBy: string[];
   setBlockedBy: Dispatch<SetStateAction<string[]>>;
   depSearch: string;
@@ -134,6 +159,18 @@ export type CardModalContextValue = {
 
   direction: string | null;
   setDirection: (v: string | null) => void;
+  dorReady: CardDorReady;
+  setDorReady: Dispatch<SetStateAction<CardDorReady>>;
+  definitionOfDone?: BoardDefinitionOfDone;
+  doneBucketKeys: string[];
+  completedProgressLabel: string;
+  dodChecks: Record<string, boolean>;
+  setDodChecks: Dispatch<SetStateAction<Record<string, boolean>>>;
+  boardMethodology: BoardMethodology;
+  storyPoints: number | null;
+  setStoryPoints: Dispatch<SetStateAction<number | null>>;
+  serviceClass: CardServiceClass | null;
+  setServiceClass: Dispatch<SetStateAction<CardServiceClass | null>>;
   smartEnrichBusy: boolean;
   smartEnrichPending: Set<SmartEnrichFieldKey> | null;
   smartEnrichMeta: {
@@ -150,6 +187,8 @@ export type CardModalContextValue = {
   requestSmartEnrich: (opts?: { immediate?: boolean }) => void;
 
   toggleTag: (tag: string) => void;
+  /** Lista atual da aba Subtasks — usada no Salvar (a prop `card` do modal fica desatualizada). */
+  syncSubtasksSnapshot: (cardId: string, subtasks: SubtaskData[]) => void;
   handleSave: () => void;
   handleCreateLabel: () => void;
   handleDeleteLabel: (label: string) => void;
@@ -162,6 +201,7 @@ export type CardModalContextValue = {
 
   openExistingCard?: (cardId: string) => void;
   mergeDraftIntoExistingCard?: (targetCardId: string) => void;
+  onBoardReloaded?: (cardId: string) => Promise<void>;
 
   t: (key: string, values?: Record<string, string | number>) => string;
   pushToast: ReturnType<typeof useToast>["pushToast"];
@@ -195,7 +235,13 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     onDelete,
     onOpenExistingCard,
     onMergeDraftIntoExisting,
+    onBoardReloaded,
+    definitionOfDone,
+    doneBucketKeys,
+    completedProgressLabel = "Concluída",
+    boardMethodology: boardMethodologyProp,
   } = props;
+  const boardMethodology: BoardMethodology = boardMethodologyProp ?? "scrum";
   const directions = directionsProp ?? [];
 
   const [aiContextApplied, setAiContextApplied] = useState<{
@@ -214,14 +260,25 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   const [priority, setPriority] = useState(card.priority);
   const [progress, setProgress] = useState(card.progress);
   const [dueDate, setDueDate] = useState(card.dueDate || "");
+  const [assigneeId, setAssigneeId] = useState(card.assigneeId || "");
   const [direction, setDirection] = useState<string | null>(() =>
     typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
+  );
+  const [dorReady, setDorReady] = useState<CardDorReady>(() => ({ ...(card.dorReady ?? {}) }));
+  const [dodChecks, setDodChecks] = useState<Record<string, boolean>>({});
+  const [storyPoints, setStoryPoints] = useState<number | null>(() =>
+    typeof card.storyPoints === "number" && Number.isInteger(card.storyPoints) ? card.storyPoints : null
+  );
+  const [serviceClass, setServiceClass] = useState<CardServiceClass | null>(() =>
+    card.serviceClass != null ? card.serviceClass : null
   );
   const [blockedBy, setBlockedBy] = useState<string[]>(() =>
     Array.isArray(card.blockedBy) ? [...card.blockedBy] : []
   );
   const [depSearch, setDepSearch] = useState("");
   const [tags, setTags] = useState<Set<string>>(new Set(card.tags || []));
+  const tagsRef = useRef(tags);
+  tagsRef.current = tags;
   const [newLabel, setNewLabel] = useState("");
   const [links, setLinks] = useState<CardLink[]>(card.links && card.links.length > 0 ? [...card.links] : []);
   const [docRefs, setDocRefs] = useState<CardDocRef[]>(Array.isArray(card.docRefs) ? [...card.docRefs] : []);
@@ -230,8 +287,20 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const subtasksSnapshotRef = useRef<Map<string, SubtaskData[]>>(new Map());
+
+  useEffect(() => {
+    subtasksSnapshotRef.current = new Map();
+  }, [card.id, mode]);
+
+  const syncSubtasksSnapshot = useCallback((cid: string, list: SubtaskData[]) => {
+    if (!cid) return;
+    subtasksSnapshotRef.current.set(cid, list);
+  }, []);
 
   const { pushToast } = useToast();
+  const { user } = useAuth();
+  const showAiTelemetry = Boolean(user && isPlatformAdminSession(user));
   const t = useTranslations("kanban");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
@@ -265,6 +334,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
   } | null>(null);
 
   const descriptionForSave = serializeDescriptionBlocks(descBlocks);
+  const generatedCardId = useMemo(
+    () => nextBoardCardId(peerCards.map((c) => c.id)),
+    [peerCards]
+  );
 
   const selfId = useMemo(() => id.trim() || card.id, [id, card.id]);
 
@@ -296,6 +369,59 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
               ? 0
               : 0;
 
+  /**
+   * Evita loop infinito (React #185): `card` pode mudar de referência a cada render
+   * (Zustand/immer/pai) com o mesmo conteúdo — `[card]` no effect disparava dezenas de setState.
+   */
+  const cardSyncKey = useMemo(() => {
+    const tags = [...(card.tags || [])].sort().join("\u0001");
+    const blocked = [...(card.blockedBy || [])].sort().join("\u0001");
+    return [
+      card.id,
+      card.title,
+      card.desc,
+      card.bucket,
+      card.priority,
+      card.progress,
+      card.dueDate ?? "",
+      card.direction ?? "",
+      tags,
+      blocked,
+      JSON.stringify(card.links || []),
+      JSON.stringify(card.docRefs || []),
+      JSON.stringify(card.dorReady || {}),
+      JSON.stringify(card.dodChecks || {}),
+      JSON.stringify(definitionOfDone?.items || []),
+      String(card.storyPoints ?? ""),
+      String(card.serviceClass ?? ""),
+    ].join("\u0002");
+  }, [
+    card.id,
+    card.title,
+    card.desc,
+    card.bucket,
+    card.priority,
+    card.progress,
+    card.dueDate,
+    card.direction,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serialização estável previne loop Immer (#185)
+    JSON.stringify(card.tags),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.blockedBy),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.links),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.docRefs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.dorReady),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(card.dodChecks),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(definitionOfDone?.items),
+    card.storyPoints,
+    card.serviceClass,
+  ]);
+
   useEffect(() => {
     setId(card.id);
     setTitle(card.title);
@@ -307,9 +433,22 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     setPriority(card.priority);
     setProgress(card.progress);
     setDueDate(card.dueDate || "");
+    setAssigneeId(card.assigneeId || "");
     setDirection(
       typeof card.direction === "string" && card.direction.trim() ? card.direction.trim().toLowerCase() : null
     );
+    setDorReady({ ...(card.dorReady ?? {}) });
+    setStoryPoints(
+      typeof card.storyPoints === "number" && Number.isInteger(card.storyPoints) ? card.storyPoints : null
+    );
+    setServiceClass(card.serviceClass != null ? card.serviceClass : null);
+    {
+      const nextDod: Record<string, boolean> = {};
+      for (const it of definitionOfDone?.items ?? []) {
+        if ((card.dodChecks ?? {})[it.id] === true) nextDod[it.id] = true;
+      }
+      setDodChecks(nextDod);
+    }
     setBlockedBy(Array.isArray(card.blockedBy) ? [...card.blockedBy] : []);
     setDepSearch("");
     setTags(new Set(card.tags || []));
@@ -328,7 +467,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     }
     smartEnrichAbortRef.current?.abort();
     smartEnrichAbortRef.current = null;
-  }, [card]);
+  }, [cardSyncKey]); // eslint-disable-line react-hooks/exhaustive-deps -- cardSyncKey deduplica `card` por conteúdo (evita #185)
 
   const smartEnrichEligible =
     mode === "new" && !descriptionForSave.trim() && title.trim().length >= 2;
@@ -578,10 +717,46 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       pushToast({ kind: "error", title: t("cardModal.toasts.missingTitle") });
       return;
     }
-    const finalId = id.trim() || (mode === "new" ? `NEW-${Date.now()}` : card.id);
+    const finalId = mode === "new" ? generatedCardId : id.trim() || card.id;
+    const requireAssignee = Boolean(useBoardStore.getState().db?.config?.cardRules?.requireAssignee);
+    if (requireAssignee && !assigneeId.trim()) {
+      pushToast({ kind: "error", title: "Este board exige responsável no card." });
+      return;
+    }
     const validIds = new Set(selectablePeers.map((c) => c.id));
     const nextBlocked = blockedBy.filter((bid) => validIds.has(bid));
-    onSave({
+    const dorPatch: CardDorReady = {};
+    if (dorReady.titleOk) dorPatch.titleOk = true;
+    if (dorReady.acceptanceOk) dorPatch.acceptanceOk = true;
+    if (dorReady.depsOk) dorPatch.depsOk = true;
+    if (dorReady.sizedOk) dorPatch.sizedOk = true;
+    const dodChecksOut: Record<string, boolean> = {};
+    if (definitionOfDone?.enabled && definitionOfDone.items.length) {
+      for (const it of definitionOfDone.items) {
+        if (dodChecks[it.id] === true) dodChecksOut[it.id] = true;
+      }
+    }
+    const draftForGate: CardData = {
+      ...card,
+      id: finalId,
+      bucket,
+      priority,
+      progress,
+      dodChecks: Object.keys(dodChecksOut).length > 0 ? dodChecksOut : undefined,
+    };
+    const gate = assertDodAllowsCompleting({
+      card: draftForGate,
+      nextBucket: bucket,
+      nextProgress: progress,
+      doneBucketKeys,
+      completedProgressLabel,
+      def: definitionOfDone,
+    });
+    if (!gate.ok) {
+      pushToast({ kind: "error", title: gate.message });
+      return;
+    }
+    const saved: CardData = {
       ...card,
       id: finalId,
       title: normalizedTitle,
@@ -590,8 +765,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       priority,
       progress,
       dueDate: dueDate || null,
+      assigneeId: assigneeId.trim() || null,
       direction,
       blockedBy: nextBlocked,
+      ...(Object.keys(dodChecksOut).length > 0 ? { dodChecks: dodChecksOut } : { dodChecks: undefined }),
+      ...(Object.keys(dorPatch).length > 0 ? { dorReady: dorPatch } : { dorReady: undefined }),
       tags: [...tags],
       links: links.filter((l) => {
         const u = l.url.trim();
@@ -605,13 +783,48 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       }),
       docRefs,
       order: card.order ?? 0,
-    });
+    };
+    if (boardMethodology === "scrum") {
+      if (storyPoints != null) saved.storyPoints = storyPoints;
+      else delete saved.storyPoints;
+    }
+    if (boardMethodology === "kanban" || boardMethodology === "lean_six_sigma") {
+      if (serviceClass != null) saved.serviceClass = serviceClass;
+      else delete saved.serviceClass;
+    }
+    /**
+     * Subtasks: a prop `card` é fixa ao abrir o modal; a aba atualiza o store e/ou este snapshot.
+     * `onSave` faz merge `{ ...d.cards[i], ...updated }` — sem isto, `updated` reintroduz subtasks antigas.
+     */
+    const hasSnap = subtasksSnapshotRef.current.has(finalId);
+    const snapList = hasSnap ? subtasksSnapshotRef.current.get(finalId)! : undefined;
+    const live = useBoardStore.getState().db?.cards.find((c) => c.id === finalId);
+    let subtasksToSave: SubtaskData[] | undefined;
+    if (hasSnap) {
+      subtasksToSave = snapList;
+    } else if (live && Array.isArray(live.subtasks)) {
+      subtasksToSave = live.subtasks as SubtaskData[];
+    } else if (Array.isArray(card.subtasks)) {
+      subtasksToSave = card.subtasks as SubtaskData[];
+    }
+    if (subtasksToSave !== undefined) {
+      const clonedSubtasks = JSON.parse(JSON.stringify(subtasksToSave)) as SubtaskData[];
+      saved.subtasks = clonedSubtasks;
+      if (clonedSubtasks.length > 0) {
+        saved.subtaskProgress = computeSubtaskProgress(clonedSubtasks);
+      } else {
+        saved.subtasks = [];
+        delete saved.subtaskProgress;
+      }
+    }
+    onSave(saved);
   }, [
     title,
     pushToast,
     t,
     id,
     mode,
+    generatedCardId,
     card,
     selectablePeers,
     blockedBy,
@@ -620,11 +833,20 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
     priority,
     progress,
     dueDate,
+    assigneeId,
     direction,
+    dorReady,
+    dodChecks,
+    definitionOfDone,
+    doneBucketKeys,
+    completedProgressLabel,
     tags,
     links,
     docRefs,
     onSave,
+    boardMethodology,
+    storyPoints,
+    serviceClass,
   ]);
 
   const handleCreateLabel = useCallback(() => {
@@ -660,10 +882,10 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       onMergeDraftIntoExisting(targetCardId, {
         title: title.trim(),
         description: descriptionForSave.trim(),
-        tags: [...tags],
+        tags: [...tagsRef.current],
       });
     },
-    [onMergeDraftIntoExisting, title, descriptionForSave, tags]
+    [onMergeDraftIntoExisting, title, descriptionForSave]
   );
 
   const generateAiContextForCard = useCallback(async () => {
@@ -736,10 +958,14 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
             timestamp: new Date().toISOString(),
             status: "error",
             message,
-            provider: String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined,
-            model: String(data?.model || data?.llmDebug?.model || "").trim() || undefined,
-            errorKind: String(data?.llmDebug?.errorKind || "").trim() || undefined,
-            errorMessage: String(data?.llmDebug?.errorMessage || "").trim() || undefined,
+            ...(showAiTelemetry
+              ? {
+                  provider: String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined,
+                  model: String(data?.model || data?.llmDebug?.model || "").trim() || undefined,
+                  errorKind: String(data?.llmDebug?.errorKind || "").trim() || undefined,
+                  errorMessage: String(data?.llmDebug?.errorMessage || "").trim() || undefined,
+                }
+              : {}),
           },
           ...prev,
         ]);
@@ -758,8 +984,12 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
         Boolean(data?.llmDebug?.generatedWithAI) ||
         Boolean((data as { usedLlm?: boolean }).usedLlm);
 
-      const providerName = String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined;
-      const modelName = String(data?.model || data?.llmDebug?.model || "").trim() || undefined;
+      const providerName = showAiTelemetry
+        ? String(data?.provider || data?.llmDebug?.provider || "").trim() || undefined
+        : undefined;
+      const modelName = showAiTelemetry
+        ? String(data?.model || data?.llmDebug?.model || "").trim() || undefined
+        : undefined;
 
       setAiContextApplied({
         usedLlm,
@@ -776,8 +1006,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
           timestamp: new Date().toISOString(),
           status: "success",
           message: usedLlm ? t("cardModal.logs.contextGeneratedByAI") : t("cardModal.logs.contextStructuredFallback"),
-          provider: providerName,
-          model: modelName,
+          ...(showAiTelemetry ? { provider: providerName, model: modelName } : {}),
           resultSnippet: String(data?.objetivo || data?.resumoNegocio || "").trim().slice(0, 180) || undefined,
         },
         ...prev,
@@ -805,7 +1034,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
         // keep modal open for result
       }
     }
-  }, [title, descriptionForSave, pushToast, t, boardId, getHeaders]);
+  }, [title, descriptionForSave, pushToast, showAiTelemetry, t, boardId, getHeaders]);
 
   const value = useMemo<CardModalContextValue>(
     () => ({
@@ -828,6 +1057,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       directions,
       id,
       setId,
+      generatedCardId,
       title,
       setTitle,
       descBlocks,
@@ -840,8 +1070,22 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       setProgress,
       dueDate,
       setDueDate,
+      assigneeId,
+      setAssigneeId,
       direction,
       setDirection,
+      dorReady,
+      setDorReady,
+      definitionOfDone,
+      doneBucketKeys,
+      completedProgressLabel,
+      dodChecks,
+      setDodChecks,
+      boardMethodology,
+      storyPoints,
+      setStoryPoints,
+      serviceClass,
+      setServiceClass,
       blockedBy,
       setBlockedBy,
       depSearch,
@@ -883,6 +1127,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dismissSmartEnrichKey,
       requestSmartEnrich,
       toggleTag,
+      syncSubtasksSnapshot,
       handleSave,
       handleCreateLabel,
       handleDeleteLabel,
@@ -892,6 +1137,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       closeBtnRef,
       openExistingCard: onOpenExistingCard ? openExistingCard : undefined,
       mergeDraftIntoExistingCard: onMergeDraftIntoExisting ? mergeDraftIntoExistingCard : undefined,
+      onBoardReloaded,
       t,
       pushToast,
     }),
@@ -913,6 +1159,7 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       onCreateLabel,
       onDeleteLabel,
       id,
+      generatedCardId,
       title,
       descBlocks,
       bucket,
@@ -920,6 +1167,14 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       progress,
       dueDate,
       direction,
+      dorReady,
+      definitionOfDone,
+      doneBucketKeys,
+      completedProgressLabel,
+      dodChecks,
+      boardMethodology,
+      storyPoints,
+      serviceClass,
       blockedBy,
       depSearch,
       tags,
@@ -950,12 +1205,14 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       dismissSmartEnrichKey,
       requestSmartEnrich,
       toggleTag,
+      syncSubtasksSnapshot,
       handleSave,
       handleCreateLabel,
       handleDeleteLabel,
       confirmDeleteOpen,
       onOpenExistingCard,
       onMergeDraftIntoExisting,
+      onBoardReloaded,
       openExistingCard,
       mergeDraftIntoExistingCard,
       t,

@@ -1,4 +1,4 @@
-﻿const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type CoachInsightCategory = "flow" | "risk" | "opportunity" | "team" | "quality";
 export type CoachInsightSeverity = "info" | "warning" | "critical";
@@ -48,8 +48,8 @@ export function computeFlowCoachInsights(
   opts: { boardName?: string; locale?: string } = {}
 ): FlowCoachResult {
   const now = Date.now();
-  const active = cards.filter((c) => c.progress !== "Conclu├¡da");
-  const done = cards.filter((c) => c.progress === "Conclu├¡da");
+  const active = cards.filter((c) => c.progress !== "Concluída");
+  const done = cards.filter((c) => c.progress === "Concluída");
   const insights: CoachInsight[] = [];
 
   // --- WIP analysis ---
@@ -72,7 +72,7 @@ export function computeFlowCoachInsights(
       severity: overLimitCols > 2 ? "critical" : "warning",
       headline: `${overLimitCols} ${overLimitCols === 1 ? "coluna excede" : "colunas excedem"} o limite WIP`,
       body: "Excesso de WIP reduz o foco e aumenta o tempo de ciclo. Conclua ou bloqueie itens antes de iniciar novos.",
-      metric: { label: "Colunas em viola├º├úo", value: String(overLimitCols), trend: "up" },
+      metric: { label: "Colunas em violação", value: String(overLimitCols), trend: "up" },
     });
   }
 
@@ -84,8 +84,8 @@ export function computeFlowCoachInsights(
       id: "stale_cards",
       category: "risk",
       severity: staleCards.length > 4 ? "critical" : "warning",
-      headline: `${staleCards.length} ${staleCards.length === 1 ? "card est├í parado" : "cards parados"} h├í mais de ${staleThreshold} dias`,
-      body: `"${staleCards[0].title}" ├® o mais antigo. Cards parados indicam bloqueios ocultos ou falta de prioriza├º├úo.`,
+      headline: `${staleCards.length} ${staleCards.length === 1 ? "card está parado" : "cards parados"} há mais de ${staleThreshold} dias`,
+      body: `"${staleCards[0].title}" é o mais antigo. Cards parados indicam bloqueios ocultos ou falta de priorização.`,
       metric: { label: "Cards estagnados", value: String(staleCards.length), trend: "up" },
     });
   }
@@ -99,7 +99,7 @@ export function computeFlowCoachInsights(
       category: "risk",
       severity: chainLength > 3 ? "critical" : "warning",
       headline: `${chainLength} ${chainLength === 1 ? "card bloqueado" : "cards bloqueados"}`,
-      body: "Desbloqueie esses cards priorizando suas depend├¬ncias. Bloqueios em cadeia s├úo o principal risco de atraso.",
+      body: "Desbloqueie esses cards priorizando suas dependências. Bloqueios em cadeia são o principal risco de atraso.",
       metric: { label: "Cards bloqueados", value: String(chainLength), trend: "up" },
     });
   }
@@ -115,7 +115,7 @@ export function computeFlowCoachInsights(
       category: "risk",
       severity: "critical",
       headline: `${overdue.length} ${overdue.length === 1 ? "card vencido" : "cards vencidos"}`,
-      body: `"${overdue[0].title}" j├í passou do prazo. Reassine ou replaneje imediatamente.`,
+      body: `"${overdue[0].title}" já passou do prazo. Reassine ou replaneje imediatamente.`,
       metric: { label: "Vencidos", value: String(overdue.length), trend: "up" },
     });
   }
@@ -141,7 +141,7 @@ export function computeFlowCoachInsights(
         category: "opportunity",
         severity: "info",
         headline: `Throughput subiu ${delta} cards esta semana`,
-        body: "O time est├í entregando mais r├ípido do que na semana anterior. Momento ideal para assumir cards de alta prioridade.",
+        body: "O time está entregando mais rápido do que na semana anterior. Momento ideal para assumir cards de alta prioridade.",
         metric: { label: "Throughput 7d", value: String(completedLast7), trend: "up" },
       });
     } else if (delta <= -2) {
@@ -150,7 +150,7 @@ export function computeFlowCoachInsights(
         category: "flow",
         severity: "warning",
         headline: `Throughput caiu ${Math.abs(delta)} cards esta semana`,
-        body: "O ritmo de entrega diminuiu. Investigue se h├í aumento de complexidade ou distra├º├Áes externas.",
+        body: "O ritmo de entrega diminuiu. Investigue se há aumento de complexidade ou distrações externas.",
         metric: { label: "Throughput 7d", value: String(completedLast7), trend: "down" },
       });
     }
@@ -166,9 +166,9 @@ export function computeFlowCoachInsights(
       id: "no_description",
       category: "quality",
       severity: "info",
-      headline: `${noDesc.length} cards sem descri├º├úo adequada`,
-      body: "Cards mal descritos geram retrabalho e mal-entendidos. Detalhe crit├®rios de aceite antes do pr├│ximo planning.",
-      metric: { label: "Sem descri├º├úo", value: String(noDesc.length), trend: "flat" },
+      headline: `${noDesc.length} cards sem descrição adequada`,
+      body: "Cards mal descritos geram retrabalho e mal-entendidos. Detalhe critérios de aceite antes do próximo planning.",
+      metric: { label: "Sem descrição", value: String(noDesc.length), trend: "flat" },
     });
   }
 
@@ -178,8 +178,8 @@ export function computeFlowCoachInsights(
       id: "on_track",
       category: "opportunity",
       severity: "info",
-      headline: "Board em ├│timo estado",
-      body: "Nenhum sinal cr├¡tico detectado. Mantenha o ritmo e considere planejar o pr├│ximo sprint.",
+      headline: "Board em ótimo estado",
+      body: "Nenhum sinal crítico detectado. Mantenha o ritmo e considere planejar o próximo sprint.",
       metric: { label: "Score", value: "100", trend: "up" },
     });
   }
@@ -210,13 +210,13 @@ export function buildFlowCoachPrompt(
   boardName: string,
   locale: string
 ): string {
-  const lang = locale.startsWith("pt") ? "portugu├¬s brasileiro" : "English";
-  return `Voc├¬ ├® um Agile Coach especialista. Analise o estado do board "${boardName}" e forne├ºa um resumo executivo curto (3-4 linhas) em ${lang}.
+  const lang = locale.startsWith("pt") ? "português brasileiro" : "English";
+  return `Você é um Agile Coach especialista. Analise o estado do board "${boardName}" e forneça um resumo executivo curto (3-4 linhas) em ${lang}.
 
 Score do board: ${result.score}/100 (${result.scoreLabel})
 
 Sinais detectados:
 ${result.insights.map((i) => `- [${i.severity.toUpperCase()}] ${i.headline}: ${i.body}`).join("\n")}
 
-Forne├ºa um resumo direto, sem bullet points, como um coach experiente falaria para o time. Seja espec├¡fico e acion├ível.`;
+Forneça um resumo direto, sem bullet points, como um coach experiente falaria para o time. Seja específico e acionável.`;
 }

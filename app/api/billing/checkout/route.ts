@@ -1,26 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { denyStripeCommercialForPlatformAdmin, ensureOrgManager } from "@/lib/api-authz";
 import { getOrganizationById } from "@/lib/kv-organizations";
-import { createCheckoutSession } from "@/lib/billing";
+import { shouldAllowStripeCheckoutForOrg } from "@/lib/admin-plan-override";
+import { billingErrorMessageForClient, createCheckoutSession, type CheckoutBillingInterval } from "@/lib/billing";
+import { getPlatformCommercialDocUncached, catalogFlagsFromDoc } from "@/lib/platform-commercial-settings";
 
 type BillingPlan = "pro" | "business";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const payload = getAuthFromRequest(request);
-  if (!payload || !payload.isAdmin) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-  }
+  const payload = await getAuthFromRequest(request);
+  if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const denied = ensureOrgManager(payload);
+  if (denied) return denied;
+  const platformStripe = denyStripeCommercialForPlatformAdmin(payload);
+  if (platformStripe) return platformStripe;
 
   const org = await getOrganizationById(payload.orgId);
   if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
 
+  if (!shouldAllowStripeCheckoutForOrg(org)) {
+    return NextResponse.json(
+      {
+        error:
+          "Esta organização já possui assinatura ativa no Stripe. Use o Portal do cliente (Billing → Gerenciar assinatura) para trocar de plano, seats ou período.",
+      },
+      { status: 409 }
+    );
+  }
+
   const body = await request.json().catch(() => ({}));
   const planRaw = body?.plan as unknown;
   const seatsRaw = body?.seats as unknown;
+  const intervalRaw = body?.interval as unknown;
+  const localeRaw = body?.locale as unknown;
+  const locale = typeof localeRaw === "string" ? localeRaw : undefined;
 
   const plan: BillingPlan = planRaw === "pro" || planRaw === "business" ? planRaw : "pro";
+  const flags = catalogFlagsFromDoc(await getPlatformCommercialDocUncached());
+  if (plan === "pro" && !flags.proEnabled) {
+    return NextResponse.json({ error: "O plano Pro não está disponível no catálogo." }, { status: 400 });
+  }
+  if (plan === "business" && !flags.businessEnabled) {
+    return NextResponse.json({ error: "O plano Business não está disponível no catálogo." }, { status: 400 });
+  }
+
+  const interval: CheckoutBillingInterval =
+    intervalRaw === "year" || intervalRaw === "annual" ? "year" : "month";
 
   const seatsCandidate = typeof seatsRaw === "number" ? seatsRaw : undefined;
   const seats =
@@ -30,13 +58,11 @@ export async function POST(request: NextRequest) {
   if (seats < 1) return NextResponse.json({ error: "seats deve ser >= 1" }, { status: 400 });
 
   try {
-    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats });
+    const session = await createCheckoutSession({ orgId: payload.orgId, plan, seats, interval, locale });
     return NextResponse.json({ url: session.url, sessionId: session.sessionId });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Erro interno" },
-      { status: 400 }
-    );
+    console.error("[billing/checkout]", err);
+    return NextResponse.json({ error: billingErrorMessageForClient(err) }, { status: 400 });
   }
 }
 

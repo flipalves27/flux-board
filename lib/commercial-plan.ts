@@ -12,13 +12,10 @@ function parsePositiveInt(raw: string | undefined): number | null {
 
 /** Máximo de boards por usuário não-admin; null = ilimitado. */
 export function maxBoardsPerUser(): number | null {
-  return (
-    parsePositiveInt(process.env.FLUX_MAX_BOARDS_PER_USER) ??
-    parsePositiveInt(process.env.NEXT_PUBLIC_FLUX_MAX_BOARDS_PER_USER)
-  );
+  return parsePositiveInt(process.env.FLUX_MAX_BOARDS_PER_USER);
 }
 
 export function isProTenant(): boolean {
-  const v = (process.env.FLUX_PRO_TENANT || process.env.NEXT_PUBLIC_FLUX_PRO_TENANT || "").toLowerCase();
+  const v = (process.env.FLUX_PRO_TENANT || "").toLowerCase();
   return v === "1" || v === "true" || v === "yes";
 }

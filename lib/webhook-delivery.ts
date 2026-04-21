@@ -12,6 +12,8 @@ import {
   updateOutboxDelivery,
   type WebhookOutboxDoc,
 } from "./kv-webhooks";
+import { postWebhookWithConnectTargets } from "./webhook-pinned-http";
+import { getValidatedWebhookConnectTargets, WebhookUrlBlockedError } from "./webhook-url";
 
 const RETRY_AFTER_MS = [10_000, 60_000, 300_000];
 const MAX_ATTEMPTS = 4;
@@ -111,12 +113,38 @@ async function runDeliveryAttempt(outboxId: ObjectId | string): Promise<void> {
   let responseBody: string | null = null;
   let errorMessage: string | null = null;
 
+  let connectTargets: Awaited<ReturnType<typeof getValidatedWebhookConnectTargets>>;
+  try {
+    connectTargets = await getValidatedWebhookConnectTargets(sub.url);
+  } catch (e) {
+    if (e instanceof WebhookUrlBlockedError) {
+      errorMessage = e.message;
+      await appendDeliveryLog(doc.orgId, {
+        orgId: doc.orgId,
+        subscriptionId: doc.subscriptionId,
+        eventId: doc.eventId,
+        eventType: doc.eventType,
+        payload: envelope as unknown as Record<string, unknown>,
+        status: "failed",
+        attempts: attemptCount,
+        httpStatus: null,
+        responseBody: null,
+        errorMessage,
+        createdAt: doc.createdAt,
+        completedAt: new Date().toISOString(),
+      });
+      await deleteOutboxDelivery(doc._id);
+      return;
+    }
+    throw e;
+  }
+
   try {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(sub.url, {
-      method: "POST",
-      headers: {
+    const res = await postWebhookWithConnectTargets(
+      connectTargets,
+      {
         "Content-Type": "application/json",
         "User-Agent": "Flux-Board-Webhooks/1.0",
         "X-Flux-Event-Id": doc.eventId,
@@ -125,15 +153,14 @@ async function runDeliveryAttempt(outboxId: ObjectId | string): Promise<void> {
         "X-Flux-Timestamp": String(timestampSec),
         "X-Flux-Signature": `t=${timestampSec},v1=${sig}`,
       },
-      body: rawBody,
-      signal: ac.signal,
-    });
+      rawBody,
+      { timeoutMs: FETCH_TIMEOUT_MS, maxResponseBytes: RESPONSE_BODY_MAX, signal: ac.signal }
+    );
     clearTimeout(t);
     httpStatus = res.status;
-    const text = await res.text().catch(() => "");
-    responseBody = truncateResponse(text);
+    responseBody = truncateResponse(res.body);
 
-    if (res.ok) {
+    if (res.status >= 200 && res.status < 300) {
       await appendDeliveryLog(doc.orgId, {
         orgId: doc.orgId,
         subscriptionId: doc.subscriptionId,

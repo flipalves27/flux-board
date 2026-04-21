@@ -5,6 +5,7 @@ import { getPortalIndexByToken } from "@/lib/kv-portal";
 import { buildPublicPortalPayload } from "@/lib/portal-public";
 import type { BoardPortalSettings } from "@/lib/portal-types";
 import { PORTAL_COOKIE_NAME, verifyPortalSessionToken } from "@/lib/portal-session";
+import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 
 async function lockedPreview(board: BoardData, portal: BoardPortalSettings, orgId: string) {
   const org = await getOrganizationById(orgId);
@@ -22,6 +23,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { token } = await params;
   if (!token) {
     return NextResponse.json({ error: "Token inválido." }, { status: 400 });
+  }
+
+  const ip = getClientIpFromHeaders(request.headers);
+  const rl = await rateLimit({
+    key: `portal:get:${token.slice(0, 48)}:${ip}`,
+    limit: Number(process.env.FLUX_RL_PORTAL_GET_PER_MIN || 120),
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
   }
 
   const index = await getPortalIndexByToken(token);

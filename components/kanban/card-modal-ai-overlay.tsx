@@ -1,7 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useCardModal } from "@/components/kanban/card-modal-context";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
+import type { FluxyAvatarState } from "@/components/fluxy/fluxy-types";
 
 export function CardModalAiOverlay() {
   const {
@@ -19,11 +22,18 @@ export function CardModalAiOverlay() {
     t,
   } = useCardModal();
 
+  const fluxyState = useMemo((): FluxyAvatarState => {
+    if (aiContextBusy) return "thinking";
+    if (aiContextPhase === "done") return "celebrating";
+    if (aiContextPhase === "error") return "idle";
+    return "idle";
+  }, [aiContextBusy, aiContextPhase]);
+
   if (!aiContextOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[420] bg-[var(--flux-backdrop-scrim)] backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[var(--flux-z-card-ai-overlay)] bg-[var(--flux-backdrop-scrim)] backdrop-blur-sm flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-context-title"
@@ -34,15 +44,18 @@ export function CardModalAiOverlay() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div>
-            <h3 id="ai-context-title" className="font-display font-bold text-[var(--flux-text)] text-base">
-              {t("cardModal.aiContext.title")}
-            </h3>
-            <p className="text-xs text-[var(--flux-text-muted)]">
-              {t("cardModal.aiContext.boardLabel", {
-                boardName: boardName || t("cardModal.aiContext.boardFallback"),
-              })}
-            </p>
+          <div className="flex items-start gap-3 min-w-0">
+            <FluxyAvatar state={fluxyState} size="compact" className="shrink-0 origin-top-left" />
+            <div className="min-w-0">
+              <h3 id="ai-context-title" className="font-display font-bold text-[var(--flux-text)] text-base">
+                {t("cardModal.aiContext.title")}
+              </h3>
+              <p className="text-xs text-[var(--flux-text-muted)]">
+                {t("cardModal.aiContext.boardLabel", {
+                  boardName: boardName || t("cardModal.aiContext.boardFallback"),
+                })}
+              </p>
+            </div>
           </div>
           <button type="button" onClick={() => setAiContextOpen(false)} className="btn-secondary">
             {t("cardModal.aiContext.close")}
