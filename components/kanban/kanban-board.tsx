@@ -13,7 +13,6 @@ import { useBoardStore, registerCsvImportInput } from "@/stores/board-store";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { registerBoardDesktopDailyOpener } from "@/lib/board-desktop-daily-bridge";
 import { registerRecentCard } from "@/lib/recent-cards";
-import { registerBoardDesktopDailyOpener } from "@/lib/board-desktop-daily-bridge";
 import { useToast } from "@/context/toast-context";
 import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
