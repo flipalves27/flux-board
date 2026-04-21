@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, type AuthUser } from "@/context/auth-context";
 import { useLocale, useTranslations } from "next-intl";
@@ -28,6 +28,18 @@ import {
 } from "@/lib/board-portfolio-metrics";
 import { FluxCapabilityStrip } from "@/components/boards/flux-capability-strip";
 import { FluxAiHub } from "@/components/boards/flux-ai-hub";
+import { BoardPulse } from "@/components/boards/board-pulse";
+import { BoardMomentumRing } from "@/components/boards/board-momentum-ring";
+import {
+  SpotlightModeToggle,
+  useSpotlightMode,
+} from "@/components/boards/spotlight-mode";
+import {
+  SmartCollections,
+  applySmartCollection,
+  type SmartCollectionKey,
+} from "@/components/boards/smart-collections";
+import { BoardQuickPeek } from "@/components/boards/board-quick-peek";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
@@ -107,6 +119,181 @@ function BoardsQueryParamsEffects({
   return null;
 }
 
+function ModernBoardCard({
+  board,
+  locale,
+  isFavorite,
+  wasUpdatedToday,
+  onOpen,
+  onToggleFavorite,
+  onEdit,
+  onDelete,
+  tLabels,
+}: {
+  board: Board;
+  locale: string;
+  isFavorite: boolean;
+  wasUpdatedToday: boolean;
+  onOpen: () => void;
+  onToggleFavorite: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  tLabels: {
+    rename: string;
+    delete: string;
+    today: string;
+    updatedAt: (date: string) => string;
+    favorite: string;
+    unfavorite: string;
+    methodology: { scrum: string; kanban: string; lss: string };
+  };
+}) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [peekOpen, setPeekOpen] = useState(false);
+
+  const onEnter = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setPeekOpen(true), 320);
+  };
+  const onLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setPeekOpen(false);
+  };
+
+  const methodologyLabel =
+    board.boardMethodology === "kanban"
+      ? tLabels.methodology.kanban
+      : board.boardMethodology === "scrum"
+        ? tLabels.methodology.scrum
+        : board.boardMethodology === "lean_six_sigma"
+          ? tLabels.methodology.lss
+          : undefined;
+
+  const lastUpdatedLabel = board.lastUpdated
+    ? new Date(board.lastUpdated).toLocaleDateString(locale === "en" ? "en-US" : "pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "-";
+
+  return (
+    <>
+      <div
+        ref={cardRef}
+        className="flux-board-card flux-spotlight-stage group flex min-h-[160px] cursor-pointer flex-col gap-3 p-5"
+        onClick={onOpen}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        onFocus={onEnter}
+        onBlur={onLeave}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen();
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-label={board.name}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="min-w-0 truncate font-display font-bold text-[var(--flux-text)]">
+                {board.name}
+              </h3>
+              {methodologyLabel ? (
+                <span
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                    board.boardMethodology === "kanban"
+                      ? "border-[var(--flux-accent-alpha-35)] bg-[var(--flux-accent-alpha-10)] text-[var(--flux-accent)]"
+                      : board.boardMethodology === "lean_six_sigma"
+                        ? "border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] text-[var(--flux-secondary)]"
+                        : "border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)]"
+                  }`}
+                >
+                  {methodologyLabel}
+                </span>
+              ) : null}
+              <BoardPulse lastUpdated={board.lastUpdated} locale={locale} />
+            </div>
+            {board.clientLabel ? (
+              <span className="mt-1.5 inline-block max-w-full truncate rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
+                {board.clientLabel}
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            className="flux-star-btn"
+            data-active={isFavorite ? "true" : undefined}
+            aria-label={isFavorite ? tLabels.unfavorite : tLabels.favorite}
+            title={isFavorite ? tLabels.unfavorite : tLabels.favorite}
+          >
+            {isFavorite ? "★" : "☆"}
+          </button>
+        </div>
+
+        <BoardMomentumRing portfolio={board.portfolio} seed={board.id} locale={locale} />
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-2 text-[11px] text-[var(--flux-text-muted)]">
+            <span>{tLabels.updatedAt(lastUpdatedLabel)}</span>
+            {wasUpdatedToday && (
+              <span className="rounded-full border border-[var(--flux-secondary-alpha-38)] bg-[var(--flux-secondary-alpha-12)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--flux-secondary)]">
+                {tLabels.today}
+              </span>
+            )}
+          </div>
+          <div
+            className="flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
+            aria-hidden="false"
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="flux-lift-btn"
+            >
+              {tLabels.rename}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="flux-lift-btn flux-lift-btn--danger"
+            >
+              {tLabels.delete}
+            </button>
+          </div>
+        </div>
+      </div>
+      <BoardQuickPeek
+        open={peekOpen}
+        anchorRef={cardRef}
+        locale={locale}
+        data={{
+          name: board.name,
+          clientLabel: board.clientLabel,
+          methodology: methodologyLabel,
+          lastUpdated: board.lastUpdated,
+          portfolio: board.portfolio,
+        }}
+      />
+    </>
+  );
+}
+
 function PortfolioMetricBar({ label, value }: { label: string; value: number | null }) {
   const fillClass =
     value === null
@@ -160,6 +347,8 @@ export default function BoardsPage() {
   const [recentEntries, setRecentEntries] = useState<BoardVisitEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"myBoards" | "analytics">("myBoards");
   const [visitCounts, setVisitCounts] = useState<Record<string, number>>({});
+  const [smartCollection, setSmartCollection] = useState<SmartCollectionKey>("all");
+  const spotlight = useSpotlightMode();
   const { pushToast } = useToast();
 
   const showListSkeleton = useMinimumSkeletonDuration(loading);
@@ -390,6 +579,8 @@ export default function BoardsPage() {
       list = list.filter((b) => favoriteIds.has(b.id));
     }
 
+    list = applySmartCollection(list, smartCollection);
+
     const sorted = [...list];
     if (sortMode === "name") {
       sorted.sort((a, b) => a.name.localeCompare(b.name, dateLocale));
@@ -401,7 +592,7 @@ export default function BoardsPage() {
       });
     }
     return sorted;
-  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, todayKey, dateLocale]);
+  }, [boards, query, sortMode, showOnlyUpdatedToday, showOnlyFavorites, favoriteBoardIds, smartCollection, todayKey, dateLocale]);
 
   const quickFavoriteBoards = useMemo(() => {
     const favoriteIds = new Set(favoriteBoardIds);
@@ -462,16 +653,25 @@ export default function BoardsPage() {
       </Suspense>
       <Header />
       <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <header className="mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--flux-text)]">
-            {t("pageTitle")}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)]">
-            {t("pageSubtitle")}
-          </p>
+        <header className="flux-spotlight-dim mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="flux-board-heading font-display text-2xl font-bold tracking-tight">
+                {t("pageTitle")}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)]">
+                {t("pageSubtitle")}
+              </p>
+            </div>
+            <SpotlightModeToggle
+              active={spotlight.active}
+              onToggle={spotlight.toggle}
+              locale={locale}
+            />
+          </div>
         </header>
 
-        <div className="flex gap-1 border-b border-[var(--flux-chrome-alpha-08)] mb-6">
+        <div className="flux-spotlight-dim flex gap-1 border-b border-[var(--flux-chrome-alpha-08)] mb-6">
           <button
             className={`px-4 py-2.5 text-sm font-semibold font-display transition-colors ${activeTab === "myBoards" ? "text-[var(--flux-primary-light)] border-b-2 border-[var(--flux-primary)]" : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"}`}
             onClick={() => setActiveTab("myBoards")}
@@ -488,7 +688,7 @@ export default function BoardsPage() {
 
         {plan && plan.maxBoards !== null && !plan.isPro && (
           <div
-            className={`mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
+            className={`flux-spotlight-dim mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
               plan.atLimit
                 ? "border-[var(--flux-warning)] bg-[var(--flux-amber-alpha-12)] text-[var(--flux-text)]"
                 : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)]"
@@ -526,52 +726,72 @@ export default function BoardsPage() {
             {activeTab === "myBoards" && (
               <>
                 {user ? (
-                  <FluxAiHub
-                    localeRoot={localeRoot}
-                    isExec={Boolean(user.isAdmin || user.isExecutive)}
-                  />
+                  <div className="flux-spotlight-dim">
+                    <FluxAiHub
+                      localeRoot={localeRoot}
+                      isExec={Boolean(user.isAdmin || user.isExecutive)}
+                    />
+                  </div>
                 ) : null}
-                <section className="mb-6 space-y-3" aria-labelledby="boards-search-heading">
-                  <h2 id="boards-search-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
+                <section className="mb-5 flux-spotlight-stage" aria-labelledby="boards-search-heading">
+                  <h2 id="boards-search-heading" className="sr-only">
                     {t("sections.search")}
                   </h2>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t("filters.searchPlaceholder")}
-                    className="w-full rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] outline-none focus:border-[var(--flux-primary)]"
-                  />
-                  <select
-                    value={sortMode}
-                    onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
-                    className="rounded-[var(--flux-rad)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] px-3 py-2 text-sm text-[var(--flux-text)] outline-none focus:border-[var(--flux-primary)]"
-                    aria-label={t("filters.sortAriaLabel")}
-                  >
-                    <option value="recent">{t("filters.sort.recent")}</option>
-                    <option value="name">{t("filters.sort.nameAZ")}</option>
-                  </select>
-                  <button
-                    onClick={() => setShowOnlyUpdatedToday((v) => !v)}
-                    className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
-                      showOnlyUpdatedToday
-                        ? "border-[var(--flux-secondary)] bg-[var(--flux-secondary-alpha-12)] text-[var(--flux-secondary)]"
-                        : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                    }`}
-                  >
-                    {showOnlyUpdatedToday ? "Somente hoje: ON" : "Somente hoje: OFF"}
-                  </button>
-                  <button
-                    onClick={() => setShowOnlyFavorites((v) => !v)}
-                    className={`rounded-[var(--flux-rad)] border px-3 py-2 text-sm transition-colors ${
-                      showOnlyFavorites
-                        ? "border-[var(--flux-gold-alpha-50)] bg-[var(--flux-gold-alpha-12)] text-[var(--flux-text)]"
-                        : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                    }`}
-                  >
-                    {showOnlyFavorites ? "Só favoritos: ON" : "Só favoritos: OFF"}
-                  </button>
+                  <div className="flux-board-toolbar space-y-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+                      <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={t("filters.searchPlaceholder")}
+                        className="flux-input-modern"
+                      />
+                      <select
+                        value={sortMode}
+                        onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
+                        className="flux-input-modern"
+                        aria-label={t("filters.sortAriaLabel")}
+                      >
+                        <option value="recent">{t("filters.sort.recent")}</option>
+                        <option value="name">{t("filters.sort.nameAZ")}</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setShowOnlyUpdatedToday((v) => !v)}
+                        className="flux-chip"
+                        data-active={showOnlyUpdatedToday ? "true" : undefined}
+                      >
+                        <span className="flux-chip-dot" style={{ color: "var(--flux-secondary)" }} />
+                        {showOnlyUpdatedToday
+                          ? locale === "en"
+                            ? "Today only"
+                            : "Somente hoje"
+                          : locale === "en"
+                            ? "Today"
+                            : "Hoje"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowOnlyFavorites((v) => !v)}
+                        className="flux-chip"
+                        data-active={showOnlyFavorites ? "true" : undefined}
+                      >
+                        <span aria-hidden="true">★</span>
+                        {showOnlyFavorites
+                          ? locale === "en"
+                            ? "Favorites only"
+                            : "Só favoritos"
+                          : locale === "en"
+                            ? "Favorites"
+                            : "Favoritos"}
+                      </button>
+                    </div>
+                    <SmartCollections
+                      boards={boards}
+                      active={smartCollection}
+                      onChange={setSmartCollection}
+                      locale={locale}
+                    />
                   </div>
                 </section>
 
@@ -660,16 +880,23 @@ export default function BoardsPage() {
                   </section>
                 )}
 
-                <section className="space-y-4" aria-labelledby="boards-grid-heading">
-                  <h2 id="boards-grid-heading" className="font-display text-sm font-bold text-[var(--flux-text)]">
+                <section className="space-y-4 flux-spotlight-stage" aria-labelledby="boards-grid-heading">
+                  <h2 id="boards-grid-heading" className="sr-only">
                     {t("sections.yourBoards")}
                   </h2>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                   <button
+                    type="button"
                     onClick={openNewModal}
-                    className="bg-[var(--flux-surface-card)] border-2 border-dashed border-[var(--flux-primary-alpha-30)] flex items-center justify-center min-h-[120px] text-[var(--flux-text-muted)] font-semibold rounded-[var(--flux-rad)] hover:bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] transition-all duration-200 cursor-pointer font-display"
+                    className="group relative flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-[var(--flux-rad-lg)] border-2 border-dashed border-[var(--flux-primary-alpha-30)] bg-[color-mix(in_srgb,var(--flux-primary)_4%,var(--flux-surface-card))] p-5 font-display font-semibold text-[var(--flux-text-muted)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--flux-primary)] hover:bg-[color-mix(in_srgb,var(--flux-primary)_10%,var(--flux-surface-card))] hover:text-[var(--flux-primary-light)] hover:shadow-[0_20px_44px_-22px_color-mix(in_srgb,var(--flux-primary)_55%,transparent)]"
                   >
-                    {t("actions.newBoard")}
+                    <span
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] text-xl text-[var(--flux-primary-light)] transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      +
+                    </span>
+                    <span>{t("actions.newBoard")}</span>
                   </button>
                   {visibleBoards.map((b) => {
                     const wasUpdatedToday = (() => {
@@ -677,95 +904,32 @@ export default function BoardsPage() {
                       const d = parseDateSafe(b.lastUpdated);
                       return d ? toDateKey(d) === todayKey : false;
                     })();
+                    const isEn = locale === "en";
                     return (
-                      <div
+                      <ModernBoardCard
                         key={b.id}
-                        className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-5 flex flex-col gap-2 cursor-pointer transition-all hover:shadow-[var(--shadow-md)] hover:border-[var(--flux-primary)]"
-                        onClick={() => handleOpenBoard(b.id)}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-display font-bold text-[var(--flux-text)]">{b.name}</h3>
-                              {b.boardMethodology === "kanban" ? (
-                                <span className="shrink-0 rounded-full border border-[var(--flux-accent-alpha-35)] bg-[var(--flux-accent-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-accent)]">
-                                  Kanban
-                                </span>
-                              ) : b.boardMethodology === "scrum" ? (
-                                <span className="shrink-0 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
-                                  Scrum
-                                </span>
-                              ) : b.boardMethodology === "lean_six_sigma" ? (
-                                <span className="shrink-0 rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
-                                  LSS
-                                </span>
-                              ) : null}
-                            </div>
-                            {b.clientLabel ? (
-                              <span className="mt-1 inline-block max-w-full truncate rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-secondary)]">
-                                {b.clientLabel}
-                              </span>
-                            ) : null}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFavorite(b.id);
-                            }}
-                            className={`rounded-md border px-2 py-1 text-xs transition-colors ${
-                              favoriteBoardIds.includes(b.id)
-                                ? "border-[var(--flux-gold-alpha-50)] bg-[var(--flux-gold-alpha-15)] text-[var(--flux-text)]"
-                                : "border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
-                            }`}
-                            aria-label={favoriteBoardIds.includes(b.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                            title={favoriteBoardIds.includes(b.id) ? "Desfavoritar" : "Favoritar"}
-                          >
-                            {favoriteBoardIds.includes(b.id) ? "★" : "☆"}
-                          </button>
-                        </div>
-                        {b.portfolio && b.portfolio.cardCount > 0 ? (
-                          <div className="space-y-2 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]/80 p-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
-                              Score do board
-                            </p>
-                            <PortfolioMetricBar label="Risco" value={b.portfolio.risco} />
-                            <PortfolioMetricBar label="Throughput" value={b.portfolio.throughput} />
-                            <PortfolioMetricBar label="Previsibilidade" value={b.portfolio.previsibilidade} />
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-[var(--flux-text-muted)]">
-                            Sem itens ainda — os índices aparecem quando houver cards.
-                          </p>
-                        )}
-                        <span className="text-xs text-[var(--flux-text-muted)]">
-                          Atualizado: {formatDate(b.lastUpdated)}
-                        </span>
-                        {wasUpdatedToday && (
-                          <span className="w-fit rounded-full border border-[var(--flux-secondary-alpha-38)] bg-[var(--flux-secondary-alpha-12)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
-                            Hoje
-                          </span>
-                        )}
-                        <div className="mt-auto pt-3 flex gap-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(b.id, b.name);
-                              }}
-                              className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-10)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)]"
-                            >
-                              Renomear
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteBoard(b.id, b.name);
-                              }}
-                              className="btn-sm border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-danger-alpha-12)] hover:border-[var(--flux-danger)] hover:text-[var(--flux-danger)]"
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                      </div>
+                        board={b}
+                        locale={locale}
+                        isFavorite={favoriteBoardIds.includes(b.id)}
+                        wasUpdatedToday={wasUpdatedToday}
+                        onOpen={() => handleOpenBoard(b.id)}
+                        onToggleFavorite={() => handleToggleFavorite(b.id)}
+                        onEdit={() => openEditModal(b.id, b.name)}
+                        onDelete={() => deleteBoard(b.id, b.name)}
+                        tLabels={{
+                          rename: isEn ? "Rename" : "Renomear",
+                          delete: isEn ? "Delete" : "Excluir",
+                          today: isEn ? "Today" : "Hoje",
+                          updatedAt: (d) => (isEn ? `Updated ${d}` : `Atualizado ${d}`),
+                          favorite: isEn ? "Add to favorites" : "Adicionar aos favoritos",
+                          unfavorite: isEn ? "Remove from favorites" : "Remover dos favoritos",
+                          methodology: {
+                            scrum: "Scrum",
+                            kanban: "Kanban",
+                            lss: "LSS",
+                          },
+                        }}
+                      />
                     );
                   })}
                 </div>
@@ -785,7 +949,9 @@ export default function BoardsPage() {
                 )}
                 </section>
 
-                <FluxCapabilityStrip compact />
+                <div className="flux-spotlight-dim">
+                  <FluxCapabilityStrip compact />
+                </div>
               </>
             )}
 
