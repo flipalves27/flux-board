@@ -41,7 +41,9 @@ export default function SprintCommandCenterPage() {
           `/api/boards/${encodeURIComponent(boardId)}/sprints/${encodeURIComponent(sprintId)}/overview`,
           getHeaders()
         ),
-        apiGet<BoardPayload>(`/api/boards/${encodeURIComponent(boardId)}`, getHeaders()).catch(() => ({})),
+        apiGet<BoardPayload>(`/api/boards/${encodeURIComponent(boardId)}`, getHeaders()).catch(
+          () => ({}) as BoardPayload
+        ),
         apiGet<{ sprints: SprintData[] }>(
           `/api/boards/${encodeURIComponent(boardId)}/sprints`,
           getHeaders()
