@@ -1,80 +1,104 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1774221561454" clover="3.2.0">
-  <project timestamp="1774221561454" name="All files">
-    <metrics statements="116" coveredstatements="115" conditionals="106" coveredconditionals="101" methods="20" coveredmethods="20" elements="242" coveredelements="236" complexity="0" loc="116" ncloc="116" packages="1" files="6" classes="6"/>
+<coverage generated="1776899559362" clover="3.2.0">
+  <project timestamp="1776899559363" name="All files">
+    <metrics statements="184" coveredstatements="183" conditionals="173" coveredconditionals="165" methods="24" coveredmethods="24" elements="381" coveredelements="372" complexity="0" loc="184" ncloc="184" packages="1" files="6" classes="6"/>
     <file name="cors-allowlist.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\cors-allowlist.ts">
-      <metrics statements="23" coveredstatements="23" conditionals="21" coveredconditionals="20" methods="5" coveredmethods="5"/>
-      <line num="8" count="5" type="cond" truecount="2" falsecount="0"/>
+      <metrics statements="23" coveredstatements="23" conditionals="25" coveredconditionals="24" methods="5" coveredmethods="5"/>
+      <line num="8" count="8" type="cond" truecount="2" falsecount="0"/>
       <line num="9" count="1" type="stmt"/>
       <line num="11" count="4" type="stmt"/>
-      <line num="16" count="5" type="stmt"/>
-      <line num="17" count="5" type="stmt"/>
-      <line num="18" count="5" type="cond" truecount="2" falsecount="0"/>
-      <line num="19" count="5" type="stmt"/>
-      <line num="20" count="5" type="cond" truecount="2" falsecount="0"/>
-      <line num="21" count="5" type="stmt"/>
+      <line num="16" count="8" type="stmt"/>
+      <line num="17" count="8" type="stmt"/>
+      <line num="18" count="8" type="cond" truecount="2" falsecount="0"/>
+      <line num="19" count="8" type="stmt"/>
+      <line num="20" count="8" type="cond" truecount="2" falsecount="0"/>
+      <line num="21" count="8" type="stmt"/>
       <line num="22" count="2" type="stmt"/>
-      <line num="24" count="5" type="stmt"/>
-      <line num="25" count="5" type="cond" truecount="2" falsecount="0"/>
+      <line num="24" count="8" type="stmt"/>
+      <line num="25" count="8" type="cond" truecount="2" falsecount="0"/>
       <line num="30" count="1" type="stmt"/>
-      <line num="32" count="4" type="stmt"/>
-      <line num="40" count="6" type="cond" truecount="2" falsecount="0"/>
-      <line num="41" count="1" type="stmt"/>
-      <line num="48" count="5" type="stmt"/>
-      <line num="49" count="5" type="stmt"/>
-      <line num="51" count="6" type="cond" truecount="4" falsecount="0"/>
-      <line num="57" count="6" type="stmt"/>
-      <line num="63" count="6" type="cond" truecount="2" falsecount="0"/>
-      <line num="64" count="5" type="stmt"/>
-      <line num="67" count="5" type="stmt"/>
+      <line num="32" count="7" type="stmt"/>
+      <line num="40" count="9" type="cond" truecount="2" falsecount="0"/>
+      <line num="46" count="1" type="stmt"/>
+      <line num="53" count="8" type="stmt"/>
+      <line num="54" count="8" type="stmt"/>
+      <line num="56" count="9" type="cond" truecount="4" falsecount="0"/>
+      <line num="62" count="9" type="stmt"/>
+      <line num="68" count="9" type="cond" truecount="2" falsecount="0"/>
+      <line num="69" count="8" type="stmt"/>
+      <line num="72" count="8" type="stmt"/>
     </file>
     <file name="cron-secret.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\cron-secret.ts">
-      <metrics statements="14" coveredstatements="14" conditionals="12" coveredconditionals="11" methods="6" coveredmethods="6"/>
+      <metrics statements="14" coveredstatements="14" conditionals="12" coveredconditionals="12" methods="6" coveredmethods="6"/>
       <line num="1" count="1" type="stmt"/>
       <line num="5" count="2" type="cond" truecount="2" falsecount="0"/>
-      <line num="9" count="3" type="stmt"/>
-      <line num="10" count="3" type="stmt"/>
-      <line num="11" count="3" type="cond" truecount="1" falsecount="1"/>
+      <line num="9" count="4" type="stmt"/>
+      <line num="10" count="4" type="stmt"/>
+      <line num="11" count="4" type="cond" truecount="2" falsecount="0"/>
       <line num="12" count="3" type="stmt"/>
-      <line num="22" count="6" type="cond" truecount="2" falsecount="0"/>
-      <line num="23" count="7" type="stmt"/>
-      <line num="24" count="6" type="stmt"/>
-      <line num="26" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="22" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="23" count="8" type="stmt"/>
+      <line num="24" count="7" type="stmt"/>
+      <line num="26" count="7" type="cond" truecount="2" falsecount="0"/>
       <line num="27" count="2" type="cond" truecount="2" falsecount="0"/>
       <line num="28" count="1" type="stmt"/>
-      <line num="31" count="4" type="cond" truecount="2" falsecount="0"/>
-      <line num="32" count="3" type="stmt"/>
+      <line num="31" count="5" type="cond" truecount="2" falsecount="0"/>
+      <line num="32" count="4" type="stmt"/>
     </file>
     <file name="env-validate.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\env-validate.ts">
-      <metrics statements="13" coveredstatements="13" conditionals="14" coveredconditionals="13" methods="1" coveredmethods="1"/>
-      <line num="3" count="5" type="stmt"/>
-      <line num="10" count="6" type="cond" truecount="2" falsecount="0"/>
-      <line num="11" count="5" type="stmt"/>
-      <line num="13" count="5" type="stmt"/>
-      <line num="15" count="5" type="cond" truecount="2" falsecount="0"/>
-      <line num="16" count="3" type="stmt"/>
-      <line num="17" count="3" type="cond" truecount="2" falsecount="0"/>
-      <line num="18" count="1" type="stmt"/>
-      <line num="21" count="3" type="cond" truecount="2" falsecount="0"/>
-      <line num="23" count="3" type="cond" truecount="2" falsecount="0"/>
-      <line num="24" count="1" type="stmt"/>
-      <line num="28" count="3" type="cond" truecount="2" falsecount="0"/>
-      <line num="29" count="1" type="stmt"/>
+      <metrics statements="37" coveredstatements="37" conditionals="51" coveredconditionals="46" methods="3" coveredmethods="3"/>
+      <line num="4" count="10" type="stmt"/>
+      <line num="7" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="8" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="13" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="15" count="6" type="cond" truecount="1" falsecount="1"/>
+      <line num="17" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="25" count="11" type="cond" truecount="2" falsecount="0"/>
+      <line num="26" count="10" type="stmt"/>
+      <line num="28" count="10" type="stmt"/>
+      <line num="30" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="34" count="1" type="stmt"/>
+      <line num="39" count="9" type="cond" truecount="4" falsecount="0"/>
+      <line num="40" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="41" count="1" type="stmt"/>
+      <line num="45" count="6" type="stmt"/>
+      <line num="46" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="47" count="1" type="stmt"/>
+      <line num="50" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="52" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="53" count="1" type="stmt"/>
+      <line num="57" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="58" count="1" type="stmt"/>
+      <line num="60" count="6" type="cond" truecount="1" falsecount="1"/>
+      <line num="61" count="6" type="stmt"/>
+      <line num="63" count="6" type="cond" truecount="1" falsecount="1"/>
+      <line num="64" count="6" type="stmt"/>
+      <line num="66" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="67" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="68" count="1" type="stmt"/>
+      <line num="72" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="73" count="1" type="stmt"/>
+      <line num="77" count="2" type="stmt"/>
+      <line num="78" count="2" type="cond" truecount="3" falsecount="1"/>
+      <line num="79" count="2" type="stmt"/>
+      <line num="84" count="6" type="stmt"/>
+      <line num="85" count="7" type="cond" truecount="5" falsecount="0"/>
+      <line num="86" count="1" type="stmt"/>
     </file>
     <file name="jwt-secret.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\jwt-secret.ts">
-      <metrics statements="9" coveredstatements="9" conditionals="6" coveredconditionals="5" methods="2" coveredmethods="2"/>
-      <line num="1" count="11" type="stmt"/>
-      <line num="3" count="11" type="stmt"/>
-      <line num="9" count="9" type="cond" truecount="1" falsecount="1"/>
-      <line num="10" count="9" type="stmt"/>
-      <line num="11" count="9" type="cond" truecount="4" falsecount="0"/>
+      <metrics statements="9" coveredstatements="9" conditionals="6" coveredconditionals="6" methods="2" coveredmethods="2"/>
+      <line num="1" count="20" type="stmt"/>
+      <line num="3" count="20" type="stmt"/>
+      <line num="9" count="17" type="cond" truecount="2" falsecount="0"/>
+      <line num="10" count="15" type="stmt"/>
+      <line num="11" count="17" type="cond" truecount="4" falsecount="0"/>
       <line num="12" count="2" type="stmt"/>
-      <line num="16" count="7" type="stmt"/>
-      <line num="17" count="7" type="stmt"/>
-      <line num="21" count="6" type="stmt"/>
+      <line num="16" count="13" type="stmt"/>
+      <line num="17" count="13" type="stmt"/>
+      <line num="21" count="11" type="stmt"/>
     </file>
     <file name="llm-utils.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\llm-utils.ts">
-      <metrics statements="41" coveredstatements="41" conditionals="40" coveredconditionals="40" methods="5" coveredmethods="5"/>
+      <metrics statements="85" coveredstatements="85" conditionals="66" coveredconditionals="65" methods="7" coveredmethods="7"/>
       <line num="31" count="20" type="cond" truecount="2" falsecount="0"/>
       <line num="32" count="19" type="cond" truecount="2" falsecount="0"/>
       <line num="33" count="17" type="cond" truecount="2" falsecount="0"/>
@@ -89,33 +113,77 @@
       <line num="50" count="10" type="cond" truecount="2" falsecount="0"/>
       <line num="51" count="8" type="stmt"/>
       <line num="53" count="2" type="stmt"/>
-      <line num="60" count="10" type="cond" truecount="2" falsecount="0"/>
-      <line num="61" count="10" type="cond" truecount="2" falsecount="0"/>
-      <line num="62" count="7" type="stmt"/>
-      <line num="63" count="7" type="stmt"/>
-      <line num="64" count="7" type="stmt"/>
-      <line num="65" count="7" type="cond" truecount="4" falsecount="0"/>
-      <line num="66" count="10" type="stmt"/>
-      <line num="67" count="10" type="stmt"/>
-      <line num="69" count="2" type="stmt"/>
-      <line num="80" count="11" type="cond" truecount="2" falsecount="0"/>
-      <line num="81" count="11" type="cond" truecount="5" falsecount="0"/>
-      <line num="82" count="2" type="stmt"/>
-      <line num="84" count="9" type="cond" truecount="3" falsecount="0"/>
-      <line num="85" count="11" type="stmt"/>
-      <line num="86" count="11" type="stmt"/>
-      <line num="87" count="11" type="stmt"/>
-      <line num="95" count="7" type="stmt"/>
-      <line num="96" count="7" type="cond" truecount="2" falsecount="0"/>
-      <line num="97" count="2" type="stmt"/>
-      <line num="98" count="2" type="stmt"/>
-      <line num="101" count="5" type="stmt"/>
-      <line num="102" count="5" type="stmt"/>
-      <line num="104" count="1" type="stmt"/>
-      <line num="106" count="4" type="stmt"/>
-      <line num="108" count="11" type="stmt"/>
-      <line num="109" count="11" type="stmt"/>
-      <line num="111" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="61" count="26" type="stmt"/>
+      <line num="62" count="26" type="cond" truecount="2" falsecount="0"/>
+      <line num="63" count="24" type="stmt"/>
+      <line num="64" count="24" type="stmt"/>
+      <line num="65" count="24" type="stmt"/>
+      <line num="66" count="540" type="stmt"/>
+      <line num="67" count="540" type="cond" truecount="2" falsecount="0"/>
+      <line num="68" count="179" type="stmt"/>
+      <line num="69" count="179" type="stmt"/>
+      <line num="70" count="1319" type="stmt"/>
+      <line num="71" count="1319" type="cond" truecount="2" falsecount="0"/>
+      <line num="72" count="3" type="stmt"/>
+      <line num="73" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="74" count="2" type="stmt"/>
+      <line num="75" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="76" count="1" type="stmt"/>
+      <line num="77" count="1" type="stmt"/>
+      <line num="78" count="1" type="cond" truecount="2" falsecount="0"/>
+      <line num="79" count="4" type="stmt"/>
+      <line num="80" count="4" type="stmt"/>
+      <line num="83" count="1" type="stmt"/>
+      <line num="85" count="2" type="stmt"/>
+      <line num="87" count="1316" type="cond" truecount="2" falsecount="0"/>
+      <line num="88" count="178" type="stmt"/>
+      <line num="89" count="178" type="stmt"/>
+      <line num="91" count="1138" type="stmt"/>
+      <line num="93" count="178" type="stmt"/>
+      <line num="95" count="361" type="cond" truecount="2" falsecount="0"/>
+      <line num="96" count="41" type="stmt"/>
+      <line num="97" count="320" type="cond" truecount="2" falsecount="0"/>
+      <line num="98" count="39" type="stmt"/>
+      <line num="99" count="39" type="cond" truecount="2" falsecount="0"/>
+      <line num="101" count="339" type="stmt"/>
+      <line num="103" count="1" type="stmt"/>
+      <line num="110" count="29" type="cond" truecount="2" falsecount="0"/>
+      <line num="111" count="29" type="cond" truecount="2" falsecount="0"/>
+      <line num="112" count="26" type="stmt"/>
+      <line num="118" count="26" type="stmt"/>
+      <line num="119" count="23" type="stmt"/>
+      <line num="120" count="23" type="stmt"/>
+      <line num="122" count="2" type="stmt"/>
+      <line num="126" count="26" type="stmt"/>
+      <line num="127" count="26" type="cond" truecount="2" falsecount="0"/>
+      <line num="128" count="22" type="stmt"/>
+      <line num="129" count="22" type="cond" truecount="2" falsecount="0"/>
+      <line num="132" count="5" type="stmt"/>
+      <line num="133" count="5" type="stmt"/>
+      <line num="138" count="4" type="stmt"/>
+      <line num="139" count="4" type="stmt"/>
+      <line num="140" count="4" type="cond" truecount="4" falsecount="0"/>
+      <line num="141" count="1" type="stmt"/>
+      <line num="142" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="145" count="4" type="stmt"/>
+      <line num="155" count="11" type="cond" truecount="2" falsecount="0"/>
+      <line num="156" count="11" type="cond" truecount="5" falsecount="0"/>
+      <line num="157" count="2" type="stmt"/>
+      <line num="159" count="9" type="cond" truecount="3" falsecount="0"/>
+      <line num="160" count="11" type="stmt"/>
+      <line num="161" count="11" type="stmt"/>
+      <line num="162" count="11" type="stmt"/>
+      <line num="170" count="7" type="stmt"/>
+      <line num="171" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="172" count="2" type="stmt"/>
+      <line num="173" count="2" type="stmt"/>
+      <line num="176" count="5" type="stmt"/>
+      <line num="177" count="5" type="stmt"/>
+      <line num="179" count="1" type="stmt"/>
+      <line num="181" count="4" type="stmt"/>
+      <line num="183" count="11" type="stmt"/>
+      <line num="184" count="11" type="stmt"/>
+      <line num="186" count="2" type="cond" truecount="2" falsecount="0"/>
     </file>
     <file name="slack-request-verify.ts" path="C:\Users\felip\Documents\source\flux-board\flux-board\lib\slack-request-verify.ts">
       <metrics statements="16" coveredstatements="15" conditionals="13" coveredconditionals="12" methods="1" coveredmethods="1"/>

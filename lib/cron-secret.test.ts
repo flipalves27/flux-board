@@ -53,6 +53,15 @@ describe("verifyCronSecret", () => {
     expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(false);
   });
 
+  it("denies wrong secret when header length does not match candidate", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.AUTOMATION_CRON_SECRET = "ab";
+    const req = new NextRequest("http://localhost/api/cron/x", {
+      headers: { "x-cron-secret": "a" },
+    });
+    expect(verifyCronSecret(req, ["AUTOMATION_CRON_SECRET"])).toBe(false);
+  });
+
   it("uses first defined env key among candidates", () => {
     process.env.VERCEL_ENV = "production";
     delete process.env.FIRST_CRON;

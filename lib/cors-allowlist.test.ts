@@ -71,6 +71,18 @@ describe("boardsApiCorsHeaders", () => {
     expect(h["Access-Control-Allow-Origin"]).toBe("https://solo.test");
   });
 
+  it("uses the sole allowlisted origin when Origin is present but does not match it", async () => {
+    delete process.env.ALLOW_PUBLIC_BOARDS_CORS;
+    process.env.NEXT_PUBLIC_APP_URL = "https://only.one";
+    delete process.env.VERCEL_URL;
+    const { boardsApiCorsHeaders: headers } = await import("./cors-allowlist");
+    const req = new NextRequest("http://localhost/api/boards", {
+      headers: { origin: "https://mismatch.test" },
+    });
+    const h = headers(req);
+    expect(h["Access-Control-Allow-Origin"]).toBe("https://only.one");
+  });
+
   it("adds VERCEL_URL to allowlist", async () => {
     delete process.env.ALLOW_PUBLIC_BOARDS_CORS;
     process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";

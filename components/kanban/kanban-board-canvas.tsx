@@ -17,6 +17,7 @@ import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { BoardTimelineView } from "./board-timeline-view";
 import { BoardTableView } from "./board-table-view";
+import { BoardExecutivePresentationView } from "./board-executive-presentation-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
@@ -77,6 +78,11 @@ type KanbanBoardCanvasProps = {
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc: (cardId: string) => void;
   onOpenAddColumn: () => void;
+  /** Apresentação gerencial — contexto e métricas para gestão. */
+  executiveBoardName: string;
+  executiveProductGoal?: string;
+  executiveLastUpdated: string;
+  onExecutiveOpenCard: (card: CardData) => void;
   onPatchCard: (
     cardId: string,
     patch: Partial<Pick<CardData, "priority" | "bucket">>
@@ -141,6 +147,10 @@ export function KanbanBoardCanvas({
   onSetDirection,
   onOpenDesc,
   onOpenAddColumn,
+  executiveBoardName,
+  executiveProductGoal,
+  executiveLastUpdated,
+  onExecutiveOpenCard,
   onPatchCard,
   onDuplicateCard,
   onPinCardToTop,
@@ -268,6 +278,17 @@ export function KanbanBoardCanvas({
           priorities={priorities}
           onPatchCard={onPatchCardFromTable}
           onOpenCard={onTableOpenCard}
+        />
+      ) : null}
+      {boardView === "executive" ? (
+        <BoardExecutivePresentationView
+          boardName={executiveBoardName}
+          productGoal={executiveProductGoal}
+          lastUpdated={executiveLastUpdated}
+          buckets={buckets}
+          cards={cards}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
         />
       ) : null}
       {boardView === "eisenhower" ? (
