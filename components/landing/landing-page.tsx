@@ -11,6 +11,8 @@ import { DEFAULT_PLATFORM_NAME } from "@/lib/org-branding";
 import type { PublicCommercialCatalog } from "@/lib/platform-commercial-settings";
 import type { LandingLocale } from "@/lib/landing-models";
 import { LandingPublicBackdrop } from "./landing-public-backdrop";
+import { LandingCursorAurora } from "./landing-cursor-aurora";
+import { LandingScrollProgress } from "./landing-scroll-progress";
 import { LandingFaqSection } from "./landing-faq-section";
 import { LandingFluxyFaqChat } from "./landing-fluxy-faq-chat";
 import { LandingFooter } from "./landing-footer";
@@ -22,6 +24,7 @@ import { LandingPillars } from "./landing-pillars";
 import { LandingPlatform } from "./landing-platform";
 import { LandingPricing } from "./landing-pricing";
 import { LandingRoadmap } from "./landing-roadmap";
+import { LandingSmartShowcase } from "./landing-smart-showcase";
 import { LandingSocialProof } from "./landing-social-proof";
 import { LandingSpotlight } from "./landing-spotlight";
 import { LandingTrust } from "./landing-trust";
@@ -74,6 +77,8 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
           className="home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
         >
           <LandingPublicBackdrop />
+          <LandingScrollProgress />
+          <LandingCursorAurora />
 
           <LandingHeader localeRoot={localeRoot} appName={appName} logoUrl={logoUrl} user={user} />
 
@@ -89,16 +94,19 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
               <ScrollReveal delay={0.07}>
                 <LandingPillars />
               </ScrollReveal>
-              <ScrollReveal delay={0.14}>
+              <ScrollReveal delay={0.12}>
+                <LandingSmartShowcase />
+              </ScrollReveal>
+              <ScrollReveal delay={0.18}>
                 <LandingSpotlight />
               </ScrollReveal>
-              <ScrollReveal delay={0.21}>
+              <ScrollReveal delay={0.24}>
                 <LandingPlatform localeRoot={localeRoot} appName={appName} user={user} />
               </ScrollReveal>
-              <ScrollReveal delay={0.28}>
+              <ScrollReveal delay={0.3}>
                 <LandingHow />
               </ScrollReveal>
-              <ScrollReveal delay={0.35}>
+              <ScrollReveal delay={0.36}>
                 <LandingPricing
                   localeRoot={localeRoot}
                   user={user}
@@ -112,16 +120,16 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
               <ScrollReveal delay={0.42}>
                 <LandingSocialProof />
               </ScrollReveal>
-              <ScrollReveal delay={0.49}>
+              <ScrollReveal delay={0.48}>
                 <LandingRoadmap chargeLabelByTier={chargeLabelByTier} />
               </ScrollReveal>
-              <ScrollReveal delay={0.56}>
+              <ScrollReveal delay={0.54}>
                 <LandingTrust localeRoot={localeRoot} />
               </ScrollReveal>
-              <ScrollReveal delay={0.63}>
+              <ScrollReveal delay={0.6}>
                 <LandingFaqSection />
               </ScrollReveal>
-              <ScrollReveal delay={0.7}>
+              <ScrollReveal delay={0.66}>
                 <LandingFooterCta localeRoot={localeRoot} appName={appName} user={user} />
               </ScrollReveal>
             </main>
