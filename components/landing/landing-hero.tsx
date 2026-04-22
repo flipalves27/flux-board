@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { KanbanMock } from "./landing-kanban-mock";
+import { LandingMagnetCard } from "./landing-magnet-card";
+import { LandingCountUp } from "./landing-count-up";
 
 type LandingHeroProps = {
   localeRoot: string;
@@ -56,6 +58,16 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
     { val: t("hero.metrics.m2.value"), label: t("hero.metrics.m2.label") },
     { val: t("hero.metrics.m3.value"), label: t("hero.metrics.m3.label") },
   ];
+
+  /** Extrai parte numérica de "3 min" → 3 para animar; retorna null se não houver. */
+  const parseMetric = (raw: string): { prefix: string; num: number | null; suffix: string } => {
+    const match = raw.match(/^\s*(\D*?)(\d[\d.,]*)(.*)$/);
+    if (!match) return { prefix: raw, num: null, suffix: "" };
+    const [, prefix, numStr, suffix] = match;
+    const num = Number(numStr.replace(/[.,]/g, ""));
+    if (!Number.isFinite(num)) return { prefix: raw, num: null, suffix: "" };
+    return { prefix, num, suffix };
+  };
 
   const primaryClass =
     "flux-marketing-btn-primary landing-btn-shimmer landing-cta-pulse relative w-full justify-center text-center sm:w-auto";
@@ -122,24 +134,36 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
           </ul>
 
           <div className="mt-9 grid grid-cols-3 gap-3 sm:max-w-md">
-            {heroMetrics.map((m, i) => (
-              <div
-                key={m.label}
-                className="landing-metric-card group relative min-w-0 overflow-hidden rounded-[14px] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_45%,transparent)] px-3 py-3 backdrop-blur-[8px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--flux-primary-alpha-30)]"
-                style={{ animationDelay: `${i * 0.12}s` }}
-              >
-                <span
-                  className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[var(--flux-primary-alpha-40)] to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-100"
-                  aria-hidden
-                />
-                <span className="block bg-gradient-to-br from-[var(--flux-primary-light)] to-[var(--flux-secondary)] bg-clip-text font-display text-[1.35rem] font-extrabold leading-none text-transparent">
-                  {m.val}
-                </span>
-                <span className="mt-1.5 block text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--flux-text-muted)]/85">
-                  {m.label}
-                </span>
-              </div>
-            ))}
+            {heroMetrics.map((m, i) => {
+              const parsed = parseMetric(m.val);
+              return (
+                <LandingMagnetCard key={m.label} intensity={5} glow={0.4}>
+                  <div
+                    className="landing-metric-card group relative min-w-0 overflow-hidden rounded-[14px] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_45%,transparent)] px-3 py-3 backdrop-blur-[8px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--flux-primary-alpha-30)]"
+                    style={{ animationDelay: `${i * 0.12}s` }}
+                  >
+                    <span
+                      className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[var(--flux-primary-alpha-40)] to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+                      aria-hidden
+                    />
+                    <span className="block bg-gradient-to-br from-[var(--flux-primary-light)] to-[var(--flux-secondary)] bg-clip-text font-display text-[1.35rem] font-extrabold leading-none text-transparent">
+                      {parsed.num !== null ? (
+                        <LandingCountUp
+                          value={parsed.num}
+                          prefix={parsed.prefix}
+                          suffix={parsed.suffix}
+                        />
+                      ) : (
+                        m.val
+                      )}
+                    </span>
+                    <span className="mt-1.5 block text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--flux-text-muted)]/85">
+                      {m.label}
+                    </span>
+                  </div>
+                </LandingMagnetCard>
+              );
+            })}
           </div>
         </div>
 
