@@ -70,6 +70,27 @@ function IconEisenhower({ active }: { active: boolean }) {
   );
 }
 
+function IconExecutive({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
+    >
+      <path
+        d="M4 19V5M4 19h16M4 5h16M8 15v-4M12 15V9M16 15v-2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 type NlqApiResponse =
   | {
       ok: true;
@@ -325,6 +346,21 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
               aria-label={tTimeline("viewEisenhowerAria")}
             >
               <IconEisenhower active={boardView === "eisenhower"} />
+            </button>
+          </CustomTooltip>
+          <CustomTooltip content={tTimeline("viewExecutiveTooltip")} position="bottom">
+            <button
+              type="button"
+              onClick={() => setBoardView("executive")}
+              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                boardView === "executive"
+                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
+              }`}
+              aria-pressed={boardView === "executive"}
+              aria-label={tTimeline("viewExecutiveAria")}
+            >
+              <IconExecutive active={boardView === "executive"} />
             </button>
           </CustomTooltip>
         </div>

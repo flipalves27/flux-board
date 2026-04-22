@@ -847,6 +847,7 @@ function KanbanBoardLoaded({
                   ["table", "T", "viewTableTooltip", "viewTableAria"],
                   ["timeline", "TL", "viewTimelineTooltip", "viewTimelineAria"],
                   ["eisenhower", "E", "viewEisenhowerTooltip", "viewEisenhowerAria"],
+                  ["executive", "G", "viewExecutiveTooltip", "viewExecutiveAria"],
                 ] as const
               ).map(([v, label, tooltipKey, ariaKey]) => (
                 <CustomTooltip key={v} content={tView(tooltipKey)} position="bottom">
@@ -1238,6 +1239,10 @@ function KanbanBoardLoaded({
             board.setNewColumnName("");
             board.setAddColumnOpen(true);
           }}
+          executiveBoardName={boardName}
+          executiveProductGoal={db.config.productGoal}
+          executiveLastUpdated={db.lastUpdated}
+          onExecutiveOpenCard={board.handleTimelineOpenCard}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}

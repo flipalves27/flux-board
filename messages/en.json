@@ -3053,6 +3053,8 @@
         "viewTimelineAria": "Switch to timeline view",
         "viewEisenhowerTooltip": "Eisenhower (E): urgent vs important",
         "viewEisenhowerAria": "Switch to Eisenhower matrix view",
+        "viewExecutiveTooltip": "Executive (G): leadership-ready story and business context",
+        "viewExecutiveAria": "Switch to executive presentation view",
         "groupByAria": "Group timeline rows",
         "groupByLabel": "Y axis",
         "groupFlat": "Flat",
@@ -3074,6 +3076,49 @@
         "colEstDelivery": "Est. Delivery",
         "emptyTitle": "No cards match filters",
         "emptyHint": "Adjust filters or search — the same rules as Kanban apply here."
+      },
+      "executivePresentation": {
+        "kicker": "Executive overview",
+        "subtitle": "What is moving, where to steer attention, and the balance of risk and dates — in business terms, not tool jargon.",
+        "updated": "Synthesis from the board: {when}",
+        "aria": {
+          "updated": "Last board update time used in this view"
+        },
+        "productGoalLabel": "Product / business direction",
+        "kpi": {
+          "resilience": "Composite risk index",
+          "resilienceHint": "Higher is better: less exposure to late work, critical priority overload, and too many items in motion.",
+          "momentum": "Flow capacity",
+          "momentumHint": "Blends funnel progress, completion rate, and recent board activity.",
+          "predictability": "Schedule predictability",
+          "predictabilityHint": "How well known due dates line up with remaining open work."
+        },
+        "filtersLabel": "Focus",
+        "filter": {
+          "all": "Active portfolio",
+          "attention": "Immediate attention",
+          "momentum": "In motion only"
+        },
+        "summary": "{open} open · {active} in progress · {queued} to start · {done} completed",
+        "defaultStageIntent": "Value-delivery stage",
+        "emptyColumn": "Nothing in this stage for the current filter",
+        "progress": {
+          "inProgress": "In execution",
+          "queued": "Not started",
+          "done": "Done"
+        },
+        "priority": {
+          "critical": "Critical priority",
+          "high": "High impact",
+          "normal": "Moderate impact"
+        },
+        "due": {
+          "none": "Date to be agreed",
+          "overdue": "{days, plural, one {1 day late} other {# days late}}",
+          "today": "Due: today",
+          "tomorrow": "Due: tomorrow",
+          "inDays": "Due in {days} days"
+        }
       },
       "filters": {
         "hideTooltip": "Hide filters",

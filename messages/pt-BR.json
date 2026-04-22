@@ -3058,6 +3058,8 @@
         "viewTimelineAria": "Alternar para linha do tempo",
         "viewEisenhowerTooltip": "Eisenhower (E): urgente x importante",
         "viewEisenhowerAria": "Alternar para matriz Eisenhower",
+        "viewExecutiveTooltip": "Gestão (G): apresentação para liderança e contexto de negócio",
+        "viewExecutiveAria": "Alternar para visualização de apresentação gerencial",
         "groupByAria": "Agrupar linhas da timeline",
         "groupByLabel": "Eixo Y",
         "groupFlat": "Lista",
@@ -3079,6 +3081,49 @@
         "colEstDelivery": "Previsão",
         "emptyTitle": "Nenhum card corresponde aos filtros",
         "emptyHint": "Ajuste filtros ou busca — as mesmas regras do Kanban se aplicam aqui."
+      },
+      "executivePresentation": {
+        "kicker": "Panorama executivo",
+        "subtitle": "O que está em andamento, onde concentrar a atenção e o equilíbrio de riscos e prazos — sem jargão de ferramenta.",
+        "updated": "Síntese com base no quadro: {when}",
+        "aria": {
+          "updated": "Data da última atualização do quadro usada nesta visão"
+        },
+        "productGoalLabel": "Direcionamento de produto / negócio",
+        "kpi": {
+          "resilience": "Risco (índice composto)",
+          "resilienceHint": "Quanto maior, menor exposição a atrasos, prioridade crítica e excesso de itens em execução.",
+          "momentum": "Capacidade de fluxo",
+          "momentumHint": "Combina avanço no funil, ritmo de conclusão e atividade recente no quadro.",
+          "predictability": "Previsibilidade de prazos",
+          "predictabilityHint": "Quão alinhados estão os prazos informados com o que ainda está em aberto."
+        },
+        "filtersLabel": "Foco",
+        "filter": {
+          "all": "Portfólio ativo",
+          "attention": "Atenção imediata",
+          "momentum": "Só em movimento"
+        },
+        "summary": "{open} em aberto · {active} em andamento · {queued} a iniciar · {done} concluídos",
+        "defaultStageIntent": "Etapa do fluxo de entrega de valor",
+        "emptyColumn": "Nada nesta etapa com o filtro atual",
+        "progress": {
+          "inProgress": "Em execução",
+          "queued": "A iniciar",
+          "done": "Concluído"
+        },
+        "priority": {
+          "critical": "Prioridade crítica",
+          "high": "Alto impacto",
+          "normal": "Impacto moderado"
+        },
+        "due": {
+          "none": "Prazo a alinhar",
+          "overdue": "{days, plural, one {Atraso de 1 dia} other {Atraso de {days} dias}}",
+          "today": "Prazo: hoje",
+          "tomorrow": "Prazo: amanhã",
+          "inDays": "Prazo em {days} dias"
+        }
       },
       "filters": {
         "hideTooltip": "Ocultar filtros",

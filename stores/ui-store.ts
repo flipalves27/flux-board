@@ -69,7 +69,7 @@ export const useKanbanUiStore = create<KanbanUiState>()(
           })),
         getBoardView: (boardId) => {
           const v = get().boardViewByBoard[boardId] ?? "kanban";
-          return v === "kanban" || v === "table" || v === "timeline" || v === "eisenhower" ? v : "kanban";
+          return v === "kanban" || v === "table" || v === "timeline" || v === "eisenhower" || v === "executive" ? v : "kanban";
         },
 
         modalCard: null,
