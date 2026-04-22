@@ -78,4 +78,58 @@ describe("validateServerEnv", () => {
     const { validateServerEnv } = await import("./env-validate");
     expect(() => validateServerEnv()).toThrow(/ADMIN_INITIAL_PASSWORD/);
   });
+
+  it("warns in production when Google OAuth is configured but public URL, cookie domain, and allowlist are missing or empty", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PHASE;
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.CRON_MASTER_SECRET = "x".repeat(32);
+    process.env.AUTH_GOOGLE_CLIENT_ID = "g-id";
+    process.env.AUTH_GOOGLE_CLIENT_SECRET = "g-secret";
+    delete process.env.AUTH_MICROSOFT_CLIENT_ID;
+    delete process.env.AUTH_MICROSOFT_CLIENT_SECRET;
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.AUTH_COOKIE_DOMAIN;
+    process.env.OAUTH_ALLOWED_PUBLIC_ORIGINS = "";
+    const { validateServerEnv } = await import("./env-validate");
+    validateServerEnv();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/NEXT_PUBLIC_APP_URL/));
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/AUTH_COOKIE_DOMAIN/));
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/OAUTH_ALLOWLIST|OAUTH_ALLOWED/));
+  });
+
+  it("warns in production when Google OAuth is configured and OAUTH allowlist is invalid (parse error)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PHASE;
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.CRON_MASTER_SECRET = "x".repeat(32);
+    process.env.AUTH_GOOGLE_CLIENT_ID = "g-id";
+    process.env.AUTH_GOOGLE_CLIENT_SECRET = "g-secret";
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
+    process.env.AUTH_COOKIE_DOMAIN = ".example.com";
+    process.env.OAUTH_ALLOWED_PUBLIC_ORIGINS = "not[valid-json";
+    const { validateServerEnv } = await import("./env-validate");
+    validateServerEnv();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringMatching(/OAUTH_ALLOWED_PUBLIC_ORIGINS|OAUTH allowlist|inválido/i)
+    );
+  });
+
+  it("warns in production when FLUX_ADMIN_SUPERPOWERS is enabled", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PHASE;
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.CRON_MASTER_SECRET = "x".repeat(32);
+    process.env.FLUX_ADMIN_SUPERPOWERS = "1";
+    delete process.env.AUTH_GOOGLE_CLIENT_ID;
+    delete process.env.AUTH_GOOGLE_CLIENT_SECRET;
+    delete process.env.AUTH_MICROSOFT_CLIENT_ID;
+    delete process.env.AUTH_MICROSOFT_CLIENT_SECRET;
+    const { validateServerEnv } = await import("./env-validate");
+    validateServerEnv();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/FLUX_ADMIN_SUPERPOWERS/));
+  });
 });

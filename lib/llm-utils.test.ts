@@ -92,6 +92,22 @@ describe("safeJsonParse", () => {
     expect(safeJsonParse("{not json}")).toBeNull();
   });
 
+  it("parses JSON with \\u escapes inside a string (lexer)", () => {
+    expect(safeJsonParse('intro {"a":"Z\\u00e1po"} out')).toEqual({ a: "Zápo" });
+  });
+
+  it("parses JSON with a simple backslash escape inside a string (lexer else branch)", () => {
+    expect(safeJsonParse('{"line":"a\\nb"}')).toEqual({ line: "a\nb" });
+  });
+
+  it("returns null when a JSON string is truncated after a backslash in extract", () => {
+    expect(safeJsonParse('{"a":"\\')).toBeNull();
+  });
+
+  it("returns null when a balanced first object cannot be completed (unclosed object)", () => {
+    expect(safeJsonParse('prose {"a":1')).toBeNull();
+  });
+
   it("preserves unicode", () => {
     expect(safeJsonParse('{"msg":"αβγ 你好"}')).toEqual({ msg: "αβγ 你好" });
   });
