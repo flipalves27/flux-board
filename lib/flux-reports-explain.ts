@@ -30,7 +30,7 @@ export async function generateFluxReportExplain(opts: {
     return {
       narrative: heuristicNarrative(chartTitle, dataSummary),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "missing_config",
       errorMessage: "TOGETHER_API_KEY ou TOGETHER_MODEL não configurados.",
     };
@@ -63,7 +63,7 @@ export async function generateFluxReportExplain(opts: {
       return {
         narrative: heuristicNarrative(chartTitle, dataSummary),
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: "openai_compat",
         errorKind: "http_error",
         errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
       };
@@ -75,18 +75,18 @@ export async function generateFluxReportExplain(opts: {
       return {
         narrative: heuristicNarrative(chartTitle, dataSummary),
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: "openai_compat",
         errorKind: "empty",
         errorMessage: "Resposta vazia da IA.",
       };
     }
 
-    return { narrative, generatedWithAI: true, model, provider: "together.ai" };
+    return { narrative, generatedWithAI: true, model, provider: "openai_compat" };
   } catch (err) {
     return {
       narrative: heuristicNarrative(chartTitle, dataSummary),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede.",
     };
@@ -115,7 +115,7 @@ export async function generateLssExecutiveReportExplain(opts: {
     return {
       narrative: heuristicLssExecutive(chartTitle, dataSummary),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "missing_config",
       errorMessage: "TOGETHER_API_KEY ou TOGETHER_MODEL não configurados.",
     };
@@ -149,7 +149,7 @@ export async function generateLssExecutiveReportExplain(opts: {
       return {
         narrative: heuristicLssExecutive(chartTitle, dataSummary),
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: "openai_compat",
         errorKind: "http_error",
         errorMessage: `HTTP ${response.status ?? "?"} ${response.bodySnippet || response.error}`,
       };
@@ -161,18 +161,18 @@ export async function generateLssExecutiveReportExplain(opts: {
       return {
         narrative: heuristicLssExecutive(chartTitle, dataSummary),
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: "openai_compat",
         errorKind: "empty",
         errorMessage: "Resposta vazia da IA.",
       };
     }
 
-    return { narrative, generatedWithAI: true, model, provider: "together.ai" };
+    return { narrative, generatedWithAI: true, model, provider: "openai_compat" };
   } catch (err) {
     return {
       narrative: heuristicLssExecutive(chartTitle, dataSummary),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede.",
     };

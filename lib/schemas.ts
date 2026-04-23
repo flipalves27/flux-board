@@ -631,9 +631,12 @@ export const OrgBrandingUpdateSchema = z
 
 export const OrgAiSettingsUpdateSchema = z
   .object({
-    anthropicModel: z.string().trim().max(120).optional().nullable(),
-    batchLlmProvider: z.enum(["anthropic", "together"]).optional().nullable(),
-    claudeUserIds: z.array(z.string().trim().max(120)).max(200).optional().nullable(),
+    togetherModel: z.string().trim().max(160).optional().nullable(),
+    /** Nova chave API (BYOK). Nunca persistir em claro; o servidor cifra para `aiSecretsEnc`. */
+    togetherApiKey: z.string().trim().max(2000).optional().nullable(),
+    togetherBaseUrl: z.string().trim().url().max(512).optional().nullable(),
+    /** Remove chave/base URL cifrada da org. */
+    removeTogetherSecrets: z.boolean().optional(),
   })
   .strict();
 

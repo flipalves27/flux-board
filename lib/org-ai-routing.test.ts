@@ -2,113 +2,85 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import type { Organization } from "@/lib/kv-organizations";
 import {
   isAnthropicApiConfigured,
+  isCloudLlmConfigured,
   resolveBatchLlmRoute,
   resolveInteractiveLlmRoute,
 } from "@/lib/org-ai-routing";
 
+function baseOrg(overrides: Partial<Organization> = {}): Organization {
+  return {
+    _id: "o1",
+    name: "O",
+    slug: "o",
+    ownerId: "x",
+    plan: "pro",
+    maxUsers: 10,
+    maxBoards: 10,
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
 describe("org-ai-routing", () => {
-  const prevAnthropic = process.env.ANTHROPIC_API_KEY;
-  const prevTogether = process.env.TOGETHER_API_KEY;
+  const prevKey = process.env.TOGETHER_API_KEY;
   const prevModel = process.env.TOGETHER_MODEL;
+  const prevBase = process.env.TOGETHER_BASE_URL;
 
   beforeEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
-    process.env.TOGETHER_API_KEY = "t";
-    process.env.TOGETHER_MODEL = "m";
+    delete process.env.TOGETHER_API_KEY;
+    delete process.env.TOGETHER_MODEL;
+    delete process.env.TOGETHER_BASE_URL;
   });
 
   afterEach(() => {
-    process.env.ANTHROPIC_API_KEY = prevAnthropic;
-    process.env.TOGETHER_API_KEY = prevTogether;
-    process.env.TOGETHER_MODEL = prevModel;
+    if (prevKey === undefined) delete process.env.TOGETHER_API_KEY;
+    else process.env.TOGETHER_API_KEY = prevKey;
+    if (prevModel === undefined) delete process.env.TOGETHER_MODEL;
+    else process.env.TOGETHER_MODEL = prevModel;
+    if (prevBase === undefined) delete process.env.TOGETHER_BASE_URL;
+    else process.env.TOGETHER_BASE_URL = prevBase;
   });
 
-  it("resolveInteractive: admin uses anthropic when key exists", () => {
-    process.env.ANTHROPIC_API_KEY = "a";
-    const org: Organization = {
-      _id: "o1",
-      name: "O",
-      slug: "o",
-      ownerId: "x",
-      plan: "pro",
-      maxUsers: 10,
-      maxBoards: 10,
-      createdAt: new Date().toISOString(),
-    };
-    const r = resolveInteractiveLlmRoute(org, { userId: "u1", isAdmin: true });
-    expect(r.route).toBe("anthropic");
+  it("resolveInteractiveLlmRoute always returns openai_compat and env model when configured", () => {
+    process.env.TOGETHER_API_KEY = "k";
+    process.env.TOGETHER_MODEL = "m-env";
+    const r = resolveInteractiveLlmRoute(baseOrg(), { userId: "u1", isAdmin: false });
+    expect(r.route).toBe("openai_compat");
+    expect(r.model).toBe("m-env");
   });
 
-  it("resolveInteractive: non-admin without delegation uses together", () => {
-    process.env.ANTHROPIC_API_KEY = "a";
-    const org: Organization = {
-      _id: "o1",
-      name: "O",
-      slug: "o",
-      ownerId: "x",
-      plan: "pro",
-      maxUsers: 10,
-      maxBoards: 10,
-      createdAt: new Date().toISOString(),
-    };
-    const r = resolveInteractiveLlmRoute(org, { userId: "u1", isAdmin: false });
-    expect(r.route).toBe("together");
+  it("resolveInteractiveLlmRoute uses org model with env fallback when no BYOK key", () => {
+    process.env.TOGETHER_API_KEY = "k";
+    process.env.TOGETHER_MODEL = "m-env";
+    const r = resolveInteractiveLlmRoute(baseOrg({ aiSettings: { togetherModel: "m-org" } }), {
+      userId: "u1",
+      isAdmin: true,
+    });
+    expect(r.route).toBe("openai_compat");
+    expect(r.model).toBe("m-org");
   });
 
-  it("resolveInteractive: delegated user uses anthropic", () => {
-    process.env.ANTHROPIC_API_KEY = "a";
-    const org: Organization = {
-      _id: "o1",
-      name: "O",
-      slug: "o",
-      ownerId: "x",
-      plan: "pro",
-      maxUsers: 10,
-      maxBoards: 10,
-      createdAt: new Date().toISOString(),
-      aiSettings: { claudeUserIds: ["u2"] },
-    };
-    const r = resolveInteractiveLlmRoute(org, { userId: "u2", isAdmin: false });
-    expect(r.route).toBe("anthropic");
+  it("resolveBatchLlmRoute matches interactive route for same org", () => {
+    process.env.TOGETHER_API_KEY = "k";
+    process.env.TOGETHER_MODEL = "m-env";
+    const org = baseOrg();
+    expect(resolveBatchLlmRoute(org)).toEqual(resolveInteractiveLlmRoute(org, { userId: "u", isAdmin: false }));
   });
 
-  it("resolveBatch: business + anthropic preference uses anthropic when key exists", () => {
-    process.env.ANTHROPIC_API_KEY = "a";
-    const org: Organization = {
-      _id: "o1",
-      name: "O",
-      slug: "o",
-      ownerId: "x",
-      plan: "business",
-      maxUsers: 10,
-      maxBoards: 10,
-      createdAt: new Date().toISOString(),
-      aiSettings: { batchLlmProvider: "anthropic" },
-    };
-    const r = resolveBatchLlmRoute(org);
-    expect(r.route).toBe("anthropic");
+  it("resolveBatchLlmRoute returns empty model when LLM not configured", () => {
+    const r = resolveBatchLlmRoute(baseOrg());
+    expect(r.route).toBe("openai_compat");
+    expect(r.model).toBe("");
   });
 
-  it("resolveBatch: business without preference uses together", () => {
-    process.env.ANTHROPIC_API_KEY = "a";
-    const org: Organization = {
-      _id: "o1",
-      name: "O",
-      slug: "o",
-      ownerId: "x",
-      plan: "business",
-      maxUsers: 10,
-      maxBoards: 10,
-      createdAt: new Date().toISOString(),
-    };
-    const r = resolveBatchLlmRoute(org);
-    expect(r.route).toBe("together");
-  });
-
-  it("isAnthropicApiConfigured reflects env", () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  it("isAnthropicApiConfigured is always false", () => {
     expect(isAnthropicApiConfigured()).toBe(false);
-    process.env.ANTHROPIC_API_KEY = "x";
-    expect(isAnthropicApiConfigured()).toBe(true);
+  });
+
+  it("isCloudLlmConfigured reflects server env only", () => {
+    expect(isCloudLlmConfigured()).toBe(false);
+    process.env.TOGETHER_API_KEY = "x";
+    process.env.TOGETHER_MODEL = "y";
+    expect(isCloudLlmConfigured()).toBe(true);
   });
 });

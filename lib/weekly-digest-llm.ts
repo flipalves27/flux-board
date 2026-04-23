@@ -1,7 +1,7 @@
 import type { BoardData } from "@/lib/kv-boards";
 import type { Organization } from "@/lib/kv-organizations";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { isCloudLlmConfigured, isTogetherApiConfigured, resolveBatchLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { safeJsonParse } from "@/lib/llm-utils";
 import type { OverdueCard, WeeklyBoardToolMetrics } from "@/lib/weekly-digest-metrics";
 
@@ -109,10 +109,6 @@ function makeHeuristicBoardInsight(args: {
   return { summary, insight: insight.replace(/^Board\s+/i, ""), overdueActions };
 }
 
-function digestProviderLabel(p: "anthropic" | "together"): "anthropic" | "together.ai" {
-  return p === "anthropic" ? "anthropic" : "together.ai";
-}
-
 export async function generateBoardWeeklyDigestInsightAI(args: {
   board: BoardData;
   boardName: string;
@@ -125,17 +121,14 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
   const { board, boardName, metrics, overdueCards, allowAI, org, orgId } = args;
 
   const cap = process.env.WEEKLY_DIGEST_AI_CAP; // opcional (limite local para teste)
-  const batchRoute = resolveBatchLlmRoute(org ?? null);
-  const canCall =
-    isCloudLlmConfigured() &&
-    ((batchRoute.route === "anthropic") || (batchRoute.route === "together" && isTogetherApiConfigured()));
+  const canCall = isOrgCloudLlmConfigured(org ?? null);
 
   const bucketKeys = parseBucketKeys(board);
   const bucketHint = bucketKeys.length ? bucketKeys.join(", ") : "—";
 
   if (!allowAI || !canCall || (cap && Number(cap) === 0) || !orgId) {
     const heuristic = makeHeuristicBoardInsight({ board, boardName, metrics, overdueCards });
-    return { ...heuristic, generatedWithAI: false, provider: "together.ai" };
+    return { ...heuristic, generatedWithAI: false, provider: "openai_compat" };
   }
 
   const throughputCurrent = metrics.concludedCurrent;
@@ -188,7 +181,7 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
       return {
         ...heuristic,
         generatedWithAI: false,
-        provider: digestProviderLabel(response.resolvedRoute),
+        provider: "openai_compat",
         errorKind: "http_error",
         errorMessage: response.error || "request_failed",
       };
@@ -203,7 +196,7 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
       return {
         ...heuristic,
         generatedWithAI: false,
-        provider: digestProviderLabel(response.provider),
+        provider: "openai_compat",
         errorKind: "bad_json",
         errorMessage: "Resposta da IA não estava no formato esperado.",
       };
@@ -228,7 +221,7 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
       overdueActions: safeOverdueActions,
       generatedWithAI: true,
       model: response.model,
-      provider: digestProviderLabel(response.provider),
+      provider: "openai_compat",
       errorKind: undefined,
     };
   } catch (err) {
@@ -236,7 +229,7 @@ export async function generateBoardWeeklyDigestInsightAI(args: {
     return {
       ...heuristic,
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede ao chamar a IA.",
     };

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import {
   canUseFeature,
@@ -133,9 +133,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const llmCloudEnabled =
-    (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
-    Boolean(process.env.ANTHROPIC_API_KEY);
+  const llmCloudEnabled = isOrgCloudLlmConfigured(org);
   if (tier === "free" && llmCloudEnabled) {
     const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {
@@ -260,10 +258,7 @@ export async function POST(request: NextRequest) {
           { role: "user", content: userMessage },
         ];
 
-        const interactiveConfigured =
-          isTogetherApiConfigured() || Boolean(process.env.ANTHROPIC_API_KEY);
-        const routeProbe = resolveInteractiveLlmRoute(org, { userId: payload.id, isAdmin: payload.isAdmin });
-        const canCallLlm = interactiveConfigured && (routeProbe.route === "anthropic" || routeProbe.route === "together");
+        const canCallLlm = isOrgCloudLlmConfigured(org);
 
         let finalReply: string;
         let llmModel: string | undefined;

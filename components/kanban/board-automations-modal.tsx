@@ -181,7 +181,7 @@ export function BoardAutomationsModal({
       if (data.preview) setNlPreview(data.preview);
       if (data.rule) setNlRule(data.rule);
       if (typeof data.model === "string" && data.model.trim()) {
-        setNlInterpretLlm({ model: data.model.trim(), provider: data.llmProvider?.trim() || "Together" });
+        setNlInterpretLlm({ model: data.model.trim(), provider: data.llmProvider?.trim() || "openai_compat" });
       }
     } catch (e) {
       pushToast({

@@ -10,6 +10,7 @@ import {
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { getBoardCopilotChat } from "@/lib/kv-board-copilot";
 import type { CopilotAuthPayload, CopilotChatHistory } from "./types";
 import { COPILOT_USER_RATE_LIMIT, FREE_DEMO_MESSAGES_LIMIT } from "./config";
@@ -107,9 +108,7 @@ export async function enforceCopilotPostPolicy(input: {
     };
   }
 
-  const llmCloudEnabled =
-    (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
-    Boolean(process.env.ANTHROPIC_API_KEY);
+  const llmCloudEnabled = isOrgCloudLlmConfigured(org);
   if (tier === "free" && llmCloudEnabled) {
     const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {

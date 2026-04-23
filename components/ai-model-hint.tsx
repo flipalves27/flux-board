@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { formatAiModelLabel } from "@/lib/ai-model-label";
 
 type Props = {
@@ -8,15 +9,31 @@ type Props = {
   className?: string;
 };
 
+function normalizeProviderKey(provider: string): string | null {
+  const p = String(provider || "").trim();
+  if (!p) return null;
+  if (/^together$/i.test(p) || p === "openai_compat") return "openai_compat";
+  return p;
+}
+
 /**
  * Indicação discreta do modelo (e opcionalmente provedor) usado numa operação de IA.
  */
 export function AiModelHint({ model, provider, className = "" }: Props) {
+  const t = useTranslations("aiModelHint");
   const m = formatAiModelLabel(model);
-  const p = String(provider || "").trim();
-  if (!m && !p) return null;
+  const raw = String(provider || "").trim();
+  const key = normalizeProviderKey(raw);
+  const p = key === "openai_compat" ? t("openAiCompatLabel") : raw;
 
-  const title = [p && `Provider: ${p}`, model && `Modelo: ${model}`].filter(Boolean).join(" · ");
+  const title = [
+    p && `${t("providerTitle")}: ${p}`,
+    model && `${t("modelTitle")}: ${model}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  if (!m && !p) return null;
 
   return (
     <span

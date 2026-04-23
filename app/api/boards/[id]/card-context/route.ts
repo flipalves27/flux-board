@@ -20,7 +20,7 @@ import {
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
-import { isAnthropicApiConfigured } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { includeLlmTelemetryInApiResponse } from "@/lib/rbac";
 
 type AuthPayload = NonNullable<Awaited<ReturnType<typeof getAuthFromRequest>>>;
@@ -203,7 +203,7 @@ export async function POST(
       const result: LlmCardContextResult = {
         ...fallback,
         generatedWithAI: false,
-        provider: "together.ai",
+        provider: "openai_compat",
         errorKind: "plan_blocked",
         errorMessage: "Plano atual sem acesso ao recurso de IA completo. Aplicado fallback estruturado.",
       };
@@ -233,8 +233,7 @@ export async function POST(
     let inFlight = cardContextInFlight.get(cacheKey);
     if (!inFlight) {
       const cap = getDailyAiCallsCap(org, gateCtx);
-      const cloudAiEnabled =
-        isAnthropicApiConfigured() || Boolean(process.env.TOGETHER_API_KEY?.trim());
+      const cloudAiEnabled = isOrgCloudLlmConfigured(org);
       if (cap !== null && cloudAiEnabled) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
         const rlDaily = await rateLimit({

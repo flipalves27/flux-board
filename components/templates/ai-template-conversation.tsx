@@ -301,7 +301,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
             <div>
               <div className="flex flex-wrap items-end justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">{t("aiConv.previewTitle")}</p>
-                {lastLlmModel ? <AiModelHint model={lastLlmModel} provider="Together" /> : null}
+                {lastLlmModel ? <AiModelHint model={lastLlmModel} provider="openai_compat" /> : null}
               </div>
               <p className="text-sm font-display font-semibold text-[var(--flux-text)] mt-1">{draft.title}</p>
               <p className="text-xs text-[var(--flux-text-muted)] mt-1 leading-relaxed">{draft.description}</p>

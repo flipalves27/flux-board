@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { callCopilotLlmModel } from "./llm";
 
 vi.mock("@/lib/org-ai-routing", () => ({
-  isTogetherApiConfigured: vi.fn(() => false),
-  resolveInteractiveLlmRoute: vi.fn(() => ({ route: "together", anthropicModel: "claude" })),
+  isOrgCloudLlmConfigured: vi.fn(() => false),
+  resolveInteractiveLlmRoute: vi.fn(() => ({ route: "openai_compat", model: "" })),
 }));
 
 vi.mock("@/lib/llm-org-chat", () => ({

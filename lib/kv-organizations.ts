@@ -10,7 +10,6 @@ export type BillingNotice =
   | { kind: "trial_ended"; at: string }
   | { kind: "downgrade_grace_ended"; at: string };
 
-/** Preferências de IA (plano Business: modelo Claude e jobs em lote). */
 /** Preferências de UI / rollout (Onda 4). */
 export type OrgUiOnda4Settings = {
   enabled?: boolean;
@@ -26,12 +25,13 @@ export type OrgUiSettings = {
 };
 
 export type OrgAiSettings = {
-  /** Modelo Anthropic (ex.: claude-3-5-sonnet-20241022). */
-  anthropicModel?: string;
-  /** Digest/agregados sem usuário: preferir Claude vs Together quando a chave existir. */
-  batchLlmProvider?: "anthropic" | "together";
-  /** Usuários não-admin autorizados a usar a rota Claude (admin sempre pode). */
-  claudeUserIds?: string[];
+  /** Modelo de chat (API compatível com OpenAI). Vazio → `TOGETHER_MODEL` no servidor. */
+  togetherModel?: string;
+  /**
+   * Segredos cifrados (`FLUX_AI_SECRETS_KEY`): JSON com `togetherApiKey` e opcionalmente `togetherBaseUrl`.
+   * Nunca expor ao cliente.
+   */
+  aiSecretsEnc?: string;
 };
 
 export type OrganizationPlan = "free" | "trial" | "pro" | "business";
@@ -62,7 +62,7 @@ export interface Organization {
   stripeSeats?: number;
   /** Feedback opcional ao cancelar/pausar (survey). */
   billingCancellationFeedback?: { reason: string; at: string };
-  /** IA: modelo Claude, delegação e preferências de batch (Business). */
+  /** IA: modelo e segredos BYOK (API compatível com OpenAI). */
   aiSettings?: OrgAiSettings;
   /** UI / feature rollout (ex.: Onda 4). */
   ui?: OrgUiSettings;

@@ -136,7 +136,7 @@ export function BoardNlqDock({
         }
         const llmMeta =
           typeof data.llmModel === "string" && data.llmModel.trim()
-            ? { model: data.llmModel.trim(), provider: "Together" as const }
+            ? { model: data.llmModel.trim(), provider: "openai_compat" as const }
             : null;
         setNlqLlmMeta(boardId, llmMeta);
         if (!data.ok) {

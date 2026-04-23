@@ -2,8 +2,8 @@ import type { SprintData } from "@/lib/schemas";
 import type { BoardData } from "@/lib/kv-boards";
 import { sprintDeliveredVsCommitment } from "@/lib/sprint-delivery-metrics";
 import type { Organization } from "@/lib/kv-organizations";
-import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
-import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 
 export type ReviewDemoItem = {
   cardId: string;
@@ -62,8 +62,9 @@ Gere um relatório de review. Responda em JSON válido:
   }));
 
   try {
-    const { route } = resolveBatchLlmRoute(org);
-    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    const runtime = resolveOrgLlmRuntime(org);
+    if (!runtime) throw new Error("no_api_key");
+    const provider = createOpenAiCompatProvider(runtime);
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
       undefined,

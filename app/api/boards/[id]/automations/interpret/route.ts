@@ -210,7 +210,7 @@ ${schemaDoc}`;
       rule,
       preview,
       model,
-      llmProvider: "Together",
+      llmProvider: "openai_compat",
     });
   } catch (err) {
     console.error("[automations/interpret]", err);

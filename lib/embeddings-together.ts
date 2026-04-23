@@ -14,7 +14,7 @@ export type TextEmbeddingsResult =
   | { ok: true; vectors: number[][] }
   | { ok: false; error: string; status?: number; bodySnippet?: string };
 
-function baseUrl(): string {
+function defaultBaseUrl(): string {
   return (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
 }
 
@@ -23,14 +23,15 @@ function baseUrl(): string {
  */
 export async function fetchTextEmbeddingsWithMeta(
   inputs: string[],
-  opts?: { model?: string }
+  opts?: { model?: string; apiKey?: string; baseUrl?: string }
 ): Promise<TextEmbeddingsResult> {
-  const apiKey = process.env.TOGETHER_API_KEY?.trim();
+  const apiKey = (opts?.apiKey ?? process.env.TOGETHER_API_KEY)?.trim();
   if (!apiKey) return { ok: false, error: "missing_together_api_key" };
   if (!inputs.length) return { ok: true, vectors: [] };
 
   const model = (opts?.model ?? process.env.TOGETHER_EMBEDDING_MODEL ?? DEFAULT_GENERAL_EMBEDDING_MODEL).trim();
-  const url = `${baseUrl()}/embeddings`;
+  const base = (opts?.baseUrl ?? defaultBaseUrl()).replace(/\/+$/, "");
+  const url = `${base}/embeddings`;
 
   try {
     const res = await fetch(url, {
@@ -85,7 +86,7 @@ export async function fetchTextEmbeddingsWithMeta(
 
 export async function fetchTextEmbeddings(
   inputs: string[],
-  opts?: { model?: string }
+  opts?: { model?: string; apiKey?: string; baseUrl?: string }
 ): Promise<number[][] | null> {
   const r = await fetchTextEmbeddingsWithMeta(inputs, opts);
   return r.ok ? r.vectors : null;

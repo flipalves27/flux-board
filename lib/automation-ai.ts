@@ -1,6 +1,8 @@
 import type { BoardData } from "./kv-boards";
+import type { Organization } from "./kv-organizations";
 import type { SimilarCardRef } from "./smart-card-enrich";
 import { callTogetherApi, safeJsonParse } from "./llm-utils";
+import { resolveOrgLlmRuntime } from "./org-llm-runtime";
 
 export type AiCardClassification = {
   bucketKey?: string;
@@ -25,20 +27,21 @@ export async function classifyIntakeFormWithTogether(params: {
   description: string;
   knownTags: string[];
   similarCards: Array<{ id: string; title: string; desc: string; bucket: string }>;
+  org?: Organization | null;
 }): Promise<{
   ok: boolean;
   data?: IntakeFormLlmClassification;
   error?: string;
-  /** Preenchido quando `ok` e chamada Together bem-sucedida. */
+  /** Preenchido quando `ok` e chamada ao motor OpenAI-compat bem-sucedida. */
   model?: string;
   provider?: string;
 }> {
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
-  const base = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-  if (!apiKey) {
+  const rt = resolveOrgLlmRuntime(params.org ?? null);
+  if (!rt) {
     return { ok: false, error: "no_api_key" };
   }
+  const { apiKey, model, baseUrl } = rt;
+  const base = baseUrl.replace(/\/+$/, "");
 
   const bucketOrder = Array.isArray(params.board.config?.bucketOrder) ? params.board.config!.bucketOrder : [];
   const columns = bucketOrder
@@ -147,7 +150,7 @@ Formato exato:
       duplicateCardId: duplicateCardId === "" ? null : duplicateCardId,
       mergeSuggestion,
     };
-    return { ok: true, data, model, provider: "Together" };
+    return { ok: true, data, model, provider: "openai_compat" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "network" };
   }
@@ -171,13 +174,14 @@ export async function enrichSmartCardWithTogether(params: {
   ragExcerpts: string[];
   leadStats: { avgDays: number; sampleCount: number };
   allowedDirections: string[];
+  org?: Organization | null;
 }): Promise<{ ok: boolean; data?: SmartCardEnrichLlmPayload; error?: string }> {
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
-  const base = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
-  if (!apiKey) {
+  const rt = resolveOrgLlmRuntime(params.org ?? null);
+  if (!rt) {
     return { ok: false, error: "no_api_key" };
   }
+  const { apiKey, model, baseUrl } = rt;
+  const base = baseUrl.replace(/\/+$/, "");
 
   const bucketOrder = Array.isArray(params.board.config?.bucketOrder) ? params.board.config!.bucketOrder : [];
   const columns = bucketOrder

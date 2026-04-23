@@ -15,15 +15,14 @@ async function ensureIndexes(): Promise<void> {
 
 /** USD por 1M tokens — ajustável via env (estimativa de custo). */
 function pricePerMillion(provider: LlmRoute, kind: "input" | "output"): number {
-  if (provider === "anthropic") {
-    const envKey = kind === "input" ? "AI_PRICE_ANTHROPIC_INPUT_PER_M" : "AI_PRICE_ANTHROPIC_OUTPUT_PER_M";
-    const raw = Number(process.env[envKey] ?? "");
-    if (Number.isFinite(raw) && raw >= 0) return raw;
-    return kind === "input" ? 3 : 15;
-  }
-  const envKey = kind === "input" ? "AI_PRICE_TOGETHER_INPUT_PER_M" : "AI_PRICE_TOGETHER_OUTPUT_PER_M";
+  void provider;
+  const envKey =
+    kind === "input" ? "AI_PRICE_OPENAI_COMPAT_INPUT_PER_M" : "AI_PRICE_OPENAI_COMPAT_OUTPUT_PER_M";
   const raw = Number(process.env[envKey] ?? "");
   if (Number.isFinite(raw) && raw >= 0) return raw;
+  const legacyKey = kind === "input" ? "AI_PRICE_TOGETHER_INPUT_PER_M" : "AI_PRICE_TOGETHER_OUTPUT_PER_M";
+  const legacy = Number(process.env[legacyKey] ?? "");
+  if (Number.isFinite(legacy) && legacy >= 0) return legacy;
   return kind === "input" ? 0.88 : 0.88;
 }
 

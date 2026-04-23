@@ -1,5 +1,7 @@
 import type { BoardData } from "@/lib/kv-boards";
+import type { Organization } from "@/lib/kv-organizations";
 import { callTogetherApi, safeJsonParse } from "@/lib/llm-utils";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 import type { CopilotChatDocLike } from "@/lib/weekly-digest-metrics";
 import {
   collectCardIdsFromDateFieldsInWindow,
@@ -212,22 +214,23 @@ export async function generateBoardWeeklySentimentAI(args: {
   corpus: string;
   previousWeekScore: number | null;
   allowAI?: boolean;
+  org?: Organization | null;
 }): Promise<BoardWeeklySentimentResult> {
-  const { boardName, corpus, previousWeekScore, allowAI } = args;
+  const { boardName, corpus, previousWeekScore, allowAI, org } = args;
 
   const cap = process.env.WEEKLY_DIGEST_AI_CAP;
-  const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL;
+  const rt = resolveOrgLlmRuntime(org ?? null);
+  const apiKey = rt?.apiKey;
+  const model = rt?.model;
 
   const fallback = (): BoardWeeklySentimentResult => {
     const h = heuristicSentiment({ corpus, previousScore: previousWeekScore });
-    return { ...h, generatedWithAI: false, provider: "together.ai" };
+    return { ...h, generatedWithAI: false, provider: "openai_compat" };
   };
 
-  if (!allowAI || !togetherEnabled || !apiKey || !model || (cap && Number(cap) === 0)) {
+  if (!allowAI || !rt || !apiKey || !model || (cap && Number(cap) === 0)) {
     const h = heuristicSentiment({ corpus, previousScore: previousWeekScore });
-    return { ...h, generatedWithAI: false, provider: "together.ai" };
+    return { ...h, generatedWithAI: false, provider: "openai_compat" };
   }
 
   const prevHint =
@@ -252,7 +255,7 @@ export async function generateBoardWeeklySentimentAI(args: {
     corpus.trim() || "(vazio)",
   ].join("\n");
 
-  const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");
+  const baseUrl = rt.baseUrl.replace(/\/+$/, "");
 
   try {
     const response = await callTogetherApi(
@@ -320,7 +323,7 @@ export async function generateBoardWeeklySentimentAI(args: {
       emoji: emojiForCategory(category),
       generatedWithAI: true,
       model,
-      provider: "together.ai",
+      provider: "openai_compat",
     };
   } catch (err) {
     const h = fallback();

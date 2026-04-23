@@ -16,7 +16,7 @@ export type NlqLlmMeta = { model?: string; provider?: string };
 type BoardNlqUiState = {
   allowedIdsByBoard: Record<string, string[]>;
   metricByBoard: Record<string, BoardNlqMetricSnapshot>;
-  /** Última consulta NLQ com metadados de modelo (Together quando aplicável). */
+  /** Última consulta NLQ com metadados de modelo (OpenAI-compat quando aplicável). */
   nlqLlmMetaByBoard: Record<string, NlqLlmMeta | undefined>;
   setBoardNlqCards: (boardId: string, ids: string[] | null) => void;
   setBoardNlqMetric: (boardId: string, snapshot: BoardNlqMetricSnapshot | null) => void;

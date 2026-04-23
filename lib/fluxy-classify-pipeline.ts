@@ -6,21 +6,24 @@ import { assertOrgAiBudget } from "@/lib/ai-org-budget";
 import { classifyIntentLocalSync } from "@/lib/fluxy-intent-local";
 import type { FluxyClassifyContext, FluxyIntentKind, FluxyLocalClassification } from "@/lib/fluxy-intent-types";
 import { fluxyLlmIntentSchema } from "@/lib/fluxy-intent-schema";
-import { createAnthropicProvider, createTogetherProvider } from "@/lib/llm-provider";
-import { resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 import { logFluxyClassifyTelemetry } from "@/lib/fluxy-intent-telemetry";
 
 const THRESH_HIGH = 0.72;
 const THRESH_MED = 0.6;
 
-const HAIKU_MODEL = process.env.FLUXY_CLASSIFY_HAIKU_MODEL?.trim() || "claude-3-5-haiku-20241022";
+const FAST_MODEL =
+  process.env.FLUXY_CLASSIFY_FAST_MODEL?.trim() ||
+  process.env.TOGETHER_MODEL?.trim() ||
+  "meta-llama/Llama-3.3-70B-Instruct-Turbo";
 
 function buildCacheKey(locale: string, text: string, context: FluxyClassifyContext): string {
   const digest = JSON.stringify({
     p: context.pathname ?? "",
     b: context.boardId ?? "",
   });
-  return hashCacheKey(["fluxy_classify_v1", locale, text.trim().toLowerCase(), digest]);
+  return hashCacheKey(["fluxy_classify_v2", locale, text.trim().toLowerCase(), digest]);
 }
 
 function extractJsonObject(raw: string): string | null {
@@ -31,12 +34,13 @@ function extractJsonObject(raw: string): string | null {
   return t.slice(start, end + 1);
 }
 
-async function runAnthropicClassifier(params: {
+async function runOpenAiCompatClassifier(params: {
+  runtime: NonNullable<ReturnType<typeof resolveOrgLlmRuntime>>;
   model: string;
   maxTokens: number;
   userPrompt: string;
 }): Promise<{ text: string; inputTokens?: number; outputTokens?: number } | null> {
-  const p = createAnthropicProvider();
+  const p = createOpenAiCompatProvider(params.runtime);
   const res = await p.chat(
     [
       {
@@ -53,22 +57,6 @@ async function runAnthropicClassifier(params: {
     inputTokens: res.usage?.inputTokens,
     outputTokens: res.usage?.outputTokens,
   };
-}
-
-async function runTogetherClassifier(params: { userPrompt: string; maxTokens: number }): Promise<{
-  text: string;
-  inputTokens?: number;
-  outputTokens?: number;
-  model: string;
-} | null> {
-  const p = createTogetherProvider();
-  const res = await p.chat(
-    [{ role: "user", content: params.userPrompt }],
-    undefined,
-    { maxTokens: params.maxTokens, temperature: 0.1 }
-  );
-  if (!res.ok) return null;
-  return { text: res.assistantText, inputTokens: res.usage?.inputTokens, outputTokens: res.usage?.outputTokens, model: res.model };
 }
 
 function buildUserPrompt(locale: string, text: string, context: FluxyClassifyContext): string {
@@ -98,7 +86,7 @@ function parseLlmIntent(raw: string): { kind: FluxyIntentKind; confidence: numbe
 }
 
 export type ClassifyPipelineResult = FluxyLocalClassification & {
-  tier: "local" | "haiku" | "sonnet" | "together_fast" | "together_full";
+  tier: "local" | "compat_fast" | "compat_full";
   cacheHit: boolean;
   budgetBlocked: boolean;
 };
@@ -113,6 +101,7 @@ export async function runFluxyClassifyPipeline(params: {
   org: Organization | null;
 }): Promise<ClassifyPipelineResult> {
   const { text, locale, context, orgId, userId, isAdmin, org } = params;
+  void isAdmin;
   const local = classifyIntentLocalSync(text, locale === "en" ? "en" : "pt-BR");
 
   if (context.localOnly) {
@@ -133,7 +122,7 @@ export async function runFluxyClassifyPipeline(params: {
           intent: parsed.intent as FluxyIntentKind,
           confidence: parsed.confidence,
           speech: parsed.speech || local.speech,
-          tier: parsed.tier ?? "sonnet",
+          tier: parsed.tier ?? "compat_full",
           cacheHit: true,
           budgetBlocked: false,
         };
@@ -148,8 +137,13 @@ export async function runFluxyClassifyPipeline(params: {
     return { ...local, tier: "local", cacheHit: false, budgetBlocked: true };
   }
 
-  const { route, anthropicModel } = resolveInteractiveLlmRoute(org, { userId, isAdmin });
+  const runtime = resolveOrgLlmRuntime(org);
+  if (!runtime) {
+    return { ...local, tier: "local", cacheHit: false, budgetBlocked: false };
+  }
+
   const userPrompt = buildUserPrompt(locale, text, context);
+  const fullModel = runtime.model;
 
   let tier: ClassifyPipelineResult["tier"] = "local";
   let merged: FluxyLocalClassification = local;
@@ -157,7 +151,6 @@ export async function runFluxyClassifyPipeline(params: {
   const tryLog = async (
     t: ClassifyPipelineResult["tier"],
     intentKind: string,
-    provider: "anthropic" | "together" | undefined,
     model: string | undefined,
     usage?: { in?: number; out?: number }
   ) => {
@@ -166,7 +159,7 @@ export async function runFluxyClassifyPipeline(params: {
       userId,
       tier: t,
       intentKind,
-      provider,
+      provider: "openai_compat",
       model,
       inputTokens: usage?.in,
       outputTokens: usage?.out,
@@ -175,50 +168,44 @@ export async function runFluxyClassifyPipeline(params: {
     });
   };
 
-  if (route === "anthropic") {
-    const pass1 = await runAnthropicClassifier({ model: HAIKU_MODEL, maxTokens: 220, userPrompt });
-    const parsed = pass1 ? parseLlmIntent(pass1.text) : null;
-    tier = "haiku";
-    const haikuOk = Boolean(parsed && parsed.confidence >= 0.55);
-    if (haikuOk) {
+  const pass1 = await runOpenAiCompatClassifier({
+    runtime,
+    model: FAST_MODEL,
+    maxTokens: 220,
+    userPrompt,
+  });
+  const parsed1 = pass1 ? parseLlmIntent(pass1.text) : null;
+  tier = "compat_fast";
+  const fastOk = Boolean(parsed1 && parsed1.confidence >= 0.55);
+  if (fastOk) {
+    merged = {
+      intent: parsed1!.kind,
+      confidence: Math.max(parsed1!.confidence, local.confidence),
+      speech: parsed1!.speech || local.speech,
+    };
+    await tryLog("compat_fast", merged.intent, FAST_MODEL, { in: pass1?.inputTokens, out: pass1?.outputTokens });
+  }
+
+  const secondGate = local.confidence < THRESH_MED || !fastOk;
+  if (secondGate) {
+    const pass2 = await runOpenAiCompatClassifier({
+      runtime,
+      model: fullModel,
+      maxTokens: 400,
+      userPrompt,
+    });
+    tier = "compat_full";
+    const p2 = pass2 ? parseLlmIntent(pass2.text) : null;
+    if (p2) {
       merged = {
-        intent: parsed!.kind,
-        confidence: Math.max(parsed!.confidence, local.confidence),
-        speech: parsed!.speech || local.speech,
-      };
-      await tryLog("haiku", merged.intent, "anthropic", HAIKU_MODEL, { in: pass1?.inputTokens, out: pass1?.outputTokens });
-    }
-    const sonnetGate = local.confidence < THRESH_MED || !haikuOk;
-    if (sonnetGate) {
-      const pass2 = await runAnthropicClassifier({ model: anthropicModel, maxTokens: 400, userPrompt });
-      const p2 = pass2 ? parseLlmIntent(pass2.text) : null;
-      tier = "sonnet";
-      if (p2) {
-        merged = {
-          intent: p2.kind,
-          confidence: Math.max(p2.confidence, local.confidence),
-          speech: p2.speech || merged.speech,
-        };
-      }
-      await tryLog("sonnet", merged.intent, "anthropic", anthropicModel, {
-        in: pass2?.inputTokens,
-        out: pass2?.outputTokens,
-      });
-    }
-  } else {
-    const passT = await runTogetherClassifier({ userPrompt, maxTokens: 320 });
-    tier = "together_full";
-    const parsed = passT ? parseLlmIntent(passT.text) : null;
-    if (parsed) {
-      merged = {
-        intent: parsed.kind,
-        confidence: Math.max(parsed.confidence, local.confidence),
-        speech: parsed.speech || local.speech,
+        intent: p2.kind,
+        confidence: Math.max(p2.confidence, local.confidence),
+        speech: p2.speech || merged.speech,
       };
     }
-    await tryLog("together_full", merged.intent, "together", passT?.model, {
-      in: passT?.inputTokens,
-      out: passT?.outputTokens,
+    await tryLog("compat_full", merged.intent, fullModel, {
+      in: pass2?.inputTokens,
+      out: pass2?.outputTokens,
     });
   }
 

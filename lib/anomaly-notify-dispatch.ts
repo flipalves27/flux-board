@@ -129,6 +129,7 @@ export async function postPersistAnomalyNotifications(args: {
       : await generateAnomalySuggestedAction({
           alert,
           board: ctxBoard,
+          org: org ?? null,
         });
     const suggested = suggestedResult.text;
 
@@ -137,7 +138,7 @@ export async function postPersistAnomalyNotifications(args: {
       suggestedResult.llmModel != null && String(suggestedResult.llmModel).trim()
         ? {
             suggestedActionModel: String(suggestedResult.llmModel).trim(),
-            suggestedActionProvider: String(suggestedResult.llmProvider || "together.ai").trim(),
+            suggestedActionProvider: String(suggestedResult.llmProvider || "openai_compat").trim(),
           }
         : {};
     await db.collection(COL_ANOMALY_ALERTS).updateOne(

@@ -80,7 +80,7 @@ describe("ChartShell", () => {
   });
 
   it("shows ApiError message when request fails with ApiError", async () => {
-    apiPostMock.mockRejectedValue(new ApiError("quota exceeded"));
+    apiPostMock.mockRejectedValue(new ApiError("quota exceeded", 429));
 
     render(
       <ChartShell title="Velocity" chartId="velocity" explainPayload={{ value: 3 }}>

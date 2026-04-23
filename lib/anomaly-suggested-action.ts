@@ -1,5 +1,7 @@
 import type { AnomalyAlertPayload } from "./anomaly-detection";
 import type { BoardData } from "./kv-boards";
+import type { Organization } from "./kv-organizations";
+import { resolveOrgLlmRuntime } from "./org-llm-runtime";
 import { callTogetherApi, safeJsonParse } from "./llm-utils";
 
 export function fallbackAnomalySuggestion(alert: AnomalyAlertPayload): string {
@@ -63,18 +65,21 @@ export type AnomalySuggestedActionResult = {
 };
 
 /**
- * Gera recomendação acionável em PT-BR (1–3 frases). Usa Together quando configurado.
+ * Gera recomendação acionável em PT-BR (1–3 frases). Usa motor OpenAI-compat (BYOK ou servidor).
  */
 export async function generateAnomalySuggestedAction(args: {
   alert: AnomalyAlertPayload;
   board?: BoardData | null;
+  org?: Organization | null;
 }): Promise<AnomalySuggestedActionResult> {
-  const { alert, board } = args;
-  const apiKey = process.env.TOGETHER_API_KEY;
-  const model = process.env.TOGETHER_MODEL;
-  if (!apiKey || !model) {
+  const { alert, board, org } = args;
+  const rt = resolveOrgLlmRuntime(org ?? null);
+  if (!rt) {
     return { text: fallbackAnomalySuggestion(alert) };
   }
+  const apiKey = rt.apiKey;
+  const model = rt.model;
+  const baseUrl = rt.baseUrl.replace(/\/+$/, "");
 
   const sys =
     "Você é um coach ágil sênior. Responda SOMENTE JSON válido: {\"suggestedAction\":\"...\"}. " +
@@ -101,7 +106,7 @@ export async function generateAnomalySuggestedAction(args: {
         { role: "user", content: userParts.join("\n\n") },
       ],
     },
-    { apiKey }
+    { apiKey, baseUrl }
   );
 
   if (!res.ok) {
@@ -114,5 +119,5 @@ export async function generateAnomalySuggestedAction(args: {
   if (!text) {
     return { text: fallbackAnomalySuggestion(alert) };
   }
-  return { text: text.slice(0, 400), llmModel: model, llmProvider: "together.ai" };
+  return { text: text.slice(0, 400), llmModel: model, llmProvider: "openai_compat" };
 }

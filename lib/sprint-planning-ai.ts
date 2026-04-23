@@ -2,8 +2,8 @@ import type { BoardData } from "@/lib/kv-boards";
 import type { SprintData } from "@/lib/schemas";
 import type { SprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import type { Organization } from "@/lib/kv-organizations";
-import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
-import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 
 export function countBoardCardsNotDone(board: BoardData): number {
   const cards = Array.isArray(board.cards) ? (board.cards as Array<Record<string, unknown>>) : [];
@@ -57,8 +57,9 @@ Responda em JSON válido com esta estrutura:
 }`;
 
   try {
-    const { route } = resolveBatchLlmRoute(org);
-    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    const runtime = resolveOrgLlmRuntime(org);
+    if (!runtime) throw new Error("no_api_key");
+    const provider = createOpenAiCompatProvider(runtime);
     const result = await provider.chat(
       [
         { role: "system", content: systemPrompt },

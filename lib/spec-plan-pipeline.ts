@@ -52,7 +52,7 @@ async function llmJson(params: {
   userId: string;
   isAdmin: boolean;
   userContent: string;
-  /** Saída JSON: outline ~6k; itens/cartões até 8k (teto Anthropic no provider). */
+  /** Saída JSON: outline ~6k; itens/cartões até 8k (limite do modelo). */
   maxOutputTokens?: number;
   temperature?: number;
 }): Promise<{ ok: true; json: unknown } | { ok: false; message: string }> {

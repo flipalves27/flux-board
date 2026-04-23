@@ -8,8 +8,9 @@ import {
 } from "@/lib/kv-organizations";
 import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { OrgAiSettingsUpdateSchema, OrgBrandingUpdateSchema, OrgUiSettingsUpdateSchema } from "@/lib/schemas";
-import { getEffectiveTier, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 import type { OrgAiSettings, Organization } from "@/lib/kv-organizations";
+import { decryptOrgAiSecrets, encryptOrgAiSecrets, getOrgAiSecretsMasterKey } from "@/lib/org-ai-secrets-crypto";
+import { organizationForApiClient } from "@/lib/org-api-response";
 import {
   orgBrandingAllowsCustomDomain,
   orgBrandingAllowsTheming,
@@ -36,35 +37,17 @@ export async function GET(request: NextRequest) {
   const org = await getOrganizationById(payload.orgId);
   if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
 
+  const base = organizationForApiClient(org);
   return NextResponse.json({
     organization: {
-      _id: org._id,
-      name: org.name,
-      slug: org.slug,
-      plan: org.plan,
+      ...base,
       /** Override manual: só administrador da plataforma + env `FLUX_ALLOW_ADMIN_PLAN_OVERRIDE`. */
       canAdminOverridePlan: canAdminOverridePlan(org) && isPlatformAdminFromAuthPayload(payload),
       /** Só relevante para quem pode override manual (admin da plataforma). */
       planOverrideBlockedByStripe:
         planOverrideBlockedByStripe(org) && isPlatformAdminFromAuthPayload(payload),
-      maxUsers: org.maxUsers,
-      maxBoards: org.maxBoards,
-      trialEndsAt: org.trialEndsAt ?? null,
-      downgradeGraceEndsAt: org.downgradeGraceEndsAt ?? null,
-      downgradeFromTier: org.downgradeFromTier ?? null,
-      billingNotice: org.billingNotice ?? null,
-      createdAt: org.createdAt,
-      branding: org.branding ?? null,
-      // Billing (Stripe)
-      stripeCustomerId: org.stripeCustomerId ?? null,
-      stripeSubscriptionId: org.stripeSubscriptionId ?? null,
-      stripePriceId: org.stripePriceId ?? null,
-      stripeStatus: org.stripeStatus ?? null,
-      stripeCurrentPeriodEnd: org.stripeCurrentPeriodEnd ?? null,
       /** Novo checkout só quando não há assinatura ativa; senão usar Portal Stripe. */
       allowStripeCheckout: shouldAllowStripeCheckoutForOrg(org),
-      aiSettings: org.aiSettings ?? null,
-      ui: org.ui ?? null,
     },
   });
 }
@@ -212,26 +195,51 @@ export async function PUT(request: NextRequest) {
       if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.flatten().formErrors.join(" ") }, { status: 400 });
       }
-      const tier = getEffectiveTier(current, planGateCtxFromAuthPayload(payload));
-      if (tier !== "business") {
-        return NextResponse.json(
-          { error: "Configurações de IA avançadas disponíveis no plano Business." },
-          { status: 403 }
-        );
-      }
       const a = parsed.data;
-      const prev = current.aiSettings ?? {};
-      const next: OrgAiSettings = { ...prev };
-      if (a.anthropicModel !== undefined) {
-        next.anthropicModel =
-          a.anthropicModel === "" || a.anthropicModel === null ? undefined : a.anthropicModel.trim().slice(0, 120);
+      const prev = current.aiSettings;
+      const master = getOrgAiSecretsMasterKey();
+      const next: OrgAiSettings = {};
+      if (prev?.togetherModel) next.togetherModel = prev.togetherModel;
+      if (prev?.aiSecretsEnc) next.aiSecretsEnc = prev.aiSecretsEnc;
+
+      if (a.togetherModel !== undefined) {
+        if (a.togetherModel === null || a.togetherModel === "") delete next.togetherModel;
+        else next.togetherModel = a.togetherModel.trim().slice(0, 160);
       }
-      if (a.batchLlmProvider !== undefined) {
-        next.batchLlmProvider = a.batchLlmProvider === null ? undefined : a.batchLlmProvider;
-      }
-      if (a.claudeUserIds !== undefined) {
-        next.claudeUserIds =
-          a.claudeUserIds === null ? [] : [...new Set(a.claudeUserIds.map((id) => id.trim()).filter(Boolean))].slice(0, 200);
+
+      if (a.removeTogetherSecrets) {
+        delete next.aiSecretsEnc;
+      } else {
+        const wantsSecretWrite =
+          (typeof a.togetherApiKey === "string" && a.togetherApiKey.trim() !== "") || a.togetherBaseUrl !== undefined;
+        if (wantsSecretWrite) {
+          let bag: { togetherApiKey?: string; togetherBaseUrl?: string } = {};
+          if (prev?.aiSecretsEnc && master) {
+            const d = decryptOrgAiSecrets(prev.aiSecretsEnc, master);
+            if (d) bag = { ...d };
+          }
+          const nk = typeof a.togetherApiKey === "string" ? a.togetherApiKey.trim() : "";
+          if (nk) bag.togetherApiKey = nk;
+          if (a.togetherBaseUrl !== undefined) {
+            if (a.togetherBaseUrl === null || a.togetherBaseUrl === "") delete bag.togetherBaseUrl;
+            else bag.togetherBaseUrl = a.togetherBaseUrl.trim();
+          }
+          const hasAny = Boolean(bag.togetherApiKey || bag.togetherBaseUrl);
+          if (hasAny) {
+            if (!master) {
+              return NextResponse.json(
+                {
+                  error:
+                    "Defina FLUX_AI_SECRETS_KEY no servidor (mín. 16 caracteres) para guardar a chave ou URL da API com segurança.",
+                },
+                { status: 400 }
+              );
+            }
+            next.aiSecretsEnc = encryptOrgAiSecrets(bag, master);
+          } else if (prev?.aiSecretsEnc) {
+            next.aiSecretsEnc = prev.aiSecretsEnc;
+          }
+        }
       }
       aiSettingsPatch = next;
     }
@@ -302,7 +310,16 @@ export async function PUT(request: NextRequest) {
       ...(planPatch !== undefined ? { plan: planPatch } : {}),
     });
     if (!org) return NextResponse.json({ error: "Organization não encontrada" }, { status: 404 });
-    return NextResponse.json({ organization: org });
+    const pub = organizationForApiClient(org);
+    return NextResponse.json({
+      organization: {
+        ...pub,
+        canAdminOverridePlan: canAdminOverridePlan(org) && isPlatformAdminFromAuthPayload(payload),
+        planOverrideBlockedByStripe:
+          planOverrideBlockedByStripe(org) && isPlatformAdminFromAuthPayload(payload),
+        allowStripeCheckout: shouldAllowStripeCheckoutForOrg(org),
+      },
+    });
   } catch (err) {
     return publicApiErrorResponse(err, { context: "api/organizations/me/route.ts", status: 400, fallbackMessage: "Pedido inválido. Tente novamente." });
   }

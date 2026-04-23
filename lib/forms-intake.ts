@@ -1,5 +1,7 @@
 import { classifyIntakeFormWithTogether } from "@/lib/automation-ai";
 import type { BoardData } from "@/lib/kv-boards";
+import type { Organization } from "@/lib/kv-organizations";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { sanitizeText } from "@/lib/schemas";
 
 export type IntakeFormConfig = {
@@ -210,20 +212,21 @@ export function classifyIntake(input: IntakeClassifierInput): IntakeClassifierOu
 }
 
 /**
- * Classifica a submissão com LLM (Together.ai) quando configurado; caso contrário usa heurística de `classifyIntake`.
+ * Classifica a submissão com LLM (API compatível com OpenAI) quando configurado; caso contrário usa heurística de `classifyIntake`.
  */
 export async function classifyIntakeWithBoardContext(params: {
   board: BoardData;
   formDefaultTags: string[];
   input: IntakeClassifierInput;
+  org?: Organization | null;
   /** Quando false, não chama a API (ex.: cota diária esgotada). */
   allowLlm?: boolean;
 }): Promise<IntakeClassifierOutput> {
-  const { board, formDefaultTags, input, allowLlm = true } = params;
+  const { board, formDefaultTags, input, allowLlm = true, org } = params;
   const heuristic = classifyIntake(input);
-  const togetherReady = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+  const llmReady = isOrgCloudLlmConfigured(org ?? null);
 
-  if (!allowLlm || !togetherReady) {
+  if (!allowLlm || !llmReady) {
     return { ...heuristic, usedLlm: false };
   }
 
@@ -236,6 +239,7 @@ export async function classifyIntakeWithBoardContext(params: {
     description: input.description,
     knownTags,
     similarCards: similar,
+    org,
   });
 
   if (!llm.ok || !llm.data) {
