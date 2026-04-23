@@ -1386,6 +1386,54 @@
       "heading": "Menos caça ao status. Mais entrega contínua.",
       "description": "Quando o trabalho vive só em mensagens, a prioridade some. Aqui o board é a fonte da verdade — com contexto rico e ritmo visível para todo o time."
     },
+    "smartShowcase": {
+      "sectionBadge": "Interações inteligentes",
+      "heading": "Veja o produto pensando — antes mesmo de entrar.",
+      "description": "Três mini-demos ao vivo: busca por IA, fluxo de cards automático e pulso de saúde do board reagindo em tempo real.",
+      "command": {
+        "title": "Busca por IA",
+        "description": "Digite o que precisa: boards em risco, resumo de sprint, gargalos do time. A Fluxy entende e responde.",
+        "placeholder": "Pergunte algo ao board…",
+        "samples": {
+          "0": "boards em risco essa semana",
+          "1": "resumo da sprint 42",
+          "2": "gargalos do time de onboarding",
+          "3": "quem está sobrecarregado?"
+        },
+        "hint": "Atalho ⌘K em qualquer tela. Fluxy executa ações e sumariza com contexto."
+      },
+      "flow": {
+        "title": "Fluxo automático",
+        "description": "Cards caminham pelo board conforme o time move — e métricas de throughput acompanham.",
+        "columns": {
+          "backlog": "Backlog",
+          "inProgress": "Em andamento",
+          "done": "Entregue"
+        },
+        "cards": {
+          "0": "Onboarding cliente X",
+          "1": "Bug relatório financeiro",
+          "2": "Nova API de cobrança",
+          "3": "Aprimorar fluxo de login",
+          "4": "Exportar CSV de leads"
+        },
+        "live": "Ao vivo"
+      },
+      "pulse": {
+        "title": "Pulso do board",
+        "description": "Saúde do board em tempo real: score, tendência e alertas integrados ao ritmo do time.",
+        "labels": {
+          "score": "Score",
+          "trend": "Tendência",
+          "health": "Saúde"
+        },
+        "states": {
+          "live": "Ao vivo",
+          "stable": "Estável",
+          "caution": "Atenção"
+        }
+      }
+    },
     "pillars": {
       "commercialPace": {
         "title": "Kanban alinhado a como vocês realmente trabalham",

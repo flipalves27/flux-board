@@ -1386,6 +1386,54 @@
       "heading": "Less status chasing. More steady delivery.",
       "description": "When work only lives in chat, priorities blur. Here the board is the source of truth — with rich context and a visible cadence for everyone."
     },
+    "smartShowcase": {
+      "sectionBadge": "Smart interactions",
+      "heading": "See the product thinking — before you even sign in.",
+      "description": "Three live mini-demos: AI-powered search, an auto-flowing Kanban, and real-time board pulse reacting as you watch.",
+      "command": {
+        "title": "AI search",
+        "description": "Ask anything: boards at risk, sprint summaries, team bottlenecks. Fluxy understands and answers.",
+        "placeholder": "Ask your board anything…",
+        "samples": {
+          "0": "boards at risk this week",
+          "1": "summarize sprint 42",
+          "2": "onboarding team bottlenecks",
+          "3": "who is overloaded?"
+        },
+        "hint": "⌘K shortcut anywhere. Fluxy executes actions and summarizes with context."
+      },
+      "flow": {
+        "title": "Auto flow",
+        "description": "Cards move through the board as the team works — throughput metrics follow in real time.",
+        "columns": {
+          "backlog": "Backlog",
+          "inProgress": "In progress",
+          "done": "Done"
+        },
+        "cards": {
+          "0": "Customer X onboarding",
+          "1": "Financial report bug",
+          "2": "New billing API",
+          "3": "Improve login flow",
+          "4": "Lead CSV export"
+        },
+        "live": "Live"
+      },
+      "pulse": {
+        "title": "Board pulse",
+        "description": "Real-time board health: score, trend, and alerts tuned to your team's rhythm.",
+        "labels": {
+          "score": "Score",
+          "trend": "Trend",
+          "health": "Health"
+        },
+        "states": {
+          "live": "Live",
+          "stable": "Stable",
+          "caution": "Caution"
+        }
+      }
+    },
     "pillars": {
       "commercialPace": {
         "title": "Kanban aligned with how you actually work",
