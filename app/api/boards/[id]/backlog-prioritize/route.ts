@@ -112,7 +112,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       userId: payload.id,
       isAdmin: Boolean(payload.isAdmin),
       mode: "batch",
-      planGateCtx: gateCtx,
       systemPrompt:
         "Você é a Fluxy. Responda apenas linhas cardId|frase, sem markdown, sem texto extra. Uma linha por card, na mesma ordem da lista.",
       userPrompt,

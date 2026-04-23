@@ -70,7 +70,6 @@ Inclua: contexto, próximo passo sugerido, riscos e links úteis se houver na de
     userId: assigneeId,
     isAdmin: Boolean(payload.isAdmin),
     mode: "interactive",
-    planGateCtx: gateCtx,
     systemPrompt:
       "Você é a Fluxy. Escreva o briefing em markdown leve (títulos ## e listas). Sem saudações genéricas. Foque no trabalho a entregar.",
     userPrompt,
