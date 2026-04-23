@@ -237,7 +237,14 @@ async function persistAdminUserKv(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
-  if (adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
+  /**
+   * Com .env a definir senha inicial, não podemos devolver o cache: o resync
+   * alinha a BD e senão o login lê o hash antigo (cache era calculado no pedido
+   * anterior, antes de mudar .env, ou a sincronização não correu ainda).
+   */
+  const maySkipAdminCache =
+    process.env.NODE_ENV === "production" || !hasExplicitAdminInitialPasswordInEnv();
+  if (maySkipAdminCache && adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
   if (ensureAdminPromise) return ensureAdminPromise;
 
   ensureAdminPromise = (async () => {
