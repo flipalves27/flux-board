@@ -831,12 +831,12 @@
     },
     "aiTitle": "Gerar com IA",
     "aiHint": "Responda a quatro perguntas — após cada uma o preview do board é atualizado. Edite colunas antes de criar.",
-    "aiConv.targetSafeHint": "Gerar colunas e rótulos no fluxo aproximado a PI/ART (SAFe®). Marcas Scaled Agile, Inc.",
     "aiPlaceholder": "Ex.: Time de CS B2B que faz onboarding, QBR e renovação…",
     "aiGenerate": "Gerar preview",
     "aiBusy": "Gerando estrutura…",
     "aiCreateBoard": "Criar board a partir do preview",
     "aiConv": {
+      "targetSafeHint": "Gerar colunas e rótulos no fluxo aproximado a PI/ART (SAFe®). Marcas Scaled Agile, Inc.",
       "intro": "Quatro perguntas rápidas (menos de 2 minutos). O preview é atualizado após cada resposta.",
       "step": "Passo {n} de 4",
       "q1": "Que tipo de time você tem?",
@@ -3733,6 +3733,12 @@
         "expandAria": "Mostrar meta do produto, barra de sprint e filtros de peso da matriz",
         "collapse": "Recolher meta, sprint e peso da matriz",
         "activeMatrixBadge": "Matriz: {filter}"
+      },
+      "chrome": {
+        "l2Trigger": "Filtros, etiquetas e pesquisa",
+        "l3Trigger": "Briefing, alertas e contexto do board",
+        "l2SummarySearch": "Pesquisa ativa: “{q}”",
+        "l3SummaryWip": "WIP visível: {n} em progresso"
       },
       "nlqCompact": {
         "expand": "Abrir busca NLQ",

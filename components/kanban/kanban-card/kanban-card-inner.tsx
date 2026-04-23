@@ -405,7 +405,7 @@ function KanbanCardInner({
       ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
       : sprintEmphasis
         ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50"
-        : "border-[var(--flux-border-default)] hover:border-[var(--flux-primary)]/50"
+        : "border-[var(--flux-control-border)] hover:border-[var(--flux-primary)]/50"
   } ${isBlockedOpen ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""} ${variantClass}`.trim();
 
   const selectionOverlay =

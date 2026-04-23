@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { KanbanCard } from "./kanban-card";
 import { CardTemplatePicker } from "./card-template-picker";
 import type { CardData, BucketConfig } from "@/app/board/[id]/page";
 import type { CardTemplate } from "@/lib/kv-card-templates";
@@ -12,6 +11,7 @@ import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { useTranslations } from "next-intl";
 import { countColumnBlockedOpen, countColumnOverdueOpen } from "@/lib/kanban-column-flow";
 import { KANBAN_COLUMN_CARD_CV_THRESHOLD } from "./kanban-constants";
+import { KanbanColumnCardList } from "./kanban-column-card-list";
 
 interface KanbanColumnProps {
   bucket: BucketConfig;
@@ -48,23 +48,6 @@ interface KanbanColumnProps {
   doneBucketKeys?: string[];
   /** Sample cycle times from completed cards (board-level). */
   historicalCycleDays?: number[];
-}
-
-function DroppableSlot({ id, tall }: { id: string; tall?: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <div
-      ref={setNodeRef}
-      data-tall={tall ? "true" : undefined}
-      aria-hidden="true"
-      role="presentation"
-      className={`flux-kanban-drop-slot min-h-[12px] flex-shrink-0 rounded transition-all duration-200 ease-out ${
-        isOver
-          ? "bg-[var(--flux-primary)]/20 ring-2 ring-[var(--flux-primary)]/40 scale-[1.01] shadow-[0_0_12px_var(--flux-primary-alpha-25)]"
-          : "hover:bg-[var(--flux-surface-hover)]"
-      }`}
-    />
-  );
 }
 
 export function KanbanColumn({
@@ -120,6 +103,14 @@ export function KanbanColumn({
   } = useSortable({ id: bucket.key });
 
   const { setNodeRef: setBucketRef, isOver } = useDroppable({ id: `bucket-${bucket.key}` });
+  const columnBodyScrollRef = useRef<HTMLDivElement | null>(null);
+  const setDropScrollRegionRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setBucketRef(node);
+      columnBodyScrollRef.current = node;
+    },
+    [setBucketRef]
+  );
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -180,7 +171,7 @@ export function KanbanColumn({
         />
         <div className="font-display font-bold text-xs text-[var(--flux-text)] flex-1 min-w-0 truncate flex items-center">
           {bucket.label}
-          <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--flux-chrome-alpha-12)] px-1.5 text-[10px] font-semibold tabular-nums text-[var(--flux-text-muted)]">
+          <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--flux-chrome-alpha-12)] px-1.5 text-flux-xs font-semibold tabular-nums text-[var(--flux-text-muted)]">
             {cards.length}
           </span>
         </div>
@@ -293,7 +284,7 @@ export function KanbanColumn({
                 content={t("column.flowInsights.blockedTooltip", { count: columnBlockedOpen })}
                 position="top"
               >
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-chrome-alpha-18)] bg-[var(--flux-black-alpha-12)] text-[var(--flux-text-muted)] tabular-nums">
+                <span className="text-flux-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-chrome-alpha-18)] bg-[var(--flux-black-alpha-12)] text-[var(--flux-text-muted)] tabular-nums">
                   {t("column.flowInsights.blockedChip", { count: columnBlockedOpen })}
                 </span>
               </CustomTooltip>
@@ -303,7 +294,7 @@ export function KanbanColumn({
                 content={t("column.flowInsights.overdueTooltip", { count: columnOverdueOpen })}
                 position="top"
               >
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-10)] text-[var(--flux-danger)] tabular-nums">
+                <span className="text-flux-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-[var(--flux-danger-alpha-35)] bg-[var(--flux-danger-alpha-10)] text-[var(--flux-danger)] tabular-nums">
                   {t("column.flowInsights.overdueChip", { count: columnOverdueOpen })}
                 </span>
               </CustomTooltip>
@@ -312,61 +303,56 @@ export function KanbanColumn({
         ) : null}
 
         <div
-          ref={setBucketRef}
+          ref={setDropScrollRegionRef}
           role="region"
           aria-label={t("column.dropRegionAriaLabel", { label: bucket.label })}
           className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
         >
-          {cards.length === 0 ? (
-            <div
-              {...(isFirstColumn ? { "data-tour": "board-card" as const } : {})}
-              className="min-h-[52px] rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-black-alpha-08)] flex items-center justify-center px-2 py-4 text-center text-xs text-[var(--flux-text-muted)]/50"
-            >
-              {isFirstColumn ? t("column.tourEmptyCardHint") : t("column.emptyHint")}
-            </div>
-          ) : null}
-          {cards.map((c, idx) => (
-            <div
-              key={c.id}
-              className="flux-kanban-card-cv-wrap flex flex-col gap-1"
-              data-flux-cv={useCv ? "1" : undefined}
-            >
-              <DroppableSlot id={`slot-${bucket.key}-${idx}`} tall={tallSlots} />
-              <KanbanCard
-                cardId={c.id}
-                bucketKey={bucket.key}
-                directions={directions}
-                dirColors={dirColors}
-                onEdit={onEditCard}
-                onDelete={onDeleteCard}
-                onSetDirection={onSetDirection}
-                onOpenDesc={onOpenDesc}
-                tourFirstCard={!!isFirstColumn && idx === 0}
-                buckets={boardBuckets}
-                priorities={priorities}
-                onPatchCard={onPatchCard}
-                onDuplicateCard={onDuplicateCard}
-                onPinToTop={onPinCardToTop}
-                activeDragIds={activeDragIds}
-                sprintBoardQuickActions={sprintBoardQuickActions}
-                historicalCycleDays={historicalCycleDays}
-                isFinalColumn={isFinalColumn}
-              />
-            </div>
-          ))}
-          <DroppableSlot id={`slot-${bucket.key}-${cards.length}`} tall={tallSlots} />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddCard();
-            }}
-            className="mt-1 w-full rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-transparent py-2 text-xs font-medium text-[var(--flux-text-muted)] flex items-center justify-center gap-1.5 transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)] active:scale-[0.98]"
-            aria-label={t("column.tooltips.newCard")}
-          >
-            <span className="text-sm leading-none">+</span>
-            {t("column.addCardButton")}
-          </button>
+          <KanbanColumnCardList
+            scrollRef={columnBodyScrollRef}
+            bucketKey={bucket.key}
+            cards={cards}
+            useCv={useCv}
+            tallSlots={tallSlots}
+            isFirstColumn={isFirstColumn}
+            directions={directions}
+            dirColors={dirColors}
+            boardBuckets={boardBuckets}
+            priorities={priorities}
+            onEditCard={onEditCard}
+            onDeleteCard={onDeleteCard}
+            onSetDirection={onSetDirection}
+            onOpenDesc={onOpenDesc}
+            onPatchCard={onPatchCard}
+            onDuplicateCard={onDuplicateCard}
+            onPinCardToTop={onPinCardToTop}
+            activeDragIds={activeDragIds}
+            sprintBoardQuickActions={sprintBoardQuickActions}
+            historicalCycleDays={historicalCycleDays}
+            isFinalColumn={isFinalColumn}
+            columnEmpty={
+              <div
+                {...(isFirstColumn ? { "data-tour": "board-card" as const } : {})}
+                className="min-h-[52px] rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-black-alpha-08)] flex items-center justify-center px-2 py-4 text-center text-xs text-[var(--flux-text-muted)]/50"
+              >
+                {isFirstColumn ? t("column.tourEmptyCardHint") : t("column.emptyHint")}
+              </div>
+            }
+            addCardFooter={
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddCard();
+                }}
+                className="mt-1 w-full rounded-[var(--flux-rad-sm)] border border-dashed border-[var(--flux-chrome-alpha-16)] bg-transparent py-2 text-xs font-medium text-[var(--flux-text-muted)] flex items-center justify-center gap-1.5 transition-colors hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-glow)] active:scale-[0.98]"
+                aria-label={t("column.tooltips.newCard")}
+              >
+                <span className="text-sm leading-none">+</span>
+                {t("column.addCardButton")}
+              </button>
+            }
+          />
         </div>
         </>
       )}

@@ -24,14 +24,8 @@ import { useCeremonyStore } from "@/stores/ceremony-store";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
-import { BoardNlqDock } from "./board-nlq-dock";
-import { BoardFilterBar } from "./board-filter-bar";
-import { BoardPriorityButtons } from "@/components/board/board-filter-chips";
-import { BoardIntelligenceRow } from "./board-intelligence-row";
-import { BoardDailyBriefing } from "./board-daily-briefing";
-import { AnomalyToastStack } from "./anomaly-toast-stack";
+import { BoardChromeSticky } from "./board-chrome-sticky";
 import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
-import { useFluxyOmnibarStore } from "@/stores/fluxy-omnibar-store";
 import { BoardFlowHealthPanel } from "./board-flow-health-panel";
 import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
 import { buildFlowInsightChips } from "@/lib/board-flow-insights";
@@ -54,21 +48,16 @@ import {
   type BoardMethodology,
 } from "@/lib/board-methodology";
 import { getMethodologyModule } from "@/lib/methodology-module";
-import { BoardProductGoalStrip } from "./board-product-goal-strip";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
 import { BoardLssAssistPanel } from "./board-lss-assist-panel";
-import { BoardLssDetailChrome } from "@/components/board-methodology/lean-six-sigma/board-lss-detail-chrome";
-import { BoardSafeDetailChrome } from "@/components/board-methodology/safe/board-safe-detail-chrome";
 import { BoardSafeAssistPanel } from "./board-safe-assist-panel";
-import { BoardViewModeSegment } from "./board-view-mode-segment";
 import type { BoardViewMode } from "./kanban-constants";
 import { BoardKnowledgeGraphPanel } from "./board-knowledge-graph-panel";
 import { BoardWorkloadPanel } from "./board-workload-panel";
 import { BoardFocusModeBar } from "./board-focus-mode-bar";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
-import { BoardAutomationSuggestions } from "./board-automation-suggestions";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
 function SelectionClearBridge({ clearRef }: { clearRef: React.MutableRefObject<(() => void) | null> }) {
@@ -817,329 +806,101 @@ function KanbanBoardLoaded({
     onCardsBatchDeleted: () => clearSelectionRef.current?.(),
   };
 
-  const activeMatrixWeightFilterLabel =
-    matrixWeightOptions.find((o) => o.key === matrixWeightFilter)?.label ?? "";
-  const detailCollapseOnMatrixOnly =
-    !isSprintMethodology(methodology) && !isLeanSixSigmaMethodology(methodology);
+  const showSprintInlineBadge =
+    isSprintMethodology(methodology) &&
+    activeSprintBoard?.status === "active" &&
+    Boolean(sprintProgress && sprintProgress.total > 0);
 
   return (
     <>
       {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
 
       {!focusMode && (
-      <div className="sticky top-[min(8rem,calc(env(safe-area-inset-top,0px)+6.75rem))] md:top-[42px] z-[var(--flux-z-board-sticky-chrome)] flex flex-col flux-glass-surface rounded-none border-x-0 border-t-0 border-b-[var(--flux-glass-surface-border)] flux-depth-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-200">
-        <BoardAutomationSuggestions
-          variant="topStrip"
-          boardId={boardId}
-          cards={board.cards}
-          buckets={board.buckets}
-        />
-        {/* --- NLQ Dock: compact / expanded -------------------------------- */}
-        {nlqExpanded && !(onda4.enabled && onda4.omnibar) ? (
-          <div className="relative">
-            <BoardNlqDock
-              boardId={boardId}
-              getHeaders={getHeaders}
-              boardView={boardView as BoardViewMode}
-              setBoardView={setBoardView}
-              allowedViewModes={methodologyModule.allowedViewModes}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              searchInputRef={filters.searchInputRef}
-            />
-            <button
-              type="button"
-              onClick={() => setNlqExpanded(false)}
-              className="absolute right-3 top-2 rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-              aria-label={t("board.nlqCompact.collapse")}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 15l-6-6-6 6" /></svg>
-            </button>
-          </div>
-        ) : (
-          <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 px-4 py-1.5 scrollbar-flux touch-pan-x sm:px-5 lg:px-6">
-            <BoardViewModeSegment
-              boardView={boardView as BoardViewMode}
-              setBoardView={setBoardView}
-              allowedViewModes={methodologyModule.allowedViewModes}
-              tTimeline={tView as (k: string) => string}
-              variant="keys"
-              groupAriaLabel={t("board.timeline.toggleGroupAria")}
-            />
-
-            {/* Sprint badge (inline) */}
-            {isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && sprintProgress && sprintProgress.total > 0 ? (
-              <button
-                type="button"
-                onClick={toggleSprintScopeOnly}
-                className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-semibold transition-colors shrink-0 ${
-                  sprintScopeOnly
-                    ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                    : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-                }`}
-                title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
-              >
-                <svg viewBox="0 0 36 36" className="h-5 w-5 -rotate-90 shrink-0" aria-hidden>
-                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--flux-chrome-alpha-12)" strokeWidth="3.5" />
-                  <circle
-                    cx="18" cy="18" r="15.5" fill="none"
-                    stroke={sprintProgress.pct === 100 ? "var(--flux-success)" : "var(--flux-primary)"}
-                    strokeWidth="3.5"
-                    strokeDasharray={`${(sprintProgress.pct / 100) * 97.4} 97.4`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="tabular-nums">{sprintProgress.pct}%</span>
-                <span className="truncate max-w-[100px] hidden sm:inline">{activeSprintBoard.name}</span>
-              </button>
-            ) : null}
-
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-              <BoardPriorityButtons boardId={boardId} />
-            </div>
-
-            {!(onda4.enabled && onda4.omnibar) ? (
-              <button
-                type="button"
-                onClick={() => setNlqExpanded(true)}
-                className="ml-auto rounded-md border border-[var(--flux-chrome-alpha-12)] p-1.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)] transition-colors"
-                aria-label={t("board.nlqCompact.expand")}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
-              </button>
-            ) : null}
-
-            <div className="relative shrink-0 w-[min(100%,180px)] sm:w-[200px]">
-              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[var(--flux-text-muted)] opacity-50 text-xs select-none" aria-hidden>⌕</span>
-              <input
-                ref={filters.searchInputRef}
-                data-flux-board-search
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar…"
-                className="w-full pl-7 pr-2 py-1 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-[11px] bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] outline-none transition-all duration-200"
-              />
-            </div>
-          </div>
-        )}
-
-        <BoardFilterBar boardId={boardId} hidePriorities getHeaders={getHeaders} />
-
-        {onda4.enabled && onda4.omnibar ? (
-          <div className="border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1.5 text-[10px] text-[var(--flux-text-muted)] sm:px-5">
-            Onda 4: NLQ compacto foi integrado à Omnibar Fluxy (⌘K ou /). Painéis de fluxo, cadência e carga continuam pelos atalhos do board.
-          </div>
-        ) : null}
-        <BoardDailyBriefing boardId={boardId} />
-        <AnomalyToastStack boardId={boardId} />
-
-        {/* --- Intelligence Row: collapsible ------------------------------- */}
-        {intelligenceExpanded ? (
-          <div className="relative">
-            <BoardIntelligenceRow
-              portfolio={portfolioSnapshot}
-              chips={flowChips}
-              insightFocusActive={insightFocusCardIds.size > 0}
-              onInsightChip={(ids) => setInsightFocusCardIds(ids)}
-              onClearInsightFocus={clearInsightFocus}
-              onOpenFlowHealth={() => setFlowHealthOpen(true)}
-              onOpenSprintCoach={() => setSprintCoachOpen(true)}
-              sprintCoachVisible={isSprintMethodology(methodology) && activeSprintBoard?.status === "active"}
-              onOpenCadence={() => setKanbanCadenceOpen(true)}
-              cadenceVisible={methodology === "kanban"}
-              boardId={boardId}
-              getHeaders={getHeaders}
-              onOpenWorkloadBalance={() => setWorkloadBalanceOpen(true)}
-              onOpenKnowledgeGraph={() => setKnowledgeGraphOpen(true)}
-              onda4Omnibar={onda4.enabled && onda4.omnibar}
-              onAskFluxy={() => {
-                const seed = `Resumir riscos e WIP deste board (${boardName})`;
-                useFluxyOmnibarStore.getState().setPendingSeed(seed);
-                window.dispatchEvent(new CustomEvent("flux-open-fluxy-omnibar", { detail: { seed } }));
-              }}
-            />
-            <button
-              type="button"
-              onClick={toggleIntelligenceExpanded}
-              className="absolute right-3 top-1.5 rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-              aria-label={t("board.intelligenceCollapse.collapse")}
-              aria-expanded
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden><path d="M18 15l-6-6-6 6" /></svg>
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1 sm:px-5 lg:px-6">
-            <button
-              type="button"
-              onClick={toggleIntelligenceExpanded}
-              className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-              aria-expanded={false}
-              aria-label={t("board.intelligenceCollapse.expand")}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
-              <span>{t("board.intelligenceCollapse.label")}</span>
-            </button>
-            <span className="text-[10px] tabular-nums text-[var(--flux-text-muted)]">
-              WIP {board.executionInsights.inProgress}
+        <BoardChromeSticky
+          surfaceVariant="glass"
+          tChrome={(key) => t(`board.${key}`)}
+          l2TriggerSummary={
+            searchQuery.trim() ? (
+              <span className="truncate">
+                {t("board.chrome.l2SummarySearch", { q: searchQuery.trim() })}
+              </span>
+            ) : null
+          }
+          l3TriggerSummary={
+            <span className="truncate">
+              {t("board.chrome.l3SummaryWip", { n: board.executionInsights.inProgress })}
             </span>
-            {flowChips.find((c) => c.kind === "blocked") ? (
-              <span className="text-[10px] tabular-nums text-[var(--flux-warning,#f59e0b)]">
-                {flowChips.find((c) => c.kind === "blocked")?.values?.count ?? 0} blocked
-              </span>
-            ) : null}
-            {portfolioSnapshot.risco !== null ? (
-              <span className="text-[10px] tabular-nums text-[var(--flux-text-muted)]">
-                {t("board.intelligence.riskShort", { n: portfolioSnapshot.risco })}
-              </span>
-            ) : null}
-          </div>
-        )}
-
-        {!detailChromeExpanded ? (
-          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1 sm:px-5 lg:px-6">
-            <button
-              type="button"
-              onClick={toggleDetailChromeExpanded}
-              className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-              aria-expanded={false}
-              aria-label={t("board.detailChrome.expandAria")}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-              <span>{t("board.detailChrome.expand")}</span>
-            </button>
-            {matrixWeightFilter !== "all" ? (
-              <span
-                className="max-w-[min(100%,220px)] truncate rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-primary-light)]"
-                title={activeMatrixWeightFilterLabel}
-              >
-                {t("board.detailChrome.activeMatrixBadge", { filter: activeMatrixWeightFilterLabel })}
-              </span>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            {methodologyModule.detailChromeStrip === "scrum_product_goal" ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={toggleDetailChromeExpanded}
-                  className="absolute left-2 top-2 z-[1] rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-                  aria-label={t("board.detailChrome.collapse")}
-                  aria-expanded
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-                    <path d="M18 15l-6-6-6 6" />
-                  </svg>
-                </button>
-                <BoardProductGoalStrip
-                  boardId={boardId}
-                  getHeaders={getHeaders}
-                  onOpenScrumSettings={() => setScrumSettingsOpen(true)}
-                  onOpenIncrementReview={() => setIncrementReviewOpen(true)}
-                  className="pl-10 sm:pl-11"
-                />
-              </div>
-            ) : null}
-
-            {methodologyModule.detailChromeStrip === "lss_context" ? (
-              <BoardLssDetailChrome
-                buckets={board.buckets}
-                cards={board.cards}
-                onOpenAssist={() => setLssAssistOpen(true)}
-                onCollapseDetailChrome={toggleDetailChromeExpanded}
-              />
-            ) : null}
-
-            {methodologyModule.detailChromeStrip === "safe_context" ? (
-              <BoardSafeDetailChrome
-                buckets={board.buckets}
-                cards={board.cards}
-                onOpenAssist={() => setSafeAssistOpen(true)}
-                onCollapseDetailChrome={toggleDetailChromeExpanded}
-              />
-            ) : null}
-
-            {/* Sprint bar: only shows as full row when NLQ dock is expanded (compact badge handles it otherwise) */}
-            {nlqExpanded && isSprintMethodology(methodology) && activeSprintBoard?.status === "active" ? (
-              <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
-                {sprintProgress && sprintProgress.total > 0 ? (
-                  <div
-                    className="relative h-9 w-9 shrink-0"
-                    title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
-                  >
-                    <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--flux-chrome-alpha-12)" strokeWidth="3" />
-                      <circle
-                        cx="18" cy="18" r="15.5" fill="none"
-                        stroke={sprintProgress.pct === 100 ? "var(--flux-success)" : "var(--flux-primary)"}
-                        strokeWidth="3"
-                        strokeDasharray={`${(sprintProgress.pct / 100) * 97.4} 97.4`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums text-[var(--flux-text-muted)]">
-                      {sprintProgress.pct}%
-                    </span>
-                  </div>
-                ) : null}
-                <span className="text-[11px] font-semibold text-[var(--flux-text-muted)] truncate max-w-[min(100%,220px)]">
-                  {activeSprintBoard.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={toggleSprintScopeOnly}
-                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                    sprintScopeOnly
-                      ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                      : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-                  }`}
-                >
-                  {sprintScopeOnly ? t("board.filters.sprintAll") : t("board.filters.sprintOnly")}
-                </button>
-                <span className="text-[10px] text-[var(--flux-text-muted)] hidden sm:inline">{t("board.filters.sprintFilterHint")}</span>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
-              {detailCollapseOnMatrixOnly ? (
-                <button
-                  type="button"
-                  onClick={toggleDetailChromeExpanded}
-                  className="shrink-0 rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-                  aria-label={t("board.detailChrome.collapse")}
-                  aria-expanded
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-                    <path d="M18 15l-6-6-6 6" />
-                  </svg>
-                </button>
-              ) : null}
-              <span className="text-[11px] font-semibold text-[var(--flux-text-muted)]">{t("board.filters.matrixWeightLabel")}</span>
-              {matrixWeightOptions.map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setMatrixWeightFilter(opt.key)}
-                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                    matrixWeightFilter === opt.key
-                      ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                      : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+          }
+          l1={{
+            boardId,
+            boardName,
+            cards: board.cards,
+            buckets: board.buckets,
+            nlqExpanded,
+            setNlqExpanded,
+            onda4Omnibar: onda4.enabled && onda4.omnibar,
+            getHeaders,
+            boardView: boardView as BoardViewMode,
+            setBoardView,
+            allowedViewModes: methodologyModule.allowedViewModes,
+            showSprintInlineBadge,
+            activeSprintName: activeSprintBoard?.status === "active" ? activeSprintBoard.name ?? null : null,
+            sprintProgress,
+            sprintScopeOnly,
+            toggleSprintScopeOnly,
+            searchQuery,
+            setSearchQuery,
+            searchInputRef: filters.searchInputRef,
+            t,
+            tTimeline: tView as (k: string) => string,
+          }}
+          l2={{
+            boardId,
+            getHeaders,
+            searchQuery,
+            setSearchQuery,
+            searchInputRef: filters.searchInputRef,
+            onda4Enabled: onda4.enabled,
+            onda4Omnibar: onda4.omnibar,
+            nlqExpanded,
+          }}
+          l3={{
+            boardId,
+            boardName,
+            getHeaders,
+            methodology,
+            methodologyModule,
+            board,
+            portfolioSnapshot,
+            flowChips,
+            insightFocusCardIds,
+            setInsightFocusCardIds,
+            clearInsightFocus,
+            intelligenceExpanded,
+            toggleIntelligenceExpanded,
+            detailChromeExpanded,
+            toggleDetailChromeExpanded,
+            nlqExpanded,
+            activeSprintBoard: activeSprintBoard ?? null,
+            sprintProgress,
+            sprintScopeOnly,
+            toggleSprintScopeOnly,
+            matrixWeightFilter,
+            setMatrixWeightFilter,
+            matrixWeightOptions,
+            onOpenFlowHealth: () => setFlowHealthOpen(true),
+            onOpenSprintCoach: () => setSprintCoachOpen(true),
+            onOpenKanbanCadence: () => setKanbanCadenceOpen(true),
+            onOpenWorkloadBalance: () => setWorkloadBalanceOpen(true),
+            onOpenKnowledgeGraph: () => setKnowledgeGraphOpen(true),
+            onOpenScrumSettings: () => setScrumSettingsOpen(true),
+            onOpenIncrementReview: () => setIncrementReviewOpen(true),
+            onOpenLssAssist: () => setLssAssistOpen(true),
+            onOpenSafeAssist: () => setSafeAssistOpen(true),
+            onda4Omnibar: onda4.enabled && onda4.omnibar,
+            t,
+          }}
+        />
       )}
 
       {/* Hidden file input for CSV import — triggered from the header via the board-store bridge */}

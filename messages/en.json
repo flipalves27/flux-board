@@ -831,12 +831,12 @@
     },
     "aiTitle": "Generate with AI",
     "aiHint": "Answer a few questions — after each step we refresh a live board preview. Edit columns before creating.",
-    "aiConv.targetSafeHint": "Generate columns and labels in an approximate PI/ART-style (SAFe®) flow. Trademarks belong to Scaled Agile, Inc.",
     "aiPlaceholder": "e.g. B2B CS team running onboarding, QBRs, and renewals…",
     "aiGenerate": "Generate preview",
     "aiBusy": "Generating structure…",
     "aiCreateBoard": "Create board from preview",
     "aiConv": {
+      "targetSafeHint": "Generate columns and labels in an approximate PI/ART-style (SAFe®) flow. Trademarks belong to Scaled Agile, Inc.",
       "intro": "Four short questions (under two minutes). Your preview updates after each answer.",
       "step": "Step {n} of 4",
       "q1": "What kind of team is it?",
@@ -3732,6 +3732,12 @@
         "expandAria": "Show product goal, sprint bar and matrix weight filters",
         "collapse": "Collapse product context and matrix filters",
         "activeMatrixBadge": "Matrix: {filter}"
+      },
+      "chrome": {
+        "l2Trigger": "Filters, labels & search",
+        "l3Trigger": "Briefing, alerts & board context",
+        "l2SummarySearch": "Active search: “{q}”",
+        "l3SummaryWip": "Visible WIP: {n} in progress"
       },
       "nlqCompact": {
         "expand": "Open NLQ search",
