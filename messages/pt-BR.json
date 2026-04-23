@@ -2253,7 +2253,8 @@
       "copy": "Copiar",
       "download": "Baixar .md",
       "close": "Fechar",
-      "generatedBy": "Gerado por {model}"
+      "generatedBy": "Gerado por {model}",
+      "packageHint": "Parte do pacote de inteligência operacional (digest, alertas de anomalia, brief): focado no board, com limites de uso e sugestões acionáveis — não é chat genérico."
     },
     "portal": {
       "open": "Portal do cliente",
@@ -2282,6 +2283,40 @@
       "displayTitle": "Título exibido no portal",
       "saveSuccess": "Portal atualizado.",
       "saveError": "Erro ao salvar o portal."
+    },
+    "reports": {
+      "open": "Relatórios",
+      "aria": "Abrir relatórios da organização — métricas de fluxo, CFD e lead time"
+    },
+    "intakeForm": {
+      "open": "Flux Forms (intake público)",
+      "title": "Flux Forms — intake público",
+      "hint": "Visitantes enviam pedidos sem conta Flux. Cada envio cria um card neste board, com classificação assistida opcional.",
+      "journeyHint": "Em seguida: abra Automações e crie uma regra com o gatilho “Novo envio Flux Forms” para mover, etiquetar ou notificar (demo em poucos minutos).",
+      "loading": "Carregando formulário…",
+      "enabled": "Ativar formulário público",
+      "slug": "Slug da URL",
+      "slugPlaceholder": "ex.: pedidos-suporte",
+      "slugHint": "URL pública: …/forms/{slug}. Mínimo 3 caracteres.",
+      "formTitle": "Título do formulário",
+      "formTitlePlaceholder": "Aparece no topo da página pública",
+      "description": "Descrição curta (opcional)",
+      "descriptionPlaceholder": "O que o solicitante deve enviar?",
+      "targetBucket": "Coluna padrão para novos cards",
+      "defaultPriority": "Prioridade padrão",
+      "defaultProgress": "Status / progresso padrão",
+      "defaultTags": "Tags padrão",
+      "defaultTagsPlaceholder": "Separadas por vírgula, ex.: intake, triagem",
+      "publicUrl": "Link público",
+      "copyLink": "Copiar link público",
+      "linkCopied": "Link do formulário copiado.",
+      "linkCopyFailed": "Não foi possível copiar o link.",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "saveOk": "Flux Forms salvo.",
+      "saveError": "Não foi possível salvar o Flux Forms.",
+      "validationError": "Preencha slug (3+ caracteres), título e uma coluna válida."
     }
   },
   "portal": {
@@ -2314,6 +2349,7 @@
     },
     "fluxIntelligence": {
       "title": "Flux Intelligence",
+      "packageIntro": "Pacote de inteligência operacional: sinais estruturados e próximos passos sugeridos — use junto de Daily Insights, alertas de anomalia e Brief executivo.",
       "backToBoard": "Voltar ao board",
       "tabInsights": "Insights",
       "tabDeps": "Dependências",

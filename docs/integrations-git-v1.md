@@ -2,6 +2,16 @@
 
 Initial v1 scaffold for organization-level GitHub/GitLab integrations.
 
+## Escopo cirúrgico (ICP)
+
+Objetivo **não** é paridade com Jira ou um catálogo amplo de eventos. Para o ICP (squads produto+ops, times híbridos, consultoria de fluxo), o v1 prioriza:
+
+- **Ligação card ↔ branch/PR/MR** e fechamento de laço quando o merge ocorre.
+- **Webhooks inbound** com verificação de assinatura e dedupe.
+- **Automação mínima de estado** no cartão (tags/links), auditável.
+
+Fora do escopo curto: replicação de Issues como ITSM, comentários bidirecionais completos e “qualquer evento do GitHub”. Ver [posicionamento ICP e moat](strategy/posicionamento-icp-e-moat.md#5-integrações-cirúrgicas-github-gitlab-e-api-pública).
+
 ## Organization connection endpoints
 
 - `GET /api/integrations/github`

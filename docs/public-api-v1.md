@@ -24,6 +24,10 @@ Rate-limit envs (optional):
 - `PUBLIC_API_V1_RATE_LIMIT_READ` (default `240`)
 - `PUBLIC_API_V1_RATE_LIMIT_WRITE` (default `90`)
 
+## Princípios de escopo (ICP)
+
+A API pública existe para **estender o fluxo** (automação interna, CI, bots da org): boards, cards, comentários e sprints com **escopos** e **rate limit** explícitos. Não é objetivo cobrir paridade com administradores de campo ou workflow de ferramentas enterprise. Referência: [posicionamento ICP e moat](strategy/posicionamento-icp-e-moat.md#5-integrações-cirúrgicas-github-gitlab-e-api-pública).
+
 ## OpenAPI document
 
 - Endpoint: `GET /api/public/v1/openapi`

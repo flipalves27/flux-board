@@ -2,6 +2,8 @@
 
 Aplicação de gestão de backlog em formato Kanban. **Organize the flow. Ship what matters.**
 
+Posicionamento (ICP, moat de fluxo, intake, inteligência operacional e escopo de integrações): [`docs/strategy/posicionamento-icp-e-moat.md`](docs/strategy/posicionamento-icp-e-moat.md).
+
 ## Estrutura do Projeto
 
 ```

@@ -17,13 +17,14 @@ import { OnboardingFluxyHero } from "@/components/onboarding/onboarding-fluxy-he
 import {
   DEFAULT_TEMPLATE_ID,
   ONBOARDING_TEMPLATES,
+  resolveOnboardingTemplateBuckets,
   type BucketConfig,
   type TemplateId,
   getOnboardingDoneStorageKey,
   getOnboardingFluxyHeroStorageKey,
   getOnboardingStateStorageKey,
 } from "@/lib/onboarding";
-import { defaultBucketOrderLeanSixSigma, type BoardMethodology } from "@/lib/board-methodology";
+import { type BoardMethodology } from "@/lib/board-methodology";
 import { nextBoardCardId } from "@/lib/card-id";
 import { useInviteJoinAcknowledgement } from "@/hooks/use-invite-join-acknowledgement";
 
@@ -163,7 +164,9 @@ export default function OnboardingPage() {
   const [boardId, setBoardId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState<string>("");
   const [templateId, setTemplateId] = useState<TemplateId>(DEFAULT_TEMPLATE_ID);
-  const [bucketOrder, setBucketOrder] = useState<BucketConfig[]>(ONBOARDING_TEMPLATES[DEFAULT_TEMPLATE_ID].buckets);
+  const [bucketOrder, setBucketOrder] = useState<BucketConfig[]>(() =>
+    resolveOnboardingTemplateBuckets("kanban", DEFAULT_TEMPLATE_ID)
+  );
   const [columnsPersisted, setColumnsPersisted] = useState(false);
 
   // Step 3 form state
@@ -172,7 +175,7 @@ export default function OnboardingPage() {
   const [cardBucketKey, setCardBucketKey] = useState<string>("");
   const [cardPriority, setCardPriority] = useState<(typeof PRIORITIES)[number]>("Média");
   const [cardProgress, setCardProgress] = useState<(typeof PROGRESSES)[number]>("Não iniciado");
-  const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("scrum");
+  const [wizardMethodology, setWizardMethodology] = useState<BoardMethodology>("kanban");
   const [onboardingBoardsRetryKey, setOnboardingBoardsRetryKey] = useState(0);
   const [fluxyHeroOpen, setFluxyHeroOpen] = useState(false);
   /** Incrementado a cada execução do efeito de init; evita que uma resposta antiga marque o passo como “pronto”. */
@@ -204,10 +207,10 @@ export default function OnboardingPage() {
     if (storageKey) localStorage.removeItem(storageKey);
   }, [user, doneKey, storageKey]);
 
-  const loadTemplateBuckets = useCallback((tid: TemplateId) => {
-    const t = ONBOARDING_TEMPLATES[tid];
-    setBucketOrder(t.buckets);
-    setCardBucketKey((t.buckets[0]?.key ?? "").toString());
+  const syncPreviewBuckets = useCallback((tid: TemplateId, methodology: BoardMethodology) => {
+    const buckets = resolveOnboardingTemplateBuckets(methodology, tid);
+    setBucketOrder(buckets);
+    setCardBucketKey((buckets[0]?.key ?? "").toString());
   }, []);
 
   useEffect(() => {
@@ -302,9 +305,10 @@ export default function OnboardingPage() {
           setStep(1);
           setBoardId(null);
           setBoardName("");
+          setWizardMethodology("kanban");
           setTemplateId(DEFAULT_TEMPLATE_ID);
           setColumnsPersisted(false);
-          loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
+          syncPreviewBuckets(DEFAULT_TEMPLATE_ID, "kanban");
           return;
         }
 
@@ -312,9 +316,10 @@ export default function OnboardingPage() {
         setStep(1);
         setBoardId(null);
         setBoardName("");
+        setWizardMethodology("kanban");
         setTemplateId(DEFAULT_TEMPLATE_ID);
         setColumnsPersisted(false);
-        loadTemplateBuckets(DEFAULT_TEMPLATE_ID);
+        syncPreviewBuckets(DEFAULT_TEMPLATE_ID, "kanban");
       } catch (e) {
         if (cancelled) return;
         const msg =
@@ -330,7 +335,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [doneKey, getHeaders, loadTemplateBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
+  }, [doneKey, getHeaders, syncPreviewBuckets, router, storageKey, user?.id, isChecked, localeRoot, onboardingBoardsRetryKey]);
 
   useEffect(() => {
     if (!heroStorageKey) {
@@ -400,10 +405,7 @@ export default function OnboardingPage() {
         }
 
         const name = (nextBoardName || "").trim() || "Meu Board";
-        const templateBuckets =
-          wizardMethodology === "lean_six_sigma"
-            ? defaultBucketOrderLeanSixSigma()
-            : ONBOARDING_TEMPLATES[nextTemplateId].buckets;
+        const templateBuckets = resolveOnboardingTemplateBuckets(wizardMethodology, nextTemplateId);
 
         const { board } = await apiPost<{ board: { id: string; name: string } }>(
           "/api/boards",
@@ -679,7 +681,10 @@ export default function OnboardingPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => setWizardMethodology("scrum")}
+                      onClick={() => {
+                        setWizardMethodology("scrum");
+                        syncPreviewBuckets(templateId, "scrum");
+                      }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                         wizardMethodology === "scrum"
                           ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
@@ -691,7 +696,10 @@ export default function OnboardingPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => setWizardMethodology("kanban")}
+                      onClick={() => {
+                        setWizardMethodology("kanban");
+                        syncPreviewBuckets(templateId, "kanban");
+                      }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                         wizardMethodology === "kanban"
                           ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
@@ -703,7 +711,10 @@ export default function OnboardingPage() {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => setWizardMethodology("lean_six_sigma")}
+                      onClick={() => {
+                        setWizardMethodology("lean_six_sigma");
+                        syncPreviewBuckets(templateId, "lean_six_sigma");
+                      }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                         wizardMethodology === "lean_six_sigma"
                           ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
@@ -730,6 +741,7 @@ export default function OnboardingPage() {
                           disabled={busy}
                           onClick={() => {
                             setTemplateId(tid);
+                            syncPreviewBuckets(tid, wizardMethodology);
                           }}
                           className={`text-left rounded-[var(--flux-rad)] border px-4 py-3 transition-colors ${
                             isSelected

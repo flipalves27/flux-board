@@ -1,5 +1,9 @@
 # Onda 3 - Roadmap Tecnico de Competitividade v1
 
+## Alinhamento com posicionamento (2026)
+
+Integrações e API seguem escopo **cirúrgico** para o ICP (fluxo + entrega), não checklist de paridade Jira: ver [posicionamento-icp-e-moat.md](posicionamento-icp-e-moat.md).
+
 ## Objetivo
 Entregar base de ecossistema e integracoes para elevar paridade competitiva: Git, API publica, PWA/push e automation builder.
 
