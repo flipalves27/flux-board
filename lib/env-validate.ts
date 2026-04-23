@@ -37,9 +37,11 @@ export function validateServerEnv(): void {
   }
 
   if (process.env.NODE_ENV === "production" && !isNextCompilerBuildPhase()) {
-    if (!process.env.ADMIN_INITIAL_PASSWORD?.trim()) {
+    const hasAdminInitial =
+      process.env.ADMIN_INITIAL_PASSWORD_B64?.trim() || process.env.ADMIN_INITIAL_PASSWORD?.trim();
+    if (!hasAdminInitial) {
       throw new Error(
-        "[env] ADMIN_INITIAL_PASSWORD é obrigatório em produção (password inicial do utilizador admin seed)."
+        "[env] Defina ADMIN_INITIAL_PASSWORD ou ADMIN_INITIAL_PASSWORD_B64 em produção (password inicial do utilizador admin seed)."
       );
     }
     const stripe = process.env.STRIPE_SECRET_KEY?.trim();
