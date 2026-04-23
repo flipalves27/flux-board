@@ -3,7 +3,11 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import type { CardData } from "@/app/board/[id]/page";
-import { BOARD_VIEW_STORAGE_PREFIX, type BoardViewMode } from "@/components/kanban/kanban-constants";
+import {
+  BOARD_VIEW_STORAGE_PREFIX,
+  isBoardViewMode,
+  type BoardViewMode,
+} from "@/components/kanban/kanban-constants";
 
 export type ConfirmDeleteState =
   | { type: "card" | "bucket"; id: string; label: string }
@@ -69,7 +73,7 @@ export const useKanbanUiStore = create<KanbanUiState>()(
           })),
         getBoardView: (boardId) => {
           const v = get().boardViewByBoard[boardId] ?? "kanban";
-          return v === "kanban" || v === "table" || v === "timeline" || v === "eisenhower" || v === "executive" ? v : "kanban";
+          return isBoardViewMode(v) ? v : "kanban";
         },
 
         modalCard: null,

@@ -68,7 +68,7 @@ import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
-import { isScrumMethodology, type BoardMethodology } from "@/lib/board-methodology";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass, SprintData, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import {
   setBoardPersistenceHandler,
@@ -553,7 +553,10 @@ export default function BoardPage() {
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
-        methodologyRaw === "kanban" || methodologyRaw === "scrum" || methodologyRaw === "lean_six_sigma"
+        methodologyRaw === "kanban" ||
+        methodologyRaw === "scrum" ||
+        methodologyRaw === "lean_six_sigma" ||
+        methodologyRaw === "discovery"
           ? methodologyRaw
           : undefined;
       useBoardStore.getState().hydrate(boardId, {
@@ -1089,7 +1092,7 @@ export default function BoardPage() {
 
       <BoardCopilotPanel boardId={boardId} boardName={boardName} getHeaders={getHeaders} hideDesktopFab />
 
-      {isScrumMethodology(boardMethodologyForSprint ?? "scrum") ? (
+      {isSprintMethodology(boardMethodologyForSprint ?? "scrum") ? (
         <SprintPanel boardId={boardId} getHeaders={getHeaders} />
       ) : null}
 

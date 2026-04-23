@@ -695,9 +695,20 @@ export default function BoardsPage() {
                                 <span className="shrink-0 rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
                                   Scrum
                                 </span>
+                              ) : b.boardMethodology === "safe" ? (
+                                <span
+                                  className="shrink-0 rounded-full border border-[var(--flux-warning-alpha-35)] bg-[var(--flux-warning-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-warning)]"
+                                  title="SAFe® — marcas registradas da Scaled Agile, Inc."
+                                >
+                                  SAFe
+                                </span>
                               ) : b.boardMethodology === "lean_six_sigma" ? (
                                 <span className="shrink-0 rounded-full border border-[var(--flux-secondary-alpha-35)] bg-[var(--flux-secondary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-secondary)]">
                                   LSS
+                                </span>
+                              ) : b.boardMethodology === "discovery" ? (
+                                <span className="shrink-0 rounded-full border border-[var(--flux-info-alpha-35)] bg-[var(--flux-info-alpha-10)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-info)]">
+                                  Discovery
                                 </span>
                               ) : null}
                             </div>
@@ -936,6 +947,18 @@ export default function BoardsPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setCreateMethodology("safe")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "safe"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                    title="SAFe® is a registered trademark of Scaled Agile, Inc."
+                  >
+                    {t("modal.methodologySafe")}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setCreateMethodology("kanban")}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                       createMethodology === "kanban"
@@ -955,6 +978,17 @@ export default function BoardsPage() {
                     }`}
                   >
                     {t("modal.methodologyLss")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateMethodology("discovery")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "discovery"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    {t("modal.methodologyDiscovery")}
                   </button>
                 </div>
                 <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>

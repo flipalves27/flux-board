@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { FlowInsightChipModel } from "@/lib/board-flow-insights";
 import type { BoardPortfolioMetrics } from "@/lib/board-portfolio-metrics";
 import { BoardHealthScoreWidget } from "@/components/kanban/board-health-score-widget";
+import { BoardHealthBriefingButton } from "@/components/kanban/board-health-briefing-button";
 
 export type BoardIntelligenceRowProps = {
   portfolio: BoardPortfolioMetrics;
@@ -81,7 +82,10 @@ export function BoardIntelligenceRow({
         data-tour="board-intelligence"
       >
         {boardId && getHeaders && (
-          <BoardHealthScoreWidget boardId={boardId} getHeaders={getHeaders} />
+          <>
+            <BoardHealthScoreWidget boardId={boardId} getHeaders={getHeaders} />
+            <BoardHealthBriefingButton boardId={boardId} getHeaders={getHeaders} />
+          </>
         )}
         <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
           {portfolio.risco !== null && (

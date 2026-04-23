@@ -1,6 +1,7 @@
 {
   "navigation": {
     "boards": "Boards",
+    "deliveryCalendar": "Entregas",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
     "fluxAiHub": "Hub de IA",
@@ -48,6 +49,7 @@
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
+      "deliveryCalendar": "Calendário, visão de gestão e cronograma por board (vencimentos, riscos e marcos em sprint).",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
       "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",
       "portfolio": "Portfólio executivo: saúde agregada, OKRs, anomalias e throughput.",
@@ -556,6 +558,115 @@
       "platformAdmin": "Administração da plataforma"
     }
   },
+  "deliveryCalendar": {
+    "title": "Hub de previsão de entregas",
+    "backBoards": "← Boards",
+    "subtitle": "Datas, leitura gerencial e eixo de tempo de sprint para um único board. O projeto, aqui, é o board; o sprint (opcional) afina a visão e filtros.",
+    "selectBoard": "Board",
+    "selectSprint": "Sprint (opcional)",
+    "allSprints": "Todos",
+    "loading": "A carregar…",
+    "authLoading": "A verificar a sessão…",
+    "loadError": "Não foi possível carregar o board.",
+    "membersError": "Não foi possível carregar membros (nomes de responsáveis).",
+    "unauthenticatedTitle": "Inicie sessão para continuar",
+    "unauthenticatedMessage": "Abra o ambiente de trabalho após autenticar.",
+    "emptyNoBoards": "Sem boards disponíveis",
+    "emptyNoBoardsHint": "Crie um board e regresse aqui para planear com datas e sprints.",
+    "modeGroupLabel": "Modo de visualização",
+    "modes": {
+      "calendar": "Calendário",
+      "manager": "Gerencial",
+      "schedule": "Cronograma"
+    },
+    "legend": {
+      "overdue": "Atraso",
+      "dueSoon": "7 dias",
+      "ok": "A prazo",
+      "noDue": "Sem data",
+      "done": "Concluído"
+    },
+    "weekdays": {
+      "0": "Dom",
+      "1": "Seg",
+      "2": "Ter",
+      "3": "Qua",
+      "4": "Qui",
+      "5": "Sex",
+      "6": "Sáb"
+    },
+    "calendar": {
+      "title": "{m} de {y}",
+      "emptyMonth": "Nenhum item com data de vencimento neste mês. Defina previsões nos cards para preencher a grelha.",
+      "months": {
+        "1": "Janeiro",
+        "2": "Fevereiro",
+        "3": "Março",
+        "4": "Abril",
+        "5": "Maio",
+        "6": "Junho",
+        "7": "Julho",
+        "8": "Agosto",
+        "9": "Setembro",
+        "10": "Outubro",
+        "11": "Novembro",
+        "12": "Dezembro"
+      }
+    },
+    "preview": {
+      "openBoard": "Abrir board",
+      "due": "Previsão",
+      "noDue": "Sem previsão",
+      "assignee": "Responsável",
+      "sprints": "Sprints"
+    },
+    "manager": {
+      "scopeBoard": "Board completo",
+      "scopeSprint": "Sprint: {name}",
+      "kpiTotal": "Cards no recorte",
+      "kpiWithDue": "Com previsão (abertos)",
+      "kpiOfActive": "de {n} abertos",
+      "kpiOverdue": "Atraso (abertos)",
+      "kpiDueSoon": "Em 7 dias (abertos)",
+      "kpiDone": "% concluído",
+      "kpiCoverage": "Cobertura de previsões",
+      "riskTitle": "Risco imediato",
+      "riskEmpty": "Sem atrasos ou itens de 7 dias.",
+      "badgeOverdue": "Atraso",
+      "badgeSoon": "7 dias",
+      "byAssigneeTitle": "Por responsável",
+      "bySprintTitle": "Por sprint",
+      "tableAssignee": "Pessoa / sem dono",
+      "tableTotal": "Total",
+      "tableDone": "Concluído",
+      "tableOverdue": "Atraso",
+      "tableSoon": "≤7d",
+      "sprintName": "Sprint",
+      "sprintStatus": "Estado",
+      "sprintWhen": "Quando",
+      "sprintScope": "Concl./escopo",
+      "sprintOverdue": "Atraso no escopo",
+      "sprintNoDates": "Sem datas",
+      "empty": "Sem linhas.",
+      "noSprints": "Ainda não há sprints neste board."
+    },
+    "schedule": {
+      "title": "Cronograma (board / sprint)",
+      "noSprints": "Não há sprints a mostrar.",
+      "zoomWeek": "Janela: ~semanas",
+      "zoomMonth": "Janela: ~mês",
+      "zoomIn": "Afinar",
+      "zoomOut": "Alargar",
+      "axisHint": "Janela: {a} a {b} (datas em UTC).",
+      "sprintWindow": "{a} a {b}",
+      "noSprintRange": "Sprint sem início/fim",
+      "scope": "{p}% concluído no escopo ({a}/{b})",
+      "placeholdersLane": "Defina início e fim do sprint para alinhar marcos no eixo; os itens listam-se na mesma faixa sem posição exata se faltar janela.",
+      "unscheduled": "Sprints sem início e fim",
+      "completions": "{n} card(s) concluídos nesta janela (timestamps de conclusão).",
+      "burndown": "Último burndown: {d} com {n} pendentes (snapshots)."
+    }
+  },
   "diagnostics": {
     "title": "Diagnóstico Flux",
     "openAria": "Abrir diagnóstico Flux",
@@ -704,11 +815,23 @@
     "loading": "Carregando catálogo…",
     "loadError": "Não foi possível carregar os templates.",
     "empty": "Nenhum template publicado ainda.",
+    "filterEmpty": "Nenhum template corresponde aos filtros selecionados.",
     "import": "Usar template",
     "importing": "Criando board…",
     "filterAll": "Todas as categorias",
+    "methodologyFilterLabel": "Metodologia",
+    "methodologyFilterAll": "Todas as metodologias",
+    "methodologyFilterUnset": "Sem metodologia no snapshot",
+    "methodologyBadge": {
+      "scrum": "Scrum",
+      "kanban": "Kanban",
+      "lean_six_sigma": "LSS",
+      "discovery": "Discovery",
+      "safe": "SAFe"
+    },
     "aiTitle": "Gerar com IA",
     "aiHint": "Responda a quatro perguntas — após cada uma o preview do board é atualizado. Edite colunas antes de criar.",
+    "aiConv.targetSafeHint": "Gerar colunas e rótulos no fluxo aproximado a PI/ART (SAFe®). Marcas Scaled Agile, Inc.",
     "aiPlaceholder": "Ex.: Time de CS B2B que faz onboarding, QBR e renovação…",
     "aiGenerate": "Gerar preview",
     "aiBusy": "Gerando estrutura…",
@@ -1872,9 +1995,11 @@
       "boardNamePlaceholder": "Ex: Backlog Principal",
       "methodologyLabel": "Metodologia",
       "methodologyScrum": "Scrum",
+      "methodologySafe": "SAFe",
       "methodologyKanban": "Kanban",
       "methodologyLss": "Lean Six Sigma",
-      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. Kanban: fluxo contínuo, WIP e cadências de serviço. Lean Six Sigma: projeto DMAIC (Define–Measure–Analyze–Improve–Control) com assistente de artefatos.",
+      "methodologyDiscovery": "Discovery",
+      "methodologyHint": "Scrum: sprints, meta de produto e cerimônias por sprint. SAFe: fluxo aproximado a PI/ART (sprints representam a iteração; não certificação). Kanban: fluxo contínuo, WIP e cadências de serviço. Lean Six Sigma: projeto DMAIC. Discovery: problemas, pesquisa, protótipos e aprendizagem. Sair de Scrum/SAFe com sprint ativo não é permitido para Kanban, LSS ou Discovery. SAFe®/Scaled Agile Framework são marcas da Scaled Agile, Inc.",
       "cancel": "Cancelar",
       "create": "Criar",
       "save": "Salvar"
@@ -3060,6 +3185,10 @@
         "viewEisenhowerAria": "Alternar para matriz Eisenhower",
         "viewExecutiveTooltip": "Gestão (G): apresentação para liderança e contexto de negócio",
         "viewExecutiveAria": "Alternar para visualização de apresentação gerencial",
+        "viewRoadmapTooltip": "Roadmap (R): trabalho aberto por data de conclusão",
+        "viewRoadmapAria": "Alternar para vista roadmap por data",
+        "viewFlowMetricsTooltip": "Fluxo (F): carga aberta por coluna",
+        "viewFlowMetricsAria": "Alternar para vista de carga por coluna",
         "groupByAria": "Agrupar linhas da timeline",
         "groupByLabel": "Eixo Y",
         "groupFlat": "Lista",
@@ -3125,6 +3254,19 @@
           "inDays": "Prazo em {days} dias"
         }
       },
+      "roadmapProjection": {
+        "empty": "Sem cards nesta faixa.",
+        "lanes": {
+          "overdue": "Em atraso",
+          "week": "Próximos 7 dias",
+          "later": "Mais tarde",
+          "none": "Sem data"
+        }
+      },
+      "flowMetricsProjection": {
+        "hint": "Cards abertos (não concluídos) por coluna; os mesmos filtros do board aplicam-se.",
+        "openCount": "{n} em aberto"
+      },
       "filters": {
         "hideTooltip": "Ocultar filtros",
         "showTooltip": "Mostrar filtros",
@@ -3167,11 +3309,14 @@
         "titleAgile": "Metodologia ágil — Product Goal e Definition of Done",
         "methodologyLabel": "Metodologia do quadro",
         "methodologyScrum": "Scrum",
+        "methodologySafe": "SAFe (aproximação)",
         "methodologyKanban": "Kanban",
         "methodologyLss": "Lean Six Sigma",
-        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Lean Six Sigma organiza melhoria em DMAIC. Sair de Scrum para Kanban ou LSS não é permitido com sprint ativo.",
+        "methodologyDiscovery": "Discovery",
+        "methodologyHint": "Scrum usa sprints e eventos (planning, daily, review, retro). A opção SAFe reutiliza sprints em lugar da iteração; não é certificação. Kanban prioriza fluxo contínuo, limites de WIP e cadências de revisão. Lean Six Sigma organiza melhoria em DMAIC. Discovery: hipóteses, pesquisa, protótipos e validação. Sair de Scrum/SAFe para Kanban, LSS ou Discovery não é permitido com sprint ativo.",
         "refScrumGuide": "Scrum Guide",
         "refKanbanGuide": "Kanban Guide for Scrum Teams",
+        "refScaledAgile": "Scaled Agile (referência de marcas)",
         "closeAria": "Fechar",
         "productGoal": "Meta do produto (Product Goal)",
         "productGoalPlaceholder": "Qual resultado este board busca para o cliente ou produto?",
@@ -3199,6 +3344,47 @@
         "reasonHint": "Mínimo de 8 caracteres. Dica: use WIP “flexível” nas configurações de metodologia se os limites forem só orientativos.",
         "cancel": "Cancelar",
         "confirm": "Mover com justificativa"
+      },
+      "safe": {
+        "flowFocus": "Foco PI / fluxo",
+        "openAssist": "Assistente SAFe (IA)",
+        "phases": {
+          "program-backlog": "Program Backlog",
+          "preparacao-wsjf": "Prep WSJF",
+          "pi-planning": "PI planning",
+          "em-iteracao": "Em iteração",
+          "integracao-demo": "Integração e demo",
+          "concluido": "Concluído",
+          "unknown": "Visão geral"
+        },
+        "checklist": {
+          "program-backlog": "Refine o backlog de programa, priorize valor e dependências antes do planning de PI.",
+          "preparacao-wsjf": "Use WSJF e mapeie dependências para reduzir riscos antes do compromisso.",
+          "pi-planning": "Alinhe objetivos de PI, capacidade e escopo do intervalo de planejamento.",
+          "em-iteracao": "Execute a iteração: sincronize dependências, desbloqueie e acompanhe saúde do fluxo.",
+          "integracao-demo": "Integre incrementos, valide com stakeholders e prepare a demo de solução.",
+          "concluido": "Confirme o DoD e registe aprendizados para o próximo PI."
+        }
+      },
+      "safeAssist": {
+        "title": "Coach estilo SAFe (IA)",
+        "closeAria": "Fechar",
+        "close": "Fechar",
+        "generate": "Gerar",
+        "generating": "Gerando…",
+        "errorGeneric": "Não foi possível gerar. Tente novamente.",
+        "modeLabel": "Modo",
+        "contextLabel": "Contexto (opcional)",
+        "contextPlaceholder": "Metas de PI, riscos, dependências ou o que precisa…",
+        "cardIdLabel": "Id de card (opcional)",
+        "cardIdPlaceholder": "id do card no board",
+        "lockedHint": "Plano Business+ necessário para o coach estilo SAFe. Faça upgrade para desbloquear.",
+        "modes": {
+          "pi_risk_review": "Revisão de riscos de PI (texto)",
+          "wsjf_narrative": "WSJF e priorização (narrativa)",
+          "dependency_sync": "Plano de sincronização de dependências",
+          "pi_objectives_draft": "Rascunho de objetivos e resultados de PI"
+        }
       },
       "lss": {
         "dmaicFocus": "Foco DMAIC",
@@ -3441,7 +3627,13 @@
         "workloadMembers": "Membros do time",
         "workloadEmpty": "Nenhum responsável encontrado nos cards.",
         "workloadSuggestions": "Sugestões de rebalanceamento",
-        "workloadRefresh": "Atualizar análise"
+        "workloadRefresh": "Atualizar análise",
+        "healthBriefingCta": "Briefing IA (saúde)",
+        "healthBriefingLoading": "A gerar briefing…",
+        "healthBriefingErrorAuth": "Inicie sessão para usar o briefing com IA.",
+        "healthBriefingErrorPlan": "Esta função requer um plano com IA executiva.",
+        "healthBriefingErrorGeneric": "Não foi possível carregar o briefing. Tente mais tarde.",
+        "healthBriefingClose": "Fechar"
       },
       "healthScore": {
         "label": "Saúde",

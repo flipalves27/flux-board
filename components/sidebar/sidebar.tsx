@@ -194,6 +194,7 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/boards") return normalizedPath === "/boards";
+    if (href === "/calendar") return normalizedPath.startsWith("/calendar");
     if (href === "/reports") return normalizedPath === "/reports";
     if (href === "/ai") return normalizedPath === "/ai" || normalizedPath === "/portfolio";
     if (href === "/dashboard") return normalizedPath === "/dashboard" || normalizedPath === "/portfolio";

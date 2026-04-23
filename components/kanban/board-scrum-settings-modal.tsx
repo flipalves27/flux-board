@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import type { BoardDefinitionOfDoneItem, BucketConfig } from "@/app/board/[id]/page";
 import { useBoardStore } from "@/stores/board-store";
-import type { BoardMethodology } from "@/lib/board-methodology";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 
 function stableItemId(label: string, idx: number): string {
   const base = label
@@ -51,7 +51,11 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
         ? "kanban"
         : db.boardMethodology === "lean_six_sigma"
           ? "lean_six_sigma"
-          : "scrum"
+          : db.boardMethodology === "discovery"
+            ? "discovery"
+            : db.boardMethodology === "safe"
+              ? "safe"
+            : "scrum"
     );
     setProductGoal(db.config.productGoal ?? "");
     setBacklogKey(db.config.backlogBucketKey ?? "");
@@ -86,7 +90,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
       d.boardMethodology = methodologyDraft;
 
       const g = productGoal.trim().slice(0, 800);
-      if (methodologyDraft === "scrum") {
+      if (isSprintMethodology(methodologyDraft)) {
         if (g) d.config.productGoal = g;
         else delete d.config.productGoal;
 
@@ -112,7 +116,11 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
       }
       d.config.cardRules = { ...(d.config.cardRules ?? {}), requireAssignee };
 
-      if (methodologyDraft === "kanban" || methodologyDraft === "lean_six_sigma") {
+      if (
+        methodologyDraft === "kanban" ||
+        methodologyDraft === "lean_six_sigma" ||
+        methodologyDraft === "discovery"
+      ) {
         (d.config as { wipEnforcement?: string }).wipEnforcement = wipEnforcement;
       } else {
         delete (d.config as { wipEnforcement?: string }).wipEnforcement;
@@ -177,6 +185,17 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
               </button>
               <button
                 type="button"
+                onClick={() => setMethodologyDraft("safe")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  methodologyDraft === "safe"
+                    ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("methodologySafe")}
+              </button>
+              <button
+                type="button"
                 onClick={() => setMethodologyDraft("kanban")}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                   methodologyDraft === "kanban"
@@ -197,6 +216,17 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
               >
                 {t("methodologyLss")}
               </button>
+              <button
+                type="button"
+                onClick={() => setMethodologyDraft("discovery")}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  methodologyDraft === "discovery"
+                    ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                    : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                }`}
+              >
+                {t("methodologyDiscovery")}
+              </button>
             </div>
             <p className="text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("methodologyHint")}</p>
             <p className="text-[11px] text-[var(--flux-text-muted)] flex flex-wrap gap-x-3 gap-y-1">
@@ -211,10 +241,13 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
               >
                 {t("refKanbanGuide")}
               </Link>
+              <Link href="https://scaledagile.com" target="_blank" rel="noreferrer" className="underline hover:text-[var(--flux-primary-light)]">
+                {t("refScaledAgile")}
+              </Link>
             </p>
           </div>
 
-          {methodologyDraft === "kanban" || methodologyDraft === "lean_six_sigma" ? (
+          {methodologyDraft === "kanban" || methodologyDraft === "lean_six_sigma" || methodologyDraft === "discovery" ? (
             <div className="rounded-xl border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-black-alpha-06)] p-3 space-y-2">
               <p className="text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide">
                 {t("wipEnforcementLabel")}
@@ -242,7 +275,7 @@ export function BoardScrumSettingsModal({ open, onClose }: BoardScrumSettingsMod
             </div>
           ) : null}
 
-          {methodologyDraft === "scrum" ? (
+          {isSprintMethodology(methodologyDraft) ? (
             <>
               <div>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] uppercase tracking-wide mb-1">

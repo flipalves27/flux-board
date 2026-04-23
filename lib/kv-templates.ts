@@ -7,7 +7,7 @@ import type {
   TemplatePricingTier,
 } from "./template-types";
 import { TEMPLATE_CATEGORIES } from "./template-types";
-import { defaultBucketOrderLeanSixSigma } from "./board-methodology";
+import { defaultBucketOrderLeanSixSigma, defaultBucketOrderSafe } from "./board-methodology";
 
 const COL = "published_templates";
 
@@ -75,7 +75,69 @@ export function buildLssPremiumShowcaseTemplates(nowIso: string): PublishedTempl
   ];
 }
 
+/** Showcase: templates alinhados a metodologia SAFe aproximada (snapshot `boardMethodology: safe`). */
+export function buildSafeShowcaseTemplates(nowIso: string): PublishedTemplate[] {
+  const safeBuckets = defaultBucketOrderSafe().map((b) => ({
+    key: b.key,
+    label: b.label,
+    color: b.color,
+  }));
+  return [
+    {
+      _id: "tpl_seed_safe_team_pi",
+      slug: "safe-team-pi-iteration",
+      title: "SAFe — time / ART, PI e iteração",
+      description:
+        "Backlog de programa, preparação WSJF, planning de PI, iteração e integração; labels para Feature, Enabler, Risco e dependências. SAFe is a registered trademark of Scaled Agile, Inc.",
+      category: "projects",
+      pricingTier: "free",
+      creatorRevenueSharePercent: 100,
+      creatorOrgId: "org_flux_showcase",
+      creatorOrgName: "Flux-Board",
+      snapshot: {
+        config: {
+          bucketOrder: safeBuckets,
+          collapsedColumns: [],
+          labels: ["Feature", "Enabler", "Risco", "Dependência", "Objetivo de PI"],
+        },
+        mapaProducao: [],
+        labelPalette: [],
+        automations: [],
+        boardMethodology: "safe",
+      },
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      _id: "tpl_seed_safe_value_stream",
+      slug: "safe-value-stream-release",
+      title: "SAFe — value stream (visão de release)",
+      description:
+        "Fluxo alinhado a colunas de programa, preparação e conclusão; ponto de partida para mapear value stream. Marcas conforme atribuição a Scaled Agile, Inc.",
+      category: "operations",
+      pricingTier: "free",
+      creatorRevenueSharePercent: 100,
+      creatorOrgId: "org_flux_showcase",
+      creatorOrgName: "Flux-Board",
+      snapshot: {
+        config: {
+          bucketOrder: safeBuckets,
+          collapsedColumns: [],
+          labels: ["Risco de PI", "Objetivo de solução", "Dependência cruzada", "Demo"],
+        },
+        mapaProducao: [],
+        labelPalette: [],
+        automations: [],
+        boardMethodology: "safe",
+      },
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
+}
+
 let mongoLssPremiumShowcaseEnsured = false;
+let mongoSafeShowcaseEnsured = false;
 
 async function ensureMongoLssPremiumShowcaseTemplates(db: Db): Promise<void> {
   if (mongoLssPremiumShowcaseEnsured) return;
@@ -83,6 +145,16 @@ async function ensureMongoLssPremiumShowcaseTemplates(db: Db): Promise<void> {
   const col = db.collection<PublishedTemplate>(COL);
   const now = new Date().toISOString();
   for (const t of buildLssPremiumShowcaseTemplates(now)) {
+    await col.updateOne({ slug: t.slug }, { $setOnInsert: { ...t } }, { upsert: true });
+  }
+}
+
+async function ensureMongoSafeShowcaseTemplates(db: Db): Promise<void> {
+  if (mongoSafeShowcaseEnsured) return;
+  mongoSafeShowcaseEnsured = true;
+  const col = db.collection<PublishedTemplate>(COL);
+  const now = new Date().toISOString();
+  for (const t of buildSafeShowcaseTemplates(now)) {
     await col.updateOne({ slug: t.slug }, { $setOnInsert: { ...t } }, { upsert: true });
   }
 }
@@ -124,6 +196,9 @@ async function seedMemoryTemplatesIfNeeded(): Promise<void> {
   for (const t of buildLssPremiumShowcaseTemplates(now)) {
     memoryStore.set(t._id, t);
   }
+  for (const t of buildSafeShowcaseTemplates(now)) {
+    memoryStore.set(t._id, t);
+  }
 }
 
 let indexesEnsured = false;
@@ -163,6 +238,7 @@ export async function listPublishedTemplates(params?: {
     const db = await getDb();
     await ensureIndexes(db);
     await ensureMongoLssPremiumShowcaseTemplates(db);
+    await ensureMongoSafeShowcaseTemplates(db);
     const q: Record<string, unknown> = {};
     if (cat && TEMPLATE_CATEGORIES.includes(cat)) q.category = cat;
     if (status) {
@@ -195,6 +271,8 @@ export async function getPublishedTemplateById(id: string): Promise<PublishedTem
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureIndexes(db);
+    await ensureMongoLssPremiumShowcaseTemplates(db);
+    await ensureMongoSafeShowcaseTemplates(db);
     const doc = await db.collection<PublishedTemplate>(COL).findOne({ _id: id });
     return doc || null;
   }
@@ -207,6 +285,8 @@ export async function getPublishedTemplateBySlug(slug: string): Promise<Publishe
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureIndexes(db);
+    await ensureMongoLssPremiumShowcaseTemplates(db);
+    await ensureMongoSafeShowcaseTemplates(db);
     const doc = await db.collection<PublishedTemplate>(COL).findOne({ slug });
     return doc || null;
   }

@@ -8,88 +8,8 @@ import { useBoardNlqUiStore, type BoardNlqMetricSnapshot } from "@/stores/board-
 import { useToast } from "@/context/toast-context";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
+import { BoardViewModeSegment } from "./board-view-mode-segment";
 import type { BoardViewMode } from "./kanban-constants";
-
-function IconKanban({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
-    >
-      <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
-    </svg>
-  );
-}
-
-function IconTable({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
-    >
-      <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconTimeline({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
-    >
-      <path d="M4 7h5v4H4V7zm7 0h9v4h-9V7zM4 14h8v4H4v-4zm10 0h6v4h-6v-4z" />
-    </svg>
-  );
-}
-
-function IconEisenhower({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
-    >
-      <path d="M3 3h18v18H3V3zm8 1v16h2V4h-2zM4 11v2h16v-2H4z" />
-    </svg>
-  );
-}
-
-function IconExecutive({ active }: { active: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
-    >
-      <path
-        d="M4 19V5M4 19h16M4 5h16M8 15v-4M12 15V9M16 15v-2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 type NlqApiResponse =
   | {
@@ -118,6 +38,7 @@ type BoardNlqDockProps = {
   onExpandFilters?: () => void;
   boardView: BoardViewMode;
   setBoardView: (v: BoardViewMode) => void;
+  allowedViewModes: readonly BoardViewMode[];
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -125,7 +46,17 @@ type BoardNlqDockProps = {
 
 const nlqExpandedStorageKey = (boardId: string) => `flux-board.nlqDock.expanded.${boardId}`;
 
-export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, setBoardView, searchQuery, setSearchQuery, searchInputRef }: BoardNlqDockProps) {
+export function BoardNlqDock({
+  boardId,
+  getHeaders,
+  onExpandFilters,
+  boardView,
+  setBoardView,
+  allowedViewModes,
+  searchQuery,
+  setSearchQuery,
+  searchInputRef,
+}: BoardNlqDockProps) {
   const t = useTranslations("kanban.board.nlq");
   const tTimeline = useTranslations("kanban.board.timeline");
   const { pushToast } = useToast();
@@ -283,87 +214,14 @@ export function BoardNlqDock({ boardId, getHeaders, onExpandFilters, boardView, 
           </button>
         </CustomTooltip>
 
-        <div
-          className="board-segment flex items-center gap-0.5 p-1 shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]"
-          role="group"
-          aria-label={tTimeline("toggleGroupAria")}
-        >
-          <CustomTooltip content={tTimeline("viewKanbanTooltip")} position="bottom">
-            <button
-              type="button"
-              onClick={() => setBoardView("kanban")}
-              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                boardView === "kanban"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-              aria-pressed={boardView === "kanban"}
-              aria-label={tTimeline("viewKanbanAria")}
-            >
-              <IconKanban active={boardView === "kanban"} />
-            </button>
-          </CustomTooltip>
-          <CustomTooltip content={tTimeline("viewTableTooltip")} position="bottom">
-            <button
-              type="button"
-              onClick={() => setBoardView("table")}
-              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                boardView === "table"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-              aria-pressed={boardView === "table"}
-              aria-label={tTimeline("viewTableAria")}
-            >
-              <IconTable active={boardView === "table"} />
-            </button>
-          </CustomTooltip>
-          <CustomTooltip content={tTimeline("viewTimelineTooltip")} position="bottom">
-            <button
-              type="button"
-              onClick={() => setBoardView("timeline")}
-              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                boardView === "timeline"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-              aria-pressed={boardView === "timeline"}
-              aria-label={tTimeline("viewTimelineAria")}
-            >
-              <IconTimeline active={boardView === "timeline"} />
-            </button>
-          </CustomTooltip>
-          <CustomTooltip content={tTimeline("viewEisenhowerTooltip")} position="bottom">
-            <button
-              type="button"
-              onClick={() => setBoardView("eisenhower")}
-              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                boardView === "eisenhower"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-              aria-pressed={boardView === "eisenhower"}
-              aria-label={tTimeline("viewEisenhowerAria")}
-            >
-              <IconEisenhower active={boardView === "eisenhower"} />
-            </button>
-          </CustomTooltip>
-          <CustomTooltip content={tTimeline("viewExecutiveTooltip")} position="bottom">
-            <button
-              type="button"
-              onClick={() => setBoardView("executive")}
-              className={`px-2.5 py-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                boardView === "executive"
-                  ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-              }`}
-              aria-pressed={boardView === "executive"}
-              aria-label={tTimeline("viewExecutiveAria")}
-            >
-              <IconExecutive active={boardView === "executive"} />
-            </button>
-          </CustomTooltip>
-        </div>
+        <BoardViewModeSegment
+          boardView={boardView}
+          setBoardView={setBoardView}
+          allowedViewModes={allowedViewModes}
+          tTimeline={tTimeline as (k: string) => string}
+          variant="icons"
+          groupAriaLabel={tTimeline("toggleGroupAria")}
+        />
 
         <div className="relative ml-auto shrink-0 w-[min(100%,220px)] sm:w-[240px]">
           <span

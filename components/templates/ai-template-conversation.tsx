@@ -50,10 +50,11 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
   const [exportBoardId, setExportBoardId] = useState<string | null>(null);
   const [publishAfterCreate, setPublishAfterCreate] = useState(false);
   const [lastLlmModel, setLastLlmModel] = useState<string | null>(null);
+  const [aiTargetSafe, setAiTargetSafe] = useState(false);
 
   const snapshot: BoardTemplateSnapshot | null = useMemo(
-    () => (draft ? aiDraftToSnapshot(draft) : null),
-    [draft]
+    () => (draft ? aiDraftToSnapshot(draft, { boardMethodology: aiTargetSafe ? "safe" : undefined }) : null),
+    [draft, aiTargetSafe]
   );
 
   const sampleCardTitles = useMemo(() => {
@@ -115,6 +116,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
         mode: "conversation" as const,
         turnIndex,
         answers: baseAnswers,
+        ...(aiTargetSafe ? { targetMethodology: "safe" as const } : {}),
       };
       const res = await apiPost<{ draft: AiTemplateDraft; snapshot: BoardTemplateSnapshot; llmModel?: string }>(
         "/api/templates/ai-generate",
@@ -174,6 +176,7 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
     setDraft(null);
     setPublishAfterCreate(false);
     setLastLlmModel(null);
+    setAiTargetSafe(false);
   }
 
   const doneQuestions = activeStep >= 4;
@@ -217,6 +220,20 @@ export function AiTemplateConversation({ getHeaders, localeRoot }: Props) {
   return (
     <div className="space-y-5">
       <p className="text-xs text-[var(--flux-text-muted)]">{t("aiConv.intro")}</p>
+      <label className="flex items-start gap-2 text-xs text-[var(--flux-text-muted)] cursor-pointer max-w-xl">
+        <input
+          type="checkbox"
+          checked={aiTargetSafe}
+          onChange={(e) => {
+            setAiTargetSafe(e.target.checked);
+            setDraft(null);
+            setActiveStep(0);
+            setLastLlmModel(null);
+          }}
+          className="mt-0.5"
+        />
+        <span>{t("aiConv.targetSafeHint")}</span>
+      </label>
 
       <div className="flex gap-1.5" aria-hidden>
         {[0, 1, 2, 3].map((i) => (

@@ -11,6 +11,7 @@ import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import { AiRefineHintBadge, MatrixWeightBadge, SubtaskProgressMini } from "./kanban-card-badges";
 import type { SubtaskItem } from "./kanban-card-utils";
 import type { DeliveryPrediction } from "@/lib/predictive-delivery";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 
 export type KanbanCardBodyProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
@@ -250,7 +251,7 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: progColor }} />
           <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{progLabel}</span>
         </div>
-        {boardMethodology === "scrum" && typeof card.storyPoints === "number" ? (
+        {isSprintMethodology(boardMethodology as BoardMethodology) && typeof card.storyPoints === "number" ? (
           <span className="text-[11px] font-bold tabular-nums text-[var(--flux-primary-light)]">{card.storyPoints} SP</span>
         ) : null}
         {dr !== null && (

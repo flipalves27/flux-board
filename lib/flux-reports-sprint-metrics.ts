@@ -1,4 +1,5 @@
 import type { BoardData } from "@/lib/kv-boards";
+import { isSprintMethodology } from "@/lib/board-methodology";
 import { listSprints } from "@/lib/kv-sprints";
 import type { SprintData } from "@/lib/schemas";
 
@@ -40,16 +41,16 @@ export type SprintStoryPointsRow = {
 };
 
 /**
- * Histórico de velocity em story points por sprint fechado (boards Scrum).
+ * Histórico de velocity em story points por sprint fechado (boards com sprints: Scrum/SAFe aproximado).
  * Soma `storyPoints` dos cards em `doneCardIds`; se zero, usa `sprint.velocity` quando numérico.
  */
 export async function buildSprintStoryPointsHistory(
   orgId: string,
   boards: BoardData[]
 ): Promise<SprintStoryPointsRow[]> {
-  const scrumBoards = boards.filter((b) => b.boardMethodology === "scrum");
+  const sprintBoards = boards.filter((b) => isSprintMethodology(b.boardMethodology));
   const sprintLists = await Promise.all(
-    scrumBoards.map(async (b) => {
+    sprintBoards.map(async (b) => {
       try {
         return await listSprints(orgId, b.id);
       } catch {
@@ -59,7 +60,7 @@ export async function buildSprintStoryPointsHistory(
   );
 
   const rows: SprintStoryPointsRow[] = [];
-  scrumBoards.forEach((b, bi) => {
+  sprintBoards.forEach((b, bi) => {
     const sprints = sprintLists[bi] ?? [];
     const cards = Array.isArray(b.cards) ? b.cards : [];
     for (const s of sprints) {

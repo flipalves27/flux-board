@@ -48,8 +48,12 @@ export type BoardTemplateSnapshot = {
   /** Tags/labels observadas no board na exportação (sem conteúdo de cards). */
   labelPalette: string[];
   automations: AutomationRule[];
-  /** Opcional: metodologia do quadro exportado. */
-  boardMethodology?: "scrum" | "kanban" | "lean_six_sigma";
+  /**
+   * Opcional: metodologia do quadro exportado. Os mesmos valores existem em `BoardData.boardMethodology`.
+   * `templateKind` (ex.: bpmn, priority_matrix) continua a sobrepor a forma de instanciar o board; em dúvida
+   * o import usa kanban para BPMN/matriz e aplica o snapshot de colunas fornecido.
+   */
+  boardMethodology?: "scrum" | "kanban" | "lean_six_sigma" | "discovery" | "safe";
   /** Ausente ou `kanban`: snapshot clássico; `priority_matrix`: quatro colunas + `templateCards`. */
   templateKind?: TemplateKind;
   /** Com `priority_matrix`: quadrantes Eisenhower ou grade 4×4 (16 colunas). */

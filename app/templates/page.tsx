@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -9,6 +9,7 @@ import { apiDelete, apiGet, apiPatch, apiPost, apiPut, ApiError } from "@/lib/ap
 import { useToast } from "@/context/toast-context";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import type { TemplateCategory } from "@/lib/template-types";
+import type { BoardMethodology } from "@/lib/board-methodology";
 import { AiTemplateConversation } from "@/components/templates/ai-template-conversation";
 
 type Row = {
@@ -24,6 +25,7 @@ type Row = {
   priorityMatrixModel?: "eisenhower" | "grid4";
   status?: "draft" | "published" | "archived";
   version?: number;
+  boardMethodology?: BoardMethodology | null;
 };
 
 export default function TemplatesShowcasePage() {
@@ -39,6 +41,7 @@ export default function TemplatesShowcasePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<TemplateCategory | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "published" | "archived">("all");
+  const [methodologyFilter, setMethodologyFilter] = useState<"all" | BoardMethodology | "none">("all");
   const [importingId, setImportingId] = useState<string | null>(null);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,6 +75,12 @@ export default function TemplatesShowcasePage() {
       cancelled = true;
     };
   }, [isChecked, user, router, localeRoot, filter, statusFilter, pushToast, t]);
+
+  const visibleRows = useMemo(() => {
+    if (methodologyFilter === "all") return rows;
+    if (methodologyFilter === "none") return rows.filter((r) => !r.boardMethodology);
+    return rows.filter((r) => r.boardMethodology === methodologyFilter);
+  }, [rows, methodologyFilter]);
 
   async function importTemplate(id: string, title: string) {
     if (!user) return;
@@ -257,15 +266,33 @@ export default function TemplatesShowcasePage() {
             <option value="published">Publicado</option>
             <option value="archived">Arquivado</option>
           </select>
+          <label className="text-xs text-[var(--flux-text-muted)] flex items-center gap-2">
+            {t("methodologyFilterLabel")}
+            <select
+              value={methodologyFilter}
+              onChange={(e) => setMethodologyFilter(e.target.value as "all" | BoardMethodology | "none")}
+              className="px-3 py-2 rounded-[var(--flux-rad)] bg-[var(--flux-surface-elevated)] border border-[var(--flux-control-border)] text-sm"
+            >
+              <option value="all">{t("methodologyFilterAll")}</option>
+              <option value="none">{t("methodologyFilterUnset")}</option>
+              <option value="scrum">Scrum</option>
+              <option value="kanban">Kanban</option>
+              <option value="lean_six_sigma">LSS</option>
+              <option value="discovery">Discovery</option>
+              <option value="safe">SAFe</option>
+            </select>
+          </label>
         </div>
 
         {loading ? (
           <p className="text-[var(--flux-text-muted)]">{t("loading")}</p>
         ) : rows.length === 0 ? (
           <FluxEmptyState title={t("title")} description={t("empty")} />
+        ) : visibleRows.length === 0 ? (
+          <FluxEmptyState title={t("title")} description={t("filterEmpty")} />
         ) : (
           <ul className="space-y-3">
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <li
                 key={r.id}
                 className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-elevated)]/80 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
@@ -283,6 +310,11 @@ export default function TemplatesShowcasePage() {
                         {t("bpmnBadge")}
                       </span>
                     )}
+                    {r.boardMethodology ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-chrome-alpha-10)] text-[var(--flux-text-muted)] border border-[var(--flux-chrome-alpha-12)]">
+                        {t(`methodologyBadge.${r.boardMethodology}`)}
+                      </span>
+                    ) : null}
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                         r.pricingTier === "premium"

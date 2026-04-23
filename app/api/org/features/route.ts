@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       lss_executive_reports: canUseFeature(org, "lss_executive_reports", gateCtx),
       lss_ai_premium: canUseFeature(org, "lss_ai_premium", gateCtx),
+      safe_ai_premium: canUseFeature(org, "safe_ai_premium", gateCtx),
       board_copilot: canUseFeature(org, "board_copilot", gateCtx),
       spec_ai_scope_planner: canUseFeature(org, "spec_ai_scope_planner", gateCtx),
       ux_v2_command_unified: uxV2.ux_v2_command_unified,

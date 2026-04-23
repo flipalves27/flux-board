@@ -12,7 +12,7 @@ import { getRecentCards } from "@/lib/recent-cards";
 import { getCommandHistory, pushCommandHistory } from "@/lib/command-palette-history";
 import type { HistoryPaletteEntry, PaletteAction, PaletteCategory, PaletteItem } from "@/lib/command-palette-types";
 import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command-palette-ai";
-import type { BoardMethodology } from "@/lib/board-methodology";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { isPlatformAdminSession, sessionCanManageMembersAndBilling, sessionCanManageOrgBilling } from "@/lib/rbac";
 import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
 
@@ -215,7 +215,7 @@ export function CommandPalette(props?: CommandPaletteProps) {
     for (const b of boards) {
       const methodology = b.boardMethodology ?? "scrum";
       const isKanban = methodology === "kanban";
-      const isScrum = methodology === "scrum";
+      const isSprint = isSprintMethodology(methodology);
       const isLss = methodology === "lean_six_sigma";
       items.push({
         id: `board:${b.id}`,
@@ -282,7 +282,7 @@ export function CommandPalette(props?: CommandPaletteProps) {
           action: { type: "boardDeep", boardId: b.id, query: "scrumSettings=1" },
           icon: "actions",
         });
-      } else if (isScrum) {
+      } else if (isSprint) {
         items.push({
           id: `sprintpanel:${b.id}`,
           category: "actions",

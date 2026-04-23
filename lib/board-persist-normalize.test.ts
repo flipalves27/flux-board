@@ -255,4 +255,21 @@ describe("normalizeBoardForPersist", () => {
     const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
     expect(parsed.success).toBe(true);
   });
+
+  it("preserves boardMethodology safe", () => {
+    const db: BoardData = {
+      version: "1",
+      lastUpdated: "t",
+      boardMethodology: "safe",
+      cards: [],
+      config: {
+        bucketOrder: [{ key: "program-backlog", label: "Backlog", color: "var(--flux-primary)" }],
+        collapsedColumns: [],
+      },
+    };
+    const n = normalizeBoardForPersist(db);
+    expect(n.boardMethodology).toBe("safe");
+    const parsed = BoardUpdateSchema.safeParse({ ...n, lastUpdated: new Date().toISOString() });
+    expect(parsed.success).toBe(true);
+  });
 });

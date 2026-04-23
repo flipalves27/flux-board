@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { IconBoards, IconTemplates } from "./icons";
+import { IconBoards, IconCalendar, IconTemplates } from "./icons";
 import { SidebarNavLink } from "./sidebar-nav-link";
 import { SidebarSectionTitle } from "./sidebar-section-title";
 
@@ -15,6 +15,12 @@ export function SidebarQuickAccess() {
         hint={t("hints.boards")}
         icon={<IconBoards className="h-4 w-4 shrink-0" />}
         label={t("boards")}
+      />
+      <SidebarNavLink
+        path="/calendar"
+        hint={t("hints.deliveryCalendar")}
+        icon={<IconCalendar className="h-4 w-4 shrink-0" />}
+        label={t("deliveryCalendar")}
       />
       <SidebarNavLink
         path="/templates"
