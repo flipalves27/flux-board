@@ -15,8 +15,8 @@ export const runtime = "nodejs";
 function costHintFromMeta(tier: FluxyClassifyMeta["classifierTier"], cacheHit: boolean): FluxyCostHint {
   if (cacheHit) return "none";
   if (tier === "local") return "none";
-  if (tier === "haiku" || tier === "together_fast") return "low";
-  if (tier === "together_full") return "medium";
+  if (tier === "compat_fast") return "low";
+  if (tier === "compat_full") return "medium";
   return "medium";
 }
 

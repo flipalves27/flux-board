@@ -36,10 +36,12 @@ export type FluxyOmnibarResultItem = {
   action: FluxyOmnibarAction;
 };
 
+export type FluxyClassifierTier = "local" | "compat_fast" | "compat_full";
+
 export type FluxyClassifyMeta = {
   costHint: FluxyCostHint;
-  /** Which tier ran last: none | fast LLM | strong LLM. */
-  classifierTier: "local" | "haiku" | "sonnet" | "together_fast" | "together_full";
+  /** Which path ran last: heurística local | LLM rápido | LLM mais capaz (OpenAI-compat). */
+  classifierTier: FluxyClassifierTier;
   confidence: number;
   locale: string;
   budgetBlocked?: boolean;
