@@ -368,7 +368,13 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
 
   const bmRaw = (db as { boardMethodology?: unknown }).boardMethodology;
   const boardMethodology =
-    bmRaw === "scrum" || bmRaw === "kanban" || bmRaw === "lean_six_sigma" ? bmRaw : undefined;
+    bmRaw === "scrum" ||
+    bmRaw === "kanban" ||
+    bmRaw === "lean_six_sigma" ||
+    bmRaw === "discovery" ||
+    bmRaw === "safe"
+      ? bmRaw
+      : undefined;
   const { boardMethodology: _omitBm, ...dbWithoutBm } = db as BoardData & { boardMethodology?: unknown };
 
   const result = {

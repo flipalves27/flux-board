@@ -18,6 +18,8 @@ import { KanbanCard } from "./kanban-card";
 import { BoardTimelineView } from "./board-timeline-view";
 import { BoardTableView } from "./board-table-view";
 import { BoardExecutivePresentationView } from "./board-executive-presentation-view";
+import { BoardRoadmapProjectionView } from "./board-roadmap-projection-view";
+import { BoardFlowMetricsProjectionView } from "./board-flow-metrics-projection-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
@@ -285,6 +287,22 @@ export function KanbanBoardCanvas({
           boardName={executiveBoardName}
           productGoal={executiveProductGoal}
           lastUpdated={executiveLastUpdated}
+          buckets={buckets}
+          cards={cards}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+        />
+      ) : null}
+      {boardView === "roadmap" ? (
+        <BoardRoadmapProjectionView
+          buckets={buckets}
+          cards={cards}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+        />
+      ) : null}
+      {boardView === "flow_metrics" ? (
+        <BoardFlowMetricsProjectionView
           buckets={buckets}
           cards={cards}
           filterCard={filterCard}

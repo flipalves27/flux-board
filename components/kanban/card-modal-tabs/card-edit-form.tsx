@@ -21,7 +21,12 @@ import {
   type SprintData,
 } from "@/lib/schemas";
 import { useSprintStore } from "@/stores/sprint-store";
-import { isKanbanMethodology, isLeanSixSigmaMethodology } from "@/lib/board-methodology";
+import {
+  isDiscoveryMethodology,
+  isKanbanMethodology,
+  isLeanSixSigmaMethodology,
+  isSprintMethodology,
+} from "@/lib/board-methodology";
 import { buildRefinementInputFromFields, computeRefinementReadinessScore } from "@/lib/card-refinement-readiness";
 
 const EMPTY_SPRINTS: SprintData[] = [];
@@ -834,7 +839,7 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
-      {boardMethodology === "scrum" ? (
+      {isSprintMethodology(boardMethodology) ? (
         <CardModalSection
           title={t("cardModal.methodology.scrum.title")}
           description={t("cardModal.methodology.scrum.description")}
@@ -908,7 +913,9 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </CardModalSection>
       ) : null}
 
-      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
+      {isKanbanMethodology(boardMethodology) ||
+      isLeanSixSigmaMethodology(boardMethodology) ||
+      isDiscoveryMethodology(boardMethodology) ? (
         <CardModalSection
           title={t("cardModal.methodology.kanban.title")}
           description={t("cardModal.methodology.kanban.description")}
@@ -1006,7 +1013,9 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
         </div>
       </CardModalSection>
 
-      {isKanbanMethodology(boardMethodology) || isLeanSixSigmaMethodology(boardMethodology) ? (
+      {isKanbanMethodology(boardMethodology) ||
+      isLeanSixSigmaMethodology(boardMethodology) ||
+      isDiscoveryMethodology(boardMethodology) ? (
         <details className="rounded-xl border border-[var(--flux-chrome-alpha-10)] bg-[var(--flux-black-alpha-06)] px-3 py-2">
           <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--flux-text)] [&::-webkit-details-marker]:hidden">
             {t("cardModal.sections.dor.summaryKanban")}

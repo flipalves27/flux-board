@@ -1102,6 +1102,18 @@ export default function BoardsPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setCreateMethodology("safe")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "safe"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                    title="SAFe® is a registered trademark of Scaled Agile, Inc."
+                  >
+                    {t("modal.methodologySafe")}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setCreateMethodology("kanban")}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                       createMethodology === "kanban"
@@ -1121,6 +1133,17 @@ export default function BoardsPage() {
                     }`}
                   >
                     {t("modal.methodologyLss")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateMethodology("discovery")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      createMethodology === "discovery"
+                        ? "bg-[var(--flux-primary-alpha-22)] text-[var(--flux-primary-light)]"
+                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+                    }`}
+                  >
+                    {t("modal.methodologyDiscovery")}
                   </button>
                 </div>
                 <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>

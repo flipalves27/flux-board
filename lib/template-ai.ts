@@ -1,5 +1,6 @@
 import { callTogetherApi, safeJsonParse } from "./llm-utils";
 import type { BoardTemplateSnapshot } from "./template-types";
+import type { BoardMethodology } from "./board-methodology";
 
 export type AiTemplateDraft = {
   title: string;
@@ -30,14 +31,19 @@ const CATEGORIES = [
   "insurance_warranty",
 ] as const;
 
-function baseSystemPrompt(includeOkrs: boolean): string {
+function baseSystemPrompt(includeOkrs: boolean, targetMethodology?: BoardMethodology): string {
+  const safeBlock =
+    targetMethodology === "safe"
+      ? `
+- O quadro aproxima ritmo de PI/iteração (SAFe de marca); use colunas coerentes (ex.: Program Backlog, preparação WSJF, planning de PI, iteração, integração, concluído) e labels do tipo Feature, Enabler, Risco, Dependência, Objetivo de PI.`
+      : "";
   const okrsBlock = includeOkrs
     ? `
 - initialOkrs: array com exatamente 1 objeto { "objective": string (título do objetivo para o trimestre), "keyResults": array de 2 a 4 strings (KRs mensuráveis alinhados ao processo descrito) }`
     : `
 - initialOkrs: sempre [] (array vazio nesta etapa)`;
 
-  return `Você projeta templates de quadro Kanban para times de negócio.
+  return `Você projeta templates de quadro Kanban para times de negócio.${safeBlock}
 Responda APENAS JSON válido (sem markdown). Campos obrigatórios:
 - title: string curta (nome sugerido do board)
 - description: 1-3 frases em português sobre o fluxo
@@ -181,7 +187,8 @@ async function callTogetherForJson(system: string, user: string): Promise<{
 /** Fluxo conversacional: turnIndex 0..3 — OKRs apenas no turno 3. */
 export async function generateTemplateFromConversationTurn(
   answers: ConversationAnswers,
-  turnIndex: number
+  turnIndex: number,
+  targetMethodology?: BoardMethodology
 ): Promise<{
   ok: boolean;
   draft?: AiTemplateDraft;
@@ -193,7 +200,7 @@ export async function generateTemplateFromConversationTurn(
   }
 
   const includeOkrs = turnIndex === 3;
-  const system = baseSystemPrompt(includeOkrs);
+  const system = baseSystemPrompt(includeOkrs, targetMethodology);
   const user = `${buildConversationBody(answers, turnIndex).slice(0, 8000)}`;
 
   const res = await callTogetherForJson(system, user);
@@ -215,7 +222,10 @@ export async function generateTemplateFromConversationTurn(
   return { ok: true, draft, llmModel: res.model };
 }
 
-export async function generateTemplateDraftWithTogether(teamDescription: string): Promise<{
+export async function generateTemplateDraftWithTogether(
+  teamDescription: string,
+  options?: { targetMethodology?: BoardMethodology }
+): Promise<{
   ok: boolean;
   draft?: AiTemplateDraft;
   error?: string;
@@ -230,7 +240,7 @@ export async function generateTemplateDraftWithTogether(teamDescription: string)
 
   const modelId = model.trim();
 
-  const system = baseSystemPrompt(false);
+  const system = baseSystemPrompt(false, options?.targetMethodology);
   const user = `Descreva o trabalho do time (uma única mensagem):\n${teamDescription.slice(0, 4000)}`;
 
   const res = await callTogetherApi(
@@ -264,7 +274,10 @@ export async function generateTemplateDraftWithTogether(teamDescription: string)
   return { ok: true, draft, llmModel: modelId };
 }
 
-export function aiDraftToSnapshot(draft: AiTemplateDraft): BoardTemplateSnapshot {
+export function aiDraftToSnapshot(
+  draft: AiTemplateDraft,
+  opts?: { boardMethodology?: BoardMethodology }
+): BoardTemplateSnapshot {
   const labels = draft.labelPalette.slice(0, 100);
   return {
     config: {
@@ -275,5 +288,6 @@ export function aiDraftToSnapshot(draft: AiTemplateDraft): BoardTemplateSnapshot
     mapaProducao: [],
     labelPalette: draft.labelPalette,
     automations: [],
+    ...(opts?.boardMethodology ? { boardMethodology: opts.boardMethodology } : {}),
   };
 }

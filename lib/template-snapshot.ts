@@ -240,7 +240,9 @@ export function buildTemplateSnapshotFromBoard(board: BoardData, rules: Automati
     automations: Array.isArray(rules) ? rules : [],
     ...(board.boardMethodology === "scrum" ||
     board.boardMethodology === "kanban" ||
-    board.boardMethodology === "lean_six_sigma"
+    board.boardMethodology === "lean_six_sigma" ||
+    board.boardMethodology === "discovery" ||
+    board.boardMethodology === "safe"
       ? { boardMethodology: board.boardMethodology }
       : {}),
   };

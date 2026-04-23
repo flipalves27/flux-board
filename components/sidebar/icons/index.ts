@@ -1,6 +1,7 @@
 export { FluxLogoIcon } from "./flux-logo-icon";
 export { IconBilling } from "./icon-billing";
 export { IconBoards } from "./icon-boards";
+export { IconCalendar } from "./icon-calendar";
 export { IconBuilding } from "./icon-building";
 export { IconChevronLeft } from "./icon-chevron-left";
 export { IconChevronRight } from "./icon-chevron-right";

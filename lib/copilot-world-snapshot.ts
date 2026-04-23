@@ -14,7 +14,7 @@ import { isMongoConfigured } from "@/lib/mongo";
 import { getActiveSprint } from "@/lib/kv-sprints";
 import { listBoardActivity } from "@/lib/kv-board-activity";
 import { LSS_DMAIC_KEYS } from "@/lib/flux-reports-lss";
-import { isKanbanMethodology, isScrumMethodology } from "@/lib/board-methodology";
+import { isDiscoveryMethodology, isKanbanMethodology, isScrumMethodology } from "@/lib/board-methodology";
 
 /** ~4k tokens em contexto compacto PT-BR (heurística: ~4 chars/token). */
 const MAX_SNAPSHOT_CHARS = 14_000;
@@ -179,10 +179,16 @@ export async function buildCopilotWorldSnapshot(params: {
   lines.push(`metodologiaDeclarada=${methodology ?? "inferir_por_board"}`);
   if (methodology && isScrumMethodology(methodology)) {
     lines.push("modoAssistencia=Scrum: priorize sprint goal, commitment, impedimentos e Definition of Done.");
+  } else if (methodology === "safe") {
+    lines.push(
+      "modoAssistencia=SAFe_aprox: PI, ART, WSJF, riscos e dependências; iteração mapeada a sprint; não atribua certificação. Marcas: SAFe/Scaled Agile Framework são da Scaled Agile, Inc."
+    );
   } else if (methodology && isKanbanMethodology(methodology)) {
     lines.push("modoAssistencia=Kanban: priorize fluxo, WIP, lead time e políticas explícitas de coluna.");
   } else if (methodology === "lean_six_sigma") {
     lines.push("modoAssistencia=Lean_Six_Sigma: priorize fase DMAIC, evidências e critérios de tollgate.");
+  } else if (methodology && isDiscoveryMethodology(methodology)) {
+    lines.push("modoAssistencia=Discovery: priorize hipóteses, evidência de utilizador, protótipos e critérios de aprendizagem.");
   } else {
     lines.push("modoAssistencia=misto/legado: combine boas práticas de fluxo com cerimônias se houver sprint.");
   }

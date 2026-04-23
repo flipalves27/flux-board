@@ -12,7 +12,7 @@ import { runSyncAutomationsOnBoardPut } from "@/lib/automation-engine";
 import { stripPortalForClient, applyPortalPatch, type PortalBoardPatch } from "@/lib/portal-settings";
 import { validateDodOnBoardPut } from "@/lib/board-scrum";
 import type { BucketConfig } from "@/app/board/[id]/page";
-import { inferLegacyBoardMethodology, type BoardMethodology } from "@/lib/board-methodology";
+import { inferLegacyBoardMethodology, isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { listSprints, getActiveSprint } from "@/lib/kv-sprints";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 
@@ -239,15 +239,17 @@ export async function PUT(
         prevEffective = inferLegacyBoardMethodology(sprints.length > 0);
       }
       if (
-        (clean.boardMethodology === "kanban" || clean.boardMethodology === "lean_six_sigma") &&
-        prevEffective === "scrum"
+        (clean.boardMethodology === "kanban" ||
+          clean.boardMethodology === "lean_six_sigma" ||
+          clean.boardMethodology === "discovery") &&
+        isSprintMethodology(prevEffective)
       ) {
         const active = await getActiveSprint(payload.orgId, boardId);
         if (active) {
           return NextResponse.json(
             {
               error:
-                "Não é possível mudar de Scrum com sprint ativo. Encerre ou feche o sprint antes, ou escolha outro board.",
+                "Não é possível sair de Scrum/SAFe com sprint ativo. Encerre ou feche o sprint antes, ou escolha outro board.",
             },
             { status: 400 }
           );

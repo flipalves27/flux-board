@@ -87,7 +87,11 @@ export async function createBoardFromTemplateSnapshot(
         ? "kanban"
         : snap.boardMethodology === "lean_six_sigma"
           ? "lean_six_sigma"
-          : "scrum";
+          : snap.boardMethodology === "discovery"
+            ? "discovery"
+            : snap.boardMethodology === "safe"
+              ? "safe"
+              : "scrum";
 
   const instantiated = isMatrix ? instantiateTemplateCards(snap) : [];
   const palette = Array.isArray(snap.labelPalette) ? snap.labelPalette : [];

@@ -60,6 +60,7 @@ function firstPathSegment(pathWithLeadingSlash: string): string | null {
  */
 const AUTH_DOCUMENT_FIRST_SEGMENTS = new Set([
   "boards",
+  "calendar",
   "board",
   "onboarding",
   "onboarding-org",

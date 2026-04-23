@@ -11,6 +11,7 @@ import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import { AiRefineHintBadge, MatrixWeightBadge, SubtaskProgressMini } from "./kanban-card-badges";
 import type { SubtaskItem } from "./kanban-card-utils";
 import type { DeliveryPrediction } from "@/lib/predictive-delivery";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 
 export type KanbanCardBodyProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
@@ -250,7 +251,7 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: progColor }} />
           <span className="text-[11px] text-[var(--flux-text-muted)] font-medium">{progLabel}</span>
         </div>
-        {boardMethodology === "scrum" && typeof card.storyPoints === "number" ? (
+        {isSprintMethodology(boardMethodology as BoardMethodology) && typeof card.storyPoints === "number" ? (
           <span className="text-[11px] font-bold tabular-nums text-[var(--flux-primary-light)]">{card.storyPoints} SP</span>
         ) : null}
         {dr !== null && (
@@ -266,12 +267,12 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
                 ? "text-[var(--flux-danger)]"
                 : "text-[var(--flux-text-muted)]"
             }`}
-            title={`${t("predictiveDelivery.estimate")} ${delivery.estimatedDate} (${delivery.confidencePercent}%)`}
+            title={`${t("card.predictiveDelivery.estimate")} ${delivery.estimatedDate} (${delivery.confidencePercent}%)`}
           >
             <span className="text-[9px]">⏱</span>
-            {t("predictiveDelivery.estimate")} {delivery.estimatedDate.slice(5)}
+            {t("card.predictiveDelivery.estimate")} {delivery.estimatedDate.slice(5)}
             {delivery.isLate && (
-              <span className="text-[9px] font-bold uppercase">{t("predictiveDelivery.late")}</span>
+              <span className="text-[9px] font-bold uppercase">{t("card.predictiveDelivery.late")}</span>
             )}
           </span>
         )}

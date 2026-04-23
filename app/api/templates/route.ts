@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       version: t.version ?? 1,
       templateKind: t.snapshot.templateKind ?? "kanban",
       priorityMatrixModel: t.snapshot.priorityMatrixModel,
+      boardMethodology: t.snapshot.boardMethodology ?? null,
     })),
   });
 }

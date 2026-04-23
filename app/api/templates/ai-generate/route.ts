@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
+import { isBoardMethodology } from "@/lib/board-methodology";
 import {
   aiDraftToSnapshot,
   generateTemplateDraftWithTogether,
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
   if (!payload) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
+  const targetRaw = body && typeof body === "object" ? (body as { targetMethodology?: unknown }).targetMethodology : undefined;
+  const targetMethodology = isBoardMethodology(targetRaw) && targetRaw === "safe" ? targetRaw : undefined;
 
   const conv = parseConversationBody(body);
   if (conv) {
@@ -58,11 +61,11 @@ export async function POST(request: NextRequest) {
     if (err) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
-    const gen = await generateTemplateFromConversationTurn(conv.answers, conv.turnIndex);
+    const gen = await generateTemplateFromConversationTurn(conv.answers, conv.turnIndex, targetMethodology);
     if (!gen.ok || !gen.draft) {
       return NextResponse.json({ error: gen.error || "Falha ao gerar template." }, { status: 400 });
     }
-    const snapshot = aiDraftToSnapshot(gen.draft);
+    const snapshot = aiDraftToSnapshot(gen.draft, { boardMethodology: targetMethodology });
     return NextResponse.json({
       mode: "conversation",
       turnIndex: conv.turnIndex,
@@ -78,12 +81,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Descreva o time com pelo menos 10 caracteres." }, { status: 400 });
   }
 
-  const gen = await generateTemplateDraftWithTogether(description);
+  const gen = await generateTemplateDraftWithTogether(description, { targetMethodology });
   if (!gen.ok || !gen.draft) {
     return NextResponse.json({ error: gen.error || "Falha ao gerar template." }, { status: 400 });
   }
 
-  const snapshot = aiDraftToSnapshot(gen.draft);
+  const snapshot = aiDraftToSnapshot(gen.draft, { boardMethodology: targetMethodology });
   return NextResponse.json({
     draft: gen.draft,
     snapshot,

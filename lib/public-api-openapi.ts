@@ -23,7 +23,7 @@ export const PUBLIC_API_V1_OPENAPI = {
           name: { type: "string" },
           orgId: { type: "string" },
           ownerId: { type: "string" },
-          boardMethodology: { type: "string", enum: ["scrum", "kanban", "lean_six_sigma"] },
+          boardMethodology: { type: "string", enum: ["scrum", "kanban", "lean_six_sigma", "discovery", "safe"] },
           clientLabel: { type: "string", nullable: true },
           createdAt: { type: "string", format: "date-time", nullable: true },
           lastUpdated: { type: "string", format: "date-time", nullable: true },

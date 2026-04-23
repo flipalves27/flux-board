@@ -48,13 +48,22 @@ import { buildKanbanOverlayModel } from "./kanban-overlay-model";
 import { buildDragMoveFieldsFromOverId } from "./kanban-dnd-utils";
 import { resolveDoneBucketKeys } from "@/lib/board-scrum";
 import { buildHistoricalCycleDaysFromCards } from "@/lib/board-historical-cycle-days";
-import { isLeanSixSigmaMethodology, isScrumMethodology } from "@/lib/board-methodology";
+import {
+  isLeanSixSigmaMethodology,
+  isSprintMethodology,
+  type BoardMethodology,
+} from "@/lib/board-methodology";
+import { getMethodologyModule } from "@/lib/methodology-module";
 import { BoardProductGoalStrip } from "./board-product-goal-strip";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
 import { BoardLssAssistPanel } from "./board-lss-assist-panel";
-import { BoardLssContextStrip } from "./board-lss-context-strip";
+import { BoardLssDetailChrome } from "@/components/board-methodology/lean-six-sigma/board-lss-detail-chrome";
+import { BoardSafeDetailChrome } from "@/components/board-methodology/safe/board-safe-detail-chrome";
+import { BoardSafeAssistPanel } from "./board-safe-assist-panel";
+import { BoardViewModeSegment } from "./board-view-mode-segment";
+import type { BoardViewMode } from "./kanban-constants";
 import { BoardKnowledgeGraphPanel } from "./board-knowledge-graph-panel";
 import { BoardWorkloadPanel } from "./board-workload-panel";
 import { BoardFocusModeBar } from "./board-focus-mode-bar";
@@ -199,6 +208,7 @@ function KanbanBoardLoaded({
   const [workloadBalanceOpen, setWorkloadBalanceOpen] = useState(false);
   const [knowledgeGraphOpen, setKnowledgeGraphOpen] = useState(false);
   const [lssAssistOpen, setLssAssistOpen] = useState(false);
+  const [safeAssistOpen, setSafeAssistOpen] = useState(false);
   const [matrixWeightFilter, setMatrixWeightFilter] = useState<
     "all" | "critical_high" | "high_plus" | "medium_plus" | "critical"
   >("all");
@@ -250,6 +260,17 @@ function KanbanBoardLoaded({
   }, [onda4.enabled, onda4.omnibar]);
 
   const methodology = db.boardMethodology ?? "scrum";
+  const methodologyModule = useMemo(
+    () => getMethodologyModule(methodology as BoardMethodology),
+    [methodology]
+  );
+
+  useEffect(() => {
+    const allowed = methodologyModule.allowedViewModes;
+    if (!allowed.includes(boardView as BoardViewMode)) {
+      setBoardView(allowed[0] ?? "kanban");
+    }
+  }, [methodologyModule.allowedViewModes, boardView, setBoardView]);
 
   const matrixWeightOptions = useMemo(
     () =>
@@ -799,7 +820,7 @@ function KanbanBoardLoaded({
   const activeMatrixWeightFilterLabel =
     matrixWeightOptions.find((o) => o.key === matrixWeightFilter)?.label ?? "";
   const detailCollapseOnMatrixOnly =
-    !isScrumMethodology(methodology) && !isLeanSixSigmaMethodology(methodology);
+    !isSprintMethodology(methodology) && !isLeanSixSigmaMethodology(methodology);
 
   return (
     <>
@@ -819,8 +840,9 @@ function KanbanBoardLoaded({
             <BoardNlqDock
               boardId={boardId}
               getHeaders={getHeaders}
-              boardView={boardView}
+              boardView={boardView as BoardViewMode}
               setBoardView={setBoardView}
+              allowedViewModes={methodologyModule.allowedViewModes}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               searchInputRef={filters.searchInputRef}
@@ -836,40 +858,17 @@ function KanbanBoardLoaded({
           </div>
         ) : (
           <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[var(--flux-chrome-alpha-08)] flux-glass-surface rounded-none border-x-0 border-t-0 px-4 py-1.5 scrollbar-flux touch-pan-x sm:px-5 lg:px-6">
-            <div
-              className="board-segment flex items-center gap-0.5 p-1 shrink-0 rounded-lg border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-black-alpha-08)]"
-              role="group"
-              aria-label={t("board.timeline.toggleGroupAria")}
-            >
-              {(
-                [
-                  ["kanban", "K", "viewKanbanTooltip", "viewKanbanAria"],
-                  ["table", "T", "viewTableTooltip", "viewTableAria"],
-                  ["timeline", "TL", "viewTimelineTooltip", "viewTimelineAria"],
-                  ["eisenhower", "E", "viewEisenhowerTooltip", "viewEisenhowerAria"],
-                  ["executive", "G", "viewExecutiveTooltip", "viewExecutiveAria"],
-                ] as const
-              ).map(([v, label, tooltipKey, ariaKey]) => (
-                <CustomTooltip key={v} content={tView(tooltipKey)} position="bottom">
-                  <button
-                    type="button"
-                    onClick={() => setBoardView(v)}
-                    className={`px-2 py-1.5 rounded-md transition-all duration-200 flex items-center justify-center ${
-                      boardView === v
-                        ? "bg-[var(--flux-primary)] text-white shadow-[0_2px_8px_var(--flux-primary-alpha-35)]"
-                        : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)]"
-                    }`}
-                    aria-pressed={boardView === v}
-                    aria-label={tView(ariaKey)}
-                  >
-                    <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
-                  </button>
-                </CustomTooltip>
-              ))}
-            </div>
+            <BoardViewModeSegment
+              boardView={boardView as BoardViewMode}
+              setBoardView={setBoardView}
+              allowedViewModes={methodologyModule.allowedViewModes}
+              tTimeline={tView as (k: string) => string}
+              variant="keys"
+              groupAriaLabel={t("board.timeline.toggleGroupAria")}
+            />
 
             {/* Sprint badge (inline) */}
-            {isScrumMethodology(methodology) && activeSprintBoard?.status === "active" && sprintProgress && sprintProgress.total > 0 ? (
+            {isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && sprintProgress && sprintProgress.total > 0 ? (
               <button
                 type="button"
                 onClick={toggleSprintScopeOnly}
@@ -949,7 +948,7 @@ function KanbanBoardLoaded({
               onClearInsightFocus={clearInsightFocus}
               onOpenFlowHealth={() => setFlowHealthOpen(true)}
               onOpenSprintCoach={() => setSprintCoachOpen(true)}
-              sprintCoachVisible={isScrumMethodology(methodology) && activeSprintBoard?.status === "active"}
+              sprintCoachVisible={isSprintMethodology(methodology) && activeSprintBoard?.status === "active"}
               onOpenCadence={() => setKanbanCadenceOpen(true)}
               cadenceVisible={methodology === "kanban"}
               boardId={boardId}
@@ -1026,7 +1025,7 @@ function KanbanBoardLoaded({
           </div>
         ) : (
           <>
-            {isScrumMethodology(methodology) ? (
+            {methodologyModule.detailChromeStrip === "scrum_product_goal" ? (
               <div className="relative">
                 <button
                   type="button"
@@ -1049,30 +1048,26 @@ function KanbanBoardLoaded({
               </div>
             ) : null}
 
-            {isLeanSixSigmaMethodology(methodology) ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={toggleDetailChromeExpanded}
-                  className="absolute left-2 top-2 z-[1] rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-                  aria-label={t("board.detailChrome.collapse")}
-                  aria-expanded
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-                    <path d="M18 15l-6-6-6 6" />
-                  </svg>
-                </button>
-                <BoardLssContextStrip
-                  buckets={board.buckets}
-                  cards={board.cards}
-                  onOpenAssist={() => setLssAssistOpen(true)}
-                  className="pl-10 sm:pl-11"
-                />
-              </div>
+            {methodologyModule.detailChromeStrip === "lss_context" ? (
+              <BoardLssDetailChrome
+                buckets={board.buckets}
+                cards={board.cards}
+                onOpenAssist={() => setLssAssistOpen(true)}
+                onCollapseDetailChrome={toggleDetailChromeExpanded}
+              />
+            ) : null}
+
+            {methodologyModule.detailChromeStrip === "safe_context" ? (
+              <BoardSafeDetailChrome
+                buckets={board.buckets}
+                cards={board.cards}
+                onOpenAssist={() => setSafeAssistOpen(true)}
+                onCollapseDetailChrome={toggleDetailChromeExpanded}
+              />
             ) : null}
 
             {/* Sprint bar: only shows as full row when NLQ dock is expanded (compact badge handles it otherwise) */}
-            {nlqExpanded && isScrumMethodology(methodology) && activeSprintBoard?.status === "active" ? (
+            {nlqExpanded && isSprintMethodology(methodology) && activeSprintBoard?.status === "active" ? (
               <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
                 {sprintProgress && sprintProgress.total > 0 ? (
                   <div
@@ -1247,7 +1242,7 @@ function KanbanBoardLoaded({
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
-          sprintBoardQuickActions={isScrumMethodology(methodology) ? { boardId, getHeaders } : undefined}
+          sprintBoardQuickActions={isSprintMethodology(methodology) ? { boardId, getHeaders } : undefined}
           getHeaders={getHeaders}
           onAddCardFromTemplate={(bucketKey, tpl) => {
             board.setModalCard({
@@ -1328,6 +1323,12 @@ function KanbanBoardLoaded({
       <BoardLssAssistPanel
         open={lssAssistOpen}
         onClose={() => setLssAssistOpen(false)}
+        boardId={boardId}
+        getHeaders={getHeaders}
+      />
+      <BoardSafeAssistPanel
+        open={safeAssistOpen}
+        onClose={() => setSafeAssistOpen(false)}
         boardId={boardId}
         getHeaders={getHeaders}
       />

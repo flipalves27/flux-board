@@ -21,7 +21,7 @@ import type {
   CardDorReady,
   BoardDefinitionOfDone,
 } from "@/app/board/[id]/page";
-import type { BoardMethodology } from "@/lib/board-methodology";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { computeSubtaskProgress, type CardServiceClass, type SubtaskData } from "@/lib/schemas";
 import { useBoardStore } from "@/stores/board-store";
 import { assertDodAllowsCompleting } from "@/lib/board-scrum";
@@ -784,11 +784,11 @@ export function CardModalProvider({ children, ...props }: CardModalProps & { chi
       docRefs,
       order: card.order ?? 0,
     };
-    if (boardMethodology === "scrum") {
+    if (isSprintMethodology(boardMethodology)) {
       if (storyPoints != null) saved.storyPoints = storyPoints;
       else delete saved.storyPoints;
     }
-    if (boardMethodology === "kanban" || boardMethodology === "lean_six_sigma") {
+    if (boardMethodology === "kanban" || boardMethodology === "lean_six_sigma" || boardMethodology === "discovery") {
       if (serviceClass != null) saved.serviceClass = serviceClass;
       else delete saved.serviceClass;
     }

@@ -65,4 +65,34 @@ describe("flux-reports-sprint-metrics", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.completedStoryPoints).toBe(5);
   });
+
+  it("includes safe boards in sprint story point history", async () => {
+    const { buildSprintStoryPointsHistory } = await import("./flux-reports-sprint-metrics");
+    const boards: BoardData[] = [
+      {
+        id: "b1",
+        name: "SAFe",
+        orgId: "o1",
+        ownerId: "u1",
+        boardMethodology: "safe",
+        cards: [
+          {
+            id: "c1",
+            bucket: "concluido",
+            progress: "Concluída",
+            title: "Feature",
+            desc: "",
+            priority: "Média",
+            tags: [],
+            order: 0,
+            storyPoints: 8,
+          },
+        ],
+        config: { bucketOrder: [{ key: "concluido", label: "Concluído", color: "var(--flux-primary)" }] },
+      } as unknown as BoardData,
+    ];
+    const rows = await buildSprintStoryPointsHistory("o1", boards);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.completedStoryPoints).toBe(8);
+  });
 });
