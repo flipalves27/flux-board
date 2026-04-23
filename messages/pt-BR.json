@@ -3738,7 +3738,9 @@
         "l2Trigger": "Filtros, etiquetas e pesquisa",
         "l3Trigger": "Briefing, alertas e contexto do board",
         "l2SummarySearch": "Pesquisa ativa: “{q}”",
-        "l3SummaryWip": "WIP visível: {n} em progresso"
+        "l3SummaryWip": "WIP visível: {n} em progresso",
+        "filtersRailExpand": "Mostrar filtros e contexto do board",
+        "filtersRailCollapse": "Recolher filtros e contexto para ganhar espaço no board"
       },
       "nlqCompact": {
         "expand": "Abrir busca NLQ",

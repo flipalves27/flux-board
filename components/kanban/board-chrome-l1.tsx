@@ -6,6 +6,14 @@ import { BoardViewModeSegment } from "./board-view-mode-segment";
 import { BoardAutomationSuggestions } from "./board-automation-suggestions";
 import type { BoardViewMode } from "./kanban-constants";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
+import { SlidersHorizontal } from "lucide-react";
+
+export type BoardChromeFilterRailShortcut = {
+  expanded: boolean;
+  onToggle: () => void;
+  expandLabel: string;
+  collapseLabel: string;
+};
 
 export type BoardChromeL1Props = {
   boardId: string;
@@ -29,6 +37,8 @@ export type BoardChromeL1Props = {
   searchInputRef: RefObject<HTMLInputElement | null>;
   t: (key: string, values?: Record<string, string | number>) => string;
   tTimeline: (k: string) => string;
+  /** Atalho na barra principal: recolher / expandir filtros + contexto (L2+L3). */
+  filterRailShortcut?: BoardChromeFilterRailShortcut;
 };
 
 export function BoardChromeL1({
@@ -53,6 +63,7 @@ export function BoardChromeL1({
   searchInputRef,
   t,
   tTimeline,
+  filterRailShortcut,
 }: BoardChromeL1Props) {
   void boardName;
 
@@ -122,18 +133,34 @@ export function BoardChromeL1({
             </button>
           ) : null}
 
-          {!onda4Omnibar ? (
-            <button
-              type="button"
-              onClick={() => setNlqExpanded(true)}
-              className="ml-auto rounded-md border border-[var(--flux-chrome-alpha-12)] p-1.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)] transition-colors shrink-0"
-              aria-label={t("board.nlqCompact.expand")}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </button>
+          {filterRailShortcut || !onda4Omnibar ? (
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {filterRailShortcut ? (
+                <button
+                  type="button"
+                  onClick={filterRailShortcut.onToggle}
+                  aria-expanded={filterRailShortcut.expanded}
+                  aria-label={filterRailShortcut.expanded ? filterRailShortcut.collapseLabel : filterRailShortcut.expandLabel}
+                  title={filterRailShortcut.expanded ? filterRailShortcut.collapseLabel : filterRailShortcut.expandLabel}
+                  className="rounded-lg border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-surface-elevated)] p-1.5 text-[var(--flux-text-muted)] shadow-sm transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)]"
+                >
+                  <SlidersHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              ) : null}
+              {!onda4Omnibar ? (
+                <button
+                  type="button"
+                  onClick={() => setNlqExpanded(true)}
+                  className="rounded-md border border-[var(--flux-chrome-alpha-12)] p-1.5 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:border-[var(--flux-primary-alpha-35)] transition-colors"
+                  aria-label={t("board.nlqCompact.expand")}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       )}

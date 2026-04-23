@@ -2,52 +2,55 @@
 
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 type BoardChromeLayerCollapsibleProps = {
   id: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** When true, children are always visible (no collapsible chrome). */
-  forceExpanded: boolean;
   triggerLabel: string;
   triggerSummary?: ReactNode;
   children: ReactNode;
 };
 
 /**
- * Radix Collapsible for L2/L3 on small viewports: removes closed content
- * from tab order and keeps expand/collapse semantics for assistive tech.
+ * Radix Collapsible para faixas L2/L3: recolhe em qualquer viewport, mantém a11y
+ * e liberta altura para o canvas Kanban.
  */
 export function BoardChromeLayerCollapsible({
   id,
   open,
   onOpenChange,
-  forceExpanded,
   triggerLabel,
   triggerSummary,
   children,
 }: BoardChromeLayerCollapsibleProps) {
-  if (forceExpanded) {
-    return <>{children}</>;
-  }
-
   return (
     <Collapsible.Root open={open} onOpenChange={onOpenChange}>
-      <div className="flex flex-col border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-3 py-1 sm:px-4 md:hidden">
+      <div className="border-b border-[var(--flux-chrome-alpha-10)] bg-[color-mix(in_srgb,var(--flux-surface-card)_88%,transparent)] backdrop-blur-[6px]">
         <Collapsible.Trigger
           type="button"
-          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-md py-1.5 text-left text-flux-xs font-semibold text-[var(--flux-text-muted)] hover:bg-[var(--flux-surface-hover)] hover:text-[var(--flux-text)] transition-colors"
+          className="group flex w-full min-w-0 items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-[var(--flux-surface-hover)] sm:px-5 lg:px-6 motion-safe:duration-150"
+          aria-expanded={open}
           aria-controls={`${id}-panel`}
           id={`${id}-trigger`}
         >
-          <span className="truncate">{triggerLabel}</span>
-          <span className="shrink-0 tabular-nums text-[var(--flux-text-muted)]" aria-hidden>
-            {open ? "▾" : "▸"}
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-[var(--flux-text-muted)] transition-transform duration-200 ease-out ${
+              open ? "rotate-180" : ""
+            }`}
+            aria-hidden
+            strokeWidth={2.25}
+          />
+          <span className="min-w-0 truncate text-flux-xs font-semibold tracking-tight text-[var(--flux-text)]">
+            {triggerLabel}
           </span>
+          {!open && triggerSummary ? (
+            <span className="ml-auto min-w-0 max-w-[min(100%,280px)] truncate text-right text-flux-xs font-medium text-[var(--flux-text-muted)]">
+              {triggerSummary}
+            </span>
+          ) : null}
         </Collapsible.Trigger>
-        {triggerSummary && !open ? (
-          <div className="pb-1.5 text-flux-xs text-[var(--flux-text-muted)]">{triggerSummary}</div>
-        ) : null}
       </div>
       <Collapsible.Content
         id={`${id}-panel`}
