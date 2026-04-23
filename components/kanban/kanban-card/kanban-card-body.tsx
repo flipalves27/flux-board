@@ -267,12 +267,12 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
                 ? "text-[var(--flux-danger)]"
                 : "text-[var(--flux-text-muted)]"
             }`}
-            title={`${t("predictiveDelivery.estimate")} ${delivery.estimatedDate} (${delivery.confidencePercent}%)`}
+            title={`${t("card.predictiveDelivery.estimate")} ${delivery.estimatedDate} (${delivery.confidencePercent}%)`}
           >
             <span className="text-[9px]">⏱</span>
-            {t("predictiveDelivery.estimate")} {delivery.estimatedDate.slice(5)}
+            {t("card.predictiveDelivery.estimate")} {delivery.estimatedDate.slice(5)}
             {delivery.isLate && (
-              <span className="text-[9px] font-bold uppercase">{t("predictiveDelivery.late")}</span>
+              <span className="text-[9px] font-bold uppercase">{t("card.predictiveDelivery.late")}</span>
             )}
           </span>
         )}
