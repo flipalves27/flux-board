@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
 import type { LlmChatMessage } from "@/lib/llm-provider";
-import { createAnthropicProvider } from "@/lib/llm-provider";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { rateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/schemas";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,9 +29,10 @@ function buildSystemPrompt(locale: string): string {
   ].join("\n");
 }
 
-/** Public landing: whether Claude is wired (no secrets exposed). */
+/** Página pública: motor configurado no servidor (sem expor segredos). */
 export async function GET() {
-  return NextResponse.json({ llmEnabled: Boolean(process.env.ANTHROPIC_API_KEY?.trim()) });
+  const rt = resolveOrgLlmRuntime(null);
+  return NextResponse.json({ llmEnabled: Boolean(rt) });
 }
 
 type PostBody = {
@@ -53,7 +55,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+  const runtime = resolveOrgLlmRuntime(null);
+  if (!runtime) {
     return NextResponse.json({ mode: "fallback" as const, reason: "no_api_key" as const });
   }
 
@@ -83,8 +86,8 @@ export async function POST(request: NextRequest) {
   }
   messages[lastIx] = { role: "user", content: guarded.text };
 
-  const provider = createAnthropicProvider();
-  const landingModel = process.env.ANTHROPIC_LANDING_MODEL?.trim();
+  const provider = createOpenAiCompatProvider(runtime);
+  const landingModel = process.env.FLUXY_LANDING_MODEL?.trim() || process.env.TOGETHER_MODEL?.trim();
   const payload: LlmChatMessage[] = [{ role: "system", content: buildSystemPrompt(locale) }, ...messages];
 
   const result = await provider.chat(payload, undefined, {

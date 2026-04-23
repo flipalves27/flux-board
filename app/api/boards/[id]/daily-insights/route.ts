@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { publicApiErrorResponse, publicErrorMessage } from "@/lib/public-api-error";
 import { getAuthFromRequest } from "@/lib/auth";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { isCloudLlmConfigured, isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, updateBoardFromExisting, userCanAccessBoard } from "@/lib/kv-boards";
 import { DailyInsightInputSchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
@@ -323,10 +323,6 @@ function parseJsonFromLlmContent(content: string): ParseOutcome {
   return { parsed: objectFromRawContent(raw), recovered: true };
 }
 
-function providerLabel(p: "anthropic" | "together"): "anthropic" | "together.ai" {
-  return p === "anthropic" ? "anthropic" : "together.ai";
-}
-
 async function llmInsight(args: {
   org: Organization | null;
   orgId: string;
@@ -337,24 +333,14 @@ async function llmInsight(args: {
   cardSnippets: string[];
   transcript: string;
 }): Promise<LlmInsightResult> {
-  if (!isCloudLlmConfigured()) {
+  if (!isOrgCloudLlmConfigured(args.org)) {
     return {
       insight: heuristicInsight(args.transcript),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "no_api_key",
-      errorMessage: "Nenhuma chave de IA cloud configurada (Together e/ou Anthropic). Usando modo heurístico.",
-    };
-  }
-
-  const pick = resolveInteractiveLlmRoute(args.org, { userId: args.userId, isAdmin: args.isAdmin });
-  if (pick.route === "together" && !isTogetherApiConfigured()) {
-    return {
-      insight: heuristicInsight(args.transcript),
-      generatedWithAI: false,
-      provider: "together.ai",
-      errorKind: "no_model",
-      errorMessage: "TOGETHER_API_KEY/MODEL necessários para este usuário. Usando modo heurístico.",
+      errorMessage:
+        "Nenhuma API compatível com OpenAI configurada para esta organização (nem chave no servidor). Usando modo heurístico.",
     };
   }
 
@@ -403,7 +389,7 @@ async function llmInsight(args: {
       return {
         insight: heuristicInsight(args.transcript),
         generatedWithAI: false,
-        provider: providerLabel(response.resolvedRoute),
+        provider: "openai_compat",
         errorKind: "http_error",
         errorMessage: message,
       };
@@ -415,7 +401,7 @@ async function llmInsight(args: {
       insight: safeInsight(parsed.parsed),
       generatedWithAI: true,
       model: response.model,
-      provider: providerLabel(response.provider),
+      provider: "openai_compat",
       rawContent: content,
       // JSON foi recuperado localmente; não propaga erro de parse para a camada de integração.
       errorKind: undefined,
@@ -428,7 +414,7 @@ async function llmInsight(args: {
     return {
       insight: heuristicInsight(args.transcript),
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "network_error",
       errorMessage: publicErrorMessage(err, "Erro de rede ao chamar a IA.", "api/boards/[id]/daily-insights/route.ts"),
     };
@@ -516,11 +502,9 @@ export async function POST(
       )} | ${String(rec.desc || "").slice(0, 220)}`;
     });
 
-    // Quota de "calls/dia" apenas quando vamos de fato disparar IA via Together.ai.
+    // Quota de "calls/dia" apenas quando vamos de fato disparar IA cloud.
     const cap = getDailyAiCallsCap(org, gateCtx);
-    const llmCloudEnabled =
-      (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
-      Boolean(process.env.ANTHROPIC_API_KEY);
+    const llmCloudEnabled = isOrgCloudLlmConfigured(org);
     if (cap !== null && llmCloudEnabled) {
       const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
       const rlDaily = await rateLimit({

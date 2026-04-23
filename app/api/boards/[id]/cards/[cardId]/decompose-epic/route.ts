@@ -89,7 +89,6 @@ Decomponha em 3-8 histórias de usuário. Retorne JSON:
     userId: payload.id,
     isAdmin: Boolean(payload.isAdmin),
     mode: "batch",
-    planGateCtx: gateCtx,
     systemPrompt,
     userPrompt,
     maxTokens: 2200,

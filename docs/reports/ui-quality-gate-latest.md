@@ -1,6 +1,6 @@
 # UI Quality Gate Report
 
-Generated at: 2026-03-31T11:35:02.542Z
+Generated at: 2026-04-23T09:59:41.419Z
 
 ## Performance snapshot
 

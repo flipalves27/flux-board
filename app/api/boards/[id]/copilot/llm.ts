@@ -1,5 +1,5 @@
 import { runOrgLlmChat, type OrgLlmChatResult } from "@/lib/llm-org-chat";
-import { isTogetherApiConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
 import type { Organization } from "@/lib/kv-organizations";
 import { getCopilotLlmHistoryMessageLimit, type CopilotMessageRole } from "@/lib/kv-board-copilot";
 import { getEffectiveTier } from "@/lib/plan-gates";
@@ -12,11 +12,6 @@ const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"] as const;
 const DIRECTIONS = ["Manter", "Priorizar", "Adiar", "Cancelar", "Reavaliar"] as const;
 const MAX_MODEL_CONTEXT_CARDS = 40;
 
-function anthropicSnippetIsInsufficientCredits(snippet: string): boolean {
-  const s = snippet.toLowerCase();
-  return s.includes("credit balance") || s.includes("too low to access") || s.includes("purchase credits") || s.includes("plans & billing");
-}
-
 function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>): string {
   const err = failed.error || "";
   const status = failed.status;
@@ -28,40 +23,26 @@ function copilotLlmFailureReply(failed: Extract<OrgLlmChatResult, { ok: false }>
     status,
   });
 
-  if (failed.resolvedRoute === "anthropic") {
-    if (err === "no_api_key") {
-      return "ANTHROPIC_API_KEY não está disponível neste deploy. Confira variáveis de ambiente no Vercel (Production vs Preview).";
-    }
-    if (err.startsWith("http_")) {
-      const code = Number(err.slice(5));
-      if (code === 401) {
-        return "A API Anthropic recusou a chave (401). Verifique se ANTHROPIC_API_KEY está correta, sem espaços extras, e ligada ao ambiente que você usa (Production/Preview/Development).";
-      }
-      if (code === 403) {
-        return "Acesso negado pela Anthropic (403). Confira permissões da chave, região e faturamento da conta.";
-      }
-      if (code === 400 || code === 404) {
-        if (anthropicSnippetIsInsufficientCredits(snippet)) {
-          return "Saldo de créditos da conta Anthropic insuficiente. Em https://console.anthropic.com acesse Plans & Billing para comprar créditos ou ativar um plano. O erro 400 neste caso não é ID do modelo.";
-        }
-        const hint = snippet ? ` (${snippet.slice(0, 220)}${snippet.length > 220 ? "…" : ""})` : "";
-        return `Pedido rejeitado pela Anthropic (${code}). Use o ID exato do modelo na API (Configurações da organização ou ANTHROPIC_MODEL no Vercel).${hint}`;
-      }
-      if (code === 429) return "Limite de uso da API Anthropic (429). Aguarde e tente de novo.";
-      if (code === 503 || code === 529) return "Serviço Anthropic sobrecarregado ou indisponível. Tente novamente em instantes.";
-    }
-    if (err === "network_error" || err.includes("fetch")) {
-      return "Falha de rede ao contactar a API Anthropic. Tente de novo ou confira firewall/DNS no ambiente de deploy.";
-    }
+  if (err === "no_api_key") {
+    return "Nenhuma chave API configurada para esta organização (ou no servidor). Configure o motor de IA nas definições da organização ou as variáveis de ambiente do deploy.";
   }
-
-  if (failed.resolvedRoute === "together") {
-    if (err === "no_api_key") return "TOGETHER_API_KEY não configurada neste deploy.";
-    if (err.startsWith("http_")) {
-      const code = Number(err.slice(5));
-      if (code === 401) return "A API Together recusou a chave (401). Verifique TOGETHER_API_KEY no Vercel.";
-      if (code === 429) return "Limite de uso da API Together (429). Tente novamente em instantes.";
+  if (err.startsWith("http_")) {
+    const code = Number(err.slice(5));
+    if (code === 401) {
+      return "A API recusou a chave (401). Verifique a chave nas definições da organização ou as credenciais no servidor.";
     }
+    if (code === 403) {
+      return "Acesso negado pela API (403). Confira permissões da chave e faturamento.";
+    }
+    if (code === 400 || code === 404) {
+      const hint = snippet ? ` (${snippet.slice(0, 220)}${snippet.length > 220 ? "…" : ""})` : "";
+      return `Pedido rejeitado pela API (${code}). Confira o ID do modelo e a URL base (se aplicável).${hint}`;
+    }
+    if (code === 429) return "Limite de uso da API (429). Aguarde e tente de novo.";
+    if (code === 503 || code === 529) return "Serviço do modelo sobrecarregado ou indisponível. Tente novamente em instantes.";
+  }
+  if (err === "network_error" || err.includes("fetch")) {
+    return "Falha de rede ao contactar a API do modelo. Tente de novo ou confira firewall/DNS no ambiente de deploy.";
   }
 
   if (failed.error === "missing_user") return "Sessão inválida para chamar o modelo.";
@@ -81,11 +62,11 @@ export async function callCopilotLlmModel(input: {
   worldSnapshot: string;
 }): Promise<CopilotModelOutput> {
   const routePick = resolveInteractiveLlmRoute(input.org, { userId: input.userId, isAdmin: input.isAdmin });
-  if (routePick.route === "together" && !isTogetherApiConfigured()) {
+  if (!isOrgCloudLlmConfigured(input.org)) {
     return copilotHeuristicWhenNoLlm({ board: input.board, userMessage: input.userMessage });
   }
 
-  const providerLabel = (p: string) => (p === "anthropic" ? "Anthropic" : "Together");
+  const providerLabel = () => "openai_compat";
   const llmHistLimit = getCopilotLlmHistoryMessageLimit();
   const ctx = buildCopilotContext(input.board);
   const cardsForPrompt = ctx.cards.slice(0, MAX_MODEL_CONTEXT_CARDS);
@@ -146,15 +127,14 @@ export async function callCopilotLlmModel(input: {
   });
 
   if (!res.ok) {
-    const modelHint =
-      res.resolvedRoute === "anthropic" ? routePick.anthropicModel : process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
+    const modelHint = routePick.model || process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo";
     return {
       reply: copilotLlmFailureReply(res),
       actions: [],
       llm: {
         source: "cloud",
         model: modelHint,
-        provider: providerLabel(res.resolvedRoute === "anthropic" ? "anthropic" : "together"),
+        provider: providerLabel(),
       },
     };
   }
@@ -175,7 +155,7 @@ export async function callCopilotLlmModel(input: {
           args: (row.args && typeof row.args === "object" ? row.args : {}) as Record<string, unknown>,
         };
       }),
-    llm: { source: "cloud", model: res.model, provider: providerLabel(res.provider) },
+    llm: { source: "cloud", model: res.model, provider: providerLabel() },
   };
 }
 

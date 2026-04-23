@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { isCloudLlmConfigured, resolveInteractiveLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBoard, userCanAccessBoard } from "@/lib/kv-boards";
 import { getOrganizationById } from "@/lib/kv-organizations";
@@ -207,7 +207,7 @@ export async function POST(
       );
     }
 
-    if (!isCloudLlmConfigured()) {
+    if (!isOrgCloudLlmConfigured(org)) {
       return NextResponse.json({
         summary: heuristicSummary(insights).summary,
         impediments: heuristicSummary(insights).impediments,
@@ -259,9 +259,6 @@ export async function POST(
       "",
       "Return ONLY the JSON object. No markdown fences. No extra text.",
     ].join("\n");
-
-    const pick = resolveInteractiveLlmRoute(org, { userId: payload.id, isAdmin: payload.isAdmin });
-    void pick;
 
     const response = await runOrgLlmChat({
       org,

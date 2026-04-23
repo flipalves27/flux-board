@@ -11,6 +11,7 @@ import {
 import { publicApiErrorResponse } from "@/lib/public-api-error";
 import { IntakeSubmissionSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { classifyIntakeWithBoardContext, normalizeFormSlug } from "@/lib/forms-intake";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { getClientIpFromHeaders, rateLimit } from "@/lib/rate-limit";
 import { enqueueWebhookDeliveriesForEvent } from "@/lib/webhook-delivery";
 import { nextBoardCardId } from "@/lib/card-id";
@@ -103,9 +104,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const org = await getOrganizationById(index.orgId);
     const cap = getDailyAiCallsCap(org);
-    const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
+    const llmConfigured = isOrgCloudLlmConfigured(org);
     let allowLlm = true;
-    if (cap !== null && togetherEnabled) {
+    if (cap !== null && llmConfigured) {
       const rlDaily = await rateLimit({
         key: makeDailyAiCallsRateLimitKey(index.orgId),
         limit: cap,
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         title: String(clean.title || ""),
         description: String(clean.description || ""),
       },
+      org,
       allowLlm,
     });
 

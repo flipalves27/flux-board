@@ -3,8 +3,6 @@ import type { SprintData } from "@/lib/schemas";
 import type { BoardData } from "@/lib/kv-boards";
 import { sprintDeliveredVsCommitment } from "@/lib/sprint-delivery-metrics";
 import type { Organization } from "@/lib/kv-organizations";
-import type { PlanGateContext } from "@/lib/plan-gates";
-
 export type RetroItem = {
   id: string;
   category: string;
@@ -136,7 +134,6 @@ export async function generateRetrospective(params: {
   format?: RetroFormat;
   userId?: string | null;
   isAdmin?: boolean;
-  planGateCtx?: PlanGateContext;
 }): Promise<RetroOutput> {
   const { sprint, board, org, mode = "sprint", format = "classic" } = params;
   const orgId = org?._id ?? board.orgId;
@@ -174,7 +171,6 @@ Valores de priority: high | medium | low.`;
       userId: params.userId,
       isAdmin: params.isAdmin,
       mode: "batch",
-      planGateCtx: params.planGateCtx,
       systemPrompt: RETRO_SYSTEM_FLEX,
       userPrompt,
       maxTokens: 1500,
@@ -292,7 +288,6 @@ Cada item deve ser específico e acionável. Máximo 6 itens por categoria.`;
     userId: params.userId,
     isAdmin: params.isAdmin,
     mode: "batch",
-    planGateCtx: params.planGateCtx,
     systemPrompt: RETRO_SYSTEM_CLASSIC,
     userPrompt: prompt,
     maxTokens: 1200,

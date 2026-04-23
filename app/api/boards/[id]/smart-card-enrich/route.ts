@@ -24,8 +24,8 @@ import {
   pickSimilarCardRefs,
   type SimilarCardRef,
 } from "@/lib/smart-card-enrich";
-import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
-import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 import { parseDecomposeSubtasksFromAssistant } from "@/lib/decompose-subtasks-from-llm";
 
 async function handleDecomposeMode(
@@ -54,8 +54,10 @@ Responda em JSON válido:
 Máximo 8 subtasks. Seja conciso e específico.`;
 
   try {
-    const { route } = resolveBatchLlmRoute(org, planGateCtx);
-    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    void planGateCtx;
+    const runtime = resolveOrgLlmRuntime(org);
+    if (!runtime) return NextResponse.json({ ok: true, subtasks: [] });
+    const provider = createOpenAiCompatProvider(runtime);
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
       undefined,
@@ -97,8 +99,10 @@ Responda em JSON válido:
 }`;
 
   try {
-    const { route } = resolveBatchLlmRoute(org, planGateCtx);
-    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    void planGateCtx;
+    const runtime = resolveOrgLlmRuntime(org);
+    if (!runtime) return NextResponse.json({ ok: false, error: "no_api_key" }, { status: 503 });
+    const provider = createOpenAiCompatProvider(runtime);
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
       undefined,
@@ -355,8 +359,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let usedLlm = false;
     let llmPayload = buildHeuristicLlm();
 
-    const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
-    if (togetherEnabled) {
+    const llmRuntime = resolveOrgLlmRuntime(org);
+    if (llmRuntime) {
       const cap = getDailyAiCallsCap(org, gateCtx);
       if (cap !== null) {
         const dailyKey = makeDailyAiCallsRateLimitKey(payload.orgId);
@@ -397,6 +401,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         ragExcerpts,
         leadStats,
         allowedDirections,
+        org,
       });
       if (r.ok && r.data) {
         usedLlm = true;
@@ -429,7 +434,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ok: true,
       usedLlm,
       llmModel: usedLlm ? process.env.TOGETHER_MODEL || "meta-llama/Llama-3.3-70B-Instruct-Turbo" : undefined,
-      llmProvider: usedLlm ? "together.ai" : undefined,
+      llmProvider: usedLlm ? "openai_compat" : undefined,
       ...normalized,
     });
   } catch (err) {

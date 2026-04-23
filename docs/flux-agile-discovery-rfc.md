@@ -25,3 +25,5 @@ Este documento substitui entrevistas presenciais por um roteiro fixo e decisões
 
 - Velocity por sprint fechado (reuso de `doneCardIds` / snapshots).
 - Checklist “Definition of Done” por board (template em `CardDataSchema`).
+
+Ver também: [posicionamento ICP e moat de produto](strategy/posicionamento-icp-e-moat.md) (mensagem de mercado, anti-posicionamento e demo padrão com WIP).

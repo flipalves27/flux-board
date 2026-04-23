@@ -403,7 +403,7 @@ export function BoardCopilotPanel({ boardId, boardName, getHeaders, hideDesktopF
 
           const nlqLlmMeta =
             typeof data.llmModel === "string" && data.llmModel.trim()
-              ? { llmModel: data.llmModel.trim(), llmProvider: "Together" as const }
+              ? { llmModel: data.llmModel.trim(), llmProvider: "openai_compat" as const }
               : undefined;
 
           if (!res.ok) {

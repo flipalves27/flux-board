@@ -262,7 +262,7 @@ describe("callTogetherApi", () => {
     );
   });
 
-  it("uses default Together base URL when env has no TOGETHER_BASE_URL", async () => {
+  it("uses default OpenAI-compat base URL when env has no TOGETHER_BASE_URL", async () => {
     delete process.env.TOGETHER_BASE_URL;
     process.env.TOGETHER_API_KEY = "k";
     const fetchMock = vi.fn().mockResolvedValue({

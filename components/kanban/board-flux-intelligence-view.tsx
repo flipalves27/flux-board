@@ -128,6 +128,10 @@ export function BoardFluxIntelligenceView({
         </Link>
       </div>
 
+      <p className="text-xs text-[var(--flux-text-muted)] leading-relaxed border border-[var(--flux-chrome-alpha-10)] rounded-lg px-3 py-2 bg-[var(--flux-chrome-alpha-03)]">
+        {t("packageIntro")}
+      </p>
+
       <div className="flex flex-wrap gap-2 border-b border-[var(--flux-chrome-alpha-12)] pb-2">
         {(
           [

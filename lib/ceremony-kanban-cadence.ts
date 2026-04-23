@@ -1,7 +1,7 @@
 import type { BoardData } from "@/lib/kv-boards";
 import type { Organization } from "@/lib/kv-organizations";
-import { resolveBatchLlmRoute } from "@/lib/org-ai-routing";
-import { createTogetherProvider, createAnthropicProvider } from "@/lib/llm-provider";
+import { createOpenAiCompatProvider } from "@/lib/llm-provider";
+import { resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 
 export type KanbanCadenceType =
   | "service_delivery_review"
@@ -175,8 +175,9 @@ export async function generateKanbanCadence(params: {
   const prompt = buildCadencePrompt(type, board, metrics);
 
   try {
-    const { route } = resolveBatchLlmRoute(org);
-    const provider = route === "anthropic" ? createAnthropicProvider() : createTogetherProvider();
+    const runtime = resolveOrgLlmRuntime(org);
+    if (!runtime) throw new Error("no_api_key");
+    const provider = createOpenAiCompatProvider(runtime);
     const result = await provider.chat(
       [{ role: "user", content: prompt }],
       undefined,

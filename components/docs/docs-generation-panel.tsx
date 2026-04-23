@@ -396,7 +396,7 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
             </ol>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-xs font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">Pré-visualização</div>
-              {lastPipelineLlmModel ? <AiModelHint model={lastPipelineLlmModel} provider="Together" /> : null}
+              {lastPipelineLlmModel ? <AiModelHint model={lastPipelineLlmModel} provider="openai_compat" /> : null}
             </div>
             <pre className="mt-2 max-h-[220px] flex-1 overflow-auto whitespace-pre-wrap rounded border border-[var(--flux-chrome-alpha-06)] bg-[var(--flux-black-alpha-20)] p-2 font-mono text-[11px] leading-relaxed text-[var(--flux-text)]">
               {preview || (generating ? "Aguardando conteúdo…" : "—")}

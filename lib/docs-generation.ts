@@ -19,7 +19,7 @@ export async function generateMarkdownWithTogether(args: {
   const apiKey = process.env.TOGETHER_API_KEY;
   const model = process.env.TOGETHER_MODEL;
   if (!togetherEnabled() || !apiKey || !model) {
-    return { ok: false, markdown: "", error: "IA não configurada (Together.ai)." };
+    return { ok: false, markdown: "", error: "IA não configurada (motor OpenAI-compat no servidor)." };
   }
 
   const baseUrl = (process.env.TOGETHER_BASE_URL || "https://api.together.xyz/v1").replace(/\/+$/, "");

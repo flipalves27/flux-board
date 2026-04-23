@@ -27,6 +27,7 @@ import {
 import { generateOkrWeeklyDigestBlockAI } from "@/lib/okr-weekly-digest-llm";
 import { loadOkrProjectionsForOrgQuarter } from "@/lib/okr-projection-org";
 import { canUseFeature } from "@/lib/plan-gates";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { COL_ANOMALY_ALERTS } from "@/lib/anomaly-service";
 import { resolvePlatformDisplayName } from "@/lib/org-branding";
 import { buildResendFromForOrg } from "@/lib/org-branding-resend";
@@ -186,9 +187,7 @@ export async function GET(request: NextRequest) {
         previousRange: weekPrevious,
       });
 
-      const llmCloudEnabled =
-        (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) ||
-        Boolean(process.env.ANTHROPIC_API_KEY);
+      const llmCloudEnabled = isOrgCloudLlmConfigured(org);
 
       let okrSection: WeeklyDigestOkrSection | null = null;
       if (canUseFeature(org, "okr_engine")) {
@@ -284,6 +283,7 @@ export async function GET(request: NextRequest) {
           corpus: sentimentCorpus,
           previousWeekScore: previousWeekSentimentScore,
           allowAI,
+          org,
         });
 
         await upsertBoardWeeklySentiment({

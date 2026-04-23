@@ -278,7 +278,7 @@ export function copilotHeuristicWhenNoLlm(input: {
   }
   return {
     reply:
-      "Modo sem IA cloud habilitada (configure TOGETHER_API_KEY/TOGETHER_MODEL e/ou ANTHROPIC_API_KEY). Posso responder por heurística: cards parados por dailies e brief semanal.",
+      "Modo sem IA cloud habilitada (configure uma API compatível com OpenAI nas definições da organização ou TOGETHER_API_KEY/TOGETHER_MODEL no servidor). Posso responder por heurística: cards parados por dailies e brief semanal.",
     actions: [],
     llm: { source: "heuristic", model: "Heurístico local" },
   };

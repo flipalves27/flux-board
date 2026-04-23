@@ -2,23 +2,28 @@ import { afterEach, describe, expect, it } from "vitest";
 import { GET } from "./route";
 
 describe("GET /api/fluxy", () => {
-  const prev = process.env.ANTHROPIC_API_KEY;
+  const prevKey = process.env.TOGETHER_API_KEY;
+  const prevModel = process.env.TOGETHER_MODEL;
 
   afterEach(() => {
-    if (prev === undefined) delete process.env.ANTHROPIC_API_KEY;
-    else process.env.ANTHROPIC_API_KEY = prev;
+    if (prevKey === undefined) delete process.env.TOGETHER_API_KEY;
+    else process.env.TOGETHER_API_KEY = prevKey;
+    if (prevModel === undefined) delete process.env.TOGETHER_MODEL;
+    else process.env.TOGETHER_MODEL = prevModel;
   });
 
-  it("returns llmEnabled false when ANTHROPIC_API_KEY is unset", async () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  it("returns llmEnabled false when OpenAI-compat server env is incomplete", async () => {
+    delete process.env.TOGETHER_API_KEY;
+    delete process.env.TOGETHER_MODEL;
     const res = await GET();
     expect(res.status).toBe(200);
     const body = (await res.json()) as { llmEnabled?: boolean };
     expect(body.llmEnabled).toBe(false);
   });
 
-  it("returns llmEnabled true when ANTHROPIC_API_KEY is set", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+  it("returns llmEnabled true when TOGETHER_API_KEY and TOGETHER_MODEL are set", async () => {
+    process.env.TOGETHER_API_KEY = "test-key";
+    process.env.TOGETHER_MODEL = "test-model";
     const res = await GET();
     const body = (await res.json()) as { llmEnabled?: boolean };
     expect(body.llmEnabled).toBe(true);

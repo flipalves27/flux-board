@@ -2,7 +2,7 @@ import { safeJsonParse } from "@/lib/llm-utils";
 import type { OkrKrProjection } from "@/lib/okr-projection";
 import type { Organization } from "@/lib/kv-organizations";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
-import { isCloudLlmConfigured, isTogetherApiConfigured, resolveBatchLlmRoute } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 
 export type OkrWeeklyDigestBlock = {
   headline: string;
@@ -34,10 +34,6 @@ function heuristicOkrDigest(projections: OkrKrProjection[]): OkrWeeklyDigestBloc
   return { headline, bullets: bullets.slice(0, 8), generatedWithAI: false };
 }
 
-function digestProviderLabel(p: "anthropic" | "together"): "anthropic" | "together.ai" {
-  return p === "anthropic" ? "anthropic" : "together.ai";
-}
-
 export async function generateOkrWeeklyDigestBlockAI(args: {
   orgName: string;
   quarter: string;
@@ -49,10 +45,7 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
   const { orgName, quarter, projections, allowAI, org, orgId } = args;
 
   const cap = process.env.WEEKLY_DIGEST_AI_CAP;
-  const batchRoute = resolveBatchLlmRoute(org ?? null);
-  const canCall =
-    isCloudLlmConfigured() &&
-    ((batchRoute.route === "anthropic") || (batchRoute.route === "together" && isTogetherApiConfigured()));
+  const canCall = isOrgCloudLlmConfigured(org ?? null);
 
   if (!projections.length) {
     return {
@@ -108,7 +101,7 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
       return {
         ...h,
         generatedWithAI: false,
-        provider: digestProviderLabel(response.resolvedRoute),
+        provider: "openai_compat",
         errorKind: "http_error",
         errorMessage: response.error || "request_failed",
       };
@@ -123,7 +116,7 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
       return {
         ...h,
         generatedWithAI: false,
-        provider: digestProviderLabel(response.provider),
+        provider: "openai_compat",
         errorKind: "bad_json",
         errorMessage: "Resposta da IA fora do formato.",
       };
@@ -140,14 +133,14 @@ export async function generateOkrWeeklyDigestBlockAI(args: {
       bullets: bullets.length ? bullets : heuristicOkrDigest(projections).bullets,
       generatedWithAI: true,
       model: response.model,
-      provider: digestProviderLabel(response.provider),
+      provider: "openai_compat",
     };
   } catch (err) {
     const h = heuristicOkrDigest(projections);
     return {
       ...h,
       generatedWithAI: false,
-      provider: "together.ai",
+      provider: "openai_compat",
       errorKind: "network_error",
       errorMessage: err instanceof Error ? err.message : "Erro de rede",
     };

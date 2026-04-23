@@ -23,6 +23,7 @@ describe("POST /api/integrations/slack/commands", () => {
   });
 
   it("returns 404 when SLACK_SIGNING_SECRET is unset", async () => {
+    vi.useRealTimers();
     delete process.env.SLACK_SIGNING_SECRET;
     const { POST } = await import("./route");
     const req = new NextRequest("http://localhost/api/integrations/slack/commands", {

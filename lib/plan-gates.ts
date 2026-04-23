@@ -356,7 +356,7 @@ function parsePositiveInt(raw: string | undefined): number | null {
 }
 
 /**
- * Limite de "calls/dia" para endpoints que chamam IA (Together.ai).
+ * Limite de "calls/dia" para endpoints que chamam IA (motor OpenAI-compat).
  * Free: 3 (por padrão) | Pro/Business: ilimitado (null).
  */
 export function getDailyAiCallsCap(org: Organization | null | undefined, ctx?: PlanGateContext): number | null {

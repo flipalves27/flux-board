@@ -1,65 +1,38 @@
-import type { Organization, OrgAiSettings } from "@/lib/kv-organizations";
+import type { Organization } from "@/lib/kv-organizations";
 import type { PlanGateContext } from "@/lib/plan-gates";
-import { getEffectiveTier } from "@/lib/plan-gates";
+import { isTogetherApiConfigured, resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
 
-export type LlmRoute = "anthropic" | "together";
+/** Valor canónico em telemetria / `ai_usage_log`. */
+export type LlmRoute = "openai_compat";
 
-export function isAnthropicApiConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
-}
+export { isTogetherApiConfigured, resolveOrgLlmRuntime, isOrgCloudLlmConfigured } from "@/lib/org-llm-runtime";
 
-export function isTogetherApiConfigured(): boolean {
-  return Boolean(process.env.TOGETHER_API_KEY?.trim() && process.env.TOGETHER_MODEL?.trim());
-}
-
-/** Qualquer LLM cloud configurado (Claude ou Together). */
+/** @deprecated Use {@link isOrgCloudLlmConfigured} com a org quando disponível. */
 export function isCloudLlmConfigured(): boolean {
-  return isAnthropicApiConfigured() || isTogetherApiConfigured();
-}
-
-function anthropicModelForOrg(org: Organization | null | undefined): string {
-  const s: OrgAiSettings | undefined = org?.aiSettings;
-  const fromOrg = typeof s?.anthropicModel === "string" ? s.anthropicModel.trim() : "";
-  const fromEnv = process.env.ANTHROPIC_MODEL?.trim();
-  return fromOrg || fromEnv || "claude-3-5-sonnet-20241022";
+  return isTogetherApiConfigured();
 }
 
 /**
- * Copilot, daily insights, etc.: só Admin ou usuários em `claudeUserIds` usam Claude.
- * Demais usuários: Together (se configurado).
+ * Copilot, insights, etc.: motor único OpenAI-compat (BYOK ou env do servidor).
+ * Parâmetros de utilizador mantidos por compatibilidade de assinatura; não alteram a rota.
  */
 export function resolveInteractiveLlmRoute(
   org: Organization | null | undefined,
-  params: { userId: string; isAdmin: boolean }
-): { route: LlmRoute; anthropicModel: string } {
-  const anthropicModel = anthropicModelForOrg(org);
-  if (!isAnthropicApiConfigured()) {
-    return { route: "together", anthropicModel };
-  }
-  if (params.isAdmin) {
-    return { route: "anthropic", anthropicModel };
-  }
-  const allowed = org?.aiSettings?.claudeUserIds ?? [];
-  if (allowed.includes(params.userId)) {
-    return { route: "anthropic", anthropicModel };
-  }
-  return { route: "together", anthropicModel };
+  _params: { userId: string; isAdmin: boolean }
+): { route: LlmRoute; model: string } {
+  const rt = resolveOrgLlmRuntime(org);
+  return { route: "openai_compat", model: rt?.model ?? "" };
 }
 
-/**
- * Weekly digest / OKR blocos sem usuário: Business pode preferir Claude em lote.
- */
+/** Digest / jobs sem utilizador: mesmo motor que o interativo. */
 export function resolveBatchLlmRoute(
   org: Organization | null | undefined,
-  ctx?: PlanGateContext
-): { route: LlmRoute; anthropicModel: string } {
-  const anthropicModel = anthropicModelForOrg(org);
-  if (!isAnthropicApiConfigured()) {
-    return { route: "together", anthropicModel };
-  }
-  const tier = getEffectiveTier(org, ctx);
-  if (tier === "business" && org?.aiSettings?.batchLlmProvider === "anthropic") {
-    return { route: "anthropic", anthropicModel };
-  }
-  return { route: "together", anthropicModel };
+  _ctx?: PlanGateContext
+): { route: LlmRoute; model: string } {
+  const rt = resolveOrgLlmRuntime(org);
+  return { route: "openai_compat", model: rt?.model ?? "" };
+}
+
+export function isAnthropicApiConfigured(): false {
+  return false;
 }

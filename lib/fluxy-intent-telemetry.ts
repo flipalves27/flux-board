@@ -16,7 +16,7 @@ export function fluxyClassifyPromptFingerprint(text: string): { lenBucket: strin
 export async function logFluxyClassifyTelemetry(params: {
   orgId: string;
   userId: string;
-  tier: "local" | "haiku" | "sonnet" | "together_fast" | "together_full";
+  tier: "local" | "compat_fast" | "compat_full";
   intentKind: string;
   provider?: LlmRoute;
   model?: string;

@@ -111,13 +111,14 @@ export function BoardExecutiveBriefModal({ open, onClose, markdown, cached, mode
         </div>
 
         {/* Footer */}
-        {model && (
-          <div className="border-t border-[var(--flux-border-muted)] px-5 py-2">
-            <span className="text-[9px] text-[var(--flux-text-muted)]">
+        <div className="border-t border-[var(--flux-border-muted)] px-5 py-2 space-y-1">
+          <p className="text-[10px] leading-relaxed text-[var(--flux-text-muted)]">{t("executiveBrief.packageHint")}</p>
+          {model ? (
+            <span className="text-[9px] text-[var(--flux-text-muted)] block">
               {t("executiveBrief.generatedBy", { model })}
             </span>
-          </div>
-        )}
+          ) : null}
+        </div>
       </div>
     </>
   );

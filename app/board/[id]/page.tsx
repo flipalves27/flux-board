@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -61,6 +62,10 @@ const BoardExecutiveBriefModal = dynamic(
 );
 const BoardGoalsModal = dynamic(
   () => import("@/components/kanban/board-goals-modal").then((m) => ({ default: m.BoardGoalsModal })),
+  { ssr: false }
+);
+const BoardIntakeFormsModal = dynamic(
+  () => import("@/components/kanban/board-intake-forms-modal").then((m) => ({ default: m.BoardIntakeFormsModal })),
   { ssr: false }
 );
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
@@ -430,7 +435,6 @@ export default function BoardPage() {
     portal: boardPortal,
     anomalyNotifications: boardAnomalyNotifications,
     boardMethodology: boardMethodologyForSprint,
-    intakeForm: boardIntakeForm,
   } = useBoardStore(
     useShallow((s) => {
       const d = s.db;
@@ -439,7 +443,6 @@ export default function BoardPage() {
         portal: d?.portal,
         anomalyNotifications: d?.anomalyNotifications,
         boardMethodology: d?.boardMethodology,
-        intakeForm: d?.intakeForm,
       };
     })
   );
@@ -453,6 +456,7 @@ export default function BoardPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [briefOpen, setBriefOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -776,9 +780,6 @@ export default function BoardPage() {
       </div>
     );
   }
-  const formSlug = String(boardIntakeForm?.slug || "").trim();
-  const formLink = formSlug && formOrigin ? `${formOrigin}/${locale}/forms/${encodeURIComponent(formSlug)}` : "";
-
   return (
     <div className="min-h-screen">
       <DataFadeIn active animate={false} key={boardId}>
@@ -858,26 +859,13 @@ export default function BoardPage() {
                     </svg>
                     {t("portal.open")}
                   </DropdownMenuItem>
-                  {formLink && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={async () => {
-                          try {
-                            await navigator.clipboard.writeText(formLink);
-                            pushToast({ kind: "success", title: "Link do Flux Forms copiado." });
-                          } catch {
-                            pushToast({ kind: "error", title: "Não foi possível copiar o link." });
-                          }
-                        }}
-                      >
-                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        Flux Forms
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setIntakeFormsOpen(true)}>
+                    <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    {t("intakeForm.open")}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -908,6 +896,17 @@ export default function BoardPage() {
                 </svg>
                 Goals
               </button>
+
+              <Link
+                href={`/${locale}/reports`}
+                className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm no-underline"
+                aria-label={t("reports.aria")}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                {t("reports.open")}
+              </Link>
 
               {/* Admin tools — collapsed into dropdown */}
               {user?.isAdmin && (
@@ -1064,6 +1063,18 @@ export default function BoardPage() {
             d.portal = portal;
           });
         }}
+      />
+
+      <BoardIntakeFormsModal
+        open={intakeFormsOpen}
+        onClose={() => setIntakeFormsOpen(false)}
+        boardId={boardId}
+        bucketOrder={boardBucketOrder ?? []}
+        priorities={PRIORITIES}
+        progresses={PROGRESSES}
+        getHeaders={getHeaders}
+        formOrigin={formOrigin}
+        onSaved={() => loadBoard()}
       />
 
       <BoardTemplateExportModal

@@ -12,6 +12,7 @@ import {
   PlanGateError,
 } from "@/lib/plan-gates";
 import { rateLimit } from "@/lib/rate-limit";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 import { LssPremiumAssistBodySchema, sanitizeText, zodErrorToMessage } from "@/lib/schemas";
 import { guardUserPromptForLlm } from "@/lib/prompt-guard";
 import { runOrgLlmChat } from "@/lib/llm-org-chat";
@@ -73,8 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const tier = getEffectiveTier(org, gateCtx);
-  const llmCloudEnabled =
-    (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) || Boolean(process.env.ANTHROPIC_API_KEY);
+  const llmCloudEnabled = isOrgCloudLlmConfigured(org);
   if (tier === "free" && llmCloudEnabled) {
     const cap = getDailyAiCallsCap(org, gateCtx);
     if (cap !== null) {

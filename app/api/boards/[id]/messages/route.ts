@@ -17,7 +17,7 @@ import {
   makeDailyAiCallsRateLimitKey,
   planGateCtxFromAuthPayload,
 } from "@/lib/plan-gates";
-import { isTogetherApiConfigured } from "@/lib/org-ai-routing";
+import { isOrgCloudLlmConfigured } from "@/lib/org-ai-routing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -149,8 +149,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const orgProbe = await getOrganizationById(payload.orgId);
     const gateCtx = planGateCtxFromAuthPayload(payload);
     const tier = getEffectiveTier(orgProbe, gateCtx);
-    const llmCloudEnabled =
-      (Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL)) || Boolean(process.env.ANTHROPIC_API_KEY);
+    const llmCloudEnabled = isOrgCloudLlmConfigured(orgProbe);
     if (tier === "free" && llmCloudEnabled) {
       const cap = getDailyAiCallsCap(orgProbe, gateCtx);
       if (cap !== null) {

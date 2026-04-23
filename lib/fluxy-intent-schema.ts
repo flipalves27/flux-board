@@ -54,7 +54,7 @@ export const fluxyClassifyResponseSchema = z.object({
   ),
   meta: z.object({
     costHint: z.enum(["none", "low", "medium", "high"]),
-    classifierTier: z.enum(["local", "haiku", "sonnet", "together_fast", "together_full"]),
+    classifierTier: z.enum(["local", "compat_fast", "compat_full"]),
     confidence: z.number(),
     locale: z.string(),
     budgetBlocked: z.boolean().optional(),
