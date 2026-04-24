@@ -15,6 +15,8 @@ import type { BucketConfig } from "@/app/board/[id]/page";
 import { inferLegacyBoardMethodology, isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { listSprints, getActiveSprint } from "@/lib/kv-sprints";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
+import { boardUpdateRequiresAdmin } from "@/lib/board-put-rbac";
+import { getBoardEffectiveRole, roleCanEdit, roleCanAdmin } from "@/lib/kv-board-members";
 
 export const maxDuration = 60;
 
@@ -113,15 +115,39 @@ export async function PUT(
         : "";
     delete (clean as { wipOverrideReason?: string }).wipOverrideReason;
 
+    const prevForRbac = await getBoard(boardId, payload.orgId);
+    if (!prevForRbac) {
+      return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
+    }
+    const effectiveBoardRole = await getBoardEffectiveRole(
+      payload.orgId,
+      boardId,
+      payload.id,
+      prevForRbac.ownerId === payload.id,
+      Boolean(payload.isAdmin)
+    );
+    if (!roleCanEdit(effectiveBoardRole)) {
+      return NextResponse.json(
+        { error: "Sua função (visualizador) não permite editar este board. Peça acesso de editor a um gestor do board." },
+        { status: 403 }
+      );
+    }
+    if (boardUpdateRequiresAdmin(clean, prevForRbac, wipOverrideReason) && !roleCanAdmin(effectiveBoardRole)) {
+      return NextResponse.json(
+        {
+          error:
+            "Apenas gestores do board podem alterar essa configuração (ex.: colunas, limites WIP, portal ou nome do board).",
+        },
+        { status: 403 }
+      );
+    }
+
     const updates: Record<string, unknown> = {};
     if (clean.name !== undefined) {
       updates.name = String(clean.name || "").trim().slice(0, 100);
     }
     if (clean.cards !== undefined) {
-      const prevBoard = await getBoard(boardId, payload.orgId);
-      if (!prevBoard) {
-        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
-      }
+      const prevBoard = prevForRbac;
       const prevCfg = (prevBoard.config || {}) as Record<string, unknown>;
       const patchCfg = (clean.config || {}) as Record<string, unknown>;
       const mergedBucketOrder = (patchCfg.bucketOrder as unknown[] | undefined) ?? (prevCfg.bucketOrder as unknown[] | undefined) ?? [];
@@ -190,7 +216,7 @@ export async function PUT(
       updates.cards = cards;
     }
     if (clean.config !== undefined) {
-      const prevForWip = await getBoard(boardId, payload.orgId);
+      const prevForWip = prevForRbac;
       const nextWipMode =
         (clean.config as { wipEnforcement?: string }).wipEnforcement === "soft"
           ? "soft"
@@ -229,10 +255,7 @@ export async function PUT(
     }
 
     if (clean.boardMethodology !== undefined) {
-      const prevBoard = await getBoard(boardId, payload.orgId);
-      if (!prevBoard) {
-        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
-      }
+      const prevBoard = prevForRbac;
       let prevEffective: BoardMethodology = prevBoard.boardMethodology ?? "scrum";
       if (!prevBoard.boardMethodology) {
         const sprints = await listSprints(payload.orgId, boardId);
@@ -259,10 +282,7 @@ export async function PUT(
     }
 
     if (clean.portal !== undefined) {
-      const prevBoard = await getBoard(boardId, payload.orgId);
-      if (!prevBoard) {
-        return NextResponse.json({ error: "Board não encontrado" }, { status: 404 });
-      }
+      const prevBoard = prevForRbac;
       const portalPatch = sanitizeDeep(clean.portal) as PortalBoardPatch;
       const { portal: nextPortal } = await applyPortalPatch(prevBoard, portalPatch);
       updates.portal = nextPortal;

@@ -30,6 +30,8 @@
     "platformAdminConsoleProduct": "Organizações, utilizadores e auditoria",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# ativo} other {# ativos}}",
+    "releases": "Releases",
+    "releasesUpcomingSublabel": "{count, plural, one {# a lançar} other {# a lançar}}",
     "docs": "Flux Docs",
     "specScopePlanner": "Escopo por documento",
     "specScopePlannerProduct": "Business+ · IA",
@@ -60,6 +62,7 @@
       "templates": "Showcase de templates públicos e importação com um clique.",
       "tasks": "Rotinas com lembretes (Pro/Business).",
       "myWork": "Dashboard pessoal com cards atribuídos, workload e sugestões de prioridade IA.",
+      "releases": "Releases: versões, changelogs e visão org-wide.",
       "users": "Membros e permissões da organização.",
       "organization": "Nome, branding e configurações gerais.",
       "billing": "Plano Stripe e limites do espaço.",
@@ -2935,6 +2938,10 @@
         "epicActionsError": "Não foi possível concluir a ação."
       }
     },
+    "rbac": {
+      "adminOnlyColumnConfig": "Apenas gestores do board (dono, admin da org ou membro com papel admin) podem alterar colunas, limites WIP e políticas.",
+      "wipMoveNeedsAdminOrLimit": "Limite WIP excedido. Peça a um gestor do board para ajustar o limite da coluna ou reduzir o trabalho em curso."
+    },
     "addColumnModal": {
       "title": {
         "new": "Nova coluna",
@@ -4502,6 +4509,10 @@
       "allEnv": "Todos ambientes",
       "allStatus": "Todos status"
     },
+    "boardPage": {
+      "showArchived": "Mostrar arquivadas"
+    },
+    "archivedPill": "Arquivada",
     "statuses": {
       "draft": "Rascunho",
       "planned": "Planejada",
@@ -4563,11 +4574,70 @@
         "rolled_back": "Revertida"
       }
     },
+    "actions": {
+      "edit": "Editar",
+      "archive": "Arquivar",
+      "unarchive": "Desarquivar",
+      "delete": "Excluir",
+      "deleteConfirm": "Excluir a release “{name}”? Esta ação não pode ser desfeita.",
+      "cancel": "Cancelar",
+      "confirmDelete": "Excluir"
+    },
+    "hub": {
+      "pretitle": "Releases da organização",
+      "title": "Releases",
+      "subtitle": "Acompanhe versões e changelogs em todos os boards.",
+      "newRelease": "Nova release",
+      "upgradeTitle": "Releases exigem plano pago",
+      "upgradeDescription": "O módulo de versões compartilha a feature de Sprint Engine. Faça upgrade para habilitar.",
+      "upgradeCta": "Ver planos",
+      "loading": "Carregando…",
+      "emptyTitle": "Nada por aqui",
+      "emptyDescription": "Mude o segmento, a busca ou crie uma release no board.",
+      "searchPlaceholder": "Buscar nome, versão, board…",
+      "allBoards": "Todos os boards",
+      "openBoardReleases": "Página de releases do board",
+      "error": {
+        "load": "Não foi possível carregar as releases.",
+        "auth": "Sessão expirada.",
+        "unknown": "Algo deu errado."
+      },
+      "kpi": {
+        "upcoming": "A lançar",
+        "shipped": "Lançadas / final",
+        "archived": "Arquivadas",
+        "cards": "Cards na visão",
+        "cardsHint": "nas linhas listadas",
+        "risks": "Riscos na visão"
+      },
+      "segments": {
+        "upcoming": "A lançar",
+        "shipped": "Lançadas",
+        "archived": "Arquivadas"
+      },
+      "sort": {
+        "updated": "Atualizadas",
+        "version": "Versão",
+        "releaseDate": "Data de release / planejada"
+      },
+      "table": {
+        "board": "Board",
+        "version": "Versão",
+        "status": "Status",
+        "dates": "Datas",
+        "sprints": "Sprints",
+        "cards": "Cards",
+        "health": "Health",
+        "actions": "Ações",
+        "planned": "prev."
+      }
+    },
     "detail": {
       "edit": "Editar",
       "generate": "Gerar notas com IA",
       "generating": "Gerando…",
       "changelog": "Changelog",
+      "cardsInScopeOnly": "Outros cards no escopo",
       "notes": "Release notes",
       "notesHuman": "Notas humanas",
       "notesAi": "Geradas por IA",
@@ -4587,6 +4657,8 @@
         "released": "Publicada",
         "rolled_back": "Rollback",
         "edited": "Editada",
+        "archived": "Arquivada",
+        "unarchived": "Desarquivada",
         "ai_notes_generated": "Notas geradas por IA"
       }
     }

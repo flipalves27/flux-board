@@ -8,6 +8,7 @@ import { assertFeatureAllowed, planGateCtxFromAuthPayload } from "@/lib/plan-gat
 import { stripPortalForClient } from "@/lib/portal-settings";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
 import { publicApiErrorResponse } from "@/lib/public-api-error";
+import { getViewerCapabilities } from "@/lib/board-viewer-capabilities";
 
 export const maxDuration = 60;
 
@@ -80,8 +81,14 @@ export async function GET(
       boardMethodology,
       portal: stripPortalForClient(board.portal),
     };
+    const viewerCapabilities = await getViewerCapabilities(
+      payload.orgId,
+      safe,
+      payload.id,
+      Boolean(payload.isAdmin)
+    );
     logFluxApiPhase(route, "total", t0);
-    return NextResponse.json({ board: safe, sprints });
+    return NextResponse.json({ board: safe, sprints, viewerCapabilities });
   } catch (err) {
     console.error("Board bootstrap API error:", err);
     return publicApiErrorResponse(err, { context: "api/boards/[id]/bootstrap/route.ts" });

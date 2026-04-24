@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiGet, apiJson, ApiError, getApiHeaders } from "@/lib/api-client";
+import { apiDelete, apiGet, apiJson, ApiError, getApiHeaders } from "@/lib/api-client";
 import type { ReleaseData, SprintData } from "@/lib/schemas";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
 import { FeatureGateNotice } from "@/components/billing/feature-gate-notice";
@@ -23,6 +23,7 @@ type Props = {
  */
 export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
   const t = useTranslations("releases");
+  const tAct = useTranslations("releases.actions");
   const tStatus = useTranslations("releases.statuses");
   const locale = useLocale();
   const localeRoot = `/${locale}`;
@@ -37,6 +38,8 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
   const [aiBusy, setAiBusy] = useState(false);
   const [envFilter, setEnvFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ReleaseData | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,11 +73,12 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
 
   const filtered = useMemo(() => {
     let list = [...releases];
+    if (!showArchived) list = list.filter((r) => !r.archivedAt);
     if (envFilter) list = list.filter((r) => r.environment === envFilter);
     if (statusFilter) list = list.filter((r) => r.status === statusFilter);
     list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     return list;
-  }, [releases, envFilter, statusFilter]);
+  }, [releases, envFilter, statusFilter, showArchived]);
 
   const selected = useMemo(() => releases.find((r) => r.id === selectedId) ?? null, [releases, selectedId]);
 
@@ -151,6 +155,58 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
     }
   };
 
+  const archive = async (r: ReleaseData) => {
+    try {
+      const data = await apiJson<{ release: ReleaseData }>(
+        `/api/boards/${encodeURIComponent(boardId)}/releases/${encodeURIComponent(r.id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ archivedAt: new Date().toISOString() }),
+          headers: getApiHeaders(getHeaders()),
+        }
+      );
+      setReleases((prev) => prev.map((x) => (x.id === r.id ? data.release : x)));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const unarchive = async (r: ReleaseData) => {
+    try {
+      const data = await apiJson<{ release: ReleaseData }>(
+        `/api/boards/${encodeURIComponent(boardId)}/releases/${encodeURIComponent(r.id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ archivedAt: null }),
+          headers: getApiHeaders(getHeaders()),
+        }
+      );
+      setReleases((prev) => prev.map((x) => (x.id === r.id ? data.release : x)));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const doDelete = async (r: ReleaseData) => {
+    try {
+      await apiDelete(
+        `/api/boards/${encodeURIComponent(boardId)}/releases/${encodeURIComponent(r.id)}`,
+        getApiHeaders(getHeaders())
+      );
+      setReleases((prev) => {
+        const next = prev.filter((x) => x.id !== r.id);
+        if (selectedId === r.id) {
+          setSelectedId(next[0]?.id ?? null);
+        }
+        return next;
+      });
+    } catch {
+      /* ignore */
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -216,6 +272,12 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
             onClick={() => setStatusFilter(s)}
           />
         ))}
+        <span aria-hidden className="mx-1 h-5 w-px self-center bg-[var(--flux-chrome-alpha-12)]" />
+        <FilterChip
+          label={t("boardPage.showArchived")}
+          active={showArchived}
+          onClick={() => setShowArchived((v) => !v)}
+        />
       </div>
 
       {loading ? (
@@ -237,12 +299,17 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
           {selected ? (
             <ReleaseDetail
               release={selected}
+              boardId={boardId}
+              localeRoot={localeRoot}
               sprints={sprints}
               aiBusy={aiBusy}
               onEdit={() => openEdit(selected)}
               onGenerate={() => void generateAiNotes(selected)}
               onStatus={(s) => void setStatus(selected, s)}
               onRollback={() => void rollback(selected)}
+              onArchive={() => void archive(selected)}
+              onUnarchive={() => void unarchive(selected)}
+              onRequestDelete={() => setDeleteTarget(selected)}
             />
           ) : (
             <div className="rounded-[var(--flux-rad-md)] border border-dashed border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] p-6 text-center text-sm text-[var(--flux-text-muted)]">
@@ -267,6 +334,33 @@ export function ReleaseManager({ boardId, boardName, getHeaders }: Props) {
           setSelectedId(rel.id);
         }}
       />
+
+      {deleteTarget ? (
+        <div
+          className="fixed inset-0 z-[var(--flux-z-modal-feature)] flex items-center justify-center bg-[var(--flux-backdrop-scrim-strong)]"
+          role="dialog"
+          aria-modal
+          aria-labelledby="board-rel-del"
+        >
+          <div className="min-w-[min(100%,20rem)] rounded-[var(--flux-rad-md)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-card)] p-5 shadow-xl">
+            <p id="board-rel-del" className="mb-3 text-center text-sm font-medium text-[var(--flux-text)]">
+              {tAct("deleteConfirm", { name: deleteTarget.name })}
+            </p>
+            <div className="flex justify-center gap-2">
+              <button type="button" className="btn-secondary" onClick={() => setDeleteTarget(null)}>
+                {tAct("cancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-danger-solid"
+                onClick={() => void doDelete(deleteTarget)}
+              >
+                {tAct("confirmDelete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -282,6 +376,7 @@ function ReleaseList({
   onSelect: (id: string) => void;
   sprints: SprintData[];
 }) {
+  const t = useTranslations("releases");
   const tStatus = useTranslations("releases.statuses");
   const sprintById = new Map(sprints.map((s) => [s.id, s]));
   return (
@@ -308,6 +403,11 @@ function ReleaseList({
                       v{r.version}
                     </span>
                     <ReleaseStatusPill status={r.status} label={tStatus(r.status)} />
+                    {r.archivedAt ? (
+                      <span className="rounded-full border border-[var(--flux-chrome-alpha-12)] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[var(--flux-text-muted)]">
+                        {t("archivedPill")}
+                      </span>
+                    ) : null}
                     <span className="text-[10px] uppercase tracking-wide text-[var(--flux-text-muted)]">
                       {r.environment}
                     </span>
@@ -331,27 +431,47 @@ function ReleaseList({
   );
 }
 
+function cardTitleInChangelog(cardId: string, changelog: ReleaseData["changelog"]): string {
+  const e = (changelog ?? []).find((c) => c.cardId && c.cardId === cardId);
+  if (e?.title) return e.title;
+  if (cardId.length > 10) return `…${cardId.slice(-8)}`;
+  return cardId;
+}
+
 function ReleaseDetail({
   release,
+  boardId,
+  localeRoot,
   sprints,
   aiBusy,
   onEdit,
   onGenerate,
   onStatus,
   onRollback,
+  onArchive,
+  onUnarchive,
+  onRequestDelete,
 }: {
   release: ReleaseData;
+  boardId: string;
+  localeRoot: string;
   sprints: SprintData[];
   aiBusy: boolean;
   onEdit: () => void;
   onGenerate: () => void;
   onStatus: (s: ReleaseData["status"]) => void;
   onRollback: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
+  onRequestDelete: () => void;
 }) {
   const t = useTranslations("releases.detail");
   const tStatus = useTranslations("releases.statuses");
+  const tAct = useTranslations("releases.actions");
+  const tRoot = useTranslations("releases");
   const sprintById = new Map(sprints.map((s) => [s.id, s]));
   const linkedSprints = release.sprintIds.map((id) => sprintById.get(id)).filter(Boolean) as SprintData[];
+  const isArchived = Boolean(release.archivedAt);
 
   return (
     <article className="rounded-[var(--flux-rad-lg)] border border-[var(--flux-chrome-alpha-12)] bg-[var(--flux-surface-elevated)] p-5">
@@ -362,6 +482,11 @@ function ReleaseDetail({
               v{release.version}
             </span>
             <ReleaseStatusPill status={release.status} label={tStatus(release.status)} />
+            {isArchived ? (
+              <span className="rounded-full border border-[var(--flux-chrome-alpha-12)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--flux-text-muted)]">
+                {tRoot("archivedPill")}
+              </span>
+            ) : null}
           </div>
           <h2 className="mt-1 font-display text-xl font-bold text-[var(--flux-text)]">{release.name}</h2>
           {release.summary ? (
@@ -375,6 +500,30 @@ function ReleaseDetail({
             className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
           >
             {t("edit")}
+          </button>
+          {isArchived ? (
+            <button
+              type="button"
+              onClick={onUnarchive}
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            >
+              {tAct("unarchive")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onArchive}
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-12)] px-2.5 py-1 text-xs font-semibold text-[var(--flux-text)] hover:bg-[var(--flux-chrome-alpha-06)]"
+            >
+              {tAct("archive")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onRequestDelete}
+            className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-danger-alpha-22)] bg-[var(--flux-danger-alpha-08)] px-2.5 py-1 text-xs font-semibold text-[var(--flux-danger)]"
+          >
+            {tAct("delete")}
           </button>
           <button
             type="button"
@@ -406,7 +555,9 @@ function ReleaseDetail({
         />
       </div>
 
-      <StatusFlow current={release.status} onChange={onStatus} onRollback={onRollback} />
+      {isArchived ? null : (
+        <StatusFlow current={release.status} onChange={onStatus} onRollback={onRollback} />
+      )}
 
       {release.changelog.length > 0 ? (
         <section className="mt-4">
@@ -422,15 +573,46 @@ function ReleaseDetail({
                 <KindBadge kind={c.kind} />
                 <span className="flex-1 text-[12px] text-[var(--flux-text)]">{c.title}</span>
                 {c.cardId ? (
-                  <span className="shrink-0 font-mono text-[10px] text-[var(--flux-text-muted)]">
+                  <Link
+                    href={`${localeRoot}/board/${encodeURIComponent(boardId)}?card=${encodeURIComponent(c.cardId)}`}
+                    className="shrink-0 font-mono text-[10px] text-[var(--flux-primary)] hover:underline"
+                  >
                     #{c.cardId.slice(-6)}
-                  </span>
+                  </Link>
                 ) : null}
               </li>
             ))}
           </ul>
         </section>
       ) : null}
+      {(() => {
+        const inCh = new Set(
+          release.changelog
+            .map((c) => c.cardId)
+            .filter((x): x is string => Boolean(x && String(x).length))
+        );
+        const onlyIds = release.cardIds.filter((id) => !inCh.has(id));
+        if (onlyIds.length === 0) return null;
+        return (
+          <section className="mt-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--flux-text-muted)]">
+              {t("cardsInScopeOnly")}
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {onlyIds.slice(0, 16).map((id) => (
+                <li key={id} className="text-[12px]">
+                  <Link
+                    href={`${localeRoot}/board/${encodeURIComponent(boardId)}?card=${encodeURIComponent(id)}`}
+                    className="text-[var(--flux-primary)] hover:underline"
+                  >
+                    {cardTitleInChangelog(id, release.changelog)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })()}
 
       {release.aiNotes || release.humanNotes ? (
         <section className="mt-4 rounded-[var(--flux-rad-md)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-surface-card)] p-3">

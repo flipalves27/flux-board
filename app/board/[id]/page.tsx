@@ -108,6 +108,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { isPlatformAdminSession } from "@/lib/rbac";
+import type { ViewerCapabilities } from "@/lib/board-viewer-capabilities";
 
 const BoardFluxyDock = dynamic(
   () => import("@/components/fluxy/board-fluxy-dock").then((m) => ({ default: m.BoardFluxyDock })),
@@ -490,6 +491,7 @@ export default function BoardPage() {
   const csvImportMode = useKanbanUiStore((s) => s.csvImportMode);
   const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
   const [formOrigin, setFormOrigin] = useState("");
+  const [viewerCapabilities, setViewerCapabilities] = useState<ViewerCapabilities>({ canEdit: true, canAdmin: true });
 
   const showBoardSkeleton = useMinimumSkeletonDuration(loading);
   const tourExpandFilters = tourStep === BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX;
@@ -541,7 +543,16 @@ export default function BoardPage() {
       const body = (await r.json()) as {
         board?: BoardData & { name?: string; clientLabel?: string };
         sprints?: SprintData[];
+        viewerCapabilities?: ViewerCapabilities;
       };
+      if (body.viewerCapabilities && typeof body.viewerCapabilities.canAdmin === "boolean") {
+        setViewerCapabilities({
+          canEdit: Boolean(body.viewerCapabilities.canEdit),
+          canAdmin: body.viewerCapabilities.canAdmin,
+        });
+      } else {
+        setViewerCapabilities({ canEdit: true, canAdmin: true });
+      }
       const d = body.board;
       if (!d || typeof d !== "object") throw new Error("Erro ao carregar");
       if (seq !== loadSeqRef.current) return;
@@ -677,8 +688,9 @@ export default function BoardPage() {
         const maxAttempts = 3;
         const backoffBaseMs = 400;
         let lastSaveFailureMessage: string | undefined;
+        let clientRuleError = false;
         try {
-          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          saveLoop: for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
               const rawNow = data ?? useBoardStore.getState().db;
               if (!rawNow) return;
@@ -700,6 +712,10 @@ export default function BoardPage() {
               };
               if (!res.ok) {
                 lastSaveFailureMessage = saveJson.error?.trim() || `Erro ${res.status}`;
+                if (res.status >= 400 && res.status < 500) {
+                  clientRuleError = true;
+                  break saveLoop;
+                }
                 throw new Error(lastSaveFailureMessage);
               }
               if (Array.isArray(saveJson.cards)) {
@@ -755,10 +771,13 @@ export default function BoardPage() {
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
           setSaveStatus("error");
+          const useServerAsTitle = Boolean(clientRuleError && lastSaveFailureMessage);
           pushToast({
             kind: "error",
-            title: tBoardRef.current("toasts.saveError"),
-            ...(lastSaveFailureMessage
+            title: useServerAsTitle
+              ? lastSaveFailureMessage!.slice(0, 500)
+              : tBoardRef.current("toasts.saveError"),
+            ...(!useServerAsTitle && lastSaveFailureMessage
               ? { description: lastSaveFailureMessage.slice(0, 400) }
               : {}),
           });
@@ -1082,6 +1101,7 @@ export default function BoardPage() {
             priorities={PRIORITIES}
             progresses={PROGRESSES}
             directions={DIRECTIONS}
+            canAdminBoard={viewerCapabilities.canAdmin}
             productTourExpandFilters={tourExpandFilters}
             allowExternalMerge={saveStatus !== "saving"}
             reloadBoardFromServer={loadBoard}

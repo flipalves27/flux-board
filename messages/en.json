@@ -30,6 +30,8 @@
     "platformAdminConsoleProduct": "Organizations, users & audit",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
+    "releases": "Releases",
+    "releasesUpcomingSublabel": "{count, plural, one {# to ship} other {# to ship}}",
     "docs": "Flux Docs",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
@@ -60,6 +62,7 @@
       "templates": "Public template showcase and one-click import.",
       "tasks": "Routine reminders (Pro/Business).",
       "myWork": "Personal dashboard with assigned cards, workload, and AI priority suggestions.",
+      "releases": "Releases: versions, changelogs, and org-wide list.",
       "users": "Members and organization permissions.",
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
@@ -3061,6 +3064,10 @@
       "subtitle": "Next best actions and WIP risk by column",
       "emptyNextActions": "No open cards to prioritize right now."
     },
+    "rbac": {
+      "adminOnlyColumnConfig": "Only board managers (owner, org admin, or board member with the admin role) can change columns, WIP limits, and policies.",
+      "wipMoveNeedsAdminOrLimit": "WIP limit would be exceeded. Ask a board manager to raise the column limit or reduce work in progress."
+    },
     "addColumnModal": {
       "title": {
         "new": "New column",
@@ -4501,6 +4508,10 @@
       "allEnv": "All environments",
       "allStatus": "All statuses"
     },
+    "boardPage": {
+      "showArchived": "Show archived"
+    },
+    "archivedPill": "Archived",
     "statuses": {
       "draft": "Draft",
       "planned": "Planned",
@@ -4562,11 +4573,70 @@
         "rolled_back": "Rolled back"
       }
     },
+    "actions": {
+      "edit": "Edit",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "delete": "Delete",
+      "deleteConfirm": "Delete release “{name}”? This cannot be undone.",
+      "cancel": "Cancel",
+      "confirmDelete": "Delete"
+    },
+    "hub": {
+      "pretitle": "Org releases",
+      "title": "Releases",
+      "subtitle": "Track versions and changelogs across every board.",
+      "newRelease": "New release",
+      "upgradeTitle": "Releases require a paid plan",
+      "upgradeDescription": "The releases module shares the Sprint Engine feature. Upgrade to enable.",
+      "upgradeCta": "See plans",
+      "loading": "Loading…",
+      "emptyTitle": "No releases here",
+      "emptyDescription": "Change segment, search, or create a release on a board.",
+      "searchPlaceholder": "Search name, version, board…",
+      "allBoards": "All boards",
+      "openBoardReleases": "Board releases page",
+      "error": {
+        "load": "Could not load releases.",
+        "auth": "Session expired.",
+        "unknown": "Something went wrong."
+      },
+      "kpi": {
+        "upcoming": "To ship",
+        "shipped": "Shipped / final",
+        "archived": "Archived",
+        "cards": "Cards in view",
+        "cardsHint": "in listed releases",
+        "risks": "Risks in view"
+      },
+      "segments": {
+        "upcoming": "To ship",
+        "shipped": "Shipped",
+        "archived": "Archived"
+      },
+      "sort": {
+        "updated": "Last updated",
+        "version": "Version",
+        "releaseDate": "Release / planned date"
+      },
+      "table": {
+        "board": "Board",
+        "version": "Version",
+        "status": "Status",
+        "dates": "Dates",
+        "sprints": "Sprints",
+        "cards": "Cards",
+        "health": "Health",
+        "actions": "Actions",
+        "planned": "plan."
+      }
+    },
     "detail": {
       "edit": "Edit",
       "generate": "Generate AI notes",
       "generating": "Generating…",
       "changelog": "Changelog",
+      "cardsInScopeOnly": "Other cards in scope",
       "notes": "Release notes",
       "notesHuman": "Human notes",
       "notesAi": "AI generated",
@@ -4586,6 +4656,8 @@
         "released": "Released",
         "rolled_back": "Rolled back",
         "edited": "Edited",
+        "archived": "Archived",
+        "unarchived": "Unarchived",
         "ai_notes_generated": "AI notes generated"
       }
     }

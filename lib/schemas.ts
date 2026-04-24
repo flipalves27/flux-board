@@ -1327,6 +1327,8 @@ export const ReleaseTimelineEventSchema = z.object({
     "released",
     "rolled_back",
     "edited",
+    "archived",
+    "unarchived",
     "ai_notes_generated",
   ]),
   by: z.string().trim().max(200).default(""),
@@ -1374,6 +1376,7 @@ export const ReleaseDataSchema = z.object({
   releasedAt: z.string().trim().max(80).nullable().default(null),
   rolledBackAt: z.string().trim().max(80).nullable().default(null),
   rollbackReason: z.string().trim().max(500).default(""),
+  archivedAt: z.string().trim().max(80).nullable().default(null),
   tags: z.array(z.string().trim().max(60)).max(20).default([]),
   createdBy: z.string().trim().max(200).default(""),
   createdAt: z.string().trim().max(80),
@@ -1406,6 +1409,7 @@ export const ReleaseUpdateSchema = ReleaseCreateSchema.partial().extend({
   releasedAt: z.string().trim().max(80).nullable().optional(),
   rolledBackAt: z.string().trim().max(80).nullable().optional(),
   rollbackReason: z.string().trim().max(500).optional(),
+  archivedAt: z.string().trim().max(80).nullable().optional(),
 });
 export type ReleaseUpdateInput = z.infer<typeof ReleaseUpdateSchema>;
 

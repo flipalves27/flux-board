@@ -128,6 +128,11 @@ export interface KanbanBoardProps {
   priorities: string[];
   progresses: string[];
   directions: string[];
+  /**
+   * Alterar colunas, WIP, política, reordenar colunas, override de WIP — só com papel admin do board
+   * (dono, admin de org, ou membro com admin). Vem de `GET .../bootstrap` (`viewerCapabilities.canAdmin`).
+   */
+  canAdminBoard?: boolean;
   /** Expande filtros para o passo do tour (Daily Insights). */
   productTourExpandFilters?: boolean;
   /** Quando false, polling remoto não sobrescreve o board (ex.: salvando). */
@@ -144,6 +149,7 @@ function KanbanBoardLoaded({
   progresses,
   directions,
   productTourExpandFilters,
+  canAdminBoard = true,
   allowExternalMerge = true,
   reloadBoardFromServer,
 }: KanbanBoardProps) {
@@ -353,6 +359,7 @@ function KanbanBoardLoaded({
     priorities,
     progresses,
     directions,
+    canAdminBoard,
     onAfterCardBucketsChange: collab.notifyBucketsChanged,
     onAfterColumnReorder: collab.notifyColumnReorder,
   });
@@ -453,6 +460,7 @@ function KanbanBoardLoaded({
     getCardsByBucket: filters.getCardsByBucket,
     moveCardsBatch: board.moveCardsBatch,
     reorderColumns: board.reorderColumns,
+    canReorderColumns: canAdminBoard,
   });
 
   const clearSelectionRef = useRef<(() => void) | null>(null);
@@ -848,6 +856,7 @@ function KanbanBoardLoaded({
     dailyDialogRef,
     dailyCloseRef,
     onBoardReloaded,
+    canAdminBoard,
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
@@ -1043,6 +1052,7 @@ function KanbanBoardLoaded({
             board.setNewColumnName("");
             board.setAddColumnOpen(true);
           }}
+          canAdminBoard={canAdminBoard}
           executiveBoardName={boardName}
           executiveProductGoal={db.config.productGoal}
           executiveProductGoalEditable={isSprintMethodology(methodology as BoardMethodology)}

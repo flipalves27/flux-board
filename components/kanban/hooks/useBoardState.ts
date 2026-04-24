@@ -43,6 +43,8 @@ type UseBoardStateArgs = {
   priorities: string[];
   progresses: string[];
   directions: string[];
+  /** Colunas/ WIP/ política — só `roleCanAdmin` no board. */
+  canAdminBoard?: boolean;
   /** Colunas afetadas após movimentação de cards — colaboração em tempo real. */
   onAfterCardBucketsChange?: (bucketKeys: string[]) => void;
   onAfterColumnReorder?: () => void;
@@ -54,6 +56,7 @@ export function useBoardState({
   priorities,
   progresses,
   directions,
+  canAdminBoard = true,
   onAfterCardBucketsChange,
   onAfterColumnReorder,
 }: UseBoardStateArgs) {
@@ -273,6 +276,10 @@ export function useBoardState({
       if (!skipWip && !isWipSoftConfig(snap.config)) {
         const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
         if (!wip.ok) {
+          if (!canAdminBoard) {
+            pushToast({ kind: "error", title: t("board.rbac.wipMoveNeedsAdminOrLimit") });
+            return;
+          }
           setWipOverridePending({ mode: "single", cardId, newBucket, newIndex });
           return;
         }
@@ -297,7 +304,7 @@ export function useBoardState({
       const buckets = [newBucket, ...(oldBucket && oldBucket !== newBucket ? [oldBucket] : [])];
       onAfterCardBucketsChange?.([...new Set(buckets)]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
+    [canAdminBoard, db.cards, onAfterCardBucketsChange, updateDb, pushToast, t]
   );
 
   /** Move vários cards na ordem dada para `newBucket` em `insertIndex` (0 = topo). */
@@ -332,6 +339,10 @@ export function useBoardState({
       if (!skipWip && !isWipSoftConfig(snap.config)) {
         const wip = validateBoardWipPutTransition(snap.config.bucketOrder, snap.cards, nextCards);
         if (!wip.ok) {
+          if (!canAdminBoard) {
+            pushToast({ kind: "error", title: t("board.rbac.wipMoveNeedsAdminOrLimit") });
+            return;
+          }
           setWipOverridePending({ mode: "batch", orderedIds, newBucket, insertIndex });
           return;
         }
@@ -365,11 +376,15 @@ export function useBoardState({
       });
       onAfterCardBucketsChange?.([...new Set([...fromBuckets, newBucket])]);
     },
-    [db.cards, onAfterCardBucketsChange, updateDb, pushToast]
+    [canAdminBoard, db.cards, onAfterCardBucketsChange, updateDb, pushToast, t]
   );
 
   const reorderColumns = useCallback(
     (fromIndex: number, toIndex: number) => {
+      if (!canAdminBoard) {
+        pushToast({ kind: "error", title: t("board.rbac.adminOnlyColumnConfig") });
+        return;
+      }
       if (fromIndex === toIndex) return;
       updateDb((d) => {
         const newOrder = [...d.config.bucketOrder];
@@ -379,11 +394,15 @@ export function useBoardState({
       });
       onAfterColumnReorder?.();
     },
-    [onAfterColumnReorder, updateDb]
+    [canAdminBoard, onAfterColumnReorder, pushToast, t, updateDb]
   );
 
   const saveColumn = useCallback(
     (opts?: { wipLimit?: number | null; policy?: string | null }) => {
+      if (!canAdminBoard) {
+        pushToast({ kind: "error", title: t("board.rbac.adminOnlyColumnConfig") });
+        return;
+      }
       const wipLimit = opts?.wipLimit;
       const policyRaw = opts?.policy;
       const policyTrim = typeof policyRaw === "string" ? policyRaw.trim().slice(0, 500) : "";
@@ -424,11 +443,15 @@ export function useBoardState({
       setAddColumnOpen(false);
       setEditingColumnKey(null);
     },
-    [buckets.length, editingColumnKey, newColumnName, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]
+    [buckets.length, canAdminBoard, editingColumnKey, newColumnName, pushToast, t, updateDb, setAddColumnOpen, setEditingColumnKey, setNewColumnName]
   );
 
   const deleteColumn = useCallback(
     (key: string) => {
+      if (!canAdminBoard) {
+        pushToast({ kind: "error", title: t("board.rbac.adminOnlyColumnConfig") });
+        return;
+      }
       const fallbackKey = buckets.find((b) => b.key !== key)?.key;
       updateDb((d) => {
         d.cards.forEach((c) => {
@@ -439,7 +462,7 @@ export function useBoardState({
       });
       setConfirmDelete(null);
     },
-    [buckets, updateDb, setConfirmDelete]
+    [buckets, canAdminBoard, pushToast, t, updateDb, setConfirmDelete]
   );
 
   const toggleCollapsed = useCallback(
