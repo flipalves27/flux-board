@@ -706,6 +706,8 @@ export const BoardUpdateSchema = z
         collapsedColumns: z.array(z.string().trim().max(200)).optional(),
         labels: z.array(z.string().trim().max(200)).optional(),
         productGoal: z.string().trim().max(800).optional().nullable(),
+        /** Nota curta do PO para leitura C-Level (export + vista executiva); não substitui o brief IA. */
+        executiveStakeholderNote: z.string().trim().max(2000).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
         /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */

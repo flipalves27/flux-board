@@ -84,11 +84,16 @@ type KanbanBoardCanvasProps = {
   /** Apresentação gerencial — contexto e métricas para gestão. */
   executiveBoardName: string;
   executiveProductGoal?: string;
+  executiveProductGoalEditable?: boolean;
+  onExecutiveSaveProductGoal?: (value: string) => void;
+  executiveStakeholderNote?: string;
+  onExecutiveSaveStakeholderNote?: (value: string) => void;
   executiveLastUpdated: string;
   executiveBoardId: string;
   executivePresentationFilter: ExecutivePresentationFilter;
   onExecutivePresentationFilterChange: (f: ExecutivePresentationFilter) => void;
   onExecutiveOpenCard: (card: CardData) => void;
+  onExecutiveRefreshBoardData?: () => Promise<void>;
   onPatchCard: (
     cardId: string,
     patch: Partial<Pick<CardData, "priority" | "bucket">>
@@ -155,11 +160,16 @@ export function KanbanBoardCanvas({
   onOpenAddColumn,
   executiveBoardName,
   executiveProductGoal,
+  executiveProductGoalEditable,
+  onExecutiveSaveProductGoal,
+  executiveStakeholderNote,
+  onExecutiveSaveStakeholderNote,
   executiveLastUpdated,
   executiveBoardId,
   executivePresentationFilter,
   onExecutivePresentationFilterChange,
   onExecutiveOpenCard,
+  onExecutiveRefreshBoardData,
   onPatchCard,
   onDuplicateCard,
   onPinCardToTop,
@@ -295,6 +305,10 @@ export function KanbanBoardCanvas({
           getHeaders={getHeaders ?? (() => ({}))}
           boardName={executiveBoardName}
           productGoal={executiveProductGoal}
+          productGoalEditable={executiveProductGoalEditable}
+          onSaveProductGoal={onExecutiveSaveProductGoal}
+          executiveStakeholderNote={executiveStakeholderNote}
+          onSaveExecutiveStakeholderNote={onExecutiveSaveStakeholderNote}
           lastUpdated={executiveLastUpdated}
           buckets={buckets}
           cards={cards}
@@ -302,6 +316,7 @@ export function KanbanBoardCanvas({
           executiveFilter={executivePresentationFilter}
           onExecutiveFilterChange={onExecutivePresentationFilterChange}
           onOpenCard={onExecutiveOpenCard}
+          onRefreshBoardData={onExecutiveRefreshBoardData}
         />
       ) : null}
       {boardView === "roadmap" ? (

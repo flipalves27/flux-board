@@ -68,12 +68,16 @@ const BoardIntakeFormsModal = dynamic(
   () => import("@/components/kanban/board-intake-forms-modal").then((m) => ({ default: m.BoardIntakeFormsModal })),
   { ssr: false }
 );
+const BoardDiscoverySessionsModal = dynamic(
+  () => import("@/components/kanban/board-discovery-sessions-modal").then((m) => ({ default: m.BoardDiscoverySessionsModal })),
+  { ssr: false }
+);
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
-import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
+import { isDiscoveryMethodology, isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass, SprintData, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import {
   setBoardPersistenceHandler,
@@ -259,6 +263,8 @@ export interface BoardData {
     labels?: string[];
     /** Meta de produto (Product Goal) visível no quadro. */
     productGoal?: string;
+    /** Nota do PO para contexto executivo (complementa o brief IA). */
+    executiveStakeholderNote?: string;
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
     definitionOfDone?: BoardDefinitionOfDone;
@@ -360,6 +366,12 @@ function sanitizeProductGoal(raw: unknown): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
+function sanitizeExecutiveStakeholderNote(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim().slice(0, 2000);
+  return t.length > 0 ? t : undefined;
+}
+
 function sanitizeBacklogBucketKey(raw: unknown, bucketOrder: BucketConfig[]): string | undefined {
   if (typeof raw !== "string") return undefined;
   const k = raw.trim().slice(0, 200);
@@ -457,6 +469,7 @@ export default function BoardPage() {
   const [briefOpen, setBriefOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
+  const [discoverySessionsOpen, setDiscoverySessionsOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -554,6 +567,9 @@ export default function BoardPage() {
         dodChecks: dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : undefined,
       }));
       const productGoal = sanitizeProductGoal(d.config?.productGoal);
+      const executiveStakeholderNote = sanitizeExecutiveStakeholderNote(
+        (d.config as { executiveStakeholderNote?: unknown })?.executiveStakeholderNote
+      );
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
@@ -573,6 +589,7 @@ export default function BoardPage() {
           collapsedColumns: sanitizeCollapsedColumns(d.config?.collapsedColumns, bucketOrder),
           labels: sanitizeLabels(d.config?.labels),
           ...(productGoal ? { productGoal } : {}),
+          ...(executiveStakeholderNote ? { executiveStakeholderNote } : {}),
           ...(backlogBucketKey ? { backlogBucketKey } : {}),
           ...(definitionOfDone ? { definitionOfDone } : {}),
           ...(d.config?.cardRules ? { cardRules: d.config.cardRules } : {}),
@@ -897,6 +914,20 @@ export default function BoardPage() {
                 Goals
               </button>
 
+              {isDiscoveryMethodology(boardMethodologyForSprint ?? "scrum") ? (
+                <button
+                  type="button"
+                  className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                  onClick={() => setDiscoverySessionsOpen(true)}
+                  aria-label={t("discoverySessions.open")}
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {t("discoverySessions.open")}
+                </button>
+              ) : null}
+
               <Link
                 href={`/${locale}/reports`}
                 className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm no-underline"
@@ -1075,6 +1106,17 @@ export default function BoardPage() {
         getHeaders={getHeaders}
         formOrigin={formOrigin}
         onSaved={() => loadBoard()}
+      />
+
+      <BoardDiscoverySessionsModal
+        open={discoverySessionsOpen}
+        onClose={() => setDiscoverySessionsOpen(false)}
+        boardId={boardId}
+        bucketOrder={boardBucketOrder ?? []}
+        priorities={PRIORITIES}
+        progresses={PROGRESSES}
+        getHeaders={getHeaders}
+        onBoardReload={() => loadBoard()}
       />
 
       <BoardTemplateExportModal

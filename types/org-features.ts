@@ -7,6 +7,8 @@ export type OrgFeaturesResponse = {
   lss_ai_premium: boolean;
   board_copilot: boolean;
   spec_ai_scope_planner: boolean;
+  /** Flux Docs + geração de documentos (incl. discovery externo com IA). */
+  flux_docs: boolean;
   ui: {
     onda4: Onda4UiFlags;
     uxV2: UxV2Features;

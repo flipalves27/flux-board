@@ -12,6 +12,7 @@ export type ExecutiveOnePagerTopCard = {
 export function buildExecutiveOnePagerMarkdown(input: {
   boardName: string;
   productGoal?: string;
+  executiveStakeholderNote?: string;
   lastUpdatedLabel: string;
   portfolio: BoardPortfolioMetrics;
   topDecisions: ExecutiveOnePagerTopCard[];
@@ -25,6 +26,11 @@ export function buildExecutiveOnePagerMarkdown(input: {
   if (input.productGoal?.trim()) {
     lines.push("## Objetivo");
     lines.push(input.productGoal.trim());
+    lines.push("");
+  }
+  if (input.executiveStakeholderNote?.trim()) {
+    lines.push("## Nota do PO / stakeholders");
+    lines.push(input.executiveStakeholderNote.trim());
     lines.push("");
   }
   lines.push("## Indicadores");

@@ -54,6 +54,7 @@ import {
   isSprintMethodology,
   type BoardMethodology,
 } from "@/lib/board-methodology";
+import { clampExecutiveProductGoal, clampExecutiveStakeholderNote } from "@/lib/executive-board-config";
 import { getMethodologyModule } from "@/lib/methodology-module";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
@@ -261,6 +262,28 @@ function KanbanBoardLoaded({
   const methodologyModule = useMemo(
     () => getMethodologyModule(methodology as BoardMethodology),
     [methodology]
+  );
+
+  const saveExecutiveProductGoal = useCallback(
+    (value: string) => {
+      const g = clampExecutiveProductGoal(value);
+      updateDb((d) => {
+        if (g) d.config.productGoal = g;
+        else delete d.config.productGoal;
+      });
+    },
+    [updateDb]
+  );
+
+  const saveExecutiveStakeholderNote = useCallback(
+    (value: string) => {
+      const n = clampExecutiveStakeholderNote(value);
+      updateDb((d) => {
+        if (n) d.config.executiveStakeholderNote = n;
+        else delete d.config.executiveStakeholderNote;
+      });
+    },
+    [updateDb]
   );
 
   const applyCLevelMeetingPreset = useCallback(() => {
@@ -1049,12 +1072,17 @@ function KanbanBoardLoaded({
           }}
           executiveBoardName={boardName}
           executiveProductGoal={db.config.productGoal}
+          executiveProductGoalEditable={isSprintMethodology(methodology as BoardMethodology)}
+          onExecutiveSaveProductGoal={saveExecutiveProductGoal}
+          executiveStakeholderNote={db.config.executiveStakeholderNote}
+          onExecutiveSaveStakeholderNote={saveExecutiveStakeholderNote}
           executiveLastUpdated={db.lastUpdated}
           executiveBoardId={boardId}
           getHeaders={getHeaders}
           executivePresentationFilter={executivePresentationFilter}
           onExecutivePresentationFilterChange={setExecutivePresentationFilter}
           onExecutiveOpenCard={board.handleTimelineOpenCard}
+          onExecutiveRefreshBoardData={reloadBoardFromServer}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
