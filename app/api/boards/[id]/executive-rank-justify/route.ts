@@ -67,11 +67,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Limite de uso. Tente mais tarde." }, { status: 429 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const rawIds = Array.isArray(body?.cardIds) ? body.cardIds : [];
-  const cardIds: string[] = [
-    ...new Set(rawIds.map((x: unknown) => String(x).trim()).filter((s) => s.length > 0)),
-  ].slice(0, 8);
+  const body: unknown = await request.json().catch(() => ({}));
+  const raw = body && typeof body === "object" && "cardIds" in body ? (body as { cardIds?: unknown }).cardIds : undefined;
+  const rawIds: unknown[] = Array.isArray(raw) ? raw : [];
+  const normalized: string[] = [];
+  for (const x of rawIds) {
+    const id = String(x).trim();
+    if (id.length > 0) normalized.push(id);
+  }
+  const cardIds = [...new Set(normalized)].slice(0, 8);
   if (cardIds.length === 0) {
     return NextResponse.json({ error: "cardIds obrigatório (máx. 8)" }, { status: 400 });
   }
