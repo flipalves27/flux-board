@@ -1,6 +1,6 @@
 import { getStore } from "./storage";
 import { getDb, isMongoConfigured } from "./mongo";
-import { hashPassword } from "./auth";
+import { hashPassword, verifyPassword } from "./auth";
 import { DEFAULT_ORG_ID, ensureTenancyMigrationForExistingData, ensureDefaultOrganization } from "./kv-organizations";
 import type { ThemePreference } from "./theme-storage";
 import type { OrgMembershipRole, OrgRole, PlatformRole } from "./rbac";
@@ -79,21 +79,59 @@ type UserDoc = {
   orgMemberships?: { orgId: string; orgRole: string; isAdmin?: boolean }[];
 };
 
-function productionAdminPasswordPlain(): string {
+/**
+ * Senha usada na criação/recriação do admin seed. Em dev, sem variáveis explícitas, cai no default "Admin".
+ * Use `ADMIN_INITIAL_PASSWORD_B64` (UTF-8 em base64) se a senha tiver `$` e o loader de .env a alterar.
+ */
+function resolveAdminBootstrapPassword(): string {
+  const b64 = process.env.ADMIN_INITIAL_PASSWORD_B64?.trim();
+  if (b64) {
+    return Buffer.from(b64, "base64").toString("utf8");
+  }
   const p = process.env.ADMIN_INITIAL_PASSWORD?.trim();
-  if (!p) {
+  if (p) {
+    return p;
+  }
+  if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "[kv-users] ADMIN_INITIAL_PASSWORD é obrigatório em produção para criar ou recriar o admin."
+      "[kv-users] ADMIN_INITIAL_PASSWORD (ou ADMIN_INITIAL_PASSWORD_B64) é obrigatório em produção para criar ou recriar o admin."
     );
   }
-  return p;
+  return "Admin";
+}
+
+function hasExplicitAdminInitialPasswordInEnv(): boolean {
+  return Boolean(
+    process.env.ADMIN_INITIAL_PASSWORD_B64?.trim() || process.env.ADMIN_INITIAL_PASSWORD?.trim()
+  );
+}
+
+/**
+ * Em NODE_ENV != production, se a senha do admin no armazenamento não coincidir com a variável
+ * de ambiente (quando explicitamente definida), atualiza o hash. Evita .env com nova senha sem
+ * apagar o documento do admin; não corre em produção.
+ */
+async function resyncAdminPasswordIfEnvChanged(
+  existing: User,
+  persist: (admin: User) => Promise<void>
+): Promise<User> {
+  if (process.env.NODE_ENV === "production" || !hasExplicitAdminInitialPasswordInEnv()) {
+    return existing;
+  }
+  if (existing.id !== "admin" || !existing.passwordHash) {
+    return existing;
+  }
+  const plain = resolveAdminBootstrapPassword();
+  if (verifyPassword(plain, existing.passwordHash)) {
+    return existing;
+  }
+  const admin: User = { ...existing, passwordHash: hashPassword(plain) };
+  await persist(admin);
+  return admin;
 }
 
 function recreateAdminUser(): User {
-  const plain =
-    process.env.NODE_ENV === "production"
-      ? productionAdminPasswordPlain()
-      : (process.env.ADMIN_INITIAL_PASSWORD?.trim() || "Admin");
+  const plain = resolveAdminBootstrapPassword();
   return {
     ...ADMIN_USER,
     passwordHash: hashPassword(plain),
@@ -199,7 +237,14 @@ async function persistAdminUserKv(admin: User): Promise<void> {
 }
 
 export async function ensureAdminUser(): Promise<User | null> {
-  if (adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
+  /**
+   * Com .env a definir senha inicial, não podemos devolver o cache: o resync
+   * alinha a BD e senão o login lê o hash antigo (cache era calculado no pedido
+   * anterior, antes de mudar .env, ou a sincronização não correu ainda).
+   */
+  const maySkipAdminCache =
+    process.env.NODE_ENV === "production" || !hasExplicitAdminInitialPasswordInEnv();
+  if (maySkipAdminCache && adminCache && Date.now() < adminCache.expiresAt) return adminCache.value;
   if (ensureAdminPromise) return ensureAdminPromise;
 
   ensureAdminPromise = (async () => {
@@ -221,12 +266,13 @@ export async function ensureAdminUser(): Promise<User | null> {
         await persistAdminUserMongo(db, admin);
         return admin;
       }
-        if (!existing.orgId) {
-          await col.updateOne({ _id: "admin" }, { $set: { orgId: DEFAULT_ORG_ID } });
-          const updated = await col.findOne({ _id: "admin" });
-          return updated ? toUser(updated) : existing;
-        }
-      return existing;
+      const synced = await resyncAdminPasswordIfEnvChanged(existing, (a) => persistAdminUserMongo(db, a));
+      if (!synced.orgId) {
+        await col.updateOne({ _id: "admin" }, { $set: { orgId: DEFAULT_ORG_ID } });
+        const updated = await col.findOne({ _id: "admin" });
+        return updated ? toUser(updated) : synced;
+      }
+      return synced;
     }
     const admin = recreateAdminUser();
     await persistAdminUserMongo(db, admin);
@@ -244,12 +290,13 @@ export async function ensureAdminUser(): Promise<User | null> {
       await persistAdminUserKv(admin);
       return admin;
     }
-      if (!existing.orgId) {
-        const admin = { ...existing, orgId: DEFAULT_ORG_ID };
-        await persistAdminUserKv(admin);
-        return admin;
-      }
-    return existing;
+    const synced = await resyncAdminPasswordIfEnvChanged(existing, (a) => persistAdminUserKv(a));
+    if (!synced.orgId) {
+      const admin = { ...synced, orgId: DEFAULT_ORG_ID };
+      await persistAdminUserKv(admin);
+      return admin;
+    }
+    return synced;
   }
 
   const admin = recreateAdminUser();

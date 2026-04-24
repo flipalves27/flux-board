@@ -26,8 +26,18 @@ export function hashPassword(password: string): string {
 export function verifyPassword(password: string, stored: string): boolean {
   const [salt, hash] = (stored || "").split(":");
   if (!salt || !hash) return false;
-  const computed = crypto.scryptSync(password, salt, 64).toString("hex");
-  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(computed, "hex"));
+  let bStored: Buffer;
+  let bComputed: Buffer;
+  try {
+    bStored = Buffer.from(hash, "hex");
+    bComputed = crypto.scryptSync(password, salt, 64);
+  } catch {
+    return false;
+  }
+  if (bStored.length !== bComputed.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bStored, bComputed);
 }
 
 export function createToken(user: {

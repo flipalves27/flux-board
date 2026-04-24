@@ -9,6 +9,7 @@ describe("validateServerEnv", () => {
     process.env.JWT_SECRET = "vitest-jwt-secret-placeholder-min-32chars!";
     process.env.ADMIN_INITIAL_PASSWORD = "vitest-admin-initial-password!";
     delete process.env.NEXT_PUBLIC_VERCEL_BYPASS_SECRET;
+    delete process.env.ADMIN_INITIAL_PASSWORD_B64;
   });
 
   afterEach(() => {
@@ -71,12 +72,22 @@ describe("validateServerEnv", () => {
     expect(() => validateServerEnv()).toThrow(/NEXT_PUBLIC_VERCEL_BYPASS_SECRET/);
   });
 
-  it("throws in production runtime when ADMIN_INITIAL_PASSWORD is missing", async () => {
+  it("throws in production runtime when admin bootstrap password is missing", async () => {
     delete process.env.ADMIN_INITIAL_PASSWORD;
+    delete process.env.ADMIN_INITIAL_PASSWORD_B64;
     process.env.NODE_ENV = "production";
     delete process.env.NEXT_PHASE;
     const { validateServerEnv } = await import("./env-validate");
-    expect(() => validateServerEnv()).toThrow(/ADMIN_INITIAL_PASSWORD/);
+    expect(() => validateServerEnv()).toThrow(/ADMIN_INITIAL/);
+  });
+
+  it("runs in production when only ADMIN_INITIAL_PASSWORD_B64 is set", async () => {
+    delete process.env.ADMIN_INITIAL_PASSWORD;
+    process.env.ADMIN_INITIAL_PASSWORD_B64 = Buffer.from("test-b64-password", "utf8").toString("base64");
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PHASE;
+    const { validateServerEnv } = await import("./env-validate");
+    expect(() => validateServerEnv()).not.toThrow();
   });
 
   it("warns in production when Google OAuth is configured but public URL, cookie domain, and allowlist are missing or empty", async () => {
