@@ -126,6 +126,8 @@ const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
 const DIRECTIONS = ["Manter", "Priorizar", "Adiar", "Cancelar", "Reavaliar"];
 const DIRECTION_STORAGE_VALUES = DIRECTIONS.map((d) => d.toLowerCase());
+/** Referência estável — `?? []` no seletor com `useShallow` gerava novo array a cada tick e loop #185. */
+const EMPTY_BOARD_LABELS: string[] = [];
 
 export interface CardLink {
   url: string;
@@ -462,7 +464,7 @@ export default function BoardPage() {
         portal: d?.portal,
         anomalyNotifications: d?.anomalyNotifications,
         boardMethodology: d?.boardMethodology,
-        boardLabels: d?.config?.labels ?? [],
+        boardLabels: d?.config?.labels?.length ? d.config.labels : EMPTY_BOARD_LABELS,
       };
     })
   );
