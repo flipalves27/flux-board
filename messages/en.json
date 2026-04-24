@@ -2505,6 +2505,48 @@
       "apply": "Apply order on board",
       "open": "AI priority"
     },
+    "boardListImport": {
+      "menuItem": "Import list (PDF) with AI",
+      "title": "Import list from PDF with AI",
+      "description": "Upload a PDF or Word file, or paste text. The AI turns it into board cards. Review the preview, then apply to this board (Pro+).",
+      "fileLabel": "File (PDF or DOCX)",
+      "pasteLabel": "Or paste text",
+      "pastePlaceholder": "Paste backlog items, meeting notes, or a table as plain text…",
+      "sourceMeta": "Source: {name}",
+      "pages": "{n} page(s)",
+      "previewHint": "Preview: {count} card(s) — uncheck any you do not want to import.",
+      "col": {
+        "title": "Title",
+        "column": "Column",
+        "priority": "Priority"
+      },
+      "includeAria": "Include in import",
+      "enrich": {
+        "checkbox": "After import, run smart card context (up to {max} cards, uses card context limits)",
+        "progress": "Enriching with board context: {current} / {total}…",
+        "truncated": "Only the first {max} new cards were enriched; {rest} left unchanged (you can open a card to enrich manually)."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "analyze": "Analyze with AI",
+        "analyzing": "Analyzing…",
+        "apply": "Apply to board",
+        "working": "Working…"
+      },
+      "errors": {
+        "noInput": "Send a file or paste text.",
+        "parseFailed": "Could not analyze the document (HTTP {status}).",
+        "emptyCards": "No cards were generated. Try another file or paste clearer text.",
+        "planUpgrade": "This feature requires a Pro or higher plan.",
+        "network": "Network error. Try again.",
+        "noneSelected": "Select at least one card to import.",
+        "applyFailed": "Could not apply (HTTP {status})."
+      },
+      "toasts": {
+        "applied": "Imported {n} card(s).",
+        "appliedWithEnrich": "Imported {n} card(s) and updated them with board context where possible."
+      }
+    },
     "cardModal": {
       "intakeVision": {
         "badge": "Image → text",

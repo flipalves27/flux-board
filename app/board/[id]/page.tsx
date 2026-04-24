@@ -72,6 +72,10 @@ const BoardDiscoverySessionsModal = dynamic(
   () => import("@/components/kanban/board-discovery-sessions-modal").then((m) => ({ default: m.BoardDiscoverySessionsModal })),
   { ssr: false }
 );
+const BoardPdfListImportModal = dynamic(
+  () => import("@/components/kanban/board-pdf-list-import-modal").then((m) => ({ default: m.BoardPdfListImportModal })),
+  { ssr: false }
+);
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
@@ -121,6 +125,7 @@ const BoardPresenceAvatars = dynamic(
 const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
 const DIRECTIONS = ["Manter", "Priorizar", "Adiar", "Cancelar", "Reavaliar"];
+const DIRECTION_STORAGE_VALUES = DIRECTIONS.map((d) => d.toLowerCase());
 
 export interface CardLink {
   url: string;
@@ -437,6 +442,7 @@ export default function BoardPage() {
   const backToBoards = `/${locale}/boards`;
   const t = useTranslations("board");
   const tTour = useTranslations("board.productTour");
+  const tListImport = useTranslations("kanban.boardListImport");
   const [boardName, setBoardName] = useState("Board");
   const [clientLabel, setClientLabel] = useState<string | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -447,6 +453,7 @@ export default function BoardPage() {
     portal: boardPortal,
     anomalyNotifications: boardAnomalyNotifications,
     boardMethodology: boardMethodologyForSprint,
+    boardLabels,
   } = useBoardStore(
     useShallow((s) => {
       const d = s.db;
@@ -455,6 +462,7 @@ export default function BoardPage() {
         portal: d?.portal,
         anomalyNotifications: d?.anomalyNotifications,
         boardMethodology: d?.boardMethodology,
+        boardLabels: d?.config?.labels ?? [],
       };
     })
   );
@@ -470,6 +478,7 @@ export default function BoardPage() {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
   const [discoverySessionsOpen, setDiscoverySessionsOpen] = useState(false);
+  const [pdfListImportOpen, setPdfListImportOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1009,6 +1018,12 @@ export default function BoardPage() {
                         </svg>
                         Importar CSV
                       </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setPdfListImportOpen(true)}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        {tListImport("menuItem")}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => triggerCsvExport()}>
                         <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1117,6 +1132,17 @@ export default function BoardPage() {
         progresses={PROGRESSES}
         getHeaders={getHeaders}
         onBoardReload={() => loadBoard()}
+      />
+
+      <BoardPdfListImportModal
+        open={pdfListImportOpen}
+        onClose={() => setPdfListImportOpen(false)}
+        boardId={boardId}
+        getHeaders={getHeaders}
+        onBoardReload={loadBoard}
+        bucketOrder={boardBucketOrder ?? []}
+        boardLabels={boardLabels}
+        directionStorageValues={DIRECTION_STORAGE_VALUES}
       />
 
       <BoardTemplateExportModal

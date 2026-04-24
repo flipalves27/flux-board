@@ -89,6 +89,7 @@ export type FeatureKey =
   | "lss_ai_premium"
   | "safe_ai_premium"
   | "spec_ai_scope_planner"
+  | "board_pdf_list_import"
   | "ai_agent_autonomy"
   | "org_digital_twin"
   | "mcp_hub_gateway"
@@ -132,6 +133,7 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   lss_ai_premium: BIZ_UP,
   safe_ai_premium: BIZ_UP,
   spec_ai_scope_planner: BIZ_UP,
+  board_pdf_list_import: PAID,
   ai_agent_autonomy: BIZ_UP,
   org_digital_twin: BIZ_UP,
   mcp_hub_gateway: BIZ_UP,
@@ -237,6 +239,7 @@ export const PRO_FEATURE_LABELS_PT: { key: FeatureKey; label: string }[] = [
   { key: "lss_ai_premium", label: "IA C-level Lean Six Sigma" },
   { key: "safe_ai_premium", label: "Assistente SAFe aproximado (IA)" },
   { key: "spec_ai_scope_planner", label: "Planejamento de escopo por documento (IA)" },
+  { key: "board_pdf_list_import", label: "Importar lista a partir de PDF (IA)" },
 ];
 
 export function describeDowngradeImpact(params: {

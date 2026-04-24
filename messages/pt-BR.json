@@ -2506,6 +2506,48 @@
       "apply": "Aplicar ordem no board",
       "open": "Prioridade IA"
     },
+    "boardListImport": {
+      "menuItem": "Importar lista (PDF) com IA",
+      "title": "Importar lista a partir de PDF com IA",
+      "description": "Envie PDF ou Word, ou cole o texto. A IA converte em cards do quadro. Revise a prévia e aplique (Pro+).",
+      "fileLabel": "Arquivo (PDF ou DOCX)",
+      "pasteLabel": "Ou colar texto",
+      "pastePlaceholder": "Cole itens de backlog, ata, ou tabela em texto…",
+      "sourceMeta": "Fonte: {name}",
+      "pages": "{n} página(s)",
+      "previewHint": "Prévia: {count} card(s) — desmarque o que não quiser importar.",
+      "col": {
+        "title": "Título",
+        "column": "Coluna",
+        "priority": "Prioridade"
+      },
+      "includeAria": "Incluir na importação",
+      "enrich": {
+        "checkbox": "Após importar, enriquecer com contexto do quadro (até {max} cards; usa o limite de contexto de card)",
+        "progress": "Enriquecendo com contexto do quadro: {current} / {total}…",
+        "truncated": "Só os primeiros {max} novos cards foram enriquecidos; {rest} permanecem como estão (abra o card para enriquecer manualmente)."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "analyze": "Analisar com IA",
+        "analyzing": "Analisando…",
+        "apply": "Aplicar ao board",
+        "working": "Processando…"
+      },
+      "errors": {
+        "noInput": "Envie um arquivo ou cole o texto.",
+        "parseFailed": "Não foi possível analisar o documento (HTTP {status}).",
+        "emptyCards": "Nenhum card foi gerado. Tente outro arquivo ou um texto mais claro.",
+        "planUpgrade": "Recurso disponível a partir do plano Pro.",
+        "network": "Erro de rede. Tente novamente.",
+        "noneSelected": "Selecione pelo menos um card para importar.",
+        "applyFailed": "Não foi possível aplicar (HTTP {status})."
+      },
+      "toasts": {
+        "applied": "Importados {n} card(s).",
+        "appliedWithEnrich": "Importados {n} card(s) e atualizados com contexto do quadro quando possível."
+      }
+    },
     "cardModal": {
       "intakeVision": {
         "badge": "Imagem → texto",
