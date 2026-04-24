@@ -3532,13 +3532,6 @@
           "error": "Não foi possível carregar o brief"
         }
       },
-      "cLevelMeeting": {
-        "apply": "Reunião C-Level",
-        "applyTitle": "Vista executiva, filtro de atenção e modo foco",
-        "copyLinkTitle": "Copiar link deste preset de reunião",
-        "linkCopied": "Link da reunião copiado",
-        "linkCopyFailed": "Não foi possível copiar o link"
-      },
       "roadmapProjection": {
         "empty": "Sem cards nesta faixa.",
         "lanes": {

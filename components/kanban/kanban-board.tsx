@@ -19,12 +19,7 @@ import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
 import { useKanbanUiStore } from "@/stores/ui-store";
-import {
-  buildBoardDeepLinkPath,
-  buildCLevelMeetingQuery,
-  parseExecFilterParam,
-  parseViewParam,
-} from "@/lib/build-c-level-board-query";
+import { parseExecFilterParam, parseViewParam } from "@/lib/build-c-level-board-query";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
@@ -285,24 +280,6 @@ function KanbanBoardLoaded({
     },
     [updateDb]
   );
-
-  const applyCLevelMeetingPreset = useCallback(() => {
-    if (!methodologyModule.allowedViewModes.includes("executive")) return;
-    setBoardView("executive");
-    setExecutivePresentationFilter("attention");
-    setFocusMode(true);
-  }, [methodologyModule.allowedViewModes, setBoardView, setExecutivePresentationFilter]);
-
-  const copyCLevelMeetingLink = useCallback(async () => {
-    const path = buildBoardDeepLinkPath(localeRoot, boardId, buildCLevelMeetingQuery());
-    const url = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
-    try {
-      await navigator.clipboard.writeText(url);
-      pushToast({ kind: "success", title: t("board.cLevelMeeting.linkCopied") });
-    } catch {
-      pushToast({ kind: "error", title: t("board.cLevelMeeting.linkCopyFailed") });
-    }
-  }, [localeRoot, boardId, pushToast, t]);
 
   useEffect(() => {
     const allowed = methodologyModule.allowedViewModes;
@@ -924,10 +901,6 @@ function KanbanBoardLoaded({
             searchInputRef: filters.searchInputRef,
             t,
             tTimeline: tView as (k: string) => string,
-            cLevelMeeting:
-              methodologyModule.allowedViewModes.includes("executive") && !focusMode
-                ? { onApply: applyCLevelMeetingPreset, onCopyLink: copyCLevelMeetingLink }
-                : undefined,
           }}
           l2={{
             boardId,
