@@ -12,6 +12,7 @@ import {
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { CardTemplate } from "@/lib/kv-card-templates";
+import type { ExecutivePresentationFilter } from "@/stores/ui-store";
 import type { BoardViewMode } from "./kanban-constants";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
@@ -84,6 +85,9 @@ type KanbanBoardCanvasProps = {
   executiveBoardName: string;
   executiveProductGoal?: string;
   executiveLastUpdated: string;
+  executiveBoardId: string;
+  executivePresentationFilter: ExecutivePresentationFilter;
+  onExecutivePresentationFilterChange: (f: ExecutivePresentationFilter) => void;
   onExecutiveOpenCard: (card: CardData) => void;
   onPatchCard: (
     cardId: string,
@@ -152,6 +156,9 @@ export function KanbanBoardCanvas({
   executiveBoardName,
   executiveProductGoal,
   executiveLastUpdated,
+  executiveBoardId,
+  executivePresentationFilter,
+  onExecutivePresentationFilterChange,
   onExecutiveOpenCard,
   onPatchCard,
   onDuplicateCard,
@@ -284,12 +291,16 @@ export function KanbanBoardCanvas({
       ) : null}
       {boardView === "executive" ? (
         <BoardExecutivePresentationView
+          boardId={executiveBoardId}
+          getHeaders={getHeaders ?? (() => ({}))}
           boardName={executiveBoardName}
           productGoal={executiveProductGoal}
           lastUpdated={executiveLastUpdated}
           buckets={buckets}
           cards={cards}
           filterCard={filterCard}
+          executiveFilter={executivePresentationFilter}
+          onExecutiveFilterChange={onExecutivePresentationFilterChange}
           onOpenCard={onExecutiveOpenCard}
         />
       ) : null}

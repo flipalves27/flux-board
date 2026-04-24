@@ -18,6 +18,13 @@ import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
+import { useKanbanUiStore } from "@/stores/ui-store";
+import {
+  buildBoardDeepLinkPath,
+  buildCLevelMeetingQuery,
+  parseExecFilterParam,
+  parseViewParam,
+} from "@/lib/build-c-level-board-query";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
@@ -178,6 +185,8 @@ function KanbanBoardLoaded({
   const {
     boardView,
     setBoardView,
+    executivePresentationFilter,
+    setExecutivePresentationFilter,
     activePrio,
     setActivePrio,
     activeLabels,
@@ -253,6 +262,24 @@ function KanbanBoardLoaded({
     () => getMethodologyModule(methodology as BoardMethodology),
     [methodology]
   );
+
+  const applyCLevelMeetingPreset = useCallback(() => {
+    if (!methodologyModule.allowedViewModes.includes("executive")) return;
+    setBoardView("executive");
+    setExecutivePresentationFilter("attention");
+    setFocusMode(true);
+  }, [methodologyModule.allowedViewModes, setBoardView, setExecutivePresentationFilter]);
+
+  const copyCLevelMeetingLink = useCallback(async () => {
+    const path = buildBoardDeepLinkPath(localeRoot, boardId, buildCLevelMeetingQuery());
+    const url = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+    try {
+      await navigator.clipboard.writeText(url);
+      pushToast({ kind: "success", title: t("board.cLevelMeeting.linkCopied") });
+    } catch {
+      pushToast({ kind: "error", title: t("board.cLevelMeeting.linkCopyFailed") });
+    }
+  }, [localeRoot, boardId, pushToast, t]);
 
   useEffect(() => {
     const allowed = methodologyModule.allowedViewModes;
@@ -507,6 +534,9 @@ function KanbanBoardLoaded({
     const fluxyCardThread = q.get("fluxyCardThread") === "1";
     const fluxyMsg = q.get("fluxyMsg");
     const fluxyCtx = q.get("fluxyCtx");
+    const viewParam = parseViewParam(q.get("view"));
+    const execFilterParam = parseExecFilterParam(q.get("execFilter"));
+    const clevelPreset = q.get("clevel") === "1";
 
     const hasDeepLink =
       Boolean(cardId) ||
@@ -524,7 +554,10 @@ function KanbanBoardLoaded({
       scrumSettings === "1" ||
       incrementReview === "1" ||
       kanbanCadence === "1" ||
-      lssAssist === "1";
+      lssAssist === "1" ||
+      Boolean(viewParam) ||
+      execFilterParam != null ||
+      clevelPreset;
 
     if (!hasDeepLink) {
       handledQueryRef.current = null;
@@ -680,8 +713,23 @@ function KanbanBoardLoaded({
         setLssAssistOpen(true);
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
     }
-  }, [searchParamsKey, boardId, localeRoot, methodology]);
+
+    if (viewParam || execFilterParam != null || clevelPreset) {
+      const allowedViews = getMethodologyModule(methodology as BoardMethodology).allowedViewModes;
+      if (viewParam && allowedViews.includes(viewParam)) {
+        setBoardView(viewParam);
+      }
+      if (execFilterParam) {
+        useKanbanUiStore.getState().setExecutivePresentationFilter(boardId, execFilterParam);
+      }
+      if (clevelPreset) {
+        setFocusMode(true);
+      }
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+    }
+  }, [searchParamsKey, boardId, localeRoot, methodology, setBoardView]);
 
   useEffect(() => {
     const card = modalCard;
@@ -853,6 +901,10 @@ function KanbanBoardLoaded({
             searchInputRef: filters.searchInputRef,
             t,
             tTimeline: tView as (k: string) => string,
+            cLevelMeeting:
+              methodologyModule.allowedViewModes.includes("executive") && !focusMode
+                ? { onApply: applyCLevelMeetingPreset, onCopyLink: copyCLevelMeetingLink }
+                : undefined,
           }}
           l2={{
             boardId,
@@ -998,13 +1050,16 @@ function KanbanBoardLoaded({
           executiveBoardName={boardName}
           executiveProductGoal={db.config.productGoal}
           executiveLastUpdated={db.lastUpdated}
+          executiveBoardId={boardId}
+          getHeaders={getHeaders}
+          executivePresentationFilter={executivePresentationFilter}
+          onExecutivePresentationFilterChange={setExecutivePresentationFilter}
           onExecutiveOpenCard={board.handleTimelineOpenCard}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
           sprintBoardQuickActions={isSprintMethodology(methodology) ? { boardId, getHeaders } : undefined}
-          getHeaders={getHeaders}
           onAddCardFromTemplate={(bucketKey, tpl) => {
             board.setModalCard({
               id: "",

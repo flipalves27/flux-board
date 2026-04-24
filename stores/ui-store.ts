@@ -9,6 +9,13 @@ import {
   type BoardViewMode,
 } from "@/components/kanban/kanban-constants";
 
+/** Filtro da vista de apresentação executiva (persistido por board). */
+export type ExecutivePresentationFilter = "all" | "attention" | "momentum";
+
+export function isExecutivePresentationFilter(v: unknown): v is ExecutivePresentationFilter {
+  return v === "all" || v === "attention" || v === "momentum";
+}
+
 export type ConfirmDeleteState =
   | { type: "card" | "bucket"; id: string; label: string }
   | { type: "cardsBatch"; ids: string[] }
@@ -25,6 +32,10 @@ type KanbanUiState = {
   boardViewByBoard: Record<string, BoardViewMode>;
   setBoardView: (boardId: string, view: BoardViewMode) => void;
   getBoardView: (boardId: string) => BoardViewMode;
+
+  executivePresentationFilterByBoard: Record<string, ExecutivePresentationFilter>;
+  setExecutivePresentationFilter: (boardId: string, filter: ExecutivePresentationFilter) => void;
+  getExecutivePresentationFilter: (boardId: string) => ExecutivePresentationFilter;
 
   modalCard: CardData | null;
   modalMode: "new" | "edit";
@@ -76,6 +87,19 @@ export const useKanbanUiStore = create<KanbanUiState>()(
           return isBoardViewMode(v) ? v : "kanban";
         },
 
+        executivePresentationFilterByBoard: {},
+        setExecutivePresentationFilter: (boardId, filter) =>
+          set((s) => ({
+            executivePresentationFilterByBoard: {
+              ...s.executivePresentationFilterByBoard,
+              [boardId]: filter,
+            },
+          })),
+        getExecutivePresentationFilter: (boardId) => {
+          const v = get().executivePresentationFilterByBoard[boardId] ?? "all";
+          return isExecutivePresentationFilter(v) ? v : "all";
+        },
+
         modalCard: null,
         modalMode: "new",
         setModalCard: (v) => set({ modalCard: v }),
@@ -122,7 +146,10 @@ export const useKanbanUiStore = create<KanbanUiState>()(
       {
         name: VIEW_SESSION_KEY,
         storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : noopStorage)),
-        partialize: (s) => ({ boardViewByBoard: s.boardViewByBoard }),
+        partialize: (s) => ({
+          boardViewByBoard: s.boardViewByBoard,
+          executivePresentationFilterByBoard: s.executivePresentationFilterByBoard,
+        }),
         /** Evita mismatch SSR/client ao ler localStorage antes da hidratação do React. */
         skipHydration: true,
       }

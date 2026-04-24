@@ -3410,7 +3410,42 @@
           "today": "Prazo: hoje",
           "tomorrow": "Prazo: amanhã",
           "inDays": "Prazo em {days} dias"
+        },
+        "topDecisions": {
+          "title": "Top decisões desta semana",
+          "justifyCta": "Justificativas IA (curtas)",
+          "justifyLoading": "A gerar…",
+          "justifyDone": "Justificativas atualizadas",
+          "justifyError": "Não foi possível gerar justificativas",
+          "empty": "Sem cards em aberto para ranquear."
+        },
+        "narrator": {
+          "kicker": "Narrador IA",
+          "title": "Brief executivo",
+          "load": "Carregar brief",
+          "refresh": "Atualizar",
+          "loading": "A carregar…",
+          "emptyHint": "Carregue o brief para ver o resumo IA mais recente. Usa a mesma cache do brief do cabeçalho.",
+          "cachedHint": "Servido a partir de cache — atualize após alterações relevantes no quadro.",
+          "copyBrief": "Copiar brief",
+          "downloadOnePager": "Exportar one-pager (.md)",
+          "sharePortal": "Link de leitura (portal)",
+          "copied": "Brief copiado",
+          "copyFailed": "Não foi possível copiar",
+          "onePagerDownloaded": "One-pager descarregado",
+          "shareFailed": "Não foi possível criar o link de partilha",
+          "shareReady": "Link do portal copiado",
+          "shareCreated": "Link de partilha criado",
+          "modelHint": "Modelo: {model}",
+          "error": "Não foi possível carregar o brief"
         }
+      },
+      "cLevelMeeting": {
+        "apply": "Reunião C-Level",
+        "applyTitle": "Vista executiva, filtro de atenção e modo foco",
+        "copyLinkTitle": "Copiar link deste preset de reunião",
+        "linkCopied": "Link da reunião copiado",
+        "linkCopyFailed": "Não foi possível copiar o link"
       },
       "roadmapProjection": {
         "empty": "Sem cards nesta faixa.",

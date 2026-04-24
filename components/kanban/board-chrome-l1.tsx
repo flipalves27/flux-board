@@ -6,7 +6,7 @@ import { BoardViewModeSegment } from "./board-view-mode-segment";
 import { BoardAutomationSuggestions } from "./board-automation-suggestions";
 import type { BoardViewMode } from "./kanban-constants";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
-import { SlidersHorizontal } from "lucide-react";
+import { Clapperboard, Link2, SlidersHorizontal } from "lucide-react";
 
 export type BoardChromeFilterRailShortcut = {
   expanded: boolean;
@@ -39,6 +39,8 @@ export type BoardChromeL1Props = {
   tTimeline: (k: string) => string;
   /** Atalho na barra principal: recolher / expandir filtros + contexto (L2+L3). */
   filterRailShortcut?: BoardChromeFilterRailShortcut;
+  /** Preset “Reunião C-Level”: vista executiva + filtro atenção + modo foco + link partilhável. */
+  cLevelMeeting?: { onApply: () => void; onCopyLink: () => void };
 };
 
 export function BoardChromeL1({
@@ -64,6 +66,7 @@ export function BoardChromeL1({
   t,
   tTimeline,
   filterRailShortcut,
+  cLevelMeeting,
 }: BoardChromeL1Props) {
   void boardName;
 
@@ -103,6 +106,29 @@ export function BoardChromeL1({
             variant="keys"
             groupAriaLabel={t("board.timeline.toggleGroupAria")}
           />
+
+          {cLevelMeeting ? (
+            <div className="flex shrink-0 items-center gap-1 border-l border-[var(--flux-chrome-alpha-12)] pl-2 ml-0.5">
+              <button
+                type="button"
+                onClick={cLevelMeeting.onApply}
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-surface-elevated)] px-2 py-1 text-[11px] font-semibold text-[var(--flux-text-muted)] shadow-sm transition-colors hover:border-[var(--flux-primary-alpha-40)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)]"
+                title={t("board.cLevelMeeting.applyTitle")}
+              >
+                <Clapperboard className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                <span className="hidden sm:inline max-w-[140px] truncate">{t("board.cLevelMeeting.apply")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={cLevelMeeting.onCopyLink}
+                className="rounded-lg border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-surface-elevated)] p-1 text-[var(--flux-text-muted)] shadow-sm transition-colors hover:border-[var(--flux-primary-alpha-40)] hover:text-[var(--flux-primary-light)]"
+                title={t("board.cLevelMeeting.copyLinkTitle")}
+                aria-label={t("board.cLevelMeeting.copyLinkTitle")}
+              >
+                <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+          ) : null}
 
           {showSprintInlineBadge && sprintProgress && activeSprintName ? (
             <button

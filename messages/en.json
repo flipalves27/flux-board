@@ -3409,7 +3409,42 @@
           "today": "Due: today",
           "tomorrow": "Due: tomorrow",
           "inDays": "Due in {days} days"
+        },
+        "topDecisions": {
+          "title": "Top decisions this week",
+          "justifyCta": "AI rationale (short)",
+          "justifyLoading": "Generating…",
+          "justifyDone": "Rationales updated",
+          "justifyError": "Could not generate rationales",
+          "empty": "No open cards to rank."
+        },
+        "narrator": {
+          "kicker": "AI narrator",
+          "title": "Executive brief",
+          "load": "Load brief",
+          "refresh": "Refresh",
+          "loading": "Loading…",
+          "emptyHint": "Load the brief to see the latest AI summary for this board. It uses the same cache as the header brief.",
+          "cachedHint": "Served from cache — refresh after meaningful board changes.",
+          "copyBrief": "Copy brief",
+          "downloadOnePager": "Export one-pager (.md)",
+          "sharePortal": "Share read-only link",
+          "copied": "Brief copied",
+          "copyFailed": "Could not copy",
+          "onePagerDownloaded": "One-pager downloaded",
+          "shareFailed": "Could not create share link",
+          "shareReady": "Portal link copied",
+          "shareCreated": "Share link created",
+          "modelHint": "Model: {model}",
+          "error": "Could not load brief"
         }
+      },
+      "cLevelMeeting": {
+        "apply": "C-Level meeting",
+        "applyTitle": "Executive view, attention filter, and focus mode",
+        "copyLinkTitle": "Copy link for this meeting preset",
+        "linkCopied": "Meeting link copied",
+        "linkCopyFailed": "Could not copy link"
       },
       "roadmapProjection": {
         "empty": "No cards in this band.",
