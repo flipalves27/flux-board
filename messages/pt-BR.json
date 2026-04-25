@@ -2208,11 +2208,6 @@
       "open": "Configurações"
     },
     "clientLabelInHeader": "Cliente: {label}",
-    "persistence": {
-      "saving": "Salvando…",
-      "saved": "Salvo",
-      "error": "Falha ao salvar"
-    },
     "loading": "Carregando board...",
     "anomalyAlerts": {
       "open": "Alertas",
@@ -3665,6 +3660,20 @@
         "sprintAll": "Mostrar todos os cards",
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
+      },
+      "filterModal": {
+        "open": "Abrir filtros",
+        "title": "Filtros do board",
+        "close": "Fechar",
+        "search": "Busca",
+        "priority": "Prioridade",
+        "labels": "Etiquetas",
+        "sprint": "Sprint",
+        "all": "Todas",
+        "noLabels": "Sem etiquetas cadastradas",
+        "clear": "Limpar tudo",
+        "apply": "Aplicar",
+        "tools": "Ferramentas"
       },
       "sprintContext": {
         "regionAria": "Sprint ativa: {name}",

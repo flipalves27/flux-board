@@ -9,7 +9,6 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header-v2-shim";
-import { BoardFilterChips } from "@/components/board/board-filter-chips";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import type { PortalClientState } from "@/components/kanban/board-portal-modal";
 
@@ -476,7 +475,6 @@ export default function BoardPage() {
   const [templateExportOpen, setTemplateExportOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [anomalySettingsOpen, setAnomalySettingsOpen] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [briefOpen, setBriefOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
@@ -681,7 +679,6 @@ export default function BoardPage() {
     (data?: BoardData) => {
       if (!data && !useBoardStore.getState().db) return;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      setSaveStatus("saving");
       saveTimeoutRef.current = setTimeout(async () => {
         const requestSeq = ++saveRequestSeqRef.current;
         saveTimeoutRef.current = null;
@@ -755,10 +752,6 @@ export default function BoardPage() {
                 });
               }
               if (saveRequestSeqRef.current !== requestSeq) return;
-              setSaveStatus("saved");
-              setTimeout(() => {
-                if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
-              }, 1500);
               return;
             } catch (e) {
               if (e instanceof Error && e.message && !lastSaveFailureMessage) {
@@ -770,7 +763,6 @@ export default function BoardPage() {
             }
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
-          setSaveStatus("error");
           const useServerAsTitle = Boolean(clientRuleError && lastSaveFailureMessage);
           pushToast({
             kind: "error",
@@ -781,9 +773,6 @@ export default function BoardPage() {
               ? { description: lastSaveFailureMessage.slice(0, 400) }
               : {}),
           });
-          setTimeout(() => {
-            if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
-          }, 3000);
         } finally {
           saveTimeoutRef.current = null;
         }
@@ -839,34 +828,10 @@ export default function BoardPage() {
             backLabel={t("backToBoards")}
           >
             <div className="flex items-center justify-end gap-1.5 flex-wrap">
-              <div className="flex w-full basis-full min-w-0 pb-1 pt-0.5 md:hidden">
-                <BoardFilterChips boardId={boardId} hidePriorities />
-              </div>
               {/* Presence */}
               <BoardPresenceAvatars />
 
               {/* Separator */}
-              <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
-
-              {saveStatus !== "idle" ? (
-                <span
-                  className={`text-[11px] font-semibold tabular-nums shrink-0 ${
-                    saveStatus === "error"
-                      ? "text-[var(--flux-danger)]"
-                      : saveStatus === "saved"
-                        ? "text-[var(--flux-success)]"
-                        : "text-[var(--flux-text-muted)]"
-                  }`}
-                  aria-live="polite"
-                >
-                  {saveStatus === "saving"
-                    ? t("persistence.saving")
-                    : saveStatus === "saved"
-                      ? t("persistence.saved")
-                      : t("persistence.error")}
-                </span>
-              ) : null}
-
               <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
 
               {/* Board Settings dropdown — secondary actions */}
@@ -1103,7 +1068,7 @@ export default function BoardPage() {
             directions={DIRECTIONS}
             canAdminBoard={viewerCapabilities.canAdmin}
             productTourExpandFilters={tourExpandFilters}
-            allowExternalMerge={saveStatus !== "saving"}
+            allowExternalMerge={true}
             reloadBoardFromServer={loadBoard}
           />
         </div>

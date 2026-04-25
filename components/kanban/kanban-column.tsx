@@ -20,6 +20,7 @@ interface KanbanColumnProps {
   onToggleCollapse: () => void;
   onAddCard: () => void;
   onEditCard: (cardId: string) => void;
+  openingCardId?: string | null;
   onDeleteCard: (id: string) => void;
   onRenameColumn?: () => void;
   onDeleteColumn?: () => void;
@@ -57,6 +58,7 @@ export function KanbanColumn({
   onToggleCollapse,
   onAddCard,
   onEditCard,
+  openingCardId,
   onDeleteCard,
   onRenameColumn,
   onDeleteColumn,
@@ -320,6 +322,7 @@ export function KanbanColumn({
             boardBuckets={boardBuckets}
             priorities={priorities}
             onEditCard={onEditCard}
+            openingCardId={openingCardId}
             onDeleteCard={onDeleteCard}
             onSetDirection={onSetDirection}
             onOpenDesc={onOpenDesc}

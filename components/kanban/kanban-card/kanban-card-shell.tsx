@@ -10,6 +10,7 @@ export type KanbanCardShellProps = {
   tourFirstCard?: boolean;
   ariaLabel: string;
   selected: boolean;
+  isOpening?: boolean;
   rootClassName: string;
   selectionOverlay: ReactNode;
   topOverlayBadges: ReactNode;
@@ -24,6 +25,7 @@ export function KanbanCardShell({
   tourFirstCard,
   ariaLabel,
   selected,
+  isOpening,
   rootClassName,
   selectionOverlay,
   topOverlayBadges,
@@ -37,6 +39,7 @@ export function KanbanCardShell({
       data-tour={tourFirstCard ? "board-card" : undefined}
       aria-label={ariaLabel}
       data-selected={selected ? "true" : undefined}
+      data-opening={isOpening ? "true" : undefined}
       className={rootClassName}
     >
       {selectionOverlay}

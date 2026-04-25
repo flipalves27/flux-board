@@ -2188,6 +2188,9 @@
   .card-modal-content-v2 {
     animation: cardModalPanelInV2 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
+  .card-modal-sequential-enter {
+    animation: cardModalPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
@@ -2317,6 +2320,7 @@
 @media (prefers-reduced-motion: reduce) {
   .card-modal-backdrop,
   .card-modal-content,
+  .card-modal-sequential-enter,
   .card-modal-accent,
   .card-modal-tab-panel-in,
   .card-modal-footer-enter,

@@ -7,6 +7,8 @@ export type BoardFiltersSlice = {
   activePrio: string;
   activeLabels: string[];
   searchQuery: string;
+  matrixWeightFilter: "all" | "critical_high" | "high_plus" | "medium_plus" | "critical";
+  sprintScopeOnly: boolean;
   /** Foco vindo dos chips de inteligência (interseção com filtros normais). */
   insightFocusCardIds: string[];
 };
@@ -15,6 +17,8 @@ const DEFAULT_FILTERS: BoardFiltersSlice = {
   activePrio: "all",
   activeLabels: [],
   searchQuery: "",
+  matrixWeightFilter: "all",
+  sprintScopeOnly: false,
   insightFocusCardIds: [],
 };
 

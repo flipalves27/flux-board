@@ -8,13 +8,6 @@ import type { BoardViewMode } from "./kanban-constants";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import { Maximize2, SlidersHorizontal } from "lucide-react";
 
-export type BoardChromeFilterRailShortcut = {
-  expanded: boolean;
-  onToggle: () => void;
-  expandLabel: string;
-  collapseLabel: string;
-};
-
 export type BoardChromeL1Props = {
   boardId: string;
   boardName: string;
@@ -37,8 +30,8 @@ export type BoardChromeL1Props = {
   searchInputRef: RefObject<HTMLInputElement | null>;
   t: (key: string, values?: Record<string, string | number>) => string;
   tTimeline: (k: string) => string;
-  /** Atalho na barra principal: recolher / expandir filtros + contexto (L2+L3). */
-  filterRailShortcut?: BoardChromeFilterRailShortcut;
+  /** Abre o novo modal unificado de filtros. */
+  onOpenFilterModal?: () => void;
   /** Modo foco: esconde cromado (atalho global em hotkeys). */
   onEnterFocusMode?: () => void;
 };
@@ -65,7 +58,7 @@ export function BoardChromeL1({
   searchInputRef,
   t,
   tTimeline,
-  filterRailShortcut,
+  onOpenFilterModal,
   onEnterFocusMode,
 }: BoardChromeL1Props) {
   void boardName;
@@ -140,7 +133,7 @@ export function BoardChromeL1({
             </button>
           ) : null}
 
-          {filterRailShortcut || !onda4Omnibar || onEnterFocusMode ? (
+          {onOpenFilterModal || !onda4Omnibar || onEnterFocusMode ? (
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {onEnterFocusMode ? (
                 <button
@@ -153,13 +146,12 @@ export function BoardChromeL1({
                   <Maximize2 className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
               ) : null}
-              {filterRailShortcut ? (
+              {onOpenFilterModal ? (
                 <button
                   type="button"
-                  onClick={filterRailShortcut.onToggle}
-                  aria-expanded={filterRailShortcut.expanded}
-                  aria-label={filterRailShortcut.expanded ? filterRailShortcut.collapseLabel : filterRailShortcut.expandLabel}
-                  title={filterRailShortcut.expanded ? filterRailShortcut.collapseLabel : filterRailShortcut.expandLabel}
+                  onClick={onOpenFilterModal}
+                  aria-label={t("board.filterModal.open")}
+                  title={t("board.filterModal.open")}
                   className="rounded-lg border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-surface-elevated)] p-1.5 text-[var(--flux-text-muted)] shadow-sm transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)]"
                 >
                   <SlidersHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />

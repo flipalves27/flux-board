@@ -458,7 +458,7 @@ export function CardModalLayout() {
       />
       <div ref={dragWrapRef} className="relative z-[1] max-h-full max-w-full">
         <div
-          className={`card-modal-shell relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] ${cardModalV2 ? "card-modal-content-v2" : "card-modal-content"}`}
+          className={`card-modal-shell card-modal-sequential-enter relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] ${cardModalV2 ? "card-modal-content-v2" : "card-modal-content"}`}
           onClick={(e) => e.stopPropagation()}
           ref={dialogRef}
           role="dialog"

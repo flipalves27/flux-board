@@ -69,3 +69,25 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 132px;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .flux-kanban-card--opening {
+    animation: flux-card-open-flip 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+  }
+}
+
+@keyframes flux-card-open-flip {
+  0% {
+    transform: perspective(900px) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: perspective(900px) rotateY(-84deg) scale(0.98);
+    opacity: 0.68;
+  }
+  100% {
+    transform: perspective(900px) rotateY(-90deg) scale(0.98);
+    opacity: 0.45;
+  }
+}

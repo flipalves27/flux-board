@@ -52,6 +52,8 @@ export function useBoardPersistence(boardId: string) {
   const activePrio = useFilterStore((s) => s.filtersByBoard[boardId]?.activePrio ?? "all");
   const activeLabelsArr = useFilterStore((s) => s.filtersByBoard[boardId]?.activeLabels ?? EMPTY_LABELS);
   const searchQuery = useFilterStore((s) => s.filtersByBoard[boardId]?.searchQuery ?? "");
+  const matrixWeightFilter = useFilterStore((s) => s.filtersByBoard[boardId]?.matrixWeightFilter ?? "all");
+  const sprintScopeOnly = useFilterStore((s) => s.filtersByBoard[boardId]?.sprintScopeOnly ?? false);
   const insightFocusCardIdsArr = useFilterStore(
     (s) => s.filtersByBoard[boardId]?.insightFocusCardIds ?? EMPTY_LABELS,
   );
@@ -114,6 +116,22 @@ export function useBoardPersistence(boardId: string) {
     useFilterStore.getState().patchFilters(boardId, { insightFocusCardIds: [] });
   }, [boardId]);
 
+  const setMatrixWeightFilter = useCallback(
+    (next: BoardFiltersSlice["matrixWeightFilter"]) => {
+      useFilterStore.getState().patchFilters(boardId, { matrixWeightFilter: next });
+    },
+    [boardId]
+  );
+
+  const setSprintScopeOnly = useCallback(
+    (next: SetStateAction<boolean>) => {
+      const cur = useFilterStore.getState().filtersByBoard[boardId]?.sprintScopeOnly ?? false;
+      const resolved = typeof next === "function" ? next(cur) : next;
+      useFilterStore.getState().patchFilters(boardId, { sprintScopeOnly: resolved });
+    },
+    [boardId]
+  );
+
   const activeLabels = useMemo(() => new Set(activeLabelsArr), [activeLabelsArr]);
   const insightFocusCardIds = useMemo(() => new Set(insightFocusCardIdsArr), [insightFocusCardIdsArr]);
 
@@ -128,6 +146,10 @@ export function useBoardPersistence(boardId: string) {
     setActiveLabels,
     searchQuery,
     setSearchQuery,
+    matrixWeightFilter,
+    setMatrixWeightFilter,
+    sprintScopeOnly,
+    setSprintScopeOnly,
     insightFocusCardIds,
     setInsightFocusCardIds,
     clearInsightFocus,

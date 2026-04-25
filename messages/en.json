@@ -2279,11 +2279,6 @@
       }
     },
     "clientLabelInHeader": "Client: {label}",
-    "persistence": {
-      "saving": "Saving…",
-      "saved": "Saved",
-      "error": "Save failed"
-    },
     "loading": "Loading board...",
     "anomalyAlerts": {
       "open": "Alerts",
@@ -3664,6 +3659,20 @@
         "sprintAll": "Show all cards",
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
+      },
+      "filterModal": {
+        "open": "Open filters",
+        "title": "Board filters",
+        "close": "Close",
+        "search": "Search",
+        "priority": "Priority",
+        "labels": "Labels",
+        "sprint": "Sprint",
+        "all": "All",
+        "noLabels": "No labels yet",
+        "clear": "Clear all",
+        "apply": "Apply",
+        "tools": "Tools"
       },
       "sprintContext": {
         "regionAria": "Active sprint: {name}",

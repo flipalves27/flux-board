@@ -75,6 +75,7 @@ type KanbanBoardCanvasProps = {
   onToggleCollapse: (key: string) => void;
   onAddCard: (bucketKey: string) => void;
   onEditCard: (cardId: string) => void;
+  openingCardId?: string | null;
   onDeleteCard: (id: string) => void;
   onRenameColumn: (b: BucketConfig) => void;
   onDeleteColumn: ((key: string) => void) | undefined;
@@ -154,6 +155,7 @@ export function KanbanBoardCanvas({
   onToggleCollapse,
   onAddCard,
   onEditCard,
+  openingCardId,
   onDeleteCard,
   onRenameColumn,
   onDeleteColumn,
@@ -456,6 +458,7 @@ export function KanbanBoardCanvas({
                 onToggleCollapse={() => onToggleCollapse(b.key)}
                 onAddCard={() => onAddCard(b.key)}
                 onEditCard={onEditCard}
+                openingCardId={openingCardId}
                 onDeleteCard={onDeleteCard}
                 onRenameColumn={canAdminBoard ? () => onRenameColumn(b) : undefined}
                 onDeleteColumn={
