@@ -3883,7 +3883,9 @@
         "handleUnpin": "Soltar faixa de ferramentas",
         "copilotOpen": "Abrir Fluxy",
         "copilotClose": "Fechar Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Modo foco"
       },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
@@ -3891,7 +3893,9 @@
         "handleUnpin": "Soltar faixa de ferramentas",
         "copilotOpen": "Abrir Fluxy",
         "copilotClose": "Fechar Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Modo foco"
       },
       "nlq": {
         "label": "Consulta inteligente",
@@ -3931,7 +3935,8 @@
         "copilot": "Fluxy",
         "insights": "Insights de execução",
         "activity": "Atividade",
-        "daily": "IA do dia"
+        "daily": "IA do dia",
+        "focusMode": "Modo foco"
       },
       "stats": {
         "totalLabel": "Total",

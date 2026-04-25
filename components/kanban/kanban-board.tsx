@@ -216,6 +216,11 @@ function KanbanBoardLoaded({
   const [focusMode, setFocusMode] = useState(false);
 
   const toggleFocusMode = useCallback(() => setFocusMode((p) => !p), []);
+  useEffect(() => {
+    const onToggle = () => setFocusMode((p) => !p);
+    window.addEventListener("flux-toggle-board-focus-mode", onToggle as EventListener);
+    return () => window.removeEventListener("flux-toggle-board-focus-mode", onToggle as EventListener);
+  }, []);
 
   const [intelligenceExpanded, setIntelligenceExpanded] = useState(false);
   useEffect(() => {
@@ -1107,7 +1112,10 @@ function KanbanBoardLoaded({
           }}
         />
 
-        <BoardMobileToolHub onOpenDaily={openDailyModal} />
+        <BoardMobileToolHub
+          onOpenDaily={openDailyModal}
+          onToggleFocusMode={toggleFocusMode}
+        />
 
         <BoardSummaryDock
         t={t}

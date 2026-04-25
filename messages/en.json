@@ -3882,7 +3882,9 @@
         "handleUnpin": "Unpin tools strip",
         "copilotOpen": "Open Fluxy",
         "copilotClose": "Close Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Focus mode"
       },
       "desktopToolsRail": {
         "handleTitle": "Hover to reveal tools, or click to keep the strip pinned open",
@@ -3890,7 +3892,9 @@
         "handleUnpin": "Unpin tools strip",
         "copilotOpen": "Open Fluxy",
         "copilotClose": "Close Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Focus mode"
       },
       "nlq": {
         "label": "Smart board query",
@@ -3930,7 +3934,8 @@
         "copilot": "Fluxy",
         "insights": "Execution insights",
         "activity": "Activity log",
-        "daily": "Daily AI"
+        "daily": "Daily AI",
+        "focusMode": "Focus mode"
       },
       "stats": {
         "totalLabel": "Total",

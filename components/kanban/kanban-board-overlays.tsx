@@ -383,6 +383,7 @@ export function KanbanBoardOverlays({
                               : "border-[var(--flux-chrome-alpha-14)] hover:border-[var(--flux-primary-alpha-45)]"
                           } disabled:opacity-50`}
                           style={{ background: c }}
+                          aria-label={`${t("addColumnModal.colorLabel")}: ${c}`}
                           aria-pressed={selected}
                         />
                       </CustomTooltip>
