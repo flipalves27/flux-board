@@ -295,6 +295,21 @@
     color-mix(in srgb, var(--flux-secondary) 20%, transparent),
     color-mix(in srgb, var(--flux-accent) 25%, transparent)
   );
+  --flux-premium-page-max: 1200px;
+  --flux-premium-page-px: clamp(1rem, 3vw, 2rem);
+  --flux-premium-section-gap: clamp(1.25rem, 2vw, 2rem);
+  --flux-premium-title: clamp(1.55rem, 2.6vw, 2.35rem);
+  --flux-premium-body: clamp(0.92rem, 1vw, 1rem);
+  --flux-premium-surface-bg: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--flux-surface-card) 88%, transparent),
+    color-mix(in srgb, var(--flux-surface-mid) 72%, transparent)
+  );
+  --flux-premium-surface-border: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-premium-surface-shadow:
+    0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
+    0 24px 58px -34px color-mix(in srgb, var(--flux-primary) 38%, transparent),
+    0 16px 44px -30px color-mix(in srgb, black 82%, transparent);
   --flux-glass-surface-bg: linear-gradient(
     165deg,
     color-mix(in srgb, var(--flux-surface-card) 86%, transparent),
@@ -1012,6 +1027,122 @@
       var(--flux-glass-elevated-shadow),
       0 20px 56px -28px color-mix(in srgb, var(--flux-primary) 32%, transparent),
       inset 0 1px 0 var(--flux-chrome-alpha-14);
+  }
+
+  .flux-premium-page-shell {
+    width: min(100%, var(--flux-premium-page-max));
+    margin-inline: auto;
+    padding:
+      clamp(1.25rem, 2.5vw, 2rem)
+      max(var(--flux-premium-page-px), env(safe-area-inset-right, 0px))
+      clamp(2.5rem, 5vw, 4rem)
+      max(var(--flux-premium-page-px), env(safe-area-inset-left, 0px));
+  }
+
+  .flux-premium-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: var(--flux-premium-section-gap);
+    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+    border-bottom: 1px solid var(--flux-chrome-alpha-12);
+  }
+
+  .flux-premium-eyebrow {
+    margin-bottom: 0.35rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--flux-secondary);
+  }
+
+  .flux-premium-title {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-size: var(--flux-premium-title);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    color: var(--flux-text);
+  }
+
+  .flux-premium-description {
+    margin-top: 0.6rem;
+    max-width: 48rem;
+    font-size: var(--flux-premium-body);
+    line-height: 1.7;
+    color: var(--flux-text-muted);
+  }
+
+  .flux-premium-surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--flux-premium-surface-border);
+    border-radius: var(--flux-rad-lg);
+    background: var(--flux-premium-surface-bg);
+    box-shadow: var(--flux-premium-surface-shadow);
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  }
+
+  .flux-premium-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--flux-primary) 14%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in srgb, white 5%, transparent), transparent 34%);
+    opacity: 0.8;
+  }
+
+  .flux-premium-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .flux-premium-surface--elevated {
+    border-color: var(--flux-glass-elevated-border);
+    background: var(--flux-glass-elevated-bg);
+    box-shadow: var(--flux-glass-elevated-shadow), var(--flux-premium-surface-shadow);
+  }
+
+  .flux-premium-surface--accent {
+    border-color: color-mix(in srgb, var(--flux-secondary) 28%, transparent);
+    background:
+      radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--flux-secondary) 16%, transparent), transparent 36%),
+      var(--flux-premium-surface-bg);
+  }
+
+  .flux-premium-tabbar {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--flux-chrome-alpha-08);
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+
+  .flux-premium-tabbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .flux-premium-chart-frame {
+    min-height: 220px;
+  }
+
+  @media (max-width: 639px) {
+    .flux-premium-page-shell {
+      padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    }
+
+    .flux-premium-chart-frame {
+      min-height: 240px;
+      max-height: min(58vh, 320px);
+    }
   }
 
   .flux-sidebar-nav-stack {

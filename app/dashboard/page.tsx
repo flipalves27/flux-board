@@ -8,6 +8,7 @@ import { Header } from "@/components/header";
 import { ExecutiveDashboard } from "@/components/dashboard/executive-dashboard";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import { ReportsRouteLoadingFallback } from "@/components/skeletons/route-loading-fallbacks";
+import { PremiumPageShell, PremiumSectionHeader } from "@/components/ui/premium-primitives";
 
 export default function ExecutiveDashboardPage() {
   const router = useRouter();
@@ -40,16 +41,10 @@ export default function ExecutiveDashboardPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--flux-primary-light)]">
-            {t("badge")}
-          </p>
-          <h2 className="font-display text-xl font-bold text-[var(--flux-text)]">{t("title")}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("subtitle")}</p>
-        </div>
+      <PremiumPageShell>
+        <PremiumSectionHeader eyebrow={t("badge")} title={t("title")} description={t("subtitle")} />
         <ExecutiveDashboard />
-      </main>
+      </PremiumPageShell>
     </div>
   );
 }

@@ -58,7 +58,8 @@ describe("ChartShell", () => {
       expect.objectContaining({
         chartId: "throughput",
         chartTitle: "Throughput",
-        dataSummary: JSON.stringify({ value: 1 }),
+        scope: { methodology: undefined, boardIds: [] },
+        dataSummary: JSON.stringify({ scope: { boardIds: [] }, data: { value: 1 } }),
       }),
       {}
     );
@@ -143,7 +144,9 @@ describe("ChartShell", () => {
       "/api/flux-reports/lss/explain",
       expect.objectContaining({
         chartId: "custom-chart",
-        dataSummary: JSON.stringify({ cards: 4 }),
+        chartTitle: "Custom",
+        scope: { methodology: undefined, boardIds: [] },
+        dataSummary: JSON.stringify({ scope: { boardIds: [] }, data: { cards: 4 } }),
       }),
       {}
     );

@@ -43,6 +43,7 @@ import { BoardQuickPeek } from "@/components/boards/board-quick-peek";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
+import { PremiumPageShell, PremiumSectionHeader, PremiumSurface } from "@/components/ui/premium-primitives";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
@@ -652,26 +653,20 @@ export default function BoardsPage() {
         ) : null}
       </Suspense>
       <Header />
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <header className="flux-spotlight-dim mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="flux-board-heading font-display text-2xl font-bold tracking-tight">
-                {t("pageTitle")}
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)]">
-                {t("pageSubtitle")}
-              </p>
-            </div>
+      <PremiumPageShell>
+        <PremiumSectionHeader
+          title={t("pageTitle")}
+          description={t("pageSubtitle")}
+          action={
             <SpotlightModeToggle
               active={spotlight.active}
               onToggle={spotlight.toggle}
               locale={locale}
             />
-          </div>
-        </header>
+          }
+        />
 
-        <div className="flux-spotlight-dim flex gap-1 border-b border-[var(--flux-chrome-alpha-08)] mb-6">
+        <div className="flux-spotlight-dim flux-premium-tabbar mb-6">
           <button
             className={`px-4 py-2.5 text-sm font-semibold font-display transition-colors ${activeTab === "myBoards" ? "text-[var(--flux-primary-light)] border-b-2 border-[var(--flux-primary)]" : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"}`}
             onClick={() => setActiveTab("myBoards")}
@@ -687,7 +682,8 @@ export default function BoardsPage() {
         </div>
 
         {plan && plan.maxBoards !== null && !plan.isPro && (
-          <div
+          <PremiumSurface
+            tone={plan.atLimit ? "accent" : "base"}
             className={`flux-spotlight-dim mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
               plan.atLimit
                 ? "border-[var(--flux-warning)] bg-[var(--flux-amber-alpha-12)] text-[var(--flux-text)]"
@@ -715,7 +711,7 @@ export default function BoardsPage() {
                 </a>
               </>
             )}
-          </div>
+          </PremiumSurface>
         )}
 
         {showListSkeleton ? (
@@ -797,7 +793,7 @@ export default function BoardsPage() {
 
                 {(quickFavoriteBoards.length > 0 || quickRecentBoards.length > 0) && (
                   <section className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    <div className="rounded-[var(--flux-rad)] border border-[var(--flux-gold-alpha-25)] bg-[var(--flux-surface-card)] p-4">
+                    <PremiumSurface className="border-[var(--flux-gold-alpha-25)] p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                           {t("favorites.title")}
@@ -841,9 +837,9 @@ export default function BoardsPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </PremiumSurface>
 
-                    <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-4">
+                    <PremiumSurface className="border-[var(--flux-primary-alpha-25)] p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                           {t("recents.title")}
@@ -876,7 +872,7 @@ export default function BoardsPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </PremiumSurface>
                   </section>
                 )}
 
@@ -1049,7 +1045,7 @@ export default function BoardsPage() {
             </>
           </DataFadeIn>
         )}
-      </main>
+      </PremiumPageShell>
 
       {modalOpen && (
         <div

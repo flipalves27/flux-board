@@ -33,16 +33,16 @@ export function MobileAppHeader() {
 
   return (
     <header
-      className={`flux-mobile-header-bar sticky top-0 z-[var(--flux-z-mobile-header)] flex min-h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-border-subtle)] px-3 pt-[env(safe-area-inset-top,0px)] md:hidden ${
+      className={`flux-mobile-header-bar sticky top-0 z-[var(--flux-z-mobile-header)] flex min-h-12 shrink-0 items-center gap-2 border-b border-[var(--flux-border-subtle)] px-3 pt-[env(safe-area-inset-top,0px)] shadow-[0_10px_28px_-22px_color-mix(in_srgb,var(--flux-primary)_45%,transparent)] md:hidden ${
         isMinimal
-          ? "bg-[color-mix(in_srgb,var(--flux-surface-dark)_88%,transparent)]"
+          ? "bg-[color-mix(in_srgb,var(--flux-surface-dark)_90%,transparent)]"
           : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--flux-surface-dark)_92%,transparent),color-mix(in_srgb,var(--flux-surface-dark)_82%,var(--flux-primary)_18%))]"
       }`}
     >
       <button
         type="button"
         onClick={openMobile}
-        className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad-sm)] border border-transparent text-[var(--flux-text)] transition-all duration-200 hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-08)]"
+        className="flex h-10 w-10 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-primary-alpha-06)] text-[var(--flux-text)] transition-all duration-200 hover:border-[var(--flux-primary-alpha-24)] hover:bg-[var(--flux-primary-alpha-10)]"
         aria-label={t("openNavigation")}
         aria-haspopup="dialog"
         aria-expanded={mobileOpen}
@@ -54,7 +54,7 @@ export function MobileAppHeader() {
       <button
         type="button"
         onClick={openCommand}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--flux-rad-sm)] border border-transparent text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary-alpha-12)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-12)] bg-[var(--flux-surface-card)]/50 text-[var(--flux-text-muted)] transition-colors hover:border-[var(--flux-primary-alpha-24)] hover:bg-[var(--flux-primary-alpha-08)] hover:text-[var(--flux-text)]"
         aria-label={tCommand("openFromMobileHeader")}
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>

@@ -87,7 +87,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
              * Doc §1.2 order: Hero → Why → AI spotlight → Platform → Steps → Pricing → CTA.
              * Extra blocks (social proof, roadmap, trust, FAQ) stay below the core funnel for SEO and product narrative.
              */}
-            <main id="landing-main" className="home-landing-stagger">
+            <main id="landing-main" className="space-y-20 sm:space-y-24 lg:space-y-28">
               <ScrollReveal delay={0}>
                 <LandingHero localeRoot={localeRoot} user={user} />
               </ScrollReveal>
