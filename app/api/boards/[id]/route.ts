@@ -223,7 +223,14 @@ export async function PUT(
           : (prevForWip?.config as { wipEnforcement?: string } | undefined)?.wipEnforcement === "soft"
             ? "soft"
             : "strict";
-      if (prevForWip?.cards?.length && clean.config.bucketOrder?.length && nextWipMode !== "soft") {
+      // This guard is for config-only updates. Card moves are validated above via
+      // validateBoardWipPutTransition, which tolerates pre-existing WIP debt.
+      if (
+        clean.cards === undefined &&
+        prevForWip?.cards?.length &&
+        clean.config.bucketOrder?.length &&
+        nextWipMode !== "soft"
+      ) {
         const prevCfgBo =
           (prevForWip.config as { bucketOrder?: { key: string; label?: string; wipLimit?: number | null }[] } | undefined)
             ?.bucketOrder ?? [];

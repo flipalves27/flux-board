@@ -959,6 +959,42 @@
         "sentiment": "Sentiment"
       }
     },
+    "scope": {
+      "allBoards": "Organization (all boards)",
+      "methodologyLabel": "Methodology scope",
+      "boardsLabel": "Select boards",
+      "activeScopeTitle": "Active scope",
+      "activeScopeHint": "{count} board(s) in the current slice.",
+      "saveViewPlaceholder": "Saved view name",
+      "saveView": "Save view",
+      "emptySelection": "No boards found for the selected filters.",
+      "methodologies": {
+        "scrum": "Scrum",
+        "kanban": "Kanban",
+        "lean_six_sigma": "Lean Six Sigma",
+        "discovery": "Discovery",
+        "safe": "SAFe"
+      }
+    },
+    "catalog": {
+      "weeklyFlowTitle": "Preset: weekly flow review (Kanban)",
+      "weeklyFlowDesc": "Applies Kanban filter and opens flow-focused panels.",
+      "sprintHealthTitle": "Preset: sprint health (Scrum)",
+      "sprintHealthDesc": "Applies Scrum filter and highlights velocity, DoR, and sprint history.",
+      "lssExecutiveTitle": "Preset: Lean Six Sigma executive",
+      "lssExecutiveDesc": "Opens the DMAIC executive shortcut while keeping shareable scope in the URL."
+    },
+    "roadmap": {
+      "title": "Methodology coverage",
+      "discovery": {
+        "now": "Discovery currently uses general portfolio/flow metrics.",
+        "next": "Roadmap: dedicated experimentation and learning metrics."
+      },
+      "safe": {
+        "now": "SAFe currently uses general metrics and team/board capacity views.",
+        "next": "Roadmap: PI/program-level views and scaled dependencies."
+      }
+    },
     "lssExecutiveLink": "Lean Six Sigma executive (Business+)",
     "loading": "Loading metrics…",
     "loadError": "Could not load reports.",
@@ -3071,14 +3107,25 @@
     "addColumnModal": {
       "title": {
         "new": "New column",
-        "rename": "Rename column"
+        "rename": "Column settings"
       },
-      "placeholder": "Ex: Backlog, In progress...",
+      "placeholder": "e.g. Backlog, In progress…",
+      "sections": {
+        "nameTitle": "Name",
+        "nameHelp": "Shown on the board header. The internal column key is set when the column is created and does not change.",
+        "wipTitle": "WIP",
+        "policyTitle": "Policy",
+        "colorTitle": "Color"
+      },
+      "colorLabel": "Column color",
+      "colorHelp": "Helps the team spot lanes at a glance. Definition of Done and global WIP rules stay in agile settings.",
       "wipLabel": "WIP limit (optional)",
       "wipPlaceholder": "e.g. 5 — leave empty for no limit",
       "policyLabel": "Column policy (how we use this column)",
       "policyPlaceholder": "Short note for the team (optional)",
       "wipInvalid": "WIP must be a whole number between 1 and 999.",
+      "openAgileSettings": "Agile settings & Definition of Done",
+      "openAgileSettingsHint": "Edit methodology, DoD, and WIP enforcement for the whole board.",
       "cancel": "Cancel",
       "save": "Save",
       "create": "Create"
@@ -3618,6 +3665,19 @@
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
       },
+      "sprintContext": {
+        "regionAria": "Active sprint: {name}",
+        "commandCenter": "Command center",
+        "dateRange": "{start} – {end}",
+        "dateStartOnly": "Starts {start}",
+        "dateEndOnly": "Ends {end}",
+        "counts": "{inScope} in scope · {done} done",
+        "countsEmpty": "No cards in sprint scope",
+        "emptyScopeHint": "Add cards from the Sprint panel or command center.",
+        "l1BadgeTitleEmpty": "Sprint scope is empty (0 cards). Click to toggle sprint-only view when you add cards.",
+        "cardChip": "Sprint",
+        "cardChipAria": "In active sprint: {name}"
+      },
       "productGoalStrip": {
         "label": "Product goal",
         "emptyGoal": "No product goal yet — set it in Scrum & DoD settings.",
@@ -3871,7 +3931,9 @@
         "handleUnpin": "Unpin tools strip",
         "copilotOpen": "Open Fluxy",
         "copilotClose": "Close Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Focus mode"
       },
       "desktopToolsRail": {
         "handleTitle": "Hover to reveal tools, or click to keep the strip pinned open",
@@ -3879,7 +3941,9 @@
         "handleUnpin": "Unpin tools strip",
         "copilotOpen": "Open Fluxy",
         "copilotClose": "Close Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Focus mode"
       },
       "nlq": {
         "label": "Smart board query",
@@ -3919,7 +3983,8 @@
         "copilot": "Fluxy",
         "insights": "Execution insights",
         "activity": "Activity log",
-        "daily": "Daily AI"
+        "daily": "Daily AI",
+        "focusMode": "Focus mode"
       },
       "stats": {
         "totalLabel": "Total",
@@ -3928,6 +3993,9 @@
         "dueSoonLabel": "Due in 3d",
         "completedRateLabel": "Completed rate"
       },
+      "searchPlaceholder": "Search…",
+      "onda4OmnibarBar": "Wave 4: compact NLQ is in the Fluxy Omnibar (⌘K or /). Flow, cadence, and load panels use board shortcuts.",
+      "fluxyOmnibarSeed": "Summarize risks and WIP for this board ({name})",
       "intelligence": {
         "riskShort": "Risk {n}",
         "flowShort": "Flow {n}",
@@ -3959,7 +4027,19 @@
         "healthBriefingErrorAuth": "Sign in to use the AI briefing.",
         "healthBriefingErrorPlan": "This feature requires a plan that includes executive AI.",
         "healthBriefingErrorGeneric": "Could not load the briefing. Try again later.",
-        "healthBriefingClose": "Close"
+        "healthBriefingClose": "Close",
+        "groups": {
+          "flow": "Flow",
+          "flowMenuAria": "Flow analysis and workload",
+          "rituals": "Rituals",
+          "ritualsMenuAria": "Sprint and cadence",
+          "graphs": "Graphs",
+          "graphsMenuAria": "Graphs and knowledge map"
+        },
+        "askFluxy": "Ask Fluxy",
+        "askFluxyTitle": "Open Fluxy with this board in context",
+        "compactWip": "WIP {n}",
+        "compactBlocked": "{n} blocked"
       },
       "healthScore": {
         "label": "Health",
@@ -3982,7 +4062,9 @@
         "l2SummarySearch": "Active search: “{q}”",
         "l3SummaryWip": "Visible WIP: {n} in progress",
         "filtersRailExpand": "Show filters and board context",
-        "filtersRailCollapse": "Collapse filters and context for more board space"
+        "filtersRailCollapse": "Collapse filters and context for more board space",
+        "focusMode": "Focus mode",
+        "focusModeTitle": "Hide board chrome and focus on the canvas (use keyboard shortcut from help)"
       },
       "nlqCompact": {
         "expand": "Open NLQ search",

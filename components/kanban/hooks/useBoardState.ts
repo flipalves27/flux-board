@@ -398,7 +398,7 @@ export function useBoardState({
   );
 
   const saveColumn = useCallback(
-    (opts?: { wipLimit?: number | null; policy?: string | null }) => {
+    (opts?: { wipLimit?: number | null; policy?: string | null; color?: string | null }) => {
       if (!canAdminBoard) {
         pushToast({ kind: "error", title: t("board.rbac.adminOnlyColumnConfig") });
         return;
@@ -407,11 +407,14 @@ export function useBoardState({
       const policyRaw = opts?.policy;
       const policyTrim = typeof policyRaw === "string" ? policyRaw.trim().slice(0, 500) : "";
       const label = newColumnName.trim() || "Nova Coluna";
+      const colorOpt = opts?.color;
+      const nextColorFromPicker =
+        typeof colorOpt === "string" && COLUMN_COLORS.includes(colorOpt) ? colorOpt : null;
       if (editingColumnKey) {
         updateDb((d) => {
           d.config.bucketOrder = d.config.bucketOrder.map((b) => {
             if (b.key !== editingColumnKey) return b;
-            const next = { ...b, label } as typeof b & { policy?: string };
+            const next = { ...b, label } as typeof b & { policy?: string; color?: string };
             if (wipLimit === null) {
               delete (next as { wipLimit?: number }).wipLimit;
             } else if (typeof wipLimit === "number" && wipLimit >= 1 && wipLimit <= 999) {
@@ -422,12 +425,16 @@ export function useBoardState({
             } else {
               next.policy = policyTrim;
             }
+            if (nextColorFromPicker) {
+              next.color = nextColorFromPicker;
+            }
             return next;
           });
         });
       } else {
         const key = `col_${Date.now()}`;
-        const color = COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
+        const color =
+          nextColorFromPicker ?? COLUMN_COLORS[buckets.length % COLUMN_COLORS.length];
         updateDb((d) => {
           const row: { key: string; label: string; color: string; wipLimit?: number; policy?: string } = {
             key,

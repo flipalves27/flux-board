@@ -17,19 +17,19 @@ export type BoardChromeResponsive = {
 
 /**
  * L2/L3 (filtros + contexto) são recolhíveis em **todos** os tamanhos de ecrã.
- * - Primeira visita: expandido em desktop (`md+`), recolhido em mobile, salvo em `localStorage`.
+ * - Primeira visita: recolhido (mais espaço para o canvas); `localStorage` persiste a preferência.
  * - Preferência do utilizador persiste ao redimensionar.
  */
 export function useBoardChromeResponsive(): BoardChromeResponsive {
   const [isMdUp, setIsMdUp] = useState(true);
-  const [l2Open, setL2OpenState] = useState(true);
-  const [l3Open, setL3OpenState] = useState(true);
+  const [l2Open, setL2OpenState] = useState(false);
+  const [l3Open, setL3OpenState] = useState(false);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
       setIsMdUp(true);
-      setL2OpenState(true);
-      setL3OpenState(true);
+      setL2OpenState(false);
+      setL3OpenState(false);
       return;
     }
     const mq = window.matchMedia(MD_QUERY);
@@ -39,11 +39,11 @@ export function useBoardChromeResponsive(): BoardChromeResponsive {
       try {
         const s2 = localStorage.getItem(LS_L2);
         const s3 = localStorage.getItem(LS_L3);
-        setL2OpenState(s2 !== null ? s2 === "1" : md);
-        setL3OpenState(s3 !== null ? s3 === "1" : md);
+        setL2OpenState(s2 !== null ? s2 === "1" : false);
+        setL3OpenState(s3 !== null ? s3 === "1" : false);
       } catch {
-        setL2OpenState(md);
-        setL3OpenState(md);
+        setL2OpenState(false);
+        setL3OpenState(false);
       }
     };
     readInitial();

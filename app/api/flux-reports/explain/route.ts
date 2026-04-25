@@ -20,6 +20,7 @@ const BodySchema = z.object({
   chartId: z.string().trim().min(1).max(120),
   chartTitle: z.string().trim().min(1).max(200),
   dataSummary: z.string().trim().min(1).max(14_000),
+  scope: z.unknown().optional(),
 });
 
 /**
@@ -47,7 +48,9 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Payload inválido." }, { status: 400 });
     }
-    const { chartId, chartTitle, dataSummary } = parsed.data;
+    const { chartId, chartTitle, dataSummary, scope } = parsed.data;
+    const normalizedSummary =
+      scope === undefined ? dataSummary : JSON.stringify({ scope, data: dataSummary }).slice(0, 14_000);
 
     const cap = getDailyAiCallsCap(org, gateCtx);
     const togetherEnabled = Boolean(process.env.TOGETHER_API_KEY) && Boolean(process.env.TOGETHER_MODEL);
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const result = await generateFluxReportExplain({ chartId, chartTitle, dataSummary });
+    const result = await generateFluxReportExplain({ chartId, chartTitle, dataSummary: normalizedSummary });
 
     return NextResponse.json({
       narrative: result.narrative,

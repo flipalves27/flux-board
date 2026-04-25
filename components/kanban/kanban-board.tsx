@@ -60,6 +60,7 @@ import type { BoardViewMode } from "./kanban-constants";
 import { BoardKnowledgeGraphPanel } from "./board-knowledge-graph-panel";
 import { BoardWorkloadPanel } from "./board-workload-panel";
 import { BoardFocusModeBar } from "./board-focus-mode-bar";
+import { BoardActiveSprintContext } from "./board-active-sprint-context";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { SkeletonKanbanBoard } from "@/components/skeletons/flux-skeletons";
 
@@ -216,6 +217,11 @@ function KanbanBoardLoaded({
   const [focusMode, setFocusMode] = useState(false);
 
   const toggleFocusMode = useCallback(() => setFocusMode((p) => !p), []);
+  useEffect(() => {
+    const onToggle = () => setFocusMode((p) => !p);
+    window.addEventListener("flux-toggle-board-focus-mode", onToggle as EventListener);
+    return () => window.removeEventListener("flux-toggle-board-focus-mode", onToggle as EventListener);
+  }, []);
 
   const [intelligenceExpanded, setIntelligenceExpanded] = useState(false);
   useEffect(() => {
@@ -857,6 +863,10 @@ function KanbanBoardLoaded({
     dailyCloseRef,
     onBoardReloaded,
     canAdminBoard,
+    onOpenAgileSettings: () => {
+      board.setAddColumnOpen(false);
+      setScrumSettingsOpen(true);
+    },
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
@@ -866,11 +876,35 @@ function KanbanBoardLoaded({
   const showSprintInlineBadge =
     isSprintMethodology(methodology) &&
     activeSprintBoard?.status === "active" &&
-    Boolean(sprintProgress && sprintProgress.total > 0);
+    Boolean(sprintProgress);
+
+  const activeSprintRibbon =
+    isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && activeSprintBoard && sprintProgress ? (
+      <BoardActiveSprintContext
+        boardId={boardId}
+        locale={locale}
+        sprint={activeSprintBoard}
+        sprintProgress={sprintProgress}
+        sprintScopeOnly={sprintScopeOnly}
+        toggleSprintScopeOnly={toggleSprintScopeOnly}
+        t={t}
+      />
+    ) : null;
 
   return (
     <>
-      {focusMode && <BoardFocusModeBar onExit={toggleFocusMode} />}
+      {focusMode && (
+        <BoardFocusModeBar
+          onExit={toggleFocusMode}
+          locale={locale}
+          boardId={boardId}
+          focusSprint={
+            isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && activeSprintBoard
+              ? { sprintId: activeSprintBoard.id, sprintName: activeSprintBoard.name }
+              : null
+          }
+        />
+      )}
 
       {!focusMode && (
         <BoardChromeSticky
@@ -910,6 +944,7 @@ function KanbanBoardLoaded({
             searchInputRef: filters.searchInputRef,
             t,
             tTimeline: tView as (k: string) => string,
+            onEnterFocusMode: toggleFocusMode,
           }}
           l2={{
             boardId,
@@ -955,8 +990,10 @@ function KanbanBoardLoaded({
             onOpenLssAssist: () => setLssAssistOpen(true),
             onOpenSafeAssist: () => setSafeAssistOpen(true),
             onda4Omnibar: onda4.enabled && onda4.omnibar,
+            sprintRowSuppressedByL1: showSprintInlineBadge,
             t,
           }}
+          chromeFooter={activeSprintRibbon}
         />
       )}
 
@@ -1101,7 +1138,10 @@ function KanbanBoardLoaded({
           }}
         />
 
-        <BoardMobileToolHub onOpenDaily={openDailyModal} />
+        <BoardMobileToolHub
+          onOpenDaily={openDailyModal}
+          onToggleFocusMode={toggleFocusMode}
+        />
 
         <BoardSummaryDock
         t={t}

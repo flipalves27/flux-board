@@ -8,9 +8,10 @@ import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insight
 
 type BoardMobileToolHubProps = {
   onOpenDaily: () => void;
+  onToggleFocusMode?: () => void;
 };
 
-export function BoardMobileToolHub({ onOpenDaily }: BoardMobileToolHubProps) {
+export function BoardMobileToolHub({ onOpenDaily, onToggleFocusMode }: BoardMobileToolHubProps) {
   const t = useTranslations("kanban.board.mobileTools");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -98,6 +99,15 @@ export function BoardMobileToolHub({ onOpenDaily }: BoardMobileToolHubProps) {
               setOpen(false);
             }}
           />
+          {onToggleFocusMode ? (
+            <MenuRow
+              label={t("focusMode")}
+              onClick={() => {
+                onToggleFocusMode();
+                setOpen(false);
+              }}
+            />
+          ) : null}
         </div>
       )}
       <button

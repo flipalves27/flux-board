@@ -959,6 +959,42 @@
         "sentiment": "Clima"
       }
     },
+    "scope": {
+      "allBoards": "Organização (todos os boards)",
+      "methodologyLabel": "Escopo por metodologia",
+      "boardsLabel": "Selecionar boards",
+      "activeScopeTitle": "Escopo ativo",
+      "activeScopeHint": "{count} board(s) no recorte atual.",
+      "saveViewPlaceholder": "Nome da visão salva",
+      "saveView": "Guardar visão",
+      "emptySelection": "Nenhum board encontrado para os filtros selecionados.",
+      "methodologies": {
+        "scrum": "Scrum",
+        "kanban": "Kanban",
+        "lean_six_sigma": "Lean Six Sigma",
+        "discovery": "Discovery",
+        "safe": "SAFe"
+      }
+    },
+    "catalog": {
+      "weeklyFlowTitle": "Preset: revisão semanal de fluxo (Kanban)",
+      "weeklyFlowDesc": "Aplica filtro Kanban e abre os painéis de fluxo contínuo.",
+      "sprintHealthTitle": "Preset: sprint health (Scrum)",
+      "sprintHealthDesc": "Aplica filtro Scrum e destaca velocidade, DoR e histórico de sprints.",
+      "lssExecutiveTitle": "Preset: executivo Lean Six Sigma",
+      "lssExecutiveDesc": "Abre o atalho para a visão executiva DMAIC e mantém o escopo compartilhável na URL."
+    },
+    "roadmap": {
+      "title": "Cobertura por metodologia",
+      "discovery": {
+        "now": "Discovery usa hoje métricas gerais de portfólio/fluxo.",
+        "next": "Roadmap: métricas dedicadas de experimentação e aprendizado."
+      },
+      "safe": {
+        "now": "SAFe usa hoje métricas gerais e capacidade por time/board.",
+        "next": "Roadmap: visões por PI/programa e dependências em escala."
+      }
+    },
     "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
     "loadError": "Não foi possível carregar os relatórios.",
@@ -2945,14 +2981,25 @@
     "addColumnModal": {
       "title": {
         "new": "Nova coluna",
-        "rename": "Renomear coluna"
+        "rename": "Definições da coluna"
       },
-      "placeholder": "Ex: Backlog, Em progresso...",
+      "placeholder": "Ex.: Backlog, Em andamento…",
+      "sections": {
+        "nameTitle": "Nome",
+        "nameHelp": "Aparece no cabeçalho da coluna. A chave interna é definida na criação e não muda.",
+        "wipTitle": "WIP",
+        "policyTitle": "Política",
+        "colorTitle": "Cor"
+      },
+      "colorLabel": "Cor da coluna",
+      "colorHelp": "Ajuda a identificar faixas rapidamente. DoD e regras globais de WIP ficam nas definições ágeis.",
       "wipLabel": "Limite WIP (opcional)",
       "wipPlaceholder": "ex.: 5 — vazio = sem limite",
       "policyLabel": "Política da coluna (como usamos esta coluna)",
       "policyPlaceholder": "Nota curta para o time (opcional)",
       "wipInvalid": "WIP deve ser um número inteiro entre 1 e 999.",
+      "openAgileSettings": "Definições ágeis e Definition of Done",
+      "openAgileSettingsHint": "Metodologia, DoD e enforcement de WIP para o board inteiro.",
       "cancel": "Cancelar",
       "save": "Salvar",
       "create": "Criar"
@@ -3619,6 +3666,19 @@
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
       },
+      "sprintContext": {
+        "regionAria": "Sprint ativa: {name}",
+        "commandCenter": "Centro da sprint",
+        "dateRange": "{start} – {end}",
+        "dateStartOnly": "Início em {start}",
+        "dateEndOnly": "Fim em {end}",
+        "counts": "{inScope} no escopo · {done} concluído(s)",
+        "countsEmpty": "Nenhum card no escopo do sprint",
+        "emptyScopeHint": "Adicione cards pelo painel Sprint ou pelo centro da sprint.",
+        "l1BadgeTitleEmpty": "Escopo do sprint vazio (0 cards). Clique para alternar “só sprint” quando houver cards.",
+        "cardChip": "Sprint",
+        "cardChipAria": "No sprint ativo: {name}"
+      },
       "productGoalStrip": {
         "label": "Meta do produto",
         "emptyGoal": "Nenhuma meta ainda — defina em Scrum e DoD.",
@@ -3872,7 +3932,9 @@
         "handleUnpin": "Soltar faixa de ferramentas",
         "copilotOpen": "Abrir Fluxy",
         "copilotClose": "Fechar Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Modo foco"
       },
       "desktopToolsRail": {
         "handleTitle": "Passe o mouse para ver as ferramentas, ou clique para fixar a faixa aberta",
@@ -3880,7 +3942,9 @@
         "handleUnpin": "Soltar faixa de ferramentas",
         "copilotOpen": "Abrir Fluxy",
         "copilotClose": "Fechar Fluxy",
-        "intelligenceBoard": "Flux Intelligence"
+        "intelligenceBoard": "Flux Intelligence",
+        "flowCoach": "Flow Coach",
+        "focusMode": "Modo foco"
       },
       "nlq": {
         "label": "Consulta inteligente",
@@ -3920,7 +3984,8 @@
         "copilot": "Fluxy",
         "insights": "Insights de execução",
         "activity": "Atividade",
-        "daily": "IA do dia"
+        "daily": "IA do dia",
+        "focusMode": "Modo foco"
       },
       "stats": {
         "totalLabel": "Total",
@@ -3929,6 +3994,9 @@
         "dueSoonLabel": "Vence em 3d",
         "completedRateLabel": "Taxa concluída"
       },
+      "searchPlaceholder": "Pesquisar…",
+      "onda4OmnibarBar": "Onda 4: o NLQ compacto está na Omnibar Fluxy (⌘K ou /). Painéis de fluxo, cadência e carga seguem pelos atalhos do board.",
+      "fluxyOmnibarSeed": "Resumir riscos e WIP deste board ({name})",
       "intelligence": {
         "riskShort": "Risco {n}",
         "flowShort": "Fluxo {n}",
@@ -3960,7 +4028,19 @@
         "healthBriefingErrorAuth": "Inicie sessão para usar o briefing com IA.",
         "healthBriefingErrorPlan": "Esta função requer um plano com IA executiva.",
         "healthBriefingErrorGeneric": "Não foi possível carregar o briefing. Tente mais tarde.",
-        "healthBriefingClose": "Fechar"
+        "healthBriefingClose": "Fechar",
+        "groups": {
+          "flow": "Fluxo",
+          "flowMenuAria": "Análise de fluxo e carga",
+          "rituals": "Rituais",
+          "ritualsMenuAria": "Sprint e cadência",
+          "graphs": "Grafos",
+          "graphsMenuAria": "Grafos e mapa de conhecimento"
+        },
+        "askFluxy": "Perguntar à Fluxy",
+        "askFluxyTitle": "Abrir a Fluxy com o contexto deste board",
+        "compactWip": "WIP {n}",
+        "compactBlocked": "{n} bloqueado(s)"
       },
       "healthScore": {
         "label": "Saúde",
@@ -3983,7 +4063,9 @@
         "l2SummarySearch": "Pesquisa ativa: “{q}”",
         "l3SummaryWip": "WIP visível: {n} em progresso",
         "filtersRailExpand": "Mostrar filtros e contexto do board",
-        "filtersRailCollapse": "Recolher filtros e contexto para ganhar espaço no board"
+        "filtersRailCollapse": "Recolher filtros e contexto para ganhar espaço no board",
+        "focusMode": "Modo foco",
+        "focusModeTitle": "Ocultar o cromado e focar no canvas (veja o atalho no painel de ajuda)"
       },
       "nlqCompact": {
         "expand": "Abrir busca NLQ",

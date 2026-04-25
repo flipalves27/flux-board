@@ -33,7 +33,19 @@ export async function GET(request: NextRequest) {
 
     const boardIdsLss = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
     const lssBoards = await getBoardsLssLeanSliceByIds(boardIdsLss, payload.orgId);
-    const lssIds = new Set(lssBoards.map((b) => b.id));
+    const requestedBoardIds = [
+      ...new Set(
+        [...request.nextUrl.searchParams.getAll("boardIds"), request.nextUrl.searchParams.get("boardIdsCsv") ?? ""]
+          .join(",")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+      ),
+    ];
+    const filteredBoards =
+      requestedBoardIds.length > 0 ? lssBoards.filter((board) => requestedBoardIds.includes(board.id)) : lssBoards;
+    const effectiveBoardIds = filteredBoards.map((board) => board.id);
+    const lssIds = new Set(filteredBoards.map((b) => b.id));
 
     let okrHints: FluxReportsLssPayload["okrHints"];
     const okrEnabled = canUseFeature(org, "okr_engine", gateCtx);
@@ -55,9 +67,24 @@ export async function GET(request: NextRequest) {
       okrHints = hints.length ? hints.slice(0, 24) : undefined;
     }
 
-    const body = buildFluxReportsLssPayload(lssBoards, { okrHints });
+    const body = buildFluxReportsLssPayload(filteredBoards, { okrHints });
+    const responseBody = {
+      ...body,
+      meta: {
+        scope: {
+          kind: requestedBoardIds.length > 0 ? "boards" : "methodology",
+          methodology: "lean_six_sigma",
+          boardIds: requestedBoardIds.length > 0 ? effectiveBoardIds : [],
+          boardCount: filteredBoards.length,
+          labelHint:
+            requestedBoardIds.length > 0
+              ? `${filteredBoards.length} selected LSS boards`
+              : "Methodology: lean_six_sigma",
+        },
+      },
+    };
 
-    return NextResponse.json(body, {
+    return NextResponse.json(responseBody, {
       headers: {
         "Cache-Control": "private, max-age=120, stale-while-revalidate=60",
       },

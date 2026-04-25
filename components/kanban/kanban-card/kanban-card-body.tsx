@@ -41,6 +41,7 @@ export type KanbanCardBodyProps = {
   stopDrag: (e: React.SyntheticEvent) => void;
   setTouchPinned: (v: boolean) => void;
   delivery: DeliveryPrediction | null;
+  sprintActiveChip?: { label: string; title: string } | null;
 };
 
 export function KanbanCardBody(p: KanbanCardBodyProps) {
@@ -72,6 +73,7 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
     stopDrag,
     setTouchPinned,
     delivery,
+    sprintActiveChip,
   } = p;
 
   return (
@@ -162,6 +164,22 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
           >
             {t("card.actions.copy")}
           </button>
+
+          {sprintActiveChip ? (
+            <span
+              role="status"
+              aria-label={sprintActiveChip.title}
+              title={sprintActiveChip.title}
+              className="inline-flex max-w-[7rem] shrink-0 items-center gap-0.5 rounded-md border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-10)] px-1 py-0 text-[9px] font-bold uppercase tracking-wide text-[var(--flux-primary-light)]"
+            >
+              <span className="shrink-0 opacity-80" aria-hidden>
+                ◆
+              </span>
+              <span className="min-w-0 truncate" aria-hidden>
+                {sprintActiveChip.label}
+              </span>
+            </span>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-1 card-top-right">

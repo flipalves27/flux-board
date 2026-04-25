@@ -118,6 +118,10 @@ export function BoardDesktopToolsRail() {
     router.push(`/${locale}/board/${encodeURIComponent(boardId)}/intelligence`);
   }, [boardId, locale, router]);
 
+  const onFocusModeClick = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("flux-toggle-board-focus-mode"));
+  }, []);
+
   const onHandleClick = useCallback(() => {
     setPinned((p) => {
       const next = !p;
@@ -237,7 +241,7 @@ export function BoardDesktopToolsRail() {
           className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
           onClick={() => setFlowCoachOpen(true)}
           disabled={!boardId}
-          aria-label="AI Flow Coach"
+          aria-label={tRail("flowCoach")}
         >
           <span className={toolButtonClass(flowCoachOpen)}
             style={flowCoachOpen ? {} : { background: "linear-gradient(135deg, color-mix(in srgb,var(--flux-primary) 14%,var(--flux-surface-mid)) 0%, var(--flux-surface-mid) 80%)" }}
@@ -245,7 +249,23 @@ export function BoardDesktopToolsRail() {
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-primary-alpha-10)] text-[var(--flux-primary-light)] text-[13px] font-bold">
               {"\u2726"}
             </span>
-            <span className="text-[11px] font-semibold whitespace-nowrap">Flow Coach</span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{tRail("flowCoach")}</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className="flex justify-end active:scale-[0.98] motion-safe:transition-transform motion-safe:duration-200"
+          onClick={onFocusModeClick}
+          aria-label={tRail("focusMode")}
+        >
+          <span className={toolButtonClass(false)}>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--flux-chrome-alpha-16)] bg-[var(--flux-void-nested-36)]">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{tRail("focusMode")}</span>
           </span>
         </button>
 
