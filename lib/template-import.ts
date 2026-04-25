@@ -79,29 +79,32 @@ export async function createBoardFromTemplateSnapshot(
   const snapConfig = (snap.config ?? {}) as Partial<NonNullable<BoardData["config"]>>;
   const isMatrix = snap.templateKind === "priority_matrix";
   const isBpmn = snap.templateKind === "bpmn" && Boolean(snap.bpmnModel);
+  const isSwot = snap.templateKind === "swot";
   const methodology: BoardMethodology = isMatrix
     ? "kanban"
     : isBpmn
       ? "kanban"
-      : snap.boardMethodology === "kanban"
+      : isSwot
         ? "kanban"
-        : snap.boardMethodology === "lean_six_sigma"
-          ? "lean_six_sigma"
-          : snap.boardMethodology === "discovery"
-            ? "discovery"
-            : snap.boardMethodology === "safe"
-              ? "safe"
-              : "scrum";
+        : snap.boardMethodology === "kanban"
+          ? "kanban"
+          : snap.boardMethodology === "lean_six_sigma"
+            ? "lean_six_sigma"
+            : snap.boardMethodology === "discovery"
+              ? "discovery"
+              : snap.boardMethodology === "safe"
+                ? "safe"
+                : "scrum";
 
-  const instantiated = isMatrix ? instantiateTemplateCards(snap) : [];
+  const instantiated = isMatrix || isSwot ? instantiateTemplateCards(snap) : [];
   const palette = Array.isArray(snap.labelPalette) ? snap.labelPalette : [];
-  const mergedLabels = isMatrix
+  const mergedLabels = isMatrix || isSwot
     ? [...new Set([...labelsFromTemplateCards(instantiated), ...palette])].slice(0, 100)
     : [];
 
   const board = await createBoard(orgId, userId, name, {
     version: "2.0",
-    cards: isMatrix
+    cards: isMatrix || isSwot
       ? instantiated
       : isBpmn
         ? (snap.bpmnModel?.nodes ?? []).map((n, i) => ({
@@ -124,11 +127,27 @@ export async function createBoardFromTemplateSnapshot(
         : isBpmn
           ? [{ key: "bpmn_canvas", label: "BPMN Canvas", color: "var(--flux-primary)" }]
           : [],
-      labels: isMatrix ? mergedLabels : isBpmn ? ["BPMN"] : [],
+      labels: isMatrix || isSwot ? mergedLabels : isBpmn ? ["BPMN"] : [],
+      ...(isSwot ? { strategyTemplateKind: "swot" as const } : {}),
+      ...(isSwot
+        ? {
+            definitionOfDone: {
+              enabled: true,
+              enforce: false,
+              doneBucketKeys: ["action_plan"],
+              items: [
+                { id: "owner", label: "Owner definido" },
+                { id: "evidence", label: "Evidência ou hipótese registrada" },
+                { id: "success", label: "Critério de sucesso definido" },
+              ],
+            },
+            cardRules: { requireAssignee: true },
+          }
+        : {}),
     },
     mapaProducao: isBpmn ? attachBpmnModelToMapa(snap.bpmnModel!, snap.mapaProducao) : snap.mapaProducao,
     dailyInsights: [],
   });
-  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn ? [] : snap.automations);
+  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn || isSwot ? [] : snap.automations);
   return board;
 }

@@ -772,13 +772,18 @@
     "createModeAi": "Com IA",
     "createModeMatrix": "Matriz de priorização",
     "createModeBpmn": "BPMN",
+    "createModeSwot": "SWOT/TOWS",
     "bpmnBadge": "BPMN",
+    "swotBadge": "SWOT/TOWS",
     "matrixSectionTitle": "Matriz de priorização",
     "matrixSectionHint": "Grade 4×4 com dois eixos de nível (como em priorização visual de mercado): arraste os cards do board para as células. Publicar no showcase exige administrador.",
     "matrixSectionCta": "Abrir sessão exclusiva da Matriz 4x4",
     "bpmnSectionTitle": "Modelo BPMN",
     "bpmnSectionHint": "Workspace dedicado para BPMN com importação/exportação em Markdown e BPMN XML.",
     "bpmnSectionCta": "Abrir workspace BPMN",
+    "swotSectionTitle": "Template SWOT/TOWS",
+    "swotSectionHint": "Diagnóstico estratégico em 2×2, evidências, TOWS e conversão de estratégias em iniciativas.",
+    "swotSectionCta": "Abrir workspace SWOT/TOWS",
     "matrixExclusive": {
       "title": "Matriz 4x4",
       "back": "← Templates",
@@ -790,6 +795,12 @@
       "back": "← Templates",
       "heading": "Sessão exclusiva BPMN",
       "hint": "Importe, valide, edite e publique templates BPMN com foco em modelagem de processos."
+    },
+    "swotExclusive": {
+      "title": "Workspace SWOT/TOWS",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva SWOT/TOWS",
+      "hint": "Monte um diagnóstico SWOT baseado em evidências, gere TOWS e publique um template estratégico."
     },
     "matrixPanel": {
       "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
@@ -824,6 +835,21 @@
       "taskGenericError": "Não foi possível salvar a tarefa no board selecionado.",
       "publishCta": "Publicar como template",
       "publishHint": "Abre o assistente com título, categoria e o layout atual da grade."
+    },
+    "swotWorkspace": {
+      "intro": "Monte uma matriz SWOT com cards existentes ou insights novos, registre evidência e publique um template que já abre com visão SWOT/TOWS no board.",
+      "bestPracticeHint": "Boas práticas: seja específico, use evidência, revise hipóteses e converta TOWS aprovados em iniciativas com dono e prazo.",
+      "loadingCards": "Carregando cards do board…",
+      "loadError": "Não foi possível carregar o board.",
+      "saveError": "Não foi possível salvar o insight no board.",
+      "emptyQuadrant": "Nenhum item selecionado.",
+      "cardPool": "Cards disponíveis",
+      "evidencePlaceholder": "Evidência, métrica ou fonte…",
+      "quickInsightTitle": "Criar insight SWOT rápido",
+      "quickInsightPlaceholder": "Ex.: Canal enterprise com alta taxa de conversão",
+      "quickInsightCta": "Criar insight",
+      "publishCta": "Publicar como template SWOT",
+      "publishHint": "Publica buckets SWOT/TOWS, cards selecionados e metadados de evidência."
     },
     "subtitle": "Importe colunas, rótulos e automações sem cards. Premium com repasse 70/30 ao criador.",
     "loading": "Carregando catálogo…",
@@ -897,11 +923,13 @@
       "hint": "Exporta colunas, automações e rótulos (sem cards). Visível no showcase.",
       "hintMatrix": "Matriz Eisenhower em quatro colunas; inclua cópias dos cards escolhidos (sem vínculo com o board de origem após importar).",
       "hintGrid4Publish": "Defina título e categoria do template. O layout 4×4 e as posições dos cards vêm do workspace de matriz.",
+      "hintSwot": "SWOT/TOWS inclui buckets estratégicos, cópias dos cards selecionados e evidências para gerar estratégias no board importado.",
       "grid4Summary": "{count, plural, one {# card posicionado na grade} other {# cards posicionados na grade}}",
       "templateKind": "Tipo de template",
       "templateKindKanban": "Kanban (estrutura)",
       "templateKindMatrix": "Matriz de priorização",
       "templateKindBpmn": "Modelo de processo BPMN",
+      "templateKindSwot": "SWOT/TOWS",
       "sourceBoard": "Board de origem",
       "loadingCards": "Carregando cards…",
       "noCards": "Nenhum card neste board.",
@@ -3505,6 +3533,8 @@
         "viewTimelineAria": "Alternar para linha do tempo",
         "viewEisenhowerTooltip": "Eisenhower (E): urgente x importante",
         "viewEisenhowerAria": "Alternar para matriz Eisenhower",
+        "viewSwotTooltip": "SWOT (S): diagnóstico estratégico e TOWS",
+        "viewSwotAria": "Alternar para visualização SWOT/TOWS",
         "viewExecutiveTooltip": "Gestão (G): apresentação para liderança e contexto de negócio",
         "viewExecutiveAria": "Alternar para visualização de apresentação gerencial",
         "viewRoadmapTooltip": "Roadmap (R): trabalho aberto por data de conclusão",
@@ -3520,6 +3550,9 @@
         "emptyTitle": "Nenhum card com data de conclusão",
         "emptyHint": "Defina uma data de conclusão nos cards para vê-los aqui. Os filtros do board também se aplicam.",
         "barAria": "Prazo de {title}: {date}. Arraste para alterar ou use as setas."
+      },
+      "swot": {
+        "initiativeCreated": "Iniciativa SWOT criada"
       },
       "table": {
         "openRow": "Abrir card",

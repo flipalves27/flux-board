@@ -21,7 +21,7 @@ type Row = {
   pricingTier: "free" | "premium";
   creatorOrgId: string;
   creatorOrgName?: string;
-  templateKind?: "kanban" | "priority_matrix" | "bpmn";
+  templateKind?: "kanban" | "priority_matrix" | "bpmn" | "swot";
   priorityMatrixModel?: "eisenhower" | "grid4";
   status?: "draft" | "published" | "archived";
   version?: number;
@@ -35,7 +35,7 @@ export default function TemplatesShowcasePage() {
   const t = useTranslations("templates");
   const { user, getHeaders, isChecked } = useAuth();
   const { pushToast } = useToast();
-  const [createMode, setCreateMode] = useState<"ai" | "matrix" | "bpmn">("ai");
+  const [createMode, setCreateMode] = useState<"ai" | "matrix" | "bpmn" | "swot">("ai");
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
@@ -208,6 +208,19 @@ export default function TemplatesShowcasePage() {
             >
               {t("createModeBpmn")}
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={createMode === "swot"}
+              className={`px-4 py-2 rounded-[var(--flux-rad)] text-sm font-medium transition-colors ${
+                createMode === "swot"
+                  ? "bg-[var(--flux-primary)] text-[var(--flux-ink-on-bright)] shadow-sm"
+                  : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"
+              }`}
+              onClick={() => setCreateMode("swot")}
+            >
+              {t("createModeSwot")}
+            </button>
           </div>
 
           {createMode === "ai" ? (
@@ -228,12 +241,20 @@ export default function TemplatesShowcasePage() {
                 {t("matrixSectionCta")}
               </button>
             </>
-          ) : (
+          ) : createMode === "bpmn" ? (
             <>
               <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("bpmnSectionTitle")}</h3>
               <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("bpmnSectionHint")}</p>
               <button type="button" className="btn-primary" onClick={() => router.push(`${localeRoot}/templates/bpmn`)}>
                 {t("bpmnSectionCta")}
+              </button>
+            </>
+          ) : (
+            <>
+              <h3 className="font-display font-semibold text-[var(--flux-text)] mb-2">{t("swotSectionTitle")}</h3>
+              <p className="text-xs text-[var(--flux-text-muted)] mb-4">{t("swotSectionHint")}</p>
+              <button type="button" className="btn-primary" onClick={() => router.push(`${localeRoot}/templates/swot`)}>
+                {t("swotSectionCta")}
               </button>
             </>
           )}
@@ -308,6 +329,11 @@ export default function TemplatesShowcasePage() {
                     {r.templateKind === "bpmn" && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-secondary-alpha-12)] text-[var(--flux-secondary)] border border-[var(--flux-secondary-alpha-20)]">
                         {t("bpmnBadge")}
+                      </span>
+                    )}
+                    {r.templateKind === "swot" && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--flux-primary-alpha-15)] text-[var(--flux-primary)] border border-[var(--flux-primary-alpha-25)]">
+                        {t("swotBadge")}
                       </span>
                     )}
                     {r.boardMethodology ? (

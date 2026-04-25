@@ -240,6 +240,8 @@ export interface CardData {
   matrixWeight?: number;
   /** Faixa de prioridade visual derivada do peso da matriz. */
   matrixWeightBand?: "low" | "medium" | "high" | "critical";
+  /** Metadados estratégicos usados por templates SWOT/TOWS. */
+  swotMeta?: Record<string, unknown>;
   /** Card pai quando criado por decomposição de épico (Fluxy). */
   epicParentId?: string | null;
   /** Histórias geradas automaticamente pela Fluxy. */
@@ -274,6 +276,8 @@ export interface BoardData {
     executiveStakeholderNote?: string;
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
+    /** Marca templates estratégicos que habilitam visões dedicadas no board. */
+    strategyTemplateKind?: "swot";
     definitionOfDone?: BoardDefinitionOfDone;
     cardRules?: { requireAssignee?: boolean };
   };

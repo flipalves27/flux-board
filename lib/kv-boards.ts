@@ -33,7 +33,14 @@ export interface BoardData {
   clientLabel?: string;
   version?: string;
   cards?: unknown[];
-  config?: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
+  config?: {
+    bucketOrder: unknown[];
+    collapsedColumns?: string[];
+    labels?: string[];
+    strategyTemplateKind?: "swot";
+    definitionOfDone?: unknown;
+    cardRules?: { requireAssignee?: boolean };
+  };
   intakeForm?: unknown;
   mapaProducao?: unknown[];
   dailyInsights?: unknown[];
@@ -55,6 +62,9 @@ function sanitizeBoardLabelsRelation(board: BoardData): BoardData {
     bucketOrder: Array.isArray(configRaw?.bucketOrder) ? configRaw.bucketOrder : [],
     ...(Array.isArray(configRaw?.collapsedColumns) ? { collapsedColumns: configRaw.collapsedColumns } : {}),
     ...(Array.isArray(configRaw?.labels) ? { labels: configRaw.labels } : {}),
+    ...(configRaw?.strategyTemplateKind === "swot" ? { strategyTemplateKind: "swot" as const } : {}),
+    ...(configRaw?.definitionOfDone !== undefined ? { definitionOfDone: configRaw.definitionOfDone } : {}),
+    ...(configRaw?.cardRules !== undefined ? { cardRules: configRaw.cardRules } : {}),
   };
   const labelsRaw = Array.isArray(config.labels) ? config.labels : [];
   const labels = [...new Set(labelsRaw.map((l: unknown) => String(l).trim()).filter(Boolean))];
@@ -608,7 +618,7 @@ export async function createBoard(
       config: {
         ...(dataConfig ?? { bucketOrder: [] }),
         bucketOrder: Array.isArray(dataConfig?.bucketOrder) ? dataConfig.bucketOrder : [],
-        labels: [],
+        labels: Array.isArray(dataConfig?.labels) ? dataConfig.labels : [],
       },
     });
     await db.collection<BoardDoc>(COL_BOARDS).insertOne(boardDataToDoc(board));
@@ -633,7 +643,7 @@ export async function createBoard(
     config: {
       ...(dataConfig ?? { bucketOrder: [] }),
       bucketOrder: Array.isArray(dataConfig?.bucketOrder) ? dataConfig.bucketOrder : [],
-      labels: [],
+      labels: Array.isArray(dataConfig?.labels) ? dataConfig.labels : [],
     },
   });
   await kv.set(BOARD_PREFIX + boardId, JSON.stringify(board));

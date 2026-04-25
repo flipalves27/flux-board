@@ -16,8 +16,8 @@ export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
 export type TemplatePricingTier = "free" | "premium";
 
-/** Padrão: estrutura Kanban sem cards; `priority_matrix` inclui cópias de cards nos quadrantes. */
-export type TemplateKind = "kanban" | "priority_matrix" | "bpmn";
+/** Padrão: estrutura Kanban sem cards; templates estratégicos incluem cópias de cards. */
+export type TemplateKind = "kanban" | "priority_matrix" | "bpmn" | "swot";
 
 export const PRIORITY_MATRIX_QUADRANT_KEYS = ["do_first", "schedule", "delegate", "eliminate"] as const;
 export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[number];
@@ -42,8 +42,52 @@ export type PriorityMatrixMeta = {
   classificationRules?: MatrixClassificationRules;
 };
 
+export const SWOT_QUADRANT_KEYS = ["strengths", "weaknesses", "opportunities", "threats"] as const;
+export type SwotQuadrantKey = (typeof SWOT_QUADRANT_KEYS)[number];
+export type SwotBucketKey = SwotQuadrantKey | "tows_strategies" | "action_plan";
+export type SwotTowsStrategyKind = "SO" | "WO" | "ST" | "WT";
+
+export type SwotCardMeta = {
+  quadrant: SwotQuadrantKey;
+  evidence?: string;
+  impact?: number;
+  confidence?: number;
+  effort?: number;
+  urgency?: number;
+  risk?: number;
+  horizon?: "now" | "quarter" | "semester";
+  status?: "hypothesis" | "validated" | "converted" | "discarded";
+  relatedCardIds?: string[];
+};
+
+export type SwotTowsStrategy = {
+  id: string;
+  kind: SwotTowsStrategyKind;
+  title: string;
+  description: string;
+  sourceCardIds: string[];
+  impact?: number;
+  confidence?: number;
+  effort?: number;
+  risk?: number;
+  convertedCardId?: string;
+};
+
+export type SwotMeta = {
+  version: "swot-tows-v1";
+  quadrantLabels?: Partial<Record<SwotQuadrantKey, string>>;
+  defaultView?: "swot" | "kanban";
+  towsStrategies?: SwotTowsStrategy[];
+  qualityChecklist?: string[];
+};
+
 export type BoardTemplateSnapshot = {
-  config: { bucketOrder: unknown[]; collapsedColumns?: string[]; labels?: string[] };
+  config: {
+    bucketOrder: unknown[];
+    collapsedColumns?: string[];
+    labels?: string[];
+    strategyTemplateKind?: "swot";
+  };
   mapaProducao: unknown[];
   /** Tags/labels observadas no board na exportação (sem conteúdo de cards). */
   labelPalette: string[];
@@ -54,7 +98,7 @@ export type BoardTemplateSnapshot = {
    * o import usa kanban para BPMN/matriz e aplica o snapshot de colunas fornecido.
    */
   boardMethodology?: "scrum" | "kanban" | "lean_six_sigma" | "discovery" | "safe";
-  /** Ausente ou `kanban`: snapshot clássico; `priority_matrix`: quatro colunas + `templateCards`. */
+  /** Ausente ou `kanban`: snapshot clássico; templates estratégicos: colunas próprias + `templateCards`. */
   templateKind?: TemplateKind;
   /** Com `priority_matrix`: quadrantes Eisenhower ou grade 4×4 (16 colunas). */
   priorityMatrixModel?: PriorityMatrixModel;
@@ -64,6 +108,8 @@ export type BoardTemplateSnapshot = {
   priorityMatrixMeta?: PriorityMatrixMeta;
   /** Modelo BPMN canônico simplificado. */
   bpmnModel?: BpmnTemplateModel;
+  /** Metadados visuais/estratégicos para templates SWOT/TOWS. */
+  swotMeta?: SwotMeta;
 };
 
 export type TemplateLifecycleStatus = "draft" | "published" | "archived";

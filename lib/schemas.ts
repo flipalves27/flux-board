@@ -163,6 +163,8 @@ export const SafeAssistBodySchema = z.object({
 });
 
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
+export const SwotQuadrantKeySchema = z.enum(["strengths", "weaknesses", "opportunities", "threats"]);
+const SwotStrategyKindSchema = z.enum(["SO", "WO", "ST", "WT"]);
 
 const BpmnNodeTypeSchema = z.enum(BPMN_NODE_TYPES as unknown as [string, ...string[]]);
 const BpmnSemanticVariantSchema = z.preprocess(
@@ -228,16 +230,52 @@ export const BoardTemplateSnapshotSchema = z.object({
     bucketOrder: z.array(z.unknown()),
     collapsedColumns: z.array(z.string()).optional(),
     labels: z.array(z.string()).optional(),
+    strategyTemplateKind: z.literal("swot").optional(),
   }),
   mapaProducao: z.array(z.unknown()),
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
-  templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional(),
+  templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot"]).optional(),
   priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
   priorityMatrixMeta: z.unknown().optional(),
   bpmnModel: BpmnModelSchema.optional(),
+  swotMeta: z
+    .object({
+      version: z.literal("swot-tows-v1"),
+      quadrantLabels: z
+        .object({
+          strengths: z.string().trim().max(200).optional(),
+          weaknesses: z.string().trim().max(200).optional(),
+          opportunities: z.string().trim().max(200).optional(),
+          threats: z.string().trim().max(200).optional(),
+        })
+        .optional(),
+      defaultView: z.enum(["swot", "kanban"]).optional(),
+      qualityChecklist: z.array(z.string().trim().max(300)).max(20).optional(),
+      towsStrategies: z
+        .array(
+          z
+            .object({
+              id: z.string().trim().min(1).max(100),
+              kind: SwotStrategyKindSchema,
+              title: z.string().trim().min(1).max(300),
+              description: z.string().trim().max(2000),
+              sourceCardIds: z.array(z.string().trim().max(200)).max(20),
+              impact: z.number().min(0).max(5).optional(),
+              confidence: z.number().min(0).max(5).optional(),
+              effort: z.number().min(0).max(5).optional(),
+              risk: z.number().min(0).max(5).optional(),
+              convertedCardId: z.string().trim().max(200).optional(),
+            })
+            .passthrough()
+        )
+        .max(100)
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
 });
 
 export const BoardCreateSchema = z
@@ -531,7 +569,7 @@ export const TemplateExportBodySchema = z
       "insurance_warranty",
     ]),
     pricingTier: z.enum(["free", "premium"]),
-    templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional().default("kanban"),
+    templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot"]).optional().default("kanban"),
     /** Eisenhower: quadrantes. Ignorado quando priorityMatrixModel é grid4. */
     priorityMatrixSelections: z
       .array(
@@ -548,6 +586,23 @@ export const TemplateExportBodySchema = z
     bpmnModel: BpmnModelSchema.optional(),
     bpmnMarkdown: z.string().max(300_000).optional(),
     bpmnXml: z.string().max(300_000).optional(),
+    swotSelections: z
+      .array(
+        z.object({
+          cardId: z.string().trim().min(1).max(200),
+          quadrantKey: SwotQuadrantKeySchema,
+          evidence: z.string().trim().max(1000).optional(),
+          impact: z.number().min(0).max(5).optional(),
+          confidence: z.number().min(0).max(5).optional(),
+          effort: z.number().min(0).max(5).optional(),
+          urgency: z.number().min(0).max(5).optional(),
+          risk: z.number().min(0).max(5).optional(),
+          horizon: z.enum(["now", "quarter", "semester"]).optional(),
+        })
+      )
+      .max(200)
+      .optional(),
+    swotMeta: z.unknown().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
@@ -594,6 +649,27 @@ export const TemplateExportBodySchema = z
           path: ["templateKind"],
         });
       }
+    }
+    if (data.templateKind !== "swot" && data.swotSelections && data.swotSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "swotSelections só é permitido com templateKind swot.",
+        path: ["swotSelections"],
+      });
+    }
+    if (
+      data.templateKind === "swot" &&
+      (data.priorityMatrixSelections?.length ||
+        data.priorityMatrixGridSelections?.length ||
+        data.bpmnModel ||
+        data.bpmnMarkdown ||
+        data.bpmnXml)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Campos de matriz/BPMN não se aplicam ao template SWOT.",
+        path: ["templateKind"],
+      });
     }
   });
 
@@ -709,6 +785,7 @@ export const BoardUpdateSchema = z
         /** Nota curta do PO para leitura C-Level (export + vista executiva); não substitui o brief IA. */
         executiveStakeholderNote: z.string().trim().max(2000).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
+        strategyTemplateKind: z.literal("swot").optional(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
         /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */
         wipEnforcement: z.enum(["strict", "soft"]).optional(),

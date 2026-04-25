@@ -21,11 +21,13 @@ import { BoardTableView } from "./board-table-view";
 import { BoardExecutivePresentationView } from "./board-executive-presentation-view";
 import { BoardRoadmapProjectionView } from "./board-roadmap-projection-view";
 import { BoardFlowMetricsProjectionView } from "./board-flow-metrics-projection-view";
+import { BoardSwotView } from "./board-swot-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
 import { useBoardCollabStore } from "@/stores/board-collab-store";
 import type { RemoteDragState } from "@/stores/board-collab-store";
+import type { SwotTowsStrategy } from "@/lib/template-types";
 
 function resolveRemoteDragTargetBucket(st: RemoteDragState, cardList: CardData[]): string | null {
   const k = st.overKind;
@@ -102,6 +104,7 @@ type KanbanBoardCanvasProps = {
     patch: Partial<Pick<CardData, "priority" | "bucket">>
   ) => void;
   onDuplicateCard: (cardId: string) => void;
+  onSwotCreateInitiative?: (strategy: SwotTowsStrategy) => void;
   onPinCardToTop?: (cardId: string) => void;
   /** Coluna com maior visibilidade no scroll (presença em tempo real). */
   onVisibleColumnKeyChange?: (columnKey: string | null) => void;
@@ -177,6 +180,7 @@ export function KanbanBoardCanvas({
   onExecutiveRefreshBoardData,
   onPatchCard,
   onDuplicateCard,
+  onSwotCreateInitiative,
   onPinCardToTop,
   onVisibleColumnKeyChange,
   sprintBoardQuickActions,
@@ -338,6 +342,14 @@ export function KanbanBoardCanvas({
           cards={cards}
           filterCard={filterCard}
           onOpenCard={onExecutiveOpenCard}
+        />
+      ) : null}
+      {boardView === "swot" ? (
+        <BoardSwotView
+          cards={cards}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+          onCreateInitiative={onSwotCreateInitiative ?? (() => {})}
         />
       ) : null}
       {boardView === "eisenhower" ? (

@@ -9,6 +9,7 @@ import {
   buildBpmnSnapshotFromModel,
   buildPriorityMatrixGrid4SnapshotFromBoard,
   buildPriorityMatrixSnapshotFromBoard,
+  buildSwotSnapshotFromBoard,
   buildTemplateSnapshotFromBoard,
 } from "@/lib/template-snapshot";
 import { TemplateExportBodySchema, zodErrorToMessage } from "@/lib/schemas";
@@ -69,6 +70,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } catch (e) {
       console.error("[export-template] BPMN snapshot", e);
       return NextResponse.json({ error: "Não foi possível montar o snapshot BPMN." }, { status: 400 });
+    }
+  } else if (kind === "swot") {
+    try {
+      snapshot = buildSwotSnapshotFromBoard(
+        board,
+        parsed.data.swotSelections ?? [],
+        parsed.data.swotMeta as Parameters<typeof buildSwotSnapshotFromBoard>[2]
+      );
+    } catch (e) {
+      console.error("[export-template] swot snapshot", e);
+      return NextResponse.json({ error: "Não foi possível montar o snapshot SWOT." }, { status: 400 });
     }
   } else {
     const rules = await getBoardAutomationRules(boardId, payload.orgId);

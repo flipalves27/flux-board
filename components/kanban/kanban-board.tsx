@@ -53,6 +53,8 @@ import {
 } from "@/lib/board-methodology";
 import { clampExecutiveProductGoal, clampExecutiveStakeholderNote } from "@/lib/executive-board-config";
 import { getMethodologyModule } from "@/lib/methodology-module";
+import { strategyToInitiative } from "@/lib/swot-intelligence";
+import type { SwotTowsStrategy } from "@/lib/template-types";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
@@ -277,6 +279,11 @@ function KanbanBoardLoaded({
     () => getMethodologyModule(methodology as BoardMethodology),
     [methodology]
   );
+  const isSwotBoard = db.config?.strategyTemplateKind === "swot";
+  const allowedBoardViewModes = useMemo(() => {
+    const base = methodologyModule.allowedViewModes.filter((mode) => mode !== "swot");
+    return isSwotBoard ? [...base, "swot" as const] : base;
+  }, [isSwotBoard, methodologyModule.allowedViewModes]);
 
   const saveExecutiveProductGoal = useCallback(
     (value: string) => {
@@ -301,11 +308,11 @@ function KanbanBoardLoaded({
   );
 
   useEffect(() => {
-    const allowed = methodologyModule.allowedViewModes;
+    const allowed = allowedBoardViewModes;
     if (!allowed.includes(boardView as BoardViewMode)) {
       setBoardView(allowed[0] ?? "kanban");
     }
-  }, [methodologyModule.allowedViewModes, boardView, setBoardView]);
+  }, [allowedBoardViewModes, boardView, setBoardView]);
 
   const matrixWeightOptions = useMemo(
     () =>
@@ -727,7 +734,7 @@ function KanbanBoardLoaded({
     }
 
     if (viewParam || execFilterParam != null || clevelPreset) {
-      const allowedViews = getMethodologyModule(methodology as BoardMethodology).allowedViewModes;
+      const allowedViews = allowedBoardViewModes;
       if (viewParam && allowedViews.includes(viewParam)) {
         setBoardView(viewParam);
       }
@@ -739,7 +746,7 @@ function KanbanBoardLoaded({
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
-  }, [searchParamsKey, boardId, localeRoot, methodology, setBoardView]);
+  }, [searchParamsKey, boardId, localeRoot, methodology, allowedBoardViewModes, setBoardView]);
 
   useEffect(() => {
     const card = modalCard;
@@ -814,6 +821,25 @@ function KanbanBoardLoaded({
       }, 220);
     },
     [openingCardId, openCardEditorById, prefersReducedMotion]
+  );
+
+  const createSwotInitiative = useCallback(
+    (strategy: SwotTowsStrategy) => {
+      let createdId: string | null = null;
+      updateDb((d) => {
+        const card = strategyToInitiative(strategy, d.cards);
+        while (d.cards.some((existing) => existing.id === card.id)) {
+          card.id = `${card.id}_${Math.random().toString(36).slice(2, 6)}`;
+        }
+        d.cards.push(card);
+        createdId = card.id;
+      });
+      if (createdId) {
+        pushToast({ kind: "success", title: t("board.swot.initiativeCreated") });
+        onEditCardById(createdId);
+      }
+    },
+    [onEditCardById, pushToast, t, updateDb]
   );
 
   const onOpenDescById = useCallback(
@@ -938,7 +964,7 @@ function KanbanBoardLoaded({
             getHeaders,
             boardView: boardView as BoardViewMode,
             setBoardView,
-            allowedViewModes: methodologyModule.allowedViewModes,
+            allowedViewModes: allowedBoardViewModes,
             showSprintInlineBadge,
             activeSprintName: activeSprintBoard?.status === "active" ? activeSprintBoard.name ?? null : null,
             sprintProgress,
@@ -1099,6 +1125,7 @@ function KanbanBoardLoaded({
           onExecutiveRefreshBoardData={reloadBoardFromServer}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
+          onSwotCreateInitiative={createSwotInitiative}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
           sprintBoardQuickActions={isSprintMethodology(methodology) ? { boardId, getHeaders } : undefined}
