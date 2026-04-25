@@ -12,6 +12,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MapaProducaoSection } from "./mapa-producao-section";
 import type { ConfirmDeleteState } from "@/stores/ui-store";
 import { useToast } from "@/context/toast-context";
+import { COLUMN_COLORS } from "./kanban-constants";
+import { FileText, Gauge, LayoutGrid, Palette } from "lucide-react";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 
 type KanbanT = (key: string, values?: Record<string, string | number>) => string;
 
@@ -51,7 +54,9 @@ export type KanbanBoardOverlaysProps = {
   setNewColumnName: (v: string) => void;
   editingColumnKey: string | null;
   setEditingColumnKey: (v: string | null) => void;
-  saveColumn: (opts?: { wipLimit?: number | null; policy?: string | null }) => void;
+  saveColumn: (opts?: { wipLimit?: number | null; policy?: string | null; color?: string | null }) => void;
+  /** Link to global agile / DoD — column modal only. */
+  onOpenAgileSettings?: () => void;
   addColumnDialogRef: RefObject<HTMLDivElement | null>;
   addColumnInputRef: RefObject<HTMLInputElement | null>;
   confirmDelete: ConfirmDeleteState;
@@ -147,10 +152,12 @@ export function KanbanBoardOverlays({
   doneBucketKeys,
   boardMethodology,
   canAdminBoard,
+  onOpenAgileSettings,
 }: KanbanBoardOverlaysProps) {
   const { pushToast } = useToast();
   const [columnWipDraft, setColumnWipDraft] = useState("");
   const [columnPolicyDraft, setColumnPolicyDraft] = useState("");
+  const [columnColorKey, setColumnColorKey] = useState<string>(COLUMN_COLORS[0] ?? "");
 
   useEffect(() => {
     if (!addColumnOpen) return;
@@ -159,9 +166,14 @@ export function KanbanBoardOverlays({
       setColumnWipDraft(typeof b?.wipLimit === "number" ? String(b.wipLimit) : "");
       const pol = (b as { policy?: string } | undefined)?.policy;
       setColumnPolicyDraft(typeof pol === "string" ? pol : "");
+      const c = (b as { color?: string } | undefined)?.color;
+      setColumnColorKey(
+        typeof c === "string" && COLUMN_COLORS.includes(c) ? c : COLUMN_COLORS[0] ?? ""
+      );
     } else {
       setColumnWipDraft("");
       setColumnPolicyDraft("");
+      setColumnColorKey(COLUMN_COLORS[buckets.length % COLUMN_COLORS.length] ?? COLUMN_COLORS[0] ?? "");
     }
   }, [addColumnOpen, editingColumnKey, buckets]);
 
@@ -175,7 +187,11 @@ export function KanbanBoardOverlays({
       pushToast({ kind: "error", title: t("addColumnModal.wipInvalid") });
       return;
     }
-    saveColumn({ wipLimit: parsed.value, policy: columnPolicyDraft.trim() ? columnPolicyDraft : null });
+    saveColumn({
+      wipLimit: parsed.value,
+      policy: columnPolicyDraft.trim() ? columnPolicyDraft : null,
+      color: columnColorKey && COLUMN_COLORS.includes(columnColorKey) ? columnColorKey : null,
+    });
     setColumnWipDraft("");
     setColumnPolicyDraft("");
   };
@@ -258,7 +274,7 @@ export function KanbanBoardOverlays({
 
       {addColumnOpen && (
         <div
-          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-feature)] flex items-center justify-center"
+          className="fixed inset-0 bg-[var(--flux-backdrop-scrim-strong)] z-[var(--flux-z-modal-feature)] flex items-center justify-center p-4"
           onClick={() => {
             setAddColumnOpen(false);
             setColumnWipDraft("");
@@ -266,7 +282,7 @@ export function KanbanBoardOverlays({
           }}
         >
           <div
-            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-6 min-w-[280px] shadow-xl"
+            className="bg-[var(--flux-surface-card)] border border-[var(--flux-primary-alpha-20)] rounded-[var(--flux-rad)] p-0 min-w-[min(100%,380px)] max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[min(100%,90vh)]"
             onClick={(e) => e.stopPropagation()}
             ref={addColumnDialogRef}
             role="dialog"
@@ -274,49 +290,125 @@ export function KanbanBoardOverlays({
             aria-labelledby="add-column-title"
             tabIndex={-1}
           >
-            <h3 id="add-column-title" className="font-display font-bold text-[var(--flux-text)] mb-4">
-              {editingColumnKey ? t("addColumnModal.title.rename") : t("addColumnModal.title.new")}
-            </h3>
-            <input
-              type="text"
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitColumn()}
-              placeholder={t("addColumnModal.placeholder")}
-              disabled={!canAdminBoard}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              autoFocus
-              ref={addColumnInputRef}
-            />
-            <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.wipLabel")}</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={columnWipDraft}
-              onChange={(e) => setColumnWipDraft(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitColumn()}
-              placeholder={t("addColumnModal.wipPlaceholder")}
-              disabled={!canAdminBoard}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={t("addColumnModal.wipLabel")}
-            />
-            <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.policyLabel")}</label>
-            <textarea
-              value={columnPolicyDraft}
-              onChange={(e) => setColumnPolicyDraft(e.target.value)}
-              placeholder={t("addColumnModal.policyPlaceholder")}
-              rows={3}
-              maxLength={500}
-              disabled={!canAdminBoard}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-2 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px] disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={t("addColumnModal.policyLabel")}
-            />
-            {!canAdminBoard ? (
-              <p className="text-xs text-[var(--flux-text-muted)] mb-3" role="note">
-                {t("board.rbac.adminOnlyColumnConfig")}
-              </p>
-            ) : null}
-            <div className="flex gap-3 justify-end pt-2">
+            <div className="border-b border-[var(--flux-chrome-alpha-08)] px-5 py-4">
+              <h3 id="add-column-title" className="font-display font-bold text-base text-[var(--flux-text)]">
+                {editingColumnKey ? t("addColumnModal.title.rename") : t("addColumnModal.title.new")}
+              </h3>
+            </div>
+            <div className="overflow-y-auto px-5 py-4 space-y-5">
+              <section className="space-y-2" aria-labelledby="add-column-sec-name">
+                <h4
+                  id="add-column-sec-name"
+                  className="flex items-center gap-2 text-flux-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  {t("addColumnModal.sections.nameTitle")}
+                </h4>
+                <p className="text-flux-xs text-[var(--flux-text-muted)] leading-relaxed">
+                  {t("addColumnModal.sections.nameHelp")}
+                </p>
+                <input
+                  type="text"
+                  value={newColumnName}
+                  onChange={(e) => setNewColumnName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitColumn()}
+                  placeholder={t("addColumnModal.placeholder")}
+                  disabled={!canAdminBoard}
+                  className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  autoFocus
+                  ref={addColumnInputRef}
+                />
+              </section>
+              <section className="space-y-2" aria-labelledby="add-column-sec-wip">
+                <h4
+                  id="add-column-sec-wip"
+                  className="flex items-center gap-2 text-flux-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]"
+                >
+                  <Gauge className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  {t("addColumnModal.sections.wipTitle")}
+                </h4>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={columnWipDraft}
+                  onChange={(e) => setColumnWipDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitColumn()}
+                  placeholder={t("addColumnModal.wipPlaceholder")}
+                  disabled={!canAdminBoard}
+                  className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={t("addColumnModal.wipLabel")}
+                />
+                <p className="text-flux-xs text-[var(--flux-text-muted)]">{t("addColumnModal.wipLabel")}</p>
+              </section>
+              <section className="space-y-2" aria-labelledby="add-column-sec-policy">
+                <h4
+                  id="add-column-sec-policy"
+                  className="flex items-center gap-2 text-flux-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]"
+                >
+                  <FileText className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  {t("addColumnModal.sections.policyTitle")}
+                </h4>
+                <textarea
+                  value={columnPolicyDraft}
+                  onChange={(e) => setColumnPolicyDraft(e.target.value)}
+                  placeholder={t("addColumnModal.policyPlaceholder")}
+                  rows={3}
+                  maxLength={500}
+                  disabled={!canAdminBoard}
+                  className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={t("addColumnModal.policyLabel")}
+                />
+              </section>
+              <section className="space-y-2" aria-labelledby="add-column-sec-color">
+                <h4
+                  id="add-column-sec-color"
+                  className="flex items-center gap-2 text-flux-xs font-bold uppercase tracking-wide text-[var(--flux-text-muted)]"
+                >
+                  <Palette className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                  {t("addColumnModal.sections.colorTitle")}
+                </h4>
+                <p className="text-flux-xs text-[var(--flux-text-muted)] leading-relaxed">{t("addColumnModal.colorHelp")}</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label={t("addColumnModal.colorLabel")}>
+                  {COLUMN_COLORS.map((c) => {
+                    const selected = columnColorKey === c;
+                    return (
+                      <CustomTooltip key={c} content={t("addColumnModal.colorLabel")} position="top">
+                        <button
+                          type="button"
+                          disabled={!canAdminBoard}
+                          onClick={() => setColumnColorKey(c)}
+                          className={`h-8 w-8 rounded-md border-2 transition-transform focus:outline-none focus:ring-2 focus:ring-[var(--flux-primary-alpha-40)] ${
+                            selected
+                              ? "ring-2 ring-[var(--flux-primary)] border-[var(--flux-primary)] scale-105"
+                              : "border-[var(--flux-chrome-alpha-14)] hover:border-[var(--flux-primary-alpha-45)]"
+                          } disabled:opacity-50`}
+                          style={{ background: c }}
+                          aria-pressed={selected}
+                        />
+                      </CustomTooltip>
+                    );
+                  })}
+                </div>
+              </section>
+              {!canAdminBoard ? (
+                <p className="text-flux-xs text-[var(--flux-text-muted)]" role="note">
+                  {t("board.rbac.adminOnlyColumnConfig")}
+                </p>
+              ) : null}
+              {onOpenAgileSettings ? (
+                <div className="border-t border-[var(--flux-chrome-alpha-08)] pt-4">
+                  <button
+                    type="button"
+                    onClick={() => onOpenAgileSettings()}
+                    className="text-flux-xs font-semibold text-[var(--flux-primary-light)] hover:underline w-full text-left"
+                  >
+                    {t("addColumnModal.openAgileSettings")}
+                  </button>
+                  <p className="text-[10px] text-[var(--flux-text-muted)] mt-1 leading-snug">{t("addColumnModal.openAgileSettingsHint")}</p>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex gap-3 justify-end border-t border-[var(--flux-chrome-alpha-08)] px-5 py-3 bg-[var(--flux-surface-elevated)]/80">
               <button
                 type="button"
                 onClick={() => {

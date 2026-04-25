@@ -101,6 +101,7 @@ export function buildKanbanOverlayModel(args: {
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
   onBoardReloaded?: KanbanBoardOverlaysProps["onBoardReloaded"];
   canAdminBoard: boolean;
+  onOpenAgileSettings?: KanbanBoardOverlaysProps["onOpenAgileSettings"];
 }): KanbanBoardOverlaysProps {
   const {
     board,
@@ -119,6 +120,7 @@ export function buildKanbanOverlayModel(args: {
     openCardById,
     onBoardReloaded,
     canAdminBoard,
+    onOpenAgileSettings: openAgileFromArg,
   } = args;
   const d = board.dailySession;
 
@@ -219,5 +221,6 @@ export function buildKanbanOverlayModel(args: {
     boardMethodology,
     onBoardReloaded,
     canAdminBoard,
+    onOpenAgileSettings: openAgileFromArg,
   };
 }

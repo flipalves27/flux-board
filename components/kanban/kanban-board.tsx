@@ -857,6 +857,10 @@ function KanbanBoardLoaded({
     dailyCloseRef,
     onBoardReloaded,
     canAdminBoard,
+    onOpenAgileSettings: () => {
+      board.setAddColumnOpen(false);
+      setScrumSettingsOpen(true);
+    },
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
@@ -910,6 +914,7 @@ function KanbanBoardLoaded({
             searchInputRef: filters.searchInputRef,
             t,
             tTimeline: tView as (k: string) => string,
+            onEnterFocusMode: toggleFocusMode,
           }}
           l2={{
             boardId,
@@ -955,6 +960,7 @@ function KanbanBoardLoaded({
             onOpenLssAssist: () => setLssAssistOpen(true),
             onOpenSafeAssist: () => setSafeAssistOpen(true),
             onda4Omnibar: onda4.enabled && onda4.omnibar,
+            sprintRowSuppressedByL1: showSprintInlineBadge,
             t,
           }}
         />

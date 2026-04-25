@@ -51,6 +51,8 @@ export type BoardChromeL3Props = {
   onOpenLssAssist: () => void;
   onOpenSafeAssist: () => void;
   onda4Omnibar: boolean;
+  /** L1 already shows sprint badge + scope; hide duplicate strip in L3. */
+  sprintRowSuppressedByL1?: boolean;
   t: (key: string, values?: Record<string, string | number>) => string;
 };
 
@@ -88,6 +90,7 @@ export function BoardChromeL3({
   onOpenLssAssist,
   onOpenSafeAssist,
   onda4Omnibar,
+  sprintRowSuppressedByL1 = false,
   t,
 }: BoardChromeL3Props) {
   const activeMatrixWeightFilterLabel =
@@ -119,7 +122,7 @@ export function BoardChromeL3({
             onOpenKnowledgeGraph={onOpenKnowledgeGraph}
             onda4Omnibar={onda4Omnibar}
             onAskFluxy={() => {
-              const seed = `Resumir riscos e WIP deste board (${boardName})`;
+              const seed = t("board.fluxyOmnibarSeed", { name: boardName });
               useFluxyOmnibarStore.getState().setPendingSeed(seed);
               window.dispatchEvent(new CustomEvent("flux-open-fluxy-omnibar", { detail: { seed } }));
             }}
@@ -151,11 +154,13 @@ export function BoardChromeL3({
             <span>{t("board.intelligenceCollapse.label")}</span>
           </button>
           <span className="text-flux-xs tabular-nums text-[var(--flux-text-muted)]">
-            WIP {board.executionInsights.inProgress}
+            {t("board.intelligence.compactWip", { n: board.executionInsights.inProgress })}
           </span>
           {flowChips.find((c) => c.kind === "blocked") ? (
             <span className="text-flux-xs tabular-nums text-[var(--flux-warning,#f59e0b)]">
-              {flowChips.find((c) => c.kind === "blocked")?.values?.count ?? 0} blocked
+              {t("board.intelligence.compactBlocked", {
+                n: flowChips.find((c) => c.kind === "blocked")?.values?.count ?? 0,
+              })}
             </span>
           ) : null}
           {portfolioSnapshot.risco !== null ? (
@@ -232,7 +237,10 @@ export function BoardChromeL3({
             />
           ) : null}
 
-          {nlqExpanded && isSprintMethodology(methodology) && activeSprintBoard?.status === "active" ? (
+          {nlqExpanded &&
+          isSprintMethodology(methodology) &&
+          activeSprintBoard?.status === "active" &&
+          !sprintRowSuppressedByL1 ? (
             <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
               {sprintProgress && sprintProgress.total > 0 ? (
                 <div

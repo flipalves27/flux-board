@@ -29,6 +29,7 @@ export function BoardChromeL2({
   nlqExpanded = false,
 }: BoardChromeL2Props) {
   const tPrioritize = useTranslations("kanban.backlogPrioritize");
+  const tBoard = useTranslations("kanban.board");
   const [prioritizeOpen, setPrioritizeOpen] = useState(false);
   const hideCompactSearchRow = nlqExpanded && !onda4Omnibar;
 
@@ -66,7 +67,7 @@ export function BoardChromeL2({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar…"
+                placeholder={tBoard("searchPlaceholder")}
                 className="w-full min-w-0 pl-7 pr-2 py-1.5 rounded-[var(--flux-rad-sm)] border border-[var(--flux-control-border)] text-flux-xs bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] focus:ring-2 focus:ring-[var(--flux-primary-alpha-20)] outline-none transition-all duration-200"
               />
             </div>
@@ -83,7 +84,7 @@ export function BoardChromeL2({
 
       {onda4Enabled && onda4Omnibar ? (
         <div className="border-b border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-1.5 text-flux-xs text-[var(--flux-text-muted)] sm:px-5">
-          Onda 4: NLQ compacto foi integrado à Omnibar Fluxy (⌘K ou /). Painéis de fluxo, cadência e carga continuam pelos atalhos do board.
+          {tBoard("onda4OmnibarBar")}
         </div>
       ) : null}
     </>

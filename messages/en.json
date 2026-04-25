@@ -3071,14 +3071,25 @@
     "addColumnModal": {
       "title": {
         "new": "New column",
-        "rename": "Rename column"
+        "rename": "Column settings"
       },
-      "placeholder": "Ex: Backlog, In progress...",
+      "placeholder": "e.g. Backlog, In progress…",
+      "sections": {
+        "nameTitle": "Name",
+        "nameHelp": "Shown on the board header. The internal column key is set when the column is created and does not change.",
+        "wipTitle": "WIP",
+        "policyTitle": "Policy",
+        "colorTitle": "Color"
+      },
+      "colorLabel": "Column color",
+      "colorHelp": "Helps the team spot lanes at a glance. Definition of Done and global WIP rules stay in agile settings.",
       "wipLabel": "WIP limit (optional)",
       "wipPlaceholder": "e.g. 5 — leave empty for no limit",
       "policyLabel": "Column policy (how we use this column)",
       "policyPlaceholder": "Short note for the team (optional)",
       "wipInvalid": "WIP must be a whole number between 1 and 999.",
+      "openAgileSettings": "Agile settings & Definition of Done",
+      "openAgileSettingsHint": "Edit methodology, DoD, and WIP enforcement for the whole board.",
       "cancel": "Cancel",
       "save": "Save",
       "create": "Create"
@@ -3928,6 +3939,9 @@
         "dueSoonLabel": "Due in 3d",
         "completedRateLabel": "Completed rate"
       },
+      "searchPlaceholder": "Search…",
+      "onda4OmnibarBar": "Wave 4: compact NLQ is in the Fluxy Omnibar (⌘K or /). Flow, cadence, and load panels use board shortcuts.",
+      "fluxyOmnibarSeed": "Summarize risks and WIP for this board ({name})",
       "intelligence": {
         "riskShort": "Risk {n}",
         "flowShort": "Flow {n}",
@@ -3959,7 +3973,19 @@
         "healthBriefingErrorAuth": "Sign in to use the AI briefing.",
         "healthBriefingErrorPlan": "This feature requires a plan that includes executive AI.",
         "healthBriefingErrorGeneric": "Could not load the briefing. Try again later.",
-        "healthBriefingClose": "Close"
+        "healthBriefingClose": "Close",
+        "groups": {
+          "flow": "Flow",
+          "flowMenuAria": "Flow analysis and workload",
+          "rituals": "Rituals",
+          "ritualsMenuAria": "Sprint and cadence",
+          "graphs": "Graphs",
+          "graphsMenuAria": "Graphs and knowledge map"
+        },
+        "askFluxy": "Ask Fluxy",
+        "askFluxyTitle": "Open Fluxy with this board in context",
+        "compactWip": "WIP {n}",
+        "compactBlocked": "{n} blocked"
       },
       "healthScore": {
         "label": "Health",
@@ -3982,7 +4008,9 @@
         "l2SummarySearch": "Active search: “{q}”",
         "l3SummaryWip": "Visible WIP: {n} in progress",
         "filtersRailExpand": "Show filters and board context",
-        "filtersRailCollapse": "Collapse filters and context for more board space"
+        "filtersRailCollapse": "Collapse filters and context for more board space",
+        "focusMode": "Focus mode",
+        "focusModeTitle": "Hide board chrome and focus on the canvas (use keyboard shortcut from help)"
       },
       "nlqCompact": {
         "expand": "Open NLQ search",

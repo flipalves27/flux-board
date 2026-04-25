@@ -6,7 +6,7 @@ import { BoardViewModeSegment } from "./board-view-mode-segment";
 import { BoardAutomationSuggestions } from "./board-automation-suggestions";
 import type { BoardViewMode } from "./kanban-constants";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
-import { SlidersHorizontal } from "lucide-react";
+import { Maximize2, SlidersHorizontal } from "lucide-react";
 
 export type BoardChromeFilterRailShortcut = {
   expanded: boolean;
@@ -39,6 +39,8 @@ export type BoardChromeL1Props = {
   tTimeline: (k: string) => string;
   /** Atalho na barra principal: recolher / expandir filtros + contexto (L2+L3). */
   filterRailShortcut?: BoardChromeFilterRailShortcut;
+  /** Modo foco: esconde cromado (atalho global em hotkeys). */
+  onEnterFocusMode?: () => void;
 };
 
 export function BoardChromeL1({
@@ -64,6 +66,7 @@ export function BoardChromeL1({
   t,
   tTimeline,
   filterRailShortcut,
+  onEnterFocusMode,
 }: BoardChromeL1Props) {
   void boardName;
 
@@ -133,8 +136,19 @@ export function BoardChromeL1({
             </button>
           ) : null}
 
-          {filterRailShortcut || !onda4Omnibar ? (
+          {filterRailShortcut || !onda4Omnibar || onEnterFocusMode ? (
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {onEnterFocusMode ? (
+                <button
+                  type="button"
+                  onClick={onEnterFocusMode}
+                  className="rounded-lg border border-[var(--flux-chrome-alpha-14)] bg-[var(--flux-surface-elevated)] p-1.5 text-[var(--flux-text-muted)] shadow-sm transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)]"
+                  aria-label={t("board.chrome.focusMode")}
+                  title={t("board.chrome.focusModeTitle")}
+                >
+                  <Maximize2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              ) : null}
               {filterRailShortcut ? (
                 <button
                   type="button"
