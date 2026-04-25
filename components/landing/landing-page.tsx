@@ -68,13 +68,14 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
       <div className="relative">
         <a
           href="#landing-main"
-          className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] transition-transform focus:translate-y-4"
+          className="flux-marketing-btn-primary absolute left-4 top-0 z-[var(--flux-z-tooltip)] -translate-y-[120%] transition-transform focus:translate-y-4"
         >
           {t("skipToContent")}
         </a>
         <div
           lang={locale}
-          className="home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+          className="flux-page-contract home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+          data-flux-area="marketing"
         >
           <LandingPublicBackdrop />
           <LandingScrollProgress />

@@ -805,7 +805,7 @@ export default function BoardPage() {
 
   if (showBoardSkeleton || !hasBoardData) {
     return (
-      <div className="min-h-screen">
+      <div className="flux-page-contract min-h-screen" data-flux-area="operational">
         <Header title={boardName}>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
@@ -817,7 +817,7 @@ export default function BoardPage() {
     );
   }
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
       <DataFadeIn active animate={false} key={boardId}>
         <div>
           <Header

@@ -39,7 +39,7 @@ export default function ExecutiveDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="analytics">
       <Header />
       <PremiumPageShell>
         <PremiumSectionHeader eyebrow={t("badge")} title={t("title")} description={t("subtitle")} />

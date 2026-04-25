@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
 import {
-  IconBoards,
   IconDocs,
   IconExecutiveDashboard,
   IconGoals,
@@ -85,23 +84,7 @@ export function SidebarIntelligence({
               ),
             },
           ] satisfies IntelLinkDef[])
-        : ([
-            {
-              path: "/boards",
-              order: 1,
-              node: (
-                <SidebarNavLink
-                  key="intel-boards"
-                  trackPath="/boards"
-                  path="/boards"
-                  hint={t("hints.boards")}
-                  icon={<IconBoards className="h-4 w-4 shrink-0" />}
-                  label={t("boards")}
-                  sublabel={t("boards")}
-                />
-              ),
-            },
-          ] satisfies IntelLinkDef[])),
+        : []),
     ];
 
     base.push(
@@ -116,6 +99,7 @@ export function SidebarIntelligence({
             hint={t("hints.okrs")}
             icon={<IconGoals className="h-4 w-4 shrink-0" />}
             label={t("okrs")}
+            sublabel={t("okrsProduct")}
           />
         ),
       },
@@ -130,6 +114,7 @@ export function SidebarIntelligence({
             hint={t("hints.docs")}
             icon={<IconDocs className="h-4 w-4 shrink-0" />}
             label={t("docs")}
+            sublabel={t("docsProduct")}
           />
         ),
       }
@@ -149,6 +134,8 @@ export function SidebarIntelligence({
             label={t("specScopePlanner")}
             sublabel={t("specScopePlannerProduct")}
             badgeDot={specPlanActiveCount > 0}
+            badgeCount={specPlanActiveCount > 0 ? specPlanActiveCount : undefined}
+            badgeTone="ai"
           />
         ),
       });

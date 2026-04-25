@@ -18,12 +18,14 @@ export function SidebarAgileRhythm({ activeSprintCount, upcomingReleaseCount }: 
         hint={t("hints.routines")}
         icon={<IconTasks className="h-4 w-4 shrink-0" />}
         label={t("routines")}
+        sublabel={t("routinesSublabel")}
       />
       <SidebarNavLink
         path="/my-work"
         hint={t("hints.myWork")}
         icon={<IconMyWork className="h-4 w-4 shrink-0" />}
         label={t("myWork")}
+        sublabel={t("myWorkSublabel")}
       />
       <SidebarNavLink
         path="/sprints"
@@ -35,6 +37,8 @@ export function SidebarAgileRhythm({ activeSprintCount, upcomingReleaseCount }: 
             ? t("sprintsActiveSublabel", { count: activeSprintCount })
             : undefined
         }
+        badgeCount={activeSprintCount ?? undefined}
+        badgeTone="attention"
       />
       <SidebarNavLink
         path="/releases"
@@ -46,6 +50,8 @@ export function SidebarAgileRhythm({ activeSprintCount, upcomingReleaseCount }: 
             ? t("releasesUpcomingSublabel", { count: upcomingReleaseCount })
             : undefined
         }
+        badgeCount={upcomingReleaseCount ?? undefined}
+        badgeTone="ai"
       />
     </div>
   );

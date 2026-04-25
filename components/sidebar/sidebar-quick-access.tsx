@@ -15,18 +15,21 @@ export function SidebarQuickAccess() {
         hint={t("hints.boards")}
         icon={<IconBoards className="h-4 w-4 shrink-0" />}
         label={t("boards")}
+        sublabel={t("boardsSublabel")}
       />
       <SidebarNavLink
         path="/calendar"
         hint={t("hints.deliveryCalendar")}
         icon={<IconCalendar className="h-4 w-4 shrink-0" />}
         label={t("deliveryCalendar")}
+        sublabel={t("deliveryCalendarSublabel")}
       />
       <SidebarNavLink
         path="/templates"
         hint={t("hints.templates")}
         icon={<IconTemplates className="h-4 w-4 shrink-0" />}
         label={t("templates")}
+        sublabel={t("templatesSublabel")}
       />
     </div>
   );

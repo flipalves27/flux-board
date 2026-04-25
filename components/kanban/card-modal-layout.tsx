@@ -452,13 +452,13 @@ export function CardModalLayout() {
       className={`${cardModalV2 ? "card-modal-backdrop-v2" : "card-modal-backdrop"} fixed inset-0 z-[var(--flux-z-kanban-modal-stack)] flex items-center justify-center`}
     >
       <div
-        className="absolute inset-0 bg-[var(--flux-backdrop-scrim)] backdrop-blur-xl backdrop-saturate-150 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
+        className="absolute inset-0 bg-[var(--flux-backdrop-modal-strong)] backdrop-blur-md backdrop-saturate-125 motion-safe:transition-[background-color,backdrop-filter] motion-safe:duration-300"
         aria-hidden
         onClick={onClose}
       />
-      <div ref={dragWrapRef} className="relative z-[1] max-h-full max-w-full">
+      <div ref={dragWrapRef} className="relative z-[var(--flux-z-app-shell-content)] max-h-full max-w-full">
         <div
-          className={`card-modal-shell card-modal-sequential-enter relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-glass-elevated flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] ${cardModalV2 ? "card-modal-content-v2" : "card-modal-content"}`}
+          className={`card-modal-shell card-modal-shell-solid card-modal-sequential-enter relative flex w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-3xl flux-depth-3 shadow-[var(--flux-shadow-modal-depth)] ring-1 ring-[var(--flux-border-subtle)] max-h-[min(92dvh,900px)] ${cardModalV2 ? "card-modal-content-v2" : "card-modal-content"}`}
           onClick={(e) => e.stopPropagation()}
           ref={dialogRef}
           role="dialog"
@@ -468,7 +468,7 @@ export function CardModalLayout() {
         >
         {/* Barra superior: gradiente + área de arraste (translate3d no wrapper) */}
         <div
-          className="card-modal-accent card-modal-drag-strip relative z-[2] flex h-9 shrink-0 cursor-grab items-center justify-center border-b border-[var(--flux-chrome-alpha-08)] touch-none select-none active:cursor-grabbing motion-safe:transition-[filter,opacity] motion-safe:duration-200 hover:brightness-110"
+          className="card-modal-accent card-modal-drag-strip relative z-[var(--flux-z-app-shell-content)] flex h-9 shrink-0 cursor-grab items-center justify-center border-b border-[var(--flux-chrome-alpha-08)] touch-none select-none active:cursor-grabbing motion-safe:transition-[filter,opacity] motion-safe:duration-200 hover:brightness-110"
           style={{
             background: "linear-gradient(90deg, var(--flux-primary), var(--flux-secondary), var(--flux-primary))",
             backgroundSize: "200% 100%",
@@ -500,7 +500,7 @@ export function CardModalLayout() {
         ) : null}
 
         {/* Header — sem overflow-hidden no bloco inteiro: evita cortar título quando o flex encolhe (min-w-0) */}
-        <header className="relative z-[1] min-w-0 shrink-0 border-b border-[var(--flux-border-muted)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
+        <header className="card-modal-header relative z-[var(--flux-z-app-shell-content)] min-w-0 shrink-0 border-b border-[var(--flux-border-muted)] px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
           {/* Ambient glow blobs */}
           <div
             className="pointer-events-none absolute -right-20 -top-24 z-0 h-56 w-56 rounded-full opacity-[0.14] blur-3xl motion-safe:transition-opacity"
@@ -515,7 +515,7 @@ export function CardModalLayout() {
             }}
           />
 
-          <div className="relative z-[1] flex min-w-0 items-start justify-between gap-4">
+          <div className="relative z-[var(--flux-z-app-shell-content)] flex min-w-0 items-start justify-between gap-4">
             <div className="min-w-0 flex-1 pr-2">
               {/* Mode pill + card ID badge */}
               <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -566,7 +566,7 @@ export function CardModalLayout() {
 
         {/* Scrollable tab content — key triggers fade-in on tab switch */}
         <div
-          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scrollbar-kanban"
+          className="card-modal-body min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scrollbar-kanban"
           role="tabpanel"
           aria-labelledby={`card-modal-tab-${activeTab}`}
         >

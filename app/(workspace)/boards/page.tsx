@@ -641,7 +641,7 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
       <Suspense fallback={null}>
         {user ? (
           <BoardsQueryParamsEffects

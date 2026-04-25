@@ -17,6 +17,8 @@ export type SidebarNavLinkProps = {
   isActiveOverride?: boolean;
   /** Pulsing dot when análise spec-plan está em segundo plano. */
   badgeDot?: boolean;
+  badgeCount?: number;
+  badgeTone?: "neutral" | "attention" | "danger" | "ai";
   /** When set, increments local frequency for adaptive ordering (Intelligence section). */
   trackPath?: string;
 };
@@ -30,6 +32,8 @@ export function SidebarNavLink({
   dataTour,
   isActiveOverride,
   badgeDot,
+  badgeCount,
+  badgeTone = "neutral",
   trackPath,
 }: SidebarNavLinkProps) {
   const { locale, layout, compactMode, isMinimal, closeMobile, isActive, showExpandedNav } = useSidebarNav();
@@ -62,7 +66,7 @@ export function SidebarNavLink({
     >
       {badgeDot ? (
         <span
-          className="absolute right-2 top-2 h-2 w-2 shrink-0 rounded-full bg-[var(--flux-accent)] shadow-[0_0_8px_var(--flux-accent)] animate-pulse"
+          className="absolute right-2 top-2 h-2 w-2 shrink-0 rounded-full bg-[var(--flux-accent)] shadow-[0_0_8px_var(--flux-accent)] motion-safe:animate-pulse"
           title=""
           aria-hidden
         />
@@ -77,8 +81,19 @@ export function SidebarNavLink({
       ) : null}
       <span className="mt-0.5 shrink-0">{icon}</span>
       {showExpandedNav && (
-        <span className="flex min-w-0 flex-col gap-0 leading-tight">
-          <span>{label}</span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0 leading-tight">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate">{label}</span>
+            {badgeCount != null && badgeCount > 0 ? (
+              <span
+                className="flux-badge ml-auto px-1.5 py-0 text-[9px]"
+                data-tone={badgeTone === "neutral" ? undefined : badgeTone}
+                aria-label={`${badgeCount}`}
+              >
+                {badgeCount}
+              </span>
+            ) : null}
+          </span>
           {sublabel ? (
             <span className="text-[10px] font-medium text-[var(--flux-text-muted)]/90">{sublabel}</span>
           ) : null}

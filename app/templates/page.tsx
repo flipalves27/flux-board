@@ -157,7 +157,7 @@ export default function TemplatesShowcasePage() {
   if (!isChecked || !user) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
       <Header title={t("title")} backHref={`${localeRoot}/boards`} backLabel="← Boards" />
       <main className="max-w-[1200px] mx-auto px-6 py-10 space-y-10">
         <p className="text-sm text-[var(--flux-text-muted)]">{t("subtitle")}</p>
