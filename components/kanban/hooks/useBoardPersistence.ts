@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
 import { KANBAN_FILTERS_STORAGE_PREFIX, type BoardViewMode } from "../kanban-constants";
 import { useFilterStore, type BoardFiltersSlice } from "@/stores/filter-store";
-import { migrateBoardViewFromLegacyLocalStorage, useKanbanUiStore } from "@/stores/ui-store";
+import {
+  migrateBoardViewFromLegacyLocalStorage,
+  useKanbanUiStore,
+  type ExecutivePresentationFilter,
+} from "@/stores/ui-store";
 
 export type SavedKanbanFilters = BoardFiltersSlice;
 
@@ -53,12 +57,20 @@ export function useBoardPersistence(boardId: string) {
   );
 
   const boardView = useKanbanUiStore((s) => s.getBoardView(boardId));
+  const executivePresentationFilter = useKanbanUiStore((s) => s.getExecutivePresentationFilter(boardId));
 
   const setBoardView = useCallback(
     (v: SetStateAction<BoardViewMode>) => {
       const cur = useKanbanUiStore.getState().getBoardView(boardId);
       const next = typeof v === "function" ? v(cur) : v;
       useKanbanUiStore.getState().setBoardView(boardId, next);
+    },
+    [boardId]
+  );
+
+  const setExecutivePresentationFilter = useCallback(
+    (v: ExecutivePresentationFilter) => {
+      useKanbanUiStore.getState().setExecutivePresentationFilter(boardId, v);
     },
     [boardId]
   );
@@ -108,6 +120,8 @@ export function useBoardPersistence(boardId: string) {
   return {
     boardView,
     setBoardView: setBoardView as Dispatch<SetStateAction<BoardViewMode>>,
+    executivePresentationFilter,
+    setExecutivePresentationFilter,
     activePrio,
     setActivePrio,
     activeLabels,

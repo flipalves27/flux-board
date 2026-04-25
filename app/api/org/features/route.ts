@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
       safe_ai_premium: canUseFeature(org, "safe_ai_premium", gateCtx),
       board_copilot: canUseFeature(org, "board_copilot", gateCtx),
       spec_ai_scope_planner: canUseFeature(org, "spec_ai_scope_planner", gateCtx),
+      board_pdf_list_import: canUseFeature(org, "board_pdf_list_import", gateCtx),
+      flux_docs: canUseFeature(org, "flux_docs", gateCtx),
       ux_v2_command_unified: uxV2.ux_v2_command_unified,
       ux_v2_workbar: uxV2.ux_v2_workbar,
       ux_v2_toolbar: uxV2.ux_v2_toolbar,

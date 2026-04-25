@@ -12,6 +12,7 @@ import {
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import type { BucketConfig, CardData } from "@/app/board/[id]/page";
 import type { CardTemplate } from "@/lib/kv-card-templates";
+import type { ExecutivePresentationFilter } from "@/stores/ui-store";
 import type { BoardViewMode } from "./kanban-constants";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
@@ -80,11 +81,21 @@ type KanbanBoardCanvasProps = {
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc: (cardId: string) => void;
   onOpenAddColumn: () => void;
+  /** Colunas: renomear / excluir / nova coluna — só para gestores do board. */
+  canAdminBoard?: boolean;
   /** Apresentação gerencial — contexto e métricas para gestão. */
   executiveBoardName: string;
   executiveProductGoal?: string;
+  executiveProductGoalEditable?: boolean;
+  onExecutiveSaveProductGoal?: (value: string) => void;
+  executiveStakeholderNote?: string;
+  onExecutiveSaveStakeholderNote?: (value: string) => void;
   executiveLastUpdated: string;
+  executiveBoardId: string;
+  executivePresentationFilter: ExecutivePresentationFilter;
+  onExecutivePresentationFilterChange: (f: ExecutivePresentationFilter) => void;
   onExecutiveOpenCard: (card: CardData) => void;
+  onExecutiveRefreshBoardData?: () => Promise<void>;
   onPatchCard: (
     cardId: string,
     patch: Partial<Pick<CardData, "priority" | "bucket">>
@@ -149,10 +160,19 @@ export function KanbanBoardCanvas({
   onSetDirection,
   onOpenDesc,
   onOpenAddColumn,
+  canAdminBoard = true,
   executiveBoardName,
   executiveProductGoal,
+  executiveProductGoalEditable,
+  onExecutiveSaveProductGoal,
+  executiveStakeholderNote,
+  onExecutiveSaveStakeholderNote,
   executiveLastUpdated,
+  executiveBoardId,
+  executivePresentationFilter,
+  onExecutivePresentationFilterChange,
   onExecutiveOpenCard,
+  onExecutiveRefreshBoardData,
   onPatchCard,
   onDuplicateCard,
   onPinCardToTop,
@@ -284,13 +304,22 @@ export function KanbanBoardCanvas({
       ) : null}
       {boardView === "executive" ? (
         <BoardExecutivePresentationView
+          boardId={executiveBoardId}
+          getHeaders={getHeaders ?? (() => ({}))}
           boardName={executiveBoardName}
           productGoal={executiveProductGoal}
+          productGoalEditable={executiveProductGoalEditable}
+          onSaveProductGoal={onExecutiveSaveProductGoal}
+          executiveStakeholderNote={executiveStakeholderNote}
+          onSaveExecutiveStakeholderNote={onExecutiveSaveStakeholderNote}
           lastUpdated={executiveLastUpdated}
           buckets={buckets}
           cards={cards}
           filterCard={filterCard}
+          executiveFilter={executivePresentationFilter}
+          onExecutiveFilterChange={onExecutivePresentationFilterChange}
           onOpenCard={onExecutiveOpenCard}
+          onRefreshBoardData={onExecutiveRefreshBoardData}
         />
       ) : null}
       {boardView === "roadmap" ? (
@@ -428,8 +457,10 @@ export function KanbanBoardCanvas({
                 onAddCard={() => onAddCard(b.key)}
                 onEditCard={onEditCard}
                 onDeleteCard={onDeleteCard}
-                onRenameColumn={() => onRenameColumn(b)}
-                onDeleteColumn={buckets.length > 1 && onDeleteColumn ? () => onDeleteColumn(b.key) : undefined}
+                onRenameColumn={canAdminBoard ? () => onRenameColumn(b) : undefined}
+                onDeleteColumn={
+                  canAdminBoard && buckets.length > 1 && onDeleteColumn ? () => onDeleteColumn(b.key) : undefined
+                }
                 onSetDirection={(cardId, dir) => onSetDirection(cardId, dir)}
                 onOpenDesc={onOpenDesc}
                 directions={directions}
@@ -448,11 +479,15 @@ export function KanbanBoardCanvas({
               />
             ))}
           </SortableContext>
-          <CustomTooltip content={t("addColumnModal.title.new")} position="right">
+          <CustomTooltip
+            content={canAdminBoard ? t("addColumnModal.title.new") : t("board.rbac.adminOnlyColumnConfig")}
+            position="right"
+          >
             <button
               type="button"
               onClick={onOpenAddColumn}
-              className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)] transition-all cursor-pointer group opacity-80 hover:opacity-100"
+              disabled={!canAdminBoard}
+              className="shrink-0 min-w-[44px] w-[44px] h-[80px] rounded-[var(--flux-rad)] border border-dashed border-[var(--flux-primary-alpha-30)] bg-[var(--flux-surface-card)] flex items-center justify-center text-[var(--flux-text-muted)] hover:border-[var(--flux-primary)] hover:text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)] transition-all cursor-pointer group opacity-80 hover:opacity-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--flux-primary-alpha-30)]"
               aria-label={t("addColumnModal.title.new")}
             >
               <span className="text-lg font-light group-hover:scale-110 transition-transform">+</span>

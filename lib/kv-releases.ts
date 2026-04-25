@@ -74,6 +74,7 @@ export function normalizeRelease(raw: ReleaseData): ReleaseData {
     releasedAt: raw.releasedAt ?? null,
     rolledBackAt: raw.rolledBackAt ?? null,
     rollbackReason: raw.rollbackReason ?? "",
+    archivedAt: raw.archivedAt ?? null,
     createdBy: raw.createdBy ?? "",
   };
 }
@@ -84,6 +85,7 @@ async function ensureReleaseIndexes(db: Db): Promise<void> {
   await db.collection(COL_RELEASES).createIndex({ orgId: 1, boardId: 1 });
   await db.collection(COL_RELEASES).createIndex({ orgId: 1, status: 1 });
   await db.collection(COL_RELEASES).createIndex({ orgId: 1, boardId: 1, version: 1 }, { unique: true });
+  await db.collection(COL_RELEASES).createIndex({ orgId: 1, boardId: 1, archivedAt: 1 });
   releaseIndexesEnsured = true;
 }
 
@@ -151,6 +153,7 @@ export async function createRelease(params: {
     releasedAt: null,
     rolledBackAt: null,
     rollbackReason: "",
+    archivedAt: null,
     tags: (input.tags ?? []).map((t) => sanitizeText(t).trim().slice(0, 60)).filter(Boolean).slice(0, 20),
     createdBy: params.createdBy ?? "",
     createdAt: now,
@@ -210,6 +213,9 @@ export async function updateRelease(
     ...(updates.rollbackReason !== undefined
       ? { rollbackReason: sanitizeText(updates.rollbackReason).trim().slice(0, 500) }
       : {}),
+    ...(updates.archivedAt !== undefined
+      ? { archivedAt: updates.archivedAt === null ? null : String(updates.archivedAt).trim().slice(0, 80) }
+      : {}),
     ...(updates.tags !== undefined
       ? {
           tags: updates.tags
@@ -243,6 +249,17 @@ export async function updateRelease(
                 : updates.status === "planned"
                   ? "planned"
                   : "edited",
+      by: options.actor ?? "",
+      note: "",
+    });
+  } else if (
+    updates.archivedAt !== undefined &&
+    updates.archivedAt !== existing.archivedAt
+  ) {
+    const toArchive = updates.archivedAt != null;
+    timeline.push({
+      at: now,
+      kind: toArchive ? "archived" : "unarchived",
       by: options.actor ?? "",
       note: "",
     });

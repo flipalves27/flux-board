@@ -100,6 +100,7 @@ export function buildKanbanOverlayModel(args: {
   dailyDialogRef: RefObject<HTMLDivElement | null>;
   dailyCloseRef: RefObject<HTMLButtonElement | null>;
   onBoardReloaded?: KanbanBoardOverlaysProps["onBoardReloaded"];
+  canAdminBoard: boolean;
 }): KanbanBoardOverlaysProps {
   const {
     board,
@@ -117,6 +118,7 @@ export function buildKanbanOverlayModel(args: {
     t,
     openCardById,
     onBoardReloaded,
+    canAdminBoard,
   } = args;
   const d = board.dailySession;
 
@@ -216,5 +218,6 @@ export function buildKanbanOverlayModel(args: {
     doneBucketKeys,
     boardMethodology,
     onBoardReloaded,
+    canAdminBoard,
   };
 }

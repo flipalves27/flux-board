@@ -50,6 +50,7 @@ export function Sidebar() {
 
   const [activeInvites, setActiveInvites] = useState<number | null>(null);
   const [activeSprintCount, setActiveSprintCount] = useState<number | null>(null);
+  const [upcomingReleaseCount, setUpcomingReleaseCount] = useState<number | null>(null);
   const orgFeatures = useOrgFeaturesOptional();
   const specScopePlannerEnabled = Boolean(orgFeatures?.data?.spec_ai_scope_planner);
   const specPlanActiveCount = useSpecPlanActiveStore((s) => s.active.length);
@@ -116,20 +117,41 @@ export function Sidebar() {
     async function run() {
       if (!isChecked || !user?.orgId) {
         setActiveSprintCount(null);
+        setUpcomingReleaseCount(null);
         return;
       }
       try {
-        const data = await apiGet<{ activeSprintCount: number }>("/api/sprints?summary=1", getHeaders());
-        if (!cancelled) {
-          setActiveSprintCount(typeof data?.activeSprintCount === "number" ? data.activeSprintCount : 0);
-        }
+        const sprintSum = await apiGet<{ activeSprintCount: number }>("/api/sprints?summary=1", getHeaders());
+        if (cancelled) return;
+        setActiveSprintCount(
+          typeof sprintSum?.activeSprintCount === "number" ? sprintSum.activeSprintCount : 0
+        );
       } catch (e) {
         if (cancelled) return;
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
           setActiveSprintCount(null);
+        } else {
+          setActiveSprintCount(null);
+        }
+      }
+      try {
+        if (cancelled) return;
+        if (!isChecked || !user?.orgId) {
+          setUpcomingReleaseCount(null);
           return;
         }
-        setActiveSprintCount(null);
+        const relSum = await apiGet<{ upcomingReleaseCount: number }>("/api/releases?summary=1", getHeaders());
+        if (cancelled) return;
+        setUpcomingReleaseCount(
+          typeof relSum?.upcomingReleaseCount === "number" ? relSum.upcomingReleaseCount : 0
+        );
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          setUpcomingReleaseCount(null);
+        } else {
+          setUpcomingReleaseCount(null);
+        }
       }
     }
     void run();
@@ -306,7 +328,7 @@ export function Sidebar() {
               <SidebarQuickAccess />
             </SidebarZoneCollapsible>
             <SidebarZoneCollapsible title={t("zones.rhythm")} defaultOpen>
-              <SidebarAgileRhythm activeSprintCount={activeSprintCount} />
+              <SidebarAgileRhythm activeSprintCount={activeSprintCount} upcomingReleaseCount={upcomingReleaseCount} />
             </SidebarZoneCollapsible>
             <SidebarZoneCollapsible title={t("zones.intelligence")} defaultOpen>
               <SidebarIntelligence

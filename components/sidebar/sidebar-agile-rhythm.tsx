@@ -1,14 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { IconMyWork, IconSprint, IconTasks } from "./icons";
+import { IconMyWork, IconRelease, IconSprint, IconTasks } from "./icons";
 import { SidebarNavLink } from "./sidebar-nav-link";
 
 type SidebarAgileRhythmProps = {
   activeSprintCount: number | null;
+  upcomingReleaseCount: number | null;
 };
 
-export function SidebarAgileRhythm({ activeSprintCount }: SidebarAgileRhythmProps) {
+export function SidebarAgileRhythm({ activeSprintCount, upcomingReleaseCount }: SidebarAgileRhythmProps) {
   const t = useTranslations("navigation");
   return (
     <div className="flex flex-col gap-1" data-flux-sidebar-zone="agile-rhythm">
@@ -32,6 +33,17 @@ export function SidebarAgileRhythm({ activeSprintCount }: SidebarAgileRhythmProp
         sublabel={
           activeSprintCount !== null && activeSprintCount > 0
             ? t("sprintsActiveSublabel", { count: activeSprintCount })
+            : undefined
+        }
+      />
+      <SidebarNavLink
+        path="/releases"
+        hint={t("hints.releases")}
+        icon={<IconRelease className="h-4 w-4 shrink-0" />}
+        label={t("releases")}
+        sublabel={
+          upcomingReleaseCount !== null && upcomingReleaseCount > 0
+            ? t("releasesUpcomingSublabel", { count: upcomingReleaseCount })
             : undefined
         }
       />

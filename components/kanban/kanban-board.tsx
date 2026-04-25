@@ -18,6 +18,8 @@ import { useBoardNlqUiStore } from "@/stores/board-nlq-ui-store";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { useTranslations } from "next-intl";
 import { useBoardPersistence } from "./hooks/useBoardPersistence";
+import { useKanbanUiStore } from "@/stores/ui-store";
+import { parseExecFilterParam, parseViewParam } from "@/lib/build-c-level-board-query";
 import { useBoardFilters } from "./hooks/useBoardFilters";
 import { useSprintStore } from "@/stores/sprint-store";
 import { useCeremonyStore } from "@/stores/ceremony-store";
@@ -47,6 +49,7 @@ import {
   isSprintMethodology,
   type BoardMethodology,
 } from "@/lib/board-methodology";
+import { clampExecutiveProductGoal, clampExecutiveStakeholderNote } from "@/lib/executive-board-config";
 import { getMethodologyModule } from "@/lib/methodology-module";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
@@ -125,6 +128,11 @@ export interface KanbanBoardProps {
   priorities: string[];
   progresses: string[];
   directions: string[];
+  /**
+   * Alterar colunas, WIP, política, reordenar colunas, override de WIP — só com papel admin do board
+   * (dono, admin de org, ou membro com admin). Vem de `GET .../bootstrap` (`viewerCapabilities.canAdmin`).
+   */
+  canAdminBoard?: boolean;
   /** Expande filtros para o passo do tour (Daily Insights). */
   productTourExpandFilters?: boolean;
   /** Quando false, polling remoto não sobrescreve o board (ex.: salvando). */
@@ -141,6 +149,7 @@ function KanbanBoardLoaded({
   progresses,
   directions,
   productTourExpandFilters,
+  canAdminBoard = true,
   allowExternalMerge = true,
   reloadBoardFromServer,
 }: KanbanBoardProps) {
@@ -178,6 +187,8 @@ function KanbanBoardLoaded({
   const {
     boardView,
     setBoardView,
+    executivePresentationFilter,
+    setExecutivePresentationFilter,
     activePrio,
     setActivePrio,
     activeLabels,
@@ -254,6 +265,28 @@ function KanbanBoardLoaded({
     [methodology]
   );
 
+  const saveExecutiveProductGoal = useCallback(
+    (value: string) => {
+      const g = clampExecutiveProductGoal(value);
+      updateDb((d) => {
+        if (g) d.config.productGoal = g;
+        else delete d.config.productGoal;
+      });
+    },
+    [updateDb]
+  );
+
+  const saveExecutiveStakeholderNote = useCallback(
+    (value: string) => {
+      const n = clampExecutiveStakeholderNote(value);
+      updateDb((d) => {
+        if (n) d.config.executiveStakeholderNote = n;
+        else delete d.config.executiveStakeholderNote;
+      });
+    },
+    [updateDb]
+  );
+
   useEffect(() => {
     const allowed = methodologyModule.allowedViewModes;
     if (!allowed.includes(boardView as BoardViewMode)) {
@@ -326,6 +359,7 @@ function KanbanBoardLoaded({
     priorities,
     progresses,
     directions,
+    canAdminBoard,
     onAfterCardBucketsChange: collab.notifyBucketsChanged,
     onAfterColumnReorder: collab.notifyColumnReorder,
   });
@@ -426,6 +460,7 @@ function KanbanBoardLoaded({
     getCardsByBucket: filters.getCardsByBucket,
     moveCardsBatch: board.moveCardsBatch,
     reorderColumns: board.reorderColumns,
+    canReorderColumns: canAdminBoard,
   });
 
   const clearSelectionRef = useRef<(() => void) | null>(null);
@@ -507,6 +542,9 @@ function KanbanBoardLoaded({
     const fluxyCardThread = q.get("fluxyCardThread") === "1";
     const fluxyMsg = q.get("fluxyMsg");
     const fluxyCtx = q.get("fluxyCtx");
+    const viewParam = parseViewParam(q.get("view"));
+    const execFilterParam = parseExecFilterParam(q.get("execFilter"));
+    const clevelPreset = q.get("clevel") === "1";
 
     const hasDeepLink =
       Boolean(cardId) ||
@@ -524,7 +562,10 @@ function KanbanBoardLoaded({
       scrumSettings === "1" ||
       incrementReview === "1" ||
       kanbanCadence === "1" ||
-      lssAssist === "1";
+      lssAssist === "1" ||
+      Boolean(viewParam) ||
+      execFilterParam != null ||
+      clevelPreset;
 
     if (!hasDeepLink) {
       handledQueryRef.current = null;
@@ -680,8 +721,23 @@ function KanbanBoardLoaded({
         setLssAssistOpen(true);
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+      return;
     }
-  }, [searchParamsKey, boardId, localeRoot, methodology]);
+
+    if (viewParam || execFilterParam != null || clevelPreset) {
+      const allowedViews = getMethodologyModule(methodology as BoardMethodology).allowedViewModes;
+      if (viewParam && allowedViews.includes(viewParam)) {
+        setBoardView(viewParam);
+      }
+      if (execFilterParam) {
+        useKanbanUiStore.getState().setExecutivePresentationFilter(boardId, execFilterParam);
+      }
+      if (clevelPreset) {
+        setFocusMode(true);
+      }
+      routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
+    }
+  }, [searchParamsKey, boardId, localeRoot, methodology, setBoardView]);
 
   useEffect(() => {
     const card = modalCard;
@@ -800,6 +856,7 @@ function KanbanBoardLoaded({
     dailyDialogRef,
     dailyCloseRef,
     onBoardReloaded,
+    canAdminBoard,
   }),
     onOpenExistingCard: onEditCardById,
     onMergeDraftIntoExisting,
@@ -995,16 +1052,25 @@ function KanbanBoardLoaded({
             board.setNewColumnName("");
             board.setAddColumnOpen(true);
           }}
+          canAdminBoard={canAdminBoard}
           executiveBoardName={boardName}
           executiveProductGoal={db.config.productGoal}
+          executiveProductGoalEditable={isSprintMethodology(methodology as BoardMethodology)}
+          onExecutiveSaveProductGoal={saveExecutiveProductGoal}
+          executiveStakeholderNote={db.config.executiveStakeholderNote}
+          onExecutiveSaveStakeholderNote={saveExecutiveStakeholderNote}
           executiveLastUpdated={db.lastUpdated}
+          executiveBoardId={boardId}
+          getHeaders={getHeaders}
+          executivePresentationFilter={executivePresentationFilter}
+          onExecutivePresentationFilterChange={setExecutivePresentationFilter}
           onExecutiveOpenCard={board.handleTimelineOpenCard}
+          onExecutiveRefreshBoardData={reloadBoardFromServer}
           onPatchCard={board.patchCardFromTable}
           onDuplicateCard={board.duplicateCard}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
           sprintBoardQuickActions={isSprintMethodology(methodology) ? { boardId, getHeaders } : undefined}
-          getHeaders={getHeaders}
           onAddCardFromTemplate={(bucketKey, tpl) => {
             board.setModalCard({
               id: "",

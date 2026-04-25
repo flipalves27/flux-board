@@ -79,6 +79,8 @@ export type KanbanBoardOverlaysProps = {
   definitionOfDone?: BoardDefinitionOfDone;
   doneBucketKeys: string[];
   boardMethodology: BoardMethodology;
+  /** Colunas / WIP / política — edição reservada a gestores. */
+  canAdminBoard: boolean;
 };
 
 function parseWipDraft(
@@ -144,6 +146,7 @@ export function KanbanBoardOverlays({
   definitionOfDone,
   doneBucketKeys,
   boardMethodology,
+  canAdminBoard,
 }: KanbanBoardOverlaysProps) {
   const { pushToast } = useToast();
   const [columnWipDraft, setColumnWipDraft] = useState("");
@@ -163,6 +166,10 @@ export function KanbanBoardOverlays({
   }, [addColumnOpen, editingColumnKey, buckets]);
 
   const submitColumn = () => {
+    if (!canAdminBoard) {
+      pushToast({ kind: "error", title: t("board.rbac.adminOnlyColumnConfig") });
+      return;
+    }
     const parsed = parseWipDraft(columnWipDraft, Boolean(editingColumnKey));
     if (!parsed.ok) {
       pushToast({ kind: "error", title: t("addColumnModal.wipInvalid") });
@@ -276,7 +283,8 @@ export function KanbanBoardOverlays({
               onChange={(e) => setNewColumnName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submitColumn()}
               placeholder={t("addColumnModal.placeholder")}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              disabled={!canAdminBoard}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               autoFocus
               ref={addColumnInputRef}
             />
@@ -288,7 +296,8 @@ export function KanbanBoardOverlays({
               onChange={(e) => setColumnWipDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submitColumn()}
               placeholder={t("addColumnModal.wipPlaceholder")}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none"
+              disabled={!canAdminBoard}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-3 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={t("addColumnModal.wipLabel")}
             />
             <label className="block text-xs text-[var(--flux-text-muted)] mb-1">{t("addColumnModal.policyLabel")}</label>
@@ -298,9 +307,15 @@ export function KanbanBoardOverlays({
               placeholder={t("addColumnModal.policyPlaceholder")}
               rows={3}
               maxLength={500}
-              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-4 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px]"
+              disabled={!canAdminBoard}
+              className="w-full px-3 py-2 border border-[var(--flux-control-border)] rounded-[var(--flux-rad)] text-sm mb-2 bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] placeholder-[var(--flux-text-muted)] focus:border-[var(--flux-primary)] outline-none resize-y min-h-[72px] disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={t("addColumnModal.policyLabel")}
             />
+            {!canAdminBoard ? (
+              <p className="text-xs text-[var(--flux-text-muted)] mb-3" role="note">
+                {t("board.rbac.adminOnlyColumnConfig")}
+              </p>
+            ) : null}
             <div className="flex gap-3 justify-end pt-2">
               <button
                 type="button"
@@ -315,7 +330,12 @@ export function KanbanBoardOverlays({
               >
                 {t("addColumnModal.cancel")}
               </button>
-              <button type="button" onClick={submitColumn} className="btn-primary">
+              <button
+                type="button"
+                onClick={submitColumn}
+                className="btn-primary"
+                disabled={!canAdminBoard}
+              >
                 {editingColumnKey ? t("addColumnModal.save") : t("addColumnModal.create")}
               </button>
             </div>

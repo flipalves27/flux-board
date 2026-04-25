@@ -68,12 +68,20 @@ const BoardIntakeFormsModal = dynamic(
   () => import("@/components/kanban/board-intake-forms-modal").then((m) => ({ default: m.BoardIntakeFormsModal })),
   { ssr: false }
 );
+const BoardDiscoverySessionsModal = dynamic(
+  () => import("@/components/kanban/board-discovery-sessions-modal").then((m) => ({ default: m.BoardDiscoverySessionsModal })),
+  { ssr: false }
+);
+const BoardPdfListImportModal = dynamic(
+  () => import("@/components/kanban/board-pdf-list-import-modal").then((m) => ({ default: m.BoardPdfListImportModal })),
+  { ssr: false }
+);
 import type { BoardAnomalyNotifications } from "@/lib/anomaly-board-settings";
 import { apiFetch, apiGet, getApiHeaders, ApiError } from "@/lib/api-client";
 import { useToast } from "@/context/toast-context";
 import { registerBoardVisit } from "@/lib/board-shortcuts";
 import { normalizeBoardForPersist } from "@/lib/board-persist-normalize";
-import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
+import { isDiscoveryMethodology, isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import type { CardServiceClass, SprintData, SubtaskData, SubtaskProgress } from "@/lib/schemas";
 import {
   setBoardPersistenceHandler,
@@ -100,6 +108,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { isPlatformAdminSession } from "@/lib/rbac";
+import type { ViewerCapabilities } from "@/lib/board-viewer-capabilities";
 
 const BoardFluxyDock = dynamic(
   () => import("@/components/fluxy/board-fluxy-dock").then((m) => ({ default: m.BoardFluxyDock })),
@@ -117,6 +126,9 @@ const BoardPresenceAvatars = dynamic(
 const PRIORITIES = ["Urgente", "Importante", "Média"];
 const PROGRESSES = ["Não iniciado", "Em andamento", "Concluída"];
 const DIRECTIONS = ["Manter", "Priorizar", "Adiar", "Cancelar", "Reavaliar"];
+const DIRECTION_STORAGE_VALUES = DIRECTIONS.map((d) => d.toLowerCase());
+/** Referência estável — `?? []` no seletor com `useShallow` gerava novo array a cada tick e loop #185. */
+const EMPTY_BOARD_LABELS: string[] = [];
 
 export interface CardLink {
   url: string;
@@ -259,6 +271,8 @@ export interface BoardData {
     labels?: string[];
     /** Meta de produto (Product Goal) visível no quadro. */
     productGoal?: string;
+    /** Nota do PO para contexto executivo (complementa o brief IA). */
+    executiveStakeholderNote?: string;
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
     definitionOfDone?: BoardDefinitionOfDone;
@@ -360,6 +374,12 @@ function sanitizeProductGoal(raw: unknown): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
+function sanitizeExecutiveStakeholderNote(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim().slice(0, 2000);
+  return t.length > 0 ? t : undefined;
+}
+
 function sanitizeBacklogBucketKey(raw: unknown, bucketOrder: BucketConfig[]): string | undefined {
   if (typeof raw !== "string") return undefined;
   const k = raw.trim().slice(0, 200);
@@ -425,6 +445,7 @@ export default function BoardPage() {
   const backToBoards = `/${locale}/boards`;
   const t = useTranslations("board");
   const tTour = useTranslations("board.productTour");
+  const tListImport = useTranslations("kanban.boardListImport");
   const [boardName, setBoardName] = useState("Board");
   const [clientLabel, setClientLabel] = useState<string | null>(null);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -435,6 +456,7 @@ export default function BoardPage() {
     portal: boardPortal,
     anomalyNotifications: boardAnomalyNotifications,
     boardMethodology: boardMethodologyForSprint,
+    boardLabels,
   } = useBoardStore(
     useShallow((s) => {
       const d = s.db;
@@ -443,6 +465,7 @@ export default function BoardPage() {
         portal: d?.portal,
         anomalyNotifications: d?.anomalyNotifications,
         boardMethodology: d?.boardMethodology,
+        boardLabels: d?.config?.labels?.length ? d.config.labels : EMPTY_BOARD_LABELS,
       };
     })
   );
@@ -457,6 +480,8 @@ export default function BoardPage() {
   const [briefOpen, setBriefOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
+  const [discoverySessionsOpen, setDiscoverySessionsOpen] = useState(false);
+  const [pdfListImportOpen, setPdfListImportOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefData, setBriefData] = useState<{ markdown: string; cached: boolean; model?: string } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -466,6 +491,7 @@ export default function BoardPage() {
   const csvImportMode = useKanbanUiStore((s) => s.csvImportMode);
   const setCsvImportMode = useKanbanUiStore((s) => s.setCsvImportMode);
   const [formOrigin, setFormOrigin] = useState("");
+  const [viewerCapabilities, setViewerCapabilities] = useState<ViewerCapabilities>({ canEdit: true, canAdmin: true });
 
   const showBoardSkeleton = useMinimumSkeletonDuration(loading);
   const tourExpandFilters = tourStep === BOARD_PRODUCT_TOUR_DAILY_STEP_INDEX;
@@ -517,7 +543,16 @@ export default function BoardPage() {
       const body = (await r.json()) as {
         board?: BoardData & { name?: string; clientLabel?: string };
         sprints?: SprintData[];
+        viewerCapabilities?: ViewerCapabilities;
       };
+      if (body.viewerCapabilities && typeof body.viewerCapabilities.canAdmin === "boolean") {
+        setViewerCapabilities({
+          canEdit: Boolean(body.viewerCapabilities.canEdit),
+          canAdmin: body.viewerCapabilities.canAdmin,
+        });
+      } else {
+        setViewerCapabilities({ canEdit: true, canAdmin: true });
+      }
       const d = body.board;
       if (!d || typeof d !== "object") throw new Error("Erro ao carregar");
       if (seq !== loadSeqRef.current) return;
@@ -554,6 +589,9 @@ export default function BoardPage() {
         dodChecks: dodIdSet.size > 0 ? sanitizeDodChecks((c as CardData).dodChecks, dodIdSet) : undefined,
       }));
       const productGoal = sanitizeProductGoal(d.config?.productGoal);
+      const executiveStakeholderNote = sanitizeExecutiveStakeholderNote(
+        (d.config as { executiveStakeholderNote?: unknown })?.executiveStakeholderNote
+      );
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
@@ -573,6 +611,7 @@ export default function BoardPage() {
           collapsedColumns: sanitizeCollapsedColumns(d.config?.collapsedColumns, bucketOrder),
           labels: sanitizeLabels(d.config?.labels),
           ...(productGoal ? { productGoal } : {}),
+          ...(executiveStakeholderNote ? { executiveStakeholderNote } : {}),
           ...(backlogBucketKey ? { backlogBucketKey } : {}),
           ...(definitionOfDone ? { definitionOfDone } : {}),
           ...(d.config?.cardRules ? { cardRules: d.config.cardRules } : {}),
@@ -649,8 +688,9 @@ export default function BoardPage() {
         const maxAttempts = 3;
         const backoffBaseMs = 400;
         let lastSaveFailureMessage: string | undefined;
+        let clientRuleError = false;
         try {
-          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          saveLoop: for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
               const rawNow = data ?? useBoardStore.getState().db;
               if (!rawNow) return;
@@ -672,6 +712,10 @@ export default function BoardPage() {
               };
               if (!res.ok) {
                 lastSaveFailureMessage = saveJson.error?.trim() || `Erro ${res.status}`;
+                if (res.status >= 400 && res.status < 500) {
+                  clientRuleError = true;
+                  break saveLoop;
+                }
                 throw new Error(lastSaveFailureMessage);
               }
               if (Array.isArray(saveJson.cards)) {
@@ -727,10 +771,13 @@ export default function BoardPage() {
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
           setSaveStatus("error");
+          const useServerAsTitle = Boolean(clientRuleError && lastSaveFailureMessage);
           pushToast({
             kind: "error",
-            title: tBoardRef.current("toasts.saveError"),
-            ...(lastSaveFailureMessage
+            title: useServerAsTitle
+              ? lastSaveFailureMessage!.slice(0, 500)
+              : tBoardRef.current("toasts.saveError"),
+            ...(!useServerAsTitle && lastSaveFailureMessage
               ? { description: lastSaveFailureMessage.slice(0, 400) }
               : {}),
           });
@@ -897,6 +944,20 @@ export default function BoardPage() {
                 Goals
               </button>
 
+              {isDiscoveryMethodology(boardMethodologyForSprint ?? "scrum") ? (
+                <button
+                  type="button"
+                  className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm"
+                  onClick={() => setDiscoverySessionsOpen(true)}
+                  aria-label={t("discoverySessions.open")}
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {t("discoverySessions.open")}
+                </button>
+              ) : null}
+
               <Link
                 href={`/${locale}/reports`}
                 className="btn-secondary flex items-center gap-1.5 py-2 px-3 text-sm no-underline"
@@ -978,6 +1039,12 @@ export default function BoardPage() {
                         </svg>
                         Importar CSV
                       </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setPdfListImportOpen(true)}>
+                        <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        {tListImport("menuItem")}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => triggerCsvExport()}>
                         <svg className="w-3.5 h-3.5 mr-2 opacity-60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1034,6 +1101,7 @@ export default function BoardPage() {
             priorities={PRIORITIES}
             progresses={PROGRESSES}
             directions={DIRECTIONS}
+            canAdminBoard={viewerCapabilities.canAdmin}
             productTourExpandFilters={tourExpandFilters}
             allowExternalMerge={saveStatus !== "saving"}
             reloadBoardFromServer={loadBoard}
@@ -1075,6 +1143,28 @@ export default function BoardPage() {
         getHeaders={getHeaders}
         formOrigin={formOrigin}
         onSaved={() => loadBoard()}
+      />
+
+      <BoardDiscoverySessionsModal
+        open={discoverySessionsOpen}
+        onClose={() => setDiscoverySessionsOpen(false)}
+        boardId={boardId}
+        bucketOrder={boardBucketOrder ?? []}
+        priorities={PRIORITIES}
+        progresses={PROGRESSES}
+        getHeaders={getHeaders}
+        onBoardReload={() => loadBoard()}
+      />
+
+      <BoardPdfListImportModal
+        open={pdfListImportOpen}
+        onClose={() => setPdfListImportOpen(false)}
+        boardId={boardId}
+        getHeaders={getHeaders}
+        onBoardReload={loadBoard}
+        bucketOrder={boardBucketOrder ?? []}
+        boardLabels={boardLabels}
+        directionStorageValues={DIRECTION_STORAGE_VALUES}
       />
 
       <BoardTemplateExportModal

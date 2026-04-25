@@ -30,6 +30,8 @@
     "platformAdminConsoleProduct": "Organizations, users & audit",
     "sprints": "Sprints",
     "sprintsActiveSublabel": "{count, plural, one {# active} other {# active}}",
+    "releases": "Releases",
+    "releasesUpcomingSublabel": "{count, plural, one {# to ship} other {# to ship}}",
     "docs": "Flux Docs",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
@@ -60,6 +62,7 @@
       "templates": "Public template showcase and one-click import.",
       "tasks": "Routine reminders (Pro/Business).",
       "myWork": "Personal dashboard with assigned cards, workload, and AI priority suggestions.",
+      "releases": "Releases: versions, changelogs, and org-wide list.",
       "users": "Members and organization permissions.",
       "organization": "Name, branding, and org settings.",
       "billing": "Stripe plan and workspace limits.",
@@ -2201,6 +2204,44 @@
       "saveError": "Could not save Flux Forms.",
       "validationError": "Fill slug (3+ chars), title, and a valid column."
     },
+    "discoverySessions": {
+      "open": "External discovery",
+      "title": "Sessions with external respondents",
+      "hint": "Create a secure link to collect discovery context without a Flux account. After submission, generate a Flux Doc and card drafts with AI (Flux Docs plan).",
+      "close": "Close",
+      "loading": "Loading sessions…",
+      "loadError": "Could not load sessions.",
+      "newSession": "New session",
+      "creating": "Creating…",
+      "createOk": "Session created. Copy the link to share.",
+      "createError": "Could not create the session.",
+      "copyLastLink": "Copy last link",
+      "copied": "Link copied.",
+      "copyFailed": "Could not copy.",
+      "empty": "No sessions yet.",
+      "statusLabel": "Status",
+      "expires": "Expires",
+      "doc": "Document",
+      "generate": "Generate doc & drafts",
+      "generating": "Generating…",
+      "generateOk": "Generation complete.",
+      "generateError": "Could not generate. Check your plan (Flux Docs) and responses.",
+      "planGate": "AI generation requires a plan with Flux Docs (Pro/Business) or an active trial.",
+      "previewTitle": "Card preview",
+      "includeCard": "Include card",
+      "pickOne": "Select at least one card.",
+      "apply": "Create cards on board",
+      "applying": "Saving…",
+      "applyOk": "Cards created on the board.",
+      "applyError": "Could not create cards.",
+      "status": {
+        "draft": "Draft",
+        "open": "Open",
+        "submitted": "Submitted",
+        "processed": "Processed",
+        "archived": "Archived"
+      }
+    },
     "clientLabelInHeader": "Client: {label}",
     "persistence": {
       "saving": "Saving…",
@@ -2392,6 +2433,20 @@
       "saveError": "Could not save the portal."
     }
   },
+  "discoveryPublic": {
+    "pageTitle": "Discovery form",
+    "loading": "Loading…",
+    "invalidToken": "Invalid link.",
+    "loadError": "Could not load the form.",
+    "submitError": "Could not submit. Try again.",
+    "submit": "Submit responses",
+    "submitting": "Submitting…",
+    "thankYou": "Thank you — your responses were received.",
+    "alreadySubmitted": "This form has already been submitted.",
+    "closed": "This session is closed.",
+    "privacyNote": "Responses are handled by the team that shared this link, for this discovery session only. Do not enter Flux passwords or unrelated secrets.",
+    "footer": "Flux · {locale}"
+  },
   "portal": {
     "loading": "Loading portal…",
     "notFound": "Portal not found or disabled.",
@@ -2452,6 +2507,48 @@
       "close": "Close",
       "apply": "Apply order on board",
       "open": "AI priority"
+    },
+    "boardListImport": {
+      "menuItem": "Import list (PDF) with AI",
+      "title": "Import list from PDF with AI",
+      "description": "Upload a PDF or Word file, or paste text. The AI turns it into board cards. Review the preview, then apply to this board (Pro+).",
+      "fileLabel": "File (PDF or DOCX)",
+      "pasteLabel": "Or paste text",
+      "pastePlaceholder": "Paste backlog items, meeting notes, or a table as plain text…",
+      "sourceMeta": "Source: {name}",
+      "pages": "{n} page(s)",
+      "previewHint": "Preview: {count} card(s) — uncheck any you do not want to import.",
+      "col": {
+        "title": "Title",
+        "column": "Column",
+        "priority": "Priority"
+      },
+      "includeAria": "Include in import",
+      "enrich": {
+        "checkbox": "After import, run smart card context (up to {max} cards, uses card context limits)",
+        "progress": "Enriching with board context: {current} / {total}…",
+        "truncated": "Only the first {max} new cards were enriched; {rest} left unchanged (you can open a card to enrich manually)."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "analyze": "Analyze with AI",
+        "analyzing": "Analyzing…",
+        "apply": "Apply to board",
+        "working": "Working…"
+      },
+      "errors": {
+        "noInput": "Send a file or paste text.",
+        "parseFailed": "Could not analyze the document (HTTP {status}).",
+        "emptyCards": "No cards were generated. Try another file or paste clearer text.",
+        "planUpgrade": "This feature requires a Pro or higher plan.",
+        "network": "Network error. Try again.",
+        "noneSelected": "Select at least one card to import.",
+        "applyFailed": "Could not apply (HTTP {status})."
+      },
+      "toasts": {
+        "applied": "Imported {n} card(s).",
+        "appliedWithEnrich": "Imported {n} card(s) and updated them with board context where possible."
+      }
     },
     "cardModal": {
       "intakeVision": {
@@ -2967,6 +3064,10 @@
       "subtitle": "Next best actions and WIP risk by column",
       "emptyNextActions": "No open cards to prioritize right now."
     },
+    "rbac": {
+      "adminOnlyColumnConfig": "Only board managers (owner, org admin, or board member with the admin role) can change columns, WIP limits, and policies.",
+      "wipMoveNeedsAdminOrLimit": "WIP limit would be exceeded. Ask a board manager to raise the column limit or reduce work in progress."
+    },
     "addColumnModal": {
       "title": {
         "new": "New column",
@@ -3376,6 +3477,22 @@
           "updated": "Last board update time used in this view"
         },
         "productGoalLabel": "Product / business direction",
+        "productGoalPlaceholder": "What outcome does this board pursue for the client or product?",
+        "editContext": "Edit context",
+        "saveContext": "Save",
+        "cancelEdit": "Cancel",
+        "contextSaveHint": "Saving persists to the server with the same limits as board settings.",
+        "refreshData": "Refresh data",
+        "refreshing": "Refreshing…",
+        "refreshDone": "Board data refreshed",
+        "refreshError": "Could not refresh the board",
+        "overdueSummary": "{count, plural, one {# open card is overdue} other {# open cards are overdue}}",
+        "priorityMixLabel": "Priorities (open)",
+        "columnWip": "{count}/{limit}",
+        "columnWipAria": "Column WIP: {count} of {limit}",
+        "wipExceeded": "Over WIP limit",
+        "expandStage": "Expand stage",
+        "collapseStage": "Collapse stage",
         "kpi": {
           "resilience": "Composite risk index",
           "resilienceHint": "Higher is better: less exposure to late work, critical priority overload, and too many items in motion.",
@@ -3383,6 +3500,23 @@
           "momentumHint": "Blends funnel progress, completion rate, and recent board activity.",
           "predictability": "Schedule predictability",
           "predictabilityHint": "How well known due dates line up with remaining open work."
+        },
+        "kpiBento": {
+          "resilience": "Composite risk index",
+          "resilienceHint": "Higher is better: less exposure to late work, critical priority overload, and too many items in motion.",
+          "momentum": "Flow capacity",
+          "momentumHint": "Blends funnel progress, completion rate, and recent board activity.",
+          "predictability": "Schedule predictability",
+          "predictabilityHint": "How well known due dates line up with remaining open work.",
+          "attention": "Attention",
+          "attentionHint": "Critical priority or past due (open cards).",
+          "flowMix": "In progress vs queue",
+          "flowMixHint": "Active work compared to not started.",
+          "flowMixValue": "{active} active · {queued} queued",
+          "wipHeadline": "WIP by column",
+          "wipHint": "Columns with a configured limit; highlights when the limit is exceeded.",
+          "wipOverSummary": "{over}/{total} over",
+          "wipOkSummary": "Within limit ({total})"
         },
         "filtersLabel": "Focus",
         "filter": {
@@ -3409,6 +3543,41 @@
           "today": "Due: today",
           "tomorrow": "Due: tomorrow",
           "inDays": "Due in {days} days"
+        },
+        "topDecisions": {
+          "title": "Top decisions this week",
+          "justifyCta": "AI rationale (short)",
+          "justifyLoading": "Generating…",
+          "justifyDone": "Rationales updated",
+          "justifyError": "Could not generate rationales",
+          "empty": "No open cards to rank."
+        },
+        "narrator": {
+          "kicker": "AI narrator",
+          "title": "Executive brief",
+          "tabBrief": "AI brief",
+          "tabNotes": "PO notes",
+          "notesHint": "Free-form context for committees; included in the one-pager and executive read.",
+          "notesPlaceholder": "Extra context for stakeholders (risks, asks, pending decisions)…",
+          "noteSave": "Save notes",
+          "noteRevert": "Reset to last saved",
+          "noteSaved": "Notes saved to the board",
+          "load": "Load brief",
+          "refresh": "Refresh",
+          "loading": "Loading…",
+          "emptyHint": "Load the brief to see the latest AI summary for this board. It uses the same cache as the header brief.",
+          "cachedHint": "Served from cache — refresh after meaningful board changes.",
+          "copyBrief": "Copy brief",
+          "downloadOnePager": "Export one-pager (.md)",
+          "sharePortal": "Share read-only link",
+          "copied": "Brief copied",
+          "copyFailed": "Could not copy",
+          "onePagerDownloaded": "One-pager downloaded",
+          "shareFailed": "Could not create share link",
+          "shareReady": "Portal link copied",
+          "shareCreated": "Share link created",
+          "modelHint": "Model: {model}",
+          "error": "Could not load brief"
         }
       },
       "roadmapProjection": {
@@ -4339,6 +4508,10 @@
       "allEnv": "All environments",
       "allStatus": "All statuses"
     },
+    "boardPage": {
+      "showArchived": "Show archived"
+    },
+    "archivedPill": "Archived",
     "statuses": {
       "draft": "Draft",
       "planned": "Planned",
@@ -4400,11 +4573,70 @@
         "rolled_back": "Rolled back"
       }
     },
+    "actions": {
+      "edit": "Edit",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "delete": "Delete",
+      "deleteConfirm": "Delete release “{name}”? This cannot be undone.",
+      "cancel": "Cancel",
+      "confirmDelete": "Delete"
+    },
+    "hub": {
+      "pretitle": "Org releases",
+      "title": "Releases",
+      "subtitle": "Track versions and changelogs across every board.",
+      "newRelease": "New release",
+      "upgradeTitle": "Releases require a paid plan",
+      "upgradeDescription": "The releases module shares the Sprint Engine feature. Upgrade to enable.",
+      "upgradeCta": "See plans",
+      "loading": "Loading…",
+      "emptyTitle": "No releases here",
+      "emptyDescription": "Change segment, search, or create a release on a board.",
+      "searchPlaceholder": "Search name, version, board…",
+      "allBoards": "All boards",
+      "openBoardReleases": "Board releases page",
+      "error": {
+        "load": "Could not load releases.",
+        "auth": "Session expired.",
+        "unknown": "Something went wrong."
+      },
+      "kpi": {
+        "upcoming": "To ship",
+        "shipped": "Shipped / final",
+        "archived": "Archived",
+        "cards": "Cards in view",
+        "cardsHint": "in listed releases",
+        "risks": "Risks in view"
+      },
+      "segments": {
+        "upcoming": "To ship",
+        "shipped": "Shipped",
+        "archived": "Archived"
+      },
+      "sort": {
+        "updated": "Last updated",
+        "version": "Version",
+        "releaseDate": "Release / planned date"
+      },
+      "table": {
+        "board": "Board",
+        "version": "Version",
+        "status": "Status",
+        "dates": "Dates",
+        "sprints": "Sprints",
+        "cards": "Cards",
+        "health": "Health",
+        "actions": "Actions",
+        "planned": "plan."
+      }
+    },
     "detail": {
       "edit": "Edit",
       "generate": "Generate AI notes",
       "generating": "Generating…",
       "changelog": "Changelog",
+      "cardsInScopeOnly": "Other cards in scope",
       "notes": "Release notes",
       "notesHuman": "Human notes",
       "notesAi": "AI generated",
@@ -4424,6 +4656,8 @@
         "released": "Released",
         "rolled_back": "Rolled back",
         "edited": "Edited",
+        "archived": "Archived",
+        "unarchived": "Unarchived",
         "ai_notes_generated": "AI notes generated"
       }
     }

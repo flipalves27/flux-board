@@ -706,6 +706,8 @@ export const BoardUpdateSchema = z
         collapsedColumns: z.array(z.string().trim().max(200)).optional(),
         labels: z.array(z.string().trim().max(200)).optional(),
         productGoal: z.string().trim().max(800).optional().nullable(),
+        /** Nota curta do PO para leitura C-Level (export + vista executiva); não substitui o brief IA. */
+        executiveStakeholderNote: z.string().trim().max(2000).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
         /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */
@@ -1325,6 +1327,8 @@ export const ReleaseTimelineEventSchema = z.object({
     "released",
     "rolled_back",
     "edited",
+    "archived",
+    "unarchived",
     "ai_notes_generated",
   ]),
   by: z.string().trim().max(200).default(""),
@@ -1372,6 +1376,7 @@ export const ReleaseDataSchema = z.object({
   releasedAt: z.string().trim().max(80).nullable().default(null),
   rolledBackAt: z.string().trim().max(80).nullable().default(null),
   rollbackReason: z.string().trim().max(500).default(""),
+  archivedAt: z.string().trim().max(80).nullable().default(null),
   tags: z.array(z.string().trim().max(60)).max(20).default([]),
   createdBy: z.string().trim().max(200).default(""),
   createdAt: z.string().trim().max(80),
@@ -1404,6 +1409,7 @@ export const ReleaseUpdateSchema = ReleaseCreateSchema.partial().extend({
   releasedAt: z.string().trim().max(80).nullable().optional(),
   rolledBackAt: z.string().trim().max(80).nullable().optional(),
   rollbackReason: z.string().trim().max(500).optional(),
+  archivedAt: z.string().trim().max(80).nullable().optional(),
 });
 export type ReleaseUpdateInput = z.infer<typeof ReleaseUpdateSchema>;
 

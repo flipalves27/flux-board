@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
    */
   outputFileTracingIncludes: {
     "/api/boards/*/spec-plan/stream": ["./node_modules/pdfjs-dist/**/*"],
+    "/api/boards/*/list-import/parse": ["./node_modules/pdfjs-dist/**/*"],
   },
   /**
    * Source maps no bundle do browser: preview só com `ENABLE_PREVIEW_BROWSER_SOURCE_MAPS=1`;

@@ -292,6 +292,11 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
     typeof productGoalRaw === "string" && productGoalRaw.trim()
       ? productGoalRaw.trim().slice(0, 800)
       : undefined;
+  const stakeholderRaw = (db.config as { executiveStakeholderNote?: unknown } | undefined)?.executiveStakeholderNote;
+  const executiveStakeholderNote =
+    typeof stakeholderRaw === "string" && stakeholderRaw.trim()
+      ? stakeholderRaw.trim().slice(0, 2000)
+      : undefined;
   const backlogKeyRaw = db.config?.backlogBucketKey;
   const backlogBucketKey =
     typeof backlogKeyRaw === "string" &&
@@ -389,6 +394,7 @@ export function normalizeBoardForPersist(db: BoardData): BoardData {
         .filter((k) => bucketOrder.some((b) => b.key === k)),
       labels: normalizedLabels,
       ...(productGoal ? { productGoal } : {}),
+      ...(executiveStakeholderNote ? { executiveStakeholderNote } : {}),
       ...(backlogBucketKey ? { backlogBucketKey } : {}),
       ...(definitionOfDone ? { definitionOfDone } : {}),
       ...(wipEnforcement ? { wipEnforcement } : {}),

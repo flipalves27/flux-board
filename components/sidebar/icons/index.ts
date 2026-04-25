@@ -15,6 +15,7 @@ export { IconLogout } from "./icon-logout";
 export { IconMonitor } from "./icon-monitor";
 export { IconMoon } from "./icon-moon";
 export { IconMyWork } from "./icon-my-work";
+export { IconRelease } from "./icon-release";
 export { IconReports } from "./icon-reports";
 export { IconSettings } from "./icon-settings";
 export { IconShield } from "./icon-shield";

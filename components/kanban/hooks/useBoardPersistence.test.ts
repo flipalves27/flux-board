@@ -14,6 +14,7 @@ describe("useBoardPersistence", () => {
     useFilterStore.setState({ filtersByBoard: {} });
     useKanbanUiStore.setState({
       boardViewByBoard: {},
+      executivePresentationFilterByBoard: {},
       modalCard: null,
       modalMode: "new",
       mapaOpen: false,

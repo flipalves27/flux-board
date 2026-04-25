@@ -21,6 +21,7 @@ type UseBoardDndArgs = {
   getCardsByBucket: (bucketKey: string) => CardData[];
   moveCardsBatch: (orderedIds: string[], newBucket: string, newIndex: number) => void;
   reorderColumns: (fromIndex: number, toIndex: number) => void;
+  canReorderColumns?: boolean;
 };
 
 /**
@@ -59,6 +60,7 @@ export function useBoardDnd({
   getCardsByBucket,
   moveCardsBatch,
   reorderColumns,
+  canReorderColumns = true,
 }: UseBoardDndArgs) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeDragIds, setActiveDragIds] = useState<string[] | null>(null);
@@ -103,6 +105,7 @@ export function useBoardDnd({
 
       // --- Column reorder: only when dragging a column, never a card ---
       if (!activeIdStr.startsWith("card-")) {
+        if (!canReorderColumns) return;
         const colIndex = buckets.findIndex((b) => b.key === activeIdStr);
         if (colIndex >= 0) {
           const normalizedOver = overId.startsWith("bucket-")
@@ -159,7 +162,7 @@ export function useBoardDnd({
         moveCardsBatch(dragIds, newBucket, bucketCards.length);
       }
     },
-    [buckets, cards, getCardsByBucket, moveCardsBatch, reorderColumns]
+    [buckets, canReorderColumns, cards, getCardsByBucket, moveCardsBatch, reorderColumns]
   );
 
   const activeCard =

@@ -9,7 +9,7 @@ import { runOrgLlmChat } from "@/lib/llm-org-chat";
 import {
   buildDailyArrivalBriefPrompt,
   buildExecutiveBriefAiUserPrompt,
-  type ExecutiveBriefCardSlice,
+  cardDataToExecutiveBriefSlices,
 } from "@/lib/board-executive-brief-ai";
 import { hashCacheKey, getAiTextCache, setAiTextCache } from "@/lib/ai-completion-cache";
 import { FLUX_LLM_PROMPT_VERSION } from "@/lib/prompt-versions";
@@ -87,15 +87,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   }
 
+  const cardSlices = cardDataToExecutiveBriefSlices(board.cards ?? []);
+
   const userPrompt =
     briefType === "daily_arrival"
       ? buildDailyArrivalBriefPrompt({
           name: board.name ?? "Board",
-          cards: (board.cards ?? []) as ExecutiveBriefCardSlice[],
+          cards: cardSlices,
         })
       : buildExecutiveBriefAiUserPrompt({
           name: board.name ?? "Board",
-          cards: (board.cards ?? []) as ExecutiveBriefCardSlice[],
+          cards: cardSlices,
         });
 
   const res = await runOrgLlmChat({
