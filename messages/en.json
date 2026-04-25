@@ -959,6 +959,42 @@
         "sentiment": "Sentiment"
       }
     },
+    "scope": {
+      "allBoards": "Organization (all boards)",
+      "methodologyLabel": "Methodology scope",
+      "boardsLabel": "Select boards",
+      "activeScopeTitle": "Active scope",
+      "activeScopeHint": "{count} board(s) in the current slice.",
+      "saveViewPlaceholder": "Saved view name",
+      "saveView": "Save view",
+      "emptySelection": "No boards found for the selected filters.",
+      "methodologies": {
+        "scrum": "Scrum",
+        "kanban": "Kanban",
+        "lean_six_sigma": "Lean Six Sigma",
+        "discovery": "Discovery",
+        "safe": "SAFe"
+      }
+    },
+    "catalog": {
+      "weeklyFlowTitle": "Preset: weekly flow review (Kanban)",
+      "weeklyFlowDesc": "Applies Kanban filter and opens flow-focused panels.",
+      "sprintHealthTitle": "Preset: sprint health (Scrum)",
+      "sprintHealthDesc": "Applies Scrum filter and highlights velocity, DoR, and sprint history.",
+      "lssExecutiveTitle": "Preset: Lean Six Sigma executive",
+      "lssExecutiveDesc": "Opens the DMAIC executive shortcut while keeping shareable scope in the URL."
+    },
+    "roadmap": {
+      "title": "Methodology coverage",
+      "discovery": {
+        "now": "Discovery currently uses general portfolio/flow metrics.",
+        "next": "Roadmap: dedicated experimentation and learning metrics."
+      },
+      "safe": {
+        "now": "SAFe currently uses general metrics and team/board capacity views.",
+        "next": "Roadmap: PI/program-level views and scaled dependencies."
+      }
+    },
     "lssExecutiveLink": "Lean Six Sigma executive (Business+)",
     "loading": "Loading metrics…",
     "loadError": "Could not load reports.",
@@ -3628,6 +3664,19 @@
         "sprintAll": "Show all cards",
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
+      },
+      "sprintContext": {
+        "regionAria": "Active sprint: {name}",
+        "commandCenter": "Command center",
+        "dateRange": "{start} – {end}",
+        "dateStartOnly": "Starts {start}",
+        "dateEndOnly": "Ends {end}",
+        "counts": "{inScope} in scope · {done} done",
+        "countsEmpty": "No cards in sprint scope",
+        "emptyScopeHint": "Add cards from the Sprint panel or command center.",
+        "l1BadgeTitleEmpty": "Sprint scope is empty (0 cards). Click to toggle sprint-only view when you add cards.",
+        "cardChip": "Sprint",
+        "cardChipAria": "In active sprint: {name}"
       },
       "productGoalStrip": {
         "label": "Product goal",

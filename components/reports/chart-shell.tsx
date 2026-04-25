@@ -14,6 +14,7 @@ export function ChartShell({
   chartId,
   explainPayload,
   explainApiPath = "/api/flux-reports/explain",
+  scope,
 }: {
   title: string;
   hint?: string;
@@ -22,6 +23,7 @@ export function ChartShell({
   explainPayload: unknown;
   /** Ex.: `/api/flux-reports/lss/explain` para relatório Lean Six Sigma. */
   explainApiPath?: string;
+  scope?: unknown;
 }) {
   const t = useTranslations("reports");
   const { getHeaders } = useAuth();
@@ -30,6 +32,16 @@ export function ChartShell({
   const [err, setErr] = useState<string | null>(null);
   const [explainModel, setExplainModel] = useState<string | null>(null);
   const [explainProvider, setExplainProvider] = useState<string | null>(null);
+  const fallbackScope =
+    typeof window !== "undefined"
+      ? {
+          methodology: new URLSearchParams(window.location.search).get("methodology") ?? undefined,
+          boardIds: (new URLSearchParams(window.location.search).get("boardIds") ?? "")
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean),
+        }
+      : undefined;
 
   const explain = useCallback(async () => {
     setBusy(true);
@@ -48,7 +60,8 @@ export function ChartShell({
         {
           chartId,
           chartTitle: title,
-          dataSummary: JSON.stringify(explainPayload),
+          scope: scope ?? fallbackScope,
+          dataSummary: JSON.stringify({ scope: scope ?? fallbackScope, data: explainPayload }),
         },
         getHeaders()
       );
@@ -64,7 +77,7 @@ export function ChartShell({
     } finally {
       setBusy(false);
     }
-  }, [chartId, explainApiPath, explainPayload, getHeaders, title, t]);
+  }, [chartId, explainApiPath, explainPayload, fallbackScope, getHeaders, scope, title, t]);
 
   return (
     <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">

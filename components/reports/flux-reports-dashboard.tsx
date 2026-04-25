@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Area,
   AreaChart,
@@ -49,6 +50,7 @@ import { ReportsLssPanel } from "@/components/reports/reports-lss-panel";
 import { ReportsTooltip } from "@/components/reports/reports-tooltip";
 import { ReportsHeatmapCell } from "@/components/reports/reports-heatmap-cell";
 import { ReportsGeneratedAt } from "@/components/reports/reports-generated-at";
+import { BOARD_METHODOLOGY_VALUES, type BoardMethodology } from "@/lib/board-methodology";
 
 const CHART_COLORS = REPORTS_CHART_SERIES_COLORS;
 
@@ -96,7 +98,19 @@ type FluxReportsPayload = {
     throughput: number | null;
     cardCount: number;
   }>;
-  meta: { copilotHistory: boolean; boardCount: number };
+  meta: {
+    copilotHistory: boolean;
+    boardCount: number;
+    weeks?: number;
+    availableBoards?: Array<{ id: string; name: string; methodology: BoardMethodology | null }>;
+    scope?: {
+      kind: "organization" | "methodology" | "boards";
+      methodology?: BoardMethodology;
+      boardIds?: string[];
+      boardCount: number;
+      labelHint: string;
+    };
+  };
   sprintPrediction: SprintPredictionPayload;
   sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }>;
   cycleTimeScatter: CycleTimeScatterPoint[];
@@ -121,6 +135,10 @@ function riskHeatColor(risco: number | null): string {
 }
 
 type ReportsHubTab = "overview" | "kanban" | "scrum" | "lss";
+type ReportsPresetId = "weekly-flow" | "sprint-health" | "lss-executive";
+
+const SAVED_VIEWS_STORAGE_KEY = "flux-reports.saved-views.v1";
+const ACTIVE_SECTIONS_STORAGE_KEY = "flux-reports.active-sections.v1";
 
 function buildSparklinePath(values: number[], width: number, height: number): string {
   if (!values.length) return "";
@@ -212,11 +230,76 @@ export function FluxReportsDashboard() {
   const localeRoot = `/${locale}`;
   const appName = usePlatformDisplayName();
   const { getHeaders } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<FluxReportsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cfdTab, setCfdTab] = useState<"accumulated" | "weekly">("accumulated");
   const [hubTab, setHubTab] = useState<ReportsHubTab>("overview");
+  const [methodology, setMethodology] = useState<BoardMethodology | "">("");
+  const [selectedBoardIds, setSelectedBoardIds] = useState<string[]>([]);
+  const [viewNameDraft, setViewNameDraft] = useState("");
+  const [savedViews, setSavedViews] = useState<
+    Array<{ id: string; name: string; methodology: BoardMethodology | ""; boardIds: string[]; hubTab: ReportsHubTab }>
+  >([]);
+  const [activeSectionIds, setActiveSectionIds] = useState<string[]>([
+    "insights",
+    "kpis",
+    "outlook",
+    "deps",
+    "cycle",
+    "sentiment",
+    "cfd",
+  ]);
+  const [selectedPreset, setSelectedPreset] = useState<ReportsPresetId | "">("");
+
+  useEffect(() => {
+    const m = searchParams.get("methodology");
+    if (m && BOARD_METHODOLOGY_VALUES.includes(m as BoardMethodology)) {
+      setMethodology(m as BoardMethodology);
+    } else {
+      setMethodology("");
+    }
+    const ids = (searchParams.get("boardIds") ?? "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    setSelectedBoardIds(ids);
+    const tab = searchParams.get("tab");
+    if (tab === "overview" || tab === "kanban" || tab === "scrum" || tab === "lss") {
+      setHubTab(tab);
+    }
+    const preset = searchParams.get("preset");
+    if (preset === "weekly-flow" || preset === "sprint-health" || preset === "lss-executive") {
+      setSelectedPreset(preset);
+    } else {
+      setSelectedPreset("");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(SAVED_VIEWS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as typeof savedViews;
+      if (Array.isArray(parsed)) setSavedViews(parsed.slice(0, 12));
+    } catch {
+      // ignore malformed local storage
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(ACTIVE_SECTIONS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as string[];
+      if (Array.isArray(parsed) && parsed.length > 0) setActiveSectionIds(parsed);
+    } catch {
+      // ignore malformed local storage
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,7 +307,11 @@ export function FluxReportsDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const res = await apiGet<FluxReportsPayload>("/api/flux-reports", getHeaders());
+        const qs = new URLSearchParams();
+        if (methodology) qs.set("methodology", methodology);
+        if (selectedBoardIds.length) qs.set("boardIds", selectedBoardIds.join(","));
+        const endpoint = `/api/flux-reports${qs.toString() ? `?${qs.toString()}` : ""}`;
+        const res = await apiGet<FluxReportsPayload>(endpoint, getHeaders());
         if (!cancelled) setData(res);
       } catch (e) {
         if (cancelled) return;
@@ -242,7 +329,39 @@ export function FluxReportsDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [getHeaders, t]);
+  }, [getHeaders, methodology, selectedBoardIds, t]);
+
+  useEffect(() => {
+    const qs = new URLSearchParams(searchParams.toString());
+    if (methodology) qs.set("methodology", methodology);
+    else qs.delete("methodology");
+    if (selectedBoardIds.length) qs.set("boardIds", selectedBoardIds.join(","));
+    else qs.delete("boardIds");
+    qs.set("tab", hubTab);
+    if (selectedPreset) qs.set("preset", selectedPreset);
+    else qs.delete("preset");
+    router.replace(`${pathname}${qs.toString() ? `?${qs.toString()}` : ""}`);
+  }, [hubTab, methodology, pathname, router, searchParams, selectedBoardIds, selectedPreset]);
+
+  useEffect(() => {
+    if (methodology === "kanban") setHubTab("kanban");
+    if (methodology === "scrum") setHubTab("scrum");
+  }, [methodology]);
+
+  useEffect(() => {
+    if (!selectedPreset) return;
+    if (selectedPreset === "lss-executive") {
+      setHubTab("lss");
+      return;
+    }
+    if (selectedPreset === "weekly-flow") {
+      setMethodology("kanban");
+      setHubTab("kanban");
+      return;
+    }
+    setMethodology("scrum");
+    setHubTab("scrum");
+  }, [selectedPreset]);
 
   const showSkeleton = useMinimumSkeletonDuration(loading);
 
@@ -296,6 +415,63 @@ export function FluxReportsDashboard() {
     [t]
   );
 
+  const methodologyOptions = useMemo(
+    () =>
+      BOARD_METHODOLOGY_VALUES.map((m) => ({
+        id: m,
+        label: t(`scope.methodologies.${m}`),
+      })),
+    [t]
+  );
+
+  const hasZeroBoardsInScope = (data?.meta.scope?.boardCount ?? data?.meta.boardCount ?? 0) === 0;
+
+  const applyPreset = useCallback(
+    (presetId: ReportsPresetId) => {
+      setSelectedPreset(presetId);
+      if (presetId === "weekly-flow") {
+        setMethodology("kanban");
+        setHubTab("kanban");
+        setSelectedBoardIds([]);
+        return;
+      }
+      if (presetId === "sprint-health") {
+        setMethodology("scrum");
+        setHubTab("scrum");
+        setSelectedBoardIds([]);
+        return;
+      }
+      setHubTab("lss");
+    },
+    [setHubTab, setMethodology, setSelectedBoardIds]
+  );
+
+  const saveCurrentView = useCallback(() => {
+    const name = viewNameDraft.trim();
+    if (!name) return;
+    const next = [
+      {
+        id: `${Date.now()}`,
+        name,
+        methodology,
+        boardIds: selectedBoardIds,
+        hubTab,
+      },
+      ...savedViews,
+    ].slice(0, 12);
+    setSavedViews(next);
+    setViewNameDraft("");
+    window.localStorage.setItem(SAVED_VIEWS_STORAGE_KEY, JSON.stringify(next));
+  }, [hubTab, methodology, savedViews, selectedBoardIds, viewNameDraft]);
+
+  const toggleSection = useCallback((id: string) => {
+    setActiveSectionIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id];
+      window.localStorage.setItem(ACTIVE_SECTIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   if (showSkeleton) {
     return <SkeletonTable rows={6} />;
   }
@@ -309,16 +485,152 @@ export function FluxReportsDashboard() {
   return (
     <DataFadeIn active key={data.generatedAt} className="space-y-6">
       <div className="sticky top-[min(3.5rem,env(safe-area-inset-top,0px)+2.5rem)] z-[var(--flux-z-board-sticky-chrome)] -mx-1 space-y-2 rounded-b-[var(--flux-rad)] flux-glass-surface border-x-0 border-t-0 px-1 pb-2 pt-1 flux-depth-1">
+        <div className="grid grid-cols-1 gap-2 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-08)] bg-[var(--flux-chrome-alpha-04)] p-2 sm:grid-cols-3">
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="font-semibold text-[var(--flux-text-muted)]">{t("scope.methodologyLabel")}</span>
+            <select
+              aria-label={t("scope.methodologyLabel")}
+              className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-transparent px-2 py-1.5"
+              value={methodology}
+              onChange={(e) => {
+                setSelectedPreset("");
+                setMethodology((e.target.value || "") as BoardMethodology | "");
+              }}
+            >
+              <option value="">{t("scope.allBoards")}</option>
+              {methodologyOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs sm:col-span-2">
+            <span className="font-semibold text-[var(--flux-text-muted)]">{t("scope.boardsLabel")}</span>
+            <select
+              aria-label={t("scope.boardsLabel")}
+              multiple
+              className="min-h-[80px] rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-transparent px-2 py-1.5"
+              value={selectedBoardIds}
+              onChange={(e) =>
+                {
+                  setSelectedPreset("");
+                  setSelectedBoardIds(Array.from(e.target.selectedOptions).map((option) => option.value).slice(0, 20));
+                }
+              }
+            >
+              {(data.meta.availableBoards ?? []).map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="sm:col-span-3 flex flex-wrap items-center gap-2">
+            <input
+              value={viewNameDraft}
+              onChange={(e) => setViewNameDraft(e.target.value)}
+              placeholder={t("scope.saveViewPlaceholder")}
+              className="h-8 rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] bg-transparent px-2 text-xs"
+            />
+            <button
+              type="button"
+              onClick={saveCurrentView}
+              className="h-8 rounded-[var(--flux-rad-sm)] border border-[var(--flux-primary-alpha-35)] px-2 text-xs font-semibold"
+            >
+              {t("scope.saveView")}
+            </button>
+            {savedViews.map((view) => (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() => {
+                  setMethodology(view.methodology);
+                  setSelectedBoardIds(view.boardIds);
+                  setHubTab(view.hubTab);
+                  setSelectedPreset("");
+                }}
+                className="rounded-full border border-[var(--flux-chrome-alpha-10)] px-2 py-1 text-[10px]"
+              >
+                {view.name}
+              </button>
+            ))}
+          </div>
+          <div className="sm:col-span-3 flex flex-wrap gap-1">
+            {overviewChapters.map((chapter) => (
+              <button
+                key={chapter.id}
+                type="button"
+                onClick={() => toggleSection(chapter.id.replace("flux-reports-chapter-", ""))}
+                className={`rounded-full border px-2 py-1 text-[10px] ${
+                  activeSectionIds.includes(chapter.id.replace("flux-reports-chapter-", ""))
+                    ? "border-[var(--flux-primary-alpha-35)]"
+                    : "border-[var(--flux-chrome-alpha-10)] opacity-70"
+                }`}
+              >
+                {chapter.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <ReportsTabBar
           items={hubTabs}
           value={hubTab}
-          onChange={setHubTab}
+          onChange={(next) => {
+            setSelectedPreset("");
+            setHubTab(next);
+          }}
           className="flex flex-wrap gap-2 border-0 pb-0"
         />
         {hubTab === "overview" ? (
           <ReportsChapterNav chapters={overviewChapters} label={t("hub.chapters.label")} />
         ) : null}
       </div>
+
+      <ReportsInfoCard
+        title={t("scope.activeScopeTitle")}
+        value={data.meta.scope?.labelHint ?? t("scope.allBoards")}
+        hint={t("scope.activeScopeHint", { count: data.meta.scope?.boardCount ?? data.meta.boardCount ?? 0 })}
+      />
+
+      <section className="grid grid-cols-1 gap-2 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => applyPreset("weekly-flow")}
+          className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] p-3 text-left"
+        >
+          <p className="text-xs font-semibold">{t("catalog.weeklyFlowTitle")}</p>
+          <p className="text-xs text-[var(--flux-text-muted)]">{t("catalog.weeklyFlowDesc")}</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("sprint-health")}
+          className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] p-3 text-left"
+        >
+          <p className="text-xs font-semibold">{t("catalog.sprintHealthTitle")}</p>
+          <p className="text-xs text-[var(--flux-text-muted)]">{t("catalog.sprintHealthDesc")}</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("lss-executive")}
+          className="rounded-[var(--flux-rad-sm)] border border-[var(--flux-chrome-alpha-10)] p-3 text-left"
+        >
+          <p className="text-xs font-semibold">{t("catalog.lssExecutiveTitle")}</p>
+          <p className="text-xs text-[var(--flux-text-muted)]">{t("catalog.lssExecutiveDesc")}</p>
+        </button>
+      </section>
+
+      {(methodology === "discovery" || methodology === "safe") && (
+        <ReportsInfoCard
+          title={t("roadmap.title")}
+          value={t(`roadmap.${methodology}.now`)}
+          hint={t(`roadmap.${methodology}.next`)}
+        />
+      )}
+
+      {hasZeroBoardsInScope && hubTab !== "lss" ? (
+        <ReportsEmptyState message={t("scope.emptySelection")} />
+      ) : null}
 
       {hubTab === "lss" ? (
         <ReportsLssPanel
@@ -328,8 +640,9 @@ export function FluxReportsDashboard() {
         />
       ) : null}
 
-      {hubTab === "overview" ? (
+      {!hasZeroBoardsInScope && hubTab === "overview" ? (
         <>
+          {activeSectionIds.includes("insights") ? (
           <div id="flux-reports-chapter-insights" className="grid grid-cols-1 gap-4 lg:grid-cols-12 scroll-mt-24">
             <BentoTile delayMs={0} className="lg:col-span-8">
               <ProactiveAiPanel />
@@ -343,7 +656,9 @@ export function FluxReportsDashboard() {
               />
             </BentoTile>
           </div>
+          ) : null}
 
+          {activeSectionIds.includes("kpis") ? (
           <section id="flux-reports-chapter-kpis" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 scroll-mt-24">
             <BentoTile delayMs={70}>
               <div className="rounded-[var(--flux-rad)] flux-glass-surface flux-depth-1 p-3">
@@ -387,7 +702,9 @@ export function FluxReportsDashboard() {
               </div>
             </BentoTile>
           </section>
+          ) : null}
 
+          {activeSectionIds.includes("outlook") ? (
           <div id="flux-reports-chapter-outlook" className="grid grid-cols-1 gap-4 lg:grid-cols-12 scroll-mt-24">
             <BentoTile delayMs={190} className="lg:col-span-7">
               <SprintPredictionPanel prediction={data.sprintPrediction} />
@@ -400,17 +717,23 @@ export function FluxReportsDashboard() {
               )}
             </BentoTile>
           </div>
+          ) : null}
 
+          {activeSectionIds.includes("deps") ? (
           <BentoTile delayMs={250} id="flux-reports-chapter-deps">
             <Suspense fallback={<ReportsSectionPlaceholder message={t("dependencies.loading")} />}>
               <CrossBoardDependenciesPanel />
             </Suspense>
           </BentoTile>
+          ) : null}
 
+          {activeSectionIds.includes("cycle") ? (
           <BentoTile delayMs={280} id="flux-reports-chapter-cycle">
             <CycleTimeScatterPanel points={data.cycleTimeScatter} />
           </BentoTile>
+          ) : null}
 
+      {activeSectionIds.includes("sentiment") ? (
       <div id="flux-reports-chapter-sentiment" className="scroll-mt-24">
       <ChartShell
         title={t("charts.sentiment")}
@@ -448,11 +771,13 @@ export function FluxReportsDashboard() {
         )}
       </ChartShell>
       </div>
+      ) : null}
 
       {!data.meta.copilotHistory ? (
         <p className="text-xs text-[var(--flux-text-muted)]">{t("copilotHint")}</p>
       ) : null}
 
+      {activeSectionIds.includes("cfd") ? (
       <div id="flux-reports-chapter-cfd" className="scroll-mt-24 space-y-3">
         <ReportsTabBar
           items={[
@@ -503,6 +828,7 @@ export function FluxReportsDashboard() {
           </ChartShell>
         )}
       </div>
+      ) : null}
 
       <ChartShell
         title={t("charts.throughput")}
@@ -648,7 +974,7 @@ export function FluxReportsDashboard() {
         </>
       ) : null}
 
-      {hubTab === "kanban" ? (
+      {!hasZeroBoardsInScope && hubTab === "kanban" ? (
         <div className="space-y-6">
           <p className="text-sm leading-relaxed text-[var(--flux-text-muted)]">{t("hub.leadCycleNote")}</p>
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -730,7 +1056,7 @@ export function FluxReportsDashboard() {
         </div>
       ) : null}
 
-      {hubTab === "scrum" ? (
+      {!hasZeroBoardsInScope && hubTab === "scrum" ? (
         <div className="space-y-6">
           <SprintPredictionPanel prediction={data.sprintPrediction} />
           <ChartShell

@@ -8,6 +8,7 @@ import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import type { SprintData } from "@/lib/schemas";
 import { useOptionalBoardCardSelection } from "../board-card-selection-context";
 import { useTranslations } from "next-intl";
+import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { computeCardRiskScore, inferStagnationDaysFromCard } from "@/lib/card-risk-score";
 import { predictDelivery } from "@/lib/predictive-delivery";
 import type { KanbanCardProps } from "./kanban-card-props";
@@ -49,6 +50,11 @@ function KanbanCardInner({
     const sp = s.activeSprint[currentBoardId];
     if (!sp || sp.status !== "active") return false;
     return (sp.cardIds ?? []).includes(cardId);
+  });
+
+  const activeSprintNameForCard = useSprintStore((s) => {
+    const sp = s.activeSprint[currentBoardId];
+    return sp?.status === "active" ? (sp.name?.trim() || "") : "";
   });
 
   const sprintsForBoard = useSprintStore((s) =>
@@ -378,6 +384,18 @@ function KanbanCardInner({
 
   const dragVisual = isDragging || isGhostSource;
   const sprintEmphasis = inActiveSprint && !selected;
+  const sprintMethod = isSprintMethodology(boardMethodology as BoardMethodology);
+  const sprintActiveChip =
+    inActiveSprint && sprintMethod
+      ? {
+          label: t("board.sprintContext.cardChip"),
+          title: t("board.sprintContext.cardChipAria", {
+            name: activeSprintNameForCard || t("board.sprintContext.cardChip"),
+          }),
+        }
+      : null;
+  const sprintLeftAccent =
+    sprintEmphasis && sprintMethod ? "shadow-[inset_3px_0_0_var(--flux-primary)]" : "";
   const matrixWeight = typeof card.matrixWeight === "number" ? Math.max(0, Math.min(100, Math.round(card.matrixWeight))) : null;
 
   const isBlocked = Array.isArray(card.blockedBy) && card.blockedBy.length > 0;
@@ -404,9 +422,9 @@ function KanbanCardInner({
     selected
       ? "border-[var(--flux-primary)] ring-2 ring-[var(--flux-primary)]/55 bg-[var(--flux-primary-alpha-08)] hover:border-[var(--flux-primary)]"
       : sprintEmphasis
-        ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50"
+        ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50 shadow-[0_1px_10px_var(--flux-primary-alpha-12)]"
         : "border-[var(--flux-control-border)] hover:border-[var(--flux-primary)]/50"
-  } ${isBlockedOpen ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""} ${variantClass}`.trim();
+  } ${sprintLeftAccent} ${isBlockedOpen ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""} ${variantClass}`.trim();
 
   const selectionOverlay =
     selected && selectionCount > 1 ? (
@@ -507,6 +525,7 @@ function KanbanCardInner({
           stopDrag={stopDrag}
           setTouchPinned={setTouchPinned}
           delivery={delivery}
+          sprintActiveChip={sprintActiveChip}
         />
       </div>
     </KanbanCardShell>

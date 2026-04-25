@@ -116,7 +116,11 @@ export function BoardChromeL1({
                   ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
                   : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
               }`}
-              title={t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })}
+              title={
+                sprintProgress.total === 0
+                  ? t("board.sprintContext.l1BadgeTitleEmpty")
+                  : t("board.filters.sprintProgress", { done: sprintProgress.done, total: sprintProgress.total })
+              }
             >
               <svg viewBox="0 0 36 36" className="h-5 w-5 -rotate-90 shrink-0" aria-hidden>
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--flux-chrome-alpha-12)" strokeWidth="3.5" />

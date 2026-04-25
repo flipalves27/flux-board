@@ -3,10 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FluxReportsDashboard } from "./flux-reports-dashboard";
 
 const apiGetMock = vi.fn();
+const replaceMock = vi.fn();
+const paramsState = new URLSearchParams();
 
 vi.mock("next-intl", () => ({
   useLocale: () => "pt-BR",
   useTranslations: () => (key: string) => key,
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: replaceMock }),
+  usePathname: () => "/pt-BR/reports",
+  useSearchParams: () => paramsState,
 }));
 
 vi.mock("@/context/auth-context", () => ({
@@ -96,6 +104,8 @@ function buildPayload(overrides?: Partial<typeof basePayload>) {
 describe("FluxReportsDashboard", () => {
   beforeEach(() => {
     apiGetMock.mockReset();
+    replaceMock.mockReset();
+    paramsState.forEach((_, key) => paramsState.delete(key));
   });
   afterEach(() => {
     cleanup();
@@ -210,6 +220,58 @@ describe("FluxReportsDashboard", () => {
 
     await waitFor(() => {
       expect(screen.getByText("copilotHint")).toBeTruthy();
+    });
+  });
+
+  it("applies scope filters and syncs URL", async () => {
+    apiGetMock.mockResolvedValue(buildPayload({ meta: { copilotHistory: true, boardCount: 1, availableBoards: [{ id: "b1", name: "Board 1", methodology: "kanban" }] } }));
+    render(<FluxReportsDashboard />);
+
+    await waitFor(() => {
+      expect(apiGetMock).toHaveBeenCalledWith("/api/flux-reports", {});
+    });
+
+    fireEvent.change(screen.getByLabelText("scope.methodologyLabel"), { target: { value: "kanban" } });
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalled();
+      expect(apiGetMock).toHaveBeenLastCalledWith(expect.stringContaining("methodology=kanban"), {});
+    });
+  });
+
+  it("shows active scope metadata and empty-state coherence", async () => {
+    apiGetMock.mockResolvedValue(
+      buildPayload({
+        meta: {
+          copilotHistory: true,
+          boardCount: 0,
+          scope: { kind: "boards", boardCount: 0, labelHint: "0 selected boards", boardIds: [] },
+          availableBoards: [],
+        },
+      })
+    );
+    render(<FluxReportsDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("scope.activeScopeTitle")).toBeTruthy();
+      expect(screen.getByText("0 selected boards")).toBeTruthy();
+      expect(screen.getByText("scope.emptySelection")).toBeTruthy();
+      expect(screen.queryByText("proactive-panel")).toBeNull();
+    });
+  });
+
+  it("applies catalog preset and keeps it in URL state", async () => {
+    apiGetMock.mockResolvedValue(buildPayload());
+    render(<FluxReportsDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("proactive-panel")).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /catalog\.weeklyFlowTitle/ }));
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith(expect.stringContaining("preset=weekly-flow"));
+      expect(apiGetMock).toHaveBeenLastCalledWith(expect.stringContaining("methodology=kanban"), {});
     });
   });
 

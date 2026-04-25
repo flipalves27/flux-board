@@ -959,6 +959,42 @@
         "sentiment": "Clima"
       }
     },
+    "scope": {
+      "allBoards": "Organização (todos os boards)",
+      "methodologyLabel": "Escopo por metodologia",
+      "boardsLabel": "Selecionar boards",
+      "activeScopeTitle": "Escopo ativo",
+      "activeScopeHint": "{count} board(s) no recorte atual.",
+      "saveViewPlaceholder": "Nome da visão salva",
+      "saveView": "Guardar visão",
+      "emptySelection": "Nenhum board encontrado para os filtros selecionados.",
+      "methodologies": {
+        "scrum": "Scrum",
+        "kanban": "Kanban",
+        "lean_six_sigma": "Lean Six Sigma",
+        "discovery": "Discovery",
+        "safe": "SAFe"
+      }
+    },
+    "catalog": {
+      "weeklyFlowTitle": "Preset: revisão semanal de fluxo (Kanban)",
+      "weeklyFlowDesc": "Aplica filtro Kanban e abre os painéis de fluxo contínuo.",
+      "sprintHealthTitle": "Preset: sprint health (Scrum)",
+      "sprintHealthDesc": "Aplica filtro Scrum e destaca velocidade, DoR e histórico de sprints.",
+      "lssExecutiveTitle": "Preset: executivo Lean Six Sigma",
+      "lssExecutiveDesc": "Abre o atalho para a visão executiva DMAIC e mantém o escopo compartilhável na URL."
+    },
+    "roadmap": {
+      "title": "Cobertura por metodologia",
+      "discovery": {
+        "now": "Discovery usa hoje métricas gerais de portfólio/fluxo.",
+        "next": "Roadmap: métricas dedicadas de experimentação e aprendizado."
+      },
+      "safe": {
+        "now": "SAFe usa hoje métricas gerais e capacidade por time/board.",
+        "next": "Roadmap: visões por PI/programa e dependências em escala."
+      }
+    },
     "lssExecutiveLink": "Executivo Lean Six Sigma (Business+)",
     "loading": "Carregando métricas…",
     "loadError": "Não foi possível carregar os relatórios.",
@@ -3629,6 +3665,19 @@
         "sprintAll": "Mostrar todos os cards",
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
+      },
+      "sprintContext": {
+        "regionAria": "Sprint ativa: {name}",
+        "commandCenter": "Centro da sprint",
+        "dateRange": "{start} – {end}",
+        "dateStartOnly": "Início em {start}",
+        "dateEndOnly": "Fim em {end}",
+        "counts": "{inScope} no escopo · {done} concluído(s)",
+        "countsEmpty": "Nenhum card no escopo do sprint",
+        "emptyScopeHint": "Adicione cards pelo painel Sprint ou pelo centro da sprint.",
+        "l1BadgeTitleEmpty": "Escopo do sprint vazio (0 cards). Clique para alternar “só sprint” quando houver cards.",
+        "cardChip": "Sprint",
+        "cardChipAria": "No sprint ativo: {name}"
       },
       "productGoalStrip": {
         "label": "Meta do produto",

@@ -30,8 +30,34 @@ import { buildSprintPredictionPayload } from "@/lib/sprint-prediction-metrics";
 import { ensureBoardWeeklySentimentIndexes, listOrgSentimentHistory } from "@/lib/board-weekly-sentiment";
 import { listDependencySuggestionsForOrg } from "@/lib/kv-card-dependencies";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
+import { isBoardMethodology, type BoardMethodology } from "@/lib/board-methodology";
 
 const NUM_WEEKS = 8;
+const MAX_WEEKS = 24;
+
+type ScopeKind = "organization" | "methodology" | "boards";
+
+function parseBoardIdsParam(request: NextRequest): string[] {
+  const params = request.nextUrl.searchParams;
+  const raw = [...params.getAll("boardIds"), params.get("boardIdsCsv") ?? ""]
+    .join(",")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return [...new Set(raw)];
+}
+
+function parseMethodologyParam(request: NextRequest): BoardMethodology | undefined {
+  const raw = request.nextUrl.searchParams.get("methodology");
+  if (!raw) return undefined;
+  return isBoardMethodology(raw) ? raw : undefined;
+}
+
+function parseWeeksParam(request: NextRequest): number {
+  const raw = Number(request.nextUrl.searchParams.get("weeks"));
+  if (!Number.isFinite(raw)) return NUM_WEEKS;
+  return Math.max(2, Math.min(MAX_WEEKS, Math.floor(raw)));
+}
 
 function weekStartLabelFromMs(ms: number): string {
   const d = new Date(ms);
@@ -51,6 +77,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const requestedMethodology = parseMethodologyParam(request);
+    const requestedBoardIds = parseBoardIdsParam(request);
+    const requestedWeeks = parseWeeksParam(request);
+
     await ensureAdminUser();
     const org = await getOrganizationById(payload.orgId);
     const gateCtx = planGateCtxFromAuthPayload(payload);
@@ -62,12 +92,17 @@ export async function GET(request: NextRequest) {
     }
     const tB = Date.now();
     const boardIdsForReports = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
-    const boards = await getBoardsFluxReportsSliceByIds(boardIdsForReports, payload.orgId);
+    const boardsUniverse = await getBoardsFluxReportsSliceByIds(boardIdsForReports, payload.orgId);
     logFluxApiPhase(route, "getBoardsFluxReportsSliceByIds", tB);
+    const boards = boardsUniverse.filter((board) => {
+      if (requestedMethodology && board.boardMethodology !== requestedMethodology) return false;
+      if (requestedBoardIds.length > 0 && !requestedBoardIds.includes(board.id)) return false;
+      return true;
+    });
     const rows = boardsToPortfolioRows(boards);
     const aggregates = aggregatePortfolio(rows);
     const nowMs = Date.now();
-    const weeks = buildRollingWeekRanges(NUM_WEEKS, nowMs);
+    const weeks = buildRollingWeekRanges(requestedWeeks, nowMs);
 
     const boardIds = boards.map((b) => b.id).filter(Boolean);
 
@@ -75,7 +110,7 @@ export async function GET(request: NextRequest) {
     const sentimentHistory: Array<{ weekLabel: string; avgScore: number; boardCount: number }> = [];
     if (isMongoConfigured() && boardIds.length) {
       const db = await getDb();
-      const oldestStart = weeks[0]?.startMs ?? nowMs - NUM_WEEKS * 7 * 24 * 60 * 60 * 1000;
+      const oldestStart = weeks[0]?.startMs ?? nowMs - requestedWeeks * 7 * 24 * 60 * 60 * 1000;
       const prevStartIso = new Date(oldestStart).toISOString();
       copilotChats = (await db
         .collection("board_copilot_chats")
@@ -83,7 +118,7 @@ export async function GET(request: NextRequest) {
         .toArray()) as CopilotChatDocLike[];
 
       await ensureBoardWeeklySentimentIndexes(db);
-      const sentimentPts = await listOrgSentimentHistory({ db, orgId: payload.orgId, maxWeeks: NUM_WEEKS });
+      const sentimentPts = await listOrgSentimentHistory({ db, orgId: payload.orgId, maxWeeks: requestedWeeks });
       sentimentHistory.push(
         ...sentimentPts.map((p) => ({
           weekLabel: weekStartLabelFromMs(p.weekStartMs),
@@ -155,6 +190,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const effectiveBoardIds = boards.map((board) => board.id);
+    const scopeKind: ScopeKind =
+      requestedBoardIds.length > 0 ? "boards" : requestedMethodology ? "methodology" : "organization";
+    const scopeLabelHint =
+      scopeKind === "organization"
+        ? "Organization"
+        : scopeKind === "methodology"
+          ? `Methodology: ${requestedMethodology}`
+          : `${boards.length} selected boards`;
+
     logFluxApiPhase(route, "total", t0);
     return NextResponse.json({
       schema: "flux-board.reports.v1",
@@ -186,6 +231,19 @@ export async function GET(request: NextRequest) {
       meta: {
         copilotHistory: copilotChats.length > 0,
         boardCount: boards.length,
+        weeks: requestedWeeks,
+        scope: {
+          kind: scopeKind,
+          methodology: requestedMethodology,
+          boardIds: scopeKind === "boards" ? effectiveBoardIds : [],
+          boardCount: boards.length,
+          labelHint: scopeLabelHint,
+        },
+        availableBoards: boardsUniverse.map((board) => ({
+          id: board.id,
+          name: board.name,
+          methodology: board.boardMethodology ?? null,
+        })),
       },
       blockerTagDistribution,
       scrumDorReady,

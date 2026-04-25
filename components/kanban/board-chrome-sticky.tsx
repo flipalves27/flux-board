@@ -19,6 +19,8 @@ export type BoardChromeStickyProps = {
   /** Resumo quando L3 está fechado (ex.: WIP). */
   l3TriggerSummary?: ReactNode;
   tChrome: (key: string) => string;
+  /** Faixa opcional colada ao chrome sticky (ex.: contexto da sprint ativa). */
+  chromeFooter?: ReactNode;
 };
 
 export function BoardChromeSticky({
@@ -29,6 +31,7 @@ export function BoardChromeSticky({
   l2TriggerSummary,
   l3TriggerSummary,
   tChrome,
+  chromeFooter,
 }: BoardChromeStickyProps) {
   const { l2Open, l3Open, setL2Open, setL3Open } = useBoardChromeResponsive();
 
@@ -101,6 +104,8 @@ export function BoardChromeSticky({
       >
         <BoardChromeL3 {...l3} />
       </BoardChromeLayerCollapsible>
+
+      {chromeFooter}
     </div>
   );
 }
