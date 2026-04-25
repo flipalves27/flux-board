@@ -1186,14 +1186,14 @@ function KanbanBoardLoaded({
         t={t}
         searchInputRef={filterSearchInputRef}
         onOpenBacklogPrioritize={
-          getHeaders
+          user
             ? () => {
                 setBacklogPrioritizeOpen(true);
               }
             : undefined
         }
       />
-      {getHeaders ? (
+      {user ? (
         <BoardBacklogPrioritizeDrawer
           boardId={boardId}
           open={backlogPrioritizeOpen}

@@ -859,17 +859,26 @@ export function BpmnWorkspace({ getHeaders, isAdmin }: Props) {
     });
   }, [model.nodes, model.lanes, nodeDrag, liveDragDelta]);
 
-  const edgesWithPoints = useMemo(() => {
-    const byId = new Map(nodesForEdges.map((n) => [n.id, n]));
-    return model.edges
-      .map((e) => {
-        const points = buildEdgePoints(e, byId, nodesForEdges);
-        if (!points.length) return null;
-        const wps = Array.isArray(e.waypoints) ? e.waypoints : [];
-        return { ...e, points, waypoints: wps };
-      })
-      .filter(Boolean) as Array<{ id: string; points: Array<{ x: number; y: number }>; label?: string; waypoints: Array<{ x: number; y: number }> }>;
-  }, [model.edges, nodesForEdges]);
+  const edgesWithPoints = useMemo(
+    () => {
+      const byId = new Map(nodesForEdges.map((n) => [n.id, n]));
+      return model.edges
+        .map((e) => {
+          const points = buildEdgePoints(e, byId, nodesForEdges);
+          if (!points.length) return null;
+          const wps = Array.isArray(e.waypoints) ? e.waypoints : [];
+          return { ...e, points, waypoints: wps };
+        })
+        .filter(Boolean) as Array<{
+        id: string;
+        points: Array<{ x: number; y: number }>;
+        label?: string;
+        waypoints: Array<{ x: number; y: number }>;
+      }>;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `buildEdgePoints` is stable; recompute from edges + layout nodes only
+    [model.edges, nodesForEdges],
+  );
 
   const connectPreviewLine = useMemo(() => {
     if (!connectingFromId || !connectPreview) return null;
