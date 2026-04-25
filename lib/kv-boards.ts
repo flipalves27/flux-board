@@ -37,7 +37,7 @@ export interface BoardData {
     bucketOrder: unknown[];
     collapsedColumns?: string[];
     labels?: string[];
-    strategyTemplateKind?: "swot";
+    strategyTemplateKind?: "swot" | "strategic_portfolio";
     definitionOfDone?: unknown;
     cardRules?: { requireAssignee?: boolean };
   };
@@ -62,7 +62,9 @@ function sanitizeBoardLabelsRelation(board: BoardData): BoardData {
     bucketOrder: Array.isArray(configRaw?.bucketOrder) ? configRaw.bucketOrder : [],
     ...(Array.isArray(configRaw?.collapsedColumns) ? { collapsedColumns: configRaw.collapsedColumns } : {}),
     ...(Array.isArray(configRaw?.labels) ? { labels: configRaw.labels } : {}),
-    ...(configRaw?.strategyTemplateKind === "swot" ? { strategyTemplateKind: "swot" as const } : {}),
+    ...(configRaw?.strategyTemplateKind === "swot" || configRaw?.strategyTemplateKind === "strategic_portfolio"
+      ? { strategyTemplateKind: configRaw.strategyTemplateKind }
+      : {}),
     ...(configRaw?.definitionOfDone !== undefined ? { definitionOfDone: configRaw.definitionOfDone } : {}),
     ...(configRaw?.cardRules !== undefined ? { cardRules: configRaw.cardRules } : {}),
   };

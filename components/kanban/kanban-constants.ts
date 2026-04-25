@@ -8,6 +8,7 @@ export const ALL_BOARD_VIEW_MODES = [
   "timeline",
   "eisenhower",
   "swot",
+  "strategic_portfolio",
   "executive",
   /** Due-date tranches; projection only (no new card fields). */
   "roadmap",

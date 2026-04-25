@@ -49,6 +49,20 @@ function decodeHtmlEntities(input: string): string {
   return out;
 }
 
+export const StrategicPortfolioHealthSchema = z.enum(["green", "yellow", "red", "blocked"]);
+
+export const StrategicPortfolioCardMetaSchema = z
+  .object({
+    businessOutcome: z.string().trim().max(500).optional(),
+    health: StrategicPortfolioHealthSchema.optional(),
+    milestoneLabel: z.string().trim().max(120).optional(),
+    ownerName: z.string().trim().max(160).optional(),
+    phase: z.string().trim().max(80).optional(),
+  })
+  .passthrough();
+
+const StrategyTemplateKindSchema = z.enum(["swot", "strategic_portfolio"]);
+
 function stripHtmlTags(input: string): string {
   let out = String(input);
 
@@ -230,13 +244,13 @@ export const BoardTemplateSnapshotSchema = z.object({
     bucketOrder: z.array(z.unknown()),
     collapsedColumns: z.array(z.string()).optional(),
     labels: z.array(z.string()).optional(),
-    strategyTemplateKind: z.literal("swot").optional(),
+    strategyTemplateKind: StrategyTemplateKindSchema.optional(),
   }),
   mapaProducao: z.array(z.unknown()),
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
-  templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot"]).optional(),
+  templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot", "strategic_portfolio"]).optional(),
   priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
   priorityMatrixMeta: z.unknown().optional(),
@@ -273,6 +287,23 @@ export const BoardTemplateSnapshotSchema = z.object({
         )
         .max(100)
         .optional(),
+    })
+    .passthrough()
+    .optional(),
+  strategicPortfolioMeta: z
+    .object({
+      version: z.literal("strategic-portfolio-v1"),
+      defaultView: z.enum(["strategic_portfolio", "kanban"]).optional(),
+      objectiveLabels: z.record(z.string().trim().max(200), z.string().trim().max(200)).optional(),
+      healthLabels: z
+        .object({
+          green: z.string().trim().max(80).optional(),
+          yellow: z.string().trim().max(80).optional(),
+          red: z.string().trim().max(80).optional(),
+          blocked: z.string().trim().max(80).optional(),
+        })
+        .optional(),
+      kpiLabels: z.array(z.string().trim().max(120)).max(12).optional(),
     })
     .passthrough()
     .optional(),
@@ -428,6 +459,8 @@ export const CardDataSchema = z
     serviceClass: CardServiceClassSchema.nullable().optional(),
     matrixWeight: z.number().min(0).max(100).optional(),
     matrixWeightBand: z.enum(["low", "medium", "high", "critical"]).optional(),
+    swotMeta: z.unknown().optional(),
+    portfolioMeta: StrategicPortfolioCardMetaSchema.optional(),
   })
   .passthrough();
 
@@ -569,7 +602,7 @@ export const TemplateExportBodySchema = z
       "insurance_warranty",
     ]),
     pricingTier: z.enum(["free", "premium"]),
-    templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot"]).optional().default("kanban"),
+    templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot", "strategic_portfolio"]).optional().default("kanban"),
     /** Eisenhower: quadrantes. Ignorado quando priorityMatrixModel é grid4. */
     priorityMatrixSelections: z
       .array(
@@ -603,6 +636,7 @@ export const TemplateExportBodySchema = z
       .max(200)
       .optional(),
     swotMeta: z.unknown().optional(),
+    strategicPortfolioMeta: z.unknown().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
@@ -668,6 +702,21 @@ export const TemplateExportBodySchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Campos de matriz/BPMN não se aplicam ao template SWOT.",
+        path: ["templateKind"],
+      });
+    }
+    if (
+      data.templateKind === "strategic_portfolio" &&
+      (data.priorityMatrixSelections?.length ||
+        data.priorityMatrixGridSelections?.length ||
+        data.bpmnModel ||
+        data.bpmnMarkdown ||
+        data.bpmnXml ||
+        data.swotSelections?.length)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Campos de matriz/BPMN/SWOT não se aplicam ao template Strategic Portfolio.",
         path: ["templateKind"],
       });
     }
@@ -785,7 +834,7 @@ export const BoardUpdateSchema = z
         /** Nota curta do PO para leitura C-Level (export + vista executiva); não substitui o brief IA. */
         executiveStakeholderNote: z.string().trim().max(2000).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
-        strategyTemplateKind: z.literal("swot").optional(),
+        strategyTemplateKind: StrategyTemplateKindSchema.optional(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
         /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */
         wipEnforcement: z.enum(["strict", "soft"]).optional(),

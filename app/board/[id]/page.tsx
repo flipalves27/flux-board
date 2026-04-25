@@ -242,6 +242,14 @@ export interface CardData {
   matrixWeightBand?: "low" | "medium" | "high" | "critical";
   /** Metadados estratégicos usados por templates SWOT/TOWS. */
   swotMeta?: Record<string, unknown>;
+  /** Metadados executivos usados pela Strategic Portfolio View. */
+  portfolioMeta?: {
+    businessOutcome?: string;
+    health?: "green" | "yellow" | "red" | "blocked";
+    milestoneLabel?: string;
+    ownerName?: string;
+    phase?: string;
+  };
   /** Card pai quando criado por decomposição de épico (Fluxy). */
   epicParentId?: string | null;
   /** Histórias geradas automaticamente pela Fluxy. */
@@ -277,7 +285,7 @@ export interface BoardData {
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
     /** Marca templates estratégicos que habilitam visões dedicadas no board. */
-    strategyTemplateKind?: "swot";
+    strategyTemplateKind?: "swot" | "strategic_portfolio";
     definitionOfDone?: BoardDefinitionOfDone;
     cardRules?: { requireAssignee?: boolean };
   };
@@ -595,6 +603,10 @@ export default function BoardPage() {
         (d.config as { executiveStakeholderNote?: unknown })?.executiveStakeholderNote
       );
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
+      const strategyTemplateKind =
+        d.config?.strategyTemplateKind === "swot" || d.config?.strategyTemplateKind === "strategic_portfolio"
+          ? d.config.strategyTemplateKind
+          : undefined;
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
         methodologyRaw === "kanban" ||
@@ -615,6 +627,7 @@ export default function BoardPage() {
           ...(productGoal ? { productGoal } : {}),
           ...(executiveStakeholderNote ? { executiveStakeholderNote } : {}),
           ...(backlogBucketKey ? { backlogBucketKey } : {}),
+          ...(strategyTemplateKind ? { strategyTemplateKind } : {}),
           ...(definitionOfDone ? { definitionOfDone } : {}),
           ...(d.config?.cardRules ? { cardRules: d.config.cardRules } : {}),
         },

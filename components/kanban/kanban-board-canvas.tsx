@@ -22,6 +22,7 @@ import { BoardExecutivePresentationView } from "./board-executive-presentation-v
 import { BoardRoadmapProjectionView } from "./board-roadmap-projection-view";
 import { BoardFlowMetricsProjectionView } from "./board-flow-metrics-projection-view";
 import { BoardSwotView } from "./board-swot-view";
+import { BoardStrategicPortfolioView } from "./board-strategic-portfolio-view";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
@@ -60,7 +61,7 @@ type KanbanBoardCanvasProps = {
   priorities: string[];
   onPatchCardFromTable: (
     cardId: string,
-    patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+    patch: Partial<Pick<CardData, "title" | "priority" | "progress" | "dueDate" | "bucket" | "tags" | "portfolioMeta">>
   ) => void;
   onTableOpenCard: (card: CardData) => void;
   sensors: NonNullable<ComponentProps<typeof DndContext>["sensors"]>;
@@ -101,8 +102,9 @@ type KanbanBoardCanvasProps = {
   onExecutiveRefreshBoardData?: () => Promise<void>;
   onPatchCard: (
     cardId: string,
-    patch: Partial<Pick<CardData, "priority" | "bucket">>
+    patch: Partial<Pick<CardData, "priority" | "progress" | "bucket" | "dueDate" | "portfolioMeta">>
   ) => void;
+  onMovePortfolioCard: (cardId: string, bucketKey: string, insertIndex: number) => void;
   onDuplicateCard: (cardId: string) => void;
   onSwotCreateInitiative?: (strategy: SwotTowsStrategy) => void;
   onPinCardToTop?: (cardId: string) => void;
@@ -179,6 +181,7 @@ export function KanbanBoardCanvas({
   onExecutiveOpenCard,
   onExecutiveRefreshBoardData,
   onPatchCard,
+  onMovePortfolioCard,
   onDuplicateCard,
   onSwotCreateInitiative,
   onPinCardToTop,
@@ -350,6 +353,18 @@ export function KanbanBoardCanvas({
           filterCard={filterCard}
           onOpenCard={onExecutiveOpenCard}
           onCreateInitiative={onSwotCreateInitiative ?? (() => {})}
+        />
+      ) : null}
+      {boardView === "strategic_portfolio" ? (
+        <BoardStrategicPortfolioView
+          cards={cards}
+          buckets={buckets}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+          onMoveCard={onMovePortfolioCard}
+          onPatchCard={onPatchCard}
+          sensors={sensors}
+          collisionDetection={collisionDetection}
         />
       ) : null}
       {boardView === "eisenhower" ? (

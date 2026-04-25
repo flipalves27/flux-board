@@ -17,7 +17,7 @@ export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 export type TemplatePricingTier = "free" | "premium";
 
 /** Padrão: estrutura Kanban sem cards; templates estratégicos incluem cópias de cards. */
-export type TemplateKind = "kanban" | "priority_matrix" | "bpmn" | "swot";
+export type TemplateKind = "kanban" | "priority_matrix" | "bpmn" | "swot" | "strategic_portfolio";
 
 export const PRIORITY_MATRIX_QUADRANT_KEYS = ["do_first", "schedule", "delegate", "eliminate"] as const;
 export type PriorityMatrixQuadrantKey = (typeof PRIORITY_MATRIX_QUADRANT_KEYS)[number];
@@ -81,12 +81,30 @@ export type SwotMeta = {
   qualityChecklist?: string[];
 };
 
+export type StrategicPortfolioHealth = "green" | "yellow" | "red" | "blocked";
+
+export type StrategicPortfolioCardMeta = {
+  businessOutcome?: string;
+  health?: StrategicPortfolioHealth;
+  milestoneLabel?: string;
+  ownerName?: string;
+  phase?: "Discovery" | "Build" | "Rollout" | "Scale" | "Done" | string;
+};
+
+export type StrategicPortfolioMeta = {
+  version: "strategic-portfolio-v1";
+  defaultView?: "strategic_portfolio" | "kanban";
+  objectiveLabels?: Record<string, string>;
+  healthLabels?: Partial<Record<StrategicPortfolioHealth, string>>;
+  kpiLabels?: string[];
+};
+
 export type BoardTemplateSnapshot = {
   config: {
     bucketOrder: unknown[];
     collapsedColumns?: string[];
     labels?: string[];
-    strategyTemplateKind?: "swot";
+    strategyTemplateKind?: "swot" | "strategic_portfolio";
   };
   mapaProducao: unknown[];
   /** Tags/labels observadas no board na exportação (sem conteúdo de cards). */
@@ -110,6 +128,8 @@ export type BoardTemplateSnapshot = {
   bpmnModel?: BpmnTemplateModel;
   /** Metadados visuais/estratégicos para templates SWOT/TOWS. */
   swotMeta?: SwotMeta;
+  /** Metadados executivos para Strategic Portfolio View. */
+  strategicPortfolioMeta?: StrategicPortfolioMeta;
 };
 
 export type TemplateLifecycleStatus = "draft" | "published" | "archived";

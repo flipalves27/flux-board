@@ -83,7 +83,7 @@ type KanbanBatchToolbarProps = {
   priorities: string[];
   patchCardFromTable: (
     cardId: string,
-    patch: Partial<Pick<import("@/app/board/[id]/page").CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+    patch: Partial<Pick<import("@/app/board/[id]/page").CardData, "title" | "priority" | "progress" | "dueDate" | "bucket" | "tags" | "portfolioMeta">>
   ) => void;
   setConfirmDelete: (v: import("@/stores/ui-store").ConfirmDeleteState) => void;
 };
@@ -279,11 +279,15 @@ function KanbanBoardLoaded({
     () => getMethodologyModule(methodology as BoardMethodology),
     [methodology]
   );
-  const isSwotBoard = db.config?.strategyTemplateKind === "swot";
-  const allowedBoardViewModes = useMemo(() => {
-    const base = methodologyModule.allowedViewModes.filter((mode) => mode !== "swot");
-    return isSwotBoard ? [...base, "swot" as const] : base;
-  }, [isSwotBoard, methodologyModule.allowedViewModes]);
+  const strategyTemplateKind = db.config?.strategyTemplateKind;
+  const allowedBoardViewModes = useMemo<readonly BoardViewMode[]>(() => {
+    const base = methodologyModule.allowedViewModes.filter(
+      (mode): mode is BoardViewMode => mode !== "swot" && mode !== "strategic_portfolio"
+    );
+    if (strategyTemplateKind === "swot") return [...base, "swot" as const];
+    if (strategyTemplateKind === "strategic_portfolio") return [...base, "strategic_portfolio" as const];
+    return base;
+  }, [strategyTemplateKind, methodologyModule.allowedViewModes]);
 
   const saveExecutiveProductGoal = useCallback(
     (value: string) => {
@@ -1124,6 +1128,7 @@ function KanbanBoardLoaded({
           onExecutiveOpenCard={board.handleTimelineOpenCard}
           onExecutiveRefreshBoardData={reloadBoardFromServer}
           onPatchCard={board.patchCardFromTable}
+          onMovePortfolioCard={board.moveCard}
           onDuplicateCard={board.duplicateCard}
           onSwotCreateInitiative={createSwotInitiative}
           onPinCardToTop={board.pinCardToTop}

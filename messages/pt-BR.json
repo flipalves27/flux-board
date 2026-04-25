@@ -3535,6 +3535,8 @@
         "viewEisenhowerAria": "Alternar para matriz Eisenhower",
         "viewSwotTooltip": "SWOT (S): diagnóstico estratégico e TOWS",
         "viewSwotAria": "Alternar para visualização SWOT/TOWS",
+        "viewStrategicPortfolioTooltip": "Portfolio (P): iniciativas por objetivo estratégico",
+        "viewStrategicPortfolioAria": "Alternar para Strategic Portfolio View",
         "viewExecutiveTooltip": "Gestão (G): apresentação para liderança e contexto de negócio",
         "viewExecutiveAria": "Alternar para visualização de apresentação gerencial",
         "viewRoadmapTooltip": "Roadmap (R): trabalho aberto por data de conclusão",

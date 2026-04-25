@@ -3534,6 +3534,8 @@
         "viewEisenhowerAria": "Switch to Eisenhower matrix view",
         "viewSwotTooltip": "SWOT (S): strategic diagnosis and TOWS",
         "viewSwotAria": "Switch to SWOT/TOWS view",
+        "viewStrategicPortfolioTooltip": "Portfolio (P): initiatives by strategic objective",
+        "viewStrategicPortfolioAria": "Switch to strategic portfolio view",
         "viewExecutiveTooltip": "Executive (G): leadership-ready story and business context",
         "viewExecutiveAria": "Switch to executive presentation view",
         "viewRoadmapTooltip": "Roadmap (R): open work by due date",

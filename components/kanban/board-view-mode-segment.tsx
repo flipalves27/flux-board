@@ -99,6 +99,27 @@ function IconSwot({ active }: { active: boolean }) {
   );
 }
 
+function IconStrategicPortfolio({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={`shrink-0 ${active ? "text-white" : "text-[var(--flux-text-muted)]"}`}
+    >
+      <path
+        d="M4 18h16M6 15l4-4 3 2 5-7M6 6h4v4H6V6zm8 8h4v4h-4v-4z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function IconRoadmap({ active }: { active: boolean }) {
   return (
     <svg
@@ -146,6 +167,7 @@ const MODE_DEFS: {
   { mode: "timeline", kbd: "TL", tooltipKey: "viewTimelineTooltip", ariaKey: "viewTimelineAria" },
   { mode: "eisenhower", kbd: "E", tooltipKey: "viewEisenhowerTooltip", ariaKey: "viewEisenhowerAria" },
   { mode: "swot", kbd: "S", tooltipKey: "viewSwotTooltip", ariaKey: "viewSwotAria" },
+  { mode: "strategic_portfolio", kbd: "P", tooltipKey: "viewStrategicPortfolioTooltip", ariaKey: "viewStrategicPortfolioAria" },
   { mode: "executive", kbd: "G", tooltipKey: "viewExecutiveTooltip", ariaKey: "viewExecutiveAria" },
   { mode: "roadmap", kbd: "R", tooltipKey: "viewRoadmapTooltip", ariaKey: "viewRoadmapAria" },
   { mode: "flow_metrics", kbd: "F", tooltipKey: "viewFlowMetricsTooltip", ariaKey: "viewFlowMetricsAria" },
@@ -163,6 +185,8 @@ function renderIcon(mode: BoardViewMode, active: boolean) {
       return <IconEisenhower active={active} />;
     case "swot":
       return <IconSwot active={active} />;
+    case "strategic_portfolio":
+      return <IconStrategicPortfolio active={active} />;
     case "executive":
       return <IconExecutive active={active} />;
     case "roadmap":

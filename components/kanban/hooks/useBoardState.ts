@@ -561,7 +561,7 @@ export function useBoardState({
   const patchCardFromTable = useCallback(
     (
       cardId: string,
-      patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+      patch: Partial<Pick<CardData, "title" | "priority" | "progress" | "dueDate" | "bucket" | "tags" | "portfolioMeta">>
     ) => {
       const snap = useBoardStore.getState().db;
       if (!snap) return;
@@ -615,8 +615,10 @@ export function useBoardState({
           const merged: CardData = { ...card };
           if (patch.title !== undefined) merged.title = patch.title;
           if (patch.priority !== undefined) merged.priority = patch.priority;
+          if (patch.progress !== undefined) merged.progress = patch.progress;
           if (patch.dueDate !== undefined) merged.dueDate = patch.dueDate;
           if (patch.tags !== undefined) merged.tags = patch.tags;
+          if (patch.portfolioMeta !== undefined) merged.portfolioMeta = patch.portfolioMeta;
           merged.bucket = targetBucket;
           merged.columnEnteredAt = new Date().toISOString();
           const doneKeys = resolveDoneBucketKeys(
@@ -638,8 +640,10 @@ export function useBoardState({
 
         if (patch.title !== undefined) card.title = patch.title;
         if (patch.priority !== undefined) card.priority = patch.priority;
+        if (patch.progress !== undefined) card.progress = patch.progress;
         if (patch.dueDate !== undefined) card.dueDate = patch.dueDate;
         if (patch.tags !== undefined) card.tags = patch.tags;
+        if (patch.portfolioMeta !== undefined) card.portfolioMeta = patch.portfolioMeta;
       });
     },
     [updateDb, pushToast]

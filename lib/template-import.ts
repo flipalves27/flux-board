@@ -80,31 +80,35 @@ export async function createBoardFromTemplateSnapshot(
   const isMatrix = snap.templateKind === "priority_matrix";
   const isBpmn = snap.templateKind === "bpmn" && Boolean(snap.bpmnModel);
   const isSwot = snap.templateKind === "swot";
+  const isStrategicPortfolio = snap.templateKind === "strategic_portfolio";
   const methodology: BoardMethodology = isMatrix
     ? "kanban"
     : isBpmn
       ? "kanban"
       : isSwot
         ? "kanban"
-        : snap.boardMethodology === "kanban"
+        : isStrategicPortfolio
           ? "kanban"
-          : snap.boardMethodology === "lean_six_sigma"
-            ? "lean_six_sigma"
-            : snap.boardMethodology === "discovery"
-              ? "discovery"
-              : snap.boardMethodology === "safe"
-                ? "safe"
-                : "scrum";
+          : snap.boardMethodology === "kanban"
+            ? "kanban"
+            : snap.boardMethodology === "lean_six_sigma"
+              ? "lean_six_sigma"
+              : snap.boardMethodology === "discovery"
+                ? "discovery"
+                : snap.boardMethodology === "safe"
+                  ? "safe"
+                  : "scrum";
 
-  const instantiated = isMatrix || isSwot ? instantiateTemplateCards(snap) : [];
+  const isCardTemplate = isMatrix || isSwot || isStrategicPortfolio;
+  const instantiated = isCardTemplate ? instantiateTemplateCards(snap) : [];
   const palette = Array.isArray(snap.labelPalette) ? snap.labelPalette : [];
-  const mergedLabels = isMatrix || isSwot
+  const mergedLabels = isCardTemplate
     ? [...new Set([...labelsFromTemplateCards(instantiated), ...palette])].slice(0, 100)
     : [];
 
   const board = await createBoard(orgId, userId, name, {
     version: "2.0",
-    cards: isMatrix || isSwot
+    cards: isCardTemplate
       ? instantiated
       : isBpmn
         ? (snap.bpmnModel?.nodes ?? []).map((n, i) => ({
@@ -127,8 +131,9 @@ export async function createBoardFromTemplateSnapshot(
         : isBpmn
           ? [{ key: "bpmn_canvas", label: "BPMN Canvas", color: "var(--flux-primary)" }]
           : [],
-      labels: isMatrix || isSwot ? mergedLabels : isBpmn ? ["BPMN"] : [],
+      labels: isCardTemplate ? mergedLabels : isBpmn ? ["BPMN"] : [],
       ...(isSwot ? { strategyTemplateKind: "swot" as const } : {}),
+      ...(isStrategicPortfolio ? { strategyTemplateKind: "strategic_portfolio" as const } : {}),
       ...(isSwot
         ? {
             definitionOfDone: {
@@ -144,10 +149,25 @@ export async function createBoardFromTemplateSnapshot(
             cardRules: { requireAssignee: true },
           }
         : {}),
+      ...(isStrategicPortfolio
+        ? {
+            definitionOfDone: {
+              enabled: true,
+              enforce: false,
+              doneBucketKeys: [],
+              items: [
+                { id: "owner", label: "Owner definido" },
+                { id: "milestone", label: "Próximo marco definido" },
+                { id: "business_outcome", label: "Resultado de negócio definido" },
+              ],
+            },
+            cardRules: { requireAssignee: true },
+          }
+        : {}),
     },
     mapaProducao: isBpmn ? attachBpmnModelToMapa(snap.bpmnModel!, snap.mapaProducao) : snap.mapaProducao,
     dailyInsights: [],
   });
-  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn || isSwot ? [] : snap.automations);
+  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn || isSwot || isStrategicPortfolio ? [] : snap.automations);
   return board;
 }
