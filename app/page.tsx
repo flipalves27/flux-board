@@ -1,7 +1,10 @@
-import LandingPage from "@/components/landing/landing-page";
-import { getPublicCommercialCatalog } from "@/lib/platform-commercial-settings";
+import { redirect } from "next/navigation";
+import { routing } from "@/i18n";
 
-export default async function RootHomePage() {
-  const initialCatalog = await getPublicCommercialCatalog();
-  return <LandingPage initialCatalog={initialCatalog} />;
+/**
+ * `/` não devia duplicar a landing nem bloquear em leitura Mongo. A home canónica:
+ * `/{locale}` (ex. `/pt-BR`), com catálogo resiliente em `app/[locale]/page.tsx`.
+ */
+export default function RootPathRedirect() {
+  redirect(`/${routing.defaultLocale}`);
 }
