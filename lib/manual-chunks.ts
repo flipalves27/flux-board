@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "fs";
 import { join } from "path";
 import { getManualToc, loadManualArticle } from "./manual-content";
-import type { ManualChunk, ManualLocale, ManualSearchRecord, ManualTocItem } from "./manual-types";
+import type { ManualArticle, ManualChunk, ManualLocale, ManualSearchRecord, ManualTocItem } from "./manual-types";
 import { slugifyForChunk } from "./manual-faq";
 
 const LOCALE_DIR: Record<ManualLocale, string> = { "pt-BR": "pt-BR", en: "en" };
@@ -152,7 +152,14 @@ export function listLocaleManualSlugs(locale: ManualLocale): string[] {
     .map((f) => f.replace(/\.md$/, ""));
 }
 
-export function getPrefillTextForPage(page: ManualTocItem | null, locale: ManualLocale): string {
+/**
+ * `loadedArticle` evita 2× `readFile` na mesma RSC (page já chamou `loadManualArticle` para o artigo em destaque).
+ */
+export function getPrefillTextForPage(
+  page: ManualTocItem | null,
+  locale: ManualLocale,
+  loadedArticle?: ManualArticle | null
+): string {
   if (!page) {
     return locale === "en"
       ? "Browse topics on the left or ask Fluxy about the product manual."
@@ -166,7 +173,10 @@ export function getPrefillTextForPage(page: ManualTocItem | null, locale: Manual
   if (page.generated) {
     return page.title[locale];
   }
-  const art = loadManualArticle(page.slug, locale);
+  const art =
+    loadedArticle && loadedArticle.slug === page.slug
+      ? loadedArticle
+      : loadManualArticle(page.slug, locale);
   if (!art) {
     return page.title[locale];
   }

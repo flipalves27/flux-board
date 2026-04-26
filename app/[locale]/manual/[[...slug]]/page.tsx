@@ -44,7 +44,7 @@ export default async function ManualPage({ params }: Props) {
   }
   const art = loadManualArticle(s, locale);
   if (!art) notFound();
-  const prefill = getPrefillTextForPage(item, locale);
+  const prefill = getPrefillTextForPage(item, locale, art);
   return (
     <ManualApp
       locale={locale}
