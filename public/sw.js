@@ -1,21 +1,33 @@
-const CACHE_NAME = "flux-board-v7";
+const CACHE_NAME = "flux-board-v8";
 
 /** Não precachear `/` — em muitos hosts redireciona (www, locale) e polui a cache com respostas de redirect. */
 const STATIC_ASSETS = ["/offline.html"];
 
 /**
- * Pedidos internos do App Router (RSC / flight). Não são `mode: "navigate"`; se o SW os tratar e o
- * `.catch` devolver `undefined`, o Chrome falha com "Failed to convert value to 'Response'".
- * @see next/dist/client/components/app-router-headers.js
+ * Pedidos internos do App Router (RSC / flight / HMR / Turbopack). Não são `mode: "navigate"`.
+ * Se o SW tratar e falhar, o cliente pode falhar a hidratar o shell (página "em branco", lista Network vazia/estranha).
  */
-function isNextAppRouterDataRequest(request) {
+function isNextOrAppRouterRequest(request, url) {
+  if (url.searchParams.has("rsc") || /[?&]_rsc(=|&)/.test(url.search)) return true;
   if (request.headers.get("rsc") === "1") return true;
-  if (request.headers.has("next-router-state-tree")) return true;
-  if (request.headers.has("next-router-prefetch")) return true;
-  if (request.headers.has("next-router-segment-prefetch")) return true;
-  if (request.headers.has("next-hmr-refresh")) return true;
+  for (const k of request.headers.keys()) {
+    const low = k.toLowerCase();
+    if (low === "rsc" || low.startsWith("next-") || (low.startsWith("x-") && low.includes("next"))) return true;
+  }
+  if (
+    request.headers.has("Next-Router-State-Tree") ||
+    request.headers.has("next-router-state-tree") ||
+    request.headers.has("Next-Router-Prefetch") ||
+    request.headers.has("next-router-prefetch") ||
+    request.headers.has("Next-Router-Segment-Prefetch") ||
+    request.headers.has("next-router-segment-prefetch") ||
+    request.headers.has("Next-HMR-Refresh") ||
+    request.headers.has("next-hmr-refresh")
+  )
+    return true;
   const accept = request.headers.get("accept") || "";
   if (accept.includes("text/x-component")) return true;
+  if (accept.includes("application/rsc") || accept.includes("text/x-component;")) return true;
   return false;
 }
 
@@ -56,7 +68,7 @@ self.addEventListener("fetch", (event) => {
    * Navegação client-side do Next: não é "navigate" — tem header RSC; também ignorar.
    */
   if (request.mode === "navigate") return;
-  if (isNextAppRouterDataRequest(request)) return;
+  if (isNextOrAppRouterRequest(request, url)) return;
 
   event.respondWith(
     (async () => {
