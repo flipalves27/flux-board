@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type ComponentProps, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type RefObject } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -21,11 +21,15 @@ import { BoardTableView } from "./board-table-view";
 import { BoardExecutivePresentationView } from "./board-executive-presentation-view";
 import { BoardRoadmapProjectionView } from "./board-roadmap-projection-view";
 import { BoardFlowMetricsProjectionView } from "./board-flow-metrics-projection-view";
+import { BoardSwotView } from "./board-swot-view";
+import { BoardStrategicPortfolioView } from "./board-strategic-portfolio-view";
+import { BoardMobileColumnSwitcher } from "./board-mobile-column-switcher";
 import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { DIR_COLORS } from "./kanban-constants";
 import { parseSlotId } from "./kanban-dnd-utils";
 import { useBoardCollabStore } from "@/stores/board-collab-store";
 import type { RemoteDragState } from "@/stores/board-collab-store";
+import type { SwotTowsStrategy } from "@/lib/template-types";
 
 function resolveRemoteDragTargetBucket(st: RemoteDragState, cardList: CardData[]): string | null {
   const k = st.overKind;
@@ -58,7 +62,7 @@ type KanbanBoardCanvasProps = {
   priorities: string[];
   onPatchCardFromTable: (
     cardId: string,
-    patch: Partial<Pick<CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+    patch: Partial<Pick<CardData, "title" | "priority" | "progress" | "dueDate" | "bucket" | "tags" | "portfolioMeta">>
   ) => void;
   onTableOpenCard: (card: CardData) => void;
   sensors: NonNullable<ComponentProps<typeof DndContext>["sensors"]>;
@@ -75,6 +79,7 @@ type KanbanBoardCanvasProps = {
   onToggleCollapse: (key: string) => void;
   onAddCard: (bucketKey: string) => void;
   onEditCard: (cardId: string) => void;
+  openingCardId?: string | null;
   onDeleteCard: (id: string) => void;
   onRenameColumn: (b: BucketConfig) => void;
   onDeleteColumn: ((key: string) => void) | undefined;
@@ -98,9 +103,14 @@ type KanbanBoardCanvasProps = {
   onExecutiveRefreshBoardData?: () => Promise<void>;
   onPatchCard: (
     cardId: string,
-    patch: Partial<Pick<CardData, "priority" | "bucket">>
+    patch: Partial<Pick<CardData, "priority" | "progress" | "bucket" | "dueDate" | "portfolioMeta">>
   ) => void;
+  onMovePortfolioCard: (cardId: string, bucketKey: string, insertIndex: number) => void;
+  onPortfolioAddObjective?: () => void;
+  onPortfolioEditObjective?: (bucket: BucketConfig) => void;
+  onPortfolioDeleteObjective?: (bucketKey: string) => void;
   onDuplicateCard: (cardId: string) => void;
+  onSwotCreateInitiative?: (strategy: SwotTowsStrategy) => void;
   onPinCardToTop?: (cardId: string) => void;
   /** Coluna com maior visibilidade no scroll (presença em tempo real). */
   onVisibleColumnKeyChange?: (columnKey: string | null) => void;
@@ -154,6 +164,7 @@ export function KanbanBoardCanvas({
   onToggleCollapse,
   onAddCard,
   onEditCard,
+  openingCardId,
   onDeleteCard,
   onRenameColumn,
   onDeleteColumn,
@@ -174,7 +185,12 @@ export function KanbanBoardCanvas({
   onExecutiveOpenCard,
   onExecutiveRefreshBoardData,
   onPatchCard,
+  onMovePortfolioCard,
+  onPortfolioAddObjective,
+  onPortfolioEditObjective,
+  onPortfolioDeleteObjective,
   onDuplicateCard,
+  onSwotCreateInitiative,
   onPinCardToTop,
   onVisibleColumnKeyChange,
   sprintBoardQuickActions,
@@ -185,11 +201,20 @@ export function KanbanBoardCanvas({
 }: KanbanBoardCanvasProps) {
   const remoteDragByUser = useBoardCollabStore((s) => s.remoteDragByUser);
   const pruneStaleRemoteDrags = useBoardCollabStore((s) => s.pruneStaleRemoteDrags);
+  const [mobileActiveColumnKey, setMobileActiveColumnKey] = useState<string | null>(() => buckets[0]?.key ?? null);
 
   useEffect(() => {
     const id = window.setInterval(() => pruneStaleRemoteDrags(3500), 1000);
     return () => clearInterval(id);
   }, [pruneStaleRemoteDrags]);
+
+  useEffect(() => {
+    if (buckets.length === 0) {
+      setMobileActiveColumnKey(null);
+      return;
+    }
+    setMobileActiveColumnKey((prev) => (prev && buckets.some((b) => b.key === prev) ? prev : buckets[0].key));
+  }, [buckets]);
 
   const remoteHighlightBuckets = useMemo(() => {
     const set = new Set<string>();
@@ -271,9 +296,9 @@ export function KanbanBoardCanvas({
       onPointerMove={boardView === "kanban" ? onPanPointerMove : undefined}
       onPointerUp={boardView === "kanban" ? onPanPointerUp : undefined}
       onPointerCancel={boardView === "kanban" ? onPanPointerCancel : undefined}
-      className={`board-canvas w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-4 pb-4 sm:pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[var(--flux-z-board-canvas)] ${
+      className={`board-canvas min-w-0 max-w-full w-full px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6 lg:px-8 py-3 sm:py-4 pb-[max(5.5rem,env(safe-area-inset-bottom,0px))] sm:pb-6 scrollbar-flux transition-[min-height] duration-300 ease-in-out relative z-[var(--flux-z-board-canvas)] ${
         boardView === "kanban"
-          ? `flex gap-3 sm:gap-4 overflow-x-auto overflow-y-hidden items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
+          ? `flex flex-col gap-3 overflow-x-clip overflow-y-visible md:flex-row md:snap-x md:snap-mandatory md:gap-4 md:overflow-x-auto md:overflow-y-hidden md:items-stretch ${isPanning ? "cursor-grabbing select-none" : "cursor-default"}`
           : "flex flex-col overflow-x-hidden"
       } min-h-[min(85dvh,calc(100dvh-260px))] sm:min-h-[calc(100vh-240px)]`}
       style={{
@@ -336,6 +361,31 @@ export function KanbanBoardCanvas({
           cards={cards}
           filterCard={filterCard}
           onOpenCard={onExecutiveOpenCard}
+        />
+      ) : null}
+      {boardView === "swot" ? (
+        <BoardSwotView
+          cards={cards}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+          onCreateInitiative={onSwotCreateInitiative ?? (() => {})}
+        />
+      ) : null}
+      {boardView === "strategic_portfolio" ? (
+        <BoardStrategicPortfolioView
+          cards={cards}
+          buckets={buckets}
+          filterCard={filterCard}
+          onOpenCard={onExecutiveOpenCard}
+          onMoveCard={onMovePortfolioCard}
+          onPatchCard={onPatchCard}
+          canAdminBoard={canAdminBoard}
+          onAddObjective={onPortfolioAddObjective ?? onOpenAddColumn}
+          onEditObjective={onPortfolioEditObjective ?? onRenameColumn}
+          onDeleteObjective={onPortfolioDeleteObjective ?? onDeleteColumn}
+          onCreateInitiative={onAddCard}
+          sensors={sensors}
+          collisionDetection={collisionDetection}
         />
       ) : null}
       {boardView === "eisenhower" ? (
@@ -445,17 +495,30 @@ export function KanbanBoardCanvas({
             },
           }}
         >
+          <BoardMobileColumnSwitcher
+            buckets={buckets}
+            activeKey={mobileActiveColumnKey}
+            visibleCardsByBucket={visibleCardsByBucket}
+            onActiveKeyChange={(key) => {
+              setMobileActiveColumnKey(key);
+              onVisibleColumnKeyChange?.(key);
+            }}
+            onAddCard={onAddCard}
+            t={t}
+          />
           <SortableContext items={buckets.map((b) => b.key)} strategy={horizontalListSortingStrategy}>
             {buckets.map((b, colIdx) => (
               <KanbanColumn
                 key={b.key}
                 bucket={b}
                 remoteCollabHighlight={remoteHighlightBuckets.has(b.key)}
+                mobileActive={b.key === mobileActiveColumnKey}
                 cards={visibleCardsByBucket(b.key)}
                 collapsed={collapsed.has(b.key)}
                 onToggleCollapse={() => onToggleCollapse(b.key)}
                 onAddCard={() => onAddCard(b.key)}
                 onEditCard={onEditCard}
+                openingCardId={openingCardId}
                 onDeleteCard={onDeleteCard}
                 onRenameColumn={canAdminBoard ? () => onRenameColumn(b) : undefined}
                 onDeleteColumn={

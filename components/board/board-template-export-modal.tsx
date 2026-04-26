@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
-import type { PriorityMatrixQuadrantKey, TemplateCategory } from "@/lib/template-types";
+import type { PriorityMatrixQuadrantKey, SwotQuadrantKey, TemplateCategory } from "@/lib/template-types";
 import { PRIORITY_MATRIX_QUADRANT_KEYS } from "@/lib/template-types";
 
 const CATEGORIES: TemplateCategory[] = [
@@ -26,11 +26,13 @@ type Props = {
   boardId: string;
   getHeaders: () => Record<string, string>;
   /** Pré-seleciona o tipo ao abrir (padrão: kanban). */
-  defaultTemplateKind?: "kanban" | "priority_matrix" | "bpmn";
+  defaultTemplateKind?: "kanban" | "priority_matrix" | "bpmn" | "swot";
   /** Se definido, publica matriz 4×4 (payload do workspace); não exige lista Eisenhower no modal. */
   grid4PublishSelections?: Array<{ cardId: string; row: number; col: number }>;
   /** Se definido, publica Eisenhower com seleções prontas do workspace. */
   eisenhowerPublishSelections?: Array<{ cardId: string; quadrantKey: PriorityMatrixQuadrantKey }>;
+  /** Se definido, publica SWOT com seleções prontas do workspace. */
+  swotPublishSelections?: Array<{ cardId: string; quadrantKey: SwotQuadrantKey; evidence?: string }>;
 };
 
 export function BoardTemplateExportModal({
@@ -41,15 +43,17 @@ export function BoardTemplateExportModal({
   defaultTemplateKind = "kanban",
   grid4PublishSelections,
   eisenhowerPublishSelections,
+  swotPublishSelections,
 }: Props) {
   const isGrid4PublishMode = grid4PublishSelections !== undefined;
   const isEisenhowerPublishMode = eisenhowerPublishSelections !== undefined;
+  const isSwotPublishMode = swotPublishSelections !== undefined;
   const t = useTranslations("templates");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<TemplateCategory>("operations");
   const [pricingTier, setPricingTier] = useState<"free" | "premium">("free");
-  const [templateKind, setTemplateKind] = useState<"kanban" | "priority_matrix" | "bpmn">("kanban");
+  const [templateKind, setTemplateKind] = useState<"kanban" | "priority_matrix" | "bpmn" | "swot">("kanban");
   const [sourceBoardId, setSourceBoardId] = useState(boardId);
   const [boardRows, setBoardRows] = useState<BoardRow[]>([]);
   const [cards, setCards] = useState<CardRow[]>([]);
@@ -65,13 +69,13 @@ export function BoardTemplateExportModal({
   useEffect(() => {
     if (!open) return;
     setSourceBoardId(boardId);
-    setTemplateKind(isGrid4PublishMode || isEisenhowerPublishMode ? "priority_matrix" : defaultTemplateKind);
+    setTemplateKind(isGrid4PublishMode || isEisenhowerPublishMode ? "priority_matrix" : isSwotPublishMode ? "swot" : defaultTemplateKind);
     setMatrixSelections({});
     setCardSearch("");
     setError(null);
     setPhase("idle");
     setPublishedSlug(null);
-  }, [open, boardId, defaultTemplateKind, isGrid4PublishMode, isEisenhowerPublishMode]);
+  }, [open, boardId, defaultTemplateKind, isGrid4PublishMode, isEisenhowerPublishMode, isSwotPublishMode]);
 
   useEffect(() => {
     if (templateKind === "kanban") setError(null);
@@ -160,7 +164,7 @@ export function BoardTemplateExportModal({
         category,
         pricingTier,
       };
-      const targetBoardId = isGrid4PublishMode || templateKind === "priority_matrix" ? sourceBoardId : boardId;
+      const targetBoardId = isGrid4PublishMode || templateKind === "priority_matrix" || templateKind === "swot" ? sourceBoardId : boardId;
       if (isGrid4PublishMode) {
         base.templateKind = "priority_matrix";
         base.priorityMatrixModel = "grid4";
@@ -177,6 +181,9 @@ export function BoardTemplateExportModal({
           .map(([cardId, quadrantKey]) => ({ cardId, quadrantKey }));
       } else if (templateKind === "bpmn") {
         base.templateKind = "bpmn";
+      } else if (templateKind === "swot") {
+        base.templateKind = "swot";
+        base.swotSelections = swotPublishSelections ?? [];
       } else {
         base.templateKind = "kanban";
       }
@@ -198,6 +205,8 @@ export function BoardTemplateExportModal({
     ? t("exportModal.hintGrid4Publish")
     : isEisenhowerPublishMode
       ? t("exportModal.hintMatrix")
+    : isSwotPublishMode || templateKind === "swot"
+      ? t("exportModal.hintSwot")
     : templateKind === "priority_matrix"
       ? t("exportModal.hintMatrix")
       : t("exportModal.hint");
@@ -239,7 +248,7 @@ export function BoardTemplateExportModal({
           </div>
         ) : (
           <>
-            {!isGrid4PublishMode && !isEisenhowerPublishMode && (
+            {!isGrid4PublishMode && !isEisenhowerPublishMode && !isSwotPublishMode && (
               <>
                 <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1">
                   {t("exportModal.templateKind")}
@@ -274,6 +283,16 @@ export function BoardTemplateExportModal({
                       className="rounded-full"
                     />
                     {t("exportModal.templateKindBpmn")}
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tplKind"
+                      checked={templateKind === "swot"}
+                      onChange={() => setTemplateKind("swot")}
+                      className="rounded-full"
+                    />
+                    {t("exportModal.templateKindSwot")}
                   </label>
                 </div>
               </>

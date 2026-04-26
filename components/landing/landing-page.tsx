@@ -68,13 +68,14 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
       <div className="relative">
         <a
           href="#landing-main"
-          className="flux-marketing-btn-primary absolute left-4 top-0 z-[100] -translate-y-[120%] transition-transform focus:translate-y-4"
+          className="flux-marketing-btn-primary absolute left-4 top-0 z-[var(--flux-z-tooltip)] -translate-y-[120%] transition-transform focus:translate-y-4"
         >
           {t("skipToContent")}
         </a>
         <div
           lang={locale}
-          className="home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+          className="flux-page-contract home-variant-vibrant relative min-h-screen overflow-x-hidden bg-[var(--flux-surface-dark)] text-[var(--flux-text)]"
+          data-flux-area="marketing"
         >
           <LandingPublicBackdrop />
           <LandingScrollProgress />
@@ -87,7 +88,7 @@ export default function LandingPage({ initialCatalog }: LandingPageProps) {
              * Doc §1.2 order: Hero → Why → AI spotlight → Platform → Steps → Pricing → CTA.
              * Extra blocks (social proof, roadmap, trust, FAQ) stay below the core funnel for SEO and product narrative.
              */}
-            <main id="landing-main" className="home-landing-stagger">
+            <main id="landing-main" className="space-y-20 sm:space-y-24 lg:space-y-28">
               <ScrollReveal delay={0}>
                 <LandingHero localeRoot={localeRoot} user={user} />
               </ScrollReveal>

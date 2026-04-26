@@ -20,6 +20,7 @@ export function VirtualKanbanColumnCardList({
   boardBuckets,
   priorities,
   onEditCard,
+  openingCardId,
   onDeleteCard,
   onSetDirection,
   onOpenDesc,
@@ -61,6 +62,7 @@ export function VirtualKanbanColumnCardList({
                 directions={directions}
                 dirColors={dirColors}
                 onEdit={onEditCard}
+                isOpening={openingCardId === c.id}
                 onDelete={onDeleteCard}
                 onSetDirection={onSetDirection}
                 onOpenDesc={onOpenDesc}

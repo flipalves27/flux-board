@@ -13,6 +13,7 @@ import { CardIntakeVoiceBlock } from "@/components/kanban/card-intake-voice-bloc
 import { CardAssigneeCombobox, type CardAssigneeOption } from "@/components/kanban/card-form/card-assignee-combobox";
 import { CardDescriptionBlockEditor } from "@/components/kanban/card-form/card-description-block-editor";
 import { AiModelHint } from "@/components/ai-model-hint";
+import { FluxBadge, FluxCallout, type FluxTone } from "@/components/ui/flux-surface";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
 import {
   STORY_POINTS_FIBONACCI,
@@ -251,6 +252,38 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
     return computeRefinementReadinessScore(input);
   }, [title, descriptionForSave, priority, progress, dueDate, tags, blockedBy, storyPoints, dorReady]);
 
+  const dueDeltaDays = useMemo(() => {
+    if (!dueDate) return null;
+    const due = new Date(`${dueDate}T00:00:00`);
+    if (Number.isNaN(due.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.floor((due.getTime() - today.getTime()) / 86_400_000);
+  }, [dueDate]);
+
+  const operationalSignals = useMemo<Array<{ key: string; tone: FluxTone; label: string }>>(() => {
+    const signals: Array<{ key: string; tone: FluxTone; label: string }> = [];
+    const priorityText = priority.trim().toLowerCase();
+    if (priorityText === "urgente" || priorityText === "urgent") {
+      signals.push({ key: "priority-urgent", tone: "danger", label: t("cardModal.signals.priorityUrgent") });
+    } else if (priorityText === "importante" || priorityText === "important") {
+      signals.push({ key: "priority-important", tone: "attention", label: t("cardModal.signals.priorityImportant") });
+    }
+    if (blockedBy.length > 0) {
+      signals.push({ key: "blocked", tone: "blocked", label: t("cardModal.signals.blocked", { count: blockedBy.length }) });
+    }
+    if (dueDeltaDays !== null && dueDeltaDays < 0) {
+      signals.push({ key: "overdue", tone: "overdue", label: t("cardModal.signals.overdue") });
+    }
+    if (!assigneeId) {
+      signals.push({ key: "unassigned", tone: "risk", label: t("cardModal.signals.unassigned") });
+    }
+    if (refinementReadiness.score < 45) {
+      signals.push({ key: "readiness", tone: "attention", label: t("cardModal.signals.readinessLow") });
+    }
+    return signals;
+  }, [assigneeId, blockedBy.length, dueDeltaDays, priority, refinementReadiness.score, t]);
+
   const runRefineAi = useCallback(async () => {
     const tit = title.trim();
     const desc = descriptionForSave.trim();
@@ -414,6 +447,28 @@ export function CardEditForm({ cardId: _cardId }: CardModalTabBaseProps) {
 
   return (
     <div className="space-y-5">
+      {operationalSignals.length > 0 ? (
+        <FluxCallout
+          tone={operationalSignals.some((signal) => signal.tone === "danger" || signal.tone === "blocked" || signal.tone === "overdue") ? "danger" : "attention"}
+          role="status"
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="flux-product-label text-[var(--flux-text)]">{t("cardModal.signals.title")}</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--flux-text-muted)]">
+              {t("cardModal.signals.description")}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {operationalSignals.map((signal) => (
+              <FluxBadge key={signal.key} tone={signal.tone}>
+                {signal.label}
+              </FluxBadge>
+            ))}
+          </div>
+        </FluxCallout>
+      ) : null}
+
       <CardModalSection
         title={t("cardModal.sections.identification.title")}
         description={t("cardModal.sections.identification.description")}

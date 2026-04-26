@@ -74,34 +74,43 @@ export async function createBoardFromTemplateSnapshot(
   orgId: string,
   userId: string,
   name: string,
-  snap: BoardTemplateSnapshot
+  snap: BoardTemplateSnapshot,
+  opts?: { projectId?: string | null }
 ): Promise<BoardData> {
   const snapConfig = (snap.config ?? {}) as Partial<NonNullable<BoardData["config"]>>;
   const isMatrix = snap.templateKind === "priority_matrix";
   const isBpmn = snap.templateKind === "bpmn" && Boolean(snap.bpmnModel);
+  const isSwot = snap.templateKind === "swot";
+  const isStrategicPortfolio = snap.templateKind === "strategic_portfolio";
   const methodology: BoardMethodology = isMatrix
     ? "kanban"
     : isBpmn
       ? "kanban"
-      : snap.boardMethodology === "kanban"
+      : isSwot
         ? "kanban"
-        : snap.boardMethodology === "lean_six_sigma"
-          ? "lean_six_sigma"
-          : snap.boardMethodology === "discovery"
-            ? "discovery"
-            : snap.boardMethodology === "safe"
-              ? "safe"
-              : "scrum";
+        : isStrategicPortfolio
+          ? "kanban"
+          : snap.boardMethodology === "kanban"
+            ? "kanban"
+            : snap.boardMethodology === "lean_six_sigma"
+              ? "lean_six_sigma"
+              : snap.boardMethodology === "discovery"
+                ? "discovery"
+                : snap.boardMethodology === "safe"
+                  ? "safe"
+                  : "scrum";
 
-  const instantiated = isMatrix ? instantiateTemplateCards(snap) : [];
+  const isCardTemplate = isMatrix || isSwot || isStrategicPortfolio;
+  const instantiated = isCardTemplate ? instantiateTemplateCards(snap) : [];
   const palette = Array.isArray(snap.labelPalette) ? snap.labelPalette : [];
-  const mergedLabels = isMatrix
+  const mergedLabels = isCardTemplate
     ? [...new Set([...labelsFromTemplateCards(instantiated), ...palette])].slice(0, 100)
     : [];
 
   const board = await createBoard(orgId, userId, name, {
+    projectId: opts?.projectId ?? null,
     version: "2.0",
-    cards: isMatrix
+    cards: isCardTemplate
       ? instantiated
       : isBpmn
         ? (snap.bpmnModel?.nodes ?? []).map((n, i) => ({
@@ -124,11 +133,43 @@ export async function createBoardFromTemplateSnapshot(
         : isBpmn
           ? [{ key: "bpmn_canvas", label: "BPMN Canvas", color: "var(--flux-primary)" }]
           : [],
-      labels: isMatrix ? mergedLabels : isBpmn ? ["BPMN"] : [],
+      labels: isCardTemplate ? mergedLabels : isBpmn ? ["BPMN"] : [],
+      ...(isSwot ? { strategyTemplateKind: "swot" as const } : {}),
+      ...(isStrategicPortfolio ? { strategyTemplateKind: "strategic_portfolio" as const } : {}),
+      ...(isSwot
+        ? {
+            definitionOfDone: {
+              enabled: true,
+              enforce: false,
+              doneBucketKeys: ["action_plan"],
+              items: [
+                { id: "owner", label: "Owner definido" },
+                { id: "evidence", label: "Evidência ou hipótese registrada" },
+                { id: "success", label: "Critério de sucesso definido" },
+              ],
+            },
+            cardRules: { requireAssignee: true },
+          }
+        : {}),
+      ...(isStrategicPortfolio
+        ? {
+            definitionOfDone: {
+              enabled: true,
+              enforce: false,
+              doneBucketKeys: [],
+              items: [
+                { id: "owner", label: "Owner definido" },
+                { id: "milestone", label: "Próximo marco definido" },
+                { id: "business_outcome", label: "Resultado de negócio definido" },
+              ],
+            },
+            cardRules: { requireAssignee: true },
+          }
+        : {}),
     },
     mapaProducao: isBpmn ? attachBpmnModelToMapa(snap.bpmnModel!, snap.mapaProducao) : snap.mapaProducao,
     dailyInsights: [],
   });
-  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn ? [] : snap.automations);
+  await setBoardAutomationRules(board.id, orgId, isMatrix || isBpmn || isSwot || isStrategicPortfolio ? [] : snap.automations);
   return board;
 }

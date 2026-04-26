@@ -37,6 +37,7 @@ import { WorkbarProvider } from "@/components/shell/workbar-context-provider";
 import { Workbar } from "@/components/shell/workbar";
 import { Toolbar } from "@/components/shell/toolbar";
 import { DocksStoreBridge } from "@/stores/docks-store-bridge";
+import { isPublicPath, normalizeAppPath } from "@/lib/public-routes";
 
 function CommandLayer() {
   const { data } = useOrgFeatures();
@@ -77,19 +78,20 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
   const mainColumn = (
     <div
       className={`relative z-[var(--flux-z-app-shell-content)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden touch-pan-y ${layout === "mobile" ? "max-md:min-h-0" : ""}`}
+      aria-hidden={layout === "mobile" && mobileOpen ? true : undefined}
       {...(layout === "mobile" ? mainAreaProps : {})}
     >
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <TrialBillingBanner />
         <MobileAppHeader />
         {workbar ? <Workbar /> : null}
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-clip overflow-y-auto overscroll-contain scroll-smooth">{children}</div>
       </div>
     </div>
   );
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
+    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 max-w-full overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
       <DocksStoreBridge />
       <FluxAppBackdrop className="absolute inset-0 z-[var(--flux-z-app-shell-bg)]" />
       <Sidebar />
@@ -134,15 +136,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { alerts } = useRoutineTasks();
   const announcedAlertsRef = useRef<Set<string>>(new Set());
 
-  const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
-  const isPublicRoute =
-    normalizedPath === "/" ||
-    normalizedPath === "/login" ||
-    normalizedPath === "/onboarding" ||
-    normalizedPath.startsWith("/portal/") ||
-    normalizedPath.startsWith("/forms/") ||
-    normalizedPath.startsWith("/embed/");
-  const showSidebar = isChecked && user && !isPublicRoute;
+  const normalizedPath = normalizeAppPath(pathname);
+  const showSidebar = isChecked && user && !isPublicPath(normalizedPath);
 
   useEffect(() => {
     if (!showSidebar) return;

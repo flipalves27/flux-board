@@ -8,7 +8,7 @@ export default function CalendarPage() {
   const t = useTranslations("deliveryCalendar");
   const locale = useLocale();
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--flux-surface-canvas)]">
+    <div className="flux-page-contract min-h-screen flex flex-col" data-flux-area="operational">
       <Header
         title={t("title")}
         backHref={`/${locale}/boards`}

@@ -1,7 +1,11 @@
 {
   "navigation": {
     "boards": "Boards",
+    "boardsSublabel": "Quadros e cards",
+    "projects": "Projetos",
+    "projectsSublabel": "Governança e roadmap",
     "deliveryCalendar": "Entregas",
+    "deliveryCalendarSublabel": "Prazos e marcos",
     "reports": "Relatórios",
     "reportsProduct": "Flux Reports",
     "fluxAiHub": "Hub de IA",
@@ -9,19 +13,27 @@
     "portfolio": "Portfólio",
     "portfolioProduct": "Saúde do portfólio e IA",
     "routines": "Rotinas",
+    "routinesSublabel": "Rituais recorrentes",
     "dashboard": "Executivo",
     "dashboardProduct": "Saúde do portfólio",
     "okrs": "Flux Goals",
+    "okrsProduct": "OKRs e metas",
     "goals": "Metas",
     "discovery": "Discovery",
     "templates": "Templates",
+    "templatesSublabel": "Modelos prontos",
     "tasks": "Minhas tarefas",
     "myWork": "My Work",
+    "myWorkSublabel": "Prioridades pessoais",
     "users": "Usuários",
+    "team": "Equipe",
     "organization": "Organização",
+    "organizationSublabel": "Branding e permissões",
     "activeOrganization": "Organização ativa",
     "billing": "Billing",
+    "billingSublabel": "Plano e limites",
     "invites": "Convites",
+    "invitesPendingSublabel": "{count, plural, one {# pendente} other {# pendentes}}",
     "orgAudit": "Registo de atividade",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
@@ -33,6 +45,7 @@
     "releases": "Releases",
     "releasesUpcomingSublabel": "{count, plural, one {# a lançar} other {# a lançar}}",
     "docs": "Flux Docs",
+    "docsProduct": "Conhecimento e RAG",
     "specScopePlanner": "Escopo por documento",
     "specScopePlannerProduct": "Business+ · IA",
     "teamWorkspace": "Time e estrutura",
@@ -51,6 +64,7 @@
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
+      "projects": "Projetos agregam boards, governança, custos, roadmap, riscos e IA.",
       "deliveryCalendar": "Calendário, visão de gestão e cronograma por board (vencimentos, riscos e marcos em sprint).",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
       "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",
@@ -761,13 +775,18 @@
     "createModeAi": "Com IA",
     "createModeMatrix": "Matriz de priorização",
     "createModeBpmn": "BPMN",
+    "createModeSwot": "SWOT/TOWS",
     "bpmnBadge": "BPMN",
+    "swotBadge": "SWOT/TOWS",
     "matrixSectionTitle": "Matriz de priorização",
     "matrixSectionHint": "Grade 4×4 com dois eixos de nível (como em priorização visual de mercado): arraste os cards do board para as células. Publicar no showcase exige administrador.",
     "matrixSectionCta": "Abrir sessão exclusiva da Matriz 4x4",
     "bpmnSectionTitle": "Modelo BPMN",
     "bpmnSectionHint": "Workspace dedicado para BPMN com importação/exportação em Markdown e BPMN XML.",
     "bpmnSectionCta": "Abrir workspace BPMN",
+    "swotSectionTitle": "Template SWOT/TOWS",
+    "swotSectionHint": "Diagnóstico estratégico em 2×2, evidências, TOWS e conversão de estratégias em iniciativas.",
+    "swotSectionCta": "Abrir workspace SWOT/TOWS",
     "matrixExclusive": {
       "title": "Matriz 4x4",
       "back": "← Templates",
@@ -779,6 +798,12 @@
       "back": "← Templates",
       "heading": "Sessão exclusiva BPMN",
       "hint": "Importe, valide, edite e publique templates BPMN com foco em modelagem de processos."
+    },
+    "swotExclusive": {
+      "title": "Workspace SWOT/TOWS",
+      "back": "← Templates",
+      "heading": "Sessão exclusiva SWOT/TOWS",
+      "hint": "Monte um diagnóstico SWOT baseado em evidências, gere TOWS e publique um template estratégico."
     },
     "matrixPanel": {
       "hint": "Selecione o board de origem e abra o assistente para escolher cards, quadrantes, título e categoria do template.",
@@ -813,6 +838,21 @@
       "taskGenericError": "Não foi possível salvar a tarefa no board selecionado.",
       "publishCta": "Publicar como template",
       "publishHint": "Abre o assistente com título, categoria e o layout atual da grade."
+    },
+    "swotWorkspace": {
+      "intro": "Monte uma matriz SWOT com cards existentes ou insights novos, registre evidência e publique um template que já abre com visão SWOT/TOWS no board.",
+      "bestPracticeHint": "Boas práticas: seja específico, use evidência, revise hipóteses e converta TOWS aprovados em iniciativas com dono e prazo.",
+      "loadingCards": "Carregando cards do board…",
+      "loadError": "Não foi possível carregar o board.",
+      "saveError": "Não foi possível salvar o insight no board.",
+      "emptyQuadrant": "Nenhum item selecionado.",
+      "cardPool": "Cards disponíveis",
+      "evidencePlaceholder": "Evidência, métrica ou fonte…",
+      "quickInsightTitle": "Criar insight SWOT rápido",
+      "quickInsightPlaceholder": "Ex.: Canal enterprise com alta taxa de conversão",
+      "quickInsightCta": "Criar insight",
+      "publishCta": "Publicar como template SWOT",
+      "publishHint": "Publica buckets SWOT/TOWS, cards selecionados e metadados de evidência."
     },
     "subtitle": "Importe colunas, rótulos e automações sem cards. Premium com repasse 70/30 ao criador.",
     "loading": "Carregando catálogo…",
@@ -886,11 +926,13 @@
       "hint": "Exporta colunas, automações e rótulos (sem cards). Visível no showcase.",
       "hintMatrix": "Matriz Eisenhower em quatro colunas; inclua cópias dos cards escolhidos (sem vínculo com o board de origem após importar).",
       "hintGrid4Publish": "Defina título e categoria do template. O layout 4×4 e as posições dos cards vêm do workspace de matriz.",
+      "hintSwot": "SWOT/TOWS inclui buckets estratégicos, cópias dos cards selecionados e evidências para gerar estratégias no board importado.",
       "grid4Summary": "{count, plural, one {# card posicionado na grade} other {# cards posicionados na grade}}",
       "templateKind": "Tipo de template",
       "templateKindKanban": "Kanban (estrutura)",
       "templateKindMatrix": "Matriz de priorização",
       "templateKindBpmn": "Modelo de processo BPMN",
+      "templateKindSwot": "SWOT/TOWS",
       "sourceBoard": "Board de origem",
       "loadingCards": "Carregando cards…",
       "noCards": "Nenhum card neste board.",
@@ -2208,11 +2250,6 @@
       "open": "Configurações"
     },
     "clientLabelInHeader": "Cliente: {label}",
-    "persistence": {
-      "saving": "Salvando…",
-      "saved": "Salvo",
-      "error": "Falha ao salvar"
-    },
     "loading": "Carregando board...",
     "anomalyAlerts": {
       "open": "Alertas",
@@ -2824,6 +2861,16 @@
           "placeholder": "Novo rótulo"
         }
       },
+      "signals": {
+        "title": "Atenção operacional",
+        "description": "Sinais importantes deste card aparecem aqui antes da edição.",
+        "priorityUrgent": "Prioridade urgente",
+        "priorityImportant": "Prioridade alta",
+        "blocked": "{count, plural, one {# bloqueio} other {# bloqueios}}",
+        "overdue": "Prazo vencido",
+        "unassigned": "Sem responsável",
+        "readinessLow": "Refinamento baixo"
+      },
       "unblock": {
         "cta": "Sugerir plano de desbloqueio",
         "loading": "Gerando…"
@@ -3362,7 +3409,8 @@
       },
       "completeMove": {
         "tooltip": "Concluir ou mover de coluna",
-        "menuTitle": "Mover para qual coluna?"
+        "menuTitle": "Mover para qual coluna?",
+        "mobileLabel": "Mover"
       },
       "actions": {
         "copy": "Copiar"
@@ -3489,6 +3537,10 @@
         "viewTimelineAria": "Alternar para linha do tempo",
         "viewEisenhowerTooltip": "Eisenhower (E): urgente x importante",
         "viewEisenhowerAria": "Alternar para matriz Eisenhower",
+        "viewSwotTooltip": "SWOT (S): diagnóstico estratégico e TOWS",
+        "viewSwotAria": "Alternar para visualização SWOT/TOWS",
+        "viewStrategicPortfolioTooltip": "Portfolio (P): iniciativas por objetivo estratégico",
+        "viewStrategicPortfolioAria": "Alternar para Strategic Portfolio View",
         "viewExecutiveTooltip": "Gestão (G): apresentação para liderança e contexto de negócio",
         "viewExecutiveAria": "Alternar para visualização de apresentação gerencial",
         "viewRoadmapTooltip": "Roadmap (R): trabalho aberto por data de conclusão",
@@ -3504,6 +3556,9 @@
         "emptyTitle": "Nenhum card com data de conclusão",
         "emptyHint": "Defina uma data de conclusão nos cards para vê-los aqui. Os filtros do board também se aplicam.",
         "barAria": "Prazo de {title}: {date}. Arraste para alterar ou use as setas."
+      },
+      "swot": {
+        "initiativeCreated": "Iniciativa SWOT criada"
       },
       "table": {
         "openRow": "Abrir card",
@@ -3665,6 +3720,20 @@
         "sprintAll": "Mostrar todos os cards",
         "sprintFilterHint": "Restringe o board aos cards do sprint ativo.",
         "sprintProgress": "{done} de {total} no sprint"
+      },
+      "filterModal": {
+        "open": "Abrir filtros",
+        "title": "Filtros do board",
+        "close": "Fechar",
+        "search": "Busca",
+        "priority": "Prioridade",
+        "labels": "Etiquetas",
+        "sprint": "Sprint",
+        "all": "Todas",
+        "noLabels": "Sem etiquetas cadastradas",
+        "clear": "Limpar tudo",
+        "apply": "Aplicar",
+        "tools": "Ferramentas"
       },
       "sprintContext": {
         "regionAria": "Sprint ativa: {name}",
@@ -3981,11 +4050,27 @@
         "openMenu": "Ferramentas do board",
         "closeMenu": "Fechar ferramentas",
         "menuLabel": "Ferramentas do board",
+        "sectionPrimary": "Ações rápidas",
+        "sectionView": "Vista",
+        "sectionTools": "Ferramentas",
+        "newCard": "Novo card",
+        "filters": "Filtros",
+        "viewGroup": "Vistas do board",
         "copilot": "Fluxy",
         "insights": "Insights de execução",
         "activity": "Atividade",
         "daily": "IA do dia",
         "focusMode": "Modo foco"
+      },
+      "mobileColumnPicker": {
+        "label": "Navegação mobile de colunas",
+        "selectLabel": "Escolher coluna",
+        "pillsLabel": "Colunas",
+        "cardCount": "{count} cards",
+        "addCard": "Adicionar card em {column}"
+      },
+      "mobileViewPicker": {
+        "label": "Escolher vista do board"
       },
       "stats": {
         "totalLabel": "Total",

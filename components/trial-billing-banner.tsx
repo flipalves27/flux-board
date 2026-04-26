@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useOrgBranding } from "@/context/org-branding-context";
 import { apiPut } from "@/lib/api-client";
@@ -32,15 +32,10 @@ export function TrialBillingBanner() {
     return () => window.clearInterval(id);
   }, []);
 
-  const trialRemain = useMemo(() => {
-    if (!org || org.plan !== "trial" || !org.trialEndsAt) return null;
-    return msUntil(org.trialEndsAt);
-  }, [org, tick]);
-
-  const graceRemain = useMemo(() => {
-    if (!org || org.plan !== "free" || !org.downgradeGraceEndsAt) return null;
-    return msUntil(org.downgradeGraceEndsAt);
-  }, [org, tick]);
+  const trialRemain =
+    !org || org.plan !== "trial" || !org.trialEndsAt ? null : msUntil(org.trialEndsAt);
+  const graceRemain =
+    !org || org.plan !== "free" || !org.downgradeGraceEndsAt ? null : msUntil(org.downgradeGraceEndsAt);
 
   const dismissNotice = useCallback(async () => {
     if (!user || !sessionCanManageOrgBilling(user)) return;

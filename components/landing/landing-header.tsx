@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
 import { FluxBrandMark } from "@/components/ui/flux-brand-mark";
@@ -16,14 +16,26 @@ type LandingHeaderProps = {
 export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHeaderProps) {
   const t = useTranslations("landing");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const firstLink = navRef.current?.querySelector<HTMLElement>("a[href]");
+    firstLink?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        toggleRef.current?.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [mobileOpen]);
 
   const navClass =
@@ -63,8 +75,9 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
+            ref={toggleRef}
             type="button"
-            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] text-[var(--flux-text-muted)] md:hidden"
+            className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-primary-alpha-06)] text-[var(--flux-text-muted)] shadow-[var(--flux-shadow-primary-soft)] transition-colors hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)] md:hidden"
             aria-expanded={mobileOpen}
             aria-controls="landing-mobile-nav"
             onClick={() => setMobileOpen((o) => !o)}
@@ -91,8 +104,9 @@ export function LandingHeader({ localeRoot, appName, logoUrl, user }: LandingHea
 
       {mobileOpen && (
         <nav
+          ref={navRef}
           id="landing-mobile-nav"
-          className="mx-auto mt-4 flex max-w-[1200px] flex-col gap-1 border-t border-[var(--flux-primary-alpha-15)] pt-4 text-sm font-semibold text-[var(--flux-text-muted)] md:hidden"
+          className="mx-auto mt-4 flex max-w-[1200px] flex-col gap-1 rounded-[var(--flux-rad-lg)] border border-[var(--flux-primary-alpha-18)] bg-[color-mix(in_srgb,var(--flux-surface-card)_82%,transparent)] p-3 text-sm font-semibold text-[var(--flux-text-muted)] shadow-[var(--flux-shadow-lg)] backdrop-blur-[24px] md:hidden"
           aria-label={t("nav.mainLabel")}
         >
           <a href="#why" className={`${navClass} py-2`} onClick={closeMobile}>

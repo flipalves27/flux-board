@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
@@ -28,6 +28,8 @@ import { SidebarQuickAccess } from "./sidebar-quick-access";
 import { SidebarWorkspace } from "./sidebar-workspace";
 import { SidebarOrgSwitcher } from "./sidebar-org-switcher";
 import { SidebarZoneCollapsible } from "./sidebar-zone-collapsible";
+import { useModalA11y } from "@/components/ui/use-modal-a11y";
+import { normalizeAppPath } from "@/lib/public-routes";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -37,6 +39,7 @@ export function Sidebar() {
   const platformName = usePlatformDisplayName();
   const { themePreference, cycleThemePreference } = useTheme();
   const { layout, mobileOpen, closeMobile, openMobile } = useSidebarLayout();
+  const drawerRef = useRef<HTMLElement | null>(null);
   const isMinimal = true;
   const [collapsed, setCollapsed] = useState(false);
   const [tabletHover, setTabletHover] = useState(false);
@@ -57,7 +60,13 @@ export function Sidebar() {
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
-  const normalizedPath = pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
+  const normalizedPath = normalizeAppPath(pathname);
+
+  useModalA11y({
+    open: layout === "mobile" && mobileOpen,
+    onClose: closeMobile,
+    containerRef: drawerRef,
+  });
 
   useEffect(() => {
     try {
@@ -281,6 +290,7 @@ export function Sidebar() {
       ) : null}
 
       <aside
+        ref={drawerRef}
         {...(layout === "mobile" ? drawerProps : {})}
         role={layout === "mobile" && mobileOpen ? "dialog" : undefined}
         aria-modal={layout === "mobile" && mobileOpen ? true : undefined}
@@ -288,6 +298,7 @@ export function Sidebar() {
         aria-hidden={mobileClosed || undefined}
         onMouseEnter={() => layout === "tablet" && setTabletHover(true)}
         onMouseLeave={() => layout === "tablet" && setTabletHover(false)}
+        tabIndex={layout === "mobile" ? -1 : undefined}
         className={`flex shrink-0 flex-col overflow-hidden transition-[width,transform] duration-300 ease-out
           ${isMinimal
             ? "flux-glass-surface rounded-none border-y-0 border-l-0 border-r-[var(--flux-glass-surface-border)] flux-depth-1"

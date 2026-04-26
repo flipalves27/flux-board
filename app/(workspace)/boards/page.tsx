@@ -43,6 +43,7 @@ import { BoardQuickPeek } from "@/components/boards/board-quick-peek";
 import { useMinimumSkeletonDuration } from "@/lib/use-minimum-skeleton-duration";
 import { DataFadeIn } from "@/components/ui/data-fade-in";
 import { FluxEmptyState } from "@/components/ui/flux-empty-state";
+import { PremiumPageShell, PremiumSectionHeader, PremiumSurface } from "@/components/ui/premium-primitives";
 import { SkeletonBoardList } from "@/components/skeletons/flux-skeletons";
 import type { BoardMethodology } from "@/lib/board-methodology";
 import { sessionCanManageMembersAndBilling } from "@/lib/rbac";
@@ -62,10 +63,18 @@ interface Board {
   id: string;
   name: string;
   ownerId: string;
+  projectId?: string | null;
+  projectName?: string | null;
   clientLabel?: string;
   lastUpdated?: string;
   boardMethodology?: BoardMethodology;
   portfolio?: BoardPortfolioMetrics;
+}
+
+interface ProjectOption {
+  id: string;
+  name: string;
+  boardCount?: number;
 }
 
 interface PlanInfo {
@@ -224,6 +233,11 @@ function ModernBoardCard({
                 {board.clientLabel}
               </span>
             ) : null}
+            {board.projectName ? (
+              <span className="mt-1.5 ml-1 inline-block max-w-full truncate rounded-full border border-[var(--flux-primary-alpha-30)] bg-[var(--flux-primary-alpha-10)] px-2 py-0.5 text-[10px] font-semibold text-[var(--flux-primary-light)]">
+                {board.projectName}
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
@@ -329,6 +343,8 @@ export default function BoardsPage() {
   const localeRoot = `/${locale}`;
   const dateLocale = locale === "en" ? "en-US" : "pt-BR";
   const [boards, setBoards] = useState<Board[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -336,6 +352,7 @@ export default function BoardsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState("");
   const [createMethodology, setCreateMethodology] = useState<BoardMethodology>("scrum");
+  const [createProjectId, setCreateProjectId] = useState<string>("");
   const [empty, setEmpty] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [query, setQuery] = useState("");
@@ -355,7 +372,8 @@ export default function BoardsPage() {
 
   const loadBoards = useCallback(async () => {
     try {
-      const data = await apiGet<{ boards: Board[]; plan?: PlanInfo }>("/api/boards", getHeaders());
+      const endpoint = selectedProjectId === "all" ? "/api/boards" : `/api/boards?projectId=${encodeURIComponent(selectedProjectId)}`;
+      const data = await apiGet<{ boards: Board[]; plan?: PlanInfo }>(endpoint, getHeaders());
       const list = data.boards ?? [];
       setBoards(list);
       setPlan(data.plan ?? null);
@@ -376,19 +394,39 @@ export default function BoardsPage() {
     } finally {
       setLoading(false);
     }
-  }, [getHeaders, localeRoot, router, sessionFailure]);
+  }, [getHeaders, localeRoot, router, selectedProjectId, sessionFailure]);
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const data = await apiGet<{ projects: ProjectOption[] }>("/api/projects", getHeaders());
+      setProjects(data.projects ?? []);
+    } catch {
+      setProjects([]);
+    }
+  }, [getHeaders]);
 
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       if (cancelled) return;
       void loadBoards();
+      void loadProjects();
     }, BOARDS_LIST_STAGGER_MS);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [loadBoards]);
+  }, [loadBoards, loadProjects]);
+
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const fromUrl = sp.get("projectId")?.trim();
+      if (fromUrl) setSelectedProjectId(fromUrl);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (!isChecked) return;
@@ -426,7 +464,7 @@ export default function BoardsPage() {
     } catch {
       // ignore localStorage read errors
     }
-  }, [empty, isChecked, loading, router, user]);
+  }, [empty, isChecked, loading, localeRoot, router, user]);
 
   useEffect(() => {
     if (!user || boards.length === 0) return;
@@ -449,6 +487,7 @@ export default function BoardsPage() {
     setEditingId(null);
     setBoardName("");
     setCreateMethodology("scrum");
+    setCreateProjectId(selectedProjectId !== "all" ? selectedProjectId : projects[0]?.id ?? "");
     setModalOpen(true);
   }
 
@@ -457,9 +496,10 @@ export default function BoardsPage() {
     setEditingId(null);
     setBoardName("");
     setCreateMethodology("scrum");
+    setCreateProjectId(selectedProjectId !== "all" ? selectedProjectId : projects[0]?.id ?? "");
     setModalOpen(true);
     router.replace(`${localeRoot}/boards`, { scroll: false });
-  }, [router, localeRoot]);
+  }, [router, localeRoot, projects, selectedProjectId]);
 
   function openEditModal(id: string, name: string) {
     setModalMode("edit");
@@ -474,7 +514,7 @@ export default function BoardsPage() {
       const wasFirstBoard = boards.length === 0;
       const { board } = await apiPost<{ board: Board }>(
         "/api/boards",
-        { name, boardMethodology: createMethodology },
+        { name, boardMethodology: createMethodology, projectId: createProjectId || undefined },
         getHeaders()
       );
       setModalOpen(false);
@@ -564,7 +604,11 @@ export default function BoardsPage() {
     const normalized = query.trim().toLowerCase();
     let list = boards.filter((b) => {
       if (!normalized) return true;
-      return b.name.toLowerCase().includes(normalized) || b.id.toLowerCase().includes(normalized);
+      return (
+        b.name.toLowerCase().includes(normalized) ||
+        b.id.toLowerCase().includes(normalized) ||
+        String(b.projectName ?? "").toLowerCase().includes(normalized)
+      );
     });
 
     if (showOnlyUpdatedToday) {
@@ -640,7 +684,7 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
       <Suspense fallback={null}>
         {user ? (
           <BoardsQueryParamsEffects
@@ -652,26 +696,20 @@ export default function BoardsPage() {
         ) : null}
       </Suspense>
       <Header />
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <header className="flux-spotlight-dim mb-6 border-b border-[var(--flux-chrome-alpha-12)] pb-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="flux-board-heading font-display text-2xl font-bold tracking-tight">
-                {t("pageTitle")}
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--flux-text-muted)]">
-                {t("pageSubtitle")}
-              </p>
-            </div>
+      <PremiumPageShell>
+        <PremiumSectionHeader
+          title={t("pageTitle")}
+          description={t("pageSubtitle")}
+          action={
             <SpotlightModeToggle
               active={spotlight.active}
               onToggle={spotlight.toggle}
               locale={locale}
             />
-          </div>
-        </header>
+          }
+        />
 
-        <div className="flux-spotlight-dim flex gap-1 border-b border-[var(--flux-chrome-alpha-08)] mb-6">
+        <div className="flux-spotlight-dim flux-premium-tabbar mb-6">
           <button
             className={`px-4 py-2.5 text-sm font-semibold font-display transition-colors ${activeTab === "myBoards" ? "text-[var(--flux-primary-light)] border-b-2 border-[var(--flux-primary)]" : "text-[var(--flux-text-muted)] hover:text-[var(--flux-text)]"}`}
             onClick={() => setActiveTab("myBoards")}
@@ -687,7 +725,8 @@ export default function BoardsPage() {
         </div>
 
         {plan && plan.maxBoards !== null && !plan.isPro && (
-          <div
+          <PremiumSurface
+            tone={plan.atLimit ? "accent" : "base"}
             className={`flux-spotlight-dim mb-6 rounded-[var(--flux-rad)] border px-4 py-3 text-sm ${
               plan.atLimit
                 ? "border-[var(--flux-warning)] bg-[var(--flux-amber-alpha-12)] text-[var(--flux-text)]"
@@ -715,7 +754,7 @@ export default function BoardsPage() {
                 </a>
               </>
             )}
-          </div>
+          </PremiumSurface>
         )}
 
         {showListSkeleton ? (
@@ -738,7 +777,7 @@ export default function BoardsPage() {
                     {t("sections.search")}
                   </h2>
                   <div className="flux-board-toolbar space-y-3">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto_auto]">
                       <input
                         type="text"
                         value={query}
@@ -746,6 +785,19 @@ export default function BoardsPage() {
                         placeholder={t("filters.searchPlaceholder")}
                         className="flux-input-modern"
                       />
+                      <select
+                        value={selectedProjectId}
+                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                        className="flux-input-modern"
+                        aria-label={locale === "en" ? "Filter by project" : "Filtrar por projeto"}
+                      >
+                        <option value="all">{locale === "en" ? "All projects" : "Todos os projetos"}</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
                       <select
                         value={sortMode}
                         onChange={(e) => setSortMode(e.target.value as "recent" | "name")}
@@ -797,7 +849,7 @@ export default function BoardsPage() {
 
                 {(quickFavoriteBoards.length > 0 || quickRecentBoards.length > 0) && (
                   <section className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    <div className="rounded-[var(--flux-rad)] border border-[var(--flux-gold-alpha-25)] bg-[var(--flux-surface-card)] p-4">
+                    <PremiumSurface className="border-[var(--flux-gold-alpha-25)] p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                           {t("favorites.title")}
@@ -841,9 +893,9 @@ export default function BoardsPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </PremiumSurface>
 
-                    <div className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-25)] bg-[var(--flux-surface-card)] p-4">
+                    <PremiumSurface className="border-[var(--flux-primary-alpha-25)] p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="font-display text-sm font-bold text-[var(--flux-text)]">
                           {t("recents.title")}
@@ -876,7 +928,7 @@ export default function BoardsPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </PremiumSurface>
                   </section>
                 )}
 
@@ -1049,7 +1101,7 @@ export default function BoardsPage() {
             </>
           </DataFadeIn>
         )}
-      </main>
+      </PremiumPageShell>
 
       {modalOpen && (
         <div
@@ -1084,11 +1136,38 @@ export default function BoardsPage() {
               />
             </div>
             {modalMode === "new" ? (
-              <div className="mb-4">
-                <p className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 font-display">
-                  {t("modal.methodologyLabel")}
-                </p>
-                <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
+              <>
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-1 font-display">
+                    {locale === "en" ? "Project" : "Projeto"}
+                  </label>
+                  <select
+                    value={createProjectId}
+                    onChange={(e) => setCreateProjectId(e.target.value)}
+                    className="w-full px-3 py-2 border border-[var(--flux-chrome-alpha-12)] rounded-[var(--flux-rad)] text-sm bg-[var(--flux-surface-elevated)] text-[var(--flux-text)] focus:border-[var(--flux-primary)] outline-none"
+                  >
+                    {projects.length === 0 ? (
+                      <option value="">
+                        {locale === "en" ? "Default project" : "Projeto padrão"}
+                      </option>
+                    ) : null}
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  {projects.length === 0 ? (
+                    <p className="mt-2 text-[11px] text-[var(--flux-text-muted)]">
+                      {locale === "en" ? "A default project will be created automatically." : "Um projeto padrão sera criado automaticamente."}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="mb-4">
+                  <p className="block text-xs font-semibold text-[var(--flux-text-muted)] mb-2 font-display">
+                    {t("modal.methodologyLabel")}
+                  </p>
+                  <div className="flex flex-wrap gap-0.5 rounded-lg border border-[var(--flux-chrome-alpha-12)] p-0.5 bg-[var(--flux-surface-elevated)]">
                   <button
                     type="button"
                     onClick={() => setCreateMethodology("scrum")}
@@ -1145,9 +1224,10 @@ export default function BoardsPage() {
                   >
                     {t("modal.methodologyDiscovery")}
                   </button>
+                  </div>
+                  <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>
                 </div>
-                <p className="mt-2 text-[11px] text-[var(--flux-text-muted)] leading-relaxed">{t("modal.methodologyHint")}</p>
-              </div>
+              </>
             ) : null}
             <div className="flex gap-3 justify-end pt-2">
               <button

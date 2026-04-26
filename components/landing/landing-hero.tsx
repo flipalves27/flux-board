@@ -6,6 +6,7 @@ import { FluxyAvatar } from "@/components/fluxy/fluxy-avatar";
 import { KanbanMock } from "./landing-kanban-mock";
 import { LandingMagnetCard } from "./landing-magnet-card";
 import { LandingCountUp } from "./landing-count-up";
+import { PremiumSurface } from "@/components/ui/premium-primitives";
 
 type LandingHeroProps = {
   localeRoot: string;
@@ -74,22 +75,22 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
 
   return (
     <section
-      className="home-landing-reveal relative pt-10 md:pt-14 lg:pt-16"
+      className="relative pt-10 md:pt-14 lg:pt-16"
       aria-labelledby="landing-hero-heading"
     >
       <div
         className="pointer-events-none absolute inset-x-0 -top-24 z-0 h-[520px] landing-hero-mesh"
         aria-hidden
       />
-      <div className="relative grid items-center gap-10 max-[400px]:gap-7 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+      <div className="relative grid items-center gap-10 max-[400px]:gap-7 sm:gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
         <div className="min-w-0">
-          <div className="hero-chip landing-hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--flux-secondary)] sm:text-xs">
+          <div className="hero-chip landing-hero-chip mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--flux-secondary-alpha-25)] bg-[var(--flux-secondary-alpha-06)] px-2 py-1.5 pl-2 pr-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--flux-secondary)] shadow-[var(--flux-shadow-secondary-outline)] sm:text-xs">
             <span className="home-landing-chip-dot h-2 w-2 shrink-0 rounded-full bg-[var(--flux-secondary)]" aria-hidden />
             {t("hero.chip")}
           </div>
           <h1
             id="landing-hero-heading"
-            className="font-display text-[clamp(2.1rem,5.2vw,3.6rem)] font-extrabold leading-[1.05] tracking-[-0.035em]"
+            className="font-display text-[clamp(2.35rem,6vw,4.65rem)] font-extrabold leading-[0.98] tracking-[-0.055em]"
           >
             {t("hero.title.line1")}
             <br />
@@ -97,7 +98,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
               {t("hero.title.highlight")}
             </span>
           </h1>
-          <p className="mt-6 max-w-[540px] text-[15.5px] leading-[1.75] text-[var(--flux-text-muted)]">
+          <p className="mt-6 max-w-[580px] text-[clamp(0.98rem,1.25vw,1.12rem)] leading-[1.75] text-[var(--flux-text-muted)]">
             {t("hero.description")}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -133,13 +134,14 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             </li>
           </ul>
 
-          <div className="mt-9 grid grid-cols-3 gap-3 sm:max-w-md">
+          <div className="mt-9 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:max-w-xl">
             {heroMetrics.map((m, i) => {
               const parsed = parseMetric(m.val);
               return (
                 <LandingMagnetCard key={m.label} intensity={5} glow={0.4}>
-                  <div
-                    className="landing-metric-card group relative min-w-0 overflow-hidden rounded-[14px] border border-[var(--flux-primary-alpha-12)] bg-[color-mix(in_srgb,var(--flux-surface-card)_45%,transparent)] px-3 py-3 backdrop-blur-[8px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--flux-primary-alpha-30)]"
+                  <PremiumSurface
+                    tone={i === 0 ? "accent" : "base"}
+                    className="landing-metric-card group min-w-0 px-3 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--flux-primary-alpha-30)]"
                     style={{ animationDelay: `${i * 0.12}s` }}
                   >
                     <span
@@ -160,7 +162,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
                     <span className="mt-1.5 block text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--flux-text-muted)]/85">
                       {m.label}
                     </span>
-                  </div>
+                  </PremiumSurface>
                 </LandingMagnetCard>
               );
             })}
@@ -199,7 +201,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             <span className="tracking-wide">{t("hero.aiPill")}</span>
           </div>
 
-          <div className="relative">
+          <PremiumSurface tone="elevated" className="relative p-2 sm:p-3">
             <div
               className="landing-fluxy-emoji-float absolute -bottom-5 -right-4 z-10 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,white_15%,transparent)] bg-gradient-to-br from-[var(--flux-primary)] to-[var(--flux-secondary)] shadow-[0_10px_32px_var(--flux-primary-alpha-35)] sm:-bottom-4 sm:-right-3.5"
               title={t("hero.fluxyPeekLabel")}
@@ -210,7 +212,7 @@ export function LandingHero({ localeRoot, user }: LandingHeroProps) {
             <div className="relative max-h-[min(52vh,min(420px,100dvh-12rem))] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
               <KanbanMock liveViewLabel={t("kanbanMock.liveView")} cols={kanbanCols} />
             </div>
-          </div>
+          </PremiumSurface>
         </div>
       </div>
     </section>

@@ -94,7 +94,11 @@ export type FeatureKey =
   | "org_digital_twin"
   | "mcp_hub_gateway"
   | "okr_auto_prioritization"
-  | "org_kaizen_engine";
+  | "org_kaizen_engine"
+  | "project_governance"
+  | "project_roadmap"
+  | "project_financials"
+  | "project_ai";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: PAID,
@@ -139,6 +143,10 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   mcp_hub_gateway: BIZ_UP,
   okr_auto_prioritization: BIZ_UP,
   org_kaizen_engine: PAID,
+  project_governance: PAID,
+  project_roadmap: PAID,
+  project_financials: BIZ_UP,
+  project_ai: BIZ_UP,
 };
 
 /** Matriz canônica para UI/backend (fonte única da política de planos). */
@@ -240,6 +248,10 @@ export const PRO_FEATURE_LABELS_PT: { key: FeatureKey; label: string }[] = [
   { key: "safe_ai_premium", label: "Assistente SAFe aproximado (IA)" },
   { key: "spec_ai_scope_planner", label: "Planejamento de escopo por documento (IA)" },
   { key: "board_pdf_list_import", label: "Importar lista a partir de PDF (IA)" },
+  { key: "project_governance", label: "Projetos: governança e estratégia" },
+  { key: "project_roadmap", label: "Projetos: roadmap e cronograma" },
+  { key: "project_financials", label: "Projetos: custos e forecast" },
+  { key: "project_ai", label: "Project Copilot e simulações" },
 ];
 
 export function describeDowngradeImpact(params: {

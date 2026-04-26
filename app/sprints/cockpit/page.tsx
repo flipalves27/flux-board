@@ -27,7 +27,7 @@ export default function SprintCockpitPage() {
   const steps = ["planning", "daily", "review", "retro"] as const;
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
       <Header />
       <main className="mx-auto max-w-[720px] px-4 py-8">
         <Link href={`${localeRoot}/sprints`} className="text-xs font-semibold text-[var(--flux-primary-light)] hover:underline">

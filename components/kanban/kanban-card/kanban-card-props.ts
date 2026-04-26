@@ -33,4 +33,6 @@ export interface KanbanCardProps {
   historicalCycleDays?: number[];
   /** Whether this card lives in the last (done) column. */
   isFinalColumn?: boolean;
+  /** Trigger one-shot flip animation before modal opens. */
+  isOpening?: boolean;
 }

@@ -40,6 +40,7 @@ export function CrossBoardDependenciesPanel() {
   const colorMap = useMemo(() => {
     const m = new Map<string, string>();
     let i = 0;
+    void data;
     return (bid: string) => {
       if (!m.has(bid)) {
         m.set(bid, PALETTE[i % PALETTE.length]);
@@ -47,7 +48,7 @@ export function CrossBoardDependenciesPanel() {
       }
       return m.get(bid)!;
     };
-  }, [data?.nodes]);
+  }, [data]);
 
   const load = useCallback(async () => {
     const bid = boardFromUrl;

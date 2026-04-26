@@ -37,7 +37,7 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
               path="/equipe"
               hint={t("hints.users")}
               icon={<IconTeam className="h-4 w-4 shrink-0" />}
-              label="Equipe"
+              label={t("team")}
               sublabel={t("teamWorkspace")}
             />
           ) : null}
@@ -52,7 +52,9 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
                 }
                 icon={<IconInvites className="h-4 w-4 shrink-0" />}
                 label={t("invites")}
-                sublabel={activeInvites !== null && activeInvites > 0 ? String(activeInvites) : undefined}
+                sublabel={activeInvites !== null && activeInvites > 0 ? t("invitesPendingSublabel", { count: activeInvites }) : undefined}
+                badgeCount={activeInvites ?? undefined}
+                badgeTone="attention"
               />
               <SidebarNavLink
                 path="/org-audit"
@@ -74,6 +76,7 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
             hint={t("hints.billing")}
             icon={<IconBilling className="h-4 w-4 shrink-0" />}
             label={t("billing")}
+            sublabel={t("billingSublabel")}
           />
         </>
       )}
@@ -84,6 +87,7 @@ export function SidebarWorkspace({ user, activeInvites }: SidebarWorkspaceProps)
           hint={t("hints.organization")}
           icon={<IconSettings className="h-4 w-4 shrink-0" />}
           label={t("organization")}
+          sublabel={t("organizationSublabel")}
         />
       )}
 

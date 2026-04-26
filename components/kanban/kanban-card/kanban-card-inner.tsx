@@ -44,6 +44,7 @@ function KanbanCardInner({
   sprintBoardQuickActions,
   historicalCycleDays,
   isFinalColumn = false,
+  isOpening = false,
 }: KanbanCardProps) {
   const currentBoardId = useBoardStore((s) => s.boardId ?? "");
   const inActiveSprint = useSprintStore((s) => {
@@ -424,7 +425,7 @@ function KanbanCardInner({
       : sprintEmphasis
         ? "border-[var(--flux-primary-alpha-22)] ring-1 ring-[var(--flux-primary-alpha-22)] hover:border-[var(--flux-primary)]/50 shadow-[0_1px_10px_var(--flux-primary-alpha-12)]"
         : "border-[var(--flux-control-border)] hover:border-[var(--flux-primary)]/50"
-  } ${sprintLeftAccent} ${isBlockedOpen ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""} ${variantClass}`.trim();
+  } ${sprintLeftAccent} ${isBlockedOpen ? "motion-safe:animate-[flux-ai-pulse_2.4s_ease-in-out_infinite]" : ""} ${dragVisual ? "opacity-40 scale-[0.98]" : ""} ${isOpening ? "flux-kanban-card--opening" : ""} ${variantClass}`.trim();
 
   const selectionOverlay =
     selected && selectionCount > 1 ? (
@@ -455,6 +456,7 @@ function KanbanCardInner({
       tourFirstCard={tourFirstCard}
       ariaLabel={ariaLabel}
       selected={selected}
+      isOpening={isOpening}
       rootClassName={rootClassName}
       selectionOverlay={selectionOverlay}
       topOverlayBadges={topOverlayBadges}

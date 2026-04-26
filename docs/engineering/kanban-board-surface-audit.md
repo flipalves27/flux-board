@@ -7,7 +7,7 @@ Inventory of user-facing entry points for the board shell (`components/kanban/ka
 | Layer | Component | User actions |
 | --- | --- | --- |
 | **L1** | `board-chrome-l1` | View mode segment; sprint badge + scope toggle (scrum); expand NLQ dock; filter rail (L2+L3) toggle; focus mode (when wired). |
-| **L2** | `board-chrome-l2` | Priority chips; search; “prioritize” opener; `BoardFilterBar` (labels, more filters). |
+| **Filtros** | `filter-modal` + `kanban-board` | Modal único de filtros; priorização de backlog (drawer) acionada a partir do modal. |
 | **L3** | `board-chrome-l3` | Daily briefing / anomalies; intelligence row (expand/collapse, chips, grouped actions); product goal / LSS / SAFE strips; matrix weight filter; optional sprint scope strip (when NLQ expanded). |
 | **Sticky host** | `board-chrome-sticky` | L2/L3 collapsible layers, Sliders affordance, persisted `localStorage` via `useBoardChromeResponsive`. When the NLQ dock is expanded, the same row also shows **Focus mode** (maximize) + filters rail. |
 

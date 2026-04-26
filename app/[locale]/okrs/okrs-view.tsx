@@ -378,7 +378,7 @@ export default function OkrsView() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen" data-flux-area="analytics">
       <Header title="Flux Goals (OKRs)" backHref={`${localeRoot}/boards`} backLabel="← Boards" />
 
       {showDataSkeleton ? (

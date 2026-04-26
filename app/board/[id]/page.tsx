@@ -9,7 +9,6 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useAuth } from "@/context/auth-context";
 import { Header } from "@/components/header-v2-shim";
-import { BoardFilterChips } from "@/components/board/board-filter-chips";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import type { PortalClientState } from "@/components/kanban/board-portal-modal";
 
@@ -241,6 +240,16 @@ export interface CardData {
   matrixWeight?: number;
   /** Faixa de prioridade visual derivada do peso da matriz. */
   matrixWeightBand?: "low" | "medium" | "high" | "critical";
+  /** Metadados estratégicos usados por templates SWOT/TOWS. */
+  swotMeta?: Record<string, unknown>;
+  /** Metadados executivos usados pela Strategic Portfolio View. */
+  portfolioMeta?: {
+    businessOutcome?: string;
+    health?: "green" | "yellow" | "red" | "blocked";
+    milestoneLabel?: string;
+    ownerName?: string;
+    phase?: string;
+  };
   /** Card pai quando criado por decomposição de épico (Fluxy). */
   epicParentId?: string | null;
   /** Histórias geradas automaticamente pela Fluxy. */
@@ -275,6 +284,8 @@ export interface BoardData {
     executiveStakeholderNote?: string;
     /** Coluna tratada como product backlog para ordenação explícita. */
     backlogBucketKey?: string;
+    /** Marca templates estratégicos que habilitam visões dedicadas no board. */
+    strategyTemplateKind?: "swot" | "strategic_portfolio";
     definitionOfDone?: BoardDefinitionOfDone;
     cardRules?: { requireAssignee?: boolean };
   };
@@ -476,7 +487,6 @@ export default function BoardPage() {
   const [templateExportOpen, setTemplateExportOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [anomalySettingsOpen, setAnomalySettingsOpen] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [briefOpen, setBriefOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [intakeFormsOpen, setIntakeFormsOpen] = useState(false);
@@ -593,6 +603,10 @@ export default function BoardPage() {
         (d.config as { executiveStakeholderNote?: unknown })?.executiveStakeholderNote
       );
       const backlogBucketKey = sanitizeBacklogBucketKey(d.config?.backlogBucketKey, bucketOrder);
+      const strategyTemplateKind =
+        d.config?.strategyTemplateKind === "swot" || d.config?.strategyTemplateKind === "strategic_portfolio"
+          ? d.config.strategyTemplateKind
+          : undefined;
       const methodologyRaw = d.boardMethodology;
       const boardMethodology =
         methodologyRaw === "kanban" ||
@@ -613,6 +627,7 @@ export default function BoardPage() {
           ...(productGoal ? { productGoal } : {}),
           ...(executiveStakeholderNote ? { executiveStakeholderNote } : {}),
           ...(backlogBucketKey ? { backlogBucketKey } : {}),
+          ...(strategyTemplateKind ? { strategyTemplateKind } : {}),
           ...(definitionOfDone ? { definitionOfDone } : {}),
           ...(d.config?.cardRules ? { cardRules: d.config.cardRules } : {}),
         },
@@ -681,7 +696,6 @@ export default function BoardPage() {
     (data?: BoardData) => {
       if (!data && !useBoardStore.getState().db) return;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      setSaveStatus("saving");
       saveTimeoutRef.current = setTimeout(async () => {
         const requestSeq = ++saveRequestSeqRef.current;
         saveTimeoutRef.current = null;
@@ -755,10 +769,6 @@ export default function BoardPage() {
                 });
               }
               if (saveRequestSeqRef.current !== requestSeq) return;
-              setSaveStatus("saved");
-              setTimeout(() => {
-                if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
-              }, 1500);
               return;
             } catch (e) {
               if (e instanceof Error && e.message && !lastSaveFailureMessage) {
@@ -770,7 +780,6 @@ export default function BoardPage() {
             }
           }
           if (saveRequestSeqRef.current !== requestSeq) return;
-          setSaveStatus("error");
           const useServerAsTitle = Boolean(clientRuleError && lastSaveFailureMessage);
           pushToast({
             kind: "error",
@@ -781,9 +790,6 @@ export default function BoardPage() {
               ? { description: lastSaveFailureMessage.slice(0, 400) }
               : {}),
           });
-          setTimeout(() => {
-            if (saveRequestSeqRef.current === requestSeq) setSaveStatus("idle");
-          }, 3000);
         } finally {
           saveTimeoutRef.current = null;
         }
@@ -816,9 +822,9 @@ export default function BoardPage() {
 
   if (showBoardSkeleton || !hasBoardData) {
     return (
-      <div className="min-h-screen">
+      <div className="flux-page-contract min-h-screen min-w-0 max-w-full overflow-x-clip" data-flux-area="operational">
         <Header title={boardName}>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           </div>
@@ -828,9 +834,9 @@ export default function BoardPage() {
     );
   }
   return (
-    <div className="min-h-screen">
+    <div className="flux-page-contract min-h-screen min-w-0 max-w-full overflow-x-clip" data-flux-area="operational">
       <DataFadeIn active animate={false} key={boardId}>
-        <div>
+        <div className="min-w-0 max-w-full overflow-x-clip">
           <Header
             title={boardName}
             titleLine2={clientLabel ? t("clientLabelInHeader", { label: clientLabel }) : undefined}
@@ -838,35 +844,11 @@ export default function BoardPage() {
             backHref={backToBoards}
             backLabel={t("backToBoards")}
           >
-            <div className="flex items-center justify-end gap-1.5 flex-wrap">
-              <div className="flex w-full basis-full min-w-0 pb-1 pt-0.5 md:hidden">
-                <BoardFilterChips boardId={boardId} hidePriorities />
-              </div>
+            <div className="hidden items-center justify-end gap-1.5 flex-wrap md:flex">
               {/* Presence */}
               <BoardPresenceAvatars />
 
               {/* Separator */}
-              <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
-
-              {saveStatus !== "idle" ? (
-                <span
-                  className={`text-[11px] font-semibold tabular-nums shrink-0 ${
-                    saveStatus === "error"
-                      ? "text-[var(--flux-danger)]"
-                      : saveStatus === "saved"
-                        ? "text-[var(--flux-success)]"
-                        : "text-[var(--flux-text-muted)]"
-                  }`}
-                  aria-live="polite"
-                >
-                  {saveStatus === "saving"
-                    ? t("persistence.saving")
-                    : saveStatus === "saved"
-                      ? t("persistence.saved")
-                      : t("persistence.error")}
-                </span>
-              ) : null}
-
               <div className="w-px h-5 bg-[var(--flux-border-default)] mx-0.5 shrink-0" />
 
               {/* Board Settings dropdown — secondary actions */}
@@ -1103,7 +1085,7 @@ export default function BoardPage() {
             directions={DIRECTIONS}
             canAdminBoard={viewerCapabilities.canAdmin}
             productTourExpandFilters={tourExpandFilters}
-            allowExternalMerge={saveStatus !== "saving"}
+            allowExternalMerge={true}
             reloadBoardFromServer={loadBoard}
           />
         </div>

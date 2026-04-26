@@ -1,7 +1,11 @@
 {
   "navigation": {
     "boards": "Boards",
+    "boardsSublabel": "Boards and cards",
+    "projects": "Projects",
+    "projectsSublabel": "Governance and roadmap",
     "deliveryCalendar": "Delivery",
+    "deliveryCalendarSublabel": "Dates and milestones",
     "reports": "Reports",
     "reportsProduct": "Flux Reports",
     "fluxAiHub": "AI hub",
@@ -9,19 +13,27 @@
     "portfolio": "Portfolio",
     "portfolioProduct": "Portfolio health and AI",
     "routines": "Routines",
+    "routinesSublabel": "Recurring rituals",
     "dashboard": "Executive",
     "dashboardProduct": "Portfolio health",
     "okrs": "Flux Goals",
+    "okrsProduct": "OKRs and goals",
     "goals": "Goals",
     "discovery": "Discovery",
     "templates": "Templates",
+    "templatesSublabel": "Ready-made models",
     "tasks": "My tasks",
     "myWork": "My Work",
+    "myWorkSublabel": "Personal priorities",
     "users": "Users",
+    "team": "Team",
     "organization": "Organization",
+    "organizationSublabel": "Branding and permissions",
     "activeOrganization": "Active organization",
     "billing": "Billing",
+    "billingSublabel": "Plan and limits",
     "invites": "Invites",
+    "invitesPendingSublabel": "{count, plural, one {# pending} other {# pending}}",
     "orgAudit": "Activity log",
     "rateLimitAbuse": "Rate limit",
     "tracer": "Tracer",
@@ -33,6 +45,7 @@
     "releases": "Releases",
     "releasesUpcomingSublabel": "{count, plural, one {# to ship} other {# to ship}}",
     "docs": "Flux Docs",
+    "docsProduct": "Knowledge and RAG",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
     "teamWorkspace": "Team workspace",
@@ -51,6 +64,7 @@
     },
     "hints": {
       "boards": "Kanban boards — daily work and columns.",
+      "projects": "Projects aggregate boards, governance, costs, roadmap, risks, and AI.",
       "deliveryCalendar": "Calendars, team metrics, and sprint schedule for a board (due dates, risk, and milestones).",
       "reports": "Org-wide BI with charts and Explain (AI) on each metric.",
       "fluxAiHub": "Map of AI features: reports, docs, sprint cockpit, OKRs, and Copilot on boards.",
@@ -761,13 +775,18 @@
     "createModeAi": "With AI",
     "createModeMatrix": "Priority matrix",
     "createModeBpmn": "BPMN",
+    "createModeSwot": "SWOT/TOWS",
     "bpmnBadge": "BPMN",
+    "swotBadge": "SWOT/TOWS",
     "matrixSectionTitle": "Priority matrix",
     "matrixSectionHint": "A 4×4 grid with two level axes (like common prioritization matrices): drag board cards into cells. Publishing requires an administrator.",
     "matrixSectionCta": "Open exclusive 4x4 Matrix session",
     "bpmnSectionTitle": "BPMN model",
     "bpmnSectionHint": "Dedicated BPMN workspace with import/export in Markdown and BPMN XML.",
     "bpmnSectionCta": "Open BPMN workspace",
+    "swotSectionTitle": "SWOT/TOWS template",
+    "swotSectionHint": "Strategic 2×2 diagnosis, evidence, TOWS, and conversion from strategy to initiatives.",
+    "swotSectionCta": "Open SWOT/TOWS workspace",
     "matrixExclusive": {
       "title": "4x4 Matrix",
       "back": "← Templates",
@@ -779,6 +798,12 @@
       "back": "← Templates",
       "heading": "Exclusive BPMN session",
       "hint": "Import, validate, edit and publish BPMN templates with focus on process modeling."
+    },
+    "swotExclusive": {
+      "title": "SWOT/TOWS workspace",
+      "back": "← Templates",
+      "heading": "Exclusive SWOT/TOWS session",
+      "hint": "Build an evidence-based SWOT diagnosis, generate TOWS, and publish a strategic template."
     },
     "matrixPanel": {
       "hint": "Pick a source board, then open the wizard to select cards, quadrants, and template metadata.",
@@ -813,6 +838,21 @@
       "taskGenericError": "Could not save the task to the selected board.",
       "publishCta": "Publish as template",
       "publishHint": "Opens the wizard for title, category, and the current grid layout."
+    },
+    "swotWorkspace": {
+      "intro": "Build a SWOT matrix with existing cards or new insights, capture evidence, and publish a template that opens with the SWOT/TOWS board view.",
+      "bestPracticeHint": "Best practice: be specific, cite evidence, review hypotheses, and convert approved TOWS into initiatives with an owner and due date.",
+      "loadingCards": "Loading board cards…",
+      "loadError": "Could not load the board.",
+      "saveError": "Could not save the insight to the board.",
+      "emptyQuadrant": "No selected items.",
+      "cardPool": "Available cards",
+      "evidencePlaceholder": "Evidence, metric, or source…",
+      "quickInsightTitle": "Create a quick SWOT insight",
+      "quickInsightPlaceholder": "e.g. Enterprise channel has high conversion",
+      "quickInsightCta": "Create insight",
+      "publishCta": "Publish as SWOT template",
+      "publishHint": "Publishes SWOT/TOWS buckets, selected cards, and evidence metadata."
     },
     "subtitle": "Import columns, labels, and automations without cards. Premium uses a 70/30 creator/platform split.",
     "loading": "Loading catalog…",
@@ -886,11 +926,13 @@
       "hint": "Exports columns, automations, and labels (no cards). Visible in the showcase.",
       "hintMatrix": "Eisenhower matrix as four columns; include copies of selected cards (no link to the source board after import).",
       "hintGrid4Publish": "Set the template title and category. The 4×4 layout and card positions come from the matrix workspace.",
+      "hintSwot": "SWOT/TOWS includes strategic buckets, copies of selected cards, and evidence for strategy generation on imported boards.",
       "grid4Summary": "{count, plural, one {# card on the grid} other {# cards on the grid}}",
       "templateKind": "Template type",
       "templateKindKanban": "Kanban (structure)",
       "templateKindMatrix": "Priority matrix",
       "templateKindBpmn": "BPMN process model",
+      "templateKindSwot": "SWOT/TOWS",
       "sourceBoard": "Source board",
       "loadingCards": "Loading cards…",
       "noCards": "No cards on this board.",
@@ -2279,11 +2321,6 @@
       }
     },
     "clientLabelInHeader": "Client: {label}",
-    "persistence": {
-      "saving": "Saving…",
-      "saved": "Saved",
-      "error": "Save failed"
-    },
     "loading": "Loading board...",
     "anomalyAlerts": {
       "open": "Alerts",
@@ -2823,6 +2860,16 @@
           "placeholder": "New label"
         }
       },
+      "signals": {
+        "title": "Operational attention",
+        "description": "Important signals for this card appear here before editing.",
+        "priorityUrgent": "Urgent priority",
+        "priorityImportant": "High priority",
+        "blocked": "{count, plural, one {# blocker} other {# blockers}}",
+        "overdue": "Overdue",
+        "unassigned": "Unassigned",
+        "readinessLow": "Low refinement"
+      },
       "unblock": {
         "cta": "Suggest unblock plan",
         "loading": "Generating…"
@@ -2986,7 +3033,8 @@
       },
       "completeMove": {
         "tooltip": "Move to column or mark complete",
-        "menuTitle": "Which column should this move to?"
+        "menuTitle": "Which column should this move to?",
+        "mobileLabel": "Move"
       },
       "actions": {
         "copy": "Copy"
@@ -3488,6 +3536,10 @@
         "viewTimelineAria": "Switch to timeline view",
         "viewEisenhowerTooltip": "Eisenhower (E): urgent vs important",
         "viewEisenhowerAria": "Switch to Eisenhower matrix view",
+        "viewSwotTooltip": "SWOT (S): strategic diagnosis and TOWS",
+        "viewSwotAria": "Switch to SWOT/TOWS view",
+        "viewStrategicPortfolioTooltip": "Portfolio (P): initiatives by strategic objective",
+        "viewStrategicPortfolioAria": "Switch to strategic portfolio view",
         "viewExecutiveTooltip": "Executive (G): leadership-ready story and business context",
         "viewExecutiveAria": "Switch to executive presentation view",
         "viewRoadmapTooltip": "Roadmap (R): open work by due date",
@@ -3503,6 +3555,9 @@
         "emptyTitle": "No cards with a due date",
         "emptyHint": "Set a completion date on cards to see them here. Board filters apply to this view as well.",
         "barAria": "Due date for {title}: {date}. Drag to change or use arrow keys."
+      },
+      "swot": {
+        "initiativeCreated": "SWOT initiative created"
       },
       "table": {
         "openRow": "Open card",
@@ -3664,6 +3719,20 @@
         "sprintAll": "Show all cards",
         "sprintFilterHint": "Narrows the board to cards in the active sprint.",
         "sprintProgress": "{done} of {total} in sprint"
+      },
+      "filterModal": {
+        "open": "Open filters",
+        "title": "Board filters",
+        "close": "Close",
+        "search": "Search",
+        "priority": "Priority",
+        "labels": "Labels",
+        "sprint": "Sprint",
+        "all": "All",
+        "noLabels": "No labels yet",
+        "clear": "Clear all",
+        "apply": "Apply",
+        "tools": "Tools"
       },
       "sprintContext": {
         "regionAria": "Active sprint: {name}",
@@ -3980,11 +4049,27 @@
         "openMenu": "Board tools",
         "closeMenu": "Close tools",
         "menuLabel": "Board tools",
+        "sectionPrimary": "Quick actions",
+        "sectionView": "View",
+        "sectionTools": "Tools",
+        "newCard": "New card",
+        "filters": "Filters",
+        "viewGroup": "Board views",
         "copilot": "Fluxy",
         "insights": "Execution insights",
         "activity": "Activity log",
         "daily": "Daily AI",
         "focusMode": "Focus mode"
+      },
+      "mobileColumnPicker": {
+        "label": "Mobile column navigation",
+        "selectLabel": "Choose column",
+        "pillsLabel": "Columns",
+        "cardCount": "{count} cards",
+        "addCard": "Add card in {column}"
+      },
+      "mobileViewPicker": {
+        "label": "Choose board view"
       },
       "stats": {
         "totalLabel": "Total",

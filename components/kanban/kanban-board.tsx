@@ -27,6 +27,8 @@ import { useBoardState } from "./hooks/useBoardState";
 import { useBoardRealtime } from "./hooks/useBoardRealtime";
 import { useBoardDnd } from "./hooks/useBoardDnd";
 import { BoardChromeSticky } from "./board-chrome-sticky";
+import { BoardBacklogPrioritizeDrawer } from "@/components/board/board-backlog-prioritize-drawer";
+import { FilterModal } from "./filter-modal";
 import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
 import { BoardFlowHealthPanel } from "./board-flow-health-panel";
 import { BoardSprintCoachPanel } from "./board-sprint-coach-panel";
@@ -51,6 +53,8 @@ import {
 } from "@/lib/board-methodology";
 import { clampExecutiveProductGoal, clampExecutiveStakeholderNote } from "@/lib/executive-board-config";
 import { getMethodologyModule } from "@/lib/methodology-module";
+import { strategyToInitiative } from "@/lib/swot-intelligence";
+import type { SwotTowsStrategy } from "@/lib/template-types";
 import { BoardScrumSettingsModal } from "./board-scrum-settings-modal";
 import { BoardIncrementReviewModal } from "./board-increment-review-modal";
 import { BoardKanbanCadencePanel } from "./board-kanban-cadence-panel";
@@ -79,7 +83,7 @@ type KanbanBatchToolbarProps = {
   priorities: string[];
   patchCardFromTable: (
     cardId: string,
-    patch: Partial<Pick<import("@/app/board/[id]/page").CardData, "title" | "priority" | "dueDate" | "bucket" | "tags">>
+    patch: Partial<Pick<import("@/app/board/[id]/page").CardData, "title" | "priority" | "progress" | "dueDate" | "bucket" | "tags" | "portfolioMeta">>
   ) => void;
   setConfirmDelete: (v: import("@/stores/ui-store").ConfirmDeleteState) => void;
 };
@@ -196,6 +200,10 @@ function KanbanBoardLoaded({
     setActiveLabels,
     searchQuery,
     setSearchQuery,
+    matrixWeightFilter,
+    setMatrixWeightFilter,
+    sprintScopeOnly,
+    setSprintScopeOnly,
     insightFocusCardIds,
     setInsightFocusCardIds,
     clearInsightFocus,
@@ -210,9 +218,10 @@ function KanbanBoardLoaded({
   const [knowledgeGraphOpen, setKnowledgeGraphOpen] = useState(false);
   const [lssAssistOpen, setLssAssistOpen] = useState(false);
   const [safeAssistOpen, setSafeAssistOpen] = useState(false);
-  const [matrixWeightFilter, setMatrixWeightFilter] = useState<
-    "all" | "critical_high" | "high_plus" | "medium_plus" | "critical"
-  >("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [backlogPrioritizeOpen, setBacklogPrioritizeOpen] = useState(false);
+  const [openingCardId, setOpeningCardId] = useState<string | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const [focusMode, setFocusMode] = useState(false);
 
@@ -270,6 +279,14 @@ function KanbanBoardLoaded({
     () => getMethodologyModule(methodology as BoardMethodology),
     [methodology]
   );
+  const strategyTemplateKind = db.config?.strategyTemplateKind;
+  const allowedBoardViewModes = useMemo<readonly BoardViewMode[]>(() => {
+    const base = methodologyModule.allowedViewModes.filter(
+      (mode): mode is BoardViewMode => mode !== "swot" && mode !== "strategic_portfolio"
+    );
+    if (strategyTemplateKind === "swot") return [...base, "swot" as const, "strategic_portfolio" as const];
+    return [...base, "strategic_portfolio" as const];
+  }, [strategyTemplateKind, methodologyModule.allowedViewModes]);
 
   const saveExecutiveProductGoal = useCallback(
     (value: string) => {
@@ -294,11 +311,11 @@ function KanbanBoardLoaded({
   );
 
   useEffect(() => {
-    const allowed = methodologyModule.allowedViewModes;
+    const allowed = allowedBoardViewModes;
     if (!allowed.includes(boardView as BoardViewMode)) {
       setBoardView(allowed[0] ?? "kanban");
     }
-  }, [methodologyModule.allowedViewModes, boardView, setBoardView]);
+  }, [allowedBoardViewModes, boardView, setBoardView]);
 
   const matrixWeightOptions = useMemo(
     () =>
@@ -319,16 +336,7 @@ function KanbanBoardLoaded({
   }, [nlqIdsArr]);
 
   const activeSprintBoard = useSprintStore((s) => s.activeSprint[boardId] ?? null);
-  const sprintScopeKey = `flux-kanban-sprint-scope:${boardId}`;
-  const [sprintScopeOnly, setSprintScopeOnly] = useState(false);
-
-  useEffect(() => {
-    try {
-      setSprintScopeOnly(localStorage.getItem(sprintScopeKey) === "1");
-    } catch {
-      setSprintScopeOnly(false);
-    }
-  }, [sprintScopeKey]);
+  const filterSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   /** Sprints vêm de `GET /api/boards/[id]/bootstrap` no `loadBoard` da página (evita segundo round-trip). */
 
@@ -348,16 +356,17 @@ function KanbanBoardLoaded({
   }, [activeSprintBoard]);
 
   const toggleSprintScopeOnly = useCallback(() => {
-    setSprintScopeOnly((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(sprintScopeKey, next ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, [sprintScopeKey]);
+    setSprintScopeOnly((prev) => !prev);
+  }, [setSprintScopeOnly]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setPrefersReducedMotion(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
 
   const board = useBoardState({
     boardId,
@@ -429,7 +438,6 @@ function KanbanBoardLoaded({
   );
 
   const hotkeyPatterns = useMemo(() => resolveHotkeyPatterns(), []);
-  const { searchInputRef } = filters;
 
   const boardHotkeyBindings = useMemo(() => {
     const p = hotkeyPatterns;
@@ -440,10 +448,8 @@ function KanbanBoardLoaded({
     };
     m[p["board.focusSearch"]] = (e) => {
       e.preventDefault();
-      requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      });
+      setFiltersOpen(true);
+      requestAnimationFrame(() => filterSearchInputRef.current?.focus());
     };
     m[p["board.focusMode"]] = (e) => {
       e.preventDefault();
@@ -456,7 +462,7 @@ function KanbanBoardLoaded({
       };
     }
     return m;
-  }, [boardId, hotkeyPatterns, localeRoot, searchInputRef, onda4.enabled, onda4.omnibar]);
+  }, [boardId, hotkeyPatterns, localeRoot, onda4.enabled, onda4.omnibar]);
 
   useHotkeys(boardHotkeyBindings);
 
@@ -731,7 +737,7 @@ function KanbanBoardLoaded({
     }
 
     if (viewParam || execFilterParam != null || clevelPreset) {
-      const allowedViews = getMethodologyModule(methodology as BoardMethodology).allowedViewModes;
+      const allowedViews = allowedBoardViewModes;
       if (viewParam && allowedViews.includes(viewParam)) {
         setBoardView(viewParam);
       }
@@ -743,7 +749,7 @@ function KanbanBoardLoaded({
       }
       routerRef.current.replace(`${localeRoot}/board/${boardId}`, { scroll: false });
     }
-  }, [searchParamsKey, boardId, localeRoot, methodology, setBoardView]);
+  }, [searchParamsKey, boardId, localeRoot, methodology, allowedBoardViewModes, setBoardView]);
 
   useEffect(() => {
     const card = modalCard;
@@ -793,7 +799,7 @@ function KanbanBoardLoaded({
     });
   }, []);
 
-  const onEditCardById = useCallback(
+  const openCardEditorById = useCallback(
     (id: string) => {
       const c = useBoardStore.getState().db?.cards.find((x) => x.id === id);
       if (c) {
@@ -802,6 +808,41 @@ function KanbanBoardLoaded({
       }
     },
     [setModalCard, setModalMode]
+  );
+
+  const onEditCardById = useCallback(
+    (id: string) => {
+      if (openingCardId) return;
+      if (prefersReducedMotion) {
+        openCardEditorById(id);
+        return;
+      }
+      setOpeningCardId(id);
+      window.setTimeout(() => {
+        openCardEditorById(id);
+        setOpeningCardId(null);
+      }, 220);
+    },
+    [openingCardId, openCardEditorById, prefersReducedMotion]
+  );
+
+  const createSwotInitiative = useCallback(
+    (strategy: SwotTowsStrategy) => {
+      let createdId: string | null = null;
+      updateDb((d) => {
+        const card = strategyToInitiative(strategy, d.cards);
+        while (d.cards.some((existing) => existing.id === card.id)) {
+          card.id = `${card.id}_${Math.random().toString(36).slice(2, 6)}`;
+        }
+        d.cards.push(card);
+        createdId = card.id;
+      });
+      if (createdId) {
+        pushToast({ kind: "success", title: t("board.swot.initiativeCreated") });
+        onEditCardById(createdId);
+      }
+    },
+    [onEditCardById, pushToast, t, updateDb]
   );
 
   const onOpenDescById = useCallback(
@@ -878,6 +919,26 @@ function KanbanBoardLoaded({
     activeSprintBoard?.status === "active" &&
     Boolean(sprintProgress);
 
+  const openNewCardInBucket = useCallback(
+    (bucketKey: string) => {
+      board.setModalCard({
+        id: "",
+        bucket: bucketKey,
+        priority: "Média",
+        progress: "Não iniciado",
+        title: "",
+        desc: t("board.newCard.defaultDescription"),
+        tags: [],
+        direction: null,
+        dueDate: null,
+        blockedBy: [],
+        order: filters.getCardsByBucket(bucketKey).length,
+      });
+      board.setModalMode("new");
+    },
+    [board, filters, t]
+  );
+
   const activeSprintRibbon =
     isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && activeSprintBoard && sprintProgress ? (
       <BoardActiveSprintContext
@@ -910,13 +971,6 @@ function KanbanBoardLoaded({
         <BoardChromeSticky
           surfaceVariant="glass"
           tChrome={(key) => t(`board.${key}`)}
-          l2TriggerSummary={
-            searchQuery.trim() ? (
-              <span className="truncate">
-                {t("board.chrome.l2SummarySearch", { q: searchQuery.trim() })}
-              </span>
-            ) : null
-          }
           l3TriggerSummary={
             <span className="truncate">
               {t("board.chrome.l3SummaryWip", { n: board.executionInsights.inProgress })}
@@ -933,7 +987,7 @@ function KanbanBoardLoaded({
             getHeaders,
             boardView: boardView as BoardViewMode,
             setBoardView,
-            allowedViewModes: methodologyModule.allowedViewModes,
+            allowedViewModes: allowedBoardViewModes,
             showSprintInlineBadge,
             activeSprintName: activeSprintBoard?.status === "active" ? activeSprintBoard.name ?? null : null,
             sprintProgress,
@@ -945,16 +999,7 @@ function KanbanBoardLoaded({
             t,
             tTimeline: tView as (k: string) => string,
             onEnterFocusMode: toggleFocusMode,
-          }}
-          l2={{
-            boardId,
-            getHeaders,
-            searchQuery,
-            setSearchQuery,
-            searchInputRef: filters.searchInputRef,
-            onda4Enabled: onda4.enabled,
-            onda4Omnibar: onda4.omnibar,
-            nlqExpanded,
+            onOpenFilterModal: () => setFiltersOpen(true),
           }}
           l3={{
             boardId,
@@ -977,9 +1022,6 @@ function KanbanBoardLoaded({
             sprintProgress,
             sprintScopeOnly,
             toggleSprintScopeOnly,
-            matrixWeightFilter,
-            setMatrixWeightFilter,
-            matrixWeightOptions,
             onOpenFlowHealth: () => setFlowHealthOpen(true),
             onOpenSprintCoach: () => setSprintCoachOpen(true),
             onOpenKanbanCadence: () => setKanbanCadenceOpen(true),
@@ -1049,23 +1091,9 @@ function KanbanBoardLoaded({
           activeDragCount={dnd.activeDragCount}
           activeDragIds={dnd.activeDragIds}
           onToggleCollapse={board.toggleCollapsed}
-          onAddCard={(bucketKey) => {
-            board.setModalCard({
-              id: "",
-              bucket: bucketKey,
-              priority: "Média",
-              progress: "Não iniciado",
-              title: "",
-              desc: t("board.newCard.defaultDescription"),
-              tags: [],
-              direction: null,
-              dueDate: null,
-              blockedBy: [],
-              order: filters.getCardsByBucket(bucketKey).length,
-            });
-            board.setModalMode("new");
-          }}
+          onAddCard={openNewCardInBucket}
           onEditCard={onEditCardById}
+          openingCardId={openingCardId}
           onDeleteCard={(id) => board.setConfirmDelete({ type: "card", id, label: "" })}
           onRenameColumn={(b) => {
             board.setEditingColumnKey(b.key);
@@ -1104,7 +1132,9 @@ function KanbanBoardLoaded({
           onExecutiveOpenCard={board.handleTimelineOpenCard}
           onExecutiveRefreshBoardData={reloadBoardFromServer}
           onPatchCard={board.patchCardFromTable}
+          onMovePortfolioCard={board.moveCard}
           onDuplicateCard={board.duplicateCard}
+          onSwotCreateInitiative={createSwotInitiative}
           onPinCardToTop={board.pinCardToTop}
           onVisibleColumnKeyChange={onVisibleColumnKeyChange}
           sprintBoardQuickActions={isSprintMethodology(methodology) ? { boardId, getHeaders } : undefined}
@@ -1141,6 +1171,15 @@ function KanbanBoardLoaded({
         <BoardMobileToolHub
           onOpenDaily={openDailyModal}
           onToggleFocusMode={toggleFocusMode}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onNewCard={() => {
+            const key = visibleColumnKey ?? board.buckets[0]?.key;
+            if (key) openNewCardInBucket(key);
+          }}
+          boardView={boardView as BoardViewMode}
+          setBoardView={setBoardView}
+          allowedViewModes={allowedBoardViewModes}
+          tTimeline={tView as (k: string) => string}
         />
 
         <BoardSummaryDock
@@ -1160,6 +1199,53 @@ function KanbanBoardLoaded({
         />
         <KanbanBoardOverlays {...overlayProps} />
       </BoardCardSelectionProvider>
+      <FilterModal
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        priorities={priorities}
+        labels={Array.from(new Set(board.cards.flatMap((c) => c.tags))).sort((a, b) => a.localeCompare(b))}
+        matrixWeightOptions={matrixWeightOptions}
+        sprintEnabled={isSprintMethodology(methodology) && activeSprintBoard?.status === "active"}
+        initialState={{
+          activePrio,
+          activeLabels: [...activeLabels],
+          searchQuery,
+          matrixWeightFilter,
+          sprintScopeOnly,
+        }}
+        onApply={(next) => {
+          setActivePrio(next.activePrio);
+          setActiveLabels(new Set(next.activeLabels));
+          setSearchQuery(next.searchQuery);
+          setMatrixWeightFilter(next.matrixWeightFilter);
+          setSprintScopeOnly(next.sprintScopeOnly);
+        }}
+        onClear={() => {
+          setActivePrio("all");
+          setActiveLabels(new Set());
+          setSearchQuery("");
+          setMatrixWeightFilter("all");
+          setSprintScopeOnly(false);
+          clearInsightFocus();
+        }}
+        t={t}
+        searchInputRef={filterSearchInputRef}
+        onOpenBacklogPrioritize={
+          user
+            ? () => {
+                setBacklogPrioritizeOpen(true);
+              }
+            : undefined
+        }
+      />
+      {user ? (
+        <BoardBacklogPrioritizeDrawer
+          boardId={boardId}
+          open={backlogPrioritizeOpen}
+          onClose={() => setBacklogPrioritizeOpen(false)}
+          getHeaders={getHeaders}
+        />
+      ) : null}
 
       <BoardFlowHealthPanel
         open={flowHealthOpen}

@@ -5,7 +5,7 @@ Checklist de superfícies de ação no board para evitar regressões durante o r
 ## Chrome L1 / L2 / L3
 
 - [x] `BoardChromeL1`: trocar modo de vista, abrir/fechar NLQ compacto, abrir/fechar rail de filtros, entrar em focus mode, alternar escopo de sprint quando ativo.
-- [x] `BoardChromeL2`: chips de prioridade, abrir priorização, busca por texto, abrir filtros avançados (`BoardFilterBar`).
+- [x] Filtros unificados: `FilterModal` (busca, prioridade, etiquetas, matriz, sprint; priorização de backlog via `BoardBacklogPrioritizeDrawer`).
 - [x] `BoardChromeL3`: abrir/fechar inteligência, abrir/fechar contexto detalhado, filtros de matriz, ações agrupadas (flow/rituais/grafos), CTA Fluxy (Omnibar).
 - [x] `useBoardChromeResponsive`: persistência de abertura L2/L3 em `localStorage`.
 

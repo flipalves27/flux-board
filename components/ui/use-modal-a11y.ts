@@ -95,5 +95,5 @@ export function useModalA11y({ open, onClose, containerRef, initialFocusRef }: U
       document.removeEventListener("keydown", onKeyDownCapture, true);
       lastFocusedElRef.current?.focus?.();
     };
-  }, [open]);
+  }, [open, containerRef, initialFocusRef]);
 }

@@ -35,6 +35,11 @@
   --flux-warning: #FFD93D;
   --flux-danger: #FF6B6B;
   --flux-info: #74B9FF;
+  --flux-attention: var(--flux-warning);
+  --flux-blocked: var(--flux-danger);
+  --flux-overdue: var(--flux-danger);
+  --flux-risk: #ff9f43;
+  --flux-ai: var(--flux-primary-light);
 
   /*
    * Diagram / BPMN / OAuth — literals live here so TSX stays `var(--flux-*)`-only
@@ -295,6 +300,41 @@
     color-mix(in srgb, var(--flux-secondary) 20%, transparent),
     color-mix(in srgb, var(--flux-accent) 25%, transparent)
   );
+  --flux-premium-page-max: 1200px;
+  --flux-premium-page-px: clamp(1rem, 3vw, 2rem);
+  --flux-premium-section-gap: clamp(1.25rem, 2vw, 2rem);
+  --flux-premium-title: clamp(1.55rem, 2.6vw, 2.35rem);
+  --flux-premium-body: clamp(0.92rem, 1vw, 1rem);
+  --flux-premium-surface-bg: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--flux-surface-card) 88%, transparent),
+    color-mix(in srgb, var(--flux-surface-mid) 72%, transparent)
+  );
+  --flux-premium-surface-border: color-mix(in srgb, var(--flux-primary) 18%, transparent);
+  --flux-premium-surface-shadow:
+    0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
+    0 24px 58px -34px color-mix(in srgb, var(--flux-primary) 38%, transparent),
+    0 16px 44px -30px color-mix(in srgb, black 82%, transparent);
+  --flux-surface-solid: color-mix(in srgb, var(--flux-surface-card) 98%, black 2%);
+  --flux-surface-raised: color-mix(in srgb, var(--flux-surface-elevated) 96%, var(--flux-primary) 4%);
+  --flux-surface-glass: var(--flux-glass-surface-bg);
+  --flux-surface-critical: color-mix(in srgb, var(--flux-danger) 12%, var(--flux-surface-card));
+  --flux-modal-surface-solid: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--flux-surface-card) 98%, black 2%),
+    color-mix(in srgb, var(--flux-surface-mid) 96%, var(--flux-primary) 4%)
+  );
+  --flux-modal-header-surface: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--flux-surface-elevated) 94%, var(--flux-primary) 6%),
+    color-mix(in srgb, var(--flux-surface-card) 98%, transparent)
+  );
+  --flux-operational-surface-bg: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--flux-surface-card) 96%, transparent),
+    color-mix(in srgb, var(--flux-surface-mid) 92%, transparent)
+  );
+  --flux-analytics-surface-bg: var(--flux-premium-surface-bg);
   --flux-glass-surface-bg: linear-gradient(
     165deg,
     color-mix(in srgb, var(--flux-surface-card) 86%, transparent),
@@ -392,6 +432,8 @@
 
   --flux-backdrop-scrim: color-mix(in srgb, black 40%, transparent);
   --flux-backdrop-scrim-strong: color-mix(in srgb, black 50%, transparent);
+  --flux-backdrop-modal: color-mix(in srgb, black 56%, transparent);
+  --flux-backdrop-modal-strong: color-mix(in srgb, black 68%, transparent);
 
   /*
    * Stacking — seven layers (doc UX v2): 1 base · 2 app content · 3 raised · 4 sticky ·
@@ -462,6 +504,16 @@
   --flux-danger-alpha-38: color-mix(in srgb, var(--flux-danger) 38%, transparent);
   --flux-danger-alpha-40: color-mix(in srgb, var(--flux-danger) 40%, transparent);
   --flux-danger-alpha-45: color-mix(in srgb, var(--flux-danger) 45%, transparent);
+  --flux-attention-alpha-10: color-mix(in srgb, var(--flux-attention) 10%, transparent);
+  --flux-attention-alpha-35: color-mix(in srgb, var(--flux-attention) 35%, transparent);
+  --flux-blocked-alpha-10: color-mix(in srgb, var(--flux-blocked) 10%, transparent);
+  --flux-blocked-alpha-35: color-mix(in srgb, var(--flux-blocked) 35%, transparent);
+  --flux-overdue-alpha-10: color-mix(in srgb, var(--flux-overdue) 10%, transparent);
+  --flux-overdue-alpha-35: color-mix(in srgb, var(--flux-overdue) 35%, transparent);
+  --flux-risk-alpha-10: color-mix(in srgb, var(--flux-risk) 10%, transparent);
+  --flux-risk-alpha-35: color-mix(in srgb, var(--flux-risk) 35%, transparent);
+  --flux-ai-alpha-10: color-mix(in srgb, var(--flux-ai) 10%, transparent);
+  --flux-ai-alpha-35: color-mix(in srgb, var(--flux-ai) 35%, transparent);
   --flux-danger-alpha-55: color-mix(in srgb, var(--flux-danger) 55%, transparent);
   --flux-danger-soft-06: color-mix(in srgb, var(--flux-danger) 6%, transparent);
   --flux-danger-bright: #f97373;
@@ -638,6 +690,11 @@
   --flux-warning: #f5a623;
   --flux-danger: #e53935;
   --flux-info: #1e88e5;
+  --flux-attention: var(--flux-warning);
+  --flux-blocked: var(--flux-danger);
+  --flux-overdue: var(--flux-danger);
+  --flux-risk: #c76a11;
+  --flux-ai: var(--flux-primary);
   --flux-fluxy-fur: color-mix(in srgb, var(--flux-primary) 78%, var(--flux-text));
   --flux-fluxy-fur-dark: color-mix(in srgb, var(--flux-primary) 88%, var(--flux-text));
   --flux-fluxy-fur-light: color-mix(in srgb, var(--flux-primary) 58%, white);
@@ -690,6 +747,26 @@
     color-mix(in srgb, var(--flux-secondary) 14%, transparent),
     color-mix(in srgb, var(--flux-accent) 16%, transparent)
   );
+  --flux-surface-solid: color-mix(in srgb, var(--flux-surface-card) 98%, var(--flux-primary) 2%);
+  --flux-surface-raised: color-mix(in srgb, var(--flux-surface-elevated) 92%, white 8%);
+  --flux-surface-glass: var(--flux-glass-surface-bg);
+  --flux-surface-critical: color-mix(in srgb, var(--flux-danger) 8%, var(--flux-surface-card));
+  --flux-modal-surface-solid: linear-gradient(
+    160deg,
+    color-mix(in srgb, white 96%, var(--flux-primary) 4%),
+    color-mix(in srgb, var(--flux-surface-dark) 92%, white 8%)
+  );
+  --flux-modal-header-surface: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 88%, var(--flux-primary) 12%),
+    color-mix(in srgb, var(--flux-surface-card) 98%, transparent)
+  );
+  --flux-operational-surface-bg: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--flux-surface-card) 98%, transparent),
+    color-mix(in srgb, var(--flux-surface-dark) 90%, transparent)
+  );
+  --flux-analytics-surface-bg: var(--flux-premium-surface-bg);
   --flux-glass-surface-bg: linear-gradient(
     160deg,
     color-mix(in srgb, white 94%, transparent),
@@ -731,6 +808,8 @@
   --flux-black-alpha-65: color-mix(in srgb, var(--flux-text) 18%, transparent);
   --flux-backdrop-scrim: color-mix(in srgb, var(--flux-text) 35%, transparent);
   --flux-backdrop-scrim-strong: color-mix(in srgb, var(--flux-text) 50%, transparent);
+  --flux-backdrop-modal: color-mix(in srgb, var(--flux-text) 45%, transparent);
+  --flux-backdrop-modal-strong: color-mix(in srgb, var(--flux-text) 58%, transparent);
   --flux-shadow-embed-widget: 0 8px 28px color-mix(in srgb, var(--flux-text) 12%, transparent);
   --flux-shadow-login-panel: 0 8px 32px color-mix(in srgb, var(--flux-text) 14%, transparent);
   --flux-shadow-kanban-column:
@@ -1012,6 +1091,235 @@
       var(--flux-glass-elevated-shadow),
       0 20px 56px -28px color-mix(in srgb, var(--flux-primary) 32%, transparent),
       inset 0 1px 0 var(--flux-chrome-alpha-14);
+  }
+
+  .flux-premium-page-shell {
+    width: min(100%, var(--flux-premium-page-max));
+    margin-inline: auto;
+    padding:
+      clamp(1.25rem, 2.5vw, 2rem)
+      max(var(--flux-premium-page-px), env(safe-area-inset-right, 0px))
+      clamp(2.5rem, 5vw, 4rem)
+      max(var(--flux-premium-page-px), env(safe-area-inset-left, 0px));
+  }
+
+  .flux-premium-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: var(--flux-premium-section-gap);
+    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+    border-bottom: 1px solid var(--flux-chrome-alpha-12);
+  }
+
+  .flux-premium-eyebrow {
+    margin-bottom: 0.35rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--flux-secondary);
+  }
+
+  .flux-premium-title {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-size: var(--flux-premium-title);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    color: var(--flux-text);
+  }
+
+  .flux-premium-description {
+    margin-top: 0.6rem;
+    max-width: 48rem;
+    font-size: var(--flux-premium-body);
+    line-height: 1.7;
+    color: var(--flux-text-muted);
+  }
+
+  .flux-premium-surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--flux-premium-surface-border);
+    border-radius: var(--flux-rad-lg);
+    background: var(--flux-premium-surface-bg);
+    box-shadow: var(--flux-premium-surface-shadow);
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  }
+
+  .flux-premium-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--flux-primary) 14%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in srgb, white 5%, transparent), transparent 34%);
+    opacity: 0.8;
+  }
+
+  .flux-premium-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .flux-premium-surface--elevated {
+    border-color: var(--flux-glass-elevated-border);
+    background: var(--flux-glass-elevated-bg);
+    box-shadow: var(--flux-glass-elevated-shadow), var(--flux-premium-surface-shadow);
+  }
+
+  .flux-premium-surface--accent {
+    border-color: color-mix(in srgb, var(--flux-secondary) 28%, transparent);
+    background:
+      radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--flux-secondary) 16%, transparent), transparent 36%),
+      var(--flux-premium-surface-bg);
+  }
+
+  .flux-page-contract {
+    min-height: 100%;
+    min-width: 0;
+    max-width: 100%;
+    color: var(--flux-text);
+  }
+
+  .flux-page-contract[data-flux-area="marketing"] {
+    background: var(--flux-surface-dark);
+  }
+
+  .flux-page-contract[data-flux-area="analytics"] {
+    background:
+      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--flux-primary) 13%, transparent), transparent 34%),
+      radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--flux-secondary) 8%, transparent), transparent 30%),
+      var(--flux-surface-dark);
+  }
+
+  .flux-page-contract[data-flux-area="operational"] {
+    background:
+      var(--flux-board-mesh),
+      var(--flux-surface-dark);
+  }
+
+  .flux-product-label {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-size: var(--flux-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    color: var(--flux-text-muted);
+  }
+
+  .flux-product-copy {
+    font-size: var(--flux-text-base);
+    line-height: 1.65;
+    color: var(--flux-text-muted);
+  }
+
+  .flux-callout {
+    border: 1px solid var(--flux-border-subtle);
+    border-radius: var(--flux-rad-lg);
+    background: color-mix(in srgb, var(--flux-surface-raised) 84%, transparent);
+    box-shadow: var(--flux-shadow-sm), inset 0 1px 0 var(--flux-chrome-alpha-08);
+  }
+
+  .flux-callout[data-tone="attention"] {
+    border-color: var(--flux-attention-alpha-35);
+    background: color-mix(in srgb, var(--flux-attention) 9%, var(--flux-surface-solid));
+  }
+
+  .flux-callout[data-tone="danger"] {
+    border-color: var(--flux-blocked-alpha-35);
+    background: color-mix(in srgb, var(--flux-blocked) 9%, var(--flux-surface-solid));
+  }
+
+  .flux-callout[data-tone="ai"] {
+    border-color: var(--flux-ai-alpha-35);
+    background: color-mix(in srgb, var(--flux-ai) 9%, var(--flux-surface-solid));
+  }
+
+  .flux-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--flux-border-subtle);
+    background: color-mix(in srgb, var(--flux-surface-raised) 80%, transparent);
+    padding: 0.2rem 0.55rem;
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--flux-text-muted);
+  }
+
+  .flux-badge[data-tone="success"] {
+    border-color: color-mix(in srgb, var(--flux-success) 35%, transparent);
+    background: color-mix(in srgb, var(--flux-success) 10%, transparent);
+    color: var(--flux-success);
+  }
+
+  .flux-badge[data-tone="warning"],
+  .flux-badge[data-tone="attention"] {
+    border-color: var(--flux-attention-alpha-35);
+    background: var(--flux-attention-alpha-10);
+    color: var(--flux-attention);
+  }
+
+  .flux-badge[data-tone="danger"],
+  .flux-badge[data-tone="blocked"],
+  .flux-badge[data-tone="overdue"] {
+    border-color: var(--flux-blocked-alpha-35);
+    background: var(--flux-blocked-alpha-10);
+    color: var(--flux-blocked);
+  }
+
+  .flux-badge[data-tone="risk"] {
+    border-color: var(--flux-risk-alpha-35);
+    background: var(--flux-risk-alpha-10);
+    color: var(--flux-risk);
+  }
+
+  .flux-badge[data-tone="ai"],
+  .flux-badge[data-tone="info"] {
+    border-color: var(--flux-ai-alpha-35);
+    background: var(--flux-ai-alpha-10);
+    color: var(--flux-ai);
+  }
+
+  .flux-premium-tabbar {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--flux-chrome-alpha-08);
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+
+  .flux-premium-tabbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .flux-premium-chart-frame {
+    min-height: 220px;
+  }
+
+  @media (max-width: 639px) {
+    .flux-premium-page-shell {
+      padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    }
+
+    .flux-premium-chart-frame {
+      min-height: 240px;
+      max-height: min(58vh, 320px);
+    }
   }
 
   .flux-sidebar-nav-stack {
@@ -2188,6 +2496,9 @@
   .card-modal-content-v2 {
     animation: cardModalPanelInV2 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
+  .card-modal-sequential-enter {
+    animation: cardModalPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   .card-modal-accent {
     animation: cardModalAccentGlow 4s ease-in-out infinite;
   }
@@ -2317,6 +2628,7 @@
 @media (prefers-reduced-motion: reduce) {
   .card-modal-backdrop,
   .card-modal-content,
+  .card-modal-sequential-enter,
   .card-modal-accent,
   .card-modal-tab-panel-in,
   .card-modal-footer-enter,
@@ -2407,19 +2719,19 @@
 
   /* Onda 4 — tiers de superfície (preferir a componente `FluxSurface`). */
   .flux-surface-1 {
-    background: color-mix(in srgb, var(--flux-surface-card) 92%, transparent);
+    background: var(--flux-surface-solid);
     border: 1px solid var(--flux-border-muted);
     border-radius: var(--flux-rad-lg);
     box-shadow: var(--flux-shadow-sm);
   }
   .flux-surface-2 {
-    background: color-mix(in srgb, var(--flux-surface-elevated) 88%, transparent);
+    background: var(--flux-surface-raised);
     border: 1px solid var(--flux-border-subtle);
     border-radius: var(--flux-rad-lg);
     box-shadow: var(--flux-shadow-md);
   }
   .flux-surface-3 {
-    background: var(--flux-glass-surface-bg);
+    background: var(--flux-surface-glass);
     border: 1px solid var(--flux-glass-surface-border);
     border-radius: var(--flux-rad-xl);
     box-shadow: var(--flux-glass-surface-shadow);
@@ -2427,8 +2739,30 @@
     -webkit-backdrop-filter: blur(var(--flux-glass-backdrop-blur));
   }
 
+  .card-modal-shell-solid {
+    background: var(--flux-modal-surface-solid);
+    border-color: color-mix(in srgb, var(--flux-primary) 24%, var(--flux-border-subtle));
+    box-shadow: var(--flux-shadow-modal-depth);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .card-modal-shell-solid .card-modal-header {
+    background: var(--flux-modal-header-surface);
+  }
+
+  .card-modal-shell-solid .card-modal-body {
+    background: color-mix(in srgb, var(--flux-surface-solid) 94%, transparent);
+  }
+
+  .card-modal-shell-solid .card-modal-footer {
+    background: color-mix(in srgb, var(--flux-surface-raised) 96%, transparent);
+    border-top-color: var(--flux-border-subtle);
+  }
+
   /* Modal de card — tema claro: painel sólido e sombra explícita (glass + depth-3 ficavam lavados) */
-  [data-theme="light"] .card-modal-shell.flux-glass-elevated {
+  [data-theme="light"] .card-modal-shell.flux-glass-elevated,
+  [data-theme="light"] .card-modal-shell-solid {
     background: var(--flux-surface-card);
     border-color: var(--flux-border-default);
     box-shadow: var(--flux-shadow-modal-depth), inset 0 1px 0 var(--flux-chrome-alpha-12);

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/auth-context";
 import { apiPost, ApiError } from "@/lib/api-client";
 import { AiModelHint } from "@/components/ai-model-hint";
 import { ReportsChartHeader } from "@/components/reports/reports-chart-header";
+import { PremiumSurface } from "@/components/ui/premium-primitives";
 
 export function ChartShell({
   title,
@@ -32,16 +33,6 @@ export function ChartShell({
   const [err, setErr] = useState<string | null>(null);
   const [explainModel, setExplainModel] = useState<string | null>(null);
   const [explainProvider, setExplainProvider] = useState<string | null>(null);
-  const fallbackScope =
-    typeof window !== "undefined"
-      ? {
-          methodology: new URLSearchParams(window.location.search).get("methodology") ?? undefined,
-          boardIds: (new URLSearchParams(window.location.search).get("boardIds") ?? "")
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean),
-        }
-      : undefined;
 
   const explain = useCallback(async () => {
     setBusy(true);
@@ -49,6 +40,17 @@ export function ChartShell({
     setExplainModel(null);
     setExplainProvider(null);
     try {
+      const fallbackScope =
+        typeof window !== "undefined"
+          ? {
+              methodology: new URLSearchParams(window.location.search).get("methodology") ?? undefined,
+              boardIds: (new URLSearchParams(window.location.search).get("boardIds") ?? "")
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean),
+            }
+          : undefined;
+      const resolvedScope = scope ?? fallbackScope;
       const data = await apiPost<{
         narrative: string;
         generatedWithAI?: boolean;
@@ -60,8 +62,8 @@ export function ChartShell({
         {
           chartId,
           chartTitle: title,
-          scope: scope ?? fallbackScope,
-          dataSummary: JSON.stringify({ scope: scope ?? fallbackScope, data: explainPayload }),
+          scope: resolvedScope,
+          dataSummary: JSON.stringify({ scope: resolvedScope, data: explainPayload }),
         },
         getHeaders()
       );
@@ -77,10 +79,10 @@ export function ChartShell({
     } finally {
       setBusy(false);
     }
-  }, [chartId, explainApiPath, explainPayload, fallbackScope, getHeaders, scope, title, t]);
+  }, [chartId, explainApiPath, explainPayload, getHeaders, scope, title, t]);
 
   return (
-    <section className="rounded-[var(--flux-rad)] border border-[var(--flux-primary-alpha-20)] bg-[var(--flux-surface-card)] p-4 sm:p-5">
+    <PremiumSurface as="section" className="p-4 sm:p-5">
       <ReportsChartHeader
         title={title}
         hint={hint}
@@ -107,6 +109,6 @@ export function ChartShell({
           )}
         </div>
       ) : null}
-    </section>
+    </PremiumSurface>
   );
 }

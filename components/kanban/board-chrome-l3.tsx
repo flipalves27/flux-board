@@ -12,7 +12,7 @@ import type { BoardPortfolioMetrics } from "@/lib/board-portfolio-metrics";
 import type { CardData } from "@/app/board/[id]/page";
 import type { BucketConfig } from "@/app/board/[id]/page";
 import type { MethodologyModule } from "@/lib/methodology-module";
-import { isLeanSixSigmaMethodology, isSprintMethodology } from "@/lib/board-methodology";
+import { isSprintMethodology } from "@/lib/board-methodology";
 import type { BoardMethodology } from "@/lib/board-methodology";
 
 export type MatrixWeightFilterKey = "all" | "critical_high" | "high_plus" | "medium_plus" | "critical";
@@ -38,9 +38,6 @@ export type BoardChromeL3Props = {
   sprintProgress: { done: number; total: number; pct: number } | null;
   sprintScopeOnly: boolean;
   toggleSprintScopeOnly: () => void;
-  matrixWeightFilter: MatrixWeightFilterKey;
-  setMatrixWeightFilter: (k: MatrixWeightFilterKey) => void;
-  matrixWeightOptions: { key: MatrixWeightFilterKey; label: string }[];
   onOpenFlowHealth: () => void;
   onOpenSprintCoach: () => void;
   onOpenKanbanCadence: () => void;
@@ -77,9 +74,6 @@ export function BoardChromeL3({
   sprintProgress,
   sprintScopeOnly,
   toggleSprintScopeOnly,
-  matrixWeightFilter,
-  setMatrixWeightFilter,
-  matrixWeightOptions,
   onOpenFlowHealth,
   onOpenSprintCoach,
   onOpenKanbanCadence,
@@ -93,11 +87,6 @@ export function BoardChromeL3({
   sprintRowSuppressedByL1 = false,
   t,
 }: BoardChromeL3Props) {
-  const activeMatrixWeightFilterLabel =
-    matrixWeightOptions.find((o) => o.key === matrixWeightFilter)?.label ?? "";
-  const detailCollapseOnMatrixOnly =
-    !isSprintMethodology(methodology) && !isLeanSixSigmaMethodology(methodology);
-
   return (
     <>
       <BoardDailyBriefing boardId={boardId} />
@@ -185,14 +174,6 @@ export function BoardChromeL3({
             </svg>
             <span>{t("board.detailChrome.expand")}</span>
           </button>
-          {matrixWeightFilter !== "all" ? (
-            <span
-              className="max-w-[min(100%,220px)] truncate rounded-full border border-[var(--flux-primary-alpha-35)] bg-[var(--flux-primary-alpha-08)] px-2 py-0.5 text-flux-xs font-semibold text-[var(--flux-primary-light)]"
-              title={activeMatrixWeightFilterLabel}
-            >
-              {t("board.detailChrome.activeMatrixBadge", { filter: activeMatrixWeightFilterLabel })}
-            </span>
-          ) : null}
         </div>
       ) : (
         <>
@@ -287,36 +268,6 @@ export function BoardChromeL3({
             </div>
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--flux-border-muted)] bg-[var(--flux-black-alpha-04)] px-4 py-2 sm:px-5 lg:px-6">
-            {detailCollapseOnMatrixOnly ? (
-              <button
-                type="button"
-                onClick={toggleDetailChromeExpanded}
-                className="shrink-0 rounded-md p-1 text-[var(--flux-text-muted)] hover:text-[var(--flux-text)] hover:bg-[var(--flux-surface-hover)] transition-colors"
-                aria-label={t("board.detailChrome.collapse")}
-                aria-expanded
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-                  <path d="M18 15l-6-6-6 6" />
-                </svg>
-              </button>
-            ) : null}
-            <span className="text-flux-sm font-semibold text-[var(--flux-text-muted)]">{t("board.filters.matrixWeightLabel")}</span>
-            {matrixWeightOptions.map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setMatrixWeightFilter(opt.key)}
-                className={`rounded-lg border px-2.5 py-1 text-flux-xs font-semibold transition-colors ${
-                  matrixWeightFilter === opt.key
-                    ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
-                    : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </>
       )}
     </>

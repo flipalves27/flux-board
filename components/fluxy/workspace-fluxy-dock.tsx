@@ -15,27 +15,7 @@ import { FluxySpeechBubble } from "@/components/fluxy/fluxy-speech-bubble";
 import { FluxyStatusPill } from "@/components/fluxy/fluxy-status-pill";
 import { fluxyVisualStateCopy } from "@/lib/fluxy-visual-state-copy";
 import { trackFluxyEvent } from "@/lib/fluxy-telemetry";
-
-function normalizeAppPath(pathname: string): string {
-  return pathname.replace(/^\/(pt-BR|en)(?=\/|$)/, "") || "/";
-}
-
-function shouldRenderWorkspaceFluxy(normalizedPath: string): boolean {
-  if (
-    normalizedPath === "/" ||
-    normalizedPath === "/login" ||
-    normalizedPath === "/onboarding" ||
-    normalizedPath === "/onboarding-org" ||
-    normalizedPath === "/onboarding-invites" ||
-    normalizedPath.startsWith("/portal/") ||
-    normalizedPath.startsWith("/forms/") ||
-    normalizedPath.startsWith("/embed/")
-  ) {
-    return false;
-  }
-  if (/^\/board\/[^/]+/.test(normalizedPath)) return false;
-  return true;
-}
+import { normalizeAppPath, shouldRenderWorkspaceDock } from "@/lib/public-routes";
 
 function parseEventStreamFrame(frame: string): { event: string; data: unknown } | null {
   const lines = frame.split("\n").filter(Boolean);
@@ -103,7 +83,7 @@ export function WorkspaceFluxyDock() {
   }, [hydrateFromStorage]);
 
   const normalizedPath = normalizeAppPath(pathname);
-  const show = Boolean(isChecked && user && shouldRenderWorkspaceFluxy(normalizedPath));
+  const show = Boolean(isChecked && user && shouldRenderWorkspaceDock(normalizedPath));
 
   const closePanel = useCallback(() => {
     abortRef.current?.abort();

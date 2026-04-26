@@ -22,6 +22,7 @@ export type KanbanColumnCardListProps = {
   boardBuckets: BucketConfig[];
   priorities: string[];
   onEditCard: (cardId: string) => void;
+  openingCardId?: string | null;
   onDeleteCard: (id: string) => void;
   onSetDirection: (cardId: string, dir: string) => void;
   onOpenDesc?: (cardId: string) => void;
@@ -46,6 +47,7 @@ function ClassicKanbanColumnCardList({
   boardBuckets,
   priorities,
   onEditCard,
+  openingCardId,
   onDeleteCard,
   onSetDirection,
   onOpenDesc,
@@ -73,6 +75,7 @@ function ClassicKanbanColumnCardList({
             directions={directions}
             dirColors={dirColors}
             onEdit={onEditCard}
+            isOpening={openingCardId === c.id}
             onDelete={onDeleteCard}
             onSetDirection={onSetDirection}
             onOpenDesc={onOpenDesc}

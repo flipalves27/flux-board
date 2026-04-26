@@ -18,6 +18,7 @@ import type { AutomationRule } from "@/lib/automation-types";
 import { boardsApiCorsHeaders } from "@/lib/cors-allowlist";
 import { initialBoardPayloadForMethodology } from "@/lib/board-methodology";
 import { logFluxApiPhase } from "@/lib/flux-api-phase-log";
+import { ensureOrgBoardsHaveDefaultProject, getProject, listProjects } from "@/lib/kv-projects";
 
 export const maxDuration = 60;
 
@@ -42,6 +43,8 @@ export async function GET(request: NextRequest) {
     const t1 = Date.now();
     const org = await getOrganizationById(payload.orgId);
     logFluxApiPhase(route, "getOrganizationById", t1);
+    const requestedProjectId = request.nextUrl.searchParams.get("projectId")?.trim() || undefined;
+    await ensureOrgBoardsHaveDefaultProject(payload.orgId);
 
     const t2 = Date.now();
     const boardIds = await getBoardIds(payload.id, payload.orgId, payload.isAdmin);
@@ -58,12 +61,16 @@ export async function GET(request: NextRequest) {
     }
 
     const t3 = Date.now();
-    const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId);
+    const boardRows = await getBoardListRowsByIds(boardIds, payload.orgId, { projectId: requestedProjectId });
     logFluxApiPhase(route, "getBoardListRowsByIds", t3);
+    const projects = await listProjects(payload.orgId);
+    const projectById = new Map(projects.map((project) => [project.id, project]));
     const boards = boardRows.map((b) => ({
       id: b.id,
       name: b.name,
       ownerId: b.ownerId,
+      projectId: b.projectId ?? null,
+      projectName: b.projectId ? projectById.get(b.projectId)?.name ?? null : null,
       clientLabel: typeof b.clientLabel === "string" ? b.clientLabel : undefined,
       lastUpdated: b.lastUpdated,
       boardMethodology: b.boardMethodology,
@@ -132,6 +139,14 @@ export async function POST(request: NextRequest) {
     }
 
     const methodology = parsed.data.boardMethodology;
+    const requestedProjectId = parsed.data.projectId?.trim();
+    const project = requestedProjectId
+      ? await getProject(payload.orgId, requestedProjectId)
+      : (await ensureOrgBoardsHaveDefaultProject(payload.orgId)).project;
+    if (!project || project.archivedAt) {
+      return NextResponse.json({ error: "Projeto não encontrado ou arquivado." }, { status: 404 });
+    }
+    const projectId = project.id;
     let board;
     if (templateId) {
       const tpl = await getPublishedTemplateById(templateId);
@@ -143,15 +158,18 @@ export async function POST(request: NextRequest) {
         ...snap,
         boardMethodology: snap.boardMethodology ?? methodology,
         automations: Array.isArray(snap.automations) ? (snap.automations as AutomationRule[]) : [],
-      });
+      }, { projectId });
     } else if (rawSnap) {
       board = await createBoardFromTemplateSnapshot(payload.orgId, payload.id, name, {
         ...rawSnap,
         boardMethodology: rawSnap.boardMethodology ?? methodology,
         automations: Array.isArray(rawSnap.automations) ? (rawSnap.automations as AutomationRule[]) : [],
-      });
+      }, { projectId });
     } else {
-      board = await createBoard(payload.orgId, payload.id, name, initialBoardPayloadForMethodology(methodology));
+      board = await createBoard(payload.orgId, payload.id, name, {
+        ...initialBoardPayloadForMethodology(methodology),
+        projectId,
+      });
     }
     return NextResponse.json(
       {
@@ -159,6 +177,8 @@ export async function POST(request: NextRequest) {
           id: board.id,
           name: board.name,
           ownerId: board.ownerId,
+          projectId: board.projectId ?? projectId,
+          projectName: project.name,
           lastUpdated: board.lastUpdated,
           boardMethodology: board.boardMethodology ?? methodology,
         },

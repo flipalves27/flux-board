@@ -49,6 +49,20 @@ function decodeHtmlEntities(input: string): string {
   return out;
 }
 
+export const StrategicPortfolioHealthSchema = z.enum(["green", "yellow", "red", "blocked"]);
+
+export const StrategicPortfolioCardMetaSchema = z
+  .object({
+    businessOutcome: z.string().trim().max(500).optional(),
+    health: StrategicPortfolioHealthSchema.optional(),
+    milestoneLabel: z.string().trim().max(120).optional(),
+    ownerName: z.string().trim().max(160).optional(),
+    phase: z.string().trim().max(80).optional(),
+  })
+  .passthrough();
+
+const StrategyTemplateKindSchema = z.enum(["swot", "strategic_portfolio"]);
+
 function stripHtmlTags(input: string): string {
   let out = String(input);
 
@@ -163,6 +177,8 @@ export const SafeAssistBodySchema = z.object({
 });
 
 export const PriorityMatrixQuadrantKeySchema = z.enum(["do_first", "schedule", "delegate", "eliminate"]);
+export const SwotQuadrantKeySchema = z.enum(["strengths", "weaknesses", "opportunities", "threats"]);
+const SwotStrategyKindSchema = z.enum(["SO", "WO", "ST", "WT"]);
 
 const BpmnNodeTypeSchema = z.enum(BPMN_NODE_TYPES as unknown as [string, ...string[]]);
 const BpmnSemanticVariantSchema = z.preprocess(
@@ -228,21 +244,76 @@ export const BoardTemplateSnapshotSchema = z.object({
     bucketOrder: z.array(z.unknown()),
     collapsedColumns: z.array(z.string()).optional(),
     labels: z.array(z.string()).optional(),
+    strategyTemplateKind: StrategyTemplateKindSchema.optional(),
   }),
   mapaProducao: z.array(z.unknown()),
   labelPalette: z.array(z.string()),
   automations: z.array(z.unknown()),
   boardMethodology: BoardMethodologySchema.optional(),
-  templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional(),
+  templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot", "strategic_portfolio"]).optional(),
   priorityMatrixModel: z.enum(["eisenhower", "grid4"]).optional(),
   templateCards: z.array(z.unknown()).optional(),
   priorityMatrixMeta: z.unknown().optional(),
   bpmnModel: BpmnModelSchema.optional(),
+  swotMeta: z
+    .object({
+      version: z.literal("swot-tows-v1"),
+      quadrantLabels: z
+        .object({
+          strengths: z.string().trim().max(200).optional(),
+          weaknesses: z.string().trim().max(200).optional(),
+          opportunities: z.string().trim().max(200).optional(),
+          threats: z.string().trim().max(200).optional(),
+        })
+        .optional(),
+      defaultView: z.enum(["swot", "kanban"]).optional(),
+      qualityChecklist: z.array(z.string().trim().max(300)).max(20).optional(),
+      towsStrategies: z
+        .array(
+          z
+            .object({
+              id: z.string().trim().min(1).max(100),
+              kind: SwotStrategyKindSchema,
+              title: z.string().trim().min(1).max(300),
+              description: z.string().trim().max(2000),
+              sourceCardIds: z.array(z.string().trim().max(200)).max(20),
+              impact: z.number().min(0).max(5).optional(),
+              confidence: z.number().min(0).max(5).optional(),
+              effort: z.number().min(0).max(5).optional(),
+              risk: z.number().min(0).max(5).optional(),
+              convertedCardId: z.string().trim().max(200).optional(),
+            })
+            .passthrough()
+        )
+        .max(100)
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
+  strategicPortfolioMeta: z
+    .object({
+      version: z.literal("strategic-portfolio-v1"),
+      defaultView: z.enum(["strategic_portfolio", "kanban"]).optional(),
+      objectiveLabels: z.record(z.string().trim().max(200), z.string().trim().max(200)).optional(),
+      healthLabels: z
+        .object({
+          green: z.string().trim().max(80).optional(),
+          yellow: z.string().trim().max(80).optional(),
+          red: z.string().trim().max(80).optional(),
+          blocked: z.string().trim().max(80).optional(),
+        })
+        .optional(),
+      kpiLabels: z.array(z.string().trim().max(120)).max(12).optional(),
+    })
+    .passthrough()
+    .optional(),
 });
 
 export const BoardCreateSchema = z
   .object({
     name: z.string().trim().min(1, "Nome do board e obrigatorio.").max(100).optional(),
+    /** Projeto pai do board. O servidor preenche o projeto padrão para clientes legados. */
+    projectId: z.string().trim().min(1).max(120).optional(),
     /** Scrum (sprints) ou Kanban (fluxo e cadências). Padrão scrum se omitido (API legada). */
     boardMethodology: BoardMethodologySchema.optional().default("scrum"),
     /** Importa de template publicado no showcase. */
@@ -251,6 +322,146 @@ export const BoardCreateSchema = z
     templateSnapshot: BoardTemplateSnapshotSchema.optional(),
   })
   .passthrough();
+
+export const ProjectDeliveryModelSchema = z.enum([
+  "scrum",
+  "kanban",
+  "safe",
+  "hybrid",
+  "lean_six_sigma",
+  "discovery",
+]);
+
+export const ProjectStatusSchema = z.enum(["active", "paused", "at_risk", "completed", "archived"]);
+export const ProjectHealthSchema = z.enum(["green", "yellow", "red", "blocked"]);
+
+const ProjectOkrSchema = z
+  .object({
+    id: z.string().trim().min(1).max(120),
+    objective: z.string().trim().min(1).max(300),
+    keyResults: z.array(z.string().trim().min(1).max(300)).max(12).default([]),
+    progressPct: z.number().min(0).max(100).nullable().optional(),
+  })
+  .passthrough();
+
+const ProjectGovernanceSchema = z
+  .object({
+    sponsor: z.string().trim().max(160).nullable().optional(),
+    productOwner: z.string().trim().max(160).nullable().optional(),
+    projectManager: z.string().trim().max(160).nullable().optional(),
+    stakeholders: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+    steeringCadence: z.string().trim().max(200).nullable().optional(),
+    riskAppetite: z.enum(["low", "medium", "high"]).optional(),
+    approvalThresholds: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    decisionLog: z
+      .array(
+        z
+          .object({
+            id: z.string().trim().min(1).max(120),
+            date: z.string().trim().max(80),
+            decision: z.string().trim().min(1).max(500),
+            owner: z.string().trim().max(160).nullable().optional(),
+          })
+          .passthrough()
+      )
+      .max(100)
+      .optional(),
+  })
+  .passthrough();
+
+const ProjectFinancialsSchema = z
+  .object({
+    budget: z.number().min(0).nullable().optional(),
+    currency: z.string().trim().min(3).max(8).optional(),
+    costModel: z.enum(["fixed", "time_and_materials", "capacity", "value_stream"]).optional(),
+    monthlyRunRate: z.number().min(0).nullable().optional(),
+    actualCost: z.number().min(0).nullable().optional(),
+    forecastCost: z.number().min(0).nullable().optional(),
+    benefits: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    roi: z.number().nullable().optional(),
+    burnRate: z.number().min(0).nullable().optional(),
+    variance: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const ProjectRoadmapItemSchema = z
+  .object({
+    id: z.string().trim().min(1).max(120),
+    title: z.string().trim().min(1).max(220),
+    type: z.enum(["theme", "milestone", "release", "dependency"]),
+    status: z.enum(["planned", "in_progress", "done", "blocked"]).optional(),
+    startDate: z.string().trim().max(80).nullable().optional(),
+    targetDate: z.string().trim().max(80).nullable().optional(),
+    confidence: z.number().min(0).max(100).nullable().optional(),
+    linkedBoardIds: z.array(z.string().trim().min(1).max(120)).max(80).optional(),
+    linkedCardIds: z.array(z.string().trim().min(1).max(120)).max(200).optional(),
+  })
+  .passthrough();
+
+const ProjectAiSettingsSchema = z
+  .object({
+    contextPrompt: z.string().trim().max(6000).nullable().optional(),
+    analysisPreferences: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    ragSourceIds: z.array(z.string().trim().min(1).max(200)).max(80).optional(),
+    recommendationLog: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1).max(120),
+          createdAt: z.string().trim().max(80),
+          summary: z.string().trim().min(1).max(1000),
+          source: z.string().trim().max(200).optional(),
+        })
+      )
+      .max(100)
+      .optional(),
+    guardrails: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+  })
+  .passthrough();
+
+export const ProjectCreateSchema = z
+  .object({
+    key: z.string().trim().min(1).max(60).optional(),
+    name: z.string().trim().min(1, "Nome do projeto e obrigatorio.").max(160),
+    description: z.string().trim().max(2000).nullable().optional(),
+    color: z.string().trim().max(40).nullable().optional(),
+    cover: z.string().trim().max(500).nullable().optional(),
+    status: ProjectStatusSchema.optional().default("active"),
+    health: ProjectHealthSchema.optional().default("green"),
+    progressPct: z.number().min(0).max(100).nullable().optional(),
+    deliveryModel: ProjectDeliveryModelSchema.optional().default("hybrid"),
+    cadence: z.string().trim().max(200).nullable().optional(),
+    planningPolicy: z.string().trim().max(1000).nullable().optional(),
+    definitionOfReady: z.string().trim().max(1000).nullable().optional(),
+    vision: z.string().trim().max(2000).nullable().optional(),
+    problemStatement: z.string().trim().max(2000).nullable().optional(),
+    businessOutcome: z.string().trim().max(2000).nullable().optional(),
+    strategicThemes: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+    okrs: z.array(ProjectOkrSchema).max(20).optional(),
+    northStarMetric: z.string().trim().max(300).nullable().optional(),
+    successCriteria: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    governance: ProjectGovernanceSchema.optional(),
+    financials: ProjectFinancialsSchema.optional(),
+    roadmap: z.array(ProjectRoadmapItemSchema).max(100).optional(),
+    ai: ProjectAiSettingsSchema.optional(),
+    startDate: z.string().trim().max(80).nullable().optional(),
+    targetDate: z.string().trim().max(80).nullable().optional(),
+    baselineDate: z.string().trim().max(80).nullable().optional(),
+    confidence: z.number().min(0).max(100).nullable().optional(),
+    scopePolicy: z.string().trim().max(1000).nullable().optional(),
+  })
+  .passthrough();
+
+export const ProjectUpdateSchema = ProjectCreateSchema.partial().extend({
+  archivedAt: z.string().trim().max(80).nullable().optional(),
+});
+
+export const ProjectBoardLinkSchema = z.object({
+  boardId: z.string().trim().min(1).max(120),
+});
+
+export const ProjectAiBodySchema = z.object({
+  message: z.string().trim().min(2).max(8000),
+});
 
 export const BucketConfigSchema = z
   .object({
@@ -390,6 +601,8 @@ export const CardDataSchema = z
     serviceClass: CardServiceClassSchema.nullable().optional(),
     matrixWeight: z.number().min(0).max(100).optional(),
     matrixWeightBand: z.enum(["low", "medium", "high", "critical"]).optional(),
+    swotMeta: z.unknown().optional(),
+    portfolioMeta: StrategicPortfolioCardMetaSchema.optional(),
   })
   .passthrough();
 
@@ -531,7 +744,7 @@ export const TemplateExportBodySchema = z
       "insurance_warranty",
     ]),
     pricingTier: z.enum(["free", "premium"]),
-    templateKind: z.enum(["kanban", "priority_matrix", "bpmn"]).optional().default("kanban"),
+    templateKind: z.enum(["kanban", "priority_matrix", "bpmn", "swot", "strategic_portfolio"]).optional().default("kanban"),
     /** Eisenhower: quadrantes. Ignorado quando priorityMatrixModel é grid4. */
     priorityMatrixSelections: z
       .array(
@@ -548,6 +761,24 @@ export const TemplateExportBodySchema = z
     bpmnModel: BpmnModelSchema.optional(),
     bpmnMarkdown: z.string().max(300_000).optional(),
     bpmnXml: z.string().max(300_000).optional(),
+    swotSelections: z
+      .array(
+        z.object({
+          cardId: z.string().trim().min(1).max(200),
+          quadrantKey: SwotQuadrantKeySchema,
+          evidence: z.string().trim().max(1000).optional(),
+          impact: z.number().min(0).max(5).optional(),
+          confidence: z.number().min(0).max(5).optional(),
+          effort: z.number().min(0).max(5).optional(),
+          urgency: z.number().min(0).max(5).optional(),
+          risk: z.number().min(0).max(5).optional(),
+          horizon: z.enum(["now", "quarter", "semester"]).optional(),
+        })
+      )
+      .max(200)
+      .optional(),
+    swotMeta: z.unknown().optional(),
+    strategicPortfolioMeta: z.unknown().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.templateKind === "kanban" && data.priorityMatrixSelections && data.priorityMatrixSelections.length > 0) {
@@ -594,6 +825,42 @@ export const TemplateExportBodySchema = z
           path: ["templateKind"],
         });
       }
+    }
+    if (data.templateKind !== "swot" && data.swotSelections && data.swotSelections.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "swotSelections só é permitido com templateKind swot.",
+        path: ["swotSelections"],
+      });
+    }
+    if (
+      data.templateKind === "swot" &&
+      (data.priorityMatrixSelections?.length ||
+        data.priorityMatrixGridSelections?.length ||
+        data.bpmnModel ||
+        data.bpmnMarkdown ||
+        data.bpmnXml)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Campos de matriz/BPMN não se aplicam ao template SWOT.",
+        path: ["templateKind"],
+      });
+    }
+    if (
+      data.templateKind === "strategic_portfolio" &&
+      (data.priorityMatrixSelections?.length ||
+        data.priorityMatrixGridSelections?.length ||
+        data.bpmnModel ||
+        data.bpmnMarkdown ||
+        data.bpmnXml ||
+        data.swotSelections?.length)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Campos de matriz/BPMN/SWOT não se aplicam ao template Strategic Portfolio.",
+        path: ["templateKind"],
+      });
     }
   });
 
@@ -709,6 +976,7 @@ export const BoardUpdateSchema = z
         /** Nota curta do PO para leitura C-Level (export + vista executiva); não substitui o brief IA. */
         executiveStakeholderNote: z.string().trim().max(2000).optional().nullable(),
         backlogBucketKey: z.string().trim().max(200).optional().nullable(),
+        strategyTemplateKind: StrategyTemplateKindSchema.optional(),
         definitionOfDone: BoardDefinitionOfDoneSchema.optional().nullable(),
         /** strict = validar WIP no servidor (padrão); soft = permitir acima do limite. */
         wipEnforcement: z.enum(["strict", "soft"]).optional(),
