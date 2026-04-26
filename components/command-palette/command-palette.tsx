@@ -15,6 +15,7 @@ import { parseNaturalLanguageCommand, type AiCommandResult } from "@/lib/command
 import { isSprintMethodology, type BoardMethodology } from "@/lib/board-methodology";
 import { isPlatformAdminSession, sessionCanManageMembersAndBilling, sessionCanManageOrgBilling } from "@/lib/rbac";
 import { useOnda4Flags } from "@/components/fluxy/use-onda4-flags";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 
 type BoardRow = { id: string; name: string; boardMethodology?: BoardMethodology };
 
@@ -138,6 +139,8 @@ export function CommandPalette(props?: CommandPaletteProps) {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const onda4 = useOnda4Flags();
+  const orgFeat = useOrgFeaturesOptional();
+  const forgeOn = Boolean(orgFeat?.data?.forge_oneshot);
   const { user, getHeaders, isChecked } = useAuth();
   const userRef = useRef(user);
   userRef.current = user;
@@ -419,7 +422,20 @@ export function CommandPalette(props?: CommandPaletteProps) {
           title: t("nav.platformCommercial"),
           kw: "platform commercial plans stripe pricing catalog admin",
         },
-        { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" }
+        { path: "/admin/tracer", title: t("nav.tracer"), kw: "tracer diagnostics flux debug errors" },
+        { path: "/admin/forge", title: "Flux Forge (platform)", kw: "forge admin platform costs" }
+      );
+    }
+
+    if (forgeOn) {
+      nav.push(
+        { path: "/forge", title: t("nav.forge"), kw: "forge flux pr github code ai studio" },
+        { path: "/forge/runs", title: t("nav.forgeRuns"), kw: "forge runs queue history" },
+        {
+          path: "/forge/onboarding",
+          title: t("nav.forgeConnect"),
+          kw: "github app install connect forge",
+        }
       );
     }
 
@@ -436,7 +452,7 @@ export function CommandPalette(props?: CommandPaletteProps) {
     }
 
     return items;
-  }, [boards, boardById, user, t]);
+  }, [boards, boardById, user, t, forgeOn]);
 
   const fuse = useMemo(() => {
     return new Fuse(allItems, {

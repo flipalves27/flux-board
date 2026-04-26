@@ -80,11 +80,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const includeSubtasks = canUseFeature(org, "subtasks", gateCtx);
 
   try {
+    const beforeIds = new Set((board.cards ?? []).map((c) => String((c as { id?: string }).id || "")));
     const nextBoard = appendSpecPlanCardsToBoard({
       board: board as BoardData,
       drafts: parsed.data.cards,
       includeSubtasks,
     });
+    const newCardIds = (nextBoard.cards ?? [])
+      .map((c) => String((c as { id?: string }).id || ""))
+      .filter((id) => id && !beforeIds.has(id));
 
     const persisted = await updateBoardFromExisting(board, { cards: nextBoard.cards }, {
       userId: payload.id,
@@ -96,6 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ok: true,
       lastUpdated: persisted.lastUpdated,
       cardsAdded: parsed.data.cards.length,
+      newCardIds,
     });
   } catch (err) {
     console.error("spec-plan apply", err);

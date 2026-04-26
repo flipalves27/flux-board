@@ -10,6 +10,7 @@ import { useSidebarLayout } from "@/context/sidebar-layout-context";
 import { apiGet, ApiError } from "@/lib/api-client";
 import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
+import { useForgeActiveStore } from "@/stores/forge-active-store";
 import { useMobileDrawerPointer } from "@/lib/mobile-drawer-pointer";
 import { sessionCanManageOrgBilling } from "@/lib/rbac";
 import {
@@ -56,7 +57,9 @@ export function Sidebar() {
   const [upcomingReleaseCount, setUpcomingReleaseCount] = useState<number | null>(null);
   const orgFeatures = useOrgFeaturesOptional();
   const specScopePlannerEnabled = Boolean(orgFeatures?.data?.spec_ai_scope_planner);
+  const forgeEnabled = Boolean(orgFeatures?.data?.forge_oneshot);
   const specPlanActiveCount = useSpecPlanActiveStore((s) => s.active.length);
+  const forgeActiveCount = useForgeActiveStore((s) => s.active.length);
 
   const localeSegment = pathname.split("/")[1];
   const locale = localeSegment === "en" ? "en" : "pt-BR";
@@ -195,6 +198,32 @@ export function Sidebar() {
     };
   }, [isChecked, user?.orgId, specScopePlannerEnabled, getHeaders]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function tick() {
+      if (!isChecked || !user?.orgId || !forgeEnabled) {
+        useForgeActiveStore.getState().setActive([]);
+        return;
+      }
+      try {
+        const data = await apiGet<{
+          active?: { runId: string; boardId?: string | null; updatedAt: string; status?: string }[];
+        }>("/api/forge/active-runs", getHeaders());
+        if (!cancelled && Array.isArray(data?.active)) {
+          useForgeActiveStore.getState().setActive(data.active);
+        }
+      } catch {
+        if (!cancelled) useForgeActiveStore.getState().setActive([]);
+      }
+    }
+    void tick();
+    const id = window.setInterval(() => void tick(), 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [isChecked, user?.orgId, forgeEnabled, getHeaders]);
+
   const showExpandedNav =
     layout === "mobile" || (layout === "tablet" && tabletHover) || (layout === "desktop" && !collapsed);
   const compactMode = !showExpandedNav;
@@ -238,6 +267,7 @@ export function Sidebar() {
     if (href === "/sprints") return normalizedPath.startsWith("/sprints");
     if (href === "/docs") return normalizedPath.startsWith("/docs");
     if (href === "/spec-plan") return normalizedPath.startsWith("/spec-plan");
+    if (href === "/forge") return normalizedPath.startsWith("/forge");
     if (href === "/users") return normalizedPath === "/users";
     if (href === "/equipe") return normalizedPath.startsWith("/equipe");
     if (href === "/billing") return normalizedPath === "/billing";
@@ -346,6 +376,8 @@ export function Sidebar() {
                 user={user}
                 specScopePlannerEnabled={specScopePlannerEnabled}
                 specPlanActiveCount={specPlanActiveCount}
+                forgeEnabled={forgeEnabled}
+                forgeActiveCount={forgeActiveCount}
               />
             </SidebarZoneCollapsible>
             <SidebarZoneCollapsible title={t("zones.workspace")} defaultOpen>

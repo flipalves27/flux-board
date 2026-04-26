@@ -15,6 +15,10 @@ const CommandPalette = dynamic(
   () => import("@/components/command-palette/command-palette").then((m) => m.CommandPalette),
   { ssr: false }
 );
+const ForgeNewRunDialog = dynamic(
+  () => import("@/components/forge/forge-new-run-dialog").then((m) => m.ForgeNewRunDialog),
+  { ssr: false }
+);
 const CommandUnified = dynamic(() => import("@/components/command/command-unified").then((m) => m.CommandUnified), {
   ssr: false,
 });
@@ -100,6 +104,7 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
       <FluxyOmnibarLayer />
       <FluxyProactiveNudge />
       <CommandLayer />
+      <ForgeNewRunDialog />
       <GlobalHotkeys />
       <CeremonyRetroModal getHeaders={getHeaders} />
       <CeremonyPlanningModal getHeaders={getHeaders} />

@@ -9,6 +9,8 @@ import { apiFetch, getApiHeaders } from "@/lib/api-client";
 import type { SprintData } from "@/lib/schemas";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { SprintBacklogPicker } from "@/components/kanban/sprint-backlog-picker";
+import { ForgeSprintBatchDialog } from "@/components/forge/forge-sprint-batch-dialog";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 
 type SprintPanelProps = {
   boardId: string;
@@ -55,6 +57,8 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const tp = useTranslations("sprints.panel");
+  const forgeOn = Boolean(useOrgFeaturesOptional()?.data?.forge_oneshot);
+  const [forgeBatchOpen, setForgeBatchOpen] = useState(false);
   const panelOpen = useSprintStore((s) => s.panelOpenBoard === boardId);
   /** `?? EMPTY` em vez de `?? []` — evita nova referência a cada render quando undefined (loop #185). */
   const sprints = useSprintStore((s) => s.sprintsByBoard[boardId] ?? EMPTY_SPRINTS);
@@ -277,6 +281,15 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
               </span>
             )}
             <div className="ml-auto flex shrink-0 items-center gap-1">
+              {forgeOn && selectedSprint && selectedSprint.cardIds.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setForgeBatchOpen(true)}
+                  className="rounded-lg border border-[var(--flux-primary-alpha-35)] px-2.5 py-1 text-[10px] font-semibold text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-08)]"
+                >
+                  AI · Forge sprint
+                </button>
+              ) : null}
               {selectedSprint && (selectedSprint.status === "planning" || selectedSprint.status === "active") ? (
                 <button
                   type="button"
@@ -558,6 +571,13 @@ export default function SprintPanel({ boardId, getHeaders }: SprintPanelProps) {
           )}
         </div>
       </div>
+
+      <ForgeSprintBatchDialog
+        open={forgeBatchOpen}
+        onClose={() => setForgeBatchOpen(false)}
+        boardId={boardId}
+        sprint={selectedSprint}
+      />
 
       {/* Backdrop */}
     </>

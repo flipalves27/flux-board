@@ -1,0 +1,33 @@
+/* Flux Forge Studio — visual layer on top of Flux tokens */
+:root {
+  --forge-accent: var(--flux-accent);
+  --forge-glow: 0 0 32px color-mix(in srgb, var(--flux-primary) 35%, transparent);
+  --forge-mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  --forge-rail-bg: color-mix(in srgb, var(--flux-surface-card) 80%, transparent);
+  --forge-grid-dot: color-mix(in srgb, var(--flux-text-muted) 14%, transparent);
+}
+
+@keyframes forge-pulse {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.forge-panel-bg {
+  background-image: radial-gradient(var(--forge-grid-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-anim-pulse {
+    animation: none !important;
+  }
+}
+
+.forge-anim-pulse {
+  animation: forge-pulse 1.6s ease-in-out infinite alternate;
+}

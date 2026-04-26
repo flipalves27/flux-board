@@ -55,6 +55,9 @@ export function OrgFeaturesProvider({ children }: { children: ReactNode }) {
         spec_ai_scope_planner: Boolean(json.spec_ai_scope_planner),
         board_pdf_list_import: Boolean(json.board_pdf_list_import),
         flux_docs: Boolean(json.flux_docs),
+        forge_oneshot: Boolean(json.forge_oneshot ?? true),
+        forge_tested: Boolean(json.forge_tested),
+        forge_autonomous: Boolean(json.forge_autonomous),
         ...uxMerged,
         ui: {
           onda4: onda4

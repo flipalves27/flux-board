@@ -51,6 +51,8 @@ export type PlanGateCode = "PLAN_UPGRADE_REQUIRED" | "PLAN_LIMIT_REACHED";
 
 const PAID: EffectiveGateTier[] = ["pro", "business"];
 const BIZ_UP: EffectiveGateTier[] = ["business"];
+/** Free + paid — tier oneshot (card → draft PR) per product spec. */
+const ALLTIERS: EffectiveGateTier[] = ["free", "pro", "business"];
 
 export type FeatureKey =
   | "executive_brief"
@@ -98,7 +100,10 @@ export type FeatureKey =
   | "project_governance"
   | "project_roadmap"
   | "project_financials"
-  | "project_ai";
+  | "project_ai"
+  | "forge_oneshot"
+  | "forge_tested"
+  | "forge_autonomous";
 
 const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   executive_brief: PAID,
@@ -147,6 +152,9 @@ const FEATURE_ALLOWED_TIERS: Record<FeatureKey, EffectiveGateTier[]> = {
   project_roadmap: PAID,
   project_financials: BIZ_UP,
   project_ai: BIZ_UP,
+  forge_oneshot: ALLTIERS,
+  forge_tested: BIZ_UP,
+  forge_autonomous: BIZ_UP,
 };
 
 /** Matriz canônica para UI/backend (fonte única da política de planos). */

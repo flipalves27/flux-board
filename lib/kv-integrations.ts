@@ -18,6 +18,12 @@ export type IntegrationConnection = {
   accountLabel?: string | null;
   externalOrgId?: string | null;
   webhookSecret?: string | null;
+  /** GitHub App installation id (stringified) for outbound API. */
+  installationId?: string | null;
+  /** AES-GCM blob via FLUX_AI_SECRETS_KEY — PEM or app private key material. */
+  appPrivateKeyEnc?: string | null;
+  /** GitHub App ID (numeric string). */
+  githubAppId?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -84,6 +90,9 @@ export async function upsertIntegrationConnection(params: {
   accountLabel?: string | null;
   externalOrgId?: string | null;
   webhookSecret?: string | null;
+  installationId?: string | null;
+  appPrivateKeyEnc?: string | null;
+  githubAppId?: string | null;
 }): Promise<IntegrationConnection> {
   const now = new Date().toISOString();
   const existing = await getIntegrationConnection(params.orgId, params.provider);
@@ -95,6 +104,9 @@ export async function upsertIntegrationConnection(params: {
     accountLabel: params.accountLabel ?? existing?.accountLabel ?? null,
     externalOrgId: params.externalOrgId ?? existing?.externalOrgId ?? null,
     webhookSecret: params.webhookSecret ?? existing?.webhookSecret ?? null,
+    installationId: params.installationId ?? existing?.installationId ?? null,
+    appPrivateKeyEnc: params.appPrivateKeyEnc ?? existing?.appPrivateKeyEnc ?? null,
+    githubAppId: params.githubAppId ?? existing?.githubAppId ?? null,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

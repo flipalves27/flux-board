@@ -1,9 +1,10 @@
 import type { Organization } from "@/lib/kv-organizations";
 import type { PlanGateContext } from "@/lib/plan-gates";
 import { isTogetherApiConfigured, resolveOrgLlmRuntime } from "@/lib/org-llm-runtime";
+import { resolveAnthropicForgeConfig } from "@/lib/llm-anthropic-provider";
 
 /** Valor canónico em telemetria / `ai_usage_log`. */
-export type LlmRoute = "openai_compat";
+export type LlmRoute = "openai_compat" | "anthropic";
 
 export { isTogetherApiConfigured, resolveOrgLlmRuntime, isOrgCloudLlmConfigured } from "@/lib/org-llm-runtime";
 
@@ -33,6 +34,6 @@ export function resolveBatchLlmRoute(
   return { route: "openai_compat", model: rt?.model ?? "" };
 }
 
-export function isAnthropicApiConfigured(): false {
-  return false;
+export function isAnthropicApiConfigured(): boolean {
+  return resolveAnthropicForgeConfig() != null;
 }

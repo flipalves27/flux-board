@@ -8,6 +8,8 @@ const SALT = "flux-org-ai-secrets-v1";
 export type OrgAiSecretsPayload = {
   togetherApiKey?: string;
   togetherBaseUrl?: string;
+  /** PEM for GitHub App (optional; prefer FLUX_GITHUB_APP_PRIVATE_KEY in env). */
+  githubAppPrivateKeyPem?: string;
 };
 
 function deriveKey(secret: string): Buffer {
@@ -45,11 +47,18 @@ export function decryptOrgAiSecrets(blob: string, masterSecret: string): OrgAiSe
     const decipher = createDecipheriv(ALGO, key, iv, { authTagLength: 16 });
     decipher.setAuthTag(tag);
     const plain = Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");
-    const parsed = JSON.parse(plain) as { v?: number; togetherApiKey?: string; togetherBaseUrl?: string };
+    const parsed = JSON.parse(plain) as {
+      v?: number;
+      togetherApiKey?: string;
+      togetherBaseUrl?: string;
+      githubAppPrivateKeyPem?: string;
+    };
     if (parsed.v !== VERSION) return null;
     return {
       togetherApiKey: typeof parsed.togetherApiKey === "string" ? parsed.togetherApiKey : undefined,
       togetherBaseUrl: typeof parsed.togetherBaseUrl === "string" ? parsed.togetherBaseUrl : undefined,
+      githubAppPrivateKeyPem:
+        typeof parsed.githubAppPrivateKeyPem === "string" ? parsed.githubAppPrivateKeyPem : undefined,
     };
   } catch {
     return null;

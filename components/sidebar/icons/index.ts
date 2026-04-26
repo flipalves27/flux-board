@@ -7,6 +7,7 @@ export { IconChevronLeft } from "./icon-chevron-left";
 export { IconChevronRight } from "./icon-chevron-right";
 export { IconClose } from "./icon-close";
 export { IconDocs } from "./icon-docs";
+export { IconForge } from "./icon-forge";
 export { IconExecutiveDashboard } from "./icon-executive-dashboard";
 export { IconFluxAiHub } from "./icon-flux-ai-hub";
 export { IconGoals } from "./icon-goals";

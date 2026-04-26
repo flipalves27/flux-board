@@ -143,6 +143,9 @@ export default function SpecPlanPage() {
   const [outlineSummary, setOutlineSummary] = useState<string | null>(null);
   const [methodologySummary, setMethodologySummary] = useState<string | null>(null);
   const [accept, setAccept] = useState(false);
+  const [forgeAfterApply, setForgeAfterApply] = useState(false);
+  const [forgeRepoFull, setForgeRepoFull] = useState("");
+  const [forgeTier, setForgeTier] = useState<"oneshot" | "tested" | "autonomous">("oneshot");
   const [applying, setApplying] = useState(false);
   const [applyMsg, setApplyMsg] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -1091,7 +1094,7 @@ export default function SpecPlanPage() {
     setApplying(true);
     setApplyMsg(null);
     try {
-      await apiPost(
+      const applied = await apiPost<{ newCardIds?: string[] }>(
         `/api/boards/${encodeURIComponent(boardId)}/spec-plan/apply`,
         {
           cards: preview.map((r) => ({
@@ -1111,12 +1114,31 @@ export default function SpecPlanPage() {
         getHeaders()
       );
       setApplyMsg(t("applySuccess"));
+      if (forgeAfterApply && applied.newCardIds?.length && forgeRepoFull.trim()) {
+        try {
+          const fr = await apiPost<{ run?: { _id: string } }>(
+            "/api/forge/runs",
+            {
+              boardId,
+              cardIds: applied.newCardIds,
+              tier: forgeTier,
+              repoFullName: forgeRepoFull.trim(),
+            },
+            getHeaders()
+          );
+          if (fr.run?._id) {
+            router.push(`${localeRoot}/forge/runs/${encodeURIComponent(fr.run._id)}`);
+          }
+        } catch (fe) {
+          setApplyMsg(`${t("applySuccess")} — Forge: ${fe instanceof ApiError ? fe.message : "erro"}`);
+        }
+      }
     } catch (e) {
       setApplyMsg(e instanceof ApiError ? e.message : t("applyError"));
     } finally {
       setApplying(false);
     }
-  }, [accept, boardId, getHeaders, preview, t]);
+  }, [accept, boardId, forgeAfterApply, forgeRepoFull, forgeTier, getHeaders, preview, router, localeRoot, t]);
 
   const analysisPhases = useMemo(
     () =>
@@ -1650,6 +1672,47 @@ export default function SpecPlanPage() {
               onRemove={(i) => setPreview((p) => p.filter((_, j) => j !== i))}
             />
             )}
+            <div className="rounded-xl border border-[var(--flux-primary-alpha-18)] bg-[var(--flux-primary-alpha-06)] p-4 space-y-3">
+              <p className="text-sm font-semibold text-[var(--flux-text)]">{t("forgeStripTitle")}</p>
+              <label className="flex items-start gap-2 text-sm text-[var(--flux-text-muted)]">
+                <input
+                  type="checkbox"
+                  checked={forgeAfterApply}
+                  onChange={(e) => setForgeAfterApply(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>{t("forgeStripToggle")}</span>
+              </label>
+              {forgeAfterApply ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                      {t("forgeRepoLabel")}
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-[var(--flux-control-border)] bg-[var(--flux-surface-dark)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                      placeholder={t("forgeRepoPlaceholder")}
+                      value={forgeRepoFull}
+                      onChange={(e) => setForgeRepoFull(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--flux-text-muted)]">
+                      {t("forgeTierLabel")}
+                    </label>
+                    <select
+                      className="mt-1 w-full rounded-lg border border-[var(--flux-control-border)] bg-[var(--flux-surface-dark)] px-3 py-2 text-sm text-[var(--flux-text)]"
+                      value={forgeTier}
+                      onChange={(e) => setForgeTier(e.target.value as typeof forgeTier)}
+                    >
+                      <option value="oneshot">oneshot</option>
+                      <option value="tested">tested</option>
+                      <option value="autonomous">autonomous</option>
+                    </select>
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <label className="flex items-start gap-2 text-sm text-[var(--flux-text-muted)]">
               <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} className="mt-1" />
               <span>{t("acceptCheck")}</span>

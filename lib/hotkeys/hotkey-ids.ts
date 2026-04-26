@@ -2,6 +2,9 @@
 export const HOTKEY_IDS = [
   "nav.boards",
   "nav.reports",
+  "nav.forge",
+  "nav.forgeRuns",
+  "forge.newRun",
   "ui.cheatsheet",
   "board.newCard",
   "board.toggleFilters",

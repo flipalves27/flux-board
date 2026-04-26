@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
 
 /** App-wide shortcuts (navigation, cheatsheet). Mount once inside the authenticated shell. */
@@ -13,6 +14,8 @@ export function GlobalHotkeys() {
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const orgFeatures = useOrgFeaturesOptional();
+  const forgeOn = Boolean(orgFeatures?.data?.forge_oneshot);
 
   const patterns = useMemo(() => resolveHotkeyPatterns(), []);
 
@@ -27,12 +30,26 @@ export function GlobalHotkeys() {
       e.preventDefault();
       router.push(`${localeRoot}/reports`);
     };
+    if (forgeOn) {
+      m[p["nav.forge"]] = (e) => {
+        e.preventDefault();
+        router.push(`${localeRoot}/forge`);
+      };
+      m[p["nav.forgeRuns"]] = (e) => {
+        e.preventDefault();
+        router.push(`${localeRoot}/forge/runs`);
+      };
+      m[p["forge.newRun"]] = (e) => {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("flux-forge-new-run"));
+      };
+    }
     m[p["ui.cheatsheet"]] = (e) => {
       e.preventDefault();
       setCheatsheetOpen((open) => !open);
     };
     return m;
-  }, [localeRoot, patterns, router]);
+  }, [localeRoot, patterns, router, forgeOn]);
 
   const onCloseCheatsheet = useCallback(() => setCheatsheetOpen(false), []);
 

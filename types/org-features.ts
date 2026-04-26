@@ -10,6 +10,9 @@ export type OrgFeaturesResponse = {
   board_pdf_list_import: boolean;
   /** Flux Docs + geração de documentos (incl. discovery externo com IA). */
   flux_docs: boolean;
+  forge_oneshot: boolean;
+  forge_tested: boolean;
+  forge_autonomous: boolean;
   ui: {
     onda4: Onda4UiFlags;
     uxV2: UxV2Features;

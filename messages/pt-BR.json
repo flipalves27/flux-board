@@ -48,6 +48,8 @@
     "docsProduct": "Conhecimento e RAG",
     "specScopePlanner": "Escopo por documento",
     "specScopePlannerProduct": "Business+ · IA",
+    "forge": "Flux Forge",
+    "forgeProduct": "Spec → PR no GitHub",
     "teamWorkspace": "Time e estrutura",
     "userDirectory": "Cadastro e acessos",
     "copilot": "Copiloto",
@@ -89,6 +91,7 @@
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
       "docs": "Documentos, RAG e geração com IA.",
       "specScopePlanner": "Importe uma especificação técnica e gere cards no board com IA (Scrum, Kanban ou LSS).",
+      "forge": "Estúdio dedicado: fila de runs, repos, políticas e insights de código gerado.",
       "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."
     },
     "menu": {
@@ -572,8 +575,28 @@
       "rateLimit": "Rate limit (abuso)",
       "tracer": "Tracer (diagnóstico)",
       "platformCommercial": "Planos da plataforma (admin)",
-      "platformAdmin": "Administração da plataforma"
+      "platformAdmin": "Administração da plataforma",
+      "forge": "Flux Forge",
+      "forgeRuns": "Forge — runs",
+      "forgeConnect": "Forge — conectar GitHub App",
+      "forgeLastRun": "Forge — última run"
     }
+  },
+  "forgePage": {
+    "homeTitle": "Flux Forge Studio",
+    "homeSubtitle": "Spec validada → PR pronto para revisão",
+    "newRun": "Nova run",
+    "runs": "Runs",
+    "repos": "Repos",
+    "policies": "Políticas",
+    "insights": "Insights",
+    "onboarding": "Onboarding",
+    "liveMode": "Modo live",
+    "inspector": "Inspector",
+    "statusBarModel": "Modelo",
+    "statusBarCost": "Custo run",
+    "emptyQueue": "Nenhuma run ativa. Crie uma a partir de um card ou do Spec-Plan.",
+    "connectRepo": "Conectar repositório"
   },
   "deliveryCalendar": {
     "title": "Hub de previsão de entregas",
@@ -742,6 +765,9 @@
     },
     "goBoards": "Ir para boards",
     "goReports": "Ir para relatórios",
+    "goForge": "Ir para Flux Forge",
+    "goForgeRuns": "Ir para runs do Forge",
+    "forgeNewRun": "Nova run Forge (diálogo)",
     "cheatsheet": "Mostrar esta ajuda",
     "commandPalette": "Paleta de comandos",
     "escape": "Fechar diálogo ou paleta (quando estiver aberto)",
@@ -4537,6 +4563,11 @@
     "applyCards": "Aplicar ao board",
     "applying": "Aplicando…",
     "applySuccess": "Cards criados no board.",
+    "forgeStripTitle": "Após aplicar, gerar código no GitHub (Flux Forge)",
+    "forgeStripToggle": "Gerar código automaticamente para os cards aplicados",
+    "forgeRepoLabel": "Repositório (org/repo)",
+    "forgeRepoPlaceholder": "acme/monorepo",
+    "forgeTierLabel": "Tier",
     "applyError": "Não foi possível aplicar.",
     "openBoard": "Abrir board",
     "regenerateMapping": "Regenerar só o mapeamento",

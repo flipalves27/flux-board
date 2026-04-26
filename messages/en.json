@@ -48,6 +48,8 @@
     "docsProduct": "Knowledge and RAG",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
+    "forge": "Flux Forge",
+    "forgeProduct": "Spec → PR on GitHub",
     "teamWorkspace": "Team workspace",
     "userDirectory": "Directory and access",
     "copilot": "Copilot",
@@ -89,6 +91,7 @@
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
       "docs": "Documents, RAG and AI generation.",
       "specScopePlanner": "Import a technical spec and generate board cards with AI (Scrum, Kanban, or LSS).",
+      "forge": "Dedicated studio: run queue, repos, policies, and generated-code insights.",
       "copilot": "Board chat: summaries, search, and actions. On a board it opens the panel; elsewhere it goes to your boards list."
     },
     "menu": {
@@ -572,8 +575,28 @@
       "rateLimit": "Rate limit (abuse)",
       "tracer": "Tracer (diagnostics)",
       "platformCommercial": "Platform plans (admin)",
-      "platformAdmin": "Platform administration"
+      "platformAdmin": "Platform administration",
+      "forge": "Flux Forge",
+      "forgeRuns": "Forge — runs",
+      "forgeConnect": "Forge — connect GitHub App",
+      "forgeLastRun": "Forge — last run"
     }
+  },
+  "forgePage": {
+    "homeTitle": "Flux Forge Studio",
+    "homeSubtitle": "Validated spec → PR ready for review",
+    "newRun": "New run",
+    "runs": "Runs",
+    "repos": "Repos",
+    "policies": "Policies",
+    "insights": "Insights",
+    "onboarding": "Onboarding",
+    "liveMode": "Live mode",
+    "inspector": "Inspector",
+    "statusBarModel": "Model",
+    "statusBarCost": "Run cost",
+    "emptyQueue": "No active runs. Start one from a card or Spec-Plan.",
+    "connectRepo": "Connect repository"
   },
   "deliveryCalendar": {
     "title": "Delivery hub",
@@ -742,6 +765,9 @@
     },
     "goBoards": "Go to boards",
     "goReports": "Go to reports",
+    "goForge": "Go to Flux Forge",
+    "goForgeRuns": "Go to Forge runs",
+    "forgeNewRun": "New Forge run (dialog)",
     "cheatsheet": "Show this help",
     "commandPalette": "Command palette",
     "escape": "Close dialog or palette (when one is open)",
@@ -4536,6 +4562,11 @@
     "applyCards": "Apply to board",
     "applying": "Applying…",
     "applySuccess": "Cards created on the board.",
+    "forgeStripTitle": "After applying, generate code on GitHub (Flux Forge)",
+    "forgeStripToggle": "Automatically generate code for applied cards",
+    "forgeRepoLabel": "Repository (org/repo)",
+    "forgeRepoPlaceholder": "acme/monorepo",
+    "forgeTierLabel": "Tier",
     "applyError": "Could not apply.",
     "openBoard": "Open board",
     "regenerateMapping": "Regenerate mapping only",

@@ -21,6 +21,7 @@ import { useBoardCollabStore } from "@/stores/board-collab-store";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { CardModalAiOverlay } from "@/components/kanban/card-modal-ai-overlay";
+import { ForgeCardAction } from "@/components/forge/forge-card-action";
 import { useCardModal } from "@/components/kanban/card-modal-context";
 import { CardEditForm } from "@/components/kanban/card-modal-tabs/card-edit-form";
 import { CardSaveAsTemplateDialog } from "@/components/kanban/card-save-as-template-dialog";
@@ -527,6 +528,7 @@ export function CardModalLayout() {
                     {card.id}
                   </span>
                 )}
+                {mode === "edit" && boardId ? <ForgeCardAction boardId={boardId} cardId={card.id} /> : null}
               </div>
               <h2
                 id="card-modal-title"

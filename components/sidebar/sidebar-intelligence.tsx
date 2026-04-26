@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useSpecPlanActiveStore } from "@/stores/spec-plan-active-store";
+import { useForgeActiveStore } from "@/stores/forge-active-store";
 import {
   IconDocs,
   IconExecutiveDashboard,
+  IconForge,
   IconGoals,
   IconReports,
   IconSpecScope,
@@ -20,6 +22,8 @@ type SidebarIntelligenceProps = {
   user: AuthUser | null;
   specScopePlannerEnabled: boolean;
   specPlanActiveCount: number;
+  forgeEnabled: boolean;
+  forgeActiveCount: number;
 };
 
 type IntelLinkDef = {
@@ -32,13 +36,20 @@ export function SidebarIntelligence({
   user,
   specScopePlannerEnabled,
   specPlanActiveCount,
+  forgeEnabled,
+  forgeActiveCount,
 }: SidebarIntelligenceProps) {
   const t = useTranslations("navigation");
   const specPlanActive = useSpecPlanActiveStore((s) => s.active);
+  const forgeActive = useForgeActiveStore((s) => s.active);
   const specPlanHref =
     specPlanActiveCount === 1 && specPlanActive[0]
       ? `/spec-plan?run=${encodeURIComponent(specPlanActive[0].runId)}&board=${encodeURIComponent(specPlanActive[0].boardId)}`
       : "/spec-plan";
+  const forgeHref =
+    forgeActiveCount === 1 && forgeActive[0]
+      ? `/forge/runs/${encodeURIComponent(forgeActive[0].runId)}`
+      : "/forge";
   const [freq, setFreq] = useState(() => (typeof window !== "undefined" ? readSidebarNavFreq() : {}));
 
   useEffect(() => {
@@ -141,8 +152,29 @@ export function SidebarIntelligence({
       });
     }
 
+    if (forgeEnabled) {
+      base.push({
+        path: "/forge",
+        order: 2,
+        node: (
+          <SidebarNavLink
+            key="intel-forge"
+            trackPath="/forge"
+            path={forgeHref}
+            hint={t("hints.forge")}
+            icon={<IconForge className="h-4 w-4 shrink-0" />}
+            label={t("forge")}
+            sublabel={t("forgeProduct")}
+            badgeDot={forgeActiveCount > 0}
+            badgeCount={forgeActiveCount > 0 ? forgeActiveCount : undefined}
+            badgeTone="ai"
+          />
+        ),
+      });
+    }
+
     return base;
-  }, [user, specScopePlannerEnabled, specPlanActiveCount, specPlanHref, t]);
+  }, [user, specScopePlannerEnabled, specPlanActiveCount, forgeEnabled, forgeActiveCount, specPlanHref, forgeHref, t]);
 
   const sorted = useMemo(() => {
     return [...defs].sort((a, b) => {

@@ -4,6 +4,7 @@ import { useMemo, useRef, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useModalA11y } from "@/components/ui/use-modal-a11y";
 import { resolveHotkeyPatterns } from "@/lib/hotkeys/custom-bindings";
+import { useOrgFeaturesOptional } from "@/hooks/use-org-features";
 
 type Props = {
   open: boolean;
@@ -30,6 +31,7 @@ function formatPatternForDisplay(pattern: string): React.ReactNode {
 
 export function KeyboardShortcutsModal({ open, onClose }: Props) {
   const t = useTranslations("hotkeys");
+  const forgeOn = Boolean(useOrgFeaturesOptional()?.data?.forge_oneshot);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -84,6 +86,28 @@ export function KeyboardShortcutsModal({ open, onClose }: Props) {
               <span className="text-[var(--flux-text)]">{t("goReports")}</span>
               <span className="flex shrink-0 flex-wrap justify-end gap-1">{formatPatternForDisplay(patterns["nav.reports"])}</span>
             </li>
+            {forgeOn ? (
+              <>
+                <li className="flex items-start justify-between gap-3">
+                  <span className="text-[var(--flux-text)]">{t("goForge")}</span>
+                  <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                    {formatPatternForDisplay(patterns["nav.forge"])}
+                  </span>
+                </li>
+                <li className="flex items-start justify-between gap-3">
+                  <span className="text-[var(--flux-text)]">{t("goForgeRuns")}</span>
+                  <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                    {formatPatternForDisplay(patterns["nav.forgeRuns"])}
+                  </span>
+                </li>
+                <li className="flex items-start justify-between gap-3">
+                  <span className="text-[var(--flux-text)]">{t("forgeNewRun")}</span>
+                  <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                    {formatPatternForDisplay(patterns["forge.newRun"])}
+                  </span>
+                </li>
+              </>
+            ) : null}
             <li className="flex items-start justify-between gap-3">
               <span className="text-[var(--flux-text)]">{t("cheatsheet")}</span>
               <span className="flex shrink-0 flex-wrap justify-end gap-1">{formatPatternForDisplay(patterns["ui.cheatsheet"])}</span>
