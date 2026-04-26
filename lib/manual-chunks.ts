@@ -8,6 +8,11 @@ const LOCALE_DIR: Record<ManualLocale, string> = { "pt-BR": "pt-BR", en: "en" };
 
 const CONTENT = () => join(process.cwd(), "content", "manual");
 
+/** Conteúdo do manual é estático no deploy — evita N leituras fs por pedido (Lambda cold / manual-ask RAG). */
+const CACHE_CHUNKS = process.env.NODE_ENV === "production";
+const searchRecordsCache: Partial<Record<ManualLocale, ManualSearchRecord[]>> = {};
+const allChunksCache: Partial<Record<ManualLocale, ManualChunk[]>> = {};
+
 function splitMarkdownToSections(
   pageId: string,
   locale: ManualLocale,
@@ -47,7 +52,7 @@ function splitMarkdownToSections(
   return out;
 }
 
-export function getManualSearchRecordsForLocale(locale: ManualLocale): ManualSearchRecord[] {
+function buildManualSearchRecordsForLocale(locale: ManualLocale): ManualSearchRecord[] {
   const toc = getManualToc();
   const out: ManualSearchRecord[] = [];
   for (const it of toc.items) {
@@ -70,13 +75,7 @@ export function getManualSearchRecordsForLocale(locale: ManualLocale): ManualSea
     }
     const art = loadManualArticle(it.slug, locale);
     if (!art) continue;
-    const searchText = [
-      art.title,
-      art.excerpt,
-      it.tags.join(" "),
-      it.id,
-      art.bodyMd.replace(/[#*_`>[\]]/g, " "),
-    ]
+    const searchText = [art.title, art.excerpt, it.tags.join(" "), it.id, art.bodyMd.replace(/[#*_`>[\]]/g, " ")]
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
@@ -95,24 +94,35 @@ export function getManualSearchRecordsForLocale(locale: ManualLocale): ManualSea
   return out;
 }
 
-export function getAllManualChunksForLocale(locale: ManualLocale): ManualChunk[] {
+export function getManualSearchRecordsForLocale(locale: ManualLocale): ManualSearchRecord[] {
+  if (CACHE_CHUNKS) {
+    const hit = searchRecordsCache[locale];
+    if (hit) return hit;
+  }
+  const built = buildManualSearchRecordsForLocale(locale);
+  if (CACHE_CHUNKS) searchRecordsCache[locale] = built;
+  return built;
+}
+
+function buildAllManualChunksForLocale(locale: ManualLocale): ManualChunk[] {
   const toc = getManualToc();
   const all: ManualChunk[] = [];
   for (const it of toc.items) {
     if (it.generated) {
-      // Chunk sintético para a página "plans" (texto de referência curto; conteúdo rico = tabelas no React).
-      const t =
-        locale === "en"
-          ? `Plans and feature gates. Organization tier may be free, pro, or business. See the matrix on this page.`
-          : `Planos e regras de acesso. O tier da organização pode ser free, pro ou business. Veja a matriz nesta página.`;
-      all.push({
-        chunkId: `plans::${locale}::ref`,
-        pageId: "plans",
-        locale,
-        slug: "plans",
-        sectionTitle: "Reference",
-        text: t,
-      });
+      if (it.id === "plans") {
+        const t =
+          locale === "en"
+            ? `Plans and feature gates. Organization tier may be free, pro, or business. See the matrix on this page.`
+            : `Planos e regras de acesso. O tier da organização pode ser free, pro ou business. Veja a matriz nesta página.`;
+        all.push({
+          chunkId: `plans::${locale}::ref`,
+          pageId: "plans",
+          locale,
+          slug: "plans",
+          sectionTitle: "Reference",
+          text: t,
+        });
+      }
       continue;
     }
     const art = loadManualArticle(it.slug, locale);
@@ -121,6 +131,16 @@ export function getAllManualChunksForLocale(locale: ManualLocale): ManualChunk[]
     if (sections.length) all.push(...sections);
   }
   return all;
+}
+
+export function getAllManualChunksForLocale(locale: ManualLocale): ManualChunk[] {
+  if (CACHE_CHUNKS) {
+    const hit = allChunksCache[locale];
+    if (hit) return hit;
+  }
+  const built = buildAllManualChunksForLocale(locale);
+  if (CACHE_CHUNKS) allChunksCache[locale] = built;
+  return built;
 }
 
 /** Lista ficheiros `.md` (debug / scripts). */
@@ -143,8 +163,15 @@ export function getPrefillTextForPage(page: ManualTocItem | null, locale: Manual
       ? "This page lists numeric limits and the feature matrix (tiers) used by the app — the same data as in billing code."
       : "Esta página mostra limites numéricos e a matriz de recursos (tiers) usada na app — os mesmos dados do código de billing.";
   }
-  const ch = getAllManualChunksForLocale(locale).filter((c) => c.pageId === page.id);
-  const t = ch[0]?.text?.trim() ?? "";
+  if (page.generated) {
+    return page.title[locale];
+  }
+  const art = loadManualArticle(page.slug, locale);
+  if (!art) {
+    return page.title[locale];
+  }
+  const sections = splitMarkdownToSections(art.id, locale, page.slug, art.bodyMd);
+  const t = sections[0]?.text?.trim() ?? "";
   if (!t) return page.title[locale];
   return t.length > 280 ? t.slice(0, 277) + "…" : t;
 }
