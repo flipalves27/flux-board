@@ -190,6 +190,34 @@ export async function getPublicCommercialCatalog(): Promise<PublicCommercialCata
   };
 }
 
+/** Catálogo quando Mongo não responde (evita a landing presa a “carregar” com RSC a aguardar). */
+export function getDefaultPublicCatalog(): PublicCommercialCatalog {
+  return {
+    pricing: mergeDisplayPricingFromDoc(null),
+    ...catalogFlagsFromDoc(null),
+  };
+}
+
+/**
+ * Lê o catálogo comercial a partir do Mongo; se a operação exceder o tempo, devolve o catálogo default.
+ * Útil na landing pública para não bloquear o HTML quando a rede/Atlas está lenta ou indisponível.
+ */
+export async function getPublicCommercialCatalogResilient(
+  timeoutMs: number = 8_000
+): Promise<PublicCommercialCatalog> {
+  const t = Math.min(Math.max(Math.floor(timeoutMs), 1_000), 25_000);
+  try {
+    return await Promise.race([
+      getPublicCommercialCatalog(),
+      new Promise<PublicCommercialCatalog>((_, reject) => {
+        setTimeout(() => reject(new Error("public_catalog_timeout")), t);
+      }),
+    ]);
+  } catch {
+    return getDefaultPublicCatalog();
+  }
+}
+
 export async function getEffectiveStripePriceIds(): Promise<{
   pro: string;
   business: string;
