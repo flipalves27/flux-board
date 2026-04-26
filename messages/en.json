@@ -2,6 +2,8 @@
   "navigation": {
     "boards": "Boards",
     "boardsSublabel": "Boards and cards",
+    "projects": "Projects",
+    "projectsSublabel": "Governance and roadmap",
     "deliveryCalendar": "Delivery",
     "deliveryCalendarSublabel": "Dates and milestones",
     "reports": "Reports",
@@ -62,6 +64,7 @@
     },
     "hints": {
       "boards": "Kanban boards — daily work and columns.",
+      "projects": "Projects aggregate boards, governance, costs, roadmap, risks, and AI.",
       "deliveryCalendar": "Calendars, team metrics, and sprint schedule for a board (due dates, risk, and milestones).",
       "reports": "Org-wide BI with charts and Explain (AI) on each metric.",
       "fluxAiHub": "Map of AI features: reports, docs, sprint cockpit, OKRs, and Copilot on boards.",

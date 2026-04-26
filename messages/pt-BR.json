@@ -2,6 +2,8 @@
   "navigation": {
     "boards": "Boards",
     "boardsSublabel": "Quadros e cards",
+    "projects": "Projetos",
+    "projectsSublabel": "Governança e roadmap",
     "deliveryCalendar": "Entregas",
     "deliveryCalendarSublabel": "Prazos e marcos",
     "reports": "Relatórios",
@@ -62,6 +64,7 @@
     },
     "hints": {
       "boards": "Quadros Kanban — trabalho diário e colunas.",
+      "projects": "Projetos agregam boards, governança, custos, roadmap, riscos e IA.",
       "deliveryCalendar": "Calendário, visão de gestão e cronograma por board (vencimentos, riscos e marcos em sprint).",
       "reports": "BI agregado da org com gráficos e botão Explicar (IA).",
       "fluxAiHub": "Mapa de recursos de IA: relatórios, docs, cockpit de sprint, OKRs e Copiloto nos boards.",

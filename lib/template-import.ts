@@ -74,7 +74,8 @@ export async function createBoardFromTemplateSnapshot(
   orgId: string,
   userId: string,
   name: string,
-  snap: BoardTemplateSnapshot
+  snap: BoardTemplateSnapshot,
+  opts?: { projectId?: string | null }
 ): Promise<BoardData> {
   const snapConfig = (snap.config ?? {}) as Partial<NonNullable<BoardData["config"]>>;
   const isMatrix = snap.templateKind === "priority_matrix";
@@ -107,6 +108,7 @@ export async function createBoardFromTemplateSnapshot(
     : [];
 
   const board = await createBoard(orgId, userId, name, {
+    projectId: opts?.projectId ?? null,
     version: "2.0",
     cards: isCardTemplate
       ? instantiated

@@ -26,6 +26,8 @@ export interface BoardData {
   id: string;
   ownerId: string;
   orgId: string;
+  /** Projeto ao qual este board pertence. Boards legados podem receber este campo via migração idempotente. */
+  projectId?: string | null;
   name: string;
   /** Scrum, Kanban (fluxo contínuo) ou Lean Six Sigma (DMAIC). */
   boardMethodology?: BoardMethodology;
@@ -133,6 +135,7 @@ async function ensureBoardIndexes(db: Db): Promise<void> {
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, ownerId: 1 });
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1 });
   await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, _id: 1 });
+  await db.collection<BoardDoc>(COL_BOARDS).createIndex({ orgId: 1, projectId: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ _id: 1, orgId: 1 });
   await db.collection(COL_USER_BOARDS).createIndex({ orgId: 1 });
   boardIndexesEnsured = true;
@@ -224,22 +227,30 @@ function boardCardsToPortfolioSlice(board: BoardData): BoardData {
  * Mesma ordem/filtro que `getBoardsByIds`, porém evita trafegar cards completos do Mongo (só bucket/priority/progress/dueDate).
  * Reduz tempo e memória na serverless — importante para `GET /api/boards` em contas com muitos cards.
  */
-export async function getBoardListRowsByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
+export async function getBoardListRowsByIds(
+  boardIds: string[],
+  orgId: string,
+  opts?: { projectId?: string | null }
+): Promise<BoardData[]> {
   if (!boardIds.length) return [];
+  const projectId = typeof opts?.projectId === "string" && opts.projectId.trim() ? opts.projectId.trim() : null;
 
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureBoardIndexes(db);
+    const match: Record<string, unknown> = { _id: { $in: boardIds }, orgId };
+    if (projectId) match.projectId = projectId;
     const docs = await db
       .collection<BoardDoc>(COL_BOARDS)
       .aggregate<BoardDoc>([
-        { $match: { _id: { $in: boardIds }, orgId } },
+        { $match: match },
         {
           $project: {
             _id: 1,
             name: 1,
             ownerId: 1,
             orgId: 1,
+            projectId: 1,
             boardMethodology: 1,
             clientLabel: 1,
             lastUpdated: 1,
@@ -268,7 +279,9 @@ export async function getBoardListRowsByIds(boardIds: string[], orgId: string): 
   }
 
   const full = await getBoardsByIds(boardIds, orgId);
-  return full.map(boardCardsToPortfolioSlice);
+  return full
+    .filter((board) => !projectId || board.projectId === projectId)
+    .map(boardCardsToPortfolioSlice);
 }
 
 export async function getBoardsByIds(boardIds: string[], orgId: string): Promise<BoardData[]> {
@@ -330,6 +343,80 @@ export async function countBoardsInOrg(orgId: string): Promise<number> {
     for (const id of list) ids.add(id);
   }
   return ids.size;
+}
+
+export async function countBoardsInProject(orgId: string, projectId: string): Promise<number> {
+  const cleanProjectId = String(projectId || "").trim();
+  if (!cleanProjectId) return 0;
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    return db.collection<BoardDoc>(COL_BOARDS).countDocuments({ orgId, projectId: cleanProjectId });
+  }
+  const { listUsers } = await import("./kv-users");
+  const users = await listUsers(orgId);
+  const store = await getStore();
+  const ids = new Set<string>();
+  for (const u of users) {
+    const list = ((await store.get<string[]>(userBoardsKey(u.id))) as string[]) || [];
+    for (const id of list) ids.add(id);
+  }
+  let count = 0;
+  for (const id of ids) {
+    const raw = await store.get<string>(BOARD_PREFIX + id);
+    if (!raw) continue;
+    const board = (typeof raw === "string" ? JSON.parse(raw) : raw) as BoardData;
+    if (board?.orgId === orgId && board.projectId === cleanProjectId) count++;
+  }
+  return count;
+}
+
+export async function assignMissingProjectToBoards(
+  orgId: string,
+  projectId: string
+): Promise<{ matched: number; modified: number }> {
+  const cleanProjectId = String(projectId || "").trim();
+  if (!cleanProjectId) return { matched: 0, modified: 0 };
+
+  if (isMongoConfigured()) {
+    const db = await getDb();
+    await ensureBoardIndexes(db);
+    const res = await db.collection<BoardDoc>(COL_BOARDS).updateMany(
+      {
+        orgId,
+        $or: [
+          { projectId: { $exists: false } },
+          { projectId: null },
+          { projectId: "" },
+        ],
+      },
+      { $set: { projectId: cleanProjectId, lastUpdated: new Date().toISOString() } }
+    );
+    return { matched: res.matchedCount, modified: res.modifiedCount };
+  }
+
+  const { listUsers } = await import("./kv-users");
+  const users = await listUsers(orgId);
+  const store = await getStore();
+  const ids = new Set<string>();
+  for (const u of users) {
+    const list = ((await store.get<string[]>(userBoardsKey(u.id))) as string[]) || [];
+    for (const id of list) ids.add(id);
+  }
+  let matched = 0;
+  let modified = 0;
+  for (const id of ids) {
+    const raw = await store.get<string>(BOARD_PREFIX + id);
+    if (!raw) continue;
+    const board = (typeof raw === "string" ? JSON.parse(raw) : raw) as BoardData;
+    if (board?.orgId !== orgId || String(board.projectId ?? "").trim()) continue;
+    matched++;
+    board.projectId = cleanProjectId;
+    board.lastUpdated = new Date().toISOString();
+    await store.set(BOARD_PREFIX + id, JSON.stringify(board));
+    modified++;
+  }
+  return { matched, modified };
 }
 
 export type BoardSummaryRow = Pick<BoardData, "id" | "name" | "boardMethodology">;

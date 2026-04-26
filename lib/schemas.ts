@@ -312,6 +312,8 @@ export const BoardTemplateSnapshotSchema = z.object({
 export const BoardCreateSchema = z
   .object({
     name: z.string().trim().min(1, "Nome do board e obrigatorio.").max(100).optional(),
+    /** Projeto pai do board. O servidor preenche o projeto padrão para clientes legados. */
+    projectId: z.string().trim().min(1).max(120).optional(),
     /** Scrum (sprints) ou Kanban (fluxo e cadências). Padrão scrum se omitido (API legada). */
     boardMethodology: BoardMethodologySchema.optional().default("scrum"),
     /** Importa de template publicado no showcase. */
@@ -320,6 +322,146 @@ export const BoardCreateSchema = z
     templateSnapshot: BoardTemplateSnapshotSchema.optional(),
   })
   .passthrough();
+
+export const ProjectDeliveryModelSchema = z.enum([
+  "scrum",
+  "kanban",
+  "safe",
+  "hybrid",
+  "lean_six_sigma",
+  "discovery",
+]);
+
+export const ProjectStatusSchema = z.enum(["active", "paused", "at_risk", "completed", "archived"]);
+export const ProjectHealthSchema = z.enum(["green", "yellow", "red", "blocked"]);
+
+const ProjectOkrSchema = z
+  .object({
+    id: z.string().trim().min(1).max(120),
+    objective: z.string().trim().min(1).max(300),
+    keyResults: z.array(z.string().trim().min(1).max(300)).max(12).default([]),
+    progressPct: z.number().min(0).max(100).nullable().optional(),
+  })
+  .passthrough();
+
+const ProjectGovernanceSchema = z
+  .object({
+    sponsor: z.string().trim().max(160).nullable().optional(),
+    productOwner: z.string().trim().max(160).nullable().optional(),
+    projectManager: z.string().trim().max(160).nullable().optional(),
+    stakeholders: z.array(z.string().trim().min(1).max(160)).max(80).optional(),
+    steeringCadence: z.string().trim().max(200).nullable().optional(),
+    riskAppetite: z.enum(["low", "medium", "high"]).optional(),
+    approvalThresholds: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    decisionLog: z
+      .array(
+        z
+          .object({
+            id: z.string().trim().min(1).max(120),
+            date: z.string().trim().max(80),
+            decision: z.string().trim().min(1).max(500),
+            owner: z.string().trim().max(160).nullable().optional(),
+          })
+          .passthrough()
+      )
+      .max(100)
+      .optional(),
+  })
+  .passthrough();
+
+const ProjectFinancialsSchema = z
+  .object({
+    budget: z.number().min(0).nullable().optional(),
+    currency: z.string().trim().min(3).max(8).optional(),
+    costModel: z.enum(["fixed", "time_and_materials", "capacity", "value_stream"]).optional(),
+    monthlyRunRate: z.number().min(0).nullable().optional(),
+    actualCost: z.number().min(0).nullable().optional(),
+    forecastCost: z.number().min(0).nullable().optional(),
+    benefits: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    roi: z.number().nullable().optional(),
+    burnRate: z.number().min(0).nullable().optional(),
+    variance: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const ProjectRoadmapItemSchema = z
+  .object({
+    id: z.string().trim().min(1).max(120),
+    title: z.string().trim().min(1).max(220),
+    type: z.enum(["theme", "milestone", "release", "dependency"]),
+    status: z.enum(["planned", "in_progress", "done", "blocked"]).optional(),
+    startDate: z.string().trim().max(80).nullable().optional(),
+    targetDate: z.string().trim().max(80).nullable().optional(),
+    confidence: z.number().min(0).max(100).nullable().optional(),
+    linkedBoardIds: z.array(z.string().trim().min(1).max(120)).max(80).optional(),
+    linkedCardIds: z.array(z.string().trim().min(1).max(120)).max(200).optional(),
+  })
+  .passthrough();
+
+const ProjectAiSettingsSchema = z
+  .object({
+    contextPrompt: z.string().trim().max(6000).nullable().optional(),
+    analysisPreferences: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    ragSourceIds: z.array(z.string().trim().min(1).max(200)).max(80).optional(),
+    recommendationLog: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1).max(120),
+          createdAt: z.string().trim().max(80),
+          summary: z.string().trim().min(1).max(1000),
+          source: z.string().trim().max(200).optional(),
+        })
+      )
+      .max(100)
+      .optional(),
+    guardrails: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+  })
+  .passthrough();
+
+export const ProjectCreateSchema = z
+  .object({
+    key: z.string().trim().min(1).max(60).optional(),
+    name: z.string().trim().min(1, "Nome do projeto e obrigatorio.").max(160),
+    description: z.string().trim().max(2000).nullable().optional(),
+    color: z.string().trim().max(40).nullable().optional(),
+    cover: z.string().trim().max(500).nullable().optional(),
+    status: ProjectStatusSchema.optional().default("active"),
+    health: ProjectHealthSchema.optional().default("green"),
+    progressPct: z.number().min(0).max(100).nullable().optional(),
+    deliveryModel: ProjectDeliveryModelSchema.optional().default("hybrid"),
+    cadence: z.string().trim().max(200).nullable().optional(),
+    planningPolicy: z.string().trim().max(1000).nullable().optional(),
+    definitionOfReady: z.string().trim().max(1000).nullable().optional(),
+    vision: z.string().trim().max(2000).nullable().optional(),
+    problemStatement: z.string().trim().max(2000).nullable().optional(),
+    businessOutcome: z.string().trim().max(2000).nullable().optional(),
+    strategicThemes: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+    okrs: z.array(ProjectOkrSchema).max(20).optional(),
+    northStarMetric: z.string().trim().max(300).nullable().optional(),
+    successCriteria: z.array(z.string().trim().min(1).max(300)).max(30).optional(),
+    governance: ProjectGovernanceSchema.optional(),
+    financials: ProjectFinancialsSchema.optional(),
+    roadmap: z.array(ProjectRoadmapItemSchema).max(100).optional(),
+    ai: ProjectAiSettingsSchema.optional(),
+    startDate: z.string().trim().max(80).nullable().optional(),
+    targetDate: z.string().trim().max(80).nullable().optional(),
+    baselineDate: z.string().trim().max(80).nullable().optional(),
+    confidence: z.number().min(0).max(100).nullable().optional(),
+    scopePolicy: z.string().trim().max(1000).nullable().optional(),
+  })
+  .passthrough();
+
+export const ProjectUpdateSchema = ProjectCreateSchema.partial().extend({
+  archivedAt: z.string().trim().max(80).nullable().optional(),
+});
+
+export const ProjectBoardLinkSchema = z.object({
+  boardId: z.string().trim().min(1).max(120),
+});
+
+export const ProjectAiBodySchema = z.object({
+  message: z.string().trim().min(2).max(8000),
+});
 
 export const BucketConfigSchema = z
   .object({
