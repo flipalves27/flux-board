@@ -70,9 +70,11 @@ function quarterNow(): string {
 type Props = {
   getHeaders: () => Record<string, string>;
   onDocCreated: (doc: DocData) => void;
+  /** When opening from a board (e.g. from command palette), preselect this board. */
+  initialBoardId?: string | null;
 };
 
-export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
+export function DocsGenerationPanel({ getHeaders, onDocCreated, initialBoardId = null }: Props) {
   const [open, setOpen] = useState(false);
   const [boards, setBoards] = useState<BoardListItem[]>([]);
   const [boardId, setBoardId] = useState("");
@@ -103,6 +105,10 @@ export function DocsGenerationPanel({ getHeaders, onDocCreated }: Props) {
     if (!open) return;
     void loadBoards();
   }, [open, loadBoards]);
+
+  useEffect(() => {
+    if (initialBoardId?.trim()) setBoardId((prev) => (prev === initialBoardId ? prev : initialBoardId!));
+  }, [initialBoardId]);
 
   useEffect(() => {
     if (!open || flow !== "daily_minutes" || !boardId) {

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useLocale } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +19,8 @@ export type KanbanCardBodyProps = {
   t: (key: string, values?: Record<string, string | number>) => string;
   card: CardData;
   cardId: string;
+  /** When set, doc reference chips link to Flux Docs with board context. */
+  boardId?: string;
   directions: string[];
   boardMethodology: string;
   prioLabel: string;
@@ -45,10 +49,13 @@ export type KanbanCardBodyProps = {
 };
 
 export function KanbanCardBody(p: KanbanCardBodyProps) {
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
   const {
     t,
     card,
     cardId,
+    boardId = "",
     directions,
     boardMethodology,
     prioLabel,
@@ -258,8 +265,25 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
         ))}
       </div>
       {Array.isArray(card.docRefs) && card.docRefs.length > 0 && (
-        <div className="mb-2 text-[11px] text-[var(--flux-primary-light)]">
-          {card.docRefs.length} doc(s) vinculado(s)
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+          {card.docRefs.slice(0, 3).map((ref) => {
+            const label = ref.title?.trim() || ref.docId;
+            const href = `${localeRoot}/docs?docId=${encodeURIComponent(ref.docId)}${boardId ? `&boardId=${encodeURIComponent(boardId)}` : ""}`;
+            return (
+              <Link
+                key={ref.docId}
+                href={href}
+                className="max-w-[140px] truncate rounded-md border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-12)] px-1.5 py-0.5 font-medium text-[var(--flux-primary-light)] hover:bg-[var(--flux-primary-alpha-18)]"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {label}
+              </Link>
+            );
+          })}
+          {card.docRefs.length > 3 ? (
+            <span className="text-[var(--flux-text-muted)]">+{card.docRefs.length - 3}</span>
+          ) : null}
         </div>
       )}
       {Array.isArray(card.subtasks) && card.subtasks.length > 0 && (

@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
     title: body.title?.trim() || `Status ${String(board.name || boardId)}`,
     contentMd: markdown,
     tags: ["board-generated"],
+    boardIds: [boardId],
+    docType: "briefing",
   });
   logDocsMetric("docs.generate_from_board", { orgId: payload.orgId, boardId, docId: doc.id, cardsCount: cards.length });
   return NextResponse.json({ doc }, { status: 201 });

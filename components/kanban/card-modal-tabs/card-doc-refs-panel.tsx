@@ -1,11 +1,15 @@
 "use client";
 
+import Link from "next/link";
+import { useLocale } from "next-intl";
 import { useCardModal } from "@/components/kanban/card-modal-context";
 import { CardModalSection, inputBase } from "@/components/kanban/card-modal-section";
 import type { CardModalTabBaseProps } from "@/components/kanban/card-modal-tabs/types";
 
 export default function CardDocRefsPanel({ cardId: _cardId }: CardModalTabBaseProps) {
-  const { docQuery, setDocQuery, docResults, docRefs, setDocRefs, t } = useCardModal();
+  const locale = useLocale();
+  const localeRoot = `/${locale}`;
+  const { docQuery, setDocQuery, docResults, docRefs, setDocRefs, boardId, t } = useCardModal();
 
   return (
     <CardModalSection
@@ -48,9 +52,14 @@ export default function CardDocRefsPanel({ cardId: _cardId }: CardModalTabBasePr
           {docRefs.map((r) => (
             <span
               key={r.docId}
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-12)] px-2 py-1 text-xs text-[var(--flux-primary-light)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--flux-primary-alpha-28)] bg-[var(--flux-primary-alpha-12)] px-2 py-1 text-xs text-[var(--flux-primary-light)]"
             >
-              {r.title || r.docId}
+              <Link
+                href={`${localeRoot}/docs?docId=${encodeURIComponent(r.docId)}&boardId=${encodeURIComponent(boardId)}&cardId=${encodeURIComponent(_cardId)}`}
+                className="max-w-[200px] truncate font-medium hover:underline"
+              >
+                {r.title || r.docId}
+              </Link>
               <button
                 type="button"
                 className="text-[var(--flux-text-muted)] hover:text-[var(--flux-danger)]"

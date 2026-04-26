@@ -539,12 +539,16 @@
       "newCard": "New card in this board",
       "newBoard": "New workspace board",
       "copilotOn": "Copilot on {board}",
-      "navigate": "Go"
+      "navigate": "Go",
+      "docsBoardContext": "Open knowledge base with this board in context",
+      "newFluxDoc": "Creates a blank document and opens it"
     },
     "actions": {
       "newBoard": "Create board",
       "createCardIn": "Create card in {board}",
       "copilot": "Open Copilot",
+      "docsFromBoard": "Flux Docs — {board}",
+      "newFluxDoc": "New Flux Doc",
       "flowHealth": "Flow health — {board}",
       "sprintPanel": "Open Sprint panel — {board}",
       "sprintCoach": "Sprint coach (AI) — {board}",
@@ -4492,11 +4496,78 @@
     "sidebar": {
       "label": "Flux Docs",
       "new": "New",
-      "subdoc": "+ subdoc"
+      "subdoc": "+ subdoc",
+      "dndRoot": "Drop here to move to workspace root",
+      "dndHint": "Drag the ⋮⋮ handle to another item or the dashed area to reparent the document.",
+      "selectDoc": "Select document for batch action",
+      "bulkMode": "Select…",
+      "bulkDelete": "Delete ({n})",
+      "bulkCancel": "Cancel",
+      "bulkHint": "Check documents to select; choose Delete to remove in batch (admins only).",
+      "bulkConfirm": "Delete {n} document(s)? This cannot be undone."
+    },
+    "health": {
+      "title": "Document health",
+      "loading": "Loading health…",
+      "loadError": "Could not load health.",
+      "retry": "Retry",
+      "refresh": "Refresh",
+      "summary": "{total} docs — {stale} stale, {noOwner} without owner.",
+      "staleList": "Oldest (stale)",
+      "noOwnerList": "No owner"
     },
     "search": {
       "placeholder": "Search documents…",
-      "empty": "No results."
+      "empty": "No results.",
+      "docTypeFilter": "Type filter",
+      "allTypes": "All types",
+      "hybridLabel": "Hybrid (text + semantic)",
+      "hybridOnHint": "Combines full-text and vector search; best chunk shown as a snippet when available.",
+      "vectorUsed": "Semantic path active",
+      "textOnly": "Text search only (embeddings or index unavailable).",
+      "evidence": "Match:",
+      "docTypes": {
+        "general": "General",
+        "briefing": "Briefing",
+        "minutes": "Minutes",
+        "decision": "Decision",
+        "prd": "PRD",
+        "retro": "Retrospective"
+      }
+    },
+    "contextPanel": {
+      "ariaLabel": "Document context and links",
+      "boardContextTitle": "Board context",
+      "backToBoard": "Back to board",
+      "linksTitle": "Linked cards",
+      "linksHint": "Cards on boards you can access that reference this document.",
+      "pickDoc": "Select a document to see card links.",
+      "loadError": "Could not load links.",
+      "loading": "Loading links…",
+      "emptyBacklinks": "No cards link to this document yet.",
+      "linkBoardCta": "Add this board to the document’s scope",
+      "metaTitle": "Type and templates",
+      "docTypeLabel": "Type",
+      "docTypes": {
+        "general": "General",
+        "briefing": "Briefing",
+        "minutes": "Minutes",
+        "decision": "Decision record",
+        "prd": "PRD",
+        "retro": "Retrospective"
+      },
+      "templatesTitle": "Start from a template",
+      "templatePills": {
+        "minutes": "Minutes",
+        "prd": "PRD",
+        "retro": "Retro",
+        "decision": "Decision",
+        "briefing": "Briefing"
+      },
+      "templateReplaceConfirm": "Replace all current content with this template?",
+      "aiActionsTitle": "From board (AI, plan)",
+      "generateBoardStatus": "Create quick status from this board",
+      "summarizeToCard": "Append doc summary to this card’s description"
     }
   },
   "specPlanPage": {

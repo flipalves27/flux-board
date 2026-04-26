@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { deleteDoc, getDocById, updateDoc } from "@/lib/kv-docs";
+import { deleteDoc, getDocById, updateDoc, type DocType } from "@/lib/kv-docs";
 import { DocUpdateSchema, sanitizeDeep, zodErrorToMessage } from "@/lib/schemas";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
@@ -35,6 +35,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     parentId: clean.parentId === undefined ? undefined : clean.parentId == null ? null : String(clean.parentId),
     contentMd: clean.contentMd === undefined ? undefined : String(clean.contentMd),
     tags: Array.isArray(clean.tags) ? clean.tags.map((t) => String(t)) : undefined,
+    boardIds: (clean as { boardIds?: string[] }).boardIds,
+    projectId: (clean as { projectId?: string | null }).projectId,
+    docType: (clean as { docType?: DocType }).docType,
+    ownerUserId: (clean as { ownerUserId?: string | null }).ownerUserId,
   });
   if (!doc) return NextResponse.json({ error: "Documento não encontrado" }, { status: 404 });
   return NextResponse.json({ doc });

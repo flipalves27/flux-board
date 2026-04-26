@@ -1,4 +1,12 @@
 import type { Db } from "mongodb";
+import {
+  DOC_TYPES,
+  normalizeDocData,
+  sortTreeByRelevantBoard,
+  type DocData,
+  type DocTreeNode,
+  type DocType,
+} from "./docs-types";
 import { deleteDocChunksForDocument, syncDocChunksFromDocument } from "./kv-doc-chunks";
 import { getDb, isMongoConfigured } from "./mongo";
 import { getStore } from "./storage";
@@ -10,19 +18,7 @@ const DOC_COUNTER = "flux_doc_counter";
 const COL_DOCS = "docs";
 const COL_COUNTERS = "counters";
 
-export interface DocData {
-  id: string;
-  orgId: string;
-  title: string;
-  slug: string;
-  parentId: string | null;
-  contentMd: string;
-  excerpt: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  archivedAt?: string | null;
-}
+export type { DocData, DocType } from "./docs-types";
 
 type DocDoc = Omit<DocData, "id"> & { _id: string };
 
@@ -40,7 +36,7 @@ function toDoc(data: DocData): DocDoc {
 
 function fromDoc(doc: DocDoc): DocData {
   const { _id, ...rest } = doc;
-  return { ...rest, id: _id };
+  return normalizeDocData({ ...(rest as unknown as Record<string, unknown>), id: _id, orgId: String((rest as { orgId: string }).orgId) });
 }
 
 function unique<T>(arr: T[]): T[] {
@@ -103,6 +99,9 @@ async function ensureDocsIndexes(db: Db): Promise<void> {
   await db.collection<DocDoc>(COL_DOCS).createIndex({ orgId: 1, slug: 1 }, { unique: false });
   await db.collection<DocDoc>(COL_DOCS).createIndex({ orgId: 1, archivedAt: 1 });
   await db.collection<DocDoc>(COL_DOCS).createIndex({ title: "text", contentMd: "text", excerpt: "text", tags: "text" });
+  await db.collection<DocDoc>(COL_DOCS).createIndex({ orgId: 1, boardIds: 1 });
+  await db.collection<DocDoc>(COL_DOCS).createIndex({ orgId: 1, projectId: 1 });
+  await db.collection<DocDoc>(COL_DOCS).createIndex({ orgId: 1, docType: 1, updatedAt: -1 });
   docsIndexesEnsured = true;
 }
 
@@ -116,9 +115,13 @@ export async function getDocById(orgId: string, id: string): Promise<DocData | n
   const kv = await getStore();
   const raw = await kv.get<string>(`${DOC_PREFIX}${id}`);
   if (!raw) return null;
-  const doc = (typeof raw === "string" ? JSON.parse(raw) : raw) as DocData;
+  const doc = (typeof raw === "string" ? JSON.parse(raw) : raw) as Record<string, unknown>;
   if (doc.orgId !== orgId || doc.archivedAt) return null;
-  return doc;
+  return normalizeDocData({
+    ...doc,
+    id: String(doc.id),
+    orgId: String(doc.orgId),
+  } as Record<string, unknown> & { id: string; orgId: string });
 }
 
 export async function listDocsFlat(orgId: string): Promise<DocData[]> {
@@ -135,7 +138,18 @@ export async function listDocsFlat(orgId: string): Promise<DocData[]> {
   return docs.filter((d): d is DocData => Boolean(d)).sort((a, b) => a.updatedAt.localeCompare(b.updatedAt) * -1);
 }
 
-export async function listDocsTree(orgId: string): Promise<Array<DocData & { children: DocData[] }>> {
+function buildDocSubtree(byParent: Map<string | null, DocData[]>, parentKey: string | null): DocTreeNode[] {
+  const level = byParent.get(parentKey) ?? [];
+  return level.map((d) => ({
+    ...d,
+    children: buildDocSubtree(byParent, d.id),
+  }));
+}
+
+export async function listDocsTree(
+  orgId: string,
+  opts?: { relevantBoardId?: string | null }
+): Promise<DocTreeNode[]> {
   const docs = await listDocsFlat(orgId);
   const byParent = new Map<string | null, DocData[]>();
   for (const d of docs) {
@@ -144,11 +158,9 @@ export async function listDocsTree(orgId: string): Promise<Array<DocData & { chi
     list.push(d);
     byParent.set(key, list);
   }
-  const roots = byParent.get(null) ?? [];
-  return roots.map((r) => ({
-    ...r,
-    children: byParent.get(r.id) ?? [],
-  }));
+  const tree = buildDocSubtree(byParent, null);
+  const b = typeof opts?.relevantBoardId === "string" ? opts.relevantBoardId.trim() : "";
+  return sortTreeByRelevantBoard(tree, b || null);
 }
 
 export async function createDoc(input: {
@@ -157,11 +169,19 @@ export async function createDoc(input: {
   parentId?: string | null;
   contentMd?: string;
   tags?: string[];
+  boardIds?: string[];
+  projectId?: string | null;
+  docType?: DocType;
+  ownerUserId?: string | null;
 }): Promise<DocData> {
   const now = new Date().toISOString();
   const title = String(input.title || "").trim() || "Untitled";
   const contentMd = String(input.contentMd || "");
   const parentId = input.parentId ?? null;
+  const projectId = input.projectId != null && String(input.projectId).trim() ? String(input.projectId).trim() : null;
+  const dt = input.docType && (DOC_TYPES as readonly string[]).includes(input.docType) ? input.docType : "general";
+  const boardIds = unique((input.boardIds || []).map((b) => String(b || "").trim()).filter(Boolean));
+  const ownerUserId = input.ownerUserId != null && String(input.ownerUserId).trim() ? String(input.ownerUserId).trim() : null;
   const docId = await nextDocId(isMongoConfigured() ? await getDb() : undefined);
   const doc: DocData = {
     id: docId,
@@ -172,6 +192,10 @@ export async function createDoc(input: {
     contentMd,
     excerpt: excerptFromMarkdown(contentMd),
     tags: unique((input.tags || []).map((t) => String(t || "").trim()).filter(Boolean)),
+    boardIds,
+    projectId,
+    docType: dt,
+    ownerUserId,
     createdAt: now,
     updatedAt: now,
     archivedAt: null,
@@ -200,11 +224,25 @@ export async function updateDoc(orgId: string, id: string, updates: Partial<DocD
   if (!current) return null;
   const contentMd = updates.contentMd !== undefined ? String(updates.contentMd || "") : current.contentMd;
   const title = updates.title !== undefined ? String(updates.title || "").trim() || "Untitled" : current.title;
+  const parentId = updates.parentId === undefined ? current.parentId : updates.parentId;
+  const projectId = updates.projectId === undefined ? current.projectId : updates.projectId;
+  const docType =
+    updates.docType === undefined
+      ? current.docType
+      : (updates.docType && (DOC_TYPES as readonly string[]).includes(updates.docType) ? updates.docType : "general");
+  const ownerUserId = updates.ownerUserId === undefined ? current.ownerUserId : updates.ownerUserId;
   const next: DocData = {
     ...current,
-    ...updates,
+    parentId,
     title,
     contentMd,
+    boardIds:
+      updates.boardIds !== undefined
+        ? unique((updates.boardIds || []).map((b) => String(b || "").trim()).filter(Boolean))
+        : current.boardIds,
+    projectId: projectId === null || (typeof projectId === "string" && !String(projectId).trim()) ? null : String(projectId).trim(),
+    docType,
+    ownerUserId: ownerUserId == null || (typeof ownerUserId === "string" && !String(ownerUserId).trim()) ? null : String(ownerUserId).trim(),
     slug: updates.title !== undefined ? slugifyDocTitle(title) : current.slug,
     excerpt: updates.contentMd !== undefined ? excerptFromMarkdown(contentMd) : current.excerpt,
     tags:
@@ -228,7 +266,23 @@ export async function updateDoc(orgId: string, id: string, updates: Partial<DocD
   return next;
 }
 
+function collectDescendantIds(flat: DocData[], rootId: string, acc: Set<string>) {
+  for (const d of flat) {
+    if (d.parentId === rootId) {
+      acc.add(d.id);
+      collectDescendantIds(flat, d.id, acc);
+    }
+  }
+}
+
 export async function moveDoc(orgId: string, id: string, parentId: string | null): Promise<DocData | null> {
+  if (parentId === id) return null;
+  if (parentId) {
+    const flat = await listDocsFlat(orgId);
+    const under = new Set<string>();
+    collectDescendantIds(flat, id, under);
+    if (under.has(parentId)) return null;
+  }
   return updateDoc(orgId, id, { parentId });
 }
 
@@ -260,13 +314,37 @@ export async function deleteDoc(orgId: string, id: string): Promise<boolean> {
   return true;
 }
 
-export async function searchDocs(orgId: string, query: string, limit = 20): Promise<DocData[]> {
+export type DocSearchContext = { boardId?: string; projectId?: string; docType?: string };
+
+function contextualBoost(d: DocData, ctx: DocSearchContext | undefined): number {
+  if (!ctx) return 0;
+  let s = 0;
+  if (ctx.boardId && d.boardIds?.includes(ctx.boardId)) s += 3;
+  if (ctx.projectId && d.projectId === ctx.projectId) s += 2;
+  if (ctx.docType && d.docType === ctx.docType) s += 1;
+  return s;
+}
+
+/** Re-rank a candidate list with contextual board/project/type boost; tie-break by `tieIndex` ascending. */
+export function orderSearchByContext(
+  docs: DocData[],
+  limit: number,
+  ctx: DocSearchContext | undefined,
+  tieIndex: (d: DocData) => number
+): DocData[] {
+  const w = docs.map((d) => ({ d, b: contextualBoost(d, ctx), t: tieIndex(d) }));
+  w.sort((a, b) => b.b - a.b || a.t - b.t);
+  return w.slice(0, Math.max(1, Math.min(limit, 100))).map((x) => x.d);
+}
+
+export async function searchDocs(orgId: string, query: string, limit = 20, ctx?: DocSearchContext): Promise<DocData[]> {
   const q = String(query || "").trim();
   if (!q) return [];
 
   if (isMongoConfigured()) {
     const db = await getDb();
     await ensureDocsIndexes(db);
+    const cap = 100;
     const rows = await db
       .collection<DocDoc>(COL_DOCS)
       .find(
@@ -274,23 +352,35 @@ export async function searchDocs(orgId: string, query: string, limit = 20): Prom
         { projection: { score: { $meta: "textScore" } } as any }
       )
       .sort({ score: { $meta: "textScore" } as any })
-      .limit(Math.max(1, Math.min(limit, 100)))
+      .limit(cap)
       .toArray();
-    return rows.map(fromDoc);
+    const order = new Map<string, number>();
+    rows.forEach((row, i) => order.set(String((row as any)._id), i));
+    return orderSearchByContext(
+      rows.map(fromDoc),
+      limit,
+      ctx,
+      (d) => order.get(d.id) ?? 0
+    );
   }
 
   const docs = await listDocsFlat(orgId);
   const terms = normalize(q).split(/\s+/).filter(Boolean);
   const scored = docs
-    .map((doc) => {
+    .map((doc, i) => {
       const hay = normalize(`${doc.title}\n${doc.contentMd}\n${doc.excerpt}\n${doc.tags.join(" ")}`);
       let score = 0;
       for (const t of terms) if (hay.includes(t)) score += 1;
       if (normalize(doc.title).includes(normalize(q))) score += 3;
-      return { doc, score };
+      return { doc, score, i };
     })
     .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, Math.max(1, Math.min(limit, 100)));
-  return scored.map((x) => x.doc);
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, 100);
+  return orderSearchByContext(
+    scored.map((x) => x.doc),
+    limit,
+    ctx,
+    (d) => scored.findIndex((s) => s.doc.id === d.id)
+  );
 }

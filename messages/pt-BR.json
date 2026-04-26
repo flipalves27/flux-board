@@ -539,12 +539,16 @@
       "newCard": "Novo card neste board",
       "newBoard": "Novo board no workspace",
       "copilotOn": "Copiloto em {board}",
-      "navigate": "Ir"
+      "navigate": "Ir",
+      "docsBoardContext": "Abrir base de conhecimento com este board no contexto",
+      "newFluxDoc": "Cria um documento em branco e abre"
     },
     "actions": {
       "newBoard": "Criar board",
       "createCardIn": "Criar card em {board}",
       "copilot": "Abrir Copiloto",
+      "docsFromBoard": "Flux Docs — {board}",
+      "newFluxDoc": "Novo Flux Doc",
       "flowHealth": "Saúde do fluxo — {board}",
       "sprintPanel": "Abrir painel Sprint — {board}",
       "sprintCoach": "Coach de sprint (IA) — {board}",
@@ -4493,11 +4497,78 @@
     "sidebar": {
       "label": "Flux Docs",
       "new": "Novo",
-      "subdoc": "+ subdoc"
+      "subdoc": "+ subdoc",
+      "dndRoot": "Soltar aqui para trazer o documento à raiz do workspace",
+      "dndHint": "Arraste o ícone ⋮⋮ para outro item ou para a área tracejada para mudar o documento-pai.",
+      "selectDoc": "Selecionar documento para ação em lote",
+      "bulkMode": "Selecionar…",
+      "bulkDelete": "Excluir ({n})",
+      "bulkCancel": "Cancelar",
+      "bulkHint": "Marque os documentos; use Excluir para remoção em lote (apenas administradores).",
+      "bulkConfirm": "Excluir {n} documento(s)? Não dá para desfazer."
+    },
+    "health": {
+      "title": "Saúde dos documentos",
+      "loading": "Carregando saúde…",
+      "loadError": "Não foi possível carregar a saúde dos documentos.",
+      "retry": "Tentar de novo",
+      "refresh": "Atualizar",
+      "summary": "{total} documentos — {stale} desatualizados, {noOwner} sem dono.",
+      "staleList": "Mais antigos (desatualizados)",
+      "noOwnerList": "Sem dono"
     },
     "search": {
       "placeholder": "Buscar documentos…",
-      "empty": "Nenhum resultado."
+      "empty": "Nenhum resultado.",
+      "docTypeFilter": "Filtro por tipo",
+      "allTypes": "Todos os tipos",
+      "hybridLabel": "Híbrida (texto + semântica)",
+      "hybridOnHint": "Combina busca textual e vetorial; o melhor trecho aparece como trecho quando houver.",
+      "vectorUsed": "Busca semântica ativa",
+      "textOnly": "Apenas busca textual (embeddings ou índice indisponíveis).",
+      "evidence": "Trecho:",
+      "docTypes": {
+        "general": "Geral",
+        "briefing": "Briefing",
+        "minutes": "Ata",
+        "decision": "Decisão",
+        "prd": "PRD",
+        "retro": "Retrospectiva"
+      }
+    },
+    "contextPanel": {
+      "ariaLabel": "Contexto do documento e vínculos",
+      "boardContextTitle": "Contexto do board",
+      "backToBoard": "Voltar ao board",
+      "linksTitle": "Cards vinculados",
+      "linksHint": "Cards em boards que você acessa e que referenciam este documento.",
+      "pickDoc": "Selecione um documento para ver os cards.",
+      "loadError": "Não foi possível carregar os vínculos.",
+      "loading": "Carregando vínculos…",
+      "emptyBacklinks": "Nenhum card referencia este documento ainda.",
+      "linkBoardCta": "Incluir este board no escopo do documento",
+      "metaTitle": "Tipo e modelos",
+      "docTypeLabel": "Tipo",
+      "docTypes": {
+        "general": "Geral",
+        "briefing": "Briefing",
+        "minutes": "Ata",
+        "decision": "Registro de decisão",
+        "prd": "PRD",
+        "retro": "Retrospectiva"
+      },
+      "templatesTitle": "Começar a partir de um modelo",
+      "templatePills": {
+        "minutes": "Ata",
+        "prd": "PRD",
+        "retro": "Retrospectiva",
+        "decision": "Decisão",
+        "briefing": "Briefing"
+      },
+      "templateReplaceConfirm": "Substituir todo o conteúdo atual por este modelo?",
+      "aiActionsTitle": "A partir do board (IA — plano)",
+      "generateBoardStatus": "Criar status rápido a partir deste board",
+      "summarizeToCard": "Incluir resumo do documento na descrição do card"
     }
   },
   "specPlanPage": {

@@ -503,6 +503,7 @@ function KanbanCardInner({
           t={t}
           card={card}
           cardId={cardId}
+          boardId={currentBoardId}
           directions={directions}
           boardMethodology={boardMethodology}
           prioLabel={prioLabel}

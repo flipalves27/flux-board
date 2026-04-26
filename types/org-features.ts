@@ -10,6 +10,8 @@ export type OrgFeaturesResponse = {
   board_pdf_list_import: boolean;
   /** Flux Docs + geração de documentos (incl. discovery externo com IA). */
   flux_docs: boolean;
+  /** RAG, embeddings, geração avançada a partir de conteúdo indexado. */
+  flux_docs_rag: boolean;
   forge_oneshot: boolean;
   forge_tested: boolean;
   forge_autonomous: boolean;

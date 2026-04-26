@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth";
-import { moveDoc } from "@/lib/kv-docs";
+import { getDocById, moveDoc } from "@/lib/kv-docs";
 import { getOrganizationById } from "@/lib/kv-organizations";
 import { canUseFeature, planGateCtxFromAuthPayload } from "@/lib/plan-gates";
 
@@ -14,7 +14,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const body = (await request.json().catch(() => ({}))) as { parentId?: string | null };
   const parentId = body.parentId === undefined ? null : body.parentId === null ? null : String(body.parentId || "").trim() || null;
   const { id } = await params;
+  const before = await getDocById(payload.orgId, id);
+  if (!before) return NextResponse.json({ error: "Documento não encontrado" }, { status: 404 });
   const doc = await moveDoc(payload.orgId, id, parentId);
-  if (!doc) return NextResponse.json({ error: "Documento não encontrado" }, { status: 404 });
+  if (!doc) {
+    return NextResponse.json(
+      { error: "Movimento inválido: não é possível mover para dentro de um subdocumento de si mesmo." },
+      { status: 400 }
+    );
+  }
   return NextResponse.json({ doc });
 }

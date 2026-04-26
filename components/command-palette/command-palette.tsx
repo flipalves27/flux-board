@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
@@ -136,6 +136,7 @@ type CommandPaletteProps = {
 export function CommandPalette(props?: CommandPaletteProps) {
   const { unifiedCommand = false, commandLayout = "dialog" } = props ?? {};
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale();
   const localeRoot = `/${locale}`;
   const onda4 = useOnda4Flags();
@@ -209,9 +210,21 @@ export function CommandPalette(props?: CommandPaletteProps) {
     return m;
   }, [boards]);
 
+  const routeBoardId = useMemo(() => {
+    const m = pathname.match(/\/board\/([^/]+)/);
+    const raw = m?.[1];
+    if (!raw) return null;
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }, [pathname]);
+
   const allItems = useMemo((): PaletteItem[] => {
     if (!user) return [];
     const items: PaletteItem[] = [];
+    const canFluxDocs = Boolean(orgFeat?.data?.flux_docs);
     const shortcuts = getBoardShortcuts(user.id);
     const recentCards = getRecentCards(user.id);
 
@@ -381,6 +394,28 @@ export function CommandPalette(props?: CommandPaletteProps) {
       });
     }
 
+    if (canFluxDocs && routeBoardId) {
+      const bn = boardById.get(routeBoardId)?.name ?? "";
+      items.push({
+        id: `nav:docs:board:${routeBoardId}`,
+        category: "navigation",
+        title: t("actions.docsFromBoard", { board: bn || routeBoardId }),
+        subtitle: t("subtitles.docsBoardContext"),
+        keywords: `flux docs documentos board ${bn} ${routeBoardId}`,
+        action: { type: "navigate", path: `/docs?boardId=${encodeURIComponent(routeBoardId)}` },
+        icon: "navigation",
+      });
+      items.push({
+        id: `nav:docs:new:${routeBoardId}`,
+        category: "navigation",
+        title: t("actions.newFluxDoc"),
+        subtitle: t("subtitles.newFluxDoc"),
+        keywords: "novo documento docs criar empty",
+        action: { type: "navigate", path: `/docs?boardId=${encodeURIComponent(routeBoardId)}&newDoc=1` },
+        icon: "navigation",
+      });
+    }
+
     const nav: { path: string; title: string; kw: string }[] = [
       { path: "/boards", title: t("nav.boards"), kw: "boards lista" },
       { path: "/reports", title: t("nav.reports"), kw: "reports bi" },
@@ -452,7 +487,7 @@ export function CommandPalette(props?: CommandPaletteProps) {
     }
 
     return items;
-  }, [boards, boardById, user, t, forgeOn]);
+  }, [boards, boardById, user, t, forgeOn, routeBoardId, orgFeat?.data?.flux_docs]);
 
   const fuse = useMemo(() => {
     return new Fuse(allItems, {

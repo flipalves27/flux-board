@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       spec_ai_scope_planner: canUseFeature(org, "spec_ai_scope_planner", gateCtx),
       board_pdf_list_import: canUseFeature(org, "board_pdf_list_import", gateCtx),
       flux_docs: canUseFeature(org, "flux_docs", gateCtx),
+      flux_docs_rag: canUseFeature(org, "flux_docs_rag", gateCtx),
       forge_oneshot: canUseFeature(org, "forge_oneshot", gateCtx),
       forge_tested: canUseFeature(org, "forge_tested", gateCtx),
       forge_autonomous: canUseFeature(org, "forge_autonomous", gateCtx),

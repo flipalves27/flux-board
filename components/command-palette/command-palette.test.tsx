@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
   }),
+  usePathname: () => "/pt-BR/boards",
 }));
 
 vi.mock("next-intl", () => ({

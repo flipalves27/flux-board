@@ -1032,12 +1032,18 @@ export const IntakeSubmissionSchema = z
   })
   .passthrough();
 
+const DocTypeZ = z.enum(["general", "briefing", "minutes", "decision", "prd", "retro"]);
+
 export const DocCreateSchema = z
   .object({
     title: z.string().trim().min(1, "Título é obrigatório.").max(200),
     parentId: z.string().trim().max(200).nullable().optional(),
     contentMd: z.string().max(300_000).optional(),
     tags: z.array(z.string().trim().max(60)).max(50).optional(),
+    boardIds: z.array(z.string().trim().max(120)).max(50).optional(),
+    projectId: z.string().trim().max(80).nullable().optional(),
+    docType: DocTypeZ.optional(),
+    ownerUserId: z.string().trim().max(80).nullable().optional(),
   })
   .passthrough();
 
@@ -1047,11 +1053,30 @@ export const DocUpdateSchema = z
     parentId: z.string().trim().max(200).nullable().optional(),
     contentMd: z.string().max(300_000).optional(),
     tags: z.array(z.string().trim().max(60)).max(50).optional(),
+    boardIds: z.array(z.string().trim().max(120)).max(50).optional(),
+    projectId: z.string().trim().max(80).nullable().optional(),
+    docType: DocTypeZ.optional(),
+    ownerUserId: z.string().trim().max(80).nullable().optional(),
   })
-  .refine((data) => data.title !== undefined || data.parentId !== undefined || data.contentMd !== undefined || data.tags !== undefined, {
-    message: "Informe ao menos um campo para atualização.",
-  })
+  .refine(
+    (data) =>
+      data.title !== undefined ||
+      data.parentId !== undefined ||
+      data.contentMd !== undefined ||
+      data.tags !== undefined ||
+      data.boardIds !== undefined ||
+      data.projectId !== undefined ||
+      data.docType !== undefined ||
+      data.ownerUserId !== undefined,
+    {
+      message: "Informe ao menos um campo para atualização.",
+    }
+  )
   .passthrough();
+
+export const DocBulkDeleteSchema = z.object({
+  docIds: z.array(z.string().trim().min(1).max(200)).min(1).max(50),
+});
 
 // -----------------------
 // OKRs (Objectives / Key Results)
