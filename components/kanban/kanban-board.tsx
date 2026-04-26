@@ -126,15 +126,6 @@ function KanbanBatchToolbarBound({
   );
 }
 
-function looksLikeStrategicPortfolioBoard(db: import("@/app/board/[id]/page").BoardData): boolean {
-  if (db.config?.strategyTemplateKind === "strategic_portfolio") return true;
-  if (db.cards.some((card) => card.portfolioMeta && typeof card.portfolioMeta === "object")) return true;
-  const keys = new Set(db.config?.bucketOrder?.map((bucket) => bucket.key) ?? []);
-  return ["grow_revenue", "improve_retention", "operational_excellence", "platform_scale"].every((key) =>
-    keys.has(key)
-  );
-}
-
 export interface KanbanBoardProps {
   boardName: string;
   boardId: string;
@@ -289,15 +280,13 @@ function KanbanBoardLoaded({
     [methodology]
   );
   const strategyTemplateKind = db.config?.strategyTemplateKind;
-  const isStrategicPortfolioBoard = looksLikeStrategicPortfolioBoard(db);
   const allowedBoardViewModes = useMemo<readonly BoardViewMode[]>(() => {
     const base = methodologyModule.allowedViewModes.filter(
       (mode): mode is BoardViewMode => mode !== "swot" && mode !== "strategic_portfolio"
     );
-    if (strategyTemplateKind === "swot") return [...base, "swot" as const];
-    if (isStrategicPortfolioBoard) return [...base, "strategic_portfolio" as const];
-    return base;
-  }, [isStrategicPortfolioBoard, strategyTemplateKind, methodologyModule.allowedViewModes]);
+    if (strategyTemplateKind === "swot") return [...base, "swot" as const, "strategic_portfolio" as const];
+    return [...base, "strategic_portfolio" as const];
+  }, [strategyTemplateKind, methodologyModule.allowedViewModes]);
 
   const saveExecutiveProductGoal = useCallback(
     (value: string) => {

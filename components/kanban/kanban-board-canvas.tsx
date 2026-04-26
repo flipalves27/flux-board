@@ -105,6 +105,9 @@ type KanbanBoardCanvasProps = {
     patch: Partial<Pick<CardData, "priority" | "progress" | "bucket" | "dueDate" | "portfolioMeta">>
   ) => void;
   onMovePortfolioCard: (cardId: string, bucketKey: string, insertIndex: number) => void;
+  onPortfolioAddObjective?: () => void;
+  onPortfolioEditObjective?: (bucket: BucketConfig) => void;
+  onPortfolioDeleteObjective?: (bucketKey: string) => void;
   onDuplicateCard: (cardId: string) => void;
   onSwotCreateInitiative?: (strategy: SwotTowsStrategy) => void;
   onPinCardToTop?: (cardId: string) => void;
@@ -182,6 +185,9 @@ export function KanbanBoardCanvas({
   onExecutiveRefreshBoardData,
   onPatchCard,
   onMovePortfolioCard,
+  onPortfolioAddObjective,
+  onPortfolioEditObjective,
+  onPortfolioDeleteObjective,
   onDuplicateCard,
   onSwotCreateInitiative,
   onPinCardToTop,
@@ -363,6 +369,11 @@ export function KanbanBoardCanvas({
           onOpenCard={onExecutiveOpenCard}
           onMoveCard={onMovePortfolioCard}
           onPatchCard={onPatchCard}
+          canAdminBoard={canAdminBoard}
+          onAddObjective={onPortfolioAddObjective ?? onOpenAddColumn}
+          onEditObjective={onPortfolioEditObjective ?? onRenameColumn}
+          onDeleteObjective={onPortfolioDeleteObjective ?? onDeleteColumn}
+          onCreateInitiative={onAddCard}
           sensors={sensors}
           collisionDetection={collisionDetection}
         />

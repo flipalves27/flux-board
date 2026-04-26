@@ -100,6 +100,21 @@ export function BoardChromeL1({
             groupAriaLabel={t("board.timeline.toggleGroupAria")}
           />
 
+          {allowedViewModes.includes("strategic_portfolio") ? (
+            <button
+              type="button"
+              onClick={() => setBoardView("strategic_portfolio")}
+              className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-flux-xs font-semibold transition-colors ${
+                boardView === "strategic_portfolio"
+                  ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                  : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:border-[var(--flux-primary-alpha-35)] hover:text-[var(--flux-text)]"
+              }`}
+              aria-pressed={boardView === "strategic_portfolio"}
+            >
+              Portfolio
+            </button>
+          ) : null}
+
           {showSprintInlineBadge && sprintProgress && activeSprintName ? (
             <button
               type="button"
