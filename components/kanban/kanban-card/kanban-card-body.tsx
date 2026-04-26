@@ -109,7 +109,7 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={stopDrag}
                   title={t("card.completeMove.tooltip")}
-                  className="card-complete-btn w-[22px] h-[22px] rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-success-solid-dark)] hover:text-white hover:border-[var(--flux-success-solid-dark)] transition-all duration-200 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
+                  className="card-complete-btn h-[22px] w-[22px] rounded-md border border-[var(--flux-control-border)] bg-[var(--flux-surface-card)] text-[var(--flux-text-muted)] flex items-center justify-center shrink-0 hover:bg-[var(--flux-success-solid-dark)] hover:text-white hover:border-[var(--flux-success-solid-dark)] transition-all duration-200 max-md:h-8 max-md:w-auto max-md:min-w-[44px] max-md:gap-1 max-md:px-2 [&_svg]:w-3 [&_svg]:h-3 [&_svg]:stroke-[2.5]"
                   aria-label={t("card.completeMove.tooltip")}
                   aria-haspopup="menu"
                 >
@@ -117,6 +117,7 @@ export function KanbanCardBody(p: KanbanCardBodyProps) {
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                     <polyline points="22 4 12 14.01 9 11.01" />
                   </svg>
+                  <span className="hidden text-[10px] font-bold max-md:inline">{t("card.completeMove.mobileLabel")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent

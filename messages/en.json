@@ -3033,7 +3033,8 @@
       },
       "completeMove": {
         "tooltip": "Move to column or mark complete",
-        "menuTitle": "Which column should this move to?"
+        "menuTitle": "Which column should this move to?",
+        "mobileLabel": "Move"
       },
       "actions": {
         "copy": "Copy"
@@ -4048,11 +4049,27 @@
         "openMenu": "Board tools",
         "closeMenu": "Close tools",
         "menuLabel": "Board tools",
+        "sectionPrimary": "Quick actions",
+        "sectionView": "View",
+        "sectionTools": "Tools",
+        "newCard": "New card",
+        "filters": "Filters",
+        "viewGroup": "Board views",
         "copilot": "Fluxy",
         "insights": "Execution insights",
         "activity": "Activity log",
         "daily": "Daily AI",
         "focusMode": "Focus mode"
+      },
+      "mobileColumnPicker": {
+        "label": "Mobile column navigation",
+        "selectLabel": "Choose column",
+        "pillsLabel": "Columns",
+        "cardCount": "{count} cards",
+        "addCard": "Add card in {column}"
+      },
+      "mobileViewPicker": {
+        "label": "Choose board view"
       },
       "stats": {
         "totalLabel": "Total",

@@ -822,9 +822,9 @@ export default function BoardPage() {
 
   if (showBoardSkeleton || !hasBoardData) {
     return (
-      <div className="flux-page-contract min-h-screen" data-flux-area="operational">
+      <div className="flux-page-contract min-h-screen min-w-0 max-w-full overflow-x-clip" data-flux-area="operational">
         <Header title={boardName}>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
             <div className="h-8 w-24 rounded-[var(--flux-rad)] bg-[var(--flux-chrome-alpha-12)] flux-animate-skeleton-pulse" />
           </div>
@@ -834,9 +834,9 @@ export default function BoardPage() {
     );
   }
   return (
-    <div className="flux-page-contract min-h-screen" data-flux-area="operational">
+    <div className="flux-page-contract min-h-screen min-w-0 max-w-full overflow-x-clip" data-flux-area="operational">
       <DataFadeIn active animate={false} key={boardId}>
-        <div>
+        <div className="min-w-0 max-w-full overflow-x-clip">
           <Header
             title={boardName}
             titleLine2={clientLabel ? t("clientLabelInHeader", { label: clientLabel }) : undefined}
@@ -844,7 +844,7 @@ export default function BoardPage() {
             backHref={backToBoards}
             backLabel={t("backToBoards")}
           >
-            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+            <div className="hidden items-center justify-end gap-1.5 flex-wrap md:flex">
               {/* Presence */}
               <BoardPresenceAvatars />
 

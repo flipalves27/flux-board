@@ -3409,7 +3409,8 @@
       },
       "completeMove": {
         "tooltip": "Concluir ou mover de coluna",
-        "menuTitle": "Mover para qual coluna?"
+        "menuTitle": "Mover para qual coluna?",
+        "mobileLabel": "Mover"
       },
       "actions": {
         "copy": "Copiar"
@@ -4049,11 +4050,27 @@
         "openMenu": "Ferramentas do board",
         "closeMenu": "Fechar ferramentas",
         "menuLabel": "Ferramentas do board",
+        "sectionPrimary": "Ações rápidas",
+        "sectionView": "Vista",
+        "sectionTools": "Ferramentas",
+        "newCard": "Novo card",
+        "filters": "Filtros",
+        "viewGroup": "Vistas do board",
         "copilot": "Fluxy",
         "insights": "Insights de execução",
         "activity": "Atividade",
         "daily": "IA do dia",
         "focusMode": "Modo foco"
+      },
+      "mobileColumnPicker": {
+        "label": "Navegação mobile de colunas",
+        "selectLabel": "Escolher coluna",
+        "pillsLabel": "Colunas",
+        "cardCount": "{count} cards",
+        "addCard": "Adicionar card em {column}"
+      },
+      "mobileViewPicker": {
+        "label": "Escolher vista do board"
       },
       "stats": {
         "totalLabel": "Total",

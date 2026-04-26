@@ -40,6 +40,8 @@ interface KanbanColumnProps {
   isFirstColumn?: boolean;
   /** Outro colaborador está a arrastar sobre esta coluna (indicador em tempo real). */
   remoteCollabHighlight?: boolean;
+  /** Mobile viewport shows one active column; inactive columns are hidden below md. */
+  mobileActive?: boolean;
   /** Arrasto multi — opacidade nos cards de origem. */
   activeDragIds?: string[] | null;
   sprintBoardQuickActions?: { boardId: string; getHeaders: () => Record<string, string> };
@@ -73,6 +75,7 @@ export function KanbanColumn({
   onPinCardToTop,
   isFirstColumn,
   remoteCollabHighlight = false,
+  mobileActive = false,
   activeDragIds = null,
   sprintBoardQuickActions,
   onAddCardFromTemplate,
@@ -126,8 +129,8 @@ export function KanbanColumn({
       style={style}
       data-flux-column-key={bucket.key}
       {...(isFirstColumn ? { "data-tour": "board-column" as const } : {})}
-      className={`min-w-[min(272px,86vw)] snap-start sm:min-w-[280px] max-w-[380px] flex-1 flex-[1_1_280px] rounded-[12px] border border-[var(--flux-border-subtle)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_58%,var(--flux-surface-card)_42%)] backdrop-blur-[10px] flex flex-col max-h-[min(72dvh,calc(100dvh-220px))] md:max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
-        collapsed ? "min-w-[72px] max-w-[72px] flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
+      className={`${mobileActive ? "max-md:flex" : "max-md:hidden"} min-w-0 w-full max-w-full flex-none md:flex md:min-w-[280px] md:snap-start md:max-w-[380px] md:flex-1 md:flex-[1_1_280px] rounded-[12px] border border-[var(--flux-border-subtle)] bg-[color-mix(in_srgb,var(--flux-surface-dark)_58%,var(--flux-surface-card)_42%)] backdrop-blur-[10px] flex-col max-h-none md:max-h-[calc(100vh-165px)] transition-all shadow-[var(--flux-shadow-kanban-column)] ${
+        collapsed ? "md:min-w-[72px] md:max-w-[72px] md:flex-[0_0_72px] cursor-pointer overflow-hidden min-h-0 h-fit" : ""
       } ${isOver ? "bg-[var(--flux-primary-glow)] ring-1 ring-[var(--flux-border-default)]" : ""} ${
         remoteCollabHighlight ? "ring-2 ring-[var(--flux-primary)]/55 ring-offset-2 ring-offset-[var(--flux-surface-card)]" : ""
       }`}
@@ -164,7 +167,7 @@ export function KanbanColumn({
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-3 px-3 py-3 border-b border-[var(--flux-border-muted)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing shadow-[inset_0_1px_0_var(--flux-border-muted)]"
+        className="flex items-center gap-3 px-3 py-3 border-b border-[var(--flux-border-muted)] sticky top-0 bg-[var(--flux-surface-card)] rounded-t-[var(--flux-rad)] cursor-grab active:cursor-grabbing shadow-[inset_0_1px_0_var(--flux-border-muted)] max-md:cursor-default max-md:active:cursor-default"
         aria-label={t("column.dragAriaLabel", { label: bucket.label, count: cards.length })}
       >
         <div
@@ -308,7 +311,7 @@ export function KanbanColumn({
           ref={setDropScrollRegionRef}
           role="region"
           aria-label={t("column.dropRegionAriaLabel", { label: bucket.label })}
-          className="p-2.5 flex-1 overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
+          className="p-2.5 flex-1 overflow-y-visible md:overflow-y-auto flex flex-col gap-1.5 min-h-[50px] scrollbar-kanban"
         >
           <KanbanColumnCardList
             scrollRef={columnBodyScrollRef}

@@ -5,13 +5,41 @@ import { useTranslations } from "next-intl";
 import { useCopilotStore } from "@/stores/copilot-store";
 import { useBoardActivityStore } from "@/stores/board-activity-store";
 import { useBoardExecutionInsightsStore } from "@/stores/board-execution-insights-store";
+import type { BoardViewMode } from "./kanban-constants";
 
 type BoardMobileToolHubProps = {
   onOpenDaily: () => void;
   onToggleFocusMode?: () => void;
+  onOpenFilters?: () => void;
+  onNewCard?: () => void;
+  boardView: BoardViewMode;
+  setBoardView: (view: BoardViewMode) => void;
+  allowedViewModes: readonly BoardViewMode[];
+  tTimeline: (key: string) => string;
 };
 
-export function BoardMobileToolHub({ onOpenDaily, onToggleFocusMode }: BoardMobileToolHubProps) {
+const VIEW_LABEL_KEYS: Record<BoardViewMode, string> = {
+  kanban: "viewKanbanTooltip",
+  table: "viewTableTooltip",
+  timeline: "viewTimelineTooltip",
+  eisenhower: "viewEisenhowerTooltip",
+  swot: "viewSwotTooltip",
+  strategic_portfolio: "viewStrategicPortfolioTooltip",
+  executive: "viewExecutiveTooltip",
+  roadmap: "viewRoadmapTooltip",
+  flow_metrics: "viewFlowMetricsTooltip",
+};
+
+export function BoardMobileToolHub({
+  onOpenDaily,
+  onToggleFocusMode,
+  onOpenFilters,
+  onNewCard,
+  boardView,
+  setBoardView,
+  allowedViewModes,
+  tTimeline,
+}: BoardMobileToolHubProps) {
   const t = useTranslations("kanban.board.mobileTools");
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -63,8 +91,56 @@ export function BoardMobileToolHub({ onOpenDaily, onToggleFocusMode }: BoardMobi
           ref={panelRef}
           role="menu"
           aria-label={t("menuLabel")}
-          className="mb-1 w-[min(280px,calc(100vw-2rem))] rounded-[var(--flux-rad)] border border-[var(--flux-border-default)] bg-[var(--flux-surface-card)] p-2 shadow-[var(--flux-shadow-modal-depth)]"
+          className="mb-1 max-h-[min(72dvh,560px)] w-[min(340px,calc(100vw-2rem))] overflow-y-auto rounded-[var(--flux-rad-lg)] border border-[var(--flux-border-default)] bg-[color-mix(in_srgb,var(--flux-surface-card)_94%,transparent)] p-2 shadow-[var(--flux-shadow-modal-depth)] backdrop-blur-[18px] scrollbar-flux"
         >
+          <div className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
+            {t("sectionPrimary")}
+          </div>
+          {onNewCard ? (
+            <MenuRow
+              label={t("newCard")}
+              onClick={() => {
+                onNewCard();
+                setOpen(false);
+              }}
+            />
+          ) : null}
+          {onOpenFilters ? (
+            <MenuRow
+              label={t("filters")}
+              onClick={() => {
+                onOpenFilters();
+                setOpen(false);
+              }}
+            />
+          ) : null}
+          <div className="px-2 pb-1 pt-3 text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
+            {t("sectionView")}
+          </div>
+          <div className="grid grid-cols-2 gap-1 px-1 pb-1" role="group" aria-label={t("viewGroup")}>
+            {allowedViewModes.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="menuitemradio"
+                aria-checked={boardView === mode}
+                className={`min-h-11 rounded-lg border px-2 py-2 text-left text-xs font-semibold transition-colors ${
+                  boardView === mode
+                    ? "border-[var(--flux-primary-alpha-45)] bg-[var(--flux-primary-alpha-12)] text-[var(--flux-primary-light)]"
+                    : "border-[var(--flux-chrome-alpha-12)] text-[var(--flux-text-muted)] hover:bg-[var(--flux-primary-alpha-08)]"
+                }`}
+                onClick={() => {
+                  setBoardView(mode);
+                  setOpen(false);
+                }}
+              >
+                {tTimeline(VIEW_LABEL_KEYS[mode])}
+              </button>
+            ))}
+          </div>
+          <div className="px-2 pb-1 pt-3 text-[10px] font-bold uppercase tracking-wide text-[var(--flux-text-muted)]">
+            {t("sectionTools")}
+          </div>
           <MenuRow
             label={t("copilot")}
             onClick={() => {

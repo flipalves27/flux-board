@@ -85,13 +85,13 @@ function AppShellWithSidebar({ children }: { children: React.ReactNode }) {
         <TrialBillingBanner />
         <MobileAppHeader />
         {workbar ? <Workbar /> : null}
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth">{children}</div>
+        <div className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-clip overflow-y-auto overscroll-contain scroll-smooth">{children}</div>
       </div>
     </div>
   );
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
+    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 max-w-full overflow-hidden max-md:pl-[env(safe-area-inset-left,0px)] max-md:pr-[env(safe-area-inset-right,0px)]">
       <DocksStoreBridge />
       <FluxAppBackdrop className="absolute inset-0 z-[var(--flux-z-app-shell-bg)]" />
       <Sidebar />

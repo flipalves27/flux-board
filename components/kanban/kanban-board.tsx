@@ -919,6 +919,26 @@ function KanbanBoardLoaded({
     activeSprintBoard?.status === "active" &&
     Boolean(sprintProgress);
 
+  const openNewCardInBucket = useCallback(
+    (bucketKey: string) => {
+      board.setModalCard({
+        id: "",
+        bucket: bucketKey,
+        priority: "Média",
+        progress: "Não iniciado",
+        title: "",
+        desc: t("board.newCard.defaultDescription"),
+        tags: [],
+        direction: null,
+        dueDate: null,
+        blockedBy: [],
+        order: filters.getCardsByBucket(bucketKey).length,
+      });
+      board.setModalMode("new");
+    },
+    [board, filters, t]
+  );
+
   const activeSprintRibbon =
     isSprintMethodology(methodology) && activeSprintBoard?.status === "active" && activeSprintBoard && sprintProgress ? (
       <BoardActiveSprintContext
@@ -1071,22 +1091,7 @@ function KanbanBoardLoaded({
           activeDragCount={dnd.activeDragCount}
           activeDragIds={dnd.activeDragIds}
           onToggleCollapse={board.toggleCollapsed}
-          onAddCard={(bucketKey) => {
-            board.setModalCard({
-              id: "",
-              bucket: bucketKey,
-              priority: "Média",
-              progress: "Não iniciado",
-              title: "",
-              desc: t("board.newCard.defaultDescription"),
-              tags: [],
-              direction: null,
-              dueDate: null,
-              blockedBy: [],
-              order: filters.getCardsByBucket(bucketKey).length,
-            });
-            board.setModalMode("new");
-          }}
+          onAddCard={openNewCardInBucket}
           onEditCard={onEditCardById}
           openingCardId={openingCardId}
           onDeleteCard={(id) => board.setConfirmDelete({ type: "card", id, label: "" })}
@@ -1166,6 +1171,15 @@ function KanbanBoardLoaded({
         <BoardMobileToolHub
           onOpenDaily={openDailyModal}
           onToggleFocusMode={toggleFocusMode}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onNewCard={() => {
+            const key = visibleColumnKey ?? board.buckets[0]?.key;
+            if (key) openNewCardInBucket(key);
+          }}
+          boardView={boardView as BoardViewMode}
+          setBoardView={setBoardView}
+          allowedViewModes={allowedBoardViewModes}
+          tTimeline={tView as (k: string) => string}
         />
 
         <BoardSummaryDock
