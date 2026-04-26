@@ -429,6 +429,11 @@ export function CommandPalette(props?: CommandPaletteProps) {
       { path: "/template-marketplace", title: t("nav.marketplace"), kw: "marketplace templates galeria" },
       { path: "/sprints", title: t("nav.sprints"), kw: "sprints sprint agile scrum" },
       { path: "/docs", title: t("nav.docs"), kw: "docs documentos rag ai conhecimento" },
+      {
+        path: "/manual/intro",
+        title: t("nav.productManual"),
+        kw: "manual product help guia ajuda plataforma documentação suporte",
+      },
     ];
     if (sessionCanManageOrgBilling(user)) {
       nav.push({ path: "/org-settings", title: t("nav.orgSettings"), kw: "settings organization" });

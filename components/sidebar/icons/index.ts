@@ -12,6 +12,7 @@ export { IconExecutiveDashboard } from "./icon-executive-dashboard";
 export { IconFluxAiHub } from "./icon-flux-ai-hub";
 export { IconGoals } from "./icon-goals";
 export { IconInvites } from "./icon-invites";
+export { IconManual } from "./icon-manual";
 export { IconLogout } from "./icon-logout";
 export { IconMonitor } from "./icon-monitor";
 export { IconMoon } from "./icon-moon";

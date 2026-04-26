@@ -46,6 +46,8 @@
     "releasesUpcomingSublabel": "{count, plural, one {# to ship} other {# to ship}}",
     "docs": "Flux Docs",
     "docsProduct": "Knowledge and RAG",
+    "productManual": "Product manual",
+    "productManualProduct": "Platform help",
     "specScopePlanner": "Scope from document",
     "specScopePlannerProduct": "Business+ · AI",
     "forge": "Flux Forge",
@@ -90,6 +92,7 @@
       "platformAdminConsole": "Organizations, all users, and audit log (platform admins only).",
       "sprints": "Sprints across boards, lifecycle, and ceremonies.",
       "docs": "Documents, RAG and AI generation.",
+      "productManual": "In-app help for the platform (not your workspace Flux Docs).",
       "specScopePlanner": "Import a technical spec and generate board cards with AI (Scrum, Kanban, or LSS).",
       "forge": "Dedicated studio: run queue, repos, policies, and generated-code insights.",
       "copilot": "Board chat: summaries, search, and actions. On a board it opens the panel; elsewhere it goes to your boards list."
@@ -571,6 +574,7 @@
       "marketplace": "Template Marketplace",
       "sprints": "Sprints",
       "docs": "Flux Docs",
+      "productManual": "Product manual",
       "users": "Users",
       "team": "Team",
       "orgSettings": "Organization settings",
@@ -4419,6 +4423,43 @@
         "title": "Retro",
         "desc": "Capture insights from sentiment and flow metrics; track experiments as Kaizen cards."
       }
+    }
+  },
+  "manualApp": {
+    "title": "Product manual",
+    "back": "Back to app",
+    "searchPlaceholder": "Search the manual…",
+    "filterTag": "Tag",
+    "filterTagAll": "All",
+    "filterMyPlan": "Match my plan",
+    "openPage": "Open",
+    "noSearchResults": "No topics match your filters.",
+    "treeTitle": "Topics",
+    "proBadge": "Pro",
+    "businessBadge": "Business",
+    "fluxyTitle": "Fluxy",
+    "fluxySubtitle": "Product help",
+    "fluxyPlaceholder": "Ask about the manual…",
+    "fluxySend": "Send",
+    "fluxyEmpty": "Ask a question and Fluxy will answer from this manual, with citations to sections.",
+    "fluxyThinking": "Reading the manual…",
+    "breadcrumbs": {
+      "root": "Product manual"
+    },
+    "plans": {
+      "metaTitle": "Plans, limits, and gating (reference)",
+      "intro": "The numbers and matrix below are derived from the same source code as billing and plan checks in the app.",
+      "limitsTitle": "Numeric limits (environment defaults where applicable)",
+      "matrixTitle": "Feature flag matrix (which tiers can use each capability)",
+      "colFeature": "Capability",
+      "colTiers": "Allowed tiers",
+      "kFreeBoards": "Free — max boards (env)",
+      "kFreeUsers": "Free — max members (env)",
+      "kProUsers": "Pro — max members (env cap)",
+      "kBizUsers": "Business — max members (env cap)",
+      "kTrialDays": "Default trial (days)",
+      "kDowngradeGrace": "Downgrade grace (days)",
+      "kPaidBoards": "Paid — max boards (env cap)"
     }
   },
   "docsPage": {

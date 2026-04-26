@@ -85,6 +85,7 @@ const AUTH_DOCUMENT_FIRST_SEGMENTS = new Set([
   "spec-plan",
   "forge",
   "template-marketplace",
+  "manual",
   "okrs",
   "org-invites",
   "rate-limit-abuse",

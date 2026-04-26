@@ -1,0 +1,91 @@
+{
+  "items": [
+    {
+      "id": "intro",
+      "slug": "intro",
+      "order": 0,
+      "parentId": null,
+      "tags": ["getting-started"],
+      "minTier": null,
+      "title": {
+        "pt-BR": "Bem-vindo ao manual do produto",
+        "en": "Welcome to the product manual"
+      }
+    },
+    {
+      "id": "boards-kanban",
+      "slug": "boards-kanban",
+      "order": 1,
+      "parentId": null,
+      "tags": ["board", "kanban", "sprints"],
+      "minTier": null,
+      "title": {
+        "pt-BR": "Boards, Kanban e Sprints",
+        "en": "Boards, Kanban & Sprints"
+      }
+    },
+    {
+      "id": "flux-docs-vs-manual",
+      "slug": "flux-docs-vs-manual",
+      "order": 2,
+      "parentId": null,
+      "tags": ["docs", "flux-docs"],
+      "minTier": null,
+      "title": {
+        "pt-BR": "Flux Docs (workspace) vs manual do produto",
+        "en": "Workspace Flux Docs vs product manual"
+      }
+    },
+    {
+      "id": "okrs-goals",
+      "slug": "okrs-goals",
+      "order": 3,
+      "parentId": null,
+      "tags": ["okrs", "goals"],
+      "minTier": "pro",
+      "featureKeys": ["okr_engine"],
+      "title": {
+        "pt-BR": "Metas, OKRs e acompanhamento",
+        "en": "Goals, OKRs, and tracking"
+      }
+    },
+    {
+      "id": "billing-101",
+      "slug": "billing-101",
+      "order": 4,
+      "parentId": null,
+      "tags": ["billing", "org"],
+      "minTier": null,
+      "title": {
+        "pt-BR": "Plano, trial e faturamento",
+        "en": "Plan, trial, and billing"
+      }
+    },
+    {
+      "id": "copilot-fluxy",
+      "slug": "copilot-fluxy",
+      "order": 5,
+      "parentId": null,
+      "tags": ["ai", "copilot"],
+      "minTier": "pro",
+      "featureKeys": ["board_copilot"],
+      "title": {
+        "pt-BR": "Copilot e fluxos de IA",
+        "en": "Copilot and AI flows"
+      }
+    },
+    {
+      "id": "plans",
+      "slug": "plans",
+      "order": 6,
+      "parentId": null,
+      "tags": ["billing", "reference"],
+      "minTier": null,
+      "title": {
+        "pt-BR": "Planos, limites e gating de recursos (referência)",
+        "en": "Plans, limits, and feature gating (reference)"
+      },
+      "generated": true
+    }
+  ]
+}

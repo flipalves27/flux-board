@@ -9,6 +9,7 @@ import {
   IconExecutiveDashboard,
   IconForge,
   IconGoals,
+  IconManual,
   IconReports,
   IconSpecScope,
 } from "./icons";
@@ -111,6 +112,21 @@ export function SidebarIntelligence({
             icon={<IconGoals className="h-4 w-4 shrink-0" />}
             label={t("okrs")}
             sublabel={t("okrsProduct")}
+          />
+        ),
+      },
+      {
+        path: "/manual",
+        order: 3.5,
+        node: (
+          <SidebarNavLink
+            key="intel-manual"
+            trackPath="/manual"
+            path="/manual/intro"
+            hint={t("hints.productManual")}
+            icon={<IconManual className="h-4 w-4 shrink-0" />}
+            label={t("productManual")}
+            sublabel={t("productManualProduct")}
           />
         ),
       },

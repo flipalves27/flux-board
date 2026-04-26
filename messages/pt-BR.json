@@ -46,6 +46,8 @@
     "releasesUpcomingSublabel": "{count, plural, one {# a lançar} other {# a lançar}}",
     "docs": "Flux Docs",
     "docsProduct": "Conhecimento e RAG",
+    "productManual": "Manual do produto",
+    "productManualProduct": "Ajuda da plataforma",
     "specScopePlanner": "Escopo por documento",
     "specScopePlannerProduct": "Business+ · IA",
     "forge": "Flux Forge",
@@ -90,6 +92,7 @@
       "platformAdminConsole": "Organizações, todos os utilizadores e auditoria (só administrador da plataforma).",
       "sprints": "Sprints em todos os boards, ciclo de vida e cerimônias.",
       "docs": "Documentos, RAG e geração com IA.",
+      "productManual": "Ajuda in-app da plataforma (não são os seus Flux Docs do workspace).",
       "specScopePlanner": "Importe uma especificação técnica e gere cards no board com IA (Scrum, Kanban ou LSS).",
       "forge": "Estúdio dedicado: fila de runs, repos, políticas e insights de código gerado.",
       "copilot": "Chat com o quadro: resumos, buscas e ações. No quadro atual abre o painel; fora dele, leva à lista de quadros."
@@ -571,6 +574,7 @@
       "marketplace": "Template Marketplace",
       "sprints": "Sprints",
       "docs": "Flux Docs",
+      "productManual": "Manual do produto",
       "users": "Usuários",
       "team": "Equipe",
       "orgSettings": "Config. da organização",
@@ -4420,6 +4424,43 @@
         "title": "Retro",
         "desc": "Insights de sentimento e fluxo; experimentos viram cards Kaizen."
       }
+    }
+  },
+  "manualApp": {
+    "title": "Manual do produto",
+    "back": "Voltar à app",
+    "searchPlaceholder": "Buscar no manual…",
+    "filterTag": "Etiqueta",
+    "filterTagAll": "Todas",
+    "filterMyPlan": "Conteúdo do meu plano",
+    "openPage": "Abrir",
+    "noSearchResults": "Nenhum tópico corresponde aos filtros.",
+    "treeTitle": "Tópicos",
+    "proBadge": "Pro",
+    "businessBadge": "Business",
+    "fluxyTitle": "Fluxy",
+    "fluxySubtitle": "Ajuda do produto",
+    "fluxyPlaceholder": "Pergunte sobre o manual…",
+    "fluxySend": "Enviar",
+    "fluxyEmpty": "Faça uma pergunta: a Fluxy responde com base neste manual, citando secções.",
+    "fluxyThinking": "A ler o manual…",
+    "breadcrumbs": {
+      "root": "Manual do produto"
+    },
+    "plans": {
+      "metaTitle": "Planos, limites e gating (referência)",
+      "intro": "Os números e a matriz abaixo vêm do mesmo código usado em billing e verificação de plano na app.",
+      "limitsTitle": "Limites numéricos (padrão do ambiente quando aplicável)",
+      "matrixTitle": "Matriz de recursos (quais camadas podem usar cada funcionalidade)",
+      "colFeature": "Recurso",
+      "colTiers": "Camadas permitidas",
+      "kFreeBoards": "Grátis — máx. boards (env)",
+      "kFreeUsers": "Grátis — máx. membros (env)",
+      "kProUsers": "Pro — máx. membros (teto env)",
+      "kBizUsers": "Business — máx. membros (teto env)",
+      "kTrialDays": "Trial padrão (dias)",
+      "kDowngradeGrace": "Período de carência pós-downgrade (dias)",
+      "kPaidBoards": "Pago — máx. boards (teto env)"
     }
   },
   "docsPage": {
